@@ -62,17 +62,27 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 			
 			<div class="toolkit-description">
 				<p><?php esc_html_e( 'Comprehensive financial planning toolkit with 24 powerful tools for retirement planning, budgeting, portfolio management, and financial analysis.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><strong><?php esc_html_e( 'Works Independently:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'All tools function without requiring external API connections. You can manually manage all financial data. Optional Plaid API integration available for automatic bank account sync.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
+				<li><?php esc_html_e( 'Manual Financial Management: Track accounts, budgets, and transactions without any API dependencies', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Retirement Planning: Calculate retirement needs, optimize social security, and plan withdrawals', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Budget Management: Track expenses, analyze cash flow, and plan savings goals', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Investment Analysis: Visualize portfolios, plan asset allocation, and track rebalancing', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Debt Management: Calculate payoff strategies, track mortgage amortization', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Tax Planning: Estimate taxes, track tax-loss harvesting opportunities', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Financial Health: Calculate net worth, analyze financial health score, plan insurance needs', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Optional API Sync: Connect to Plaid for automatic bank transaction sync (not required)', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
+
+			<div class="notice notice-info inline">
+				<p>
+					<strong><?php esc_html_e( 'Privacy First:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php esc_html_e( 'Your financial data stays in your WordPress database. External API connections are completely optional.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			</div>
 		</div>
 		<?php
 	}
@@ -114,8 +124,11 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 					<td>
 						<label>
 							<input type="checkbox" name="enable_bank_sync" value="1" />
-							<?php esc_html_e( 'Allow syncing with bank accounts via third-party services', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Allow optional syncing with bank accounts via third-party services', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
+						<p class="description">
+							<?php esc_html_e( 'Optional feature. The toolkit works completely independently without this. When enabled, users can choose to connect their bank accounts via Plaid API.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 			</table>
