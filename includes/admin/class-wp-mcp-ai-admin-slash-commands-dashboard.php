@@ -664,6 +664,16 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		check_ajax_referer( 'wp_mcp_ai_slash_commands', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
+			// Log permission denial.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'command_permission_denied',
+					'User lacks edit_posts capability to execute command.',
+					array(
+						'user_id' => get_current_user_id(),
+					)
+				);
+			}
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
@@ -673,9 +683,27 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'No command provided.', 'mcp-ai-wpoos' ) ) );
 		}
 
+		// Log command execution attempt.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'command_execution_attempt',
+				sprintf( 'Attempting to execute command: %s', $command ),
+				array(
+					'command' => $command,
+					'user_id' => get_current_user_id(),
+				)
+			);
+		}
+
 		// Execute command.
 		$handler = wp_mcp_ai_get_slash_command_handler();
 		if ( ! $handler ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'command_handler_not_initialized',
+					'Slash command handler not initialized.'
+				);
+			}
 			wp_send_json_error( array( 'message' => __( 'Slash commands system not initialized.', 'mcp-ai-wpoos' ) ) );
 		}
 		$result = $handler->execute( $command, array( 'user_id' => get_current_user_id() ) );
@@ -684,10 +712,35 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		$this->log_execution( 'command', $command, $result );
 
 		if ( is_wp_error( $result ) ) {
+			// Log error with details.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'command_execution_error',
+					sprintf( 'Command execution failed: %s', $result->get_error_message() ),
+					array(
+						'command'     => $command,
+						'error_code'  => $result->get_error_code(),
+						'error_data'  => $result->get_error_data(),
+						'user_id'     => get_current_user_id(),
+					)
+				);
+			}
 			wp_send_json_error( array(
 				'message' => $result->get_error_message(),
 				'output'  => '',
 			) );
+		}
+
+		// Log success.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'command_execution_success',
+				sprintf( 'Command executed successfully: %s', $command ),
+				array(
+					'command' => $command,
+					'user_id' => get_current_user_id(),
+				)
+			);
 		}
 
 		wp_send_json_success( array(
@@ -704,6 +757,16 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		check_ajax_referer( 'wp_mcp_ai_slash_commands', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
+			// Log permission denial.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'workflow_permission_denied',
+					'User lacks edit_posts capability to execute workflow.',
+					array(
+						'user_id' => get_current_user_id(),
+					)
+				);
+			}
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
@@ -713,10 +776,28 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'No workflow provided.', 'mcp-ai-wpoos' ) ) );
 		}
 
+		// Log workflow execution attempt.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'workflow_execution_attempt',
+				sprintf( 'Attempting to execute workflow: %s', $workflow ),
+				array(
+					'workflow' => $workflow,
+					'user_id'  => get_current_user_id(),
+				)
+			);
+		}
+
 		// Execute workflow via command.
 		$command = '/workflow ' . $workflow;
 		$handler = wp_mcp_ai_get_slash_command_handler();
 		if ( ! $handler ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'workflow_handler_not_initialized',
+					'Slash command handler not initialized.'
+				);
+			}
 			wp_send_json_error( array( 'message' => __( 'Slash commands system not initialized.', 'mcp-ai-wpoos' ) ) );
 		}
 		$result = $handler->execute( $command, array( 'user_id' => get_current_user_id() ) );
@@ -725,10 +806,35 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		$this->log_execution( 'workflow', $workflow, $result );
 
 		if ( is_wp_error( $result ) ) {
+			// Log error with details.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'workflow_execution_error',
+					sprintf( 'Workflow execution failed: %s', $result->get_error_message() ),
+					array(
+						'workflow'    => $workflow,
+						'error_code'  => $result->get_error_code(),
+						'error_data'  => $result->get_error_data(),
+						'user_id'     => get_current_user_id(),
+					)
+				);
+			}
 			wp_send_json_error( array(
 				'message' => $result->get_error_message(),
 				'output'  => '',
 			) );
+		}
+
+		// Log success.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'workflow_execution_success',
+				sprintf( 'Workflow executed successfully: %s', $workflow ),
+				array(
+					'workflow' => $workflow,
+					'user_id'  => get_current_user_id(),
+				)
+			);
 		}
 
 		wp_send_json_success( array(
