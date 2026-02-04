@@ -90,10 +90,24 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			<div class="toolkit-card" style="background: #f8f9fa; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
 				<h3><?php esc_html_e( '📋 Configuration Options', 'mcp-ai-wpoos-pro' ); ?></h3>
 				
+				<h4><?php esc_html_e( 'Signaling Server Options', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'WebChat requires a signaling server for WebRTC peer discovery and connection setup. You have two options:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li>
+						<strong><?php esc_html_e( 'Self-Hosted (Recommended):', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Uses WordPress REST API + Server-Sent Events for signaling. No external server required. Enable "Use Self-Hosted Signaling" in settings.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'External WebSocket Server:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Requires a separate WebSocket server. Disable self-hosted signaling and provide the WebSocket URL (e.g., wss://signaling.yoursite.com).', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+				</ul>
+
 				<h4><?php esc_html_e( 'Default Settings', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<p><?php esc_html_e( 'Configure global defaults in the Settings tab above:', 'mcp-ai-wpoos-pro' ); ?></p>
 				<ul>
-					<li><strong><?php esc_html_e( 'Default Signaling Server URL:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Sets default WebSocket URL for all new rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Enable Self-Hosted Signaling:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use WordPress as the WebRTC signaling server (recommended)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'External Signaling Server URL:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Optional external WebSocket URL (only if self-hosted disabled)', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><strong><?php esc_html_e( 'Default Max Participants:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Default capacity for new rooms', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><strong><?php esc_html_e( 'Enable Anonymous Chat:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Allow non-authenticated users to join rooms', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><strong><?php esc_html_e( 'Enable WebChat Integration:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Master switch for WebChat features', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -106,11 +120,8 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 <strong><?php esc_html_e( 'Room Description:', 'mcp-ai-wpoos-pro' ); ?></strong>
 <?php esc_html_e( 'Interactive product demonstration and Q&A session for potential customers.', 'mcp-ai-wpoos-pro' ); ?>
 
-
 <strong><?php esc_html_e( 'Room Settings:', 'mcp-ai-wpoos-pro' ); ?></strong>
 - <?php esc_html_e( 'Max Participants: 20', 'mcp-ai-wpoos-pro' ); ?>
-
-- <?php esc_html_e( 'Signaling Server: wss://signaling.yoursite.com', 'mcp-ai-wpoos-pro' ); ?>
 
 - <?php esc_html_e( 'Status: Active', 'mcp-ai-wpoos-pro' ); ?>
 
@@ -174,8 +185,8 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 						<?php esc_html_e( ' Chrome, Firefox, Safari, or Edge with WebRTC support.', 'mcp-ai-wpoos-pro' ); ?>
 					</li>
 					<li>
-						<strong><?php esc_html_e( 'Signaling Server (Optional):', 'mcp-ai-wpoos-pro' ); ?></strong>
-						<?php esc_html_e( ' Custom WebSocket server for advanced signaling control.', 'mcp-ai-wpoos-pro' ); ?>
+						<strong><?php esc_html_e( 'Signaling Server:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Self-hosted (WordPress) or external WebSocket server. Self-hosted is recommended and requires no additional setup.', 'mcp-ai-wpoos-pro' ); ?>
 					</li>
 				</ul>
 			</div>
@@ -290,8 +301,16 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		);
 
 		add_settings_field(
+			'enable_self_hosted_signaling',
+			__( 'Enable Self-Hosted Signaling', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_enable_self_hosted_signaling_field' ),
+			$this->option_name,
+			$this->option_name . '_defaults_section'
+		);
+
+		add_settings_field(
 			'default_signaling_server',
-			__( 'Default Signaling Server URL', 'mcp-ai-wpoos-pro' ),
+			__( 'External Signaling Server URL', 'mcp-ai-wpoos-pro' ),
 			array( $this, 'render_default_signaling_server_field' ),
 			$this->option_name,
 			$this->option_name . '_defaults_section'
@@ -326,7 +345,47 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Render defaults section description.
 	 */
 	public function render_defaults_section_description() {
-		echo '<p>' . esc_html__( 'Configure default values for WebChat rooms.', 'mcp-ai-wpoos-pro' ) . '</p>';
+		echo '<p>' . esc_html__( 'Configure default values for WebChat rooms. You can use either self-hosted signaling (built into WordPress) or an external WebSocket server.', 'mcp-ai-wpoos-pro' ) . '</p>';
+	}
+
+	/**
+	 * Render enable self-hosted signaling field.
+	 */
+	public function render_enable_self_hosted_signaling_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['enable_self_hosted_signaling'] ) ? (bool) $options['enable_self_hosted_signaling'] : true;
+
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( $this->option_name ); ?>[enable_self_hosted_signaling]"
+				id="enable_self_hosted_signaling"
+				value="1"
+				<?php checked( $value, true ); ?>
+			/>
+			<?php esc_html_e( 'Use WordPress as the WebRTC signaling server', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php
+			echo wp_kses_post(
+				__( '<strong>Recommended.</strong> When enabled, WebChat uses WordPress REST API and Server-Sent Events for WebRTC signaling. No external server required. If disabled, you must provide an external WebSocket signaling server URL below.', 'mcp-ai-wpoos-pro' )
+			);
+			?>
+		</p>
+		<p class="description">
+			<?php
+			$url = rest_url( 'mcp-ai/v1/webchat/' );
+			echo wp_kses_post(
+				sprintf(
+					/* translators: %s: REST API endpoint URL */
+					__( 'Self-hosted signaling endpoint: <code>%s</code>', 'mcp-ai-wpoos-pro' ),
+					esc_url( $url )
+				)
+			);
+			?>
+		</p>
+		<?php
 	}
 
 	/**
@@ -346,7 +405,7 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			placeholder="wss://signaling.example.com"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Default WebSocket URL for WebRTC signaling server.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Optional external WebSocket URL for WebRTC signaling server. Only used if self-hosted signaling is disabled.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -434,6 +493,13 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		$sanitized = parent::sanitize_settings( $input );
 
 		// Add WebChat-specific sanitization.
+		if ( isset( $input['enable_self_hosted_signaling'] ) ) {
+			$sanitized['enable_self_hosted_signaling'] = (bool) $input['enable_self_hosted_signaling'];
+		} else {
+			// Checkbox not checked.
+			$sanitized['enable_self_hosted_signaling'] = false;
+		}
+
 		if ( isset( $input['default_signaling_server'] ) ) {
 			$sanitized['default_signaling_server'] = esc_url_raw( $input['default_signaling_server'] );
 		}

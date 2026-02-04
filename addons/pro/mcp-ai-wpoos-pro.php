@@ -284,6 +284,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
 				WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
 			}
+			// Load WebChat Self-Hosted Signaling REST Controller.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-webchat-signaling-rest-controller.php';
+			add_action( 'rest_api_init', function() {
+				$controller = new WP_MCP_AI_WebChat_Signaling_REST_Controller();
+				$controller->register_routes();
+			} );
 			// Load WebChat Settings page.
 			if ( is_admin() ) {
 				// Check if not in base version.
