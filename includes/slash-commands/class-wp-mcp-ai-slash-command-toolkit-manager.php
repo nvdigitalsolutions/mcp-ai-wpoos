@@ -3247,7 +3247,14 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	/**
 	 * Handle lead-add command.
 	 *
-	 * Add CRM leads.
+	 * Add CRM leads with enhanced validation.
+	 *
+	 * Enhanced with industry best practices:
+	 * - Schema validation
+	 * - Email/phone format validation
+	 * - Data normalization
+	 * - Duplicate detection
+	 * - Audit trail logging
 	 *
 	 * @since 1.3.0
 	 *
@@ -3256,8 +3263,37 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_lead_add( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'name', 'email' ) );
+		// Define schema for validation.
+		$schema = array(
+			'name'   => array(
+				'required' => true,
+				'type'     => 'string',
+			),
+			'email'  => array(
+				'required' => true,
+				'type'     => 'string',
+				'format'   => 'email',
+			),
+			'phone'  => array(
+				'required' => false,
+				'type'     => 'string',
+				'format'   => 'phone',
+			),
+			'source' => array(
+				'required' => false,
+				'type'     => 'string',
+				'enum'     => array( 'manual', 'website', 'referral', 'campaign', 'social', 'api' ),
+			),
+			'score'  => array(
+				'required' => false,
+				'type'     => 'integer',
+				'min'      => 0,
+				'max'      => 100,
+			),
+		);
+
+		// Validate against schema.
+		$validation = WP_MCP_AI_Slash_Command_Validator::validate_schema( $args, $schema );
 		if ( is_wp_error( $validation ) ) {
 			return $this->error_response( $validation );
 		}
@@ -3273,10 +3309,23 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		try {
-			$name = sanitize_text_field( $args['name'] );
-			$email = sanitize_email( $args['email'] );
+			// Normalize data.
+			$name = WP_MCP_AI_Slash_Command_Validator::normalize_name( $args['name'] );
+			$email = WP_MCP_AI_Slash_Command_Validator::normalize_email( $args['email'] );
 			$source = isset( $args['source'] ) ? sanitize_text_field( $args['source'] ) : 'manual';
 			$score = isset( $args['score'] ) ? absint( $args['score'] ) : 50;
+
+			// Normalize phone if provided.
+			$phone = null;
+			if ( ! empty( $args['phone'] ) ) {
+				$phone = WP_MCP_AI_Slash_Command_Validator::normalize_phone( $args['phone'] );
+			}
+
+			// Check for duplicates.
+			$duplicate_check = WP_MCP_AI_Slash_Command_Validator::check_duplicate_lead( $email );
+			if ( is_wp_error( $duplicate_check ) ) {
+				return $this->error_response( $duplicate_check );
+			}
 
 			// Create lead.
 			$lead_id = uniqid( 'lead_', true );
@@ -3284,11 +3333,16 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'id'          => $lead_id,
 				'name'        => $name,
 				'email'       => $email,
+				'phone'       => $phone,
 				'source'      => $source,
 				'score'       => $score,
 				'status'      => 'new',
 				'created'     => current_time( 'mysql' ),
 				'created_by'  => get_current_user_id(),
+				'metadata'    => array(
+					'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+					'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+				),
 			);
 
 			// Save lead.
@@ -3300,23 +3354,47 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'lead_id' => $lead_id,
 				'name'    => $name,
 				'email'   => $email,
+				'phone'   => $phone,
 				'source'  => $source,
 				'score'   => $score,
 				'status'  => 'new',
 			);
 
-			$this->log_activity( 'lead-add', $args, $result );
+			// Enhanced activity logging with structured data.
+			$this->log_activity(
+				'lead-add',
+				$args,
+				array_merge(
+					$result,
+					array(
+						'duplicate_check' => 'passed',
+						'validation'      => 'passed',
+					)
+				)
+			);
 
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %s: lead name */
-					__( 'Lead "%s" added successfully.', 'mcp-ai-wpoos' ),
-					$name
+					/* translators: 1: lead name, 2: score */
+					__( 'Lead "%1$s" added successfully with score %2$d.', 'mcp-ai-wpoos' ),
+					$name,
+					$score
 				)
 			);
 
 		} catch ( Exception $e ) {
+			// Log error with context.
+			$this->log_activity(
+				'lead-add',
+				$args,
+				array(
+					'error'   => $e->getMessage(),
+					'code'    => $e->getCode(),
+					'trace'   => $e->getTraceAsString(),
+				)
+			);
+
 			return $this->error_response( $e->getMessage() );
 		}
 	}

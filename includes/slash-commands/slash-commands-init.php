@@ -367,6 +367,9 @@ function wp_mcp_ai_load_toolkit_slash_commands() {
 	// Load toolkit manager.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
 
+	// Load validator (industry best practices).
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-validator.php';
+
 	// Load workflow orchestrator.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-workflow-orchestrator.php';
 
