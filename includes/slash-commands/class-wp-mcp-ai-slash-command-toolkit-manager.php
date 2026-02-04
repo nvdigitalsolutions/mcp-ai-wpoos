@@ -3016,12 +3016,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_analytics_dashboard( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'name' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -3032,29 +3026,92 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'name'       => array(
+				'type'     => 'string',
+				'required' => true,
+				'min'      => 3,
+				'max'      => 100,
+			),
+			'metrics'    => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'revenue', 'sessions', 'conversions', 'pageviews', 'bounces', 'users', 'avg_duration', 'exit_rate' ),
+			),
+			'time_range' => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'last-7-days', 'last-30-days', 'last-90-days', 'this-month', 'last-month', 'this-year' ),
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'analytics-dashboard', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
-			$dashboard_name = sanitize_text_field( $args['name'] );
-			$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'pageviews,sessions,bounces';
+			// Normalize data.
+			$dashboard_name = $validator->normalize_name( $args['name'] );
+			$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'revenue,sessions,conversions';
 			$time_range = isset( $args['time_range'] ) ? sanitize_text_field( $args['time_range'] ) : 'last-30-days';
+
+			// Check for duplicate dashboard name.
+			$dashboards = get_option( 'wp_mcp_ai_analytics_dashboards', array() );
+			foreach ( $dashboards as $existing ) {
+				if ( strtolower( $existing['name'] ) === strtolower( $dashboard_name ) ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							sprintf(
+								/* translators: %s: dashboard name */
+								__( 'A dashboard with the name "%s" already exists.', 'mcp-ai-wpoos' ),
+								$dashboard_name
+							)
+						)
+					);
+				}
+			}
+
+			// Parse and validate metrics.
+			$metrics_array = array_map( 'trim', explode( ',', $metrics ) );
+			$valid_metrics = array( 'revenue', 'sessions', 'conversions', 'pageviews', 'bounces', 'users', 'avg_duration', 'exit_rate' );
+			$metrics_array = array_intersect( $metrics_array, $valid_metrics );
+			if ( empty( $metrics_array ) ) {
+				$metrics_array = array( 'revenue', 'sessions', 'conversions' );
+			}
 
 			// Create dashboard configuration.
 			$dashboard_id = uniqid( 'dashboard_', true );
 			$dashboard = array(
 				'id'          => $dashboard_id,
 				'name'        => $dashboard_name,
-				'metrics'     => explode( ',', $metrics ),
+				'metrics'     => $metrics_array,
 				'time_range'  => $time_range,
-				'widgets'     => array(
-					array( 'type' => 'line_chart', 'metric' => 'pageviews' ),
-					array( 'type' => 'bar_chart', 'metric' => 'sessions' ),
-					array( 'type' => 'pie_chart', 'metric' => 'bounces' ),
+				'widgets'     => array_map(
+					function( $metric ) {
+						return array(
+							'type'   => 'line_chart',
+							'metric' => $metric,
+						);
+					},
+					$metrics_array
 				),
 				'created'     => current_time( 'mysql' ),
 				'created_by'  => get_current_user_id(),
+				'metadata'    => array(
+					'ip'         => $validator->get_client_ip(),
+					'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+				),
 			);
 
 			// Save dashboard.
-			$dashboards = get_option( 'wp_mcp_ai_analytics_dashboards', array() );
 			$dashboards[ $dashboard_id ] = $dashboard;
 			update_option( 'wp_mcp_ai_analytics_dashboards', $dashboards );
 
@@ -3062,6 +3119,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'dashboard_id' => $dashboard_id,
 				'name'         => $dashboard_name,
 				'metrics'      => $dashboard['metrics'],
+				'time_range'   => $time_range,
 				'widgets'      => count( $dashboard['widgets'] ),
 				'view_url'     => admin_url( "admin.php?page=wp-mcp-ai-analytics&dashboard={$dashboard_id}" ),
 			);
@@ -3072,12 +3130,14 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				$result,
 				sprintf(
 					/* translators: %s: dashboard name */
-					__( 'Analytics dashboard "%s" created successfully.', 'mcp-ai-wpoos' ),
-					$dashboard_name
+					__( 'Analytics dashboard "%s" created successfully with %d metrics.', 'mcp-ai-wpoos' ),
+					$dashboard_name,
+					count( $metrics_array )
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'analytics-dashboard', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -3094,12 +3154,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_social_post( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'content' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -3110,43 +3164,139 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'content'  => array(
+				'type'     => 'string',
+				'required' => true,
+				'min'      => 1,
+				'max'      => 3000,
+			),
+			'platform' => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'twitter', 'facebook', 'linkedin', 'instagram', 'all' ),
+			),
+			'hashtags' => array(
+				'type'     => 'string',
+				'required' => false,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'social-post', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
+			// Normalize data.
 			$content = sanitize_textarea_field( $args['content'] );
-			$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+			$platform = isset( $args['platform'] ) ? strtolower( sanitize_text_field( $args['platform'] ) ) : 'all';
 			$hashtags = isset( $args['hashtags'] ) ? sanitize_text_field( $args['hashtags'] ) : '';
+
+			// Platform-specific content length validation.
+			$max_lengths = array(
+				'twitter'   => 280,
+				'facebook'  => 63206,
+				'linkedin'  => 3000,
+				'instagram' => 2200,
+				'all'       => 280, // Use Twitter's limit for 'all'.
+			);
+
+			$content_length = mb_strlen( $content );
+			if ( isset( $max_lengths[ $platform ] ) && $content_length > $max_lengths[ $platform ] ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						sprintf(
+							/* translators: 1: platform name, 2: max length, 3: actual length */
+							__( 'Content exceeds %1$s character limit (%2$d characters). Your content is %3$d characters.', 'mcp-ai-wpoos' ),
+							ucfirst( $platform ),
+							$max_lengths[ $platform ],
+							$content_length
+						)
+					)
+				);
+			}
+
+			// Parse and normalize hashtags.
+			$hashtags_array = array();
+			if ( ! empty( $hashtags ) ) {
+				$hashtags_array = array_map(
+					function( $tag ) {
+						$tag = trim( $tag );
+						// Remove # prefix if present.
+						return ltrim( $tag, '#' );
+					},
+					explode( ',', $hashtags )
+				);
+				$hashtags_array = array_filter( $hashtags_array ); // Remove empty values.
+			}
+
+			// Check for duplicate posts (content hash).
+			$content_hash = md5( $content );
+			$posts = get_option( 'wp_mcp_ai_social_posts', array() );
+			foreach ( $posts as $existing ) {
+				if ( isset( $existing['content_hash'] ) && $existing['content_hash'] === $content_hash ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							__( 'A post with identical content already exists. Consider modifying your content or deleting the existing post.', 'mcp-ai-wpoos' )
+						)
+					);
+				}
+			}
 
 			// Create social post.
 			$post_id = uniqid( 'social_', true );
 			$post = array(
-				'id'          => $post_id,
-				'content'     => $content,
-				'platform'    => $platform,
-				'hashtags'    => $hashtags ? explode( ',', $hashtags ) : array(),
-				'status'      => 'draft',
-				'created'     => current_time( 'mysql' ),
-				'created_by'  => get_current_user_id(),
+				'id'           => $post_id,
+				'content'      => $content,
+				'content_hash' => $content_hash,
+				'platform'     => $platform,
+				'hashtags'     => $hashtags_array,
+				'status'       => 'draft',
+				'created'      => current_time( 'mysql' ),
+				'created_by'   => get_current_user_id(),
+				'metadata'     => array(
+					'ip'          => $validator->get_client_ip(),
+					'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'char_count'  => $content_length,
+					'hashtag_count' => count( $hashtags_array ),
+				),
 			);
 
 			// Save social post.
-			$posts = get_option( 'wp_mcp_ai_social_posts', array() );
 			$posts[ $post_id ] = $post;
 			update_option( 'wp_mcp_ai_social_posts', $posts );
 
 			$result = array(
-				'post_id'  => $post_id,
-				'platform' => $platform,
-				'status'   => 'draft',
-				'preview'  => wp_trim_words( $content, 20 ),
+				'post_id'   => $post_id,
+				'platform'  => $platform,
+				'status'    => 'draft',
+				'preview'   => wp_trim_words( $content, 20 ),
+				'hashtags'  => count( $hashtags_array ),
+				'char_count' => $content_length,
 			);
 
 			$this->log_activity( 'social-post', $args, $result );
 
 			return $this->success_response(
 				$result,
-				__( 'Social post created successfully. Ready for scheduling.', 'mcp-ai-wpoos' )
+				sprintf(
+					/* translators: %s: platform name */
+					__( 'Social post created for %s. Ready for scheduling.', 'mcp-ai-wpoos' ),
+					ucfirst( $platform )
+				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'social-post', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -3163,12 +3313,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_doc_create( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'template' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -3179,9 +3323,66 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'template' => array(
+				'type'     => 'string',
+				'required' => true,
+				'enum'     => array( 'invoice', 'contract', 'proposal', 'service-agreement', 'quote', 'nda', 'terms-of-service' ),
+			),
+			'title'    => array(
+				'type'     => 'string',
+				'required' => false,
+				'min'      => 3,
+				'max'      => 200,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'doc-create', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
 			$template = sanitize_text_field( $args['template'] );
-			$title = isset( $args['title'] ) ? sanitize_text_field( $args['title'] ) : "Document from {$template}";
+			$title = isset( $args['title'] ) ? $validator->normalize_name( $args['title'] ) : ucwords( str_replace( '-', ' ', $template ) ) . ' ' . gmdate( 'Y-m-d' );
+
+			// Check for duplicate document title.
+			$documents = get_option( 'wp_mcp_ai_documents', array() );
+			foreach ( $documents as $existing ) {
+				if ( strtolower( $existing['title'] ) === strtolower( $title ) ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							sprintf(
+								/* translators: %s: document title */
+								__( 'A document with the title "%s" already exists. Consider using a different title.', 'mcp-ai-wpoos' ),
+								$title
+							)
+						)
+					);
+				}
+			}
+
+			// Get template content.
+			$template_content = $this->get_template_content( $template );
+			if ( empty( $template_content ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'E002',
+						sprintf(
+							/* translators: %s: template name */
+							__( 'Template "%s" not found or is invalid.', 'mcp-ai-wpoos' ),
+							$template
+						)
+					)
+				);
+			}
 
 			// Create document from template.
 			$doc_id = uniqid( 'doc_', true );
@@ -3189,22 +3390,28 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'id'          => $doc_id,
 				'title'       => $title,
 				'template'    => $template,
-				'content'     => $this->get_template_content( $template ),
+				'content'     => $template_content,
 				'status'      => 'draft',
 				'created'     => current_time( 'mysql' ),
 				'created_by'  => get_current_user_id(),
+				'metadata'    => array(
+					'ip'         => $validator->get_client_ip(),
+					'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'word_count' => str_word_count( strip_tags( $template_content ) ),
+				),
 			);
 
 			// Save document.
-			$documents = get_option( 'wp_mcp_ai_documents', array() );
 			$documents[ $doc_id ] = $document;
 			update_option( 'wp_mcp_ai_documents', $documents );
 
 			$result = array(
-				'doc_id'   => $doc_id,
-				'title'    => $title,
-				'template' => $template,
-				'status'   => 'draft',
+				'doc_id'     => $doc_id,
+				'title'      => $title,
+				'template'   => $template,
+				'status'     => 'draft',
+				'word_count' => $document['metadata']['word_count'],
+				'edit_url'   => admin_url( "post.php?post={$doc_id}&action=edit" ),
 			);
 
 			$this->log_activity( 'doc-create', $args, $result );
@@ -3212,13 +3419,15 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %s: template name */
-					__( 'Document created from template "%s".', 'mcp-ai-wpoos' ),
-					$template
+					/* translators: 1: template name, 2: document title */
+					__( 'Document "%2$s" created from template "%1$s".', 'mcp-ai-wpoos' ),
+					ucwords( str_replace( '-', ' ', $template ) ),
+					$title
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'doc-create', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
