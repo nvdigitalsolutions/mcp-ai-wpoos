@@ -70,8 +70,19 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	public function execute_command( $request ) {
 		$command = $request->get_param( 'command' );
 		$async   = $request->get_param( 'async' );
+		$user_id = get_current_user_id();
+
+		// Log the REST API request.
+		$this->log_request( 'execute_command', array(
+			'command'  => $command,
+			'async'    => $async,
+			'user_id'  => $user_id,
+			'ip'       => $request->get_header( 'x-forwarded-for' ) ?: $_SERVER['REMOTE_ADDR'],
+			'endpoint' => $request->get_route(),
+		) );
 
 		if ( empty( $command ) ) {
+			$this->log_error( 'missing_command', 'Command parameter is required' );
 			return new WP_Error(
 				'missing_command',
 				__( 'Command parameter is required', 'mcp-ai-wpoos' ),
@@ -81,7 +92,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 
 		// Get context from request.
 		$context = array(
-			'user_id'      => get_current_user_id(),
+			'user_id'      => $user_id,
 			'request_time' => current_time( 'mysql' ),
 			'ip_address'   => $request->get_header( 'x-forwarded-for' ) ?: $_SERVER['REMOTE_ADDR'],
 		);
@@ -89,6 +100,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 		// Execute command.
 		$handler = wp_mcp_ai_get_slash_command_handler();
 		if ( ! $handler ) {
+			$this->log_error( 'handler_not_initialized', 'Slash command handler not initialized' );
 			return new WP_Error(
 				'handler_not_initialized',
 				__( 'Slash command handler not initialized', 'mcp-ai-wpoos' ),
@@ -102,15 +114,27 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 		}
 
 		// Synchronous execution.
-		$result = $handler->execute( $command, $context );
+		$start_time = microtime( true );
+		$result     = $handler->execute( $command, $context );
+		$duration   = round( ( microtime( true ) - $start_time ) * 1000, 2 );
 
 		if ( is_wp_error( $result ) ) {
+			$this->log_error( $result->get_error_code(), $result->get_error_message(), array(
+				'command'  => $command,
+				'duration' => $duration . 'ms',
+			) );
 			return new WP_Error(
 				$result->get_error_code(),
 				$result->get_error_message(),
 				array( 'status' => 400 )
 			);
 		}
+
+		$this->log_success( 'command_executed', array(
+			'command'  => $command,
+			'duration' => $duration . 'ms',
+			'has_result' => ! empty( $result ),
+		) );
 
 		return new WP_REST_Response(
 			array(
@@ -212,6 +236,11 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	public function check_permission( $request ) {
 		// Check if user is authenticated.
 		if ( ! is_user_logged_in() ) {
+			$this->log_request( 'permission_check', array(
+				'authenticated' => false,
+				'has_bearer'    => ! empty( $request->get_header( 'authorization' ) ),
+			) );
+
 			// Try bearer token authentication.
 			$auth_header = $request->get_header( 'authorization' );
 			if ( $auth_header && 0 === strpos( $auth_header, 'Bearer ' ) ) {
@@ -220,7 +249,9 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				$user_id = $this->validate_bearer_token( $token );
 				if ( $user_id ) {
 					wp_set_current_user( $user_id );
+					$this->log_success( 'bearer_auth', array( 'user_id' => $user_id ) );
 				} else {
+					$this->log_error( 'invalid_token', 'Bearer token validation failed' );
 					return new WP_Error(
 						'invalid_token',
 						__( 'Invalid bearer token', 'mcp-ai-wpoos' ),
@@ -228,16 +259,25 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 					);
 				}
 			} else {
+				$this->log_error( 'not_authenticated', 'No authentication provided' );
 				return new WP_Error(
 					'not_authenticated',
 					__( 'Authentication required', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
+		} else {
+			$this->log_request( 'permission_check', array(
+				'authenticated' => true,
+				'user_id'       => get_current_user_id(),
+			) );
 		}
 
 		// Check minimum capability.
 		if ( ! current_user_can( 'read' ) ) {
+			$this->log_error( 'insufficient_permission', 'User lacks read capability', array(
+				'user_id' => get_current_user_id(),
+			) );
 			return new WP_Error(
 				'insufficient_permission',
 				__( 'Insufficient permissions', 'mcp-ai-wpoos' ),
@@ -318,6 +358,54 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Log REST API request
+	 *
+	 * @param string $action Action being performed.
+	 * @param array  $data   Additional data to log.
+	 */
+	private function log_request( $action, $data = array() ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( sprintf(
+				'[SlashCommands:REST] %s | %s',
+				$action,
+				wp_json_encode( $data )
+			) );
+		}
+	}
+
+	/**
+	 * Log success message
+	 *
+	 * @param string $message Success message.
+	 * @param array  $data    Additional data to log.
+	 */
+	private function log_success( $message, $data = array() ) {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( sprintf(
+				'[SlashCommands:REST] ✅ %s | %s',
+				$message,
+				wp_json_encode( $data )
+			) );
+		}
+	}
+
+	/**
+	 * Log error message
+	 *
+	 * @param string $code    Error code.
+	 * @param string $message Error message.
+	 * @param array  $data    Additional data to log.
+	 */
+	private function log_error( $code, $message, $data = array() ) {
+		error_log( sprintf(
+			'[SlashCommands:REST] ❌ %s: %s | %s',
+			$code,
+			$message,
+			wp_json_encode( $data )
+		) );
 	}
 }
 

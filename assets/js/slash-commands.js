@@ -19,6 +19,16 @@
 			this.autocomplete = null;
 			this.commandCache = null;
 			this.cacheExpiry = 0;
+			this.debugMode = window.wpMcpAiDebug || false;
+		}
+
+		/**
+		 * Log debug message
+		 */
+		debug(...args) {
+			if (this.debugMode && window.console && console.log) {
+				console.log('[SlashCommands:DEBUG]', ...args);
+			}
 		}
 
 		/**
@@ -26,21 +36,41 @@
 		 */
 		init() {
 			if (this.initialized) {
+				this.debug('Already initialized, skipping');
 				return;
+			}
+
+			this.debug('Starting initialization...', {
+				readyState: document.readyState,
+				timestamp: new Date().toISOString()
+			});
+
+			// Check if mcpAiData is available
+			if (!window.mcpAiData) {
+				console.warn('[SlashCommands] mcpAiData not available - REST API calls may fail');
+			} else {
+				this.debug('mcpAiData available:', {
+					hasRestUrl: !!window.mcpAiData.restUrl,
+					hasNonce: !!window.mcpAiData.nonce
+				});
 			}
 
 			// Find chat input elements - support multiple class name conventions
 			this.chatInput = document.querySelector('.wp-mcp-ai-chat__input, .mcp-chat-input, #mcp-chat-input, textarea[name="message"]');
 			if (!this.chatInput) {
-				console.warn('[SlashCommands] Chat input not found');
+				console.warn('[SlashCommands] Chat input not found - slash commands will not work');
 				return;
 			}
 
+			this.debug('Chat input found:', this.chatInput.className);
+
 			this.chatForm = this.chatInput.closest('form');
 			if (!this.chatForm) {
-				console.warn('[SlashCommands] Chat form not found');
+				console.warn('[SlashCommands] Chat form not found - slash commands will not work');
 				return;
 			}
+
+			this.debug('Chat form found:', this.chatForm.className);
 
 			// Attach event listeners
 			this.attachListeners();
@@ -49,10 +79,17 @@
 			if (window.CommandAutocomplete) {
 				this.autocomplete = new window.CommandAutocomplete(this.chatInput);
 				this.autocomplete.init();
+				this.debug('Autocomplete initialized');
+			} else {
+				this.debug('CommandAutocomplete not available');
 			}
 
 			this.initialized = true;
-			console.log('[SlashCommands] Initialized');
+			console.log('[SlashCommands] ✅ Initialized successfully', {
+				debugMode: this.debugMode,
+				hasAutocomplete: !!this.autocomplete,
+				timestamp: new Date().toISOString()
+			});
 		}
 
 		/**
@@ -74,8 +111,11 @@
 			const value = e.target.value.trim();
 
 			// Check if starts with slash
-			if (value.startsWith('/') && this.autocomplete) {
-				this.autocomplete.show(value);
+			if (value.startsWith('/')) {
+				this.debug('Slash command detected in input:', value.substring(0, 20));
+				if (this.autocomplete) {
+					this.autocomplete.show(value);
+				}
 			} else if (this.autocomplete) {
 				this.autocomplete.hide();
 			}
@@ -105,8 +145,12 @@
 
 			// Check if it's a slash command
 			if (!value.startsWith('/')) {
+				this.debug('Normal message detected (not a slash command), allowing default handling');
 				return; // Let normal chat handling proceed
 			}
+
+			console.log('[SlashCommands] 🚀 Slash command detected on submit:', value);
+			this.debug('Preventing default form submission and handling slash command');
 
 			// Prevent default form submission
 			e.preventDefault();
@@ -120,21 +164,39 @@
 		 * Execute slash command
 		 */
 		async executeCommand(command) {
-			console.log('[SlashCommands] Executing:', command);
+			const startTime = Date.now();
+			console.log('[SlashCommands] ⚙️ Executing command:', command);
+			this.debug('Execution started at', new Date().toISOString());
 
 			// Show loading state
 			this.setLoading(true);
 
 			try {
+				this.debug('Sending command to REST API...');
 				const response = await this.sendCommand(command);
+				const duration = Date.now() - startTime;
+
+				this.debug('Command response received', {
+					duration: duration + 'ms',
+					success: response.success,
+					hasResult: !!response.result
+				});
 
 				if (response.success) {
+					console.log('[SlashCommands] ✅ Command executed successfully in ' + duration + 'ms');
 					this.displayResult(response.result, command);
 				} else {
+					console.error('[SlashCommands] ❌ Command failed:', response.message);
 					this.displayError(response.message || 'Command execution failed');
 				}
 			} catch (error) {
-				console.error('[SlashCommands] Error:', error);
+				const duration = Date.now() - startTime;
+				console.error('[SlashCommands] ❌ Error after ' + duration + 'ms:', error);
+				this.debug('Error details:', {
+					message: error.message,
+					stack: error.stack,
+					name: error.name
+				});
 				this.displayError(error.message || 'Failed to execute command');
 			} finally {
 				this.setLoading(false);
@@ -149,21 +211,43 @@
 			const endpoint = window.mcpAiData?.restUrl + '/mcp-ai/v1/slash-command';
 			const nonce = window.mcpAiData?.nonce;
 
+			this.debug('REST API request:', {
+				endpoint: endpoint,
+				hasNonce: !!nonce,
+				command: command
+			});
+
+			if (!endpoint || !nonce) {
+				throw new Error('REST API configuration missing (restUrl or nonce)');
+			}
+
+			const requestPayload = { command };
+			this.debug('Request payload:', requestPayload);
+
 			const response = await fetch(endpoint, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': nonce
 				},
-				body: JSON.stringify({ command })
+				body: JSON.stringify(requestPayload)
+			});
+
+			this.debug('Response status:', {
+				status: response.status,
+				statusText: response.statusText,
+				ok: response.ok
 			});
 
 			if (!response.ok) {
-				const error = await response.json();
+				const error = await response.json().catch(() => ({ message: 'API request failed' }));
+				this.debug('Error response:', error);
 				throw new Error(error.message || 'API request failed');
 			}
 
-			return await response.json();
+			const data = await response.json();
+			this.debug('Response data:', data);
+			return data;
 		}
 
 		/**
@@ -172,9 +256,17 @@
 		displayResult(result, command) {
 			const chatMessages = document.querySelector('.wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
 			if (!chatMessages) {
-				console.warn('[SlashCommands] Chat messages container not found');
+				console.warn('[SlashCommands] ⚠️ Chat messages container not found - cannot display result');
+				this.debug('Attempted selectors: .wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
+				alert('Result: ' + result); // Fallback display
 				return;
 			}
+
+			this.debug('Displaying result in chat:', {
+				commandLength: command.length,
+				resultLength: result.length,
+				messagesContainer: chatMessages.className
+			});
 
 			// Create message elements
 			const userMessage = this.createMessage('user', command);
@@ -186,14 +278,23 @@
 
 			// Scroll to bottom
 			chatMessages.scrollTop = chatMessages.scrollHeight;
+
+			this.debug('Result displayed successfully');
 		}
 
 		/**
 		 * Display error message
 		 */
 		displayError(message) {
+			console.error('[SlashCommands] Displaying error:', message);
+			this.debug('Error details:', {
+				message: message,
+				timestamp: new Date().toISOString()
+			});
+
 			const chatMessages = document.querySelector('.wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
 			if (!chatMessages) {
+				console.warn('[SlashCommands] ⚠️ Chat messages container not found - showing alert instead');
 				alert('Error: ' + message);
 				return;
 			}
