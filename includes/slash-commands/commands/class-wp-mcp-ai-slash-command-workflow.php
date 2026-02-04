@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Sequential step execution
  * - Parallel step execution (NEW in 1.2.1)
  * - Conditional branching (NEW in 1.2.1)
+ * - Loop control with exit conditions (NEW in 1.2.1)
  * - Context passing between steps
  * - Integration with existing commands
  * - Error handling and recovery
@@ -534,6 +535,54 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				continue;
 			}
 
+			// Check if this is a loop execution block.
+			if ( isset( $step['repeat_until'] ) || isset( $step['repeat'] ) ) {
+				$loop_condition = isset( $step['repeat_until'] ) ? $step['repeat_until'] : null;
+				$max_iterations = isset( $step['max_iterations'] ) ? absint( $step['max_iterations'] ) : 10;
+				$loop_steps     = isset( $step['steps'] ) ? $step['steps'] : array();
+
+				if ( empty( $loop_steps ) ) {
+					$results['step_results'][] = array(
+						'step'    => $step_num,
+						'task'    => 'loop',
+						'status'  => 'failed',
+						'error'   => __( 'Loop block has no steps defined', 'mcp-ai-wpoos' ),
+					);
+					continue;
+				}
+
+				$loop_result = $this->execute_loop_steps(
+					$loop_steps,
+					$loop_condition,
+					$max_iterations,
+					$results['context'],
+					$context,
+					$dry_run,
+					$step_num
+				);
+
+				// Merge loop results.
+				$results['steps_completed'] += $loop_result['completed'];
+				$results['steps_failed']    += $loop_result['failed'];
+				$results['step_results']     = array_merge( $results['step_results'], $loop_result['step_results'] );
+				$results['context']          = array_merge( $results['context'], $loop_result['context'] );
+
+				// Add loop summary.
+				$results['step_results'][] = array(
+					'step'    => $step_num,
+					'task'    => 'loop',
+					'status'  => $loop_result['failed'] > 0 ? 'completed-with-errors' : 'completed',
+					'message' => sprintf(
+						/* translators: 1: iterations count, 2: max iterations */
+						__( 'Loop completed: %1$d of %2$d iterations', 'mcp-ai-wpoos' ),
+						$loop_result['iterations'],
+						$max_iterations
+					),
+				);
+
+				continue;
+			}
+
 			if ( $dry_run ) {
 				$results['step_results'][] = array(
 					'step'    => $step_num,
@@ -810,6 +859,117 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	}
 
 	/**
+	 * Execute steps in a loop with exit condition
+	 *
+	 * Supports repeat_until conditions for autonomous workflows.
+	 * Implements intelligent exit detection:
+	 * - Exits when condition is met (if specified)
+	 * - Exits when max_iterations is reached
+	 * - Exits on critical errors (unless continue_on_error is set)
+	 *
+	 * @param array  $steps            Array of step definitions for the loop.
+	 * @param string $exit_condition   Exit condition expression (optional).
+	 * @param int    $max_iterations   Maximum loop iterations.
+	 * @param array  $workflow_context Workflow context.
+	 * @param array  $execution_context Execution context.
+	 * @param bool   $dry_run          Dry run mode.
+	 * @param int    $base_step_num    Base step number for reporting.
+	 * @return array Loop execution results.
+	 */
+	private function execute_loop_steps( $steps, $exit_condition, $max_iterations, $workflow_context, $execution_context, $dry_run, $base_step_num ) {
+		$loop_results = array(
+			'completed'  => 0,
+			'failed'     => 0,
+			'step_results' => array(),
+			'context'    => $workflow_context, // Preserve context across iterations.
+			'iterations' => 0,
+		);
+
+		// Execute loop iterations.
+		for ( $iteration = 1; $iteration <= $max_iterations; $iteration++ ) {
+			$loop_results['iterations'] = $iteration;
+
+			// Execute each step in this iteration.
+			foreach ( $steps as $sub_index => $step ) {
+				$step_num = sprintf( '%d.loop.%d.%d', $base_step_num, $iteration, $sub_index + 1 );
+
+				if ( $dry_run ) {
+					$loop_results['step_results'][] = array(
+						'step'    => $step_num,
+						'task'    => isset( $step['task'] ) ? $step['task'] : 'loop-step',
+						'status'  => 'skipped',
+						'message' => __( 'Dry run - loop step not executed', 'mcp-ai-wpoos' ),
+					);
+					continue;
+				}
+
+				// Execute the step.
+				$step_result = $this->execute_step( $step, $loop_results['context'], $execution_context );
+
+				if ( is_wp_error( $step_result ) ) {
+					$loop_results['failed']++;
+					$loop_results['step_results'][] = array(
+						'step'   => $step_num,
+						'task'   => $step['task'],
+						'status' => 'failed',
+						'error'  => $step_result->get_error_message(),
+					);
+
+					// Stop loop on critical error unless continue_on_error is set.
+					if ( empty( $step['continue_on_error'] ) ) {
+						return $loop_results;
+					}
+				} else {
+					$loop_results['completed']++;
+					$loop_results['step_results'][] = array(
+						'step'   => $step_num,
+						'task'   => $step['task'],
+						'status' => 'completed',
+						'result' => $step_result,
+					);
+
+					// Update context with step results.
+					if ( isset( $step['output_var'] ) && is_array( $step_result ) ) {
+						$loop_results['context'][ $step['output_var'] ] = $step_result;
+					}
+				}
+			}
+
+			// Check exit condition after each iteration.
+			if ( $exit_condition && $this->evaluate_condition( $exit_condition, $loop_results['context'] ) ) {
+				$loop_results['step_results'][] = array(
+					'step'    => sprintf( '%d.loop.%d.exit', $base_step_num, $iteration ),
+					'task'    => 'exit-condition',
+					'status'  => 'completed',
+					'message' => sprintf(
+						/* translators: 1: exit condition, 2: iteration number */
+						__( 'Exit condition met: %1$s (after %2$d iterations)', 'mcp-ai-wpoos' ),
+						$exit_condition,
+						$iteration
+					),
+				);
+				break;
+			}
+
+			// Check if we've reached max iterations.
+			if ( $iteration >= $max_iterations ) {
+				$loop_results['step_results'][] = array(
+					'step'    => sprintf( '%d.loop.%d.limit', $base_step_num, $iteration ),
+					'task'    => 'iteration-limit',
+					'status'  => 'completed',
+					'message' => sprintf(
+						/* translators: %d: max iterations */
+						__( 'Maximum iterations reached: %d', 'mcp-ai-wpoos' ),
+						$max_iterations
+					),
+				);
+			}
+		}
+
+		return $loop_results;
+	}
+
+	/**
 	 * Execute a slash command
 	 *
 	 * @param string $command Command name.
@@ -1059,6 +1219,46 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
+			'autonomous-audit' => array(
+				'name'        => 'Autonomous Content Audit Loop',
+				'description' => 'Continuously audit content until quality score is acceptable',
+				'steps'       => array(
+					array(
+						'repeat_until'    => '{{quality_score}} >= 8',
+						'max_iterations'  => 5,
+						'steps'           => array(
+							array(
+								'task'       => 'clean-content',
+								'params'     => array(
+									'limit'   => 3,
+									'dry-run' => true,
+								),
+								'output_var' => 'content_result',
+							),
+							array(
+								'task'       => 'next-task',
+								'params'     => array(
+									'type'    => 'drafts',
+									'limit'   => 3,
+									'dry-run' => true,
+								),
+								'output_var' => 'draft_result',
+							),
+							array(
+								'task'       => 'wait',
+								'params'     => array( 'seconds' => 2 ),
+							),
+						),
+					),
+					array(
+						'task'   => 'notify_admin',
+						'params' => array(
+							'subject' => 'Autonomous Audit Complete',
+							'message' => 'Content audit loop has finished with quality score: {{quality_score}}',
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -1086,10 +1286,11 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		foreach ( $results['step_results'] as $step_result ) {
 			$status_icon = array(
-				'completed'         => '✅',
-				'completed-timeout' => '⚠️',
-				'failed'            => '❌',
-				'skipped'           => '⏭️',
+				'completed'              => '✅',
+				'completed-timeout'      => '⚠️',
+				'completed-with-errors'  => '⚠️',
+				'failed'                 => '❌',
+				'skipped'                => '⏭️',
 			);
 
 			$icon = isset( $status_icon[ $step_result['status'] ] ) ? $status_icon[ $step_result['status'] ] : '❓';
