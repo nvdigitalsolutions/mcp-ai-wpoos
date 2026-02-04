@@ -147,7 +147,10 @@ class WP_MCP_AI_Tool_Get_WebChat_Status implements WP_MCP_AI_Tool_Interface, WP_
 			'active_rooms'       => $active_rooms_query->found_posts,
 			'total_participants' => absint( $total_participants ),
 			'settings'           => array(
-				'default_signaling_server'  => isset( $settings['default_signaling_server'] ) ? $settings['default_signaling_server'] : '',
+				'signaling_type'            => isset( $settings['enable_self_hosted_signaling'] ) && $settings['enable_self_hosted_signaling'] ? 'self-hosted' : 'external',
+				'self_hosted_enabled'       => isset( $settings['enable_self_hosted_signaling'] ) ? (bool) $settings['enable_self_hosted_signaling'] : true,
+				'self_hosted_endpoint'      => rest_url( 'mcp-ai/v1/webchat/' ),
+				'external_signaling_server' => isset( $settings['default_signaling_server'] ) ? $settings['default_signaling_server'] : '',
 				'default_max_participants'  => isset( $settings['default_max_participants'] ) ? absint( $settings['default_max_participants'] ) : 10,
 				'enable_anonymous_chat'     => isset( $settings['enable_anonymous_chat'] ) ? (bool) $settings['enable_anonymous_chat'] : false,
 			),

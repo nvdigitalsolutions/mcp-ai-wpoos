@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/set-default-signaling-url-again',
+        'version' => 'dev-copilot/set-default-signaling-url-again',
+        'reference' => 'd5ca0152ce7235c8545ff35952e2e0e722c363c1',
         'pretty_version' => 'dev-copilot/enhance-toolkits-with-slash-commands',
         'version' => 'dev-copilot/enhance-toolkits-with-slash-commands',
         'reference' => '26e1fb82e9465210e187d5934d129c99f743fb55',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/set-default-signaling-url-again',
+            'version' => 'dev-copilot/set-default-signaling-url-again',
+            'reference' => 'd5ca0152ce7235c8545ff35952e2e0e722c363c1',
             'pretty_version' => 'dev-copilot/enhance-toolkits-with-slash-commands',
             'version' => 'dev-copilot/enhance-toolkits-with-slash-commands',
             'reference' => '26e1fb82e9465210e187d5934d129c99f743fb55',
