@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-workflow-orchestration',
-        'version' => 'dev-copilot/enhance-workflow-orchestration',
-        'reference' => 'ce5d3c7bb3ae2f96059089d6a28a04fbb15617f2',
+        'pretty_version' => 'dev-copilot/start-implementing-slash-commands',
+        'version' => 'dev-copilot/start-implementing-slash-commands',
+        'reference' => '6066e508d7939760118bbe2a132766a8761b7e46',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-workflow-orchestration',
-            'version' => 'dev-copilot/enhance-workflow-orchestration',
-            'reference' => 'ce5d3c7bb3ae2f96059089d6a28a04fbb15617f2',
+            'pretty_version' => 'dev-copilot/start-implementing-slash-commands',
+            'version' => 'dev-copilot/start-implementing-slash-commands',
+            'reference' => '6066e508d7939760118bbe2a132766a8761b7e46',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
