@@ -94,7 +94,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 			'wp_ajax_wp_mcp_ai_get_command_history',
 			'wp_ajax_wp_mcp_ai_get_history_entry',
 			'wp_ajax_wp_mcp_ai_clear_command_history',
-			'wp_ajax_wp_mcp_ai_execute_workflow',
+			'wp_ajax_wp_mcp_ai_execute_slash_workflow',
 		);
 
 		foreach ( $actions as $action ) {
