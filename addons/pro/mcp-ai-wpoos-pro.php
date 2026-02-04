@@ -148,7 +148,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		if ( file_exists( $workflow_builder_file ) ) {
 			require_once $workflow_builder_file;
 			
-			// Instantiate the Workflow Builder to register its admin page.
+			// Instantiate the Workflow Builder to register its Admin page.
 			if ( class_exists( 'WP_MCP_AI_Pro_Workflow_Builder_Page' ) ) {
 				new WP_MCP_AI_Pro_Workflow_Builder_Page();
 			}

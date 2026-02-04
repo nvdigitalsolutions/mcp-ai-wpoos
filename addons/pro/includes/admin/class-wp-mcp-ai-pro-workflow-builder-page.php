@@ -66,7 +66,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		// Hook format: nvoos-pro-dashboard_page_wp-mcp-ai-pro-workflow-builder
+		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
 		if ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
