@@ -69,7 +69,8 @@ class WP_MCP_AI_Slash_Command_Audit {
 		dbDelta( $sql );
 
 		// Check if table was created successfully.
-		$table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$this->table_name}'" ) === $this->table_name;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $this->table_name ) ) === $this->table_name;
 
 		if ( $table_exists ) {
 			update_option( 'wp_mcp_ai_slash_audit_table_version', '1.0' );
@@ -87,7 +88,7 @@ class WP_MCP_AI_Slash_Command_Audit {
 	public function drop_table() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$result = $wpdb->query( "DROP TABLE IF EXISTS {$this->table_name}" );
 
 		if ( false !== $result ) {
@@ -158,13 +159,14 @@ class WP_MCP_AI_Slash_Command_Audit {
 		}
 
 		// Build query.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$query = "SELECT * FROM {$this->table_name} WHERE {$where_clause} ORDER BY {$order_by}";
 
 		if ( $args['limit'] > 0 ) {
 			$query .= $wpdb->prepare( ' LIMIT %d OFFSET %d', $args['limit'], $args['offset'] );
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		return $wpdb->get_results( $query, ARRAY_A );
 	}
 
@@ -177,10 +179,10 @@ class WP_MCP_AI_Slash_Command_Audit {
 	public function get_by_correlation_id( $correlation_id ) {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$this->table_name} WHERE correlation_id = %s",
+				"SELECT * FROM {$this->table_name} WHERE correlation_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$correlation_id
 			),
 			ARRAY_A
@@ -222,7 +224,7 @@ class WP_MCP_AI_Slash_Command_Audit {
 		$where_clause = implode( ' AND ', $where );
 
 		// Get statistics.
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 		$stats = $wpdb->get_row(
 			"SELECT 
 				COUNT(*) as total_executions,
@@ -252,10 +254,10 @@ class WP_MCP_AI_Slash_Command_Audit {
 
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$this->table_name} WHERE timestamp < %s",
+				"DELETE FROM {$this->table_name} WHERE timestamp < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$cutoff_date
 			)
 		);

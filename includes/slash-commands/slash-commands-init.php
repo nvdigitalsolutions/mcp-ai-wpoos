@@ -601,10 +601,10 @@ function wp_mcp_ai_execute_workflow( $workflow_name, $params = array(), $context
  * @since 1.2.0
  */
 function wp_mcp_ai_create_slash_command_audit_table() {
-require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
 
-$audit = new WP_MCP_AI_Slash_Command_Audit();
-$audit->create_table();
+	$audit = new WP_MCP_AI_Slash_Command_Audit();
+	$audit->create_table();
 }
 
 /**
@@ -613,9 +613,9 @@ $audit->create_table();
  * @since 1.2.0
  */
 function wp_mcp_ai_schedule_audit_cleanup() {
-if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_slash_audit' ) ) {
-wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_slash_audit' );
-}
+	if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_slash_audit' ) ) {
+		wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_slash_audit' );
+	}
 }
 add_action( 'init', 'wp_mcp_ai_schedule_audit_cleanup' );
 
@@ -625,16 +625,16 @@ add_action( 'init', 'wp_mcp_ai_schedule_audit_cleanup' );
  * @since 1.2.0
  */
 function wp_mcp_ai_cleanup_slash_audit() {
-require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
 
-$audit = new WP_MCP_AI_Slash_Command_Audit();
+	$audit = new WP_MCP_AI_Slash_Command_Audit();
 
-// Keep 90 days of audit logs by default.
-$days_to_keep = apply_filters( 'wp_mcp_ai_slash_audit_retention_days', 90 );
-$deleted      = $audit->clean_old_logs( $days_to_keep );
+	// Keep 90 days of audit logs by default.
+	$days_to_keep = apply_filters( 'wp_mcp_ai_slash_audit_retention_days', 90 );
+	$deleted      = $audit->clean_old_logs( $days_to_keep );
 
-if ( $deleted && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-error_log( sprintf( '[SlashCommands:AUDIT] Cleaned %d old audit log entries (older than %d days)', $deleted, $days_to_keep ) );
-}
+	if ( $deleted && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( sprintf( '[SlashCommands:AUDIT] Cleaned %d old audit log entries (older than %d days)', $deleted, $days_to_keep ) );
+	}
 }
 add_action( 'wp_mcp_ai_cleanup_slash_audit', 'wp_mcp_ai_cleanup_slash_audit' );

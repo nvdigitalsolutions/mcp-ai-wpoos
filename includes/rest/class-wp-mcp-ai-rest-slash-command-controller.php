@@ -522,6 +522,11 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 *
 	 * @param array $log_data Log entry data.
 	 */
+	/**
+	 * Write persistent audit log entry
+	 *
+	 * @param array $log_data Log entry data.
+	 */
 	private function write_audit_log( $log_data ) {
 		global $wpdb;
 
@@ -529,6 +534,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 		$table_name = $wpdb->prefix . 'mcp_ai_slash_command_audit';
 
 		// Try to insert into table (will silently fail if table doesn't exist).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->insert(
 			$table_name,
 			$log_data,
