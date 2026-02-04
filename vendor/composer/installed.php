@@ -1,9 +1,15 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+<<<<<<< copilot/implement-workflow-builder-ui
+        'pretty_version' => 'dev-copilot/implement-workflow-builder-ui',
+        'version' => 'dev-copilot/implement-workflow-builder-ui',
+        'reference' => '6c505d26bb44fd7a094c942ed1f6c712c9e0b87d',
+=======
         'pretty_version' => 'dev-copilot/add-slash-command-support',
         'version' => 'dev-copilot/add-slash-command-support',
         'reference' => '8264314b9f7a1bf4e3ad5f10f0bc9fecd6a4b153',
+>>>>>>> dev-working
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +53,15 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+<<<<<<< copilot/implement-workflow-builder-ui
+            'pretty_version' => 'dev-copilot/implement-workflow-builder-ui',
+            'version' => 'dev-copilot/implement-workflow-builder-ui',
+            'reference' => '6c505d26bb44fd7a094c942ed1f6c712c9e0b87d',
+=======
             'pretty_version' => 'dev-copilot/add-slash-command-support',
             'version' => 'dev-copilot/add-slash-command-support',
             'reference' => '8264314b9f7a1bf4e3ad5f10f0bc9fecd6a4b153',
+>>>>>>> dev-working
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
