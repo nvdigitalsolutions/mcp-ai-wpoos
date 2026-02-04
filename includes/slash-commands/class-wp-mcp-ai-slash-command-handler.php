@@ -193,7 +193,7 @@ class WP_MCP_AI_Slash_Command_Handler {
 
 			return $result;
 
-		} catch ( Exception $e ) {
+		} catch ( Throwable $e ) {
 			$error = new WP_Error(
 				'command_execution_error',
 				sprintf(
