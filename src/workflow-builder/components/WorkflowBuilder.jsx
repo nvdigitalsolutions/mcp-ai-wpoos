@@ -25,10 +25,15 @@ import 'reactflow/dist/style.css';
 import WorkflowSidebar from './WorkflowSidebar';
 import WorkflowToolbar from './WorkflowToolbar';
 import WorkflowPropertiesPanel from './WorkflowPropertiesPanel';
+import ExecutionControls from './ExecutionControls';
+import ExecutionHistoryPanel from './ExecutionHistoryPanel';
+import MetricsDashboard from './MetricsDashboard';
 import nodeTypes from '../nodes';
 import { generateNodeId, validateWorkflow } from '../utils/workflowHelpers';
 import { WorkflowHistory, debounce } from '../utils/workflowHistory';
 import { createVersion, saveVersionToLocal, getVersionsFromLocal } from '../utils/workflowVersioning';
+import { WorkflowExecutor, ExecutionStatus } from '../utils/workflowExecutor';
+import { saveExecutionHistory } from '../utils/executionHistory';
 
 /**
  * Workflow Builder Component
@@ -43,6 +48,220 @@ const WorkflowBuilderInner = () => {
 	const [validationErrors, setValidationErrors] = useState( [] );
 	const reactFlowWrapper = useRef( null );
 	const [reactFlowInstance, setReactFlowInstance] = useState( null );
+	
+	// Phase 2: History management for undo/redo
+	const historyManager = useRef( new WorkflowHistory() );
+	const [canUndo, setCanUndo] = useState( false );
+	const [canRedo, setCanRedo] = useState( false );
+
+	// Phase 3: Execution management
+	const [isExecuting, setIsExecuting] = useState( false );
+	const [isPaused, setIsPaused] = useState( false );
+	const [debugMode, setDebugMode] = useState( false );
+	const [showHistory, setShowHistory] = useState( false );
+	const [showMetrics, setShowMetrics] = useState( false );
+	const [executionState, setExecutionState] = useState( null );
+	const executorRef = useRef( null );
+
+	/**
+	 * Update history when nodes or edges change
+	 */
+	const updateHistory = useRef(
+		debounce( ( nodes, edges ) => {
+			historyManager.current.push( { nodes, edges } );
+			updateHistoryButtons();
+		}, 500 )
+	);
+
+	useEffect( () => {
+		if ( nodes.length > 0 || edges.length > 0 ) {
+			updateHistory.current( nodes, edges );
+		}
+	}, [nodes, edges] );
+
+	/**
+	 * Update undo/redo button states
+	 */
+	const updateHistoryButtons = () => {
+		setCanUndo( historyManager.current.canUndo() );
+		setCanRedo( historyManager.current.canRedo() );
+	};
+
+	/**
+	 * Handle undo
+	 */
+	const handleUndo = useCallback( () => {
+		const state = historyManager.current.undo();
+		if ( state ) {
+			setNodes( state.nodes );
+			setEdges( state.edges );
+			updateHistoryButtons();
+		}
+	}, [setNodes, setEdges] );
+
+	/**
+	 * Handle redo
+	 */
+	const handleRedo = useCallback( () => {
+		const state = historyManager.current.redo();
+		if ( state ) {
+			setNodes( state.nodes );
+			setEdges( state.edges );
+			updateHistoryButtons();
+		}
+	}, [setNodes, setEdges] );
+
+	/**
+	 * Handle keyboard shortcuts
+	 */
+	useEffect( () => {
+		const handleKeyDown = ( event ) => {
+			// Undo: Ctrl+Z or Cmd+Z
+			if ( ( event.ctrlKey || event.metaKey ) && event.key === 'z' && ! event.shiftKey ) {
+				event.preventDefault();
+				handleUndo();
+			}
+			// Redo: Ctrl+Y or Cmd+Shift+Z
+			if (
+				( event.ctrlKey || event.metaKey ) &&
+				( event.key === 'y' || ( event.key === 'z' && event.shiftKey ) )
+			) {
+				event.preventDefault();
+				handleRedo();
+			}
+		};
+
+		document.addEventListener( 'keydown', handleKeyDown );
+		return () => document.removeEventListener( 'keydown', handleKeyDown );
+	}, [handleUndo, handleRedo] );
+
+	/**
+	 * Save workflow version
+	 */
+	const handleSaveVersion = useCallback( () => {
+		const version = createVersion( {
+			name: workflowName,
+			description: workflowDescription,
+			nodes,
+			edges,
+		}, __( 'Manual save', 'mcp-ai-wpoos' ) );
+
+		const workflowId = workflowName.toLowerCase().replace( /\s+/g, '-' );
+		if ( saveVersionToLocal( workflowId, version ) ) {
+			// eslint-disable-next-line no-console
+			console.log( __( 'Version saved successfully', 'mcp-ai-wpoos' ) );
+		}
+	}, [workflowName, workflowDescription, nodes, edges] );
+
+	/**
+	 * Execute workflow
+	 */
+	const handleExecute = useCallback( async () => {
+		// Validate first
+		const errors = validateWorkflow( nodes, edges );
+		if ( errors.length > 0 ) {
+			setValidationErrors( errors );
+			return;
+		}
+
+		setIsExecuting( true );
+		setIsPaused( false );
+
+		const workflow = {
+			nodes,
+			edges,
+		};
+
+		const executor = new WorkflowExecutor( workflow, {
+			debugMode,
+			maxRetries: 2,
+			timeout: 600000,
+		} );
+
+		executorRef.current = executor;
+
+		// Listen to execution events
+		executor.on( 'onNodeStart', ( { node } ) => {
+			// Highlight current node
+			setNodes( ( nds ) =>
+				nds.map( ( n ) =>
+					n.id === node.id
+						? { ...n, data: { ...n.data, isExecuting: true } }
+						: { ...n, data: { ...n.data, isExecuting: false } }
+				)
+			);
+		} );
+
+		executor.on( 'onNodeComplete', ( { node, state } ) => {
+			setNodes( ( nds ) =>
+				nds.map( ( n ) =>
+					n.id === node.id
+						? { ...n, data: { ...n.data, isExecuting: false, executionStatus: state.status } }
+						: n
+				)
+			);
+		} );
+
+		executor.on( 'onExecutionComplete', ( result ) => {
+			setIsExecuting( false );
+			setExecutionState( executor.getState() );
+
+			// Save to history
+			const workflowId = workflowName.toLowerCase().replace( /\s+/g, '-' );
+			saveExecutionHistory( workflowId, executor.getState() );
+		} );
+
+		executor.on( 'onExecutionError', ( { error, state } ) => {
+			setIsExecuting( false );
+			setExecutionState( state );
+			setValidationErrors( [ error ] );
+
+			// Save to history
+			const workflowId = workflowName.toLowerCase().replace( /\s+/g, '-' );
+			saveExecutionHistory( workflowId, state );
+		} );
+
+		// Start execution
+		await executor.execute();
+	}, [nodes, edges, workflowName, debugMode, setNodes] );
+
+	/**
+	 * Pause execution
+	 */
+	const handlePause = useCallback( () => {
+		if ( executorRef.current ) {
+			executorRef.current.pause();
+			setIsPaused( true );
+		}
+	}, [] );
+
+	/**
+	 * Resume execution
+	 */
+	const handleResume = useCallback( () => {
+		if ( executorRef.current ) {
+			executorRef.current.resume();
+			setIsPaused( false );
+		}
+	}, [] );
+
+	/**
+	 * Stop execution
+	 */
+	const handleStop = useCallback( () => {
+		if ( executorRef.current ) {
+			executorRef.current.cancel();
+			setIsExecuting( false );
+			setIsPaused( false );
+		}
+	}, [] );
+
+	/**
+	 * Toggle debug mode
+	 */
+	const handleDebugToggle = useCallback( () => {
+		setDebugMode( ( prev ) => ! prev );
+	}, [] );
 
 	/**
 	 * Handle new connection between nodes
@@ -235,6 +454,16 @@ const WorkflowBuilderInner = () => {
 				isSaving={isSaving}
 				validationErrors={validationErrors}
 			/>
+
+			<ExecutionControls
+				onPlay={isPaused ? handleResume : handleExecute}
+				onPause={handlePause}
+				onStop={handleStop}
+				onDebugToggle={handleDebugToggle}
+				isExecuting={isExecuting}
+				isPaused={isPaused}
+				debugMode={debugMode}
+			/>
 			
 			<div className="workflow-builder-main">
 				<WorkflowSidebar onLoadTemplate={loadTemplate} />
@@ -291,7 +520,22 @@ const WorkflowBuilderInner = () => {
 						onClose={() => setSelectedNode( null )}
 					/>
 				)}
+
+				{showMetrics && (
+					<MetricsDashboard
+						workflowId={workflowName.toLowerCase().replace( /\s+/g, '-' )}
+						nodes={nodes}
+					/>
+				)}
 			</div>
+
+			{showHistory && (
+				<ExecutionHistoryPanel
+					workflowId={workflowName.toLowerCase().replace( /\s+/g, '-' )}
+					onClose={() => setShowHistory( false )}
+					onReplay={null}
+				/>
+			)}
 		</div>
 	);
 };
