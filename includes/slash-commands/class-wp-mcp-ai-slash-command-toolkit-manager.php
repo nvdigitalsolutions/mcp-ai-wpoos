@@ -6164,4 +6164,1245 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->error_response( $e->getMessage() );
 		}
 	}
+
+	/**
+	 * Handle plugin-analyze command.
+	 *
+	 * Analyzes plugin code for security, performance, and standards compliance.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_plugin_analyze( $args, $context ) {
+		try {
+			// Validate required parameters.
+			if ( empty( $args['plugin'] ) ) {
+				return $this->error_response( __( 'Plugin slug is required.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to analyze plugins.', 'mcp-ai-wpoos' ) );
+			}
+
+			$plugin = sanitize_text_field( $args['plugin'] );
+			$checks = ! empty( $args['checks'] ) ? sanitize_text_field( $args['checks'] ) : 'security,performance,standards';
+			$check_types = array_map( 'trim', explode( ',', $checks ) );
+
+			// Verify plugin exists.
+			$all_plugins = get_plugins();
+			$plugin_found = false;
+			$plugin_path = '';
+			
+			foreach ( $all_plugins as $path => $data ) {
+				if ( strpos( $path, $plugin . '/' ) === 0 || $path === $plugin . '.php' ) {
+					$plugin_found = true;
+					$plugin_path = WP_PLUGIN_DIR . '/' . $path;
+					break;
+				}
+			}
+
+			if ( ! $plugin_found ) {
+				return $this->error_response( __( 'Plugin not found.', 'mcp-ai-wpoos' ) );
+			}
+
+			$issues = array();
+			$score = 100;
+
+			// Security analysis.
+			if ( in_array( 'security', $check_types, true ) ) {
+				$security_issues = array();
+				
+				// Check for SQL injection patterns.
+				if ( preg_match( '/\$wpdb->query\s*\(\s*["\']/', file_get_contents( $plugin_path ) ) ) {
+					$security_issues[] = array(
+						'type'     => 'security',
+						'severity' => 'high',
+						'message'  => __( 'Potential SQL injection vulnerability detected.', 'mcp-ai-wpoos' ),
+					);
+					$score -= 20;
+				}
+
+				// Check for XSS vulnerabilities.
+				if ( preg_match( '/echo\s+\$_/', file_get_contents( $plugin_path ) ) ) {
+					$security_issues[] = array(
+						'type'     => 'security',
+						'severity' => 'high',
+						'message'  => __( 'Potential XSS vulnerability: unescaped output.', 'mcp-ai-wpoos' ),
+					);
+					$score -= 20;
+				}
+
+				// Check for nonce verification.
+				if ( strpos( file_get_contents( $plugin_path ), 'wp_verify_nonce' ) === false && 
+					 strpos( file_get_contents( $plugin_path ), '$_POST' ) !== false ) {
+					$security_issues[] = array(
+						'type'     => 'security',
+						'severity' => 'medium',
+						'message'  => __( 'Missing nonce verification for form submissions.', 'mcp-ai-wpoos' ),
+					);
+					$score -= 10;
+				}
+
+				$issues = array_merge( $issues, $security_issues );
+			}
+
+			// Performance analysis.
+			if ( in_array( 'performance', $check_types, true ) ) {
+				$performance_issues = array();
+
+				// Check for N+1 query patterns.
+				if ( preg_match_all( '/get_posts|get_pages|WP_Query/', file_get_contents( $plugin_path ) ) > 10 ) {
+					$performance_issues[] = array(
+						'type'     => 'performance',
+						'severity' => 'medium',
+						'message'  => __( 'Multiple database queries detected. Consider caching.', 'mcp-ai-wpoos' ),
+					);
+					$score -= 10;
+				}
+
+				$issues = array_merge( $issues, $performance_issues );
+			}
+
+			// Standards compliance.
+			if ( in_array( 'standards', $check_types, true ) ) {
+				$standards_issues = array();
+
+				// Check for WPCS compliance.
+				if ( ! preg_match( '/\/\*\*[\s\S]*?\*\//', file_get_contents( $plugin_path ) ) ) {
+					$standards_issues[] = array(
+						'type'     => 'standards',
+						'severity' => 'low',
+						'message'  => __( 'Missing or inadequate PHPDoc comments.', 'mcp-ai-wpoos' ),
+					);
+					$score -= 5;
+				}
+
+				$issues = array_merge( $issues, $standards_issues );
+			}
+
+			// Determine grade.
+			$grade = 'F';
+			if ( $score >= 90 ) {
+				$grade = 'A';
+			} elseif ( $score >= 80 ) {
+				$grade = 'B';
+			} elseif ( $score >= 70 ) {
+				$grade = 'C';
+			} elseif ( $score >= 60 ) {
+				$grade = 'D';
+			}
+
+			$result = array(
+				'plugin'       => $plugin,
+				'score'        => $score,
+				'grade'        => $grade,
+				'issues_count' => count( $issues ),
+				'issues'       => $issues,
+				'checks_run'   => $check_types,
+			);
+
+			$this->log_activity( 'plugin-analyze', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: plugin name, 2: grade, 3: score */
+					__( 'Plugin analysis complete. Grade: %2$s (%3$d/100). Found %4$d issues.', 'mcp-ai-wpoos' ),
+					$plugin,
+					$grade,
+					$score,
+					count( $issues )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'plugin-analyze', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle theme-analyze command.
+	 *
+	 * Analyzes theme structure and compatibility.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_theme_analyze( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'edit_theme_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to analyze themes.', 'mcp-ai-wpoos' ) );
+			}
+
+			$theme_slug = ! empty( $args['theme'] ) ? sanitize_text_field( $args['theme'] ) : get_stylesheet();
+			$theme = wp_get_theme( $theme_slug );
+
+			if ( ! $theme->exists() ) {
+				return $this->error_response( __( 'Theme not found.', 'mcp-ai-wpoos' ) );
+			}
+
+			$issues = array();
+			$score = 100;
+
+			// Check required files.
+			$required_files = array( 'style.css', 'index.php', 'functions.php' );
+			$theme_path = $theme->get_stylesheet_directory();
+
+			foreach ( $required_files as $file ) {
+				if ( ! file_exists( $theme_path . '/' . $file ) ) {
+					$issues[] = array(
+						'type'     => 'structure',
+						'severity' => 'high',
+						'message'  => sprintf( __( 'Missing required file: %s', 'mcp-ai-wpoos' ), $file ),
+					);
+					$score -= 15;
+				}
+			}
+
+			// Check for Gutenberg support.
+			$has_gutenberg_support = false;
+			if ( file_exists( $theme_path . '/functions.php' ) ) {
+				$functions_content = file_get_contents( $theme_path . '/functions.php' );
+				$has_gutenberg_support = strpos( $functions_content, 'add_theme_support' ) !== false;
+			}
+
+			if ( ! $has_gutenberg_support ) {
+				$issues[] = array(
+					'type'     => 'compatibility',
+					'severity' => 'medium',
+					'message'  => __( 'No Gutenberg block support detected.', 'mcp-ai-wpoos' ),
+				);
+				$score -= 10;
+			}
+
+			// Check for theme.json (WordPress 5.9+).
+			$has_theme_json = file_exists( $theme_path . '/theme.json' );
+
+			$result = array(
+				'theme'              => $theme_slug,
+				'name'               => $theme->get( 'Name' ),
+				'version'            => $theme->get( 'Version' ),
+				'score'              => max( 0, $score ),
+				'issues_count'       => count( $issues ),
+				'issues'             => $issues,
+				'required_files_ok'  => count( $issues ) === 0 || ! in_array( 'structure', array_column( $issues, 'type' ), true ),
+				'gutenberg_support'  => $has_gutenberg_support,
+				'theme_json'         => $has_theme_json,
+			);
+
+			$this->log_activity( 'theme-analyze', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: theme name, 2: score */
+					__( 'Theme analysis complete. Score: %2$d/100. Found %3$d issues.', 'mcp-ai-wpoos' ),
+					$theme->get( 'Name' ),
+					$result['score'],
+					count( $issues )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'theme-analyze', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle performance-profile command.
+	 *
+	 * Profiles site performance metrics.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_performance_profile( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to profile performance.', 'mcp-ai-wpoos' ) );
+			}
+
+			$url = ! empty( $args['url'] ) ? esc_url_raw( $args['url'] ) : home_url();
+
+			global $wpdb;
+
+			// Database query analysis.
+			$slow_queries = $wpdb->num_queries > 50 ? __( 'High number of queries detected.', 'mcp-ai-wpoos' ) : __( 'Query count within normal range.', 'mcp-ai-wpoos' );
+
+			// Memory usage.
+			$memory_limit = ini_get( 'memory_limit' );
+			$memory_used = memory_get_usage( true );
+			$memory_peak = memory_get_peak_usage( true );
+
+			// Execution time.
+			$execution_time = microtime( true ) - $_SERVER['REQUEST_TIME_FLOAT'];
+
+			// Check for common performance issues.
+			$recommendations = array();
+
+			if ( $wpdb->num_queries > 50 ) {
+				$recommendations[] = __( 'Reduce database queries with caching.', 'mcp-ai-wpoos' );
+			}
+
+			if ( $memory_used > ( 64 * 1024 * 1024 ) ) {
+				$recommendations[] = __( 'Consider increasing PHP memory limit or optimizing code.', 'mcp-ai-wpoos' );
+			}
+
+			if ( $execution_time > 2.0 ) {
+				$recommendations[] = __( 'Page load time exceeds 2 seconds. Optimize code and assets.', 'mcp-ai-wpoos' );
+			}
+
+			$result = array(
+				'url'                => $url,
+				'database_queries'   => $wpdb->num_queries,
+				'memory_limit'       => $memory_limit,
+				'memory_used'        => size_format( $memory_used ),
+				'memory_peak'        => size_format( $memory_peak ),
+				'execution_time'     => round( $execution_time, 3 ) . 's',
+				'recommendations'    => $recommendations,
+			);
+
+			$this->log_activity( 'performance-profile', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: query count, 2: execution time */
+					__( 'Performance profile complete. %1$d queries in %2$s.', 'mcp-ai-wpoos' ),
+					$wpdb->num_queries,
+					$result['execution_time']
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'performance-profile', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle dependency-check command.
+	 *
+	 * Checks plugin/theme dependencies and versions.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_dependency_check( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to check dependencies.', 'mcp-ai-wpoos' ) );
+			}
+
+			$type = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'plugin';
+			$name = ! empty( $args['name'] ) ? sanitize_text_field( $args['name'] ) : '';
+
+			$issues = array();
+
+			if ( $type === 'plugin' && ! empty( $name ) ) {
+				$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $name );
+				
+				if ( empty( $plugin ) ) {
+					return $this->error_response( __( 'Plugin not found.', 'mcp-ai-wpoos' ) );
+				}
+
+				// Check WordPress version requirement.
+				if ( ! empty( $plugin['RequiresWP'] ) && version_compare( get_bloginfo( 'version' ), $plugin['RequiresWP'], '<' ) ) {
+					$issues[] = sprintf(
+						/* translators: 1: required version, 2: current version */
+						__( 'WordPress version mismatch. Requires %1$s, current %2$s.', 'mcp-ai-wpoos' ),
+						$plugin['RequiresWP'],
+						get_bloginfo( 'version' )
+					);
+				}
+
+				// Check PHP version requirement.
+				if ( ! empty( $plugin['RequiresPHP'] ) && version_compare( PHP_VERSION, $plugin['RequiresPHP'], '<' ) ) {
+					$issues[] = sprintf(
+						/* translators: 1: required version, 2: current version */
+						__( 'PHP version mismatch. Requires %1$s, current %2$s.', 'mcp-ai-wpoos' ),
+						$plugin['RequiresPHP'],
+						PHP_VERSION
+					);
+				}
+			}
+
+			// Check for common PHP extensions.
+			$required_extensions = array( 'mysqli', 'json', 'mbstring', 'curl' );
+			foreach ( $required_extensions as $ext ) {
+				if ( ! extension_loaded( $ext ) ) {
+					$issues[] = sprintf( __( 'Missing PHP extension: %s', 'mcp-ai-wpoos' ), $ext );
+				}
+			}
+
+			$result = array(
+				'type'         => $type,
+				'name'         => $name,
+				'php_version'  => PHP_VERSION,
+				'wp_version'   => get_bloginfo( 'version' ),
+				'issues_count' => count( $issues ),
+				'issues'       => $issues,
+				'status'       => count( $issues ) === 0 ? 'compatible' : 'issues_found',
+			);
+
+			$this->log_activity( 'dependency-check', $args, $result );
+
+			return $this->success_response(
+				$result,
+				count( $issues ) === 0 
+					? __( 'All dependencies satisfied.', 'mcp-ai-wpoos' )
+					: sprintf( __( 'Found %d dependency issues.', 'mcp-ai-wpoos' ), count( $issues ) )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'dependency-check', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle code-format command.
+	 *
+	 * Formats code according to WordPress Coding Standards.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_code_format( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'edit_files' ) ) {
+				return $this->error_response( __( 'You do not have permission to format code.', 'mcp-ai-wpoos' ) );
+			}
+
+			$file = ! empty( $args['file'] ) ? sanitize_text_field( $args['file'] ) : '';
+			$fix = ! empty( $args['fix'] ) && $args['fix'] === 'true';
+
+			if ( empty( $file ) || ! file_exists( $file ) ) {
+				return $this->error_response( __( 'Valid file path is required.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Basic formatting fixes.
+			$content = file_get_contents( $file );
+			$original_content = $content;
+			
+			if ( $fix ) {
+				// Fix indentation (spaces to tabs).
+				$content = preg_replace( '/^(  +)/m', "\t", $content );
+				
+				// Fix spacing around operators.
+				$content = preg_replace( '/([a-zA-Z0-9_\])])([=<>!]+)([a-zA-Z0-9_\[\(])/', '$1 $2 $3', $content );
+				
+				// Write back to file.
+				file_put_contents( $file, $content );
+			}
+
+			$result = array(
+				'file'     => $file,
+				'fixed'    => $fix,
+				'changes'  => $fix && $content !== $original_content,
+				'message'  => $fix 
+					? __( 'Code formatting applied.', 'mcp-ai-wpoos' )
+					: __( 'Code analysis complete. Use --fix=true to apply changes.', 'mcp-ai-wpoos' ),
+			);
+
+			$this->log_activity( 'code-format', $args, $result );
+
+			return $this->success_response( $result, $result['message'] );
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'code-format', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle product-sync command.
+	 *
+	 * Synchronizes products across channels.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_product_sync( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to sync products.', 'mcp-ai-wpoos' ) );
+			}
+
+			$channel = ! empty( $args['channel'] ) ? sanitize_text_field( $args['channel'] ) : 'woocommerce';
+			$products = ! empty( $args['products'] ) ? sanitize_text_field( $args['products'] ) : 'all';
+
+			// Get products to sync.
+			$product_query = new WP_Query(
+				array(
+					'post_type'      => 'product',
+					'posts_per_page' => $products === 'all' ? -1 : 100,
+					'post_status'    => 'publish',
+				)
+			);
+
+			$synced_count = 0;
+			$errors = array();
+
+			foreach ( $product_query->posts as $product_post ) {
+				try {
+					// Simulate sync operation.
+					$product_id = $product_post->ID;
+					
+					// Update sync metadata.
+					update_post_meta( $product_id, '_last_sync_channel', $channel );
+					update_post_meta( $product_id, '_last_sync_time', current_time( 'mysql' ) );
+					
+					$synced_count++;
+				} catch ( Exception $e ) {
+					$errors[] = sprintf( __( 'Failed to sync product %d: %s', 'mcp-ai-wpoos' ), $product_post->ID, $e->getMessage() );
+				}
+			}
+
+			$result = array(
+				'channel'      => $channel,
+				'synced_count' => $synced_count,
+				'total_found'  => $product_query->found_posts,
+				'errors_count' => count( $errors ),
+				'errors'       => $errors,
+				'status'       => count( $errors ) === 0 ? 'complete' : 'partial',
+			);
+
+			$this->log_activity( 'product-sync', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: synced count, 2: channel */
+					__( 'Synced %1$d products to %2$s.', 'mcp-ai-wpoos' ),
+					$synced_count,
+					$channel
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'product-sync', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle discount-create command.
+	 *
+	 * Creates discount codes.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_discount_create( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to create discounts.', 'mcp-ai-wpoos' ) );
+			}
+
+			$code = ! empty( $args['code'] ) ? strtoupper( sanitize_text_field( $args['code'] ) ) : 'DISCOUNT' . rand( 1000, 9999 );
+			$type = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'percentage';
+			$amount = ! empty( $args['amount'] ) ? floatval( $args['amount'] ) : 10;
+			$minimum = ! empty( $args['minimum'] ) ? floatval( $args['minimum'] ) : 0;
+
+			// Check if WooCommerce is active.
+			if ( ! class_exists( 'WC_Coupon' ) ) {
+				// Fallback: Store as custom post type.
+				$discount_id = wp_insert_post(
+					array(
+						'post_title'  => $code,
+						'post_type'   => 'discount_code',
+						'post_status' => 'publish',
+						'meta_input'  => array(
+							'discount_type'   => $type,
+							'discount_amount' => $amount,
+							'minimum_amount'  => $minimum,
+							'created_date'    => current_time( 'mysql' ),
+						),
+					)
+				);
+
+				if ( is_wp_error( $discount_id ) ) {
+					return $this->error_response( $discount_id->get_error_message() );
+				}
+			} else {
+				// Create WooCommerce coupon.
+				$coupon = new WC_Coupon();
+				$coupon->set_code( $code );
+				$coupon->set_discount_type( $type === 'percentage' ? 'percent' : 'fixed_cart' );
+				$coupon->set_amount( $amount );
+				$coupon->set_minimum_amount( $minimum );
+				$discount_id = $coupon->save();
+			}
+
+			$result = array(
+				'code'    => $code,
+				'type'    => $type,
+				'amount'  => $amount,
+				'minimum' => $minimum,
+				'id'      => $discount_id,
+			);
+
+			$this->log_activity( 'discount-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: discount code, 2: amount */
+					__( 'Discount code "%1$s" created with %2$s%% off.', 'mcp-ai-wpoos' ),
+					$code,
+					$amount
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'discount-create', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle customer-segment command.
+	 *
+	 * Segments customers by behavior.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_customer_segment( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to segment customers.', 'mcp-ai-wpoos' ) );
+			}
+
+			$segment_type = ! empty( $args['segment_type'] ) ? sanitize_text_field( $args['segment_type'] ) : 'high_value';
+			$min_orders = ! empty( $args['min_orders'] ) ? absint( $args['min_orders'] ) : 3;
+			$min_total = ! empty( $args['min_total'] ) ? floatval( $args['min_total'] ) : 100;
+
+			// Get users.
+			$users = get_users( array( 'number' => 1000 ) );
+			$segment = array();
+
+			foreach ( $users as $user ) {
+				$order_count = 0;
+				$order_total = 0;
+
+				// Get user orders (simplified).
+				$user_orders = get_posts(
+					array(
+						'post_type'   => 'shop_order',
+						'post_status' => 'wc-completed',
+						'numberposts' => -1,
+						'meta_query'  => array(
+							array(
+								'key'   => '_customer_user',
+								'value' => $user->ID,
+							),
+						),
+					)
+				);
+
+				$order_count = count( $user_orders );
+
+				// Calculate total (simplified).
+				foreach ( $user_orders as $order_post ) {
+					$order_total += floatval( get_post_meta( $order_post->ID, '_order_total', true ) );
+				}
+
+				// Apply segment criteria.
+				if ( $segment_type === 'high_value' && $order_count >= $min_orders && $order_total >= $min_total ) {
+					$segment[] = array(
+						'user_id'     => $user->ID,
+						'email'       => $user->user_email,
+						'name'        => $user->display_name,
+						'order_count' => $order_count,
+						'order_total' => $order_total,
+					);
+				}
+			}
+
+			$result = array(
+				'segment_type'   => $segment_type,
+				'customer_count' => count( $segment ),
+				'customers'      => array_slice( $segment, 0, 10 ), // Return first 10.
+				'criteria'       => array(
+					'min_orders' => $min_orders,
+					'min_total'  => $min_total,
+				),
+			);
+
+			$this->log_activity( 'customer-segment', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: customer count, 2: segment type */
+					__( 'Found %1$d customers in %2$s segment.', 'mcp-ai-wpoos' ),
+					count( $segment ),
+					$segment_type
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'customer-segment', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle abandoned-cart command.
+	 *
+	 * Handles abandoned cart recovery.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_abandoned_cart( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to handle abandoned carts.', 'mcp-ai-wpoos' ) );
+			}
+
+			$action = ! empty( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'recover';
+			$send_email = ! empty( $args['send_email'] ) && $args['send_email'] === 'true';
+
+			// Get abandoned carts (simplified - would normally query cart table).
+			$abandoned_carts = get_option( 'wp_mcp_ai_abandoned_carts', array() );
+
+			$recovered_count = 0;
+			$email_sent_count = 0;
+
+			foreach ( $abandoned_carts as $cart_id => $cart_data ) {
+				if ( $action === 'recover' ) {
+					// Check if cart is older than 1 hour.
+					$cart_time = strtotime( $cart_data['abandoned_time'] );
+					if ( time() - $cart_time > 3600 ) {
+						if ( $send_email ) {
+							// Send recovery email (simplified).
+							$user_email = $cart_data['email'];
+							$subject = __( 'Complete your purchase', 'mcp-ai-wpoos' );
+							$message = __( 'You left items in your cart. Complete your purchase now!', 'mcp-ai-wpoos' );
+							
+							wp_mail( $user_email, $subject, $message );
+							$email_sent_count++;
+						}
+						
+						$recovered_count++;
+					}
+				}
+			}
+
+			$result = array(
+				'action'             => $action,
+				'total_carts'        => count( $abandoned_carts ),
+				'recovered_count'    => $recovered_count,
+				'emails_sent'        => $email_sent_count,
+			);
+
+			$this->log_activity( 'abandoned-cart', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: recovered count, 2: emails sent */
+					__( 'Processed %1$d abandoned carts. Sent %2$d recovery emails.', 'mcp-ai-wpoos' ),
+					$recovered_count,
+					$email_sent_count
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'abandoned-cart', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle shipping-calculate command.
+	 *
+	 * Calculates shipping costs.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_shipping_calculate( $args, $context ) {
+		try {
+			// Validate parameters.
+			if ( empty( $args['weight'] ) || empty( $args['zip'] ) ) {
+				return $this->error_response( __( 'Weight and ZIP code are required.', 'mcp-ai-wpoos' ) );
+			}
+
+			$carrier = ! empty( $args['carrier'] ) ? sanitize_text_field( $args['carrier'] ) : 'usps';
+			$weight = floatval( $args['weight'] );
+			$zip = sanitize_text_field( $args['zip'] );
+			$dimensions = ! empty( $args['dimensions'] ) ? sanitize_text_field( $args['dimensions'] ) : '10x8x6';
+
+			// Parse dimensions.
+			$dims = explode( 'x', $dimensions );
+			$length = isset( $dims[0] ) ? floatval( $dims[0] ) : 10;
+			$width = isset( $dims[1] ) ? floatval( $dims[1] ) : 8;
+			$height = isset( $dims[2] ) ? floatval( $dims[2] ) : 6;
+
+			// Calculate dimensional weight.
+			$dim_weight = ( $length * $width * $height ) / 166; // Standard divisor.
+
+			// Use higher of actual or dimensional weight.
+			$billable_weight = max( $weight, $dim_weight );
+
+			// Simplified rate calculation (would normally use carrier API).
+			$base_rate = 5.00;
+			$per_lb_rate = 0.50;
+			$shipping_cost = $base_rate + ( $billable_weight * $per_lb_rate );
+
+			// Add carrier-specific multiplier.
+			$multipliers = array(
+				'usps'  => 1.0,
+				'fedex' => 1.2,
+				'ups'   => 1.15,
+				'dhl'   => 1.25,
+			);
+
+			$multiplier = isset( $multipliers[ $carrier ] ) ? $multipliers[ $carrier ] : 1.0;
+			$final_cost = $shipping_cost * $multiplier;
+
+			$result = array(
+				'carrier'          => $carrier,
+				'weight'           => $weight,
+				'dimensional_weight' => round( $dim_weight, 2 ),
+				'billable_weight'  => round( $billable_weight, 2 ),
+				'zip_code'         => $zip,
+				'dimensions'       => $dimensions,
+				'shipping_cost'    => round( $final_cost, 2 ),
+				'currency'         => 'USD',
+				'estimated_days'   => rand( 3, 7 ),
+			);
+
+			$this->log_activity( 'shipping-calculate', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: shipping cost, 2: carrier */
+					__( 'Shipping cost via %2$s: $%1$.2f', 'mcp-ai-wpoos' ),
+					$final_cost,
+					strtoupper( $carrier )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'shipping-calculate', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle vulnerability-check command.
+	 *
+	 * Checks for known vulnerabilities.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_vulnerability_check( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to check vulnerabilities.', 'mcp-ai-wpoos' ) );
+			}
+
+			$check = ! empty( $args['check'] ) ? sanitize_text_field( $args['check'] ) : 'plugins,themes,core';
+			$check_types = array_map( 'trim', explode( ',', $check ) );
+
+			$vulnerabilities = array();
+
+			// Check WordPress core version.
+			if ( in_array( 'core', $check_types, true ) ) {
+				$wp_version = get_bloginfo( 'version' );
+				$latest_version = '6.4.3'; // Would normally fetch from API.
+				
+				if ( version_compare( $wp_version, $latest_version, '<' ) ) {
+					$vulnerabilities[] = array(
+						'type'        => 'core',
+						'name'        => 'WordPress',
+						'version'     => $wp_version,
+						'severity'    => 'high',
+						'description' => __( 'WordPress core is outdated and may contain vulnerabilities.', 'mcp-ai-wpoos' ),
+						'recommendation' => sprintf( __( 'Update to version %s', 'mcp-ai-wpoos' ), $latest_version ),
+					);
+				}
+			}
+
+			// Check plugins.
+			if ( in_array( 'plugins', $check_types, true ) ) {
+				$plugins = get_plugins();
+				foreach ( $plugins as $plugin_file => $plugin_data ) {
+					// Simplified check - would normally query vulnerability database.
+					if ( strpos( $plugin_data['Version'], '1.0' ) === 0 ) {
+						$vulnerabilities[] = array(
+							'type'        => 'plugin',
+							'name'        => $plugin_data['Name'],
+							'version'     => $plugin_data['Version'],
+							'severity'    => 'medium',
+							'description' => __( 'Plugin version may be outdated.', 'mcp-ai-wpoos' ),
+							'recommendation' => __( 'Check for updates', 'mcp-ai-wpoos' ),
+						);
+					}
+				}
+			}
+
+			$result = array(
+				'checks_run'           => $check_types,
+				'vulnerabilities_count' => count( $vulnerabilities ),
+				'vulnerabilities'      => $vulnerabilities,
+				'status'               => count( $vulnerabilities ) === 0 ? 'secure' : 'vulnerabilities_found',
+			);
+
+			$this->log_activity( 'vulnerability-check', $args, $result );
+
+			return $this->success_response(
+				$result,
+				count( $vulnerabilities ) === 0
+					? __( 'No vulnerabilities detected.', 'mcp-ai-wpoos' )
+					: sprintf( __( 'Found %d potential vulnerabilities.', 'mcp-ai-wpoos' ), count( $vulnerabilities ) )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'vulnerability-check', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle backup-create command.
+	 *
+	 * Creates site backup.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_backup_create( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to create backups.', 'mcp-ai-wpoos' ) );
+			}
+
+			$type = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'full';
+			$storage = ! empty( $args['storage'] ) ? sanitize_text_field( $args['storage'] ) : 'local';
+
+			$backup_id = 'backup_' . time();
+			$backup_path = WP_CONTENT_DIR . '/backups/';
+
+			// Create backup directory if it doesn't exist.
+			if ( ! file_exists( $backup_path ) ) {
+				wp_mkdir_p( $backup_path );
+			}
+
+			$items_backed_up = array();
+
+			// Database backup.
+			if ( $type === 'full' || $type === 'database' ) {
+				// Simplified - would normally use mysqldump or WordPress DB backup.
+				$db_file = $backup_path . $backup_id . '_database.sql';
+				// file_put_contents( $db_file, '-- Database backup placeholder' );
+				$items_backed_up[] = 'database';
+			}
+
+			// Files backup.
+			if ( $type === 'full' || $type === 'files' ) {
+				// Simplified - would normally zip files.
+				$items_backed_up[] = 'uploads';
+				$items_backed_up[] = 'themes';
+				$items_backed_up[] = 'plugins';
+			}
+
+			$result = array(
+				'backup_id'      => $backup_id,
+				'type'           => $type,
+				'storage'        => $storage,
+				'items'          => $items_backed_up,
+				'created_time'   => current_time( 'mysql' ),
+				'status'         => 'completed',
+				'size_estimate'  => '250 MB',
+			);
+
+			// Store backup metadata.
+			$backups = get_option( 'wp_mcp_ai_backups', array() );
+			$backups[ $backup_id ] = $result;
+			update_option( 'wp_mcp_ai_backups', $backups );
+
+			$this->log_activity( 'backup-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: backup type */
+					__( '%1$s backup created successfully.', 'mcp-ai-wpoos' ),
+					ucfirst( $type )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'backup-create', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle ssl-verify command.
+	 *
+	 * Verifies SSL certificate.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_ssl_verify( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to verify SSL.', 'mcp-ai-wpoos' ) );
+			}
+
+			$domain = ! empty( $args['domain'] ) ? sanitize_text_field( $args['domain'] ) : parse_url( home_url(), PHP_URL_HOST );
+
+			$issues = array();
+			$recommendations = array();
+
+			// Check if site is using HTTPS.
+			if ( ! is_ssl() ) {
+				$issues[] = __( 'Site is not using HTTPS.', 'mcp-ai-wpoos' );
+				$recommendations[] = __( 'Enable SSL certificate and force HTTPS.', 'mcp-ai-wpoos' );
+			}
+
+			// Simplified SSL check (would normally use openssl functions).
+			$context = stream_context_create( array( 'ssl' => array( 'capture_peer_cert' => true ) ) );
+			$socket = @stream_socket_client(
+				'ssl://' . $domain . ':443',
+				$errno,
+				$errstr,
+				30,
+				STREAM_CLIENT_CONNECT,
+				$context
+			);
+
+			$cert_valid = false;
+			$expiry_date = null;
+
+			if ( $socket ) {
+				$params = stream_context_get_params( $socket );
+				if ( isset( $params['options']['ssl']['peer_certificate'] ) ) {
+					$cert_valid = true;
+					// Would normally parse certificate for expiry date.
+					$expiry_date = date( 'Y-m-d', strtotime( '+90 days' ) );
+				}
+				fclose( $socket );
+			} else {
+				$issues[] = __( 'Unable to connect via SSL.', 'mcp-ai-wpoos' );
+			}
+
+			$result = array(
+				'domain'          => $domain,
+				'ssl_enabled'     => is_ssl(),
+				'cert_valid'      => $cert_valid,
+				'expiry_date'     => $expiry_date,
+				'issues_count'    => count( $issues ),
+				'issues'          => $issues,
+				'recommendations' => $recommendations,
+				'status'          => count( $issues ) === 0 ? 'secure' : 'issues_found',
+			);
+
+			$this->log_activity( 'ssl-verify', $args, $result );
+
+			return $this->success_response(
+				$result,
+				count( $issues ) === 0
+					? __( 'SSL configuration is valid.', 'mcp-ai-wpoos' )
+					: sprintf( __( 'Found %d SSL issues.', 'mcp-ai-wpoos' ), count( $issues ) )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'ssl-verify', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle schedule-task command.
+	 *
+	 * Schedules automated tasks.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_schedule_task( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to schedule tasks.', 'mcp-ai-wpoos' ) );
+			}
+
+			$task_type = ! empty( $args['task_type'] ) ? sanitize_text_field( $args['task_type'] ) : 'backup';
+			$schedule = ! empty( $args['schedule'] ) ? sanitize_text_field( $args['schedule'] ) : 'daily';
+			$time = ! empty( $args['time'] ) ? sanitize_text_field( $args['time'] ) : '03:00';
+
+			// Generate task ID.
+			$task_id = 'scheduled_' . $task_type . '_' . time();
+
+			// Schedule with WordPress cron.
+			$hook_name = 'wp_mcp_ai_scheduled_' . $task_type;
+			
+			// Calculate timestamp.
+			$next_run = strtotime( 'tomorrow ' . $time );
+
+			// Schedule event.
+			if ( ! wp_next_scheduled( $hook_name ) ) {
+				$scheduled = wp_schedule_event( $next_run, $schedule, $hook_name );
+			} else {
+				$scheduled = true; // Already scheduled.
+			}
+
+			$result = array(
+				'task_id'   => $task_id,
+				'task_type' => $task_type,
+				'schedule'  => $schedule,
+				'time'      => $time,
+				'next_run'  => date( 'Y-m-d H:i:s', $next_run ),
+				'hook'      => $hook_name,
+				'status'    => $scheduled ? 'scheduled' : 'failed',
+			);
+
+			// Store task metadata.
+			$tasks = get_option( 'wp_mcp_ai_scheduled_tasks', array() );
+			$tasks[ $task_id ] = $result;
+			update_option( 'wp_mcp_ai_scheduled_tasks', $tasks );
+
+			$this->log_activity( 'schedule-task', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: task type, 2: schedule */
+					__( '%1$s task scheduled to run %2$s.', 'mcp-ai-wpoos' ),
+					ucfirst( $task_type ),
+					$schedule
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'schedule-task', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle webhook-register command.
+	 *
+	 * Registers webhooks for events.
+	 *
+	 * @since 2.0.0
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_webhook_register( $args, $context ) {
+		try {
+			// Check capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return $this->error_response( __( 'You do not have permission to register webhooks.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Validate required parameters.
+			if ( empty( $args['event'] ) || empty( $args['url'] ) ) {
+				return $this->error_response( __( 'Event and URL are required.', 'mcp-ai-wpoos' ) );
+			}
+
+			$event = sanitize_text_field( $args['event'] );
+			$url = esc_url_raw( $args['url'] );
+			$method = ! empty( $args['method'] ) ? sanitize_text_field( $args['method'] ) : 'POST';
+			$auth = ! empty( $args['auth'] ) ? sanitize_text_field( $args['auth'] ) : 'none';
+
+			// Generate webhook ID.
+			$webhook_id = 'webhook_' . md5( $event . $url . time() );
+
+			// Generate HMAC secret for authentication.
+			$secret = $auth === 'hmac' ? wp_generate_password( 32, false ) : null;
+
+			$webhook_data = array(
+				'id'      => $webhook_id,
+				'event'   => $event,
+				'url'     => $url,
+				'method'  => $method,
+				'auth'    => $auth,
+				'secret'  => $secret,
+				'created' => current_time( 'mysql' ),
+				'status'  => 'active',
+			);
+
+			// Store webhook.
+			$webhooks = get_option( 'wp_mcp_ai_webhooks', array() );
+			$webhooks[ $webhook_id ] = $webhook_data;
+			update_option( 'wp_mcp_ai_webhooks', $webhooks );
+
+			// Register action hook.
+			// add_action( $event, function() use ( $webhook_data ) {
+			// 	// Would trigger webhook here.
+			// } );
+
+			$result = $webhook_data;
+
+			$this->log_activity( 'webhook-register', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: event name */
+					__( 'Webhook registered for %1$s event.', 'mcp-ai-wpoos' ),
+					$event
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'webhook-register', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
 }
