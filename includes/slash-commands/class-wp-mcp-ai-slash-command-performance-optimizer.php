@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Performance Optimizer Class
  *
  * Implements caching, lazy loading, and performance monitoring
- * for the slash command system.
+ * for the slash command system. Supports Redis/Memcached backends.
  *
  * @since 1.3.0
  */
@@ -43,6 +43,25 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 * @var array
 	 */
 	protected $metrics = array();
+
+	/**
+	 * Cache adapter instance.
+	 *
+	 * @var WP_MCP_AI_Cache_Adapter|null
+	 */
+	protected $cache_adapter = null;
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 1.3.0
+	 */
+	public function __construct() {
+		// Load cache adapter if available.
+		if ( function_exists( 'wp_mcp_ai_get_cache_adapter' ) ) {
+			$this->cache_adapter = wp_mcp_ai_get_cache_adapter();
+		}
+	}
 
 	/**
 	 * Start performance monitoring.
@@ -96,6 +115,8 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	/**
 	 * Get cached command result.
 	 *
+	 * Tries Redis/Memcached first, falls back to WordPress object cache.
+	 *
 	 * @since 1.3.0
 	 *
 	 * @param string $command Command string.
@@ -104,12 +125,29 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 */
 	public function get_cached_result( $command, $args ) {
 		$cache_key = $this->generate_cache_key( $command, $args );
+		
+		// Try persistent cache first (Redis/Memcached).
+		if ( $this->cache_adapter && $this->cache_adapter->is_available() ) {
+			$cached = $this->cache_adapter->get( $cache_key );
+			if ( false !== $cached ) {
+				// Add cache hit indicator.
+				if ( is_array( $cached ) ) {
+					$cached['cached'] = true;
+					$cached['cache_backend'] = $this->cache_adapter->get_backend();
+					$cached['cache_time'] = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
+				}
+				return $cached;
+			}
+		}
+
+		// Fall back to WordPress object cache.
 		$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false !== $cached ) {
 			// Add cache hit indicator.
 			if ( is_array( $cached ) ) {
 				$cached['cached'] = true;
+				$cached['cache_backend'] = 'wordpress';
 				$cached['cache_time'] = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
 			}
 		}
@@ -119,6 +157,8 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 
 	/**
 	 * Set cached command result.
+	 *
+	 * Stores in both Redis/Memcached and WordPress object cache for redundancy.
 	 *
 	 * @since 1.3.0
 	 *
@@ -139,7 +179,17 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 		}
 
 		$cache_key = $this->generate_cache_key( $command, $args );
-		return wp_cache_set( $cache_key, $result, self::CACHE_GROUP, $expiration );
+		$success = false;
+
+		// Store in persistent cache (Redis/Memcached).
+		if ( $this->cache_adapter && $this->cache_adapter->is_available() ) {
+			$success = $this->cache_adapter->set( $cache_key, $result, $expiration );
+		}
+
+		// Also store in WordPress object cache as fallback.
+		$wp_cache_success = wp_cache_set( $cache_key, $result, self::CACHE_GROUP, $expiration );
+
+		return $success || $wp_cache_success;
 	}
 
 	/**

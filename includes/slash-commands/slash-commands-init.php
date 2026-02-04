@@ -370,6 +370,11 @@ function wp_mcp_ai_load_toolkit_slash_commands() {
 	// Load workflow orchestrator.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-workflow-orchestrator.php';
 
+	// Load cache adapter (Redis/Memcached support).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/cache/class-wp-mcp-ai-cache-adapter.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cache/class-wp-mcp-ai-cache-adapter.php';
+	}
+
 	// Load performance optimizer.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-performance-optimizer.php';
 
