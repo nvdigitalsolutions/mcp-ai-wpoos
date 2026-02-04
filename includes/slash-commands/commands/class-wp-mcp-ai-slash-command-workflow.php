@@ -372,6 +372,13 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	/**
 	 * Get required capability for a task
 	 *
+	 * Maps workflow task names to their required WordPress capabilities.
+	 * 
+	 * Task Naming Convention:
+	 * - Primary task names use kebab-case (e.g., 'optimize-perf', 'clean-content')
+	 * - Descriptive aliases use snake_case (e.g., 'check_performance', 'publish_post')
+	 * This allows both slash-command-style and function-style naming.
+	 *
 	 * @param string $task Task name.
 	 * @return string|null Required capability or null if none required.
 	 */

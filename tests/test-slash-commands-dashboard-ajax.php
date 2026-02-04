@@ -447,16 +447,21 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'log_execution' );
 		$method->setAccessible( true );
 
-		// Log more than MAX_HISTORY_ENTRIES (100).
-		for ( $i = 0; $i < 105; $i++ ) {
+		// Get the MAX_HISTORY_ENTRIES constant from the dashboard class.
+		$max_entries = 100; // WP_MCP_AI_Admin_Slash_Commands_Dashboard::MAX_HISTORY_ENTRIES
+		$entries_to_create = $max_entries + 5;
+
+		// Log more than MAX_HISTORY_ENTRIES.
+		for ( $i = 0; $i < $entries_to_create; $i++ ) {
 			$method->invoke( $this->dashboard, 'command', "/help{$i}", "Output {$i}" );
 		}
 
-		// Verify only 100 entries kept.
+		// Verify only MAX_HISTORY_ENTRIES kept.
 		$history = get_option( 'wp_mcp_ai_slash_command_history', array() );
-		$this->assertCount( 100, $history );
+		$this->assertCount( $max_entries, $history );
 
 		// Verify newest entries are kept (oldest removed).
-		$this->assertEquals( '/help104', $history[0]['command'] );
+		$last_entry_number = $entries_to_create - 1;
+		$this->assertEquals( "/help{$last_entry_number}", $history[0]['command'] );
 	}
 }
