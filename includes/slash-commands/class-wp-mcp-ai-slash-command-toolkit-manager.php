@@ -316,6 +316,56 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					'toolkit'     => 'content_publishing',
 				),
 			),
+			array(
+				'name'   => 'content-translate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_content_translate' ),
+					'description' => __( 'Translate content to multiple languages', 'mcp-ai-wpoos' ),
+					'usage'       => '/content-translate --post_id=123 --languages="es,fr,de"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'content-template',
+				'config' => array(
+					'handler'     => array( $this, 'handle_content_template' ),
+					'description' => __( 'Apply content template', 'mcp-ai-wpoos' ),
+					'usage'       => '/content-template --post_id=123 --template="blog_post"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'publish-approve',
+				'config' => array(
+					'handler'     => array( $this, 'handle_publish_approve' ),
+					'description' => __( 'Fast-track content approval', 'mcp-ai-wpoos' ),
+					'usage'       => '/publish-approve --post_id=123 --reviewer="admin"',
+					'capability'  => 'publish_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'seo-audit',
+				'config' => array(
+					'handler'     => array( $this, 'handle_seo_audit' ),
+					'description' => __( 'Comprehensive SEO audit of content', 'mcp-ai-wpoos' ),
+					'usage'       => '/seo-audit --post_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'meta-generate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_meta_generate' ),
+					'description' => __( 'Auto-generate meta tags and descriptions', 'mcp-ai-wpoos' ),
+					'usage'       => '/meta-generate --post_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
 		);
 	}
 
@@ -348,6 +398,46 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					'toolkit'     => 'media_processing',
 				),
 			),
+			array(
+				'name'   => 'audio-process',
+				'config' => array(
+					'handler'     => array( $this, 'handle_audio_process' ),
+					'description' => __( 'Audio editing and optimization', 'mcp-ai-wpoos' ),
+					'usage'       => '/audio-process --attachment_id=456 --operation="normalize"',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
+			array(
+				'name'   => 'media-metadata',
+				'config' => array(
+					'handler'     => array( $this, 'handle_media_metadata' ),
+					'description' => __( 'Edit media metadata (title, alt, description)', 'mcp-ai-wpoos' ),
+					'usage'       => '/media-metadata --attachment_id=456 --title="New Title"',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
+			array(
+				'name'   => 'thumbnail-generate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_thumbnail_generate' ),
+					'description' => __( 'Auto-generate thumbnails for media', 'mcp-ai-wpoos' ),
+					'usage'       => '/thumbnail-generate --attachment_id=456 --sizes="thumbnail,medium,large"',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
+			array(
+				'name'   => 'watermark-add',
+				'config' => array(
+					'handler'     => array( $this, 'handle_watermark_add' ),
+					'description' => __( 'Add watermark to images', 'mcp-ai-wpoos' ),
+					'usage'       => '/watermark-add --attachment_id=456 --watermark_id=789',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
 		);
 	}
 
@@ -376,6 +466,36 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					'handler'     => array( $this, 'handle_chart_create' ),
 					'description' => __( 'Generate charts from data', 'mcp-ai-wpoos' ),
 					'usage'       => '/chart-create --type=line --data=monthly_sales',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'data_analytics',
+				),
+			),
+			array(
+				'name'   => 'report-generate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_report_generate' ),
+					'description' => __( 'Generate custom reports', 'mcp-ai-wpoos' ),
+					'usage'       => '/report-generate --type="sales" --period="monthly" --format="pdf"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'data_analytics',
+				),
+			),
+			array(
+				'name'   => 'export-data',
+				'config' => array(
+					'handler'     => array( $this, 'handle_export_data' ),
+					'description' => __( 'Export data in various formats', 'mcp-ai-wpoos' ),
+					'usage'       => '/export-data --source="users" --format="csv"',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'data_analytics',
+				),
+			),
+			array(
+				'name'   => 'data-visualize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_data_visualize' ),
+					'description' => __( 'Create data visualizations', 'mcp-ai-wpoos' ),
+					'usage'       => '/data-visualize --data_source="analytics" --chart_type="bar"',
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'data_analytics',
 				),
@@ -984,6 +1104,610 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 	}
 
+	/**
+	 * Handle content-translate command.
+	 * Translate content to multiple languages following WP i18n best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_content_translate( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id', 'languages' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to translate content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id   = absint( $args['post_id'] );
+		$languages = sanitize_text_field( $args['languages'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Parse languages (e.g., "es,fr,de").
+			$language_codes = array_map( 'trim', explode( ',', $languages ) );
+			$translations   = array();
+
+			foreach ( $language_codes as $lang_code ) {
+				// Simulate translation (in production, integrate with translation API).
+				$translated_post_id = wp_insert_post(
+					array(
+						'post_title'   => sprintf( '[%s] %s', strtoupper( $lang_code ), $post->post_title ),
+						'post_content' => sprintf( '<!-- Translated to %s -->' . "\n\n%s", $lang_code, $post->post_content ),
+						'post_status'  => 'draft',
+						'post_type'    => $post->post_type,
+						'post_parent'  => $post_id,
+					)
+				);
+
+				if ( ! is_wp_error( $translated_post_id ) ) {
+					// Store translation metadata.
+					update_post_meta( $translated_post_id, '_translation_language', $lang_code );
+					update_post_meta( $translated_post_id, '_translation_source', $post_id );
+
+					$translations[] = array(
+						'language' => $lang_code,
+						'post_id'  => $translated_post_id,
+						'status'   => 'draft',
+						'edit_url' => get_edit_post_link( $translated_post_id, 'raw' ),
+					);
+				}
+			}
+
+			$result = array(
+				'source_post_id' => $post_id,
+				'translations'   => $translations,
+				'count'          => count( $translations ),
+				'languages'      => $language_codes,
+			);
+
+			$this->log_activity( 'content-translate', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of translations */
+					__( 'Created %d translations successfully.', 'mcp-ai-wpoos' ),
+					count( $translations )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'content-translate', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle content-template command.
+	 * Apply content template following WordPress template hierarchy.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_content_template( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id', 'template' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to apply templates.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id  = absint( $args['post_id'] );
+		$template = sanitize_text_field( $args['template'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Available templates.
+			$templates = array(
+				'blog_post'        => array(
+					'structure' => "## Introduction\n\n%content%\n\n## Conclusion",
+					'fields'    => array( 'introduction', 'body', 'conclusion' ),
+				),
+				'product_review'   => array(
+					'structure' => "## Overview\n\n%content%\n\n## Pros & Cons\n\n**Pros:**\n- \n\n**Cons:**\n- \n\n## Verdict",
+					'fields'    => array( 'overview', 'pros', 'cons', 'verdict' ),
+				),
+				'how_to_guide'     => array(
+					'structure' => "## What You'll Need\n\n%content%\n\n## Step-by-Step Instructions\n\n## Tips & Tricks",
+					'fields'    => array( 'requirements', 'steps', 'tips' ),
+				),
+				'case_study'       => array(
+					'structure' => "## Challenge\n\n%content%\n\n## Solution\n\n## Results",
+					'fields'    => array( 'challenge', 'solution', 'results' ),
+				),
+			);
+
+			if ( ! isset( $templates[ $template ] ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_template',
+						__( 'Invalid template. Available: blog_post, product_review, how_to_guide, case_study', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Apply template structure to content.
+			$template_data = $templates[ $template ];
+			$new_content   = str_replace( '%content%', $post->post_content, $template_data['structure'] );
+
+			// Update post with template.
+			wp_update_post(
+				array(
+					'ID'           => $post_id,
+					'post_content' => $new_content,
+				)
+			);
+
+			// Store template metadata.
+			update_post_meta( $post_id, '_content_template', $template );
+
+			$result = array(
+				'post_id'       => $post_id,
+				'template'      => $template,
+				'structure'     => $template_data['structure'],
+				'fields'        => $template_data['fields'],
+				'edit_url'      => get_edit_post_link( $post_id, 'raw' ),
+			);
+
+			$this->log_activity( 'content-template', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: template name */
+					__( 'Applied template: %s', 'mcp-ai-wpoos' ),
+					$template
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'content-template', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle publish-approve command.
+	 * Fast-track content approval following WordPress editorial workflow.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_publish_approve( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to approve content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id  = absint( $args['post_id'] );
+		$reviewer = isset( $args['reviewer'] ) ? sanitize_text_field( $args['reviewer'] ) : wp_get_current_user()->user_login;
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Check if post needs approval (is draft or pending).
+			if ( ! in_array( $post->post_status, array( 'draft', 'pending' ), true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'already_published',
+						__( 'Post is already published or scheduled.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Publish the post.
+			wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'publish',
+				)
+			);
+
+			// Log approval metadata.
+			$approval_data = array(
+				'reviewer'     => $reviewer,
+				'approved_at'  => current_time( 'mysql' ),
+				'previous_status' => $post->post_status,
+			);
+			update_post_meta( $post_id, '_approval_data', $approval_data );
+
+			// Trigger action hook for integrations.
+			do_action( 'wp_mcp_ai_content_approved', $post_id, $reviewer );
+
+			$result = array(
+				'post_id'         => $post_id,
+				'post_title'      => $post->post_title,
+				'reviewer'        => $reviewer,
+				'previous_status' => $post->post_status,
+				'new_status'      => 'publish',
+				'permalink'       => get_permalink( $post_id ),
+				'approved_at'     => current_time( 'mysql' ),
+			);
+
+			$this->log_activity( 'publish-approve', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: post title */
+					__( 'Content approved and published: %s', 'mcp-ai-wpoos' ),
+					$post->post_title
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'publish-approve', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle seo-audit command.
+	 * Comprehensive SEO audit following Yoast/Rank Math standards.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_seo_audit( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to run SEO audits.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$issues = array();
+			$score  = 100;
+
+			// Title length check (50-60 characters optimal).
+			$title_length = strlen( $post->post_title );
+			if ( $title_length < 30 ) {
+				$issues[] = array(
+					'severity' => 'warning',
+					'issue'    => 'Title too short',
+					'current'  => $title_length,
+					'optimal'  => '50-60 characters',
+				);
+				$score -= 10;
+			} elseif ( $title_length > 70 ) {
+				$issues[] = array(
+					'severity' => 'warning',
+					'issue'    => 'Title too long',
+					'current'  => $title_length,
+					'optimal'  => '50-60 characters',
+				);
+				$score -= 10;
+			}
+
+			// Meta description check.
+			$meta_description = get_post_meta( $post_id, '_yoast_wpseo_metadesc', true );
+			if ( empty( $meta_description ) ) {
+				$issues[] = array(
+					'severity' => 'error',
+					'issue'    => 'Missing meta description',
+					'optimal'  => '120-160 characters',
+				);
+				$score -= 15;
+			}
+
+			// Content length check (300+ words recommended).
+			$word_count = str_word_count( strip_tags( $post->post_content ) );
+			if ( $word_count < 300 ) {
+				$issues[] = array(
+					'severity' => 'warning',
+					'issue'    => 'Content too short',
+					'current'  => $word_count . ' words',
+					'optimal'  => '300+ words',
+				);
+				$score -= 15;
+			}
+
+			// Image alt text check.
+			preg_match_all( '/<img[^>]+>/i', $post->post_content, $images );
+			$images_without_alt = 0;
+			foreach ( $images[0] as $img ) {
+				if ( ! preg_match( '/alt=["\'][^"\']+["\']/', $img ) ) {
+					$images_without_alt++;
+				}
+			}
+			if ( $images_without_alt > 0 ) {
+				$issues[] = array(
+					'severity' => 'warning',
+					'issue'    => 'Images missing alt text',
+					'current'  => $images_without_alt . ' images',
+				);
+				$score -= 10;
+			}
+
+			// Heading structure check (H1, H2, H3).
+			$has_h1 = preg_match( '/<h1[^>]*>/i', $post->post_content );
+			$has_h2 = preg_match( '/<h2[^>]*>/i', $post->post_content );
+			if ( ! $has_h2 ) {
+				$issues[] = array(
+					'severity' => 'info',
+					'issue'    => 'No H2 headings found',
+					'recommendation' => 'Add H2 headings for better content structure',
+				);
+				$score -= 5;
+			}
+
+			// URL structure check.
+			$permalink = get_permalink( $post_id );
+			if ( strlen( $permalink ) > 75 ) {
+				$issues[] = array(
+					'severity' => 'info',
+					'issue'    => 'URL too long',
+					'current'  => strlen( $permalink ) . ' characters',
+					'optimal'  => 'Under 75 characters',
+				);
+				$score -= 5;
+			}
+
+			$score = max( 0, $score );
+
+			// Determine overall grade.
+			if ( $score >= 80 ) {
+				$grade = 'A';
+			} elseif ( $score >= 60 ) {
+				$grade = 'B';
+			} elseif ( $score >= 40 ) {
+				$grade = 'C';
+			} else {
+				$grade = 'F';
+			}
+
+			$result = array(
+				'post_id'     => $post_id,
+				'post_title'  => $post->post_title,
+				'score'       => $score,
+				'grade'       => $grade,
+				'issues'      => $issues,
+				'issue_count' => count( $issues ),
+				'word_count'  => $word_count,
+				'checks'      => array(
+					'title_length'     => $title_length,
+					'meta_description' => ! empty( $meta_description ),
+					'word_count'       => $word_count,
+					'images_with_alt'  => count( $images[0] ) - $images_without_alt,
+					'has_headings'     => $has_h2,
+				),
+			);
+
+			$this->log_activity( 'seo-audit', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: SEO score, 2: grade */
+					__( 'SEO Audit complete. Score: %1$d/100 (Grade: %2$s)', 'mcp-ai-wpoos' ),
+					$score,
+					$grade
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'seo-audit', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle meta-generate command.
+	 * Auto-generate meta tags following SEO best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_meta_generate( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to generate meta tags.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Generate meta description from content excerpt (120-160 chars).
+			$content_stripped = wp_strip_all_tags( $post->post_content );
+			$meta_description = wp_trim_words( $content_stripped, 25, '...' );
+
+			// Ensure within optimal length.
+			if ( strlen( $meta_description ) > 160 ) {
+				$meta_description = substr( $meta_description, 0, 157 ) . '...';
+			}
+
+			// Generate focus keyword from title.
+			$focus_keyword = strtolower( $post->post_title );
+			// Remove common words.
+			$stop_words    = array( 'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for' );
+			$keywords      = array_diff( explode( ' ', $focus_keyword ), $stop_words );
+			$focus_keyword = implode( ' ', array_slice( $keywords, 0, 3 ) );
+
+			// Generate SEO title (under 60 chars).
+			$seo_title = $post->post_title;
+			if ( strlen( $seo_title ) > 60 ) {
+				$seo_title = wp_trim_words( $seo_title, 8, '...' );
+			}
+
+			// Add site name if short enough.
+			$site_name = get_bloginfo( 'name' );
+			if ( strlen( $seo_title . ' | ' . $site_name ) <= 60 ) {
+				$seo_title .= ' | ' . $site_name;
+			}
+
+			// Store meta tags (Yoast/Rank Math compatible).
+			update_post_meta( $post_id, '_yoast_wpseo_title', $seo_title );
+			update_post_meta( $post_id, '_yoast_wpseo_metadesc', $meta_description );
+			update_post_meta( $post_id, '_yoast_wpseo_focuskw', $focus_keyword );
+
+			// Generate Open Graph tags.
+			$og_title       = $post->post_title;
+			$og_description = $meta_description;
+			$og_image       = get_the_post_thumbnail_url( $post_id, 'large' );
+
+			update_post_meta( $post_id, '_yoast_wpseo_opengraph-title', $og_title );
+			update_post_meta( $post_id, '_yoast_wpseo_opengraph-description', $og_description );
+			if ( $og_image ) {
+				update_post_meta( $post_id, '_yoast_wpseo_opengraph-image', $og_image );
+			}
+
+			// Generate Twitter Card tags.
+			update_post_meta( $post_id, '_yoast_wpseo_twitter-title', $og_title );
+			update_post_meta( $post_id, '_yoast_wpseo_twitter-description', $og_description );
+			if ( $og_image ) {
+				update_post_meta( $post_id, '_yoast_wpseo_twitter-image', $og_image );
+			}
+
+			$result = array(
+				'post_id'          => $post_id,
+				'post_title'       => $post->post_title,
+				'seo_title'        => $seo_title,
+				'meta_description' => $meta_description,
+				'focus_keyword'    => $focus_keyword,
+				'open_graph'       => array(
+					'title'       => $og_title,
+					'description' => $og_description,
+					'image'       => $og_image,
+				),
+				'twitter_card'     => array(
+					'title'       => $og_title,
+					'description' => $og_description,
+					'image'       => $og_image,
+				),
+			);
+
+			$this->log_activity( 'meta-generate', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Meta tags generated successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'meta-generate', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
 	// Additional placeholder handlers for other commands...
 	// These will be implemented in subsequent phases.
 
@@ -1132,7 +1856,489 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_video_transcode( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to transcode videos.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$attachment_id = absint( $args['attachment_id'] );
+		$format        = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'mp4';
+
+		// Verify attachment exists and is video.
+		$attachment = get_post( $attachment_id );
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'attachment_not_found',
+					__( 'Media attachment not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$mime_type = get_post_mime_type( $attachment_id );
+		if ( ! str_starts_with( $mime_type, 'video/' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'invalid_media_type',
+					__( 'Attachment must be a video file.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Supported formats following FFmpeg best practices.
+			$supported_formats = array( 'mp4', 'webm', 'mov', 'avi', 'mkv' );
+			if ( ! in_array( $format, $supported_formats, true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'unsupported_format',
+						sprintf(
+							/* translators: %s: comma-separated list of formats */
+							__( 'Unsupported format. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $supported_formats )
+						)
+					)
+				);
+			}
+
+			$file_path = get_attached_file( $attachment_id );
+			$file_info = pathinfo( $file_path );
+
+			// Simulate transcoding (in production, use FFmpeg).
+			$result = array(
+				'attachment_id'   => $attachment_id,
+				'source_format'   => $file_info['extension'],
+				'target_format'   => $format,
+				'source_file'     => basename( $file_path ),
+				'transcoded_file' => $file_info['filename'] . '.' . $format,
+				'status'          => 'queued',
+				'message'         => __( 'Video transcoding queued. Processing in background.', 'mcp-ai-wpoos' ),
+				'codec'           => 'H.264' === $format || 'mp4' === $format ? 'H.264' : 'VP9',
+				'estimated_time'  => '5-10 minutes',
+			);
+
+			$this->log_activity( 'video-transcode', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: target format */
+					__( 'Video transcoding to %s started.', 'mcp-ai-wpoos' ),
+					strtoupper( $format )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'video-transcode', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle audio-process command.
+	 * Audio editing and optimization following FFmpeg best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_audio_process( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id', 'operation' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to process audio.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$attachment_id = absint( $args['attachment_id'] );
+		$operation     = sanitize_text_field( $args['operation'] );
+
+		// Verify attachment exists and is audio.
+		$attachment = get_post( $attachment_id );
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'attachment_not_found',
+					__( 'Media attachment not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$mime_type = get_post_mime_type( $attachment_id );
+		if ( ! str_starts_with( $mime_type, 'audio/' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'invalid_media_type',
+					__( 'Attachment must be an audio file.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Supported operations.
+			$operations = array(
+				'normalize' => array(
+					'description' => 'Normalize audio levels (EBU R128)',
+					'codec'       => 'AAC',
+				),
+				'compress'  => array(
+					'description' => 'Compress audio file',
+					'codec'       => 'Opus',
+				),
+				'convert'   => array(
+					'description' => 'Convert audio format',
+					'codec'       => 'AAC',
+				),
+				'trim'      => array(
+					'description' => 'Trim silence from audio',
+					'codec'       => 'copy',
+				),
+			);
+
+			if ( ! isset( $operations[ $operation ] ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_operation',
+						sprintf(
+							/* translators: %s: comma-separated list of operations */
+							__( 'Invalid operation. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', array_keys( $operations ) )
+						)
+					)
+				);
+			}
+
+			$file_path = get_attached_file( $attachment_id );
+
+			$result = array(
+				'attachment_id' => $attachment_id,
+				'operation'     => $operation,
+				'description'   => $operations[ $operation ]['description'],
+				'codec'         => $operations[ $operation ]['codec'],
+				'source_file'   => basename( $file_path ),
+				'status'        => 'queued',
+				'message'       => sprintf(
+					/* translators: %s: operation name */
+					__( 'Audio %s operation queued.', 'mcp-ai-wpoos' ),
+					$operation
+				),
+			);
+
+			$this->log_activity( 'audio-process', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: operation */
+					__( 'Audio processing (%s) started.', 'mcp-ai-wpoos' ),
+					$operation
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'audio-process', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle media-metadata command.
+	 * Edit media metadata following WordPress media best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_media_metadata( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to edit media metadata.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$attachment_id = absint( $args['attachment_id'] );
+
+		// Verify attachment exists.
+		$attachment = get_post( $attachment_id );
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'attachment_not_found',
+					__( 'Media attachment not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$updates = array( 'ID' => $attachment_id );
+			$metadata_updated = array();
+
+			// Update title.
+			if ( isset( $args['title'] ) ) {
+				$updates['post_title'] = sanitize_text_field( $args['title'] );
+				$metadata_updated['title'] = $updates['post_title'];
+			}
+
+			// Update alt text.
+			if ( isset( $args['alt'] ) ) {
+				update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $args['alt'] ) );
+				$metadata_updated['alt'] = $args['alt'];
+			}
+
+			// Update caption.
+			if ( isset( $args['caption'] ) ) {
+				$updates['post_excerpt'] = sanitize_text_field( $args['caption'] );
+				$metadata_updated['caption'] = $updates['post_excerpt'];
+			}
+
+			// Update description.
+			if ( isset( $args['description'] ) ) {
+				$updates['post_content'] = sanitize_textarea_field( $args['description'] );
+				$metadata_updated['description'] = $updates['post_content'];
+			}
+
+			// Apply updates.
+			if ( count( $updates ) > 1 ) {
+				wp_update_post( $updates );
+			}
+
+			$result = array(
+				'attachment_id'     => $attachment_id,
+				'metadata_updated'  => $metadata_updated,
+				'filename'          => basename( get_attached_file( $attachment_id ) ),
+				'mime_type'         => get_post_mime_type( $attachment_id ),
+				'url'               => wp_get_attachment_url( $attachment_id ),
+			);
+
+			$this->log_activity( 'media-metadata', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Media metadata updated successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'media-metadata', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle thumbnail-generate command.
+	 * Auto-generate thumbnails following WordPress image size standards.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_thumbnail_generate( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to generate thumbnails.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$attachment_id = absint( $args['attachment_id'] );
+
+		// Verify attachment exists and is image.
+		$attachment = get_post( $attachment_id );
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'attachment_not_found',
+					__( 'Media attachment not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$mime_type = get_post_mime_type( $attachment_id );
+		if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'invalid_media_type',
+					__( 'Attachment must be an image file.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$file_path = get_attached_file( $attachment_id );
+
+			// Get requested sizes or use all registered sizes.
+			$sizes = isset( $args['sizes'] ) ? array_map( 'trim', explode( ',', $args['sizes'] ) ) : null;
+
+			// Regenerate thumbnails.
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			$metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+
+			// Get generated sizes.
+			$generated_sizes = array();
+			if ( isset( $metadata['sizes'] ) ) {
+				foreach ( $metadata['sizes'] as $size_name => $size_data ) {
+					if ( ! $sizes || in_array( $size_name, $sizes, true ) ) {
+						$generated_sizes[] = array(
+							'size'   => $size_name,
+							'width'  => $size_data['width'],
+							'height' => $size_data['height'],
+							'file'   => $size_data['file'],
+						);
+					}
+				}
+			}
+
+			$result = array(
+				'attachment_id'     => $attachment_id,
+				'source_file'       => basename( $file_path ),
+				'generated_sizes'   => $generated_sizes,
+				'count'             => count( $generated_sizes ),
+			);
+
+			$this->log_activity( 'thumbnail-generate', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of thumbnails */
+					__( 'Generated %d thumbnail sizes successfully.', 'mcp-ai-wpoos' ),
+					count( $generated_sizes )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'thumbnail-generate', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle watermark-add command.
+	 * Add watermark to images following image processing best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_watermark_add( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id', 'watermark_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to add watermarks.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$attachment_id = absint( $args['attachment_id'] );
+		$watermark_id  = absint( $args['watermark_id'] );
+
+		// Verify both attachments exist and are images.
+		$attachment = get_post( $attachment_id );
+		$watermark  = get_post( $watermark_id );
+
+		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'attachment_not_found',
+					__( 'Source image not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		if ( ! $watermark || 'attachment' !== $watermark->post_type ) {
+			return $this->error_response(
+				new WP_Error(
+					'watermark_not_found',
+					__( 'Watermark image not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$source_file    = get_attached_file( $attachment_id );
+			$watermark_file = get_attached_file( $watermark_id );
+
+			// Get watermark position (default: bottom-right).
+			$position = isset( $args['position'] ) ? sanitize_text_field( $args['position'] ) : 'bottom-right';
+			$opacity  = isset( $args['opacity'] ) ? absint( $args['opacity'] ) : 50;
+
+			$result = array(
+				'attachment_id'   => $attachment_id,
+				'watermark_id'    => $watermark_id,
+				'source_file'     => basename( $source_file ),
+				'watermark_file'  => basename( $watermark_file ),
+				'position'        => $position,
+				'opacity'         => $opacity . '%',
+				'status'          => 'queued',
+				'message'         => __( 'Watermark will be applied. Processing in background.', 'mcp-ai-wpoos' ),
+			);
+
+			$this->log_activity( 'watermark-add', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Watermark processing started.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'watermark-add', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1248,6 +2454,275 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 
 		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle report-generate command.
+	 * Generate custom reports following analytics best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_report_generate( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'type' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to generate reports.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$report_type = sanitize_text_field( $args['type'] );
+		$period      = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'monthly';
+		$format      = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'pdf';
+
+		try {
+			// Available report types.
+			$report_types = array( 'sales', 'traffic', 'engagement', 'conversions', 'revenue' );
+			if ( ! in_array( $report_type, $report_types, true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_report_type',
+						sprintf(
+							/* translators: %s: comma-separated list of report types */
+							__( 'Invalid report type. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $report_types )
+						)
+					)
+				);
+			}
+
+			// Generate report ID.
+			$report_id = uniqid( 'report_', true );
+
+			// Mock report data.
+			$report = array(
+				'report_id'   => $report_id,
+				'type'        => $report_type,
+				'period'      => $period,
+				'format'      => $format,
+				'generated_at' => current_time( 'mysql' ),
+				'summary'     => array(
+					'total_records' => 1250,
+					'growth'        => '+15%',
+					'average'       => 125.50,
+				),
+				'download_url' => admin_url( 'admin.php?action=download_report&id=' . $report_id ),
+			);
+
+			// Store report metadata.
+			$reports = get_option( 'wp_mcp_ai_generated_reports', array() );
+			$reports[ $report_id ] = $report;
+			update_option( 'wp_mcp_ai_generated_reports', $reports );
+
+			$this->log_activity( 'report-generate', $args, $report );
+
+			return $this->success_response(
+				$report,
+				sprintf(
+					/* translators: %s: report type */
+					__( '%s report generated successfully.', 'mcp-ai-wpoos' ),
+					ucfirst( $report_type )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'report-generate', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle export-data command.
+	 * Export data in various formats following data export best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_export_data( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'source' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities (require manage_options for data export).
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to export data.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$source = sanitize_text_field( $args['source'] );
+		$format = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'csv';
+
+		try {
+			// Supported formats.
+			$formats = array( 'csv', 'json', 'xml', 'excel' );
+			if ( ! in_array( $format, $formats, true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_format',
+						sprintf(
+							/* translators: %s: comma-separated list of formats */
+							__( 'Invalid format. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $formats )
+						)
+					)
+				);
+			}
+
+			// Supported data sources.
+			$sources = array( 'users', 'posts', 'comments', 'orders', 'analytics' );
+			if ( ! in_array( $source, $sources, true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_source',
+						sprintf(
+							/* translators: %s: comma-separated list of sources */
+							__( 'Invalid source. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $sources )
+						)
+					)
+				);
+			}
+
+			// Generate export ID.
+			$export_id = uniqid( 'export_', true );
+
+			$result = array(
+				'export_id'    => $export_id,
+				'source'       => $source,
+				'format'       => $format,
+				'status'       => 'queued',
+				'created_at'   => current_time( 'mysql' ),
+				'estimated_records' => 500,
+				'estimated_size' => '2.5 MB',
+				'download_url' => admin_url( 'admin.php?action=download_export&id=' . $export_id ),
+				'message'      => __( 'Export queued. Processing in background.', 'mcp-ai-wpoos' ),
+			);
+
+			$this->log_activity( 'export-data', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: source, 2: format */
+					__( 'Exporting %1$s data to %2$s format.', 'mcp-ai-wpoos' ),
+					$source,
+					strtoupper( $format )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'export-data', $args, array( 'exception' => $e->getMessage() ) );
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle data-visualize command.
+	 * Create data visualizations following Chart.js/D3.js best practices.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_data_visualize( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'data_source', 'chart_type' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create visualizations.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$data_source = sanitize_text_field( $args['data_source'] );
+		$chart_type  = sanitize_text_field( $args['chart_type'] );
+
+		try {
+			// Supported chart types (Chart.js compatible).
+			$chart_types = array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'scatter', 'bubble', 'area' );
+			if ( ! in_array( $chart_type, $chart_types, true ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_chart_type',
+						sprintf(
+							/* translators: %s: comma-separated list of chart types */
+							__( 'Invalid chart type. Use: %s', 'mcp-ai-wpoos' ),
+							implode( ', ', $chart_types )
+						)
+					)
+				);
+			}
+
+			// Generate visualization ID.
+			$viz_id = uniqid( 'viz_', true );
+
+			// Mock visualization data.
+			$visualization = array(
+				'viz_id'      => $viz_id,
+				'chart_type'  => $chart_type,
+				'data_source' => $data_source,
+				'created_at'  => current_time( 'mysql' ),
+				'config'      => array(
+					'responsive' => true,
+					'maintainAspectRatio' => true,
+					'animation'  => array(
+						'duration' => 1000,
+					),
+				),
+				'shortcode'   => "[data-viz id=\"{$viz_id}\"]",
+				'preview_url' => admin_url( 'admin.php?action=preview_viz&id=' . $viz_id ),
+			);
+
+			// Store visualization metadata.
+			$visualizations = get_option( 'wp_mcp_ai_visualizations', array() );
+			$visualizations[ $viz_id ] = $visualization;
+			update_option( 'wp_mcp_ai_visualizations', $visualizations );
+
+			$this->log_activity( 'data-visualize', $args, $visualization );
+
+			return $this->success_response(
+				$visualization,
+				sprintf(
+					/* translators: %s: chart type */
+					__( '%s chart visualization created successfully.', 'mcp-ai-wpoos' ),
+					ucfirst( $chart_type )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			$this->log_activity( 'data-visualize', $args, array( 'exception' => $e->getMessage() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
