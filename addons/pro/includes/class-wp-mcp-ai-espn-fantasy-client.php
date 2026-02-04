@@ -93,6 +93,10 @@ if ( ! class_exists( 'WP_MCP_AI_ESPN_Fantasy_Client' ) ) {
 		 * Load authentication credentials from WordPress settings.
 		 */
 		protected function load_credentials_from_settings() {
+			if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+				return;
+			}
+
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			if ( empty( $this->espn_s2 ) && ! empty( $settings['espn_fantasy_espn_s2'] ) ) {
