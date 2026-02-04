@@ -79,6 +79,12 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			return $workflow;
 		}
 
+		// Validate user has required capabilities for all workflow steps.
+		$capability_check = $this->validate_workflow_capabilities( $workflow, $user_id );
+		if ( is_wp_error( $capability_check ) ) {
+			return $capability_check;
+		}
+
 		// Execute workflow.
 		$result = $this->execute_workflow( $workflow, $dry_run, $context );
 
@@ -316,6 +322,80 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Validate user has required capabilities for all workflow steps
+	 *
+	 * @param array $workflow Workflow definition.
+	 * @param int   $user_id  User ID to check capabilities for.
+	 * @return true|WP_Error True if user has all required capabilities, error otherwise.
+	 */
+	private function validate_workflow_capabilities( $workflow, $user_id ) {
+		if ( empty( $workflow['steps'] ) || ! is_array( $workflow['steps'] ) ) {
+			return true;
+		}
+
+		$missing_capabilities = array();
+
+		foreach ( $workflow['steps'] as $step ) {
+			if ( empty( $step['task'] ) ) {
+				continue;
+			}
+
+			$required_capability = $this->get_task_required_capability( $step['task'] );
+
+			if ( $required_capability && ! user_can( $user_id, $required_capability ) ) {
+				$missing_capabilities[ $step['task'] ] = $required_capability;
+			}
+		}
+
+		if ( ! empty( $missing_capabilities ) ) {
+			$task_list = array();
+			foreach ( $missing_capabilities as $task => $capability ) {
+				$task_list[] = sprintf( '%s (requires %s)', $task, $capability );
+			}
+
+			return new WP_Error(
+				'insufficient_workflow_permissions',
+				sprintf(
+					/* translators: %s: list of tasks and required capabilities */
+					__( 'You do not have sufficient permissions to execute this workflow. The following tasks require higher privileges: %s', 'mcp-ai-wpoos' ),
+					implode( ', ', $task_list )
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get required capability for a task
+	 *
+	 * @param string $task Task name.
+	 * @return string|null Required capability or null if none required.
+	 */
+	private function get_task_required_capability( $task ) {
+		// Map tasks to their required capabilities based on the slash command they call.
+		$task_capabilities = array(
+			'next-task'       => 'edit_posts',
+			'check_drafts'    => 'edit_posts',
+			'audit_drafts'    => 'edit_posts',
+			'ship'            => 'publish_posts',
+			'publish_post'    => 'publish_posts',
+			'clean-content'   => 'edit_posts',
+			'check_content'   => 'edit_posts',
+			'optimize-perf'   => 'manage_options',
+			'check_performance' => 'manage_options',
+			'sync-docs'       => 'edit_posts',
+			'check_docs'      => 'edit_posts',
+			'notify_admin'    => 'edit_posts',
+			'send_email'      => 'edit_posts',
+			'wait'            => null,
+			'sleep'           => null,
+		);
+
+		return isset( $task_capabilities[ $task ] ) ? $task_capabilities[ $task ] : null;
 	}
 
 	/**
