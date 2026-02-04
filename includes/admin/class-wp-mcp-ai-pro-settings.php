@@ -1033,6 +1033,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/chat-bundle.min.js' );
 			}
 
+			// Check for React packages bundled into workflow-builder via @wordpress/scripts.
+			// These packages (react, react-dom, reactflow, @dnd-kit/*) are build-time dependencies
+			// that get compiled into the workflow builder bundle for production.
+			// The workflow builder is a PRO feature.
+			$workflow_bundled_packages = array(
+				'react',
+				'react-dom',
+				'reactflow',
+				'@dnd-kit/core',
+				'@dnd-kit/sortable',
+				'@dnd-kit/utilities',
+			);
+			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
+				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
+				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js';
+					if ( file_exists( $workflow_build_path ) ) {
+						return true;
+					}
+				}
+				// Priority 2: Check base build directory (legacy/development location).
+				// NOTE: This should be moved to pro addon directory as per project standards.
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.js';
+				if ( file_exists( $legacy_workflow_build_path ) ) {
+					return true;
+				}
+				// Priority 3: Check base node_modules (development).
+				// These packages are in base package.json but used for Pro feature.
+				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				// If none exist, return false (not installed/bundled).
+				return false;
+			}
+
 			// Check for document generation packages bundled into local scripts.
 			$script_bundled_packages = array(
 				'pdfkit'  => 'generate-pdf.bundle.js',
