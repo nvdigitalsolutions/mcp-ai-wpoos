@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Parallel step execution (NEW in 1.2.1)
  * - Conditional branching (NEW in 1.2.1)
  * - Loop control with exit conditions (NEW in 1.2.1)
+ * - Step dependencies (DAG) (NEW in 1.2.1)
  * - Context passing between steps
  * - Integration with existing commands
  * - Error handling and recovery
@@ -88,8 +89,8 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			return $capability_check;
 		}
 
-		// Execute workflow.
-		$result = $this->execute_workflow( $workflow, $dry_run, $context );
+		// Execute workflow with dependency resolution.
+		$result = $this->execute_workflow_with_dependencies( $workflow, $dry_run, $context );
 
 		return $this->format_response( $workflow_name, $result, $dry_run );
 	}
@@ -593,6 +594,9 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				continue;
 			}
 
+			// Handle named steps with dependencies.
+			$step_name = isset( $step['name'] ) ? $step['name'] : null;
+
 			// Execute step.
 			$step_result = $this->execute_step( $step, $results['context'], $context );
 
@@ -603,6 +607,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					'task'    => $step['task'],
 					'status'  => 'failed',
 					'error'   => $step_result->get_error_message(),
+					'name'    => $step_name,
 				);
 
 				// Stop on failure unless continue_on_error is set.
@@ -616,16 +621,144 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					'task'    => $step['task'],
 					'status'  => 'completed',
 					'result'  => $step_result,
+					'name'    => $step_name,
 				);
 
 				// Update context with step results.
+				// Support both output_var and step name as context keys.
 				if ( isset( $step['output_var'] ) && is_array( $step_result ) ) {
 					$results['context'][ $step['output_var'] ] = $step_result;
+				}
+				if ( $step_name && is_array( $step_result ) ) {
+					$results['context'][ $step_name ] = $step_result;
 				}
 			}
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Check if workflow has named steps with dependencies
+	 *
+	 * @param array $steps Workflow steps.
+	 * @return bool True if steps have dependencies.
+	 */
+	private function has_step_dependencies( $steps ) {
+		foreach ( $steps as $step ) {
+			if ( isset( $step['depends_on'] ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Resolve step dependencies using topological sort
+	 *
+	 * Converts array of steps with dependencies into execution order.
+	 * Uses Kahn's algorithm for topological sorting.
+	 *
+	 * @param array $steps Array of step definitions with optional depends_on.
+	 * @return array|WP_Error Sorted steps or error if circular dependency detected.
+	 */
+	private function resolve_step_dependencies( $steps ) {
+		// Build dependency graph.
+		$graph          = array(); // step_name => [dependencies].
+		$in_degree      = array(); // step_name => count of dependencies.
+		$step_by_name   = array(); // step_name => step definition.
+
+		foreach ( $steps as $step ) {
+			$step_name = isset( $step['name'] ) ? $step['name'] : null;
+			
+			if ( ! $step_name ) {
+				return new WP_Error(
+					'workflow_dag_error',
+					__( 'All steps must have a "name" field when using depends_on.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$step_by_name[ $step_name ] = $step;
+			$dependencies = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
+			$graph[ $step_name ] = $dependencies;
+			$in_degree[ $step_name ] = count( $dependencies );
+		}
+
+		// Topological sort using Kahn's algorithm.
+		$sorted = array();
+		$queue = array();
+
+		// Find all nodes with no dependencies.
+		foreach ( $in_degree as $name => $degree ) {
+			if ( 0 === $degree ) {
+				$queue[] = $name;
+			}
+		}
+
+		while ( ! empty( $queue ) ) {
+			$current = array_shift( $queue );
+			$sorted[] = $step_by_name[ $current ];
+
+			// Reduce in-degree for dependent steps.
+			foreach ( $graph as $name => $dependencies ) {
+				if ( in_array( $current, $dependencies, true ) ) {
+					$in_degree[ $name ]--;
+					if ( 0 === $in_degree[ $name ] ) {
+						$queue[] = $name;
+					}
+				}
+			}
+		}
+
+		// Check for circular dependencies.
+		if ( count( $sorted ) !== count( $steps ) ) {
+			return new WP_Error(
+				'workflow_circular_dependency',
+				__( 'Circular dependency detected in workflow steps.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return $sorted;
+	}
+
+	/**
+	 * Execute workflow with dependency resolution
+	 *
+	 * If workflow has named steps with depends_on, resolve execution order first.
+	 *
+	 * @param array $workflow Workflow definition.
+	 * @param bool  $dry_run  Dry run mode.
+	 * @param array $context  Execution context.
+	 * @return array Execution results.
+	 */
+	private function execute_workflow_with_dependencies( $workflow, $dry_run, $context ) {
+		// Check if workflow uses dependencies.
+		if ( ! $this->has_step_dependencies( $workflow['steps'] ) ) {
+			return $this->execute_workflow( $workflow, $dry_run, $context );
+		}
+
+		// Resolve dependencies.
+		$sorted_steps = $this->resolve_step_dependencies( $workflow['steps'] );
+
+		if ( is_wp_error( $sorted_steps ) ) {
+			return array(
+				'steps_completed' => 0,
+				'steps_failed'    => 1,
+				'step_results'    => array(
+					array(
+						'step'   => 0,
+						'task'   => 'dependency-resolution',
+						'status' => 'failed',
+						'error'  => $sorted_steps->get_error_message(),
+					),
+				),
+				'context'         => array(),
+			);
+		}
+
+		// Execute with sorted steps.
+		$workflow['steps'] = $sorted_steps;
+		return $this->execute_workflow( $workflow, $dry_run, $context );
 	}
 
 	/**
@@ -1255,6 +1388,48 @@ class WP_MCP_AI_Slash_Command_Workflow {
 						'params' => array(
 							'subject' => 'Autonomous Audit Complete',
 							'message' => 'Content audit loop has finished with quality score: {{quality_score}}',
+						),
+					),
+				),
+			),
+			'dependency-workflow' => array(
+				'name'        => 'Complex Workflow with Dependencies',
+				'description' => 'Demonstrates step dependencies (DAG) with named steps',
+				'steps'       => array(
+					array(
+						'name'   => 'analyze',
+						'task'   => 'next-task',
+						'params' => array(
+							'type'    => 'drafts',
+							'limit'   => 5,
+							'dry-run' => true,
+						),
+					),
+					array(
+						'name'       => 'process_content',
+						'task'       => 'clean-content',
+						'depends_on' => array( 'analyze' ),
+						'params'     => array(
+							'limit'   => 5,
+							'dry-run' => true,
+						),
+					),
+					array(
+						'name'       => 'check_perf',
+						'task'       => 'optimize-perf',
+						'depends_on' => array( 'analyze' ),
+						'params'     => array(
+							'phases'  => '1,2',
+							'dry-run' => true,
+						),
+					),
+					array(
+						'name'       => 'finalize',
+						'task'       => 'notify_admin',
+						'depends_on' => array( 'process_content', 'check_perf' ),
+						'params'     => array(
+							'subject' => 'Workflow Complete',
+							'message' => 'All tasks completed: content processed and performance checked.',
 						),
 					),
 				),
