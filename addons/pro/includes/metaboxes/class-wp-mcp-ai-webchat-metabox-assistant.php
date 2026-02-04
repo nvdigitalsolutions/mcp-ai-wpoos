@@ -142,7 +142,8 @@ class WP_MCP_AI_WebChat_Metabox_Assistant extends WP_MCP_AI_WebChat_Metabox_Base
 	 */
 	public function save( $post_id, $post ) {
 		// Check nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_webchat_assistant_nonce'] ) || ! wp_verify_nonce( $_POST['wp_mcp_ai_webchat_assistant_nonce'], 'wp_mcp_ai_webchat_assistant_nonce' ) ) {
+		$nonce = isset( $_POST['wp_mcp_ai_webchat_assistant_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_webchat_assistant_nonce'] ) ) : '';
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_mcp_ai_webchat_assistant_nonce' ) ) {
 			return;
 		}
 
@@ -158,7 +159,7 @@ class WP_MCP_AI_WebChat_Metabox_Assistant extends WP_MCP_AI_WebChat_Metabox_Base
 
 		// Save assigned assistant.
 		if ( isset( $_POST['wp_mcp_ai_webchat_assigned_assistant'] ) ) {
-			$assistant_id = absint( $_POST['wp_mcp_ai_webchat_assigned_assistant'] );
+			$assistant_id = absint( wp_unslash( $_POST['wp_mcp_ai_webchat_assigned_assistant'] ) );
 
 			// Validate that the assistant exists if not 0.
 			if ( $assistant_id > 0 ) {
@@ -179,6 +180,6 @@ class WP_MCP_AI_WebChat_Metabox_Assistant extends WP_MCP_AI_WebChat_Metabox_Base
 	 * @return string Documentation URL.
 	 */
 	public function get_documentation_url() {
-		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/WEBCHAT-SELF-HOSTED-SUMMARY.md';
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/addons/pro/docs/WEBCHAT_ASSISTANT_ASSIGNMENT.md';
 	}
 }
