@@ -191,51 +191,60 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 * @return void
 	 */
 	private function render_commands_tab( $commands ) {
+		// Group commands by toolkit.
+		$toolkit_commands = $this->group_commands_by_toolkit( $commands );
+		$global_commands = $this->get_global_commands( $commands );
 		?>
 		<div class="commands-tab">
 			<h2><?php esc_html_e( 'Available Commands', 'mcp-ai-wpoos' ); ?></h2>
-			<p><?php esc_html_e( 'All registered slash commands and their capabilities:', 'mcp-ai-wpoos' ); ?></p>
+			<p><?php esc_html_e( 'All registered slash commands and their capabilities. Commands are organized by toolkit and global commands.', 'mcp-ai-wpoos' ); ?></p>
 
-			<table class="wp-list-table widefat fixed striped">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Command', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Aliases', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Capability', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php if ( empty( $commands ) ) : ?>
-						<tr>
-							<td colspan="5"><?php esc_html_e( 'No commands available.', 'mcp-ai-wpoos' ); ?></td>
-						</tr>
-					<?php else : ?>
-						<?php foreach ( $commands as $command ) : ?>
-							<tr>
-								<td><code>/<?php echo esc_html( $command['name'] ); ?></code></td>
-								<td><?php echo esc_html( $command['description'] ); ?></td>
-								<td>
-									<?php
-									if ( ! empty( $command['aliases'] ) ) {
-										echo '<code>' . esc_html( implode( '</code>, <code>', $command['aliases'] ) ) . '</code>';
-									} else {
-										echo '—';
-									}
-									?>
-								</td>
-								<td><code><?php echo esc_html( $command['capability'] ); ?></code></td>
-								<td>
-									<button type="button" class="button button-small view-command-help" data-command="<?php echo esc_attr( $command['name'] ); ?>">
-										<?php esc_html_e( 'View Help', 'mcp-ai-wpoos' ); ?>
-									</button>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					<?php endif; ?>
-				</tbody>
-			</table>
+			<!-- Statistics -->
+			<div class="command-stats">
+				<div class="stat-box">
+					<strong><?php echo esc_html( count( $commands ) ); ?></strong>
+					<span><?php esc_html_e( 'Total Commands', 'mcp-ai-wpoos' ); ?></span>
+				</div>
+				<div class="stat-box">
+					<strong><?php echo esc_html( count( $toolkit_commands ) ); ?></strong>
+					<span><?php esc_html_e( 'Toolkits', 'mcp-ai-wpoos' ); ?></span>
+				</div>
+				<div class="stat-box">
+					<strong><?php echo esc_html( count( $global_commands ) ); ?></strong>
+					<span><?php esc_html_e( 'Global Commands', 'mcp-ai-wpoos' ); ?></span>
+				</div>
+			</div>
+
+			<!-- Global Commands -->
+			<?php if ( ! empty( $global_commands ) ) : ?>
+				<h3><?php esc_html_e( 'Global Commands', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Commands available system-wide:', 'mcp-ai-wpoos' ); ?></p>
+				<?php $this->render_commands_table( $global_commands ); ?>
+			<?php endif; ?>
+
+			<!-- Toolkit Commands -->
+			<?php if ( ! empty( $toolkit_commands ) ) : ?>
+				<h3><?php esc_html_e( 'Toolkit-Specific Commands', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Commands organized by their respective toolkits:', 'mcp-ai-wpoos' ); ?></p>
+				
+				<?php foreach ( $toolkit_commands as $toolkit_name => $toolkit_cmds ) : ?>
+					<div class="toolkit-commands-section">
+						<h4 class="toolkit-name"><?php echo esc_html( $toolkit_name ); ?></h4>
+						<p class="toolkit-command-count">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of commands */
+									_n( '%d command', '%d commands', count( $toolkit_cmds ), 'mcp-ai-wpoos' ),
+									count( $toolkit_cmds )
+								)
+							);
+							?>
+						</p>
+						<?php $this->render_commands_table( $toolkit_cmds, true ); ?>
+					</div>
+				<?php endforeach; ?>
+			<?php endif; ?>
 
 			<!-- Command Help Display -->
 			<div id="command-help-display" class="command-help-box" style="display: none;">
@@ -247,6 +256,119 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render commands table.
+	 *
+	 * @param array $commands Commands to display.
+	 * @param bool  $compact  Whether to use compact view.
+	 * @return void
+	 */
+	private function render_commands_table( $commands, $compact = false ) {
+		?>
+		<table class="wp-list-table widefat fixed striped <?php echo $compact ? 'compact-view' : ''; ?>">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Command', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+					<?php if ( ! $compact ) : ?>
+						<th><?php esc_html_e( 'Aliases', 'mcp-ai-wpoos' ); ?></th>
+					<?php endif; ?>
+					<th><?php esc_html_e( 'Capability', 'mcp-ai-wpoos' ); ?></th>
+					<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php if ( empty( $commands ) ) : ?>
+					<tr>
+						<td colspan="<?php echo $compact ? '4' : '5'; ?>"><?php esc_html_e( 'No commands available.', 'mcp-ai-wpoos' ); ?></td>
+					</tr>
+				<?php else : ?>
+					<?php foreach ( $commands as $command ) : ?>
+						<tr>
+							<td><code>/<?php echo esc_html( $command['name'] ); ?></code></td>
+							<td><?php echo esc_html( $command['description'] ); ?></td>
+							<?php if ( ! $compact ) : ?>
+								<td>
+									<?php
+									if ( ! empty( $command['aliases'] ) ) {
+										echo '<code>' . esc_html( implode( '</code>, <code>', $command['aliases'] ) ) . '</code>';
+									} else {
+										echo '—';
+									}
+									?>
+								</td>
+							<?php endif; ?>
+							<td><code><?php echo esc_html( $command['capability'] ); ?></code></td>
+							<td>
+								<button type="button" class="button button-small view-command-help" data-command="<?php echo esc_attr( $command['name'] ); ?>">
+									<?php esc_html_e( 'View Help', 'mcp-ai-wpoos' ); ?>
+								</button>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Group commands by toolkit.
+	 *
+	 * @param array $commands All commands.
+	 * @return array Commands grouped by toolkit name.
+	 */
+	private function group_commands_by_toolkit( $commands ) {
+		$toolkit_manager = null;
+		if ( class_exists( 'WP_MCP_AI_Slash_Command_Toolkit_Manager' ) ) {
+			$toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+		}
+
+		if ( ! $toolkit_manager ) {
+			return array();
+		}
+
+		$registry = WP_MCP_AI_Toolkit_Registry::get_instance();
+		$toolkits = $registry->get_toolkits();
+
+		$grouped = array();
+		foreach ( $commands as $command ) {
+			// Check if command has toolkit metadata.
+			if ( ! empty( $command['toolkit'] ) ) {
+				$toolkit_slug = $command['toolkit'];
+				$toolkit_info = $registry->get_toolkit( $toolkit_slug );
+				$toolkit_name = $toolkit_info ? $toolkit_info['name'] : ucwords( str_replace( '_', ' ', $toolkit_slug ) );
+
+				if ( ! isset( $grouped[ $toolkit_name ] ) ) {
+					$grouped[ $toolkit_name ] = array();
+				}
+
+				$grouped[ $toolkit_name ][] = $command;
+			}
+		}
+
+		// Sort toolkits alphabetically.
+		ksort( $grouped );
+
+		return $grouped;
+	}
+
+	/**
+	 * Get global (non-toolkit) commands.
+	 *
+	 * @param array $commands All commands.
+	 * @return array Global commands.
+	 */
+	private function get_global_commands( $commands ) {
+		$global = array();
+		foreach ( $commands as $command ) {
+			if ( empty( $command['toolkit'] ) ) {
+				$global[] = $command;
+			}
+		}
+		return $global;
 	}
 
 	/**
@@ -453,6 +575,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 				'description' => $config['description'] ?? '',
 				'aliases'     => $config['aliases'] ?? array(),
 				'capability'  => $config['capability'] ?? 'read',
+				'toolkit'     => $config['toolkit'] ?? '',
 			);
 		}
 
