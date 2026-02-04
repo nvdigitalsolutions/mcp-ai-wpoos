@@ -29,6 +29,13 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	const PAGE_SLUG = 'nvoos-pro-workflow-builder';
 
 	/**
+	 * Cached templates class instance.
+	 *
+	 * @var WP_MCP_AI_Pattern_Workflow_Templates|null
+	 */
+	private static $templates_instance = null;
+
+	/**
 	 * Initialize the page.
 	 *
 	 * @since 2.0.0
@@ -150,15 +157,16 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @return array Templates.
 	 */
 	protected static function get_workflow_templates() {
-		$templates_class = class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) 
-			? new WP_MCP_AI_Pattern_Workflow_Templates() 
-			: null;
+		// Cache the templates class instance to avoid repeated instantiation.
+		if ( null === self::$templates_instance && class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) ) {
+			self::$templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
+		}
 
-		if ( ! $templates_class ) {
+		if ( ! self::$templates_instance ) {
 			return array();
 		}
 
-		return $templates_class->get_all_templates();
+		return self::$templates_instance->get_all_templates();
 	}
 
 	/**
