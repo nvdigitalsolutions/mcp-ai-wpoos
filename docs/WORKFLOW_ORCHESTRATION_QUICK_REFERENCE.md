@@ -361,6 +361,47 @@ git add wp-content/uploads/mcp-ai/workflows/exports/*.yml
 git commit -m "Add custom workflows"
 ```
 
+### Workflow Validation
+
+**NEW in v1.2.3**: Validate workflow files before importing or running.
+
+Use the `validate_workflow` tool to check workflow syntax and structure:
+
+```json
+{
+  "tool": "validate_workflow",
+  "arguments": {
+    "workflow_file": "examples/workflows/content-pipeline.yml",
+    "strict": true
+  }
+}
+```
+
+**Validation Checks:**
+- Required fields (name, steps)
+- Valid step structure
+- Conditional syntax
+- Loop parameters
+- DAG dependencies (no cycles)
+- Task references
+
+**Output:**
+```json
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [],
+  "summary": {
+    "name": "Content Pipeline",
+    "total_steps": 5,
+    "has_parallel": false,
+    "has_loops": false,
+    "has_conditionals": true,
+    "has_dag": false
+  }
+}
+```
+
 ---
 
 ## Performance Tips
