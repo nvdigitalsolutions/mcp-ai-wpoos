@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-fatal-error-espn-league',
-        'version' => 'dev-copilot/fix-fatal-error-espn-league',
-        'reference' => 'c9af7f12e52977dadda795d470f43cbe08afce25',
+        'pretty_version' => 'dev-copilot/fix-slash-command-error',
+        'version' => 'dev-copilot/fix-slash-command-error',
+        'reference' => 'bfe47f74afe3efd2843d5d04193295cbd38b7901',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-fatal-error-espn-league',
-            'version' => 'dev-copilot/fix-fatal-error-espn-league',
-            'reference' => 'c9af7f12e52977dadda795d470f43cbe08afce25',
+            'pretty_version' => 'dev-copilot/fix-slash-command-error',
+            'version' => 'dev-copilot/fix-slash-command-error',
+            'reference' => 'bfe47f74afe3efd2843d5d04193295cbd38b7901',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
