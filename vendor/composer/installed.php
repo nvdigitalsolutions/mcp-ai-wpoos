@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/debug-slash-commands-functionality',
+        'version' => 'dev-copilot/debug-slash-commands-functionality',
+        'reference' => 'bb497b2a4b7426ccd44f9b9edd65f1db3cc41120',
         'pretty_version' => 'dev-copilot/fix-pro-workflow-url',
         'version' => 'dev-copilot/fix-pro-workflow-url',
         'reference' => 'c777f987551c57bf290219762653b7188125877e',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/debug-slash-commands-functionality',
+            'version' => 'dev-copilot/debug-slash-commands-functionality',
+            'reference' => 'bb497b2a4b7426ccd44f9b9edd65f1db3cc41120',
             'pretty_version' => 'dev-copilot/fix-pro-workflow-url',
             'version' => 'dev-copilot/fix-pro-workflow-url',
             'reference' => 'c777f987551c57bf290219762653b7188125877e',
