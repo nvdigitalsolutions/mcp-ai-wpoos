@@ -58,10 +58,27 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		$list_only = isset( $flags['list'] ) || isset( $flags['l'] );
 		$show_def  = isset( $flags['show'] ) || isset( $flags['s'] );
 		$visualize = isset( $flags['visualize'] ) || isset( $flags['v'] );
+		$export    = isset( $flags['export'] ) || isset( $flags['e'] );
+		$import    = isset( $flags['import'] ) || isset( $flags['i'] );
 
 		// List workflows.
 		if ( $list_only || 'list' === $action ) {
 			return $this->list_workflows();
+		}
+
+		// Export workflow to YAML.
+		if ( $export && $workflow_name ) {
+			$workflow = $this->load_workflow( $workflow_name );
+			if ( is_wp_error( $workflow ) ) {
+				return $workflow;
+			}
+			return $this->export_workflow( $workflow, $workflow_name );
+		}
+
+		// Import workflow from YAML.
+		if ( $import ) {
+			$yaml_file = isset( $flags['file'] ) ? sanitize_text_field( $flags['file'] ) : null;
+			return $this->import_workflow( $yaml_file, $workflow_name );
 		}
 
 		// Show workflow definition.
@@ -376,6 +393,208 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		$output .= "```\n\n";
+
+		return $output;
+	}
+
+	/**
+	 * Export workflow to YAML format
+	 *
+	 * Creates a YAML file of the workflow definition that can be shared,
+	 * versioned, or imported into other sites.
+	 *
+	 * @param array  $workflow      Workflow definition.
+	 * @param string $workflow_name Workflow name.
+	 * @return string|WP_Error Export result message or error.
+	 */
+	private function export_workflow( $workflow, $workflow_name ) {
+		// Create export directory if it doesn't exist.
+		$upload_dir  = wp_upload_dir();
+		$export_dir  = $upload_dir['basedir'] . '/mcp-ai/workflows/exports/';
+		$export_file = $export_dir . sanitize_file_name( $workflow_name ) . '-' . gmdate( 'Y-m-d-His' ) . '.yml';
+
+		// Create directory.
+		if ( ! file_exists( $export_dir ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+			wp_mkdir_p( $export_dir );
+		}
+
+		// Add metadata to export.
+		$export_data = array(
+			'metadata' => array(
+				'exported_at' => gmdate( 'Y-m-d H:i:s' ),
+				'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
+				'export_format' => '1.0',
+			),
+			'workflow' => $workflow,
+		);
+
+		// Export to YAML.
+		if ( function_exists( 'yaml_emit' ) ) {
+			$yaml_content = yaml_emit( $export_data, YAML_UTF8_ENCODING );
+		} else {
+			// Fallback to JSON format if YAML not available.
+			$yaml_content = wp_json_encode( $export_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+			$export_file = str_replace( '.yml', '.json', $export_file );
+		}
+
+		// Save file.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$result = file_put_contents( $export_file, $yaml_content );
+
+		if ( false === $result ) {
+			return new WP_Error(
+				'export_failed',
+				__( 'Failed to export workflow. Check file permissions.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$output = "## Workflow Exported Successfully\n\n";
+		$output .= sprintf( "**Workflow:** %s\n", esc_html( $workflow['name'] ) );
+		$output .= sprintf( "**File:** `%s`\n", esc_html( basename( $export_file ) ) );
+		$output .= sprintf( "**Location:** `%s`\n", esc_html( $export_file ) );
+		$output .= sprintf( "**Size:** %s\n", size_format( filesize( $export_file ) ) );
+		$output .= sprintf( "**Format:** %s\n\n", function_exists( 'yaml_emit' ) ? 'YAML' : 'JSON' );
+
+		$output .= "### Import Command\n\n";
+		$output .= sprintf( "```bash\n/workflow %s --import --file=%s\n```\n", esc_html( $workflow_name ), esc_html( basename( $export_file ) ) );
+
+		return $output;
+	}
+
+	/**
+	 * Import workflow from YAML/JSON file
+	 *
+	 * Loads a workflow definition from an exported file and saves it
+	 * as a custom workflow.
+	 *
+	 * @param string $yaml_file     Filename to import.
+	 * @param string $workflow_name Workflow name to save as.
+	 * @return string|WP_Error Import result message or error.
+	 */
+	private function import_workflow( $yaml_file, $workflow_name ) {
+		if ( empty( $yaml_file ) ) {
+			return new WP_Error(
+				'missing_file',
+				__( 'Please specify a file to import using --file=filename.yml', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( empty( $workflow_name ) ) {
+			return new WP_Error(
+				'missing_name',
+				__( 'Please specify a workflow name: /workflow <name> --import --file=<file>', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Locate file in exports directory.
+		$upload_dir = wp_upload_dir();
+		$export_dir = $upload_dir['basedir'] . '/mcp-ai/workflows/exports/';
+		$file_path  = $export_dir . sanitize_file_name( $yaml_file );
+
+		// Check if file exists.
+		if ( ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'file_not_found',
+				sprintf(
+					/* translators: %s: file path */
+					__( 'File not found: %s', 'mcp-ai-wpoos' ),
+					$file_path
+				)
+			);
+		}
+
+		// Read file content.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$file_content = file_get_contents( $file_path );
+
+		if ( false === $file_content ) {
+			return new WP_Error(
+				'read_failed',
+				__( 'Failed to read workflow file.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Parse content based on extension.
+		$extension = pathinfo( $file_path, PATHINFO_EXTENSION );
+
+		if ( 'yml' === $extension || 'yaml' === $extension ) {
+			if ( ! function_exists( 'yaml_parse' ) ) {
+				return new WP_Error(
+					'yaml_not_supported',
+					__( 'YAML parsing not available. Please use JSON format or install YAML PHP extension.', 'mcp-ai-wpoos' )
+				);
+			}
+			$import_data = yaml_parse( $file_content );
+		} elseif ( 'json' === $extension ) {
+			$import_data = json_decode( $file_content, true );
+		} else {
+			return new WP_Error(
+				'invalid_format',
+				__( 'Invalid file format. Use .yml, .yaml, or .json files.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( empty( $import_data ) || ! is_array( $import_data ) ) {
+			return new WP_Error(
+				'parse_failed',
+				__( 'Failed to parse workflow file.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Extract workflow definition.
+		$workflow = isset( $import_data['workflow'] ) ? $import_data['workflow'] : $import_data;
+
+		// Validate workflow structure.
+		if ( empty( $workflow['steps'] ) || ! is_array( $workflow['steps'] ) ) {
+			return new WP_Error(
+				'invalid_workflow',
+				__( 'Invalid workflow structure. Missing or invalid steps array.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Save as custom workflow.
+		$custom_dir  = $upload_dir['basedir'] . '/mcp-ai/workflows/';
+		$custom_file = $custom_dir . sanitize_file_name( $workflow_name ) . '.yml';
+
+		// Create directory.
+		if ( ! file_exists( $custom_dir ) ) {
+			wp_mkdir_p( $custom_dir );
+		}
+
+		// Save workflow.
+		if ( function_exists( 'yaml_emit' ) ) {
+			$save_content = yaml_emit( $workflow, YAML_UTF8_ENCODING );
+		} else {
+			$save_content = wp_json_encode( $workflow, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
+			$custom_file  = str_replace( '.yml', '.json', $custom_file );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$result = file_put_contents( $custom_file, $save_content );
+
+		if ( false === $result ) {
+			return new WP_Error(
+				'save_failed',
+				__( 'Failed to save imported workflow.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$output = "## Workflow Imported Successfully\n\n";
+		$output .= sprintf( "**Workflow Name:** %s\n", esc_html( $workflow_name ) );
+		$output .= sprintf( "**Source File:** `%s`\n", esc_html( basename( $file_path ) ) );
+		$output .= sprintf( "**Saved As:** `%s`\n", esc_html( basename( $custom_file ) ) );
+		$output .= sprintf( "**Steps:** %d\n\n", count( $workflow['steps'] ) );
+
+		if ( isset( $import_data['metadata'] ) ) {
+			$output .= "### Import Metadata\n\n";
+			$output .= sprintf( "- **Exported:** %s\n", esc_html( $import_data['metadata']['exported_at'] ?? 'Unknown' ) );
+			$output .= sprintf( "- **Plugin Version:** %s\n", esc_html( $import_data['metadata']['plugin_version'] ?? 'Unknown' ) );
+			$output .= sprintf( "- **Format:** %s\n\n", esc_html( $import_data['metadata']['export_format'] ?? 'Unknown' ) );
+		}
+
+		$output .= "### Usage\n\n";
+		$output .= sprintf( "```bash\n/workflow %s\n```\n", esc_html( $workflow_name ) );
 
 		return $output;
 	}

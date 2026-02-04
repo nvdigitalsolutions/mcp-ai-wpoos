@@ -261,6 +261,108 @@ steps:
 
 ---
 
+## Workflow Export/Import 📦
+
+**NEW in v1.2.3**: Share and reuse workflows with export/import functionality.
+
+### Export a Workflow
+
+Export any workflow (built-in or custom) to YAML format:
+
+```bash
+# Export a workflow
+/workflow parallel-checks --export
+
+# Short flag
+/workflow my-workflow -e
+```
+
+**Output:**
+- Creates timestamped YAML file in: `wp-content/uploads/mcp-ai/workflows/exports/`
+- Includes metadata (export date, version, format)
+- Ready to share or version control
+
+**Example Export File:**
+```yaml
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: My Workflow
+  description: What it does
+  steps:
+    - task: next-task
+      params: { type: 'drafts' }
+```
+
+### Import a Workflow
+
+Import a workflow from a YAML file:
+
+```bash
+# Import with new name
+/workflow my-custom-workflow --import --file=exported-workflow.yml
+
+# Short flag
+/workflow my-workflow -i --file=workflow.yml
+```
+
+**Process:**
+1. Reads YAML from exports directory
+2. Validates workflow structure
+3. Saves as custom workflow
+4. Ready to use immediately
+
+**Import Location:**
+- Source: `wp-content/uploads/mcp-ai/workflows/exports/`
+- Saved to: `wp-content/uploads/mcp-ai/workflows/`
+
+### Example Workflows
+
+The plugin includes 5 example workflows in `examples/workflows/`:
+1. **content-pipeline.yml** - Comprehensive content workflow
+2. **site-health-check.yml** - Parallel execution demo
+3. **autonomous-content-review.yml** - Loop control demo
+4. **conditional-publishing.yml** - Conditional branching demo
+5. **complex-dag.yml** - DAG dependencies demo
+
+**To use examples:**
+```bash
+# Copy to exports directory
+cp examples/workflows/content-pipeline.yml wp-content/uploads/mcp-ai/workflows/exports/
+
+# Import it
+/workflow my-pipeline --import --file=content-pipeline.yml
+
+# Run it
+/workflow my-pipeline
+```
+
+### Sharing Workflows
+
+Share your workflows with the community:
+1. Export your workflow
+2. Test on clean install
+3. Document what it does
+4. Share the YAML file
+
+### Version Control
+
+Workflows can be version controlled:
+```bash
+# Export workflows
+/workflow workflow1 --export
+/workflow workflow2 --export
+
+# Commit to git
+git add wp-content/uploads/mcp-ai/workflows/exports/*.yml
+git commit -m "Add custom workflows"
+```
+
+---
+
 ## Performance Tips
 
 1. **Use parallel execution** for independent tasks (5-10x faster)
