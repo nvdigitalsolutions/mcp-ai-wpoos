@@ -3620,12 +3620,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_budget_create( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'name' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -3636,14 +3630,102 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'name'            => array(
+				'type'     => 'string',
+				'required' => true,
+				'min'      => 3,
+				'max'      => 100,
+			),
+			'monthly_income'  => array(
+				'type'     => 'number',
+				'required' => false,
+				'min'      => 0,
+				'max'      => 1000000,
+			),
+			'savings_goal'    => array(
+				'type'     => 'number',
+				'required' => false,
+				'min'      => 0,
+				'max'      => 1,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'budget-create', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
-			$name = sanitize_text_field( $args['name'] );
+			// Normalize data.
+			$name = $validator->normalize_name( $args['name'] );
 			$monthly_income = isset( $args['monthly_income'] ) ? floatval( $args['monthly_income'] ) : 0;
 			$savings_goal = isset( $args['savings_goal'] ) ? floatval( $args['savings_goal'] ) : 0.20;
+
+			// Validate monthly income is positive.
+			if ( $monthly_income <= 0 ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						__( 'Monthly income must be greater than zero. Please provide a valid income amount.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Validate savings goal (0-1 for percentage, or convert large numbers).
+			if ( $savings_goal > 1 && $savings_goal <= 100 ) {
+				// Convert percentage to decimal (e.g., 25 -> 0.25).
+				$savings_goal = $savings_goal / 100;
+			} elseif ( $savings_goal > 100 ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						__( 'Savings goal must be between 0 and 1 (as decimal) or 0-100 (as percentage). Example: 0.25 or 25.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Check for duplicate budget name.
+			$budgets = get_option( 'wp_mcp_ai_budgets', array() );
+			foreach ( $budgets as $existing ) {
+				if ( strtolower( $existing['name'] ) === strtolower( $name ) ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							sprintf(
+								/* translators: %s: budget name */
+								__( 'A budget with the name "%s" already exists. Please use a different name.', 'mcp-ai-wpoos' ),
+								$name
+							)
+						)
+					);
+				}
+			}
 
 			// Calculate budget allocations.
 			$savings = $monthly_income * $savings_goal;
 			$expenses = $monthly_income - $savings;
+
+			// Standard allocation percentages for expenses.
+			$allocation_percentages = array(
+				'housing'        => 0.30,
+				'food'           => 0.15,
+				'transportation' => 0.15,
+				'utilities'      => 0.10,
+				'entertainment'  => 0.10,
+				'other'          => 0.20,
+			);
+
+			$allocations = array( 'savings' => round( $savings, 2 ) );
+			foreach ( $allocation_percentages as $category => $percentage ) {
+				$allocations[ $category ] = round( $expenses * $percentage, 2 );
+			}
 
 			// Create budget.
 			$budget_id = uniqid( 'budget_', true );
@@ -3652,20 +3734,18 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'            => $name,
 				'monthly_income'  => $monthly_income,
 				'savings_goal'    => $savings_goal,
-				'allocations'     => array(
-					'savings'      => $savings,
-					'housing'      => $expenses * 0.30,
-					'food'         => $expenses * 0.15,
-					'transportation' => $expenses * 0.15,
-					'utilities'    => $expenses * 0.10,
-					'other'        => $expenses * 0.30,
-				),
+				'allocations'     => $allocations,
 				'created'         => current_time( 'mysql' ),
 				'created_by'      => get_current_user_id(),
+				'metadata'        => array(
+					'ip'               => $validator->get_client_ip(),
+					'user_agent'       => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'total_allocated'  => array_sum( $allocations ),
+					'savings_percentage' => round( $savings_goal * 100, 2 ),
+				),
 			);
 
 			// Save budget.
-			$budgets = get_option( 'wp_mcp_ai_budgets', array() );
 			$budgets[ $budget_id ] = $budget;
 			update_option( 'wp_mcp_ai_budgets', $budgets );
 
@@ -3674,7 +3754,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'           => $name,
 				'monthly_income' => $monthly_income,
 				'savings'        => $savings,
-				'allocations'    => $budget['allocations'],
+				'savings_pct'    => round( $savings_goal * 100, 2 ) . '%',
+				'allocations'    => $allocations,
+				'view_url'       => admin_url( "admin.php?page=wp-mcp-ai-budgets&budget={$budget_id}" ),
 			);
 
 			$this->log_activity( 'budget-create', $args, $result );
@@ -3682,13 +3764,15 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %s: budget name */
-					__( 'Budget "%s" created successfully.', 'mcp-ai-wpoos' ),
-					$name
+					/* translators: 1: budget name, 2: savings percentage */
+					__( 'Budget "%1$s" created with %2$s%% savings goal.', 'mcp-ai-wpoos' ),
+					$name,
+					round( $savings_goal * 100, 2 )
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'budget-create', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -3705,12 +3789,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_image_edit( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'attachment_id' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'upload_files' ) ) {
 			return $this->error_response(
@@ -3721,45 +3799,139 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'attachment_id' => array(
+				'type'     => 'integer',
+				'required' => true,
+				'min'      => 1,
+			),
+			'operation'     => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'optimize', 'resize', 'crop', 'watermark', 'rotate', 'flip' ),
+			),
+			'width'         => array(
+				'type'     => 'integer',
+				'required' => false,
+				'min'      => 1,
+				'max'      => 10000,
+			),
+			'height'        => array(
+				'type'     => 'integer',
+				'required' => false,
+				'min'      => 1,
+				'max'      => 10000,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'image-edit', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
 			$attachment_id = absint( $args['attachment_id'] );
 			$operation = isset( $args['operation'] ) ? sanitize_text_field( $args['operation'] ) : 'optimize';
 
-			// Get image details.
-			$image_meta = wp_get_attachment_metadata( $attachment_id );
-			if ( ! $image_meta ) {
+			// Verify attachment exists and is an image.
+			$attachment = get_post( $attachment_id );
+			if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 				return $this->error_response(
 					new WP_Error(
-						'invalid_attachment',
-						__( 'Invalid attachment ID.', 'mcp-ai-wpoos' )
+						'E002',
+						sprintf(
+							/* translators: %d: attachment ID */
+							__( 'Attachment ID %d not found.', 'mcp-ai-wpoos' ),
+							$attachment_id
+						)
 					)
 				);
 			}
 
-			// Simulate image edit operation.
+			// Verify it's an image.
+			$mime_type = get_post_mime_type( $attachment_id );
+			if ( ! str_starts_with( $mime_type, 'image/' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'E002',
+						sprintf(
+							/* translators: %s: mime type */
+							__( 'Attachment is not an image (type: %s). Only image files can be edited.', 'mcp-ai-wpoos' ),
+							$mime_type
+						)
+					)
+				);
+			}
+
+			// Get image metadata.
+			$image_meta = wp_get_attachment_metadata( $attachment_id );
+			if ( ! $image_meta ) {
+				return $this->error_response(
+					new WP_Error(
+						'E002',
+						__( 'Unable to retrieve image metadata. The image file may be corrupted.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Validate operation-specific requirements.
+			if ( 'resize' === $operation ) {
+				if ( ! isset( $args['width'] ) && ! isset( $args['height'] ) ) {
+					return $this->error_response(
+						new WP_Error(
+							'E001',
+							__( 'Resize operation requires width and/or height parameters.', 'mcp-ai-wpoos' )
+						)
+					);
+				}
+			}
+
+			// Get file path and size.
+			$file_path = get_attached_file( $attachment_id );
+			$file_size = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+			// Simulate image edit operation (in production, this would perform actual edits).
 			$result = array(
 				'attachment_id' => $attachment_id,
 				'operation'     => $operation,
 				'status'        => 'completed',
-				'original_size' => isset( $image_meta['filesize'] ) ? $image_meta['filesize'] : 0,
+				'original_size' => $file_size,
+				'mime_type'     => $mime_type,
 				'dimensions'    => array(
 					'width'  => $image_meta['width'],
 					'height' => $image_meta['height'],
 				),
+				'url'           => wp_get_attachment_url( $attachment_id ),
 			);
+
+			// Add operation-specific data.
+			if ( 'resize' === $operation && ( isset( $args['width'] ) || isset( $args['height'] ) ) ) {
+				$result['new_dimensions'] = array(
+					'width'  => isset( $args['width'] ) ? absint( $args['width'] ) : $image_meta['width'],
+					'height' => isset( $args['height'] ) ? absint( $args['height'] ) : $image_meta['height'],
+				);
+			}
 
 			$this->log_activity( 'image-edit', $args, $result );
 
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %s: operation name */
-					__( 'Image %s completed successfully.', 'mcp-ai-wpoos' ),
-					$operation
+					/* translators: 1: operation name, 2: attachment ID */
+					__( 'Image %1$s completed successfully for attachment #%2$d.', 'mcp-ai-wpoos' ),
+					$operation,
+					$attachment_id
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'image-edit', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -3776,12 +3948,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_translate_content( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'content', 'target_language' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -3792,35 +3958,119 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// ISO 639-1 language codes.
+		$valid_languages = array( 'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar', 'hi', 'nl', 'pl', 'tr', 'vi', 'th', 'sv', 'da', 'no', 'fi', 'cs', 'hu', 'ro', 'uk', 'el', 'he', 'id', 'ms', 'tl', 'auto' );
+
+		// Define validation schema.
+		$schema = array(
+			'content'         => array(
+				'type'     => 'string',
+				'required' => true,
+				'min'      => 1,
+				'max'      => 10000,
+			),
+			'target_language' => array(
+				'type'     => 'string',
+				'required' => true,
+				'enum'     => $valid_languages,
+			),
+			'source_language' => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => $valid_languages,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'translate-content', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
+			// Normalize data.
 			$content = sanitize_textarea_field( $args['content'] );
-			$target_language = sanitize_text_field( $args['target_language'] );
-			$source_language = isset( $args['source_language'] ) ? sanitize_text_field( $args['source_language'] ) : 'auto';
+			$target_language = strtolower( sanitize_text_field( $args['target_language'] ) );
+			$source_language = isset( $args['source_language'] ) ? strtolower( sanitize_text_field( $args['source_language'] ) ) : 'auto';
+
+			// Validate content length.
+			$content_length = mb_strlen( $content );
+			if ( $content_length > 10000 ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						sprintf(
+							/* translators: 1: max length, 2: actual length */
+							__( 'Content exceeds maximum length of %1$d characters. Your content is %2$d characters.', 'mcp-ai-wpoos' ),
+							10000,
+							$content_length
+						)
+					)
+				);
+			}
+
+			// Check for cached translation (to avoid duplicate translations).
+			$cache_key = 'translation_' . md5( $content . $source_language . $target_language );
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				$cached['from_cache'] = true;
+				$this->log_activity( 'translate-content', $args, array( 'cache_hit' => true ) );
+				return $this->success_response(
+					$cached,
+					__( 'Translation retrieved from cache.', 'mcp-ai-wpoos' )
+				);
+			}
 
 			// Simulate translation (in real implementation, would call translation API).
 			$translation_id = uniqid( 'translation_', true );
 
+			// Get language names for user-friendly output.
+			$language_names = array(
+				'en' => 'English', 'es' => 'Spanish', 'fr' => 'French', 'de' => 'German',
+				'it' => 'Italian', 'pt' => 'Portuguese', 'ru' => 'Russian', 'ja' => 'Japanese',
+				'ko' => 'Korean', 'zh' => 'Chinese', 'ar' => 'Arabic', 'hi' => 'Hindi',
+				'auto' => 'Auto-detected',
+			);
+
 			$result = array(
 				'translation_id'   => $translation_id,
 				'source_language'  => $source_language,
+				'source_lang_name' => isset( $language_names[ $source_language ] ) ? $language_names[ $source_language ] : $source_language,
 				'target_language'  => $target_language,
-				'original_length'  => strlen( $content ),
+				'target_lang_name' => isset( $language_names[ $target_language ] ) ? $language_names[ $target_language ] : $target_language,
+				'original_length'  => $content_length,
 				'translated_text'  => "[Translated to {$target_language}] {$content}",
 				'status'           => 'completed',
+				'from_cache'       => false,
+				'metadata'         => array(
+					'ip'            => $validator->get_client_ip(),
+					'user_agent'    => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'word_count'    => str_word_count( $content ),
+					'char_count'    => $content_length,
+				),
 			);
+
+			// Cache translation for 1 hour.
+			set_transient( $cache_key, $result, HOUR_IN_SECONDS );
 
 			$this->log_activity( 'translate-content', $args, $result );
 
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %s: target language */
-					__( 'Content translated to %s successfully.', 'mcp-ai-wpoos' ),
-					$target_language
+					/* translators: 1: source language, 2: target language */
+					__( 'Content translated from %1$s to %2$s successfully.', 'mcp-ai-wpoos' ),
+					isset( $language_names[ $source_language ] ) ? $language_names[ $source_language ] : $source_language,
+					isset( $language_names[ $target_language ] ) ? $language_names[ $target_language ] : $target_language
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'translate-content', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
