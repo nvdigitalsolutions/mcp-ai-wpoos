@@ -131,10 +131,12 @@ class WP_MCP_AI_WebChat_CPT {
 		// Load metabox implementations.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-webchat-metabox-details.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-webchat-metabox-participants.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-webchat-metabox-assistant.php';
 
 		// Initialize metabox instances.
 		self::$metaboxes['details']      = new WP_MCP_AI_WebChat_Metabox_Details();
 		self::$metaboxes['participants'] = new WP_MCP_AI_WebChat_Metabox_Participants();
+		self::$metaboxes['assistant']    = new WP_MCP_AI_WebChat_Metabox_Assistant();
 	}
 
 	/**
@@ -341,5 +343,15 @@ class WP_MCP_AI_WebChat_CPT {
 	public static function get_participants_count( $post_id ) {
 		$participants = get_post_meta( $post_id, '_webchat_participants', true );
 		return is_array( $participants ) ? count( $participants ) : 0;
+	}
+
+	/**
+	 * Get assigned assistant ID from post meta.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return int Assistant post ID, or 0 if none assigned.
+	 */
+	public static function get_assigned_assistant( $post_id ) {
+		return absint( get_post_meta( $post_id, '_mcp_ai_webchat_assigned_assistant', true ) );
 	}
 }

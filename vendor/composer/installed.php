@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/assign-assistant-to-chat-room',
+        'version' => 'dev-copilot/assign-assistant-to-chat-room',
+        'reference' => 'a0ba41e171d76cb20ed8576dcfcda1748501a374',
         'pretty_version' => 'dev-copilot/fix-http-403-error',
         'version' => 'dev-copilot/fix-http-403-error',
         'reference' => 'dc96fe0681df31bd3ec5d880b135b58e35c5a888',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/assign-assistant-to-chat-room',
+            'version' => 'dev-copilot/assign-assistant-to-chat-room',
+            'reference' => 'a0ba41e171d76cb20ed8576dcfcda1748501a374',
             'pretty_version' => 'dev-copilot/fix-http-403-error',
             'version' => 'dev-copilot/fix-http-403-error',
             'reference' => 'dc96fe0681df31bd3ec5d880b135b58e35c5a888',
