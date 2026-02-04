@@ -142,6 +142,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interf
 			return $standings;
 		}
 
+		// Ensure standings is an array before iterating.
+		if ( ! is_array( $standings ) ) {
+			$standings = array();
+		}
+
 		$formatted_standings = array();
 		$rank                = 1;
 

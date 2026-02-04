@@ -204,11 +204,15 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 				return 'Bench' !== $player['lineup_slot'] && 'IR' !== $player['lineup_slot'];
 			}
 		);
-		$actual_score    = array_sum( array_column( $actual_starters, 'points' ) );
+		// Safely calculate score, ensuring we have valid arrays before using array_sum and array_column.
+		$actual_points   = is_array( $actual_starters ) ? array_column( $actual_starters, 'points' ) : array();
+		$actual_score    = is_array( $actual_points ) ? array_sum( $actual_points ) : 0;
 
 		// Calculate optimal lineup.
-		$optimal_lineup = $this->calculate_optimal_lineup( $all_players, $roster_requirements );
-		$optimal_score  = array_sum( array_column( $optimal_lineup, 'points' ) );
+		$optimal_lineup  = $this->calculate_optimal_lineup( $all_players, $roster_requirements );
+		// Safely calculate optimal score, ensuring we have valid arrays.
+		$optimal_points  = is_array( $optimal_lineup ) ? array_column( $optimal_lineup, 'points' ) : array();
+		$optimal_score   = is_array( $optimal_points ) ? array_sum( $optimal_points ) : 0;
 
 		// Find changes needed.
 		$changes = $this->find_lineup_changes( $actual_starters, $optimal_lineup );
@@ -293,6 +297,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup implements WP_MCP_AI_Tool_Inter
 	 * @return array Optimal lineup.
 	 */
 	protected function calculate_optimal_lineup( $players, $roster_requirements ) {
+		// Ensure players is an array before sorting.
+		if ( ! is_array( $players ) ) {
+			return array();
+		}
+
 		// Sort players by points (highest first).
 		usort(
 			$players,

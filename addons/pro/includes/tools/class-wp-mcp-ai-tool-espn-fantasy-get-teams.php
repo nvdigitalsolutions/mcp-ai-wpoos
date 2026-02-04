@@ -142,6 +142,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams implements WP_MCP_AI_Tool_Interface,
 			return $teams;
 		}
 
+		// Ensure teams is an array before mapping.
+		if ( ! is_array( $teams ) ) {
+			$teams = array();
+		}
+
 		$formatted_teams = array_map( array( $this, 'format_team_data' ), $teams );
 
 		/* translators: %d: number of teams */

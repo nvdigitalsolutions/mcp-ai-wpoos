@@ -190,6 +190,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster implements WP_MCP_AI_Tool_Interface
 	protected function format_roster_data( $roster ) {
 		$entries = isset( $roster['entries'] ) ? $roster['entries'] : array();
 
+		// Ensure entries is an array before iterating.
+		if ( ! is_array( $entries ) ) {
+			$entries = array();
+		}
+
 		$starters    = array();
 		$bench       = array();
 		$ir          = array();
