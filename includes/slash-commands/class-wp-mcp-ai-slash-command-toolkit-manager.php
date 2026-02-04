@@ -321,7 +321,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'config' => array(
 					'handler'     => array( $this, 'handle_content_translate' ),
 					'description' => __( 'Translate content to multiple languages', 'mcp-ai-wpoos' ),
-					'usage'       => '/content-translate --post_id=123 --languages="es,fr,de"',
+					'usage'       => '/content-translate --post_id=123 --languages="es, fr, de"',
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'content_publishing',
 				),
@@ -423,7 +423,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'config' => array(
 					'handler'     => array( $this, 'handle_thumbnail_generate' ),
 					'description' => __( 'Auto-generate thumbnails for media', 'mcp-ai-wpoos' ),
-					'usage'       => '/thumbnail-generate --attachment_id=456 --sizes="thumbnail,medium,large"',
+					'usage'       => '/thumbnail-generate --attachment_id=456 --sizes="thumbnail, medium, large"',
 					'capability'  => 'upload_files',
 					'toolkit'     => 'media_processing',
 				),
@@ -1146,8 +1146,8 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		try {
-			// Parse languages (e.g., "es,fr,de").
-			$language_codes = array_map( 'trim', explode( ',', $languages ) );
+			// Parse languages (e.g., "es, fr, de").
+			$language_codes = array_map( 'trim', explode( ', ', $languages ) );
 			$translations   = array();
 
 			foreach ( $language_codes as $lang_code ) {
@@ -2211,7 +2211,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$file_path = get_attached_file( $attachment_id );
 
 			// Get requested sizes or use all registered sizes.
-			$sizes = isset( $args['sizes'] ) ? array_map( 'trim', explode( ',', $args['sizes'] ) ) : null;
+			$sizes = isset( $args['sizes'] ) ? array_map( 'trim', explode( ', ', $args['sizes'] ) ) : null;
 
 			// Regenerate thumbnails.
 			require_once ABSPATH . 'wp-admin/includes/image.php';
@@ -3030,7 +3030,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			// Mock research results.
 			$research = array(
 				'query'         => $query,
-				'sources_used'  => explode( ',', $sources ),
+				'sources_used'  => explode( ', ', $sources ),
 				'results_found' => 15,
 				'top_results'   => array(
 					array(
@@ -3269,9 +3269,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		return $this->handle_generic_command( $args, $context );
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PRO TOOLKIT COMMANDS (19 Toolkits)
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Get AI Tool Builder toolkit commands.
@@ -4991,9 +4991,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		return $commands;
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// HIGH-PRIORITY COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle aitool-create command.
@@ -5195,9 +5195,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PHASE 1: ADDITIONAL HIGH-PRIORITY HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle analytics-dashboard command.
@@ -5254,7 +5254,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		try {
 			// Normalize data.
 			$dashboard_name = $validator->normalize_name( $args['name'] );
-			$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'revenue,sessions,conversions';
+			$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'revenue, sessions, conversions';
 			$time_range = isset( $args['time_range'] ) ? sanitize_text_field( $args['time_range'] ) : 'last-30-days';
 
 			// Check for duplicate dashboard name.
@@ -5275,7 +5275,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			// Parse and validate metrics.
-			$metrics_array = array_map( 'trim', explode( ',', $metrics ) );
+			$metrics_array = array_map( 'trim', explode( ', ', $metrics ) );
 			$valid_metrics = array( 'revenue', 'sessions', 'conversions', 'pageviews', 'bounces', 'users', 'avg_duration', 'exit_rate' );
 			$metrics_array = array_intersect( $metrics_array, $valid_metrics );
 			if ( empty( $metrics_array ) ) {
@@ -5428,7 +5428,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						// Remove # prefix if present.
 						return ltrim( $tag, '#' );
 					},
-					explode( ',', $hashtags )
+					explode( ', ', $hashtags )
 				);
 				$hashtags_array = array_filter( $hashtags_array ); // Remove empty values.
 			}
@@ -6387,14 +6387,14 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		try {
 			// Normalize data.
 			$industry = isset( $args['industry'] ) ? strtolower( trim( sanitize_text_field( $args['industry'] ) ) ) : 'general';
-			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement,conversion';
+			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement, conversion';
 
 			// Parse and normalize goals.
 			$goals_array = array_map(
 				function( $goal ) {
 					return strtolower( trim( $goal ) );
 				},
-				explode( ',', $goals )
+				explode( ', ', $goals )
 			);
 			$valid_goals = array( 'engagement', 'conversion', 'traffic', 'seo', 'performance', 'accessibility', 'security', 'mobile' );
 			$goals_array = array_intersect( $goals_array, $valid_goals );
@@ -6403,7 +6403,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			// Check for duplicate research - explicit duplicate detection.
-			$research_hash = md5( $industry . implode( ',', $goals_array ) );
+			$research_hash = md5( $industry . implode( ', ', $goals_array ) );
 			$recent_research = get_option( 'wp_mcp_ai_recent_research', array() );
 			
 			// Check if identical research was done recently (within 1 hour).
@@ -6908,8 +6908,8 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			$plugin = sanitize_text_field( $args['plugin'] );
-			$checks = ! empty( $args['checks'] ) ? sanitize_text_field( $args['checks'] ) : 'security,performance,standards';
-			$check_types = array_map( 'trim', explode( ',', $checks ) );
+			$checks = ! empty( $args['checks'] ) ? sanitize_text_field( $args['checks'] ) : 'security, performance, standards';
+			$check_types = array_map( 'trim', explode( ', ', $checks ) );
 
 			// Verify plugin exists.
 			$all_plugins = get_plugins();
@@ -7763,8 +7763,8 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				return $this->error_response( __( 'You do not have permission to check vulnerabilities.', 'mcp-ai-wpoos' ) );
 			}
 
-			$check = ! empty( $args['check'] ) ? sanitize_text_field( $args['check'] ) : 'plugins,themes,core';
-			$check_types = array_map( 'trim', explode( ',', $check ) );
+			$check = ! empty( $args['check'] ) ? sanitize_text_field( $args['check'] ) : 'plugins, themes, core';
+			$check_types = array_map( 'trim', explode( ', ', $check ) );
 
 			$vulnerabilities = array();
 
@@ -8126,9 +8126,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PRO TOOLKIT COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle upsell-suggest command.
@@ -8305,7 +8305,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	public function handle_social_analytics( $args, $context ) {
 		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
 		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'week';
-		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'engagement,reach,clicks';
+		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'engagement, reach, clicks';
 
 		// Get social posts from storage.
 		$posts = get_option( 'wp_mcp_ai_social_posts', array() );
@@ -8388,7 +8388,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$template = sanitize_text_field( $args['template'] );
-		$input = array_map( 'absint', explode( ',', $args['input'] ) );
+		$input = array_map( 'absint', explode( ', ', $args['input'] ) );
 		$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'video-output-' . time();
 
 		// Create video template job.
@@ -8429,7 +8429,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	public function handle_video_analytics( $args, $context ) {
 		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
 		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'week';
-		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'views,engagement,completion';
+		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'views, engagement, completion';
 
 		// Get video analytics (simplified).
 		$analytics = array(
@@ -8447,9 +8447,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		);
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PHASE 2: ADDITIONAL E-COMMERCE COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle discount-optimize command.
@@ -8472,7 +8472,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'campaign_name'   => isset( $args['campaign-name'] ) ? sanitize_text_field( $args['campaign-name'] ) : 'Discount Campaign',
 			'discount_type'   => isset( $args['discount-type'] ) ? sanitize_text_field( $args['discount-type'] ) : 'percentage',
 			'amount'          => isset( $args['amount'] ) ? floatval( $args['amount'] ) : 10,
-			'product_ids'     => isset( $args['products'] ) ? array_map( 'absint', explode( ',', $args['products'] ) ) : array(),
+			'product_ids'     => isset( $args['products'] ) ? array_map( 'absint', explode( ', ', $args['products'] ) ) : array(),
 			'expiry_date'     => isset( $args['expiry'] ) ? sanitize_text_field( $args['expiry'] ) : null,
 		);
 
@@ -8523,9 +8523,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		);
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PHASE 2: ADDITIONAL SOCIAL MEDIA COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle social-schedule command.
@@ -8543,9 +8543,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$content = sanitize_textarea_field( $args['content'] );
-		$platforms = array_map( 'sanitize_text_field', explode( ',', $args['platforms'] ) );
+		$platforms = array_map( 'sanitize_text_field', explode( ', ', $args['platforms'] ) );
 		$schedule_time = sanitize_text_field( $args['time'] );
-		$media = isset( $args['media'] ) ? array_map( 'absint', explode( ',', $args['media'] ) ) : array();
+		$media = isset( $args['media'] ) ? array_map( 'absint', explode( ', ', $args['media'] ) ) : array();
 
 		// Validate datetime format.
 		$timestamp = strtotime( $schedule_time );
@@ -8700,9 +8700,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		);
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PHASE 2: ADDITIONAL VIDEO PRODUCTION COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle video-merge command.
@@ -8720,7 +8720,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				return $this->error_response( __( 'Video IDs are required.', 'mcp-ai-wpoos' ) );
 			}
 
-			$video_ids = array_map( 'absint', explode( ',', $args['videos'] ) );
+			$video_ids = array_map( 'absint', explode( ', ', $args['videos'] ) );
 			$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'merged-video-' . time();
 			$transitions = isset( $args['transitions'] );
 
@@ -8753,7 +8753,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$tool = new WP_MCP_AI_Tool_Merge_Videos();
 
 		$tool_args = array(
-			'video_ids'   => array_map( 'absint', explode( ',', $args['videos'] ) ),
+			'video_ids'   => array_map( 'absint', explode( ', ', $args['videos'] ) ),
 			'output_name' => isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : null,
 			'transitions' => isset( $args['transitions'] ),
 		);
@@ -8910,9 +8910,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		);
 	}
 
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 	// PHASE 3: ADDITIONAL COMMAND HANDLERS
-	// ========================================================================
+	// = === == === == === == === == === == === == === == === == === == === == === == === == === == === ===
 
 	/**
 	 * Handle bundle-create command.
@@ -8930,7 +8930,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		$bundle_name = sanitize_text_field( $args['name'] );
-		$product_ids = array_map( 'absint', explode( ',', $args['products'] ) );
+		$product_ids = array_map( 'absint', explode( ', ', $args['products'] ) );
 		$discount = isset( $args['discount'] ) ? floatval( $args['discount'] ) : 10;
 		$fixed_price = isset( $args['fixed-price'] ) ? floatval( $args['fixed-price'] ) : null;
 

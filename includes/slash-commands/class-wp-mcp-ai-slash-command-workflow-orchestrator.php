@@ -122,7 +122,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command' => 'ecom-analytics',
-						'params'  => array( 'metrics' => 'recovery-rate,revenue' ),
+						'params'  => array( 'metrics' => 'recovery-rate, revenue' ),
 					),
 				),
 			),
@@ -138,7 +138,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						'command' => 'social-post',
 						'params'  => array(
 							'content'   => '{post_content}',
-							'platforms' => 'facebook,twitter,instagram,linkedin',
+							'platforms' => 'facebook, twitter, instagram, linkedin',
 						),
 					),
 					array(
@@ -163,7 +163,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						'command' => 'social-post',
 						'params'  => array(
 							'content'   => '{video_description}',
-							'platforms' => 'youtube,facebook,instagram',
+							'platforms' => 'youtube, facebook, instagram',
 							'media'     => '{previous.video_id}',
 						),
 					),
@@ -197,7 +197,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command' => 'ecom-analytics',
-						'params'  => array( 'metrics' => 'low-stock,stock-out-risk', 'format' => 'json' ),
+						'params'  => array( 'metrics' => 'low-stock, stock-out-risk', 'format' => 'json' ),
 					),
 					array(
 						'command' => 'customer-segment',
