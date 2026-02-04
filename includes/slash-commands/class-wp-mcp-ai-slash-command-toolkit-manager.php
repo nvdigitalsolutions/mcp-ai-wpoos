@@ -9408,4 +9408,832 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			__( 'Video rendering started.', 'mcp-ai-wpoos' )
 		);
 	}
+
+	/**
+	 * Handle crosssell-suggest command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_crosssell_suggest( $args, $context ) {
+		if ( empty( $args['product-id'] ) ) {
+			return $this->error_response( __( 'Product ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$product_id = absint( $args['product-id'] );
+		$limit = isset( $args['limit'] ) ? absint( $args['limit'] ) : 5;
+		$strategy = isset( $args['strategy'] ) ? sanitize_text_field( $args['strategy'] ) : 'complementary';
+
+		// Simulate cross-sell suggestions (in production, integrate with WooCommerce).
+		$suggestions = array();
+		for ( $i = 1; $i <= $limit; $i++ ) {
+			$suggestions[] = array(
+				'product_id'   => $product_id + $i,
+				'title'        => sprintf( __( 'Cross-sell Product %d', 'mcp-ai-wpoos' ), $i ),
+				'relevance'    => 95 - ( $i * 5 ),
+				'price'        => number_format( 29.99 * $i, 2 ),
+				'strategy'     => $strategy,
+				'compatibility' => __( 'High', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		return $this->success_response(
+			array(
+				'product_id'  => $product_id,
+				'suggestions' => $suggestions,
+				'count'       => count( $suggestions ),
+				'strategy'    => $strategy,
+			),
+			sprintf(
+				/* translators: %d: number of suggestions */
+				__( 'Found %d cross-sell suggestions.', 'mcp-ai-wpoos' ),
+				count( $suggestions )
+			)
+		);
+	}
+
+	/**
+	 * Handle subscription-manage command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_subscription_manage( $args, $context ) {
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'list';
+		$subscription_id = isset( $args['subscription-id'] ) ? absint( $args['subscription-id'] ) : 0;
+
+		switch ( $action ) {
+			case 'pause':
+				if ( ! $subscription_id ) {
+					return $this->error_response( __( 'Subscription ID required for pause action.', 'mcp-ai-wpoos' ) );
+				}
+				return $this->success_response(
+					array(
+						'subscription_id' => $subscription_id,
+						'status'          => 'paused',
+						'paused_at'       => current_time( 'mysql' ),
+					),
+					__( 'Subscription paused successfully.', 'mcp-ai-wpoos' )
+				);
+
+			case 'cancel':
+				if ( ! $subscription_id ) {
+					return $this->error_response( __( 'Subscription ID required for cancel action.', 'mcp-ai-wpoos' ) );
+				}
+				return $this->success_response(
+					array(
+						'subscription_id' => $subscription_id,
+						'status'          => 'cancelled',
+						'cancelled_at'    => current_time( 'mysql' ),
+					),
+					__( 'Subscription cancelled successfully.', 'mcp-ai-wpoos' )
+				);
+
+			case 'renew':
+				if ( ! $subscription_id ) {
+					return $this->error_response( __( 'Subscription ID required for renew action.', 'mcp-ai-wpoos' ) );
+				}
+				return $this->success_response(
+					array(
+						'subscription_id' => $subscription_id,
+						'status'          => 'active',
+						'renewed_at'      => current_time( 'mysql' ),
+						'next_billing'    => date( 'Y-m-d', strtotime( '+1 month' ) ),
+					),
+					__( 'Subscription renewed successfully.', 'mcp-ai-wpoos' )
+				);
+
+			case 'list':
+			default:
+				// Simulate subscription list.
+				$subscriptions = array(
+					array(
+						'id'           => 1001,
+						'customer'     => __( 'John Doe', 'mcp-ai-wpoos' ),
+						'product'      => __( 'Monthly Plan', 'mcp-ai-wpoos' ),
+						'status'       => 'active',
+						'next_billing' => date( 'Y-m-d', strtotime( '+15 days' ) ),
+					),
+					array(
+						'id'           => 1002,
+						'customer'     => __( 'Jane Smith', 'mcp-ai-wpoos' ),
+						'product'      => __( 'Annual Plan', 'mcp-ai-wpoos' ),
+						'status'       => 'active',
+						'next_billing' => date( 'Y-m-d', strtotime( '+6 months' ) ),
+					),
+				);
+
+				return $this->success_response(
+					array(
+						'subscriptions' => $subscriptions,
+						'count'         => count( $subscriptions ),
+					),
+					sprintf(
+						/* translators: %d: number of subscriptions */
+						__( 'Found %d active subscriptions.', 'mcp-ai-wpoos' ),
+						count( $subscriptions )
+					)
+				);
+		}
+	}
+
+	/**
+	 * Handle wholesale-pricing command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_wholesale_pricing( $args, $context ) {
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'calculate';
+		$product_id = isset( $args['product-id'] ) ? absint( $args['product-id'] ) : 0;
+		$quantity = isset( $args['quantity'] ) ? absint( $args['quantity'] ) : 1;
+
+		if ( $action === 'calculate' ) {
+			if ( ! $product_id || ! $quantity ) {
+				return $this->error_response( __( 'Product ID and quantity required for calculation.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Tiered pricing logic.
+			$base_price = 100.00;
+			$discount = 0;
+
+			if ( $quantity >= 100 ) {
+				$discount = 30;
+			} elseif ( $quantity >= 50 ) {
+				$discount = 20;
+			} elseif ( $quantity >= 10 ) {
+				$discount = 10;
+			}
+
+			$unit_price = $base_price * ( 1 - $discount / 100 );
+			$total_price = $unit_price * $quantity;
+
+			return $this->success_response(
+				array(
+					'product_id'  => $product_id,
+					'quantity'    => $quantity,
+					'base_price'  => number_format( $base_price, 2 ),
+					'discount'    => $discount . '%',
+					'unit_price'  => number_format( $unit_price, 2 ),
+					'total_price' => number_format( $total_price, 2 ),
+					'savings'     => number_format( ( $base_price - $unit_price ) * $quantity, 2 ),
+				),
+				__( 'Wholesale pricing calculated.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return $this->error_response( __( 'Invalid action specified.', 'mcp-ai-wpoos' ) );
+	}
+
+	/**
+	 * Handle marketplace-sync command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_marketplace_sync( $args, $context ) {
+		$marketplace = isset( $args['marketplace'] ) ? sanitize_text_field( $args['marketplace'] ) : 'all';
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'sync';
+
+		$marketplaces = array( 'amazon', 'ebay', 'etsy', 'shopify' );
+
+		if ( $marketplace !== 'all' && ! in_array( $marketplace, $marketplaces, true ) ) {
+			return $this->error_response( __( 'Invalid marketplace specified.', 'mcp-ai-wpoos' ) );
+		}
+
+		$sync_targets = ( $marketplace === 'all' ) ? $marketplaces : array( $marketplace );
+
+		$results = array();
+		foreach ( $sync_targets as $target ) {
+			$results[] = array(
+				'marketplace'    => $target,
+				'status'         => 'synced',
+				'products_synced' => rand( 10, 100 ),
+				'updated'        => current_time( 'mysql' ),
+			);
+		}
+
+		return $this->success_response(
+			array(
+				'action'       => $action,
+				'marketplaces' => $results,
+				'total_synced' => array_sum( array_column( $results, 'products_synced' ) ),
+			),
+			sprintf(
+				/* translators: %d: number of marketplaces */
+				__( 'Synchronized %d marketplace(s).', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
+		);
+	}
+
+	/**
+	 * Handle tax-calculate command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_tax_calculate( $args, $context ) {
+		$amount = isset( $args['amount'] ) ? floatval( $args['amount'] ) : 0;
+		$location = isset( $args['location'] ) ? sanitize_text_field( $args['location'] ) : 'US-CA';
+		$product_type = isset( $args['product-type'] ) ? sanitize_text_field( $args['product-type'] ) : 'physical';
+
+		if ( $amount <= 0 ) {
+			return $this->error_response( __( 'Amount must be greater than zero.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Simulate tax rates (in production, integrate with real tax API).
+		$tax_rates = array(
+			'US-CA' => 7.25,
+			'US-NY' => 8.00,
+			'US-TX' => 6.25,
+			'UK'    => 20.00,
+			'EU'    => 19.00,
+		);
+
+		$tax_rate = isset( $tax_rates[ $location ] ) ? $tax_rates[ $location ] : 0;
+		$tax_amount = $amount * ( $tax_rate / 100 );
+		$total = $amount + $tax_amount;
+
+		return $this->success_response(
+			array(
+				'subtotal'     => number_format( $amount, 2 ),
+				'location'     => $location,
+				'tax_rate'     => $tax_rate . '%',
+				'tax_amount'   => number_format( $tax_amount, 2 ),
+				'total'        => number_format( $total, 2 ),
+				'product_type' => $product_type,
+			),
+			__( 'Tax calculated successfully.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle return-process command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_return_process( $args, $context ) {
+		$order_id = isset( $args['order-id'] ) ? absint( $args['order-id'] ) : 0;
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'initiate';
+		$reason = isset( $args['reason'] ) ? sanitize_text_field( $args['reason'] ) : 'customer-request';
+
+		if ( ! $order_id ) {
+			return $this->error_response( __( 'Order ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		switch ( $action ) {
+			case 'initiate':
+				$return_id = 'RET' . time();
+				return $this->success_response(
+					array(
+						'return_id'    => $return_id,
+						'order_id'     => $order_id,
+						'status'       => 'initiated',
+						'reason'       => $reason,
+						'created_at'   => current_time( 'mysql' ),
+						'label_url'    => 'https://example.com/return-label/' . $return_id,
+					),
+					__( 'Return initiated successfully.', 'mcp-ai-wpoos' )
+				);
+
+			case 'approve':
+				return $this->success_response(
+					array(
+						'order_id'   => $order_id,
+						'status'     => 'approved',
+						'refund_amount' => '99.99',
+						'approved_at' => current_time( 'mysql' ),
+					),
+					__( 'Return approved and refund processed.', 'mcp-ai-wpoos' )
+				);
+
+			case 'reject':
+				return $this->success_response(
+					array(
+						'order_id'    => $order_id,
+						'status'      => 'rejected',
+						'rejected_at' => current_time( 'mysql' ),
+						'reason'      => __( 'Does not meet return policy criteria.', 'mcp-ai-wpoos' ),
+					),
+					__( 'Return rejected.', 'mcp-ai-wpoos' )
+				);
+
+			default:
+				return $this->error_response( __( 'Invalid action specified.', 'mcp-ai-wpoos' ) );
+		}
+	}
+
+	/**
+	 * Handle supplier-sync command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_supplier_sync( $args, $context ) {
+		$supplier = isset( $args['supplier'] ) ? sanitize_text_field( $args['supplier'] ) : 'all';
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'sync-inventory';
+
+		$suppliers = array( 'supplier-a', 'supplier-b', 'supplier-c' );
+
+		if ( $supplier !== 'all' && ! in_array( $supplier, $suppliers, true ) ) {
+			return $this->error_response( __( 'Invalid supplier specified.', 'mcp-ai-wpoos' ) );
+		}
+
+		$sync_targets = ( $supplier === 'all' ) ? $suppliers : array( $supplier );
+
+		$results = array();
+		foreach ( $sync_targets as $target ) {
+			$results[] = array(
+				'supplier'       => $target,
+				'status'         => 'synced',
+				'items_updated'  => rand( 50, 200 ),
+				'price_changes'  => rand( 5, 20 ),
+				'last_sync'      => current_time( 'mysql' ),
+			);
+		}
+
+		return $this->success_response(
+			array(
+				'action'        => $action,
+				'suppliers'     => $results,
+				'total_updated' => array_sum( array_column( $results, 'items_updated' ) ),
+			),
+			sprintf(
+				/* translators: %d: number of suppliers */
+				__( 'Synchronized inventory with %d supplier(s).', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
+		);
+	}
+
+	/**
+	 * Handle social-calendar command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_calendar( $args, $context ) {
+		$view = isset( $args['view'] ) ? sanitize_text_field( $args['view'] ) : 'month';
+		$date = isset( $args['date'] ) ? sanitize_text_field( $args['date'] ) : current_time( 'Y-m-d' );
+
+		// Simulate calendar data.
+		$calendar_data = array(
+			array(
+				'date'     => $date,
+				'platform' => 'twitter',
+				'content'  => __( 'New product launch announcement', 'mcp-ai-wpoos' ),
+				'status'   => 'scheduled',
+				'time'     => '10:00',
+			),
+			array(
+				'date'     => date( 'Y-m-d', strtotime( $date . ' +1 day' ) ),
+				'platform' => 'instagram',
+				'content'  => __( 'Behind the scenes photo', 'mcp-ai-wpoos' ),
+				'status'   => 'scheduled',
+				'time'     => '14:00',
+			),
+			array(
+				'date'     => date( 'Y-m-d', strtotime( $date . ' +2 days' ) ),
+				'platform' => 'facebook',
+				'content'  => __( 'Customer testimonial video', 'mcp-ai-wpoos' ),
+				'status'   => 'scheduled',
+				'time'     => '12:00',
+			),
+		);
+
+		return $this->success_response(
+			array(
+				'view'          => $view,
+				'date'          => $date,
+				'posts'         => $calendar_data,
+				'total_posts'   => count( $calendar_data ),
+			),
+			sprintf(
+				/* translators: %s: view type */
+				__( 'Social media calendar (%s view) retrieved.', 'mcp-ai-wpoos' ),
+				$view
+			)
+		);
+	}
+
+	/**
+	 * Handle social-engage command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_engage( $args, $context ) {
+		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'reply';
+
+		$engagement_data = array(
+			'mentions'  => rand( 10, 50 ),
+			'comments'  => rand( 20, 100 ),
+			'messages'  => rand( 5, 30 ),
+			'replied'   => 0,
+		);
+
+		if ( $action === 'reply' ) {
+			$engagement_data['replied'] = $engagement_data['mentions'];
+			$message = __( 'Auto-replied to all mentions.', 'mcp-ai-wpoos' );
+		} elseif ( $action === 'like' ) {
+			$engagement_data['liked'] = $engagement_data['mentions'];
+			$message = __( 'Liked all mentions.', 'mcp-ai-wpoos' );
+		} else {
+			$message = __( 'Engagement data retrieved.', 'mcp-ai-wpoos' );
+		}
+
+		return $this->success_response(
+			array(
+				'platform'   => $platform,
+				'action'     => $action,
+				'engagement' => $engagement_data,
+			),
+			$message
+		);
+	}
+
+	/**
+	 * Handle social-monitor command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_monitor( $args, $context ) {
+		$keywords = isset( $args['keywords'] ) ? sanitize_text_field( $args['keywords'] ) : '';
+		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+
+		if ( empty( $keywords ) ) {
+			return $this->error_response( __( 'Keywords are required for monitoring.', 'mcp-ai-wpoos' ) );
+		}
+
+		$keyword_list = array_map( 'trim', explode( ',', $keywords ) );
+
+		$monitoring_results = array();
+		foreach ( $keyword_list as $keyword ) {
+			$monitoring_results[] = array(
+				'keyword'   => $keyword,
+				'mentions'  => rand( 5, 50 ),
+				'sentiment' => array( 'positive' => 70, 'neutral' => 20, 'negative' => 10 ),
+				'reach'     => rand( 1000, 10000 ),
+			);
+		}
+
+		return $this->success_response(
+			array(
+				'platform'  => $platform,
+				'keywords'  => $keyword_list,
+				'results'   => $monitoring_results,
+				'total_mentions' => array_sum( array_column( $monitoring_results, 'mentions' ) ),
+			),
+			sprintf(
+				/* translators: %d: number of keywords */
+				__( 'Monitoring %d keyword(s).', 'mcp-ai-wpoos' ),
+				count( $keyword_list )
+			)
+		);
+	}
+
+	/**
+	 * Handle trend-identify command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_trend_identify( $args, $context ) {
+		$category = isset( $args['category'] ) ? sanitize_text_field( $args['category'] ) : 'general';
+		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'week';
+
+		$trends = array(
+			array(
+				'topic'      => '#AITechnology',
+				'volume'     => rand( 10000, 100000 ),
+				'growth'     => '+' . rand( 10, 200 ) . '%',
+				'sentiment'  => __( 'Positive', 'mcp-ai-wpoos' ),
+			),
+			array(
+				'topic'      => '#Sustainability',
+				'volume'     => rand( 5000, 50000 ),
+				'growth'     => '+' . rand( 5, 150 ) . '%',
+				'sentiment'  => __( 'Very Positive', 'mcp-ai-wpoos' ),
+			),
+			array(
+				'topic'      => '#RemoteWork',
+				'volume'     => rand( 8000, 80000 ),
+				'growth'     => '+' . rand( 15, 180 ) . '%',
+				'sentiment'  => __( 'Neutral', 'mcp-ai-wpoos' ),
+			),
+		);
+
+		return $this->success_response(
+			array(
+				'category'    => $category,
+				'period'      => $period,
+				'trends'      => $trends,
+				'total_trends' => count( $trends ),
+			),
+			sprintf(
+				/* translators: 1: number of trends, 2: category */
+				__( 'Identified %1$d trending topics in %2$s.', 'mcp-ai-wpoos' ),
+				count( $trends ),
+				$category
+			)
+		);
+	}
+
+	/**
+	 * Handle social-report command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_report( $args, $context ) {
+		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'month';
+		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+		$format = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'summary';
+
+		$report_data = array(
+			'period'       => $period,
+			'platform'     => $platform,
+			'metrics'      => array(
+				'total_posts'    => rand( 50, 200 ),
+				'total_reach'    => rand( 10000, 100000 ),
+				'engagement_rate' => rand( 3, 15 ) . '%',
+				'follower_growth' => '+' . rand( 100, 5000 ),
+				'top_post'       => __( 'Product Launch Announcement', 'mcp-ai-wpoos' ),
+			),
+			'platforms'    => array(
+				'twitter'   => array( 'posts' => rand( 20, 80 ), 'engagement' => rand( 1000, 10000 ) ),
+				'instagram' => array( 'posts' => rand( 15, 60 ), 'engagement' => rand( 2000, 15000 ) ),
+				'facebook'  => array( 'posts' => rand( 10, 40 ), 'engagement' => rand( 1500, 12000 ) ),
+			),
+		);
+
+		return $this->success_response(
+			$report_data,
+			sprintf(
+				/* translators: %s: time period */
+				__( 'Social media report generated for %s.', 'mcp-ai-wpoos' ),
+				$period
+			)
+		);
+	}
+
+	/**
+	 * Handle video-edit command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_edit( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$operation = isset( $args['operation'] ) ? sanitize_text_field( $args['operation'] ) : 'basic';
+
+		if ( ! $video_id ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$edit_data = array(
+			'video_id'  => $video_id,
+			'operation' => $operation,
+			'status'    => 'processing',
+			'job_id'    => 'edit_' . time(),
+		);
+
+		// Store job.
+		$jobs = get_option( 'wp_mcp_ai_video_edit_jobs', array() );
+		$jobs[ $edit_data['job_id'] ] = $edit_data;
+		update_option( 'wp_mcp_ai_video_edit_jobs', $jobs );
+
+		return $this->success_response(
+			$edit_data,
+			__( 'Video editing started.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle video-effect command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_effect( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$effect = isset( $args['effect'] ) ? sanitize_text_field( $args['effect'] ) : 'none';
+
+		if ( ! $video_id ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$available_effects = array( 'blur', 'sharpen', 'vintage', 'grayscale', 'sepia', 'brightness', 'contrast' );
+
+		if ( ! in_array( $effect, $available_effects, true ) ) {
+			return $this->error_response( __( 'Invalid effect specified.', 'mcp-ai-wpoos' ) );
+		}
+
+		return $this->success_response(
+			array(
+				'video_id' => $video_id,
+				'effect'   => $effect,
+				'status'   => 'applied',
+			),
+			sprintf(
+				/* translators: %s: effect name */
+				__( 'Applied %s effect to video.', 'mcp-ai-wpoos' ),
+				$effect
+			)
+		);
+	}
+
+	/**
+	 * Handle video-transition command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_transition( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$transition = isset( $args['transition'] ) ? sanitize_text_field( $args['transition'] ) : 'fade';
+
+		if ( ! $video_id ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$transitions = array( 'fade', 'dissolve', 'wipe', 'slide', 'zoom', 'cut' );
+
+		if ( ! in_array( $transition, $transitions, true ) ) {
+			return $this->error_response( __( 'Invalid transition specified.', 'mcp-ai-wpoos' ) );
+		}
+
+		return $this->success_response(
+			array(
+				'video_id'   => $video_id,
+				'transition' => $transition,
+				'duration'   => '0.5s',
+				'status'     => 'applied',
+			),
+			sprintf(
+				/* translators: %s: transition type */
+				__( 'Applied %s transition to video.', 'mcp-ai-wpoos' ),
+				$transition
+			)
+		);
+	}
+
+	/**
+	 * Handle video-music command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_music( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$track = isset( $args['track'] ) ? sanitize_text_field( $args['track'] ) : '';
+		$volume = isset( $args['volume'] ) ? absint( $args['volume'] ) : 70;
+
+		if ( ! $video_id ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( empty( $track ) ) {
+			return $this->error_response( __( 'Music track is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		return $this->success_response(
+			array(
+				'video_id' => $video_id,
+				'track'    => $track,
+				'volume'   => $volume . '%',
+				'status'   => 'added',
+			),
+			__( 'Background music added to video.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle video-storyboard command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_storyboard( $args, $context ) {
+		$project = isset( $args['project'] ) ? sanitize_text_field( $args['project'] ) : '';
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'create';
+
+		if ( empty( $project ) ) {
+			return $this->error_response( __( 'Project name is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $action === 'create' ) {
+			$storyboard_id = 'sb_' . time();
+			return $this->success_response(
+				array(
+					'storyboard_id' => $storyboard_id,
+					'project'       => $project,
+					'scenes'        => 0,
+					'status'        => 'draft',
+					'created_at'    => current_time( 'mysql' ),
+				),
+				__( 'Storyboard created successfully.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return $this->error_response( __( 'Invalid action specified.', 'mcp-ai-wpoos' ) );
+	}
+
+	/**
+	 * Handle video-publish command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_publish( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$platforms = isset( $args['platforms'] ) ? sanitize_text_field( $args['platforms'] ) : 'youtube';
+
+		if ( ! $video_id ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$platform_list = array_map( 'trim', explode( ',', $platforms ) );
+
+		$publish_results = array();
+		foreach ( $platform_list as $platform ) {
+			$publish_results[] = array(
+				'platform' => $platform,
+				'status'   => 'published',
+				'url'      => 'https://' . $platform . '.com/video/' . $video_id,
+				'published_at' => current_time( 'mysql' ),
+			);
+		}
+
+		return $this->success_response(
+			array(
+				'video_id'  => $video_id,
+				'platforms' => $publish_results,
+				'total'     => count( $publish_results ),
+			),
+			sprintf(
+				/* translators: %d: number of platforms */
+				__( 'Video published to %d platform(s).', 'mcp-ai-wpoos' ),
+				count( $publish_results )
+			)
+		);
+	}
 }

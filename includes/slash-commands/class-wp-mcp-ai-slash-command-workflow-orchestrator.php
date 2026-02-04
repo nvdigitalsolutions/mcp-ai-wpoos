@@ -314,6 +314,70 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
+			'comprehensive_ecommerce_suite' => array(
+				'name'        => __( 'Comprehensive E-Commerce Suite', 'mcp-ai-wpoos' ),
+				'description' => __( 'Complete e-commerce automation workflow from analytics to customer engagement', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'ecom-analytics',
+						'params'  => array( 'period' => 'month', 'metrics' => 'all' ),
+					),
+					array(
+						'command' => 'inventory-forecast',
+						'params'  => array( 'period' => 30 ),
+					),
+					array(
+						'command' => 'customer-segment',
+						'params'  => array( 'criteria' => 'rfm' ),
+					),
+					array(
+						'command' => 'discount-optimize',
+						'params'  => array(
+							'campaign-name' => 'Automated Campaign',
+							'discount-type' => 'percentage',
+							'amount'        => 15,
+						),
+					),
+					array(
+						'command' => 'upsell-suggest',
+						'params'  => array( 'limit' => 10 ),
+					),
+				),
+			),
+			'video_production_complete' => array(
+				'name'        => __( 'Complete Video Production Pipeline', 'mcp-ai-wpoos' ),
+				'description' => __( 'Full video production workflow from editing to publishing', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'video-edit',
+						'params'  => array( 'video-id' => '{video_id}', 'operation' => 'basic' ),
+					),
+					array(
+						'command' => 'video-trim',
+						'params'  => array( 'video-id' => '{video_id}', 'start' => 0, 'duration' => '{target_duration}' ),
+					),
+					array(
+						'command' => 'video-effect',
+						'params'  => array( 'video-id' => '{video_id}', 'effect' => '{desired_effect}' ),
+					),
+					array(
+						'command' => 'video-music',
+						'params'  => array( 'video-id' => '{video_id}', 'track' => '{music_track}', 'volume' => 70 ),
+					),
+					array(
+						'command' => 'video-subtitle',
+						'params'  => array( 'video-id' => '{video_id}', 'auto-generate' => true ),
+					),
+					array(
+						'command' => 'video-render',
+						'params'  => array( 'project-id' => '{video_id}', 'quality' => 'high', 'format' => 'mp4' ),
+					),
+					array(
+						'command' => 'video-publish',
+						'params'  => array( 'video-id' => '{video_id}', 'platforms' => '{target_platforms}' ),
+					),
+				),
+			),
 		);
 
 		/**
