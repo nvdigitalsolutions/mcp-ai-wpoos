@@ -2,13 +2,20 @@
 
 **Date:** 2026-02-04  
 **Issue:** Users being redirected to wrong Pro Workflow Builder URL  
-**Fix:** Remove duplicate class instantiation
+**Fix:** Remove duplicate class instantiation  
+**Additional Fixes:** Found and fixed 2 more duplicate instantiation issues
 
 ## Problem
 
 Users were being redirected to an incorrect URL when accessing the Pro Workflow Builder:
 - **Incorrect URL:** `/wp-admin/nvoos-pro-workflow-builder` (404 error)
 - **Expected URL:** `/wp-admin/admin.php?page=nvoos-pro-workflow-builder`
+
+## User Report Confirmation
+
+The user correctly noted: **"I am sure we have had this issue in the past, with other admin pages when they were created"**
+
+A comprehensive audit confirmed this observation and revealed 2 additional instances of the same pattern.
 
 ## Root Cause
 
@@ -182,3 +189,60 @@ To prevent similar issues in the future:
 - WordPress Codex: [Administration Menus](https://developer.wordpress.org/reference/functions/add_submenu_page/)
 - Previous fix attempt: PR #3563
 - Related issue: Menu URL generation for admin pages with custom slugs
+
+## Additional Issues Found
+
+During comprehensive audit, 2 more duplicate instantiation issues were discovered and fixed:
+
+### 1. Document Generation Settings Page
+
+**File:** `addons/pro/includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php`
+
+**Issue:** Line 293 instantiated `WP_MCP_AI_Document_Generation_Settings_Page`, which already instantiates itself at the bottom of its own file.
+
+**Before:**
+```php
+// Initialize.
+new WP_MCP_AI_Document_Generation_Settings_Page();
+```
+
+**After:**
+```php
+// Note: WP_MCP_AI_Document_Generation_Settings_Page instantiates itself at the bottom of its own file.
+```
+
+### 2. Image Production Settings Page
+
+**File:** `addons/pro/includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php`
+
+**Issue:** Line 223 instantiated `WP_MCP_AI_Image_Production_Settings_Page`, which already instantiates itself at the bottom of its own file.
+
+**Before:**
+```php
+// Initialize.
+new WP_MCP_AI_Image_Production_Settings_Page();
+```
+
+**After:**
+```php
+// Note: WP_MCP_AI_Image_Production_Settings_Page instantiates itself at the bottom of its own file.
+```
+
+## Audit Script
+
+A comprehensive audit script was created to detect all duplicate instantiation patterns:
+
+**Location:** `/tmp/audit-duplicate-instantiation.sh` (included in testing directory for future use)
+
+**Usage:**
+```bash
+chmod +x audit-duplicate-instantiation.sh
+./audit-duplicate-instantiation.sh
+```
+
+**Results:**
+- Scanned all admin page classes
+- Identified 3 total duplicate instantiation issues
+- All issues have been fixed
+- Remaining flagged classes (Pro_License, Pro_Database) are utility classes that don't register admin menus
+
