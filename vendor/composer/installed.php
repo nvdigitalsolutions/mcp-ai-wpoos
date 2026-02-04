@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-channel-url-format',
-        'version' => 'dev-copilot/fix-chat-channel-url-format',
-        'reference' => 'a78a19b620345c3eb4a7580d1e19ce3145b34b6a',
+        'pretty_version' => 'dev-copilot/fix-configuration-page-setup',
+        'version' => 'dev-copilot/fix-configuration-page-setup',
+        'reference' => '9a790cae9d534f944923dd35bd109ad4aaf93ced',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-channel-url-format',
-            'version' => 'dev-copilot/fix-chat-channel-url-format',
-            'reference' => 'a78a19b620345c3eb4a7580d1e19ce3145b34b6a',
+            'pretty_version' => 'dev-copilot/fix-configuration-page-setup',
+            'version' => 'dev-copilot/fix-configuration-page-setup',
+            'reference' => '9a790cae9d534f944923dd35bd109ad4aaf93ced',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
