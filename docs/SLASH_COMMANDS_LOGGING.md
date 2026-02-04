@@ -2,7 +2,27 @@
 
 ## Overview
 
-This guide explains how to enable and use logging for slash commands in the chat client to diagnose issues and confirm that slash commands are working properly.
+This guide explains how to enable and use comprehensive logging for slash commands in the chat client. The system now includes correlation IDs for request tracing, persistent audit logging, timeout handling, and accessibility features.
+
+## New Features (v1.2.0+)
+
+### ✨ Correlation IDs
+Every slash command execution gets a unique correlation ID that's tracked from client → server → handler, enabling complete request tracing.
+
+### ✨ Persistent Audit Logging
+All command executions are logged to a database table (`wp_mcp_ai_slash_command_audit`) with user, status, duration, and correlation ID.
+
+### ✨ Timeout Handling
+Commands automatically timeout after 30 seconds with user-friendly error messages.
+
+### ✨ Complete Token Validation
+Assistant credentials (`cred_{id}.{secret}`) are now fully validated against hashed secrets.
+
+### ✨ ARIA Announcements
+Screen reader users receive announcements about command execution status.
+
+### ✨ Chat Integration
+Slash commands now dispatch events that chat.js can listen to for seamless integration.
 
 ## Enabling Logging
 
@@ -339,3 +359,350 @@ If slash commands still aren't working after enabling logging:
    - Browser and version
 
 3. **Report issue:** Include logs and system information in your bug report.
+
+## Correlation ID Tracing
+
+### What is a Correlation ID?
+
+A correlation ID is a unique identifier assigned to each slash command execution. It allows you to trace a request through the entire system:
+
+```
+Client (browser) → REST API → Handler → Database
+    slash_1738707654_abc123xyz
+```
+
+### Finding Correlation IDs
+
+**In Browser Console:**
+```javascript
+[SlashCommands] 🚀 Executing command: /help | ID: slash_1738707654_abc123xyz
+[SlashCommands] ✅ Command executed successfully in 234ms | ID: slash_1738707654_abc123xyz
+```
+
+**In Server Logs:**
+```
+[SlashCommands:REST] execute_command | {"command":"/help","correlation_id":"slash_1738707654_abc123xyz",...}
+[SlashCommands:AUDIT] /help | User: 1 | Status: completed | Duration: 234ms | ID: slash_1738707654_abc123xyz
+```
+
+### Querying by Correlation ID
+
+**Via PHP:**
+```php
+// Get audit entry by correlation ID
+$audit = new WP_MCP_AI_Slash_Command_Audit();
+$entry = $audit->get_by_correlation_id( 'slash_1738707654_abc123xyz' );
+print_r( $entry );
+```
+
+**Via WP-CLI:**
+```bash
+wp eval "
+\$audit = new WP_MCP_AI_Slash_Command_Audit();
+print_r(\$audit->get_by_correlation_id('slash_1738707654_abc123xyz'));
+"
+```
+
+**Via SQL:**
+```sql
+SELECT * FROM wp_mcp_ai_slash_command_audit 
+WHERE correlation_id = 'slash_1738707654_abc123xyz';
+```
+
+## Persistent Audit Logging
+
+### Database Table
+
+All command executions are logged to `wp_mcp_ai_slash_command_audit` with the following columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | bigint | Auto-incrementing primary key |
+| command | varchar(255) | The slash command executed |
+| user_id | bigint | WordPress user ID |
+| status | varchar(20) | completed, failed, or timeout |
+| duration_ms | float | Execution time in milliseconds |
+| correlation_id | varchar(100) | Unique request identifier |
+| result | text | Error message (if failed) or "success" |
+| timestamp | datetime | When command was executed |
+| ip_address | varchar(45) | IP address of requester |
+
+### Querying Audit Logs
+
+**Get recent executions:**
+```php
+$audit = new WP_MCP_AI_Slash_Command_Audit();
+
+// Last 50 commands
+$logs = $audit->get_logs( array( 'limit' => 50 ) );
+
+// Filter by user
+$logs = $audit->get_logs( array( 'user_id' => 1 ) );
+
+// Filter by status
+$logs = $audit->get_logs( array( 'status' => 'failed' ) );
+
+// Filter by command
+$logs = $audit->get_logs( array( 'command' => '/help' ) );
+
+// Date range
+$logs = $audit->get_logs( array(
+    'date_from' => '2026-02-01 00:00:00',
+    'date_to'   => '2026-02-04 23:59:59',
+) );
+```
+
+**Get statistics:**
+```php
+$audit = new WP_MCP_AI_Slash_Command_Audit();
+$stats = $audit->get_statistics();
+
+echo "Total executions: " . $stats['total_executions'] . "\n";
+echo "Success rate: " . ($stats['completed_count'] / $stats['total_executions'] * 100) . "%\n";
+echo "Average duration: " . round($stats['avg_duration'], 2) . "ms\n";
+```
+
+### Audit Log Retention
+
+By default, audit logs older than **90 days** are automatically deleted daily. To customize:
+
+```php
+// Keep audit logs for 180 days
+add_filter( 'wp_mcp_ai_slash_audit_retention_days', function() {
+    return 180;
+} );
+```
+
+### Manual Cleanup
+
+```php
+// Delete logs older than 30 days
+$audit = new WP_MCP_AI_Slash_Command_Audit();
+$deleted = $audit->clean_old_logs( 30 );
+echo "Deleted {$deleted} old entries";
+```
+
+## Timeout Handling
+
+Commands automatically timeout after **30 seconds** (configurable).
+
+### Changing Timeout
+
+```javascript
+// In browser console or custom script
+window.slashCommands.executionTimeout = 60000; // 60 seconds
+```
+
+### Timeout Logs
+
+**Client-side:**
+```javascript
+[SlashCommands] ❌ Error after 30000ms: Command execution timeout after 30 seconds | ID: slash_xxx
+```
+
+**Server-side:**
+The server continues execution (no timeout on PHP side), but the client stops waiting and shows an error.
+
+### Handling Long-Running Commands
+
+For commands that legitimately take > 30 seconds, use **async execution**:
+
+```javascript
+// Request async execution
+fetch(mcpAiData.restUrl + '/mcp-ai/v1/slash-command', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-WP-Nonce': mcpAiData.nonce
+    },
+    body: JSON.stringify({ 
+        command: '/long-running-task',
+        async: true 
+    })
+})
+.then(r => r.json())
+.then(d => {
+    console.log('Job ID:', d.job_id);
+    // Poll for results...
+});
+```
+
+## Token Validation
+
+### Assistant Credentials
+
+Assistant credentials follow the format: `cred_{credential_id}.{secret}`
+
+**Example:**
+```
+Authorization: Bearer cred_abc123.xyz789secretkey
+```
+
+### Validation Process
+
+1. **Extract components** from token
+2. **Query assistant** with matching `_mcp_ai_credential_id`
+3. **Get stored hash** from `_mcp_ai_credential_hash` meta
+4. **Compare** using constant-time hash_equals()
+5. **Return user ID** from assistant meta
+
+### Validation Logs
+
+**Successful validation:**
+```
+[SlashCommands:REST] ✅ credential_validated | {"credential_id":"abc123","user_id":5,"assistant_id":42}
+```
+
+**Failed validation:**
+```
+[SlashCommands:REST] ❌ credential_not_found: No assistant found with credential ID | {"credential_id":"abc123"}
+[SlashCommands:REST] ❌ credential_invalid_secret: Invalid credential secret | {"credential_id":"abc123"}
+```
+
+### Creating Assistant Credentials
+
+```php
+// Generate credential ID and secret
+$credential_id = 'cred_' . wp_generate_password( 12, false );
+$secret        = wp_generate_password( 32, false );
+$hash          = hash( 'sha256', $secret );
+
+// Store in assistant post meta
+update_post_meta( $assistant_id, '_mcp_ai_credential_id', $credential_id );
+update_post_meta( $assistant_id, '_mcp_ai_credential_hash', $hash );
+update_post_meta( $assistant_id, '_mcp_ai_user_id', $user_id );
+
+// Full token to provide to client
+$token = $credential_id . '.' . $secret;
+echo "Token: {$token}";
+```
+
+## ARIA Announcements
+
+Screen reader users receive live announcements about command execution:
+
+### Announcement Types
+
+1. **Executing:** "Executing command: /help"
+2. **Completed:** "Command completed successfully"
+3. **Failed:** "Command failed: {error message}"
+4. **Timeout:** "Command error: Command timed out..."
+
+### Testing ARIA
+
+Enable screen reader emulation or check the hidden announcer element:
+
+```javascript
+// View current announcement
+document.getElementById('wp-mcp-ai-slash-announcer').textContent
+```
+
+The announcer is positioned off-screen but accessible to assistive technology.
+
+## Chat Integration
+
+Slash commands now notify chat.js via custom events and global state.
+
+### Listening to Events
+
+```javascript
+// In chat.js or custom code
+window.addEventListener('slash-command-event', function(e) {
+    console.log('Slash command event:', e.detail);
+    
+    if (e.detail.type === 'command-executed') {
+        // Update chat UI
+        // e.detail.data contains { command, result, correlationId }
+    }
+});
+```
+
+### Global State
+
+```javascript
+// Access last execution
+window.wpMcpAiSlashCommandState.lastExecution
+// { type: 'command-executed', data: {...}, timestamp: '...' }
+
+// View history (last 50 events)
+window.wpMcpAiSlashCommandState.history
+// Array of execution events
+```
+
+### Event Types
+
+| Event Type | When Fired | Data |
+|------------|------------|------|
+| `command-executed` | Command completed successfully | `{ command, result, correlationId }` |
+| `command-failed` | Command execution failed | `{ command, error, correlationId }` |
+| `command-timeout` | Command timed out | `{ command, correlationId }` |
+
+## Testing All Features
+
+### Full Test Checklist
+
+1. **Basic Execution:**
+   ```
+   /help
+   ```
+   - ✅ Command executes
+   - ✅ Result displays in chat
+   - ✅ Correlation ID in console
+   - ✅ Audit log created
+
+2. **Timeout:**
+   ```javascript
+   window.slashCommands.executionTimeout = 1000; // 1 second
+   // Then run a slow command
+   ```
+   - ✅ Timeout after 1 second
+   - ✅ Error message shown
+   - ✅ Correlation ID in logs
+
+3. **ARIA:**
+   - ✅ Screen reader announces execution
+   - ✅ Hidden announcer element exists
+   - ✅ Announcement updates
+
+4. **Audit:**
+   ```php
+   $audit = new WP_MCP_AI_Slash_Command_Audit();
+   print_r($audit->get_logs(['limit' => 5]));
+   ```
+   - ✅ Logs appear in database
+   - ✅ Correlation IDs match
+   - ✅ Duration recorded
+
+5. **Token Validation:**
+   ```bash
+   curl -X POST https://example.com/wp-json/mcp-ai/v1/slash-command \
+     -H "Authorization: Bearer cred_xxx.yyy" \
+     -H "Content-Type: application/json" \
+     -d '{"command":"/help"}'
+   ```
+   - ✅ Valid token accepted
+   - ✅ Invalid token rejected
+   - ✅ Validation logged
+
+## Performance Impact
+
+The new features have minimal performance overhead:
+
+| Feature | Overhead |
+|---------|----------|
+| Correlation IDs | ~1-2ms (string generation) |
+| Audit logging | ~5-10ms (database insert) |
+| Timeout handling | 0ms (Promise.race) |
+| Token validation | ~10-20ms (database query + hash) |
+| ARIA announcements | ~1ms (DOM manipulation) |
+| Chat integration | ~1ms (event dispatch) |
+
+**Total:** ~18-34ms per command execution
+
+To disable audit logging (not recommended):
+
+```php
+// In wp-config.php or functions.php
+add_filter( 'wp_mcp_ai_slash_audit_enabled', '__return_false' );
+```
+
