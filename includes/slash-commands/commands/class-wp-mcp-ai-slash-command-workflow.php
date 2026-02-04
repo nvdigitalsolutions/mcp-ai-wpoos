@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Executes YAML-defined workflows with support for:
  * - Sequential step execution
  * - Parallel step execution (NEW in 1.2.1)
+ * - Conditional branching (NEW in 1.2.1)
  * - Context passing between steps
  * - Integration with existing commands
  * - Error handling and recovery
@@ -426,6 +427,86 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		foreach ( $workflow['steps'] as $index => $step ) {
 			$step_num = $index + 1;
 
+			// Check if this is a conditional execution block.
+			if ( isset( $step['condition'] ) ) {
+				$condition_met = $this->evaluate_condition( $step['condition'], $results['context'] );
+
+				// Execute 'then' branch if condition is true.
+				if ( $condition_met && isset( $step['then'] ) ) {
+					$branch_steps = is_array( $step['then'] ) ? $step['then'] : array( $step['then'] );
+					$branch_result = $this->execute_branch_steps(
+						$branch_steps,
+						$results['context'],
+						$context,
+						$dry_run,
+						$step_num . '.then'
+					);
+
+					// Merge branch results.
+					$results['steps_completed'] += $branch_result['completed'];
+					$results['steps_failed']    += $branch_result['failed'];
+					$results['step_results']     = array_merge( $results['step_results'], $branch_result['step_results'] );
+					$results['context']          = array_merge( $results['context'], $branch_result['context'] );
+
+					// Record condition evaluation.
+					$results['step_results'][] = array(
+						'step'    => $step_num,
+						'task'    => 'conditional',
+						'status'  => 'completed',
+						'message' => sprintf(
+							/* translators: %s: condition expression */
+							__( 'Condition met: %s (executed then branch)', 'mcp-ai-wpoos' ),
+							$step['condition']
+						),
+					);
+				}
+				// Execute 'else' branch if condition is false.
+				elseif ( ! $condition_met && isset( $step['else'] ) ) {
+					$branch_steps = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
+					$branch_result = $this->execute_branch_steps(
+						$branch_steps,
+						$results['context'],
+						$context,
+						$dry_run,
+						$step_num . '.else'
+					);
+
+					// Merge branch results.
+					$results['steps_completed'] += $branch_result['completed'];
+					$results['steps_failed']    += $branch_result['failed'];
+					$results['step_results']     = array_merge( $results['step_results'], $branch_result['step_results'] );
+					$results['context']          = array_merge( $results['context'], $branch_result['context'] );
+
+					// Record condition evaluation.
+					$results['step_results'][] = array(
+						'step'    => $step_num,
+						'task'    => 'conditional',
+						'status'  => 'completed',
+						'message' => sprintf(
+							/* translators: %s: condition expression */
+							__( 'Condition not met: %s (executed else branch)', 'mcp-ai-wpoos' ),
+							$step['condition']
+						),
+					);
+				}
+				// No branch executed.
+				else {
+					$results['step_results'][] = array(
+						'step'    => $step_num,
+						'task'    => 'conditional',
+						'status'  => 'skipped',
+						'message' => sprintf(
+							/* translators: %s: condition expression */
+							__( 'Condition %s: %s (no branch available)', 'mcp-ai-wpoos' ),
+							$condition_met ? 'met' : 'not met',
+							$step['condition']
+						),
+					);
+				}
+
+				continue;
+			}
+
 			// Check if this is a parallel execution block.
 			if ( isset( $step['parallel'] ) && is_array( $step['parallel'] ) ) {
 				$parallel_result = $this->execute_parallel_steps(
@@ -662,6 +743,73 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	}
 
 	/**
+	 * Execute steps in a conditional branch
+	 *
+	 * @param array  $steps            Array of step definitions for the branch.
+	 * @param array  $workflow_context Workflow context.
+	 * @param array  $execution_context Execution context.
+	 * @param bool   $dry_run          Dry run mode.
+	 * @param string $branch_prefix    Prefix for step numbering (e.g., "1.then").
+	 * @return array Branch execution results.
+	 */
+	private function execute_branch_steps( $steps, $workflow_context, $execution_context, $dry_run, $branch_prefix ) {
+		$branch_results = array(
+			'completed'    => 0,
+			'failed'       => 0,
+			'step_results' => array(),
+			'context'      => array(),
+		);
+
+		// Execute each step in the branch.
+		foreach ( $steps as $sub_index => $step ) {
+			$step_num = $branch_prefix . '.' . ( $sub_index + 1 );
+
+			if ( $dry_run ) {
+				$branch_results['step_results'][] = array(
+					'step'    => $step_num,
+					'task'    => isset( $step['task'] ) ? $step['task'] : 'branch-step',
+					'status'  => 'skipped',
+					'message' => __( 'Dry run - branch step not executed', 'mcp-ai-wpoos' ),
+				);
+				continue;
+			}
+
+			// Execute the step.
+			$step_result = $this->execute_step( $step, $workflow_context, $execution_context );
+
+			if ( is_wp_error( $step_result ) ) {
+				$branch_results['failed']++;
+				$branch_results['step_results'][] = array(
+					'step'   => $step_num,
+					'task'   => $step['task'],
+					'status' => 'failed',
+					'error'  => $step_result->get_error_message(),
+				);
+
+				// Stop on failure unless continue_on_error is set.
+				if ( empty( $step['continue_on_error'] ) ) {
+					break;
+				}
+			} else {
+				$branch_results['completed']++;
+				$branch_results['step_results'][] = array(
+					'step'   => $step_num,
+					'task'   => $step['task'],
+					'status' => 'completed',
+					'result' => $step_result,
+				);
+
+				// Update context with step results.
+				if ( isset( $step['output_var'] ) && is_array( $step_result ) ) {
+					$branch_results['context'][ $step['output_var'] ] = $step_result;
+				}
+			}
+		}
+
+		return $branch_results;
+	}
+
+	/**
 	 * Execute a slash command
 	 *
 	 * @param string $command Command name.
@@ -876,6 +1024,41 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
+			'conditional-publish' => array(
+				'name'        => 'Conditional Content Publishing',
+				'description' => 'Check draft count and conditionally publish or notify admin',
+				'steps'       => array(
+					array(
+						'task'       => 'next-task',
+						'params'     => array(
+							'type'  => 'drafts',
+							'limit' => 10,
+						),
+						'output_var' => 'draft_check',
+					),
+					array(
+						'condition' => '{{draft_check}} > 3',
+						'then'      => array(
+							array(
+								'task'   => 'ship',
+								'params' => array(
+									'limit'   => 5,
+									'publish' => true,
+								),
+							),
+						),
+						'else' => array(
+							array(
+								'task'   => 'notify_admin',
+								'params' => array(
+									'subject' => 'Low Draft Count',
+									'message' => 'Only a few drafts are ready. Consider creating more content.',
+								),
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -903,15 +1086,16 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		foreach ( $results['step_results'] as $step_result ) {
 			$status_icon = array(
-				'completed' => '✅',
-				'failed'    => '❌',
-				'skipped'   => '⏭️',
+				'completed'         => '✅',
+				'completed-timeout' => '⚠️',
+				'failed'            => '❌',
+				'skipped'           => '⏭️',
 			);
 
 			$icon = isset( $status_icon[ $step_result['status'] ] ) ? $status_icon[ $step_result['status'] ] : '❓';
 
 			$output .= sprintf(
-				"%s **Step %d:** %s (%s)\n",
+				"%s **Step %s:** %s (%s)\n",
 				$icon,
 				$step_result['step'],
 				esc_html( $step_result['task'] ),
@@ -924,6 +1108,14 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$output .= sprintf( "   - %s\n", esc_html( $step_result['message'] ) );
 			}
 
+			if ( isset( $step_result['warning'] ) ) {
+				$output .= sprintf( "   - Warning: %s\n", esc_html( $step_result['warning'] ) );
+			}
+
+			if ( isset( $step_result['duration'] ) ) {
+				$output .= sprintf( "   - Duration: %ss\n", $step_result['duration'] );
+			}
+
 			$output .= "\n";
 		}
 
@@ -932,5 +1124,94 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Evaluate conditional expression
+	 *
+	 * Supports simple comparison operators:
+	 * - == (equals)
+	 * - != (not equals)
+	 * - > (greater than)
+	 * - >= (greater than or equal)
+	 * - < (less than)
+	 * - <= (less than or equal)
+	 * - contains (string contains)
+	 * - empty (is empty)
+	 * - not_empty (is not empty)
+	 *
+	 * @param string $condition Condition expression (e.g., "{{var}} > 5").
+	 * @param array  $context   Workflow context for variable replacement.
+	 * @return bool Whether condition evaluates to true.
+	 */
+	private function evaluate_condition( $condition, $context ) {
+		// Replace context variables.
+		$condition = $this->replace_context_vars( $condition, $context );
+
+		// Check for empty/not_empty special cases.
+		if ( preg_match( '/^\s*empty\s*$/i', $condition ) ) {
+			return true; // Always true if literal "empty".
+		}
+		if ( preg_match( '/^\s*not_empty\s*$/i', $condition ) ) {
+			return true; // Always true if literal "not_empty".
+		}
+
+		// Parse comparison operators.
+		$operators = array(
+			'>=', '<=', '==', '!=', '>', '<', 'contains', 'empty', 'not_empty',
+		);
+
+		foreach ( $operators as $operator ) {
+			if ( false !== stripos( $condition, $operator ) ) {
+				$parts = array_map( 'trim', explode( $operator, $condition, 2 ) );
+
+				if ( count( $parts ) !== 2 ) {
+					continue;
+				}
+
+				list( $left, $right ) = $parts;
+
+				// Handle special operators.
+				switch ( strtolower( $operator ) ) {
+					case 'contains':
+						return false !== stripos( $left, $right );
+
+					case 'empty':
+						return empty( $left );
+
+					case 'not_empty':
+						return ! empty( $left );
+				}
+
+				// Numeric comparison.
+				if ( is_numeric( $left ) && is_numeric( $right ) ) {
+					switch ( $operator ) {
+						case '>':
+							return (float) $left > (float) $right;
+						case '>=':
+							return (float) $left >= (float) $right;
+						case '<':
+							return (float) $left < (float) $right;
+						case '<=':
+							return (float) $left <= (float) $right;
+						case '==':
+							return (float) $left == (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
+						case '!=':
+							return (float) $left != (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
+					}
+				}
+
+				// String comparison.
+				switch ( $operator ) {
+					case '==':
+						return $left === $right;
+					case '!=':
+						return $left !== $right;
+				}
+			}
+		}
+
+		// If no operator found, treat as boolean evaluation.
+		return ! empty( $condition ) && 'false' !== strtolower( $condition ) && '0' !== $condition;
 	}
 }
