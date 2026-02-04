@@ -50,7 +50,7 @@ Traditional command-based automation requires technical knowledge and can be err
 ### Accessing the Builder
 
 1. Log in to WordPress admin
-2. Navigate to **NV oOS → Pro Workflows**
+2. Navigate to **NV oOS Pro → Pro Workflows**
 3. Click **New Workflow** to start building
 
 ### Your First Workflow
