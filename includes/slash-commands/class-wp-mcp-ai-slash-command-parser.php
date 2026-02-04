@@ -47,8 +47,8 @@ class WP_MCP_AI_Slash_Command_Parser {
 		// Remove leading slash
 		$input = substr( $input, 1 );
 
-		// Extract command name (first word)
-		if ( ! preg_match( '/^(\w+)(.*)$/s', $input, $matches ) ) {
+		// Extract command name (allowing alphanumeric, underscores, and hyphens for multi-word commands)
+		if ( ! preg_match( '/^([a-zA-Z0-9_-]+)(.*)$/s', $input, $matches ) ) {
 			return new WP_Error(
 				'invalid_command_name',
 				__( 'Invalid command name', 'mcp-ai-wpoos' )

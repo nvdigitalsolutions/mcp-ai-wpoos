@@ -13,10 +13,14 @@
 	 */
 	class SlashCommandsDashboard {
 		constructor() {
+			console.log('[SlashCommandsDashboard] Initializing...');
+			console.log('[SlashCommandsDashboard] wpMcpAiSlashCommands:', wpMcpAiSlashCommands);
 			this.init();
 		}
 
 		init() {
+			console.log('[SlashCommandsDashboard] Setting up tabs...');
+			
 			// Commands tab.
 			this.initCommandsTab();
 
@@ -28,6 +32,8 @@
 
 			// Test tab.
 			this.initTestTab();
+			
+			console.log('[SlashCommandsDashboard] Initialization complete');
 		}
 
 		/**
@@ -105,23 +111,33 @@
 		 * Initialize test tab.
 		 */
 		initTestTab() {
+			console.log('[SlashCommandsDashboard] Initializing test tab...');
+			
 			// Execute command on button click.
 			$(document).on('click', '#execute-command-btn', () => {
+				console.log('[Test Tab] Execute button clicked');
 				const command = $('#command-input').val().trim();
+				console.log('[Test Tab] Command input value:', command);
 				if (command) {
 					this.executeCommand(command);
+				} else {
+					console.warn('[Test Tab] No command entered');
 				}
 			});
 
 			// Execute command on Enter key.
 			$(document).on('keypress', '#command-input', (e) => {
 				if (e.which === 13) { // Enter key
+					console.log('[Test Tab] Enter key pressed');
 					const command = $('#command-input').val().trim();
+					console.log('[Test Tab] Command input value:', command);
 					if (command) {
 						this.executeCommand(command);
 					}
 				}
 			});
+			
+			console.log('[Test Tab] Test tab initialized');
 		}
 
 		/**
@@ -163,8 +179,14 @@
 		 * Execute workflow.
 		 */
 		executeWorkflow(workflow) {
+			console.log('[Workflow] Executing workflow:', workflow);
+			
 			$('#workflow-execution-output').show().addClass('executing');
 			$('#workflow-execution-content').html('<p>Executing workflow...</p>');
+
+			console.log('[Workflow] Sending AJAX request...');
+			console.log('[Workflow] URL:', wpMcpAiSlashCommands.ajaxUrl);
+			console.log('[Workflow] Nonce:', wpMcpAiSlashCommands.nonce ? 'Present' : 'MISSING');
 
 			$.ajax({
 				url: wpMcpAiSlashCommands.ajaxUrl,
@@ -175,15 +197,25 @@
 					workflow: workflow
 				},
 				success: (response) => {
+					console.log('[Workflow] AJAX success response:', response);
+					
 					$('#workflow-execution-output').removeClass('executing');
 					if (response.success) {
+						console.log('[Workflow] Workflow executed successfully');
 						$('#workflow-execution-content').html('<pre>' + this.escapeHtml(response.data.output) + '</pre>');
 					} else {
+						console.error('[Workflow] Workflow execution failed:', response.data);
 						const errorMessage = response.data && response.data.message ? response.data.message : 'Unknown error occurred';
 						$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(errorMessage) + '</p>');
 					}
 				},
 				error: (xhr, textStatus, errorThrown) => {
+					console.error('[Workflow] AJAX error occurred');
+					console.error('[Workflow] XHR:', xhr);
+					console.error('[Workflow] Status:', textStatus);
+					console.error('[Workflow] Error thrown:', errorThrown);
+					console.error('[Workflow] Response text:', xhr.responseText);
+					
 					$('#workflow-execution-output').removeClass('executing');
 					let errorMessage = 'Request failed';
 					if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
@@ -195,6 +227,7 @@
 					} else if (xhr.status) {
 						errorMessage = 'HTTP ' + xhr.status + ' error';
 					}
+					console.error('[Workflow] Final error message:', errorMessage);
 					$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(errorMessage) + '</p>');
 				}
 			});
@@ -204,17 +237,23 @@
 		 * Execute command from test tab.
 		 */
 		executeCommand(command) {
+			console.log('[Test Tab] Executing command:', command);
+			
 			const $output = $('#command-output');
 			$output.addClass('executing');
 			$output.html('<p class="no-output">Executing command...</p>');
 
 			this.sendCommandRequest(command, (response) => {
+				console.log('[Test Tab] Command response:', response);
+				
 				$output.removeClass('executing success error');
 
 				if (response.success) {
+					console.log('[Test Tab] Command executed successfully');
 					$output.addClass('success');
 					$output.text(response.data.output);
 				} else {
+					console.error('[Test Tab] Command execution failed:', response.data);
 					$output.addClass('error');
 					const errorMessage = response.data && response.data.message ? response.data.message : 'Unknown error occurred';
 					$output.text('Error: ' + errorMessage);
@@ -226,6 +265,10 @@
 		 * Send command request.
 		 */
 		sendCommandRequest(command, callback) {
+			console.log('[AJAX] Sending command request:', command);
+			console.log('[AJAX] URL:', wpMcpAiSlashCommands.ajaxUrl);
+			console.log('[AJAX] Nonce:', wpMcpAiSlashCommands.nonce ? 'Present' : 'MISSING');
+			
 			$.ajax({
 				url: wpMcpAiSlashCommands.ajaxUrl,
 				type: 'POST',
@@ -234,8 +277,17 @@
 					nonce: wpMcpAiSlashCommands.nonce,
 					command: command
 				},
-				success: callback,
+				success: (response) => {
+					console.log('[AJAX] Success response:', response);
+					callback(response);
+				},
 				error: (xhr, textStatus, errorThrown) => {
+					console.error('[AJAX] Error occurred');
+					console.error('[AJAX] XHR:', xhr);
+					console.error('[AJAX] Status:', textStatus);
+					console.error('[AJAX] Error thrown:', errorThrown);
+					console.error('[AJAX] Response text:', xhr.responseText);
+					
 					let errorMessage = 'Request failed';
 					if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
 						errorMessage = xhr.responseJSON.data.message;
@@ -246,6 +298,7 @@
 					} else if (xhr.status) {
 						errorMessage = 'HTTP ' + xhr.status + ' error';
 					}
+					console.error('[AJAX] Final error message:', errorMessage);
 					callback({
 						success: false,
 						data: {
@@ -398,12 +451,32 @@
 			div.textContent = text;
 			return div.innerHTML;
 		}
+
+		/**
+		 * Wrap callback with logging.
+		 *
+		 * @param {Function} callback Original callback function.
+		 * @param {string} context Context for logging (e.g., 'Test Tab', 'Workflow').
+		 * @return {Function} Wrapped callback with logging.
+		 */
+		loggedCallback(callback, context) {
+			return (response) => {
+				console.log(`[${context}] Response:`, response);
+				callback(response);
+			};
+		}
 	}
 
 	// Initialize when document is ready.
 	$(document).ready(() => {
+		console.log('[SlashCommandsDashboard] Document ready');
+		console.log('[SlashCommandsDashboard] Looking for dashboard element...');
+		
 		if ($('.wp-mcp-ai-slash-commands-dashboard').length) {
+			console.log('[SlashCommandsDashboard] Dashboard element found, initializing...');
 			new SlashCommandsDashboard();
+		} else {
+			console.warn('[SlashCommandsDashboard] Dashboard element not found on page');
 		}
 	});
 
