@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-url',
+        'version' => 'dev-copilot/fix-pro-workflow-builder-url',
+        'reference' => '1c9df3b2696a5df3cd9ce4fe61fcd119a396e066',
         'pretty_version' => 'dev-copilot/debug-slash-commands-functionality',
         'version' => 'dev-copilot/debug-slash-commands-functionality',
         'reference' => 'bb497b2a4b7426ccd44f9b9edd65f1db3cc41120',
@@ -10,9 +13,27 @@
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => false,
+        'dev' => true,
     ),
     'versions' => array(
+        'cweagans/composer-configurable-plugin' => array(
+            'pretty_version' => '2.0.0',
+            'version' => '2.0.0.0',
+            'reference' => '15433906511a108a1806710e988629fd24b89974',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../cweagans/composer-configurable-plugin',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
+        'cweagans/composer-patches' => array(
+            'pretty_version' => '2.0.0',
+            'version' => '2.0.0.0',
+            'reference' => 'bfa6018a5f864653d9ed899b902ea72f858a2cf7',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../cweagans/composer-patches',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
         'guzzlehttp/guzzle' => array(
             'pretty_version' => '7.10.0',
             'version' => '7.10.0.0',
@@ -50,6 +71,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-url',
+            'version' => 'dev-copilot/fix-pro-workflow-builder-url',
+            'reference' => '1c9df3b2696a5df3cd9ce4fe61fcd119a396e066',
             'pretty_version' => 'dev-copilot/debug-slash-commands-functionality',
             'version' => 'dev-copilot/debug-slash-commands-functionality',
             'reference' => 'bb497b2a4b7426ccd44f9b9edd65f1db3cc41120',
