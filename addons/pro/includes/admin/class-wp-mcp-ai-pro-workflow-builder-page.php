@@ -26,7 +26,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'wp-mcp-ai-pro-workflow-builder';
+	const PAGE_SLUG = 'nvoos-pro-workflow-builder';
 
 	/**
 	 * Constructor.
