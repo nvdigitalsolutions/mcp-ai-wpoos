@@ -181,6 +181,11 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League implements WP_MCP_AI_Tool_Interfac
 			return $teams;
 		}
 
+		// Ensure teams is an array before iterating.
+		if ( ! is_array( $teams ) ) {
+			$teams = array();
+		}
+
 		$created_count = 0;
 		$updated_count = 0;
 		$skipped_count = 0;
