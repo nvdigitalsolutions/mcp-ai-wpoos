@@ -149,9 +149,18 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 		update_post_meta( $room_id, '_mcp_ai_webchat_active_participants', 0 );
 		update_post_meta( $room_id, '_mcp_ai_webchat_status', 'active' );
 
-		// Get signaling server from settings.
-		$settings        = get_option( 'wp_mcp_ai_webchat_settings', array() );
-		$signaling_server = isset( $settings['default_signaling_server'] ) ? $settings['default_signaling_server'] : '';
+		// Get signaling configuration.
+		$settings         = get_option( 'wp_mcp_ai_webchat_settings', array() );
+		$use_self_hosted  = isset( $settings['enable_self_hosted_signaling'] ) ? (bool) $settings['enable_self_hosted_signaling'] : true;
+		$signaling_server = '';
+
+		if ( $use_self_hosted ) {
+			// Use self-hosted REST API endpoint.
+			$signaling_server = rest_url( 'mcp-ai/v1/webchat/' );
+		} elseif ( isset( $settings['default_signaling_server'] ) && $settings['default_signaling_server'] ) {
+			// Use external WebSocket server.
+			$signaling_server = $settings['default_signaling_server'];
+		}
 
 		if ( $signaling_server ) {
 			update_post_meta( $room_id, '_mcp_ai_webchat_signaling_server', $signaling_server );
@@ -176,6 +185,8 @@ class WP_MCP_AI_Tool_Create_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP
 			'max_participants' => $max_participants,
 			'allow_anonymous'  => $allow_anonymous,
 			'status'           => 'active',
+			'signaling_type'   => $use_self_hosted ? 'self-hosted' : 'external',
+			'signaling_server' => $signaling_server,
 			'author_id'        => $current_user_id,
 			'created_at'       => get_the_date( 'c', $room_id ),
 		);

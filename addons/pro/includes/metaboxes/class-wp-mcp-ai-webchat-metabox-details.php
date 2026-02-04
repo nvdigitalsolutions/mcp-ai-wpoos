@@ -124,15 +124,57 @@ class WP_MCP_AI_WebChat_Metabox_Details extends WP_MCP_AI_WebChat_Metabox_Base {
 				<label for="wp_mcp_ai_webchat_signaling_server">
 					<strong><?php esc_html_e( 'Signaling Server URL:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
-				<input
-					type="url"
-					id="wp_mcp_ai_webchat_signaling_server"
-					name="wp_mcp_ai_webchat_signaling_server"
-					value="<?php echo esc_attr( $signaling_server ); ?>"
-					class="widefat"
-					placeholder="<?php echo esc_attr( get_option( 'wp_mcp_ai_webchat_default_signaling_server', '' ) ); ?>"
-				/>
-				<span class="description"><?php esc_html_e( 'Optional override from global settings', 'mcp-ai-wpoos-pro' ); ?></span>
+				<?php
+				// Check if self-hosted signaling is enabled.
+				$webchat_settings = get_option( 'wp_mcp_ai_webchat_settings', array() );
+				$use_self_hosted  = isset( $webchat_settings['enable_self_hosted_signaling'] ) ? (bool) $webchat_settings['enable_self_hosted_signaling'] : true;
+
+				if ( $use_self_hosted ) {
+					// Display self-hosted info.
+					$self_hosted_url = rest_url( 'mcp-ai/v1/webchat/' );
+					?>
+					<p style="padding: 10px; background: #e7f3ff; border-left: 4px solid #007cba; margin: 5px 0;">
+						<strong><?php esc_html_e( '✓ Self-Hosted Signaling Enabled', 'mcp-ai-wpoos-pro' ); ?></strong><br>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: REST API endpoint URL */
+								__( 'Using WordPress REST API: <code>%s</code>', 'mcp-ai-wpoos-pro' ),
+								esc_url( $self_hosted_url )
+							)
+						);
+						?>
+					</p>
+					<input
+						type="hidden"
+						id="wp_mcp_ai_webchat_signaling_server"
+						name="wp_mcp_ai_webchat_signaling_server"
+						value=""
+					/>
+					<?php
+				} else {
+					// Show external server field.
+					?>
+					<input
+						type="url"
+						id="wp_mcp_ai_webchat_signaling_server"
+						name="wp_mcp_ai_webchat_signaling_server"
+						value="<?php echo esc_attr( $signaling_server ); ?>"
+						class="widefat"
+						placeholder="<?php echo esc_attr( get_option( 'wp_mcp_ai_webchat_default_signaling_server', '' ) ); ?>"
+					/>
+					<?php
+				}
+				?>
+				<span class="description">
+					<?php
+					if ( $use_self_hosted ) {
+						esc_html_e( 'Self-hosted signaling is enabled in WebChat settings. No external server required.', 'mcp-ai-wpoos-pro' );
+					} else {
+						esc_html_e( 'External WebSocket URL for signaling. Configure in WebChat settings to use self-hosted instead.', 'mcp-ai-wpoos-pro' );
+					}
+					?>
+				</span>
 			</p>
 
 			<p>
