@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-package-references-issues',
-        'version' => 'dev-copilot/fix-package-references-issues',
-        'reference' => '61b947f8f60dff2b774feb9a02ff2193d18e6282',
+        'pretty_version' => 'dev-copilot/add-slash-command-support',
+        'version' => 'dev-copilot/add-slash-command-support',
+        'reference' => '8264314b9f7a1bf4e3ad5f10f0bc9fecd6a4b153',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-package-references-issues',
-            'version' => 'dev-copilot/fix-package-references-issues',
-            'reference' => '61b947f8f60dff2b774feb9a02ff2193d18e6282',
+            'pretty_version' => 'dev-copilot/add-slash-command-support',
+            'version' => 'dev-copilot/add-slash-command-support',
+            'reference' => '8264314b9f7a1bf4e3ad5f10f0bc9fecd6a4b153',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

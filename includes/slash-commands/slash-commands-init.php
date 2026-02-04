@@ -513,6 +513,16 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		true
 	);
 
+	// Localize script with REST API data.
+	wp_localize_script(
+		'mcp-ai-slash-commands',
+		'mcpAiData',
+		array(
+			'restUrl' => esc_url_raw( rest_url() ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		)
+	);
+
 	// Enqueue with chat bundle if it's loaded.
 	add_action(
 		'wp_enqueue_scripts',
