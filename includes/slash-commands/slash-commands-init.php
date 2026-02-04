@@ -32,6 +32,9 @@ function wp_mcp_ai_init_slash_commands() {
 	// Load default commands.
 	wp_mcp_ai_load_default_slash_commands();
 
+	// Load toolkit-specific commands.
+	wp_mcp_ai_load_toolkit_slash_commands();
+
 	// Register JavaScript files.
 	wp_mcp_ai_register_slash_command_scripts();
 
@@ -340,6 +343,43 @@ function wp_mcp_ai_load_default_slash_commands() {
 	 * @param WP_MCP_AI_Slash_Command_Handler $handler Command handler instance.
 	 */
 	do_action( 'wp_mcp_ai_default_slash_commands_loaded', $wp_mcp_ai_slash_command_handler );
+}
+
+/**
+ * Load toolkit-specific slash commands
+ *
+ * Initializes toolkit command manager and registers toolkit commands.
+ *
+ * @since 1.3.0
+ */
+function wp_mcp_ai_load_toolkit_slash_commands() {
+	global $wp_mcp_ai_slash_command_handler;
+
+	if ( ! $wp_mcp_ai_slash_command_handler ) {
+		return;
+	}
+
+	// Ensure toolkit registry is loaded.
+	if ( ! class_exists( 'WP_MCP_AI_Toolkit_Registry' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-toolkit-registry.php';
+	}
+
+	// Load toolkit manager.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
+
+	// Initialize toolkit manager (singleton pattern).
+	WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+
+	/**
+	 * Fires after toolkit slash commands are loaded
+	 *
+	 * Allows plugins to register additional toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_MCP_AI_Slash_Command_Handler $handler Command handler instance.
+	 */
+	do_action( 'wp_mcp_ai_toolkit_slash_commands_loaded', $wp_mcp_ai_slash_command_handler );
 }
 
 /**
