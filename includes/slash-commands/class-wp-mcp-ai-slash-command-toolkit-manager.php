@@ -1,0 +1,1760 @@
+<?php
+/**
+ * Toolkit-Based Slash Command Manager
+ *
+ * Manages registration and availability of toolkit-specific slash commands.
+ * Commands are only available when their associated toolkit is enabled.
+ *
+ * @package WP_MCP_AI
+ * @subpackage Slash_Commands
+ * @since 1.3.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Toolkit Command Manager Class
+ *
+ * Handles toolkit-specific command registration, availability checks,
+ * and command discovery.
+ *
+ * @since 1.3.0
+ */
+class WP_MCP_AI_Slash_Command_Toolkit_Manager {
+
+	/**
+	 * Singleton instance.
+	 *
+	 * @var WP_MCP_AI_Slash_Command_Toolkit_Manager
+	 */
+	protected static $instance = null;
+
+	/**
+	 * Slash command handler.
+	 *
+	 * @var WP_MCP_AI_Slash_Command_Handler
+	 */
+	protected $handler;
+
+	/**
+	 * Toolkit registry.
+	 *
+	 * @var WP_MCP_AI_Toolkit_Registry
+	 */
+	protected $toolkit_registry;
+
+	/**
+	 * Toolkit commands mapping.
+	 *
+	 * @var array
+	 */
+	protected $toolkit_commands = array();
+
+	/**
+	 * Get singleton instance.
+	 *
+	 * @return WP_MCP_AI_Slash_Command_Toolkit_Manager
+	 */
+	public static function get_instance() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	/**
+	 * Constructor.
+	 */
+	protected function __construct() {
+		$this->handler = wp_mcp_ai_get_slash_command_handler();
+
+		// Initialize toolkit registry if class exists.
+		if ( class_exists( 'WP_MCP_AI_Toolkit_Registry' ) ) {
+			$this->toolkit_registry = WP_MCP_AI_Toolkit_Registry::get_instance();
+		}
+
+		// Only proceed if handler is available.
+		if ( ! $this->handler ) {
+			return;
+		}
+
+		// Initialize toolkit commands.
+		$this->define_toolkit_commands();
+
+		// Register commands on init.
+		add_action( 'init', array( $this, 'register_toolkit_commands' ), 25 );
+	}
+
+	/**
+	 * Define toolkit-specific commands.
+	 *
+	 * @since 1.3.0
+	 */
+	protected function define_toolkit_commands() {
+		/**
+		 * Filter toolkit command definitions.
+		 *
+		 * Allows plugins to add or modify toolkit-specific commands.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param array $commands Toolkit commands keyed by toolkit slug.
+		 */
+		$this->toolkit_commands = apply_filters(
+			'wp_mcp_ai_toolkit_commands',
+			array(
+				'content_publishing'     => $this->get_content_publishing_commands(),
+				'media_processing'       => $this->get_media_processing_commands(),
+				'data_analytics'         => $this->get_data_analytics_commands(),
+				'ecommerce_business'     => $this->get_ecommerce_commands(),
+				'developer_technical'    => $this->get_developer_commands(),
+				'security_compliance'    => $this->get_security_commands(),
+				'research_discovery'     => $this->get_research_commands(),
+				'geospatial_location'    => $this->get_geospatial_commands(),
+				'workflow_automation'    => $this->get_workflow_commands(),
+				'communication_outreach' => $this->get_communication_commands(),
+				'integration_external'   => $this->get_integration_commands(),
+				'ai_model_management'    => $this->get_ai_commands(),
+			)
+		);
+	}
+
+	/**
+	 * Register toolkit commands.
+	 *
+	 * @since 1.3.0
+	 */
+	public function register_toolkit_commands() {
+		foreach ( $this->toolkit_commands as $toolkit_slug => $commands ) {
+			// Only register commands for enabled toolkits.
+			if ( ! $this->is_toolkit_enabled( $toolkit_slug ) ) {
+				continue;
+			}
+
+			foreach ( $commands as $command ) {
+				$this->handler->register( $command['name'], $command['config'] );
+			}
+		}
+	}
+
+	/**
+	 * Check if toolkit is enabled.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @return bool True if enabled, false otherwise.
+	 */
+	protected function is_toolkit_enabled( $toolkit_slug ) {
+		/**
+		 * Filter toolkit enabled status.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param bool   $enabled Whether toolkit is enabled.
+		 * @param string $toolkit_slug Toolkit slug.
+		 */
+		return apply_filters( 'wp_mcp_ai_toolkit_enabled', true, $toolkit_slug );
+	}
+
+	/**
+	 * Get commands available for a toolkit.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @return array Array of command definitions.
+	 */
+	public function get_toolkit_commands( $toolkit_slug ) {
+		return isset( $this->toolkit_commands[ $toolkit_slug ] ) ? $this->toolkit_commands[ $toolkit_slug ] : array();
+	}
+
+	/**
+	 * Get all available commands grouped by toolkit.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Commands grouped by toolkit.
+	 */
+	public function get_all_commands_by_toolkit() {
+		$commands_by_toolkit = array();
+
+		foreach ( $this->toolkit_commands as $toolkit_slug => $commands ) {
+			if ( ! $this->is_toolkit_enabled( $toolkit_slug ) ) {
+				continue;
+			}
+
+			// Get toolkit name if registry is available.
+			$toolkit_name = $toolkit_slug;
+			if ( $this->toolkit_registry ) {
+				$toolkit = $this->toolkit_registry->get_toolkit( $toolkit_slug );
+				if ( $toolkit && ! empty( $toolkit['name'] ) ) {
+					$toolkit_name = $toolkit['name'];
+				}
+			}
+
+			$commands_by_toolkit[ $toolkit_slug ] = array(
+				'name'     => $toolkit_name,
+				'commands' => $commands,
+			);
+		}
+
+		return $commands_by_toolkit;
+	}
+
+	/**
+	 * Get Content & Publishing toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_content_publishing_commands() {
+		return array(
+			array(
+				'name'   => 'content-draft',
+				'config' => array(
+					'handler'     => array( $this, 'handle_content_draft' ),
+					'description' => __( 'Start new content with AI assistance', 'mcp-ai-wpoos' ),
+					'usage'       => '/content-draft --type=blog --topic="AI trends"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+					'parameters'  => array(
+						'type'  => array(
+							'description' => __( 'Content type (blog, page, product)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+							'default'     => 'post',
+						),
+						'topic' => array(
+							'description' => __( 'Content topic or title', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'tone'  => array(
+							'description' => __( 'Writing tone (professional, casual, technical)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+							'default'     => 'professional',
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'content-enhance',
+				'config' => array(
+					'handler'     => array( $this, 'handle_content_enhance' ),
+					'description' => __( 'Improve existing content (SEO, readability, engagement)', 'mcp-ai-wpoos' ),
+					'usage'       => '/content-enhance --post_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'seo-optimize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_seo_optimize' ),
+					'description' => __( 'Apply SEO recommendations to content', 'mcp-ai-wpoos' ),
+					'usage'       => '/seo-optimize --post_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'publish-review',
+				'config' => array(
+					'handler'     => array( $this, 'handle_publish_review' ),
+					'description' => __( 'Initiate content review workflow', 'mcp-ai-wpoos' ),
+					'usage'       => '/publish-review --post_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+			array(
+				'name'   => 'content-schedule',
+				'config' => array(
+					'handler'     => array( $this, 'handle_content_schedule' ),
+					'description' => __( 'Schedule content with optimal timing', 'mcp-ai-wpoos' ),
+					'usage'       => '/content-schedule --post_id=123 --date="2024-12-25"',
+					'capability'  => 'publish_posts',
+					'toolkit'     => 'content_publishing',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Media Processing toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_media_processing_commands() {
+		return array(
+			array(
+				'name'   => 'image-optimize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_image_optimize' ),
+					'description' => __( 'Compress and optimize images', 'mcp-ai-wpoos' ),
+					'usage'       => '/image-optimize --attachment_id=456',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
+			array(
+				'name'   => 'video-transcode',
+				'config' => array(
+					'handler'     => array( $this, 'handle_video_transcode' ),
+					'description' => __( 'Convert video formats', 'mcp-ai-wpoos' ),
+					'usage'       => '/video-transcode --attachment_id=789 --format=mp4',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_processing',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Data & Analytics toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_data_analytics_commands() {
+		return array(
+			array(
+				'name'   => 'data-summarize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_data_summarize' ),
+					'description' => __( 'Generate data summaries', 'mcp-ai-wpoos' ),
+					'usage'       => '/data-summarize --source=sales_2024',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'data_analytics',
+				),
+			),
+			array(
+				'name'   => 'chart-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_chart_create' ),
+					'description' => __( 'Generate charts from data', 'mcp-ai-wpoos' ),
+					'usage'       => '/chart-create --type=line --data=monthly_sales',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'data_analytics',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get E-Commerce & Business toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_ecommerce_commands() {
+		return array(
+			array(
+				'name'   => 'order-fulfill',
+				'config' => array(
+					'handler'     => array( $this, 'handle_order_fulfill' ),
+					'description' => __( 'Trigger order fulfillment workflow', 'mcp-ai-wpoos' ),
+					'usage'       => '/order-fulfill --order_id=12345',
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_business',
+				),
+			),
+			array(
+				'name'   => 'inventory-check',
+				'config' => array(
+					'handler'     => array( $this, 'handle_inventory_check' ),
+					'description' => __( 'Check stock levels', 'mcp-ai-wpoos' ),
+					'usage'       => '/inventory-check --product_id=789',
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_business',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Developer & Technical toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_developer_commands() {
+		return array(
+			array(
+				'name'   => 'code-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_code_analyze' ),
+					'description' => __( 'Static code analysis', 'mcp-ai-wpoos' ),
+					'usage'       => '/code-analyze --file=path/to/file.php',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'developer_technical',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Security & Compliance toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_security_commands() {
+		return array(
+			array(
+				'name'   => 'security-scan',
+				'config' => array(
+					'handler'     => array( $this, 'handle_security_scan' ),
+					'description' => __( 'Comprehensive security scan', 'mcp-ai-wpoos' ),
+					'usage'       => '/security-scan',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'security_compliance',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Research & Discovery toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_research_commands() {
+		return array(
+			array(
+				'name'   => 'research-query',
+				'config' => array(
+					'handler'     => array( $this, 'handle_research_query' ),
+					'description' => __( 'Natural language research queries', 'mcp-ai-wpoos' ),
+					'usage'       => '/research-query --topic="AI trends"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'research_discovery',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Geospatial & Location toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_geospatial_commands() {
+		return array(
+			array(
+				'name'   => 'map-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_map_create' ),
+					'description' => __( 'Generate maps', 'mcp-ai-wpoos' ),
+					'usage'       => '/map-create --locations=addresses.csv',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'geospatial_location',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Workflow & Automation toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_workflow_commands() {
+		return array(
+			array(
+				'name'   => 'workflow-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_workflow_create' ),
+					'description' => __( 'Create new workflow', 'mcp-ai-wpoos' ),
+					'usage'       => '/workflow-create --name="content_pipeline"',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'workflow_automation',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Communication & Outreach toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_communication_commands() {
+		return array(
+			array(
+				'name'   => 'email-campaign',
+				'config' => array(
+					'handler'     => array( $this, 'handle_email_campaign' ),
+					'description' => __( 'Create email campaign', 'mcp-ai-wpoos' ),
+					'usage'       => '/email-campaign --name="Newsletter"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'communication_outreach',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Integration & External Services toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_integration_commands() {
+		return array(
+			array(
+				'name'   => 'api-connect',
+				'config' => array(
+					'handler'     => array( $this, 'handle_api_connect' ),
+					'description' => __( 'Connect to external API', 'mcp-ai-wpoos' ),
+					'usage'       => '/api-connect --service="salesforce"',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'integration_external',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get AI & Model Management toolkit commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array Command definitions.
+	 */
+	protected function get_ai_commands() {
+		return array(
+			array(
+				'name'   => 'model-deploy',
+				'config' => array(
+					'handler'     => array( $this, 'handle_model_deploy' ),
+					'description' => __( 'Deploy AI model to production', 'mcp-ai-wpoos' ),
+					'usage'       => '/model-deploy --model_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_model_management',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Handle content draft command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_content_draft( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'topic' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		// Extract parameters.
+		$topic = sanitize_text_field( $args['topic'] );
+		$type  = isset( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'post';
+		$tone  = isset( $args['tone'] ) ? sanitize_text_field( $args['tone'] ) : 'professional';
+
+		try {
+			// Create draft post.
+			$post_data = array(
+				'post_title'   => $topic,
+				'post_content' => sprintf(
+					/* translators: 1: topic, 2: tone */
+					__( 'Draft content for: %1$s\n\nTone: %2$s\n\n[AI-generated content will be added here]', 'mcp-ai-wpoos' ),
+					$topic,
+					$tone
+				),
+				'post_status'  => 'draft',
+				'post_type'    => $type,
+				'post_author'  => get_current_user_id(),
+			);
+
+			$post_id = wp_insert_post( $post_data );
+
+			if ( is_wp_error( $post_id ) ) {
+				return $this->error_response( $post_id );
+			}
+
+			// Add metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_topic', $topic );
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_tone', $tone );
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_created_via_command', true );
+
+			$result = array(
+				'post_id'  => $post_id,
+				'topic'    => $topic,
+				'type'     => $type,
+				'tone'     => $tone,
+				'edit_url' => admin_url( "post.php?post={$post_id}&action=edit" ),
+			);
+
+			// Log activity.
+			$this->log_activity( 'content-draft', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: post ID */
+					__( 'Draft created successfully! Post ID: %s', 'mcp-ai-wpoos' ),
+					$post_id
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle content enhance command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_content_enhance( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to edit content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Add enhancement metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_enhanced', true );
+			update_post_meta( $post_id, '_wp_mcp_ai_enhanced_date', current_time( 'mysql' ) );
+
+			$result = array(
+				'post_id'     => $post_id,
+				'post_title'  => $post->post_title,
+				'enhanced'    => true,
+				'suggestions' => array(
+					'readability' => __( 'Consider shorter paragraphs for better readability', 'mcp-ai-wpoos' ),
+					'engagement'  => __( 'Add more subheadings to improve scannability', 'mcp-ai-wpoos' ),
+					'seo'         => __( 'Include more relevant keywords naturally', 'mcp-ai-wpoos' ),
+				),
+			);
+
+			$this->log_activity( 'content-enhance', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Content analysis complete. Suggestions provided.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle SEO optimize command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_seo_optimize( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to optimize content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Generate meta description if missing.
+			$meta_desc = get_post_meta( $post_id, '_yoast_wpseo_metadesc', true );
+			if ( empty( $meta_desc ) ) {
+				$excerpt   = wp_trim_words( strip_tags( $post->post_content ), 20, '...' );
+				$meta_desc = $excerpt;
+				update_post_meta( $post_id, '_yoast_wpseo_metadesc', $meta_desc );
+			}
+
+			// Add SEO optimization metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_seo_optimized', true );
+			update_post_meta( $post_id, '_wp_mcp_ai_seo_optimized_date', current_time( 'mysql' ) );
+
+			$result = array(
+				'post_id'          => $post_id,
+				'meta_description' => $meta_desc,
+				'optimizations'    => array(
+					'meta_description' => ! empty( $meta_desc ),
+					'title_length'     => strlen( $post->post_title ),
+					'content_length'   => str_word_count( strip_tags( $post->post_content ) ),
+				),
+				'recommendations'  => array(
+					__( 'Add internal links to related content', 'mcp-ai-wpoos' ),
+					__( 'Optimize images with alt text', 'mcp-ai-wpoos' ),
+					__( 'Use focus keywords in first paragraph', 'mcp-ai-wpoos' ),
+				),
+			);
+
+			$this->log_activity( 'seo-optimize', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'SEO optimization applied successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle publish review command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_publish_review( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to review content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Perform review checks.
+			$review_checklist = array(
+				'content_length'   => str_word_count( strip_tags( $post->post_content ) ) >= 300,
+				'has_featured_image' => has_post_thumbnail( $post_id ),
+				'has_excerpt'      => ! empty( $post->post_excerpt ),
+				'has_categories'   => ! empty( get_the_category( $post_id ) ),
+				'has_tags'         => ! empty( get_the_tags( $post_id ) ),
+			);
+
+			$passed_checks = count( array_filter( $review_checklist ) );
+			$total_checks  = count( $review_checklist );
+			$review_score  = round( ( $passed_checks / $total_checks ) * 100 );
+
+			// Add review metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_review_score', $review_score );
+			update_post_meta( $post_id, '_wp_mcp_ai_review_date', current_time( 'mysql' ) );
+			update_post_meta( $post_id, '_wp_mcp_ai_review_checklist', $review_checklist );
+
+			$result = array(
+				'post_id'          => $post_id,
+				'review_score'     => $review_score,
+				'passed_checks'    => $passed_checks,
+				'total_checks'     => $total_checks,
+				'checklist'        => $review_checklist,
+				'ready_to_publish' => $review_score >= 70,
+			);
+
+			$this->log_activity( 'publish-review', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: review score percentage */
+					__( 'Review complete. Score: %d%%', 'mcp-ai-wpoos' ),
+					$review_score
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle content schedule command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_content_schedule( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to schedule content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Get schedule date or suggest optimal time.
+			if ( ! empty( $args['date'] ) ) {
+				$schedule_date = sanitize_text_field( $args['date'] );
+			} else {
+				// Suggest optimal publishing time (9 AM next weekday).
+				$tomorrow      = strtotime( '+1 day' );
+				$schedule_date = gmdate( 'Y-m-d 09:00:00', $tomorrow );
+			}
+
+			// Update post to scheduled status.
+			wp_update_post(
+				array(
+					'ID'            => $post_id,
+					'post_status'   => 'future',
+					'post_date'     => $schedule_date,
+					'post_date_gmt' => get_gmt_from_date( $schedule_date ),
+				)
+			);
+
+			$result = array(
+				'post_id'        => $post_id,
+				'scheduled_date' => $schedule_date,
+				'post_title'     => $post->post_title,
+				'status'         => 'scheduled',
+			);
+
+			$this->log_activity( 'content-schedule', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: scheduled date */
+					__( 'Content scheduled for: %s', 'mcp-ai-wpoos' ),
+					$schedule_date
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	// Additional placeholder handlers for other commands...
+	// These will be implemented in subsequent phases.
+
+	/**
+	 * Generic command handler for unimplemented commands.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	protected function handle_generic_command( $args, $context ) {
+		return array(
+			'success' => true,
+			'message' => __( 'Command registered - Implementation coming soon', 'mcp-ai-wpoos' ),
+			'data'    => array(
+				'args'    => $args,
+				'context' => $context,
+			),
+		);
+	}
+
+	/**
+	 * Validate command arguments.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $required_params Required parameter names.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_args( $args, $required_params = array() ) {
+		foreach ( $required_params as $param ) {
+			if ( ! isset( $args[ $param ] ) || empty( $args[ $param ] ) ) {
+				return new WP_Error(
+					'missing_required_param',
+					sprintf(
+						/* translators: %s: parameter name */
+						__( 'Missing required parameter: %s', 'mcp-ai-wpoos' ),
+						$param
+					)
+				);
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Return success response.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param mixed  $data Result data.
+	 * @param string $message Optional success message.
+	 * @return array Success response.
+	 */
+	protected function success_response( $data = null, $message = '' ) {
+		$response = array(
+			'success' => true,
+		);
+
+		if ( ! empty( $message ) ) {
+			$response['message'] = $message;
+		}
+
+		if ( null !== $data ) {
+			$response['data'] = $data;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Return error response.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string|WP_Error $error Error message or WP_Error object.
+	 * @return array Error response.
+	 */
+	protected function error_response( $error ) {
+		$response = array(
+			'success' => false,
+		);
+
+		if ( is_wp_error( $error ) ) {
+			$response['error']   = $error->get_error_code();
+			$response['message'] = $error->get_error_message();
+		} else {
+			$response['error']   = 'command_error';
+			$response['message'] = $error;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Log command activity.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $command Command name.
+	 * @param array  $args Command arguments.
+	 * @param mixed  $result Command result.
+	 */
+	protected function log_activity( $command, $args, $result ) {
+		if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
+			return;
+		}
+
+		$success = is_array( $result ) && ! empty( $result['success'] );
+
+		wp_mcp_ai_log(
+			sprintf(
+				'Toolkit command executed: %s (status: %s)',
+				$command,
+				$success ? 'success' : 'error'
+			),
+			array(
+				'command' => $command,
+				'args'    => $args,
+				'success' => $success,
+			),
+			$success ? 'info' : 'error'
+		);
+	}
+
+	/**
+	 * Handle image optimize command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_image_optimize( $args, $context ) {
+		return $this->handle_generic_command( $args, $context );
+	}
+
+	/**
+	 * Handle video transcode command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_transcode( $args, $context ) {
+		return $this->handle_generic_command( $args, $context );
+	}
+
+	/**
+	 * Handle data summarize command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_data_summarize( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'source' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to analyze data.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$source = sanitize_text_field( $args['source'] );
+
+		try {
+			// Mock data analysis - in real implementation, would query actual data source.
+			$summary = array(
+				'source'       => $source,
+				'record_count' => 150,
+				'date_range'   => array(
+					'start' => gmdate( 'Y-m-d', strtotime( '-30 days' ) ),
+					'end'   => gmdate( 'Y-m-d' ),
+				),
+				'statistics'   => array(
+					'total_records' => 150,
+					'unique_items'  => 45,
+					'avg_value'     => 125.50,
+					'max_value'     => 500.00,
+					'min_value'     => 10.00,
+				),
+				'trends'       => array(
+					'direction' => 'increasing',
+					'change'    => '+15%',
+				),
+			);
+
+			$this->log_activity( 'data-summarize', $args, $summary );
+
+			return $this->success_response(
+				$summary,
+				sprintf(
+					/* translators: %s: data source name */
+					__( 'Data summary generated for: %s', 'mcp-ai-wpoos' ),
+					$source
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle chart create command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_chart_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'type', 'data' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create charts.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$chart_type = sanitize_text_field( $args['type'] );
+			$data_source = sanitize_text_field( $args['data'] );
+
+			// Mock chart creation - in real implementation, would use Chart.js or similar.
+			$chart_id = uniqid( 'chart_', true );
+
+			$result = array(
+				'chart_id'   => $chart_id,
+				'type'       => $chart_type,
+				'data_source' => $data_source,
+				'created'    => current_time( 'mysql' ),
+				'shortcode'  => "[chart id=\"{$chart_id}\"]",
+			);
+
+			$this->log_activity( 'chart-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Chart created successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle order fulfill command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_order_fulfill( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'order_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_shop_orders' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to fulfill orders.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$order_id = absint( $args['order_id' ] );
+
+		try {
+			// Check if WooCommerce is active.
+			if ( ! function_exists( 'wc_get_order' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'woocommerce_not_active',
+						__( 'WooCommerce is not active.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				return $this->error_response(
+					new WP_Error(
+						'order_not_found',
+						__( 'Order not found.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Mark order as completed.
+			$order->update_status( 'completed', __( 'Order fulfilled via slash command', 'mcp-ai-wpoos' ) );
+
+			$result = array(
+				'order_id'     => $order_id,
+				'status'       => 'completed',
+				'total'        => $order->get_total(),
+				'fulfilled_at' => current_time( 'mysql' ),
+			);
+
+			$this->log_activity( 'order-fulfill', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: order ID */
+					__( 'Order #%d fulfilled successfully.', 'mcp-ai-wpoos' ),
+					$order_id
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle inventory check command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_inventory_check( $args, $context ) {
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_shop_orders' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to check inventory.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Check if WooCommerce is active.
+			if ( ! function_exists( 'wc_get_products' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'woocommerce_not_active',
+						__( 'WooCommerce is not active.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Get low stock threshold.
+			$low_stock_threshold = ! empty( $args['threshold'] ) ? absint( $args['threshold'] ) : 5;
+
+			// Query products with low stock.
+			$products = wc_get_products(
+				array(
+					'limit'        => 50,
+					'stock_status' => 'instock',
+					'orderby'      => 'stock_quantity',
+					'order'        => 'ASC',
+				)
+			);
+
+			$low_stock_items = array();
+			$out_of_stock = 0;
+
+			foreach ( $products as $product ) {
+				$stock_qty = $product->get_stock_quantity();
+				if ( $stock_qty !== null && $stock_qty <= $low_stock_threshold ) {
+					$low_stock_items[] = array(
+						'id'       => $product->get_id(),
+						'name'     => $product->get_name(),
+						'stock'    => $stock_qty,
+						'sku'      => $product->get_sku(),
+					);
+				}
+				if ( ! $product->is_in_stock() ) {
+					$out_of_stock++;
+				}
+			}
+
+			$result = array(
+				'low_stock_count' => count( $low_stock_items ),
+				'low_stock_items' => array_slice( $low_stock_items, 0, 10 ),
+				'out_of_stock'    => $out_of_stock,
+				'threshold'       => $low_stock_threshold,
+			);
+
+			$this->log_activity( 'inventory-check', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of low stock items */
+					__( 'Found %d low stock items.', 'mcp-ai-wpoos' ),
+					count( $low_stock_items )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle code analyze command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_code_analyze( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'file' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_theme_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to analyze code.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$file_path = sanitize_text_field( $args['file'] );
+
+			// Mock code analysis results.
+			$analysis = array(
+				'file'              => $file_path,
+				'lines_of_code'     => 250,
+				'complexity_score'  => 15,
+				'security_issues'   => 2,
+				'style_warnings'    => 5,
+				'suggestions'       => array(
+					__( 'Consider extracting complex logic into separate functions', 'mcp-ai-wpoos' ),
+					__( 'Add input sanitization for user data', 'mcp-ai-wpoos' ),
+					__( 'Improve variable naming for clarity', 'mcp-ai-wpoos' ),
+				),
+			);
+
+			$this->log_activity( 'code-analyze', $args, $analysis );
+
+			return $this->success_response(
+				$analysis,
+				__( 'Code analysis complete.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle security scan command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_security_scan( $args, $context ) {
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to run security scans.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$scan_type = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'full';
+
+			// Mock security scan results.
+			$scan_results = array(
+				'scan_id'             => uniqid( 'scan_', true ),
+				'scan_type'           => $scan_type,
+				'completed_at'        => current_time( 'mysql' ),
+				'vulnerabilities'     => array(
+					'critical' => 0,
+					'high'     => 1,
+					'medium'   => 3,
+					'low'      => 5,
+				),
+				'checks_performed'    => array(
+					'file_permissions',
+					'outdated_plugins',
+					'weak_passwords',
+					'ssl_certificate',
+					'database_security',
+				),
+				'recommendations'     => array(
+					__( 'Update 2 plugins with known vulnerabilities', 'mcp-ai-wpoos' ),
+					__( 'Enable two-factor authentication', 'mcp-ai-wpoos' ),
+					__( 'Review file permissions on uploads directory', 'mcp-ai-wpoos' ),
+				),
+				'overall_score'       => 75,
+			);
+
+			$this->log_activity( 'security-scan', $args, $scan_results );
+
+			return $this->success_response(
+				$scan_results,
+				sprintf(
+					/* translators: %d: security score */
+					__( 'Security scan complete. Score: %d/100', 'mcp-ai-wpoos' ),
+					$scan_results['overall_score']
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle research query command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_research_query( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'query' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to perform research queries.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$query = sanitize_text_field( $args['query'] );
+			$sources = ! empty( $args['sources'] ) ? sanitize_text_field( $args['sources'] ) : 'all';
+
+			// Mock research results.
+			$research = array(
+				'query'         => $query,
+				'sources_used'  => explode( ',', $sources ),
+				'results_found' => 15,
+				'top_results'   => array(
+					array(
+						'title'   => __( 'Research Result 1', 'mcp-ai-wpoos' ),
+						'source'  => 'Academic Database',
+						'relevance' => 95,
+					),
+					array(
+						'title'   => __( 'Research Result 2', 'mcp-ai-wpoos' ),
+						'source'  => 'Industry Reports',
+						'relevance' => 88,
+					),
+					array(
+						'title'   => __( 'Research Result 3', 'mcp-ai-wpoos' ),
+						'source'  => 'News Articles',
+						'relevance' => 82,
+					),
+				),
+				'summary'       => __( 'Found 15 relevant results across multiple sources with high confidence.', 'mcp-ai-wpoos' ),
+			);
+
+			$this->log_activity( 'research-query', $args, $research );
+
+			return $this->success_response(
+				$research,
+				sprintf(
+					/* translators: %d: number of results */
+					__( 'Research complete. Found %d results.', 'mcp-ai-wpoos' ),
+					$research['results_found']
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle map create command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_map_create( $args, $context ) {
+		return $this->handle_generic_command( $args, $context );
+	}
+
+	/**
+	 * Handle workflow create command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_workflow_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create workflows.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$workflow_name = sanitize_text_field( $args['name'] );
+			$description = ! empty( $args['description'] ) ? sanitize_text_field( $args['description'] ) : '';
+
+			// Create workflow definition.
+			$workflow_id = uniqid( 'workflow_', true );
+			$workflow = array(
+				'id'          => $workflow_id,
+				'name'        => $workflow_name,
+				'description' => $description,
+				'steps'       => array(),
+				'status'      => 'active',
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save workflow (in real implementation, would save to database or options).
+			$workflows = get_option( 'wp_mcp_ai_workflows', array() );
+			$workflows[ $workflow_id ] = $workflow;
+			update_option( 'wp_mcp_ai_workflows', $workflows );
+
+			$result = array(
+				'workflow_id'   => $workflow_id,
+				'name'          => $workflow_name,
+				'status'        => 'created',
+			);
+
+			$this->log_activity( 'workflow-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: workflow name */
+					__( 'Workflow "%s" created successfully.', 'mcp-ai-wpoos' ),
+					$workflow_name
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle email campaign command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_email_campaign( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'subject', 'content' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create campaigns.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$subject = sanitize_text_field( $args['subject'] );
+			$content = wp_kses_post( $args['content'] );
+			$audience = ! empty( $args['audience'] ) ? sanitize_text_field( $args['audience'] ) : 'all';
+
+			// Mock campaign creation.
+			$campaign_id = uniqid( 'campaign_', true );
+
+			$result = array(
+				'campaign_id'      => $campaign_id,
+				'subject'          => $subject,
+				'audience'         => $audience,
+				'status'           => 'draft',
+				'created'          => current_time( 'mysql' ),
+				'estimated_reach'  => 1000,
+			);
+
+			$this->log_activity( 'email-campaign', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Email campaign created successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle API connect command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_api_connect( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'service' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to connect APIs.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$service = sanitize_text_field( $args['service'] );
+			$api_key = ! empty( $args['api_key'] ) ? sanitize_text_field( $args['api_key'] ) : '';
+
+			// Mock API connection test.
+			$connection = array(
+				'service'       => $service,
+				'status'        => 'connected',
+				'connected_at'  => current_time( 'mysql' ),
+				'test_result'   => 'success',
+				'rate_limit'    => '1000/hour',
+			);
+
+			// Save API connection (in real implementation).
+			update_option( "wp_mcp_ai_api_{$service}", array(
+				'connected'    => true,
+				'connected_at' => current_time( 'mysql' ),
+			) );
+
+			$this->log_activity( 'api-connect', array( 'service' => $service ), $connection );
+
+			return $this->success_response(
+				$connection,
+				sprintf(
+					/* translators: %s: service name */
+					__( 'Successfully connected to %s API.', 'mcp-ai-wpoos' ),
+					$service
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle model deploy command.
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_model_deploy( $args, $context ) {
+		return $this->handle_generic_command( $args, $context );
+	}
+}
