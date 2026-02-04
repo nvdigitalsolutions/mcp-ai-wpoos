@@ -359,6 +359,11 @@ function wp_mcp_ai_load_toolkit_slash_commands() {
 		return;
 	}
 
+	// Ensure toolkit registry is loaded.
+	if ( ! class_exists( 'WP_MCP_AI_Toolkit_Registry' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-toolkit-registry.php';
+	}
+
 	// Load toolkit manager.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
 

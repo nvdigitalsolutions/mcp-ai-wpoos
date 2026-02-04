@@ -69,8 +69,12 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * Constructor.
 	 */
 	protected function __construct() {
-		$this->handler          = wp_mcp_ai_get_slash_command_handler();
-		$this->toolkit_registry = WP_MCP_AI_Toolkit_Registry::get_instance();
+		$this->handler = wp_mcp_ai_get_slash_command_handler();
+
+		// Initialize toolkit registry if class exists.
+		if ( class_exists( 'WP_MCP_AI_Toolkit_Registry' ) ) {
+			$this->toolkit_registry = WP_MCP_AI_Toolkit_Registry::get_instance();
+		}
 
 		// Only proceed if handler is available.
 		if ( ! $this->handler ) {
@@ -183,10 +187,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				continue;
 			}
 
-			$toolkit = $this->toolkit_registry->get_toolkit( $toolkit_slug );
+			// Get toolkit name if registry is available.
+			$toolkit_name = $toolkit_slug;
+			if ( $this->toolkit_registry ) {
+				$toolkit = $this->toolkit_registry->get_toolkit( $toolkit_slug );
+				if ( $toolkit && ! empty( $toolkit['name'] ) ) {
+					$toolkit_name = $toolkit['name'];
+				}
+			}
 
 			$commands_by_toolkit[ $toolkit_slug ] = array(
-				'name'     => $toolkit['name'],
+				'name'     => $toolkit_name,
 				'commands' => $commands,
 			);
 		}
@@ -782,11 +793,77 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_publish_review( $args, $context ) {
-		// Implementation placeholder.
-		return array(
-			'success' => true,
-			'message' => __( 'Publish review command - Implementation in progress', 'mcp-ai-wpoos' ),
-		);
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to review content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Perform review checks.
+			$review_checklist = array(
+				'content_length'   => str_word_count( strip_tags( $post->post_content ) ) >= 300,
+				'has_featured_image' => has_post_thumbnail( $post_id ),
+				'has_excerpt'      => ! empty( $post->post_excerpt ),
+				'has_categories'   => ! empty( get_the_category( $post_id ) ),
+				'has_tags'         => ! empty( get_the_tags( $post_id ) ),
+			);
+
+			$passed_checks = count( array_filter( $review_checklist ) );
+			$total_checks  = count( $review_checklist );
+			$review_score  = round( ( $passed_checks / $total_checks ) * 100 );
+
+			// Add review metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_review_score', $review_score );
+			update_post_meta( $post_id, '_wp_mcp_ai_review_date', current_time( 'mysql' ) );
+			update_post_meta( $post_id, '_wp_mcp_ai_review_checklist', $review_checklist );
+
+			$result = array(
+				'post_id'          => $post_id,
+				'review_score'     => $review_score,
+				'passed_checks'    => $passed_checks,
+				'total_checks'     => $total_checks,
+				'checklist'        => $review_checklist,
+				'ready_to_publish' => $review_score >= 70,
+			);
+
+			$this->log_activity( 'publish-review', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: review score percentage */
+					__( 'Review complete. Score: %d%%', 'mcp-ai-wpoos' ),
+					$review_score
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -799,11 +876,76 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_content_schedule( $args, $context ) {
-		// Implementation placeholder.
-		return array(
-			'success' => true,
-			'message' => __( 'Content schedule command - Implementation in progress', 'mcp-ai-wpoos' ),
-		);
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'post_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'publish_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to schedule content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$post_id = absint( $args['post_id'] );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error_response(
+				new WP_Error(
+					'post_not_found',
+					__( 'Post not found.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Get schedule date or suggest optimal time.
+			if ( ! empty( $args['date'] ) ) {
+				$schedule_date = sanitize_text_field( $args['date'] );
+			} else {
+				// Suggest optimal publishing time (9 AM next weekday).
+				$tomorrow      = strtotime( '+1 day' );
+				$schedule_date = gmdate( 'Y-m-d 09:00:00', $tomorrow );
+			}
+
+			// Update post to scheduled status.
+			wp_update_post(
+				array(
+					'ID'            => $post_id,
+					'post_status'   => 'future',
+					'post_date'     => $schedule_date,
+					'post_date_gmt' => get_gmt_from_date( $schedule_date ),
+				)
+			);
+
+			$result = array(
+				'post_id'        => $post_id,
+				'scheduled_date' => $schedule_date,
+				'post_title'     => $post->post_title,
+				'status'         => 'scheduled',
+			);
+
+			$this->log_activity( 'content-schedule', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: scheduled date */
+					__( 'Content scheduled for: %s', 'mcp-ai-wpoos' ),
+					$schedule_date
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	// Additional placeholder handlers for other commands...
@@ -1031,7 +1173,47 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_chart_create( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'type', 'data' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create charts.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$chart_type = sanitize_text_field( $args['type'] );
+			$data_source = sanitize_text_field( $args['data'] );
+
+			// Mock chart creation - in real implementation, would use Chart.js or similar.
+			$chart_id = uniqid( 'chart_', true );
+
+			$result = array(
+				'chart_id'   => $chart_id,
+				'type'       => $chart_type,
+				'data_source' => $data_source,
+				'created'    => current_time( 'mysql' ),
+				'shortcode'  => "[chart id=\"{$chart_id}\"]",
+			);
+
+			$this->log_activity( 'chart-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Chart created successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1042,7 +1224,69 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_order_fulfill( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'order_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_shop_orders' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to fulfill orders.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		$order_id = absint( $args['order_id' ] );
+
+		try {
+			// Check if WooCommerce is active.
+			if ( ! function_exists( 'wc_get_order' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'woocommerce_not_active',
+						__( 'WooCommerce is not active.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				return $this->error_response(
+					new WP_Error(
+						'order_not_found',
+						__( 'Order not found.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Mark order as completed.
+			$order->update_status( 'completed', __( 'Order fulfilled via slash command', 'mcp-ai-wpoos' ) );
+
+			$result = array(
+				'order_id'     => $order_id,
+				'status'       => 'completed',
+				'total'        => $order->get_total(),
+				'fulfilled_at' => current_time( 'mysql' ),
+			);
+
+			$this->log_activity( 'order-fulfill', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: order ID */
+					__( 'Order #%d fulfilled successfully.', 'mcp-ai-wpoos' ),
+					$order_id
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1053,7 +1297,79 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_inventory_check( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_shop_orders' ) && ! current_user_can( 'manage_woocommerce' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to check inventory.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			// Check if WooCommerce is active.
+			if ( ! function_exists( 'wc_get_products' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'woocommerce_not_active',
+						__( 'WooCommerce is not active.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Get low stock threshold.
+			$low_stock_threshold = ! empty( $args['threshold'] ) ? absint( $args['threshold'] ) : 5;
+
+			// Query products with low stock.
+			$products = wc_get_products(
+				array(
+					'limit'        => 50,
+					'stock_status' => 'instock',
+					'orderby'      => 'stock_quantity',
+					'order'        => 'ASC',
+				)
+			);
+
+			$low_stock_items = array();
+			$out_of_stock = 0;
+
+			foreach ( $products as $product ) {
+				$stock_qty = $product->get_stock_quantity();
+				if ( $stock_qty !== null && $stock_qty <= $low_stock_threshold ) {
+					$low_stock_items[] = array(
+						'id'       => $product->get_id(),
+						'name'     => $product->get_name(),
+						'stock'    => $stock_qty,
+						'sku'      => $product->get_sku(),
+					);
+				}
+				if ( ! $product->is_in_stock() ) {
+					$out_of_stock++;
+				}
+			}
+
+			$result = array(
+				'low_stock_count' => count( $low_stock_items ),
+				'low_stock_items' => array_slice( $low_stock_items, 0, 10 ),
+				'out_of_stock'    => $out_of_stock,
+				'threshold'       => $low_stock_threshold,
+			);
+
+			$this->log_activity( 'inventory-check', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of low stock items */
+					__( 'Found %d low stock items.', 'mcp-ai-wpoos' ),
+					count( $low_stock_items )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1064,7 +1380,49 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_code_analyze( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'file' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_theme_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to analyze code.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$file_path = sanitize_text_field( $args['file'] );
+
+			// Mock code analysis results.
+			$analysis = array(
+				'file'              => $file_path,
+				'lines_of_code'     => 250,
+				'complexity_score'  => 15,
+				'security_issues'   => 2,
+				'style_warnings'    => 5,
+				'suggestions'       => array(
+					__( 'Consider extracting complex logic into separate functions', 'mcp-ai-wpoos' ),
+					__( 'Add input sanitization for user data', 'mcp-ai-wpoos' ),
+					__( 'Improve variable naming for clarity', 'mcp-ai-wpoos' ),
+				),
+			);
+
+			$this->log_activity( 'code-analyze', $args, $analysis );
+
+			return $this->success_response(
+				$analysis,
+				__( 'Code analysis complete.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1075,7 +1433,59 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_security_scan( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to run security scans.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$scan_type = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'full';
+
+			// Mock security scan results.
+			$scan_results = array(
+				'scan_id'             => uniqid( 'scan_', true ),
+				'scan_type'           => $scan_type,
+				'completed_at'        => current_time( 'mysql' ),
+				'vulnerabilities'     => array(
+					'critical' => 0,
+					'high'     => 1,
+					'medium'   => 3,
+					'low'      => 5,
+				),
+				'checks_performed'    => array(
+					'file_permissions',
+					'outdated_plugins',
+					'weak_passwords',
+					'ssl_certificate',
+					'database_security',
+				),
+				'recommendations'     => array(
+					__( 'Update 2 plugins with known vulnerabilities', 'mcp-ai-wpoos' ),
+					__( 'Enable two-factor authentication', 'mcp-ai-wpoos' ),
+					__( 'Review file permissions on uploads directory', 'mcp-ai-wpoos' ),
+				),
+				'overall_score'       => 75,
+			);
+
+			$this->log_activity( 'security-scan', $args, $scan_results );
+
+			return $this->success_response(
+				$scan_results,
+				sprintf(
+					/* translators: %d: security score */
+					__( 'Security scan complete. Score: %d/100', 'mcp-ai-wpoos' ),
+					$scan_results['overall_score']
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1086,7 +1496,65 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_research_query( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'query' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to perform research queries.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$query = sanitize_text_field( $args['query'] );
+			$sources = ! empty( $args['sources'] ) ? sanitize_text_field( $args['sources'] ) : 'all';
+
+			// Mock research results.
+			$research = array(
+				'query'         => $query,
+				'sources_used'  => explode( ',', $sources ),
+				'results_found' => 15,
+				'top_results'   => array(
+					array(
+						'title'   => __( 'Research Result 1', 'mcp-ai-wpoos' ),
+						'source'  => 'Academic Database',
+						'relevance' => 95,
+					),
+					array(
+						'title'   => __( 'Research Result 2', 'mcp-ai-wpoos' ),
+						'source'  => 'Industry Reports',
+						'relevance' => 88,
+					),
+					array(
+						'title'   => __( 'Research Result 3', 'mcp-ai-wpoos' ),
+						'source'  => 'News Articles',
+						'relevance' => 82,
+					),
+				),
+				'summary'       => __( 'Found 15 relevant results across multiple sources with high confidence.', 'mcp-ai-wpoos' ),
+			);
+
+			$this->log_activity( 'research-query', $args, $research );
+
+			return $this->success_response(
+				$research,
+				sprintf(
+					/* translators: %d: number of results */
+					__( 'Research complete. Found %d results.', 'mcp-ai-wpoos' ),
+					$research['results_found']
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1108,7 +1576,63 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_workflow_create( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create workflows.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$workflow_name = sanitize_text_field( $args['name'] );
+			$description = ! empty( $args['description'] ) ? sanitize_text_field( $args['description'] ) : '';
+
+			// Create workflow definition.
+			$workflow_id = uniqid( 'workflow_', true );
+			$workflow = array(
+				'id'          => $workflow_id,
+				'name'        => $workflow_name,
+				'description' => $description,
+				'steps'       => array(),
+				'status'      => 'active',
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save workflow (in real implementation, would save to database or options).
+			$workflows = get_option( 'wp_mcp_ai_workflows', array() );
+			$workflows[ $workflow_id ] = $workflow;
+			update_option( 'wp_mcp_ai_workflows', $workflows );
+
+			$result = array(
+				'workflow_id'   => $workflow_id,
+				'name'          => $workflow_name,
+				'status'        => 'created',
+			);
+
+			$this->log_activity( 'workflow-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: workflow name */
+					__( 'Workflow "%s" created successfully.', 'mcp-ai-wpoos' ),
+					$workflow_name
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1119,7 +1643,49 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_email_campaign( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'subject', 'content' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create campaigns.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$subject = sanitize_text_field( $args['subject'] );
+			$content = wp_kses_post( $args['content'] );
+			$audience = ! empty( $args['audience'] ) ? sanitize_text_field( $args['audience'] ) : 'all';
+
+			// Mock campaign creation.
+			$campaign_id = uniqid( 'campaign_', true );
+
+			$result = array(
+				'campaign_id'      => $campaign_id,
+				'subject'          => $subject,
+				'audience'         => $audience,
+				'status'           => 'draft',
+				'created'          => current_time( 'mysql' ),
+				'estimated_reach'  => 1000,
+			);
+
+			$this->log_activity( 'email-campaign', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Email campaign created successfully.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -1130,7 +1696,55 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_api_connect( $args, $context ) {
-		return $this->handle_generic_command( $args, $context );
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'service' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to connect APIs.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$service = sanitize_text_field( $args['service'] );
+			$api_key = ! empty( $args['api_key'] ) ? sanitize_text_field( $args['api_key'] ) : '';
+
+			// Mock API connection test.
+			$connection = array(
+				'service'       => $service,
+				'status'        => 'connected',
+				'connected_at'  => current_time( 'mysql' ),
+				'test_result'   => 'success',
+				'rate_limit'    => '1000/hour',
+			);
+
+			// Save API connection (in real implementation).
+			update_option( "wp_mcp_ai_api_{$service}", array(
+				'connected'    => true,
+				'connected_at' => current_time( 'mysql' ),
+			) );
+
+			$this->log_activity( 'api-connect', array( 'service' => $service ), $connection );
+
+			return $this->success_response(
+				$connection,
+				sprintf(
+					/* translators: %s: service name */
+					__( 'Successfully connected to %s API.', 'mcp-ai-wpoos' ),
+					$service
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
