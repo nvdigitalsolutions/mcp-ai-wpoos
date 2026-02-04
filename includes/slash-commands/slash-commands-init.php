@@ -523,16 +523,9 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		)
 	);
 
-	// Enqueue with chat bundle if it's loaded.
-	add_action(
-		'wp_enqueue_scripts',
-		function() {
-			if ( wp_script_is( 'wp-mcp-ai-chat', 'enqueued' ) ) {
-				wp_enqueue_script( 'mcp-ai-slash-commands' );
-			}
-		},
-		20
-	);
+	// Note: Slash command scripts are enqueued by the shortcode renderer
+	// when the chat interface is loaded. This ensures proper loading order
+	// and compatibility with all AI providers including OpenAI, Gemini, and Ollama.
 }
 
 /**

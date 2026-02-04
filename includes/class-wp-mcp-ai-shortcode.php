@@ -830,6 +830,11 @@ class WP_MCP_AI_Shortcode {
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
 
+			// Enqueue slash commands integration if available.
+			if ( wp_script_is( 'mcp-ai-slash-commands', 'registered' ) ) {
+				wp_enqueue_script( 'mcp-ai-slash-commands' );
+			}
+
 			$instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
 			$textarea_id = $instance_id . '-input';
 			$session_key = wp_generate_uuid4();
