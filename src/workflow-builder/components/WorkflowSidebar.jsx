@@ -7,8 +7,9 @@
  * @since 2.0.0
  */
 
-import { useState } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { convertTemplateToWorkflow, getTemplatePreview } from '../utils/templateConverter';
 
 /**
  * Node types available for drag and drop
@@ -39,6 +40,55 @@ const nodeCategories = {
  */
 const WorkflowSidebar = ( { onLoadTemplate } ) => {
 	const [activeTab, setActiveTab] = useState( 'nodes' );
+	const [templates, setTemplates] = useState( [] );
+	const [loadingTemplates, setLoadingTemplates] = useState( false );
+
+	/**
+	 * Load templates from backend
+	 */
+	useEffect( () => {
+		if ( activeTab === 'templates' && templates.length === 0 ) {
+			loadTemplates();
+		}
+	}, [activeTab] );
+
+	const loadTemplates = async () => {
+		setLoadingTemplates( true );
+		try {
+			const response = await fetch( window.mcpAiWorkflowBuilder?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( {
+					action: 'wp_mcp_ai_get_workflow_templates',
+					nonce: window.mcpAiWorkflowBuilder?.nonce || '',
+				} ),
+			} );
+
+			const result = await response.json();
+			if ( result.success && result.data.templates ) {
+				setTemplates( Object.values( result.data.templates ) );
+			}
+		} catch ( error ) {
+			console.error( 'Error loading templates:', error );
+		} finally {
+			setLoadingTemplates( false );
+		}
+	};
+
+	/**
+	 * Handle template selection
+	 */
+	const handleTemplateClick = ( template ) => {
+		const workflow = convertTemplateToWorkflow( template );
+		onLoadTemplate( {
+			name: template.name,
+			description: template.description,
+			nodes: workflow.nodes,
+			edges: workflow.edges,
+		} );
+	};
 
 	/**
 	 * Handle drag start for node
@@ -99,10 +149,36 @@ const WorkflowSidebar = ( { onLoadTemplate } ) => {
 						<p className="templates-intro">
 							{__( 'Start from a pre-built workflow template', 'mcp-ai-wpoos' )}
 						</p>
-						{/* Template list will be populated from backend */}
-						<div className="template-placeholder">
-							{__( 'Loading templates...', 'mcp-ai-wpoos' )}
-						</div>
+						{loadingTemplates && (
+							<div className="template-placeholder">
+								{__( 'Loading templates...', 'mcp-ai-wpoos' )}
+							</div>
+						)}
+						{! loadingTemplates && templates.length === 0 && (
+							<div className="template-placeholder">
+								{__( 'No templates available', 'mcp-ai-wpoos' )}
+							</div>
+						)}
+						{! loadingTemplates && templates.length > 0 && (
+							<div className="template-list">
+								{templates.map( ( template, index ) => {
+									const preview = getTemplatePreview( template );
+									return (
+										<div
+											key={index}
+											className="template-item"
+											onClick={() => handleTemplateClick( template )}
+										>
+											<div className="template-name">{preview.name}</div>
+											<div className="template-description">{preview.description}</div>
+											<div className="template-meta">
+												{preview.stepCount} {__( 'steps', 'mcp-ai-wpoos' )}
+											</div>
+										</div>
+									);
+								} )}
+							</div>
+						)}
 					</div>
 				)}
 			</div>

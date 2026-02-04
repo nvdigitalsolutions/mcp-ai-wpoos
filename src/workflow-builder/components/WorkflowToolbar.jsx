@@ -1,7 +1,7 @@
 /**
  * Workflow Toolbar Component
  *
- * Top toolbar with workflow name, save, and actions.
+ * Top toolbar with workflow name, save, undo/redo, and actions.
  *
  * @package WP_MCP_AI
  * @since 2.0.0
@@ -16,6 +16,11 @@ const WorkflowToolbar = ( {
 	workflowName,
 	onNameChange,
 	onSave,
+	onUndo,
+	onRedo,
+	onSaveVersion,
+	canUndo,
+	canRedo,
 	isSaving,
 	validationErrors,
 } ) => {
@@ -31,6 +36,25 @@ const WorkflowToolbar = ( {
 				/>
 			</div>
 
+			<div className="workflow-toolbar-center">
+				<button
+					className="toolbar-button undo-button"
+					onClick={onUndo}
+					disabled={! canUndo}
+					title={__( 'Undo (Ctrl+Z)', 'mcp-ai-wpoos' )}
+				>
+					↶
+				</button>
+				<button
+					className="toolbar-button redo-button"
+					onClick={onRedo}
+					disabled={! canRedo}
+					title={__( 'Redo (Ctrl+Y)', 'mcp-ai-wpoos' )}
+				>
+					↷
+				</button>
+			</div>
+
 			<div className="workflow-toolbar-right">
 				{validationErrors.length > 0 && (
 					<span className="validation-badge error">
@@ -38,6 +62,15 @@ const WorkflowToolbar = ( {
 					</span>
 				)}
 				
+				<button
+					className="toolbar-button version-button"
+					onClick={onSaveVersion}
+					disabled={isSaving}
+					title={__( 'Save Version', 'mcp-ai-wpoos' )}
+				>
+					{__( 'Save Version', 'mcp-ai-wpoos' )}
+				</button>
+
 				<button
 					className="toolbar-button test-button"
 					disabled={isSaving}

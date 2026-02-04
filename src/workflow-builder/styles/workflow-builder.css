@@ -28,10 +28,16 @@
 }
 
 .workflow-toolbar-left,
+.workflow-toolbar-center,
 .workflow-toolbar-right {
 	display: flex;
 	align-items: center;
 	gap: 12px;
+}
+
+.workflow-toolbar-center {
+	flex: 1;
+	justify-content: center;
 }
 
 .workflow-name-input {
@@ -91,6 +97,29 @@
 
 .save-button:hover:not(:disabled) {
 	background: #2563eb;
+}
+
+.undo-button,
+.redo-button {
+	background: #f3f4f6;
+	color: #374151;
+	font-size: 20px;
+	padding: 8px 12px;
+	min-width: 40px;
+}
+
+.undo-button:hover:not(:disabled),
+.redo-button:hover:not(:disabled) {
+	background: #e5e7eb;
+}
+
+.version-button {
+	background: #8b5cf6;
+	color: #fff;
+}
+
+.version-button:hover:not(:disabled) {
+	background: #7c3aed;
 }
 
 /* Main Content Area */
@@ -459,6 +488,47 @@
 	text-align: center;
 	color: #6b7280;
 	font-size: 13px;
+}
+
+.template-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.template-item {
+	padding: 12px;
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.template-item:hover {
+	background: #f9fafb;
+	border-color: #3b82f6;
+	box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+.template-name {
+	font-size: 14px;
+	font-weight: 600;
+	color: #111827;
+	margin-bottom: 4px;
+}
+
+.template-description {
+	font-size: 12px;
+	color: #6b7280;
+	margin-bottom: 6px;
+}
+
+.template-meta {
+	font-size: 11px;
+	color: #9ca3af;
+	text-transform: uppercase;
+	font-weight: 500;
 }
 
 /* Responsive */

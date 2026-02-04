@@ -8,7 +8,7 @@
  * @since 2.0.0
  */
 
-import { useState, useCallback, useRef } from '@wordpress/element';
+import { useState, useCallback, useRef, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import ReactFlow, {
 	Background,
@@ -27,6 +27,8 @@ import WorkflowToolbar from './WorkflowToolbar';
 import WorkflowPropertiesPanel from './WorkflowPropertiesPanel';
 import nodeTypes from '../nodes';
 import { generateNodeId, validateWorkflow } from '../utils/workflowHelpers';
+import { WorkflowHistory, debounce } from '../utils/workflowHistory';
+import { createVersion, saveVersionToLocal, getVersionsFromLocal } from '../utils/workflowVersioning';
 
 /**
  * Workflow Builder Component
@@ -225,6 +227,11 @@ const WorkflowBuilderInner = () => {
 				workflowName={workflowName}
 				onNameChange={setWorkflowName}
 				onSave={saveWorkflow}
+				onUndo={handleUndo}
+				onRedo={handleRedo}
+				onSaveVersion={handleSaveVersion}
+				canUndo={canUndo}
+				canRedo={canRedo}
 				isSaving={isSaving}
 				validationErrors={validationErrors}
 			/>
