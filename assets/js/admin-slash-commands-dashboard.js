@@ -153,7 +153,8 @@
 				if (response.success) {
 					$('#workflow-details-content').html('<pre>' + this.escapeHtml(response.data.output) + '</pre>');
 				} else {
-					$('#workflow-details-content').html('<p style="color: red;">Error: ' + this.escapeHtml(response.data.message) + '</p>');
+					const errorMessage = response.data && response.data.message ? response.data.message : 'Unknown error occurred';
+					$('#workflow-details-content').html('<p style="color: red;">Error: ' + this.escapeHtml(errorMessage) + '</p>');
 				}
 			});
 		}
@@ -178,12 +179,23 @@
 					if (response.success) {
 						$('#workflow-execution-content').html('<pre>' + this.escapeHtml(response.data.output) + '</pre>');
 					} else {
-						$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(response.data.message) + '</p>');
+						const errorMessage = response.data && response.data.message ? response.data.message : 'Unknown error occurred';
+						$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(errorMessage) + '</p>');
 					}
 				},
-				error: (xhr) => {
+				error: (xhr, textStatus, errorThrown) => {
 					$('#workflow-execution-output').removeClass('executing');
-					$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(xhr.statusText) + '</p>');
+					let errorMessage = 'Request failed';
+					if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+						errorMessage = xhr.responseJSON.data.message;
+					} else if (errorThrown && errorThrown !== '') {
+						errorMessage = errorThrown;
+					} else if (xhr.statusText && xhr.statusText !== 'error') {
+						errorMessage = xhr.statusText;
+					} else if (xhr.status) {
+						errorMessage = 'HTTP ' + xhr.status + ' error';
+					}
+					$('#workflow-execution-content').html('<p style="color: red;">Error: ' + this.escapeHtml(errorMessage) + '</p>');
 				}
 			});
 		}
@@ -204,7 +216,8 @@
 					$output.text(response.data.output);
 				} else {
 					$output.addClass('error');
-					$output.text('Error: ' + response.data.message);
+					const errorMessage = response.data && response.data.message ? response.data.message : 'Unknown error occurred';
+					$output.text('Error: ' + errorMessage);
 				}
 			});
 		}
@@ -222,11 +235,21 @@
 					command: command
 				},
 				success: callback,
-				error: (xhr) => {
+				error: (xhr, textStatus, errorThrown) => {
+					let errorMessage = 'Request failed';
+					if (xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message) {
+						errorMessage = xhr.responseJSON.data.message;
+					} else if (errorThrown && errorThrown !== '') {
+						errorMessage = errorThrown;
+					} else if (xhr.statusText && xhr.statusText !== 'error') {
+						errorMessage = xhr.statusText;
+					} else if (xhr.status) {
+						errorMessage = 'HTTP ' + xhr.status + ' error';
+					}
 					callback({
 						success: false,
 						data: {
-							message: xhr.statusText || 'Unknown error'
+							message: errorMessage
 						}
 					});
 				}
