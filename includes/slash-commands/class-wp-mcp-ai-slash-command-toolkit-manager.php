@@ -1920,7 +1920,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			array(
 				'name'   => 'analytics-dashboard',
 				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
+					'handler'     => array( $this, 'handle_analytics_dashboard' ),
 					'description' => __( 'Create custom dashboards', 'mcp-ai-wpoos' ),
 					'usage'       => '/analytics-dashboard --name="Sales Overview"',
 					'capability'  => 'edit_posts',
@@ -2387,20 +2387,137 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command definitions.
 	 */
 	protected function get_crm_commands() {
-		$commands = array();
-		$command_names = array( 'lead-add', 'lead-qualify', 'lead-assign', 'contact-create', 'contact-merge', 'deal-create', 'deal-move', 'activity-log', 'follow-up', 'email-sequence', 'crm-report', 'pipeline-view', 'contact-segment', 'crm-sync' );
-		foreach ( $command_names as $name ) {
-			$commands[] = array(
-				'name'   => $name,
+		return array(
+			array(
+				'name'   => 'lead-add',
 				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
-					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'handler'     => array( $this, 'handle_lead_add' ),
+					'description' => __( 'Add new lead', 'mcp-ai-wpoos' ),
+					'usage'       => '/lead-add --name="John Doe" --email="john@example.com"',
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'crm',
 				),
-			);
-		}
-		return $commands;
+			),
+			array(
+				'name'   => 'lead-qualify',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Qualify leads', 'mcp-ai-wpoos' ),
+					'usage'       => '/lead-qualify --lead_id=456',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'lead-assign',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Assign leads', 'mcp-ai-wpoos' ),
+					'usage'       => '/lead-assign --lead_id=456 --user_id=789',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'contact-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create contact', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'contact-merge',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Merge contacts', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'deal-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create deal', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'deal-move',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Move deal in pipeline', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'activity-log',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Log activity', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'follow-up',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Schedule follow-up', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'email-sequence',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create email sequence', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'crm-report',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Generate CRM report', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'pipeline-view',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'View sales pipeline', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'contact-segment',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Segment contacts', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+			array(
+				'name'   => 'crm-sync',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Sync CRM data', 'mcp-ai-wpoos' ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			),
+		);
 	}
 
 	/**
@@ -2875,6 +2992,412 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					/* translators: %d: number of prompts found */
 					__( 'Found %d prompt templates.', 'mcp-ai-wpoos' ),
 					count( $filtered_prompts )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	// ========================================================================
+	// PHASE 1: ADDITIONAL HIGH-PRIORITY HANDLERS
+	// ========================================================================
+
+	/**
+	 * Handle analytics-dashboard command.
+	 *
+	 * Create custom analytics dashboards.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_analytics_dashboard( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create analytics dashboards.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$dashboard_name = sanitize_text_field( $args['name'] );
+			$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'pageviews,sessions,bounces';
+			$time_range = isset( $args['time_range'] ) ? sanitize_text_field( $args['time_range'] ) : 'last-30-days';
+
+			// Create dashboard configuration.
+			$dashboard_id = uniqid( 'dashboard_', true );
+			$dashboard = array(
+				'id'          => $dashboard_id,
+				'name'        => $dashboard_name,
+				'metrics'     => explode( ',', $metrics ),
+				'time_range'  => $time_range,
+				'widgets'     => array(
+					array( 'type' => 'line_chart', 'metric' => 'pageviews' ),
+					array( 'type' => 'bar_chart', 'metric' => 'sessions' ),
+					array( 'type' => 'pie_chart', 'metric' => 'bounces' ),
+				),
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save dashboard.
+			$dashboards = get_option( 'wp_mcp_ai_analytics_dashboards', array() );
+			$dashboards[ $dashboard_id ] = $dashboard;
+			update_option( 'wp_mcp_ai_analytics_dashboards', $dashboards );
+
+			$result = array(
+				'dashboard_id' => $dashboard_id,
+				'name'         => $dashboard_name,
+				'metrics'      => $dashboard['metrics'],
+				'widgets'      => count( $dashboard['widgets'] ),
+				'view_url'     => admin_url( "admin.php?page=wp-mcp-ai-analytics&dashboard={$dashboard_id}" ),
+			);
+
+			$this->log_activity( 'analytics-dashboard', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: dashboard name */
+					__( 'Analytics dashboard "%s" created successfully.', 'mcp-ai-wpoos' ),
+					$dashboard_name
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle social-post command.
+	 *
+	 * Create social media posts.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_post( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'content' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create social posts.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$content = sanitize_textarea_field( $args['content'] );
+			$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+			$hashtags = isset( $args['hashtags'] ) ? sanitize_text_field( $args['hashtags'] ) : '';
+
+			// Create social post.
+			$post_id = uniqid( 'social_', true );
+			$post = array(
+				'id'          => $post_id,
+				'content'     => $content,
+				'platform'    => $platform,
+				'hashtags'    => $hashtags ? explode( ',', $hashtags ) : array(),
+				'status'      => 'draft',
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save social post.
+			$posts = get_option( 'wp_mcp_ai_social_posts', array() );
+			$posts[ $post_id ] = $post;
+			update_option( 'wp_mcp_ai_social_posts', $posts );
+
+			$result = array(
+				'post_id'  => $post_id,
+				'platform' => $platform,
+				'status'   => 'draft',
+				'preview'  => wp_trim_words( $content, 20 ),
+			);
+
+			$this->log_activity( 'social-post', $args, $result );
+
+			return $this->success_response(
+				$result,
+				__( 'Social post created successfully. Ready for scheduling.', 'mcp-ai-wpoos' )
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle doc-create command.
+	 *
+	 * Generate documents from templates.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_doc_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'template' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create documents.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$template = sanitize_text_field( $args['template'] );
+			$title = isset( $args['title'] ) ? sanitize_text_field( $args['title'] ) : "Document from {$template}";
+
+			// Create document from template.
+			$doc_id = uniqid( 'doc_', true );
+			$document = array(
+				'id'          => $doc_id,
+				'title'       => $title,
+				'template'    => $template,
+				'content'     => $this->get_template_content( $template ),
+				'status'      => 'draft',
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save document.
+			$documents = get_option( 'wp_mcp_ai_documents', array() );
+			$documents[ $doc_id ] = $document;
+			update_option( 'wp_mcp_ai_documents', $documents );
+
+			$result = array(
+				'doc_id'   => $doc_id,
+				'title'    => $title,
+				'template' => $template,
+				'status'   => 'draft',
+			);
+
+			$this->log_activity( 'doc-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: template name */
+					__( 'Document created from template "%s".', 'mcp-ai-wpoos' ),
+					$template
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Get template content.
+	 *
+	 * Helper method to load document template content.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $template Template name.
+	 * @return string Template content.
+	 */
+	protected function get_template_content( $template ) {
+		$templates = array(
+			'invoice'           => "INVOICE\n\nDate: {date}\nInvoice #: {invoice_number}\n\nBill To:\n{customer_name}\n{customer_address}\n\nItems:\n{items}\n\nTotal: {total}",
+			'contract'          => "CONTRACT AGREEMENT\n\nThis agreement is made on {date} between:\n{party_a}\nand\n{party_b}\n\nTerms:\n{terms}\n\nSignatures:\n_____________  _____________",
+			'proposal'          => "BUSINESS PROPOSAL\n\nTo: {client_name}\nDate: {date}\n\nExecutive Summary:\n{summary}\n\nScope of Work:\n{scope}\n\nPricing:\n{pricing}",
+			'service-agreement' => "SERVICE AGREEMENT\n\nService Provider: {provider}\nClient: {client}\n\nServices: {services}\n\nPayment Terms: {payment_terms}",
+		);
+
+		return isset( $templates[ $template ] ) ? $templates[ $template ] : "Template: {$template}\n\n[Content will be added here]";
+	}
+
+	/**
+	 * Handle lead-add command.
+	 *
+	 * Add CRM leads.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_lead_add( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name', 'email' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to add leads.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$name = sanitize_text_field( $args['name'] );
+			$email = sanitize_email( $args['email'] );
+			$source = isset( $args['source'] ) ? sanitize_text_field( $args['source'] ) : 'manual';
+			$score = isset( $args['score'] ) ? absint( $args['score'] ) : 50;
+
+			// Create lead.
+			$lead_id = uniqid( 'lead_', true );
+			$lead = array(
+				'id'          => $lead_id,
+				'name'        => $name,
+				'email'       => $email,
+				'source'      => $source,
+				'score'       => $score,
+				'status'      => 'new',
+				'created'     => current_time( 'mysql' ),
+				'created_by'  => get_current_user_id(),
+			);
+
+			// Save lead.
+			$leads = get_option( 'wp_mcp_ai_crm_leads', array() );
+			$leads[ $lead_id ] = $lead;
+			update_option( 'wp_mcp_ai_crm_leads', $leads );
+
+			$result = array(
+				'lead_id' => $lead_id,
+				'name'    => $name,
+				'email'   => $email,
+				'source'  => $source,
+				'score'   => $score,
+				'status'  => 'new',
+			);
+
+			$this->log_activity( 'lead-add', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: lead name */
+					__( 'Lead "%s" added successfully.', 'mcp-ai-wpoos' ),
+					$name
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle budget-create command.
+	 *
+	 * Create financial budgets.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_budget_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create budgets.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$name = sanitize_text_field( $args['name'] );
+			$monthly_income = isset( $args['monthly_income'] ) ? floatval( $args['monthly_income'] ) : 0;
+			$savings_goal = isset( $args['savings_goal'] ) ? floatval( $args['savings_goal'] ) : 0.20;
+
+			// Calculate budget allocations.
+			$savings = $monthly_income * $savings_goal;
+			$expenses = $monthly_income - $savings;
+
+			// Create budget.
+			$budget_id = uniqid( 'budget_', true );
+			$budget = array(
+				'id'              => $budget_id,
+				'name'            => $name,
+				'monthly_income'  => $monthly_income,
+				'savings_goal'    => $savings_goal,
+				'allocations'     => array(
+					'savings'      => $savings,
+					'housing'      => $expenses * 0.30,
+					'food'         => $expenses * 0.15,
+					'transportation' => $expenses * 0.15,
+					'utilities'    => $expenses * 0.10,
+					'other'        => $expenses * 0.30,
+				),
+				'created'         => current_time( 'mysql' ),
+				'created_by'      => get_current_user_id(),
+			);
+
+			// Save budget.
+			$budgets = get_option( 'wp_mcp_ai_budgets', array() );
+			$budgets[ $budget_id ] = $budget;
+			update_option( 'wp_mcp_ai_budgets', $budgets );
+
+			$result = array(
+				'budget_id'      => $budget_id,
+				'name'           => $name,
+				'monthly_income' => $monthly_income,
+				'savings'        => $savings,
+				'allocations'    => $budget['allocations'],
+			);
+
+			$this->log_activity( 'budget-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: budget name */
+					__( 'Budget "%s" created successfully.', 'mcp-ai-wpoos' ),
+					$name
 				)
 			);
 
