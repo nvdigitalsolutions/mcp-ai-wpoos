@@ -192,7 +192,7 @@
 				url: wpMcpAiSlashCommands.ajaxUrl,
 				type: 'POST',
 				data: {
-					action: 'wp_mcp_ai_execute_workflow',
+					action: 'wp_mcp_ai_execute_slash_workflow',
 					nonce: wpMcpAiSlashCommands.nonce,
 					workflow: workflow
 				},

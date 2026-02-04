@@ -43,7 +43,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		add_action( 'wp_ajax_wp_mcp_ai_get_command_history', array( $this, 'ajax_get_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_history_entry', array( $this, 'ajax_get_history_entry' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_clear_command_history', array( $this, 'ajax_clear_history' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_execute_workflow', array( $this, 'ajax_execute_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_execute_slash_workflow', array( $this, 'ajax_execute_workflow' ) );
 	}
 
 	/**
