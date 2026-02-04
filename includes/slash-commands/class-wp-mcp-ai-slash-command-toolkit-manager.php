@@ -69,14 +69,19 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * Constructor.
 	 */
 	protected function __construct() {
-		$this->handler          = new WP_MCP_AI_Slash_Command_Handler();
+		$this->handler          = wp_mcp_ai_get_slash_command_handler();
 		$this->toolkit_registry = WP_MCP_AI_Toolkit_Registry::get_instance();
+
+		// Only proceed if handler is available.
+		if ( ! $this->handler ) {
+			return;
+		}
 
 		// Initialize toolkit commands.
 		$this->define_toolkit_commands();
 
 		// Register commands on init.
-		add_action( 'init', array( $this, 'register_toolkit_commands' ) );
+		add_action( 'init', array( $this, 'register_toolkit_commands' ), 25 );
 	}
 
 	/**
@@ -549,12 +554,76 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_content_draft( $args, $context ) {
-		// Implementation placeholder.
-		return array(
-			'success' => true,
-			'message' => __( 'Content draft command - Implementation in progress', 'mcp-ai-wpoos' ),
-			'data'    => $args,
-		);
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'topic' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		// Extract parameters.
+		$topic = sanitize_text_field( $args['topic'] );
+		$type  = isset( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'post';
+		$tone  = isset( $args['tone'] ) ? sanitize_text_field( $args['tone'] ) : 'professional';
+
+		try {
+			// Create draft post.
+			$post_data = array(
+				'post_title'   => $topic,
+				'post_content' => sprintf(
+					/* translators: 1: topic, 2: tone */
+					__( 'Draft content for: %1$s\n\nTone: %2$s\n\n[AI-generated content will be added here]', 'mcp-ai-wpoos' ),
+					$topic,
+					$tone
+				),
+				'post_status'  => 'draft',
+				'post_type'    => $type,
+				'post_author'  => get_current_user_id(),
+			);
+
+			$post_id = wp_insert_post( $post_data );
+
+			if ( is_wp_error( $post_id ) ) {
+				return $this->error_response( $post_id );
+			}
+
+			// Add metadata.
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_topic', $topic );
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_tone', $tone );
+			update_post_meta( $post_id, '_wp_mcp_ai_draft_created_via_command', true );
+
+			$result = array(
+				'post_id'  => $post_id,
+				'topic'    => $topic,
+				'type'     => $type,
+				'tone'     => $tone,
+				'edit_url' => admin_url( "post.php?post={$post_id}&action=edit" ),
+			);
+
+			// Log activity.
+			$this->log_activity( 'content-draft', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: post ID */
+					__( 'Draft created successfully! Post ID: %s', 'mcp-ai-wpoos' ),
+					$post_id
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -645,6 +714,112 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'args'    => $args,
 				'context' => $context,
 			),
+		);
+	}
+
+	/**
+	 * Validate command arguments.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $required_params Required parameter names.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_args( $args, $required_params = array() ) {
+		foreach ( $required_params as $param ) {
+			if ( ! isset( $args[ $param ] ) || empty( $args[ $param ] ) ) {
+				return new WP_Error(
+					'missing_required_param',
+					sprintf(
+						/* translators: %s: parameter name */
+						__( 'Missing required parameter: %s', 'mcp-ai-wpoos' ),
+						$param
+					)
+				);
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Return success response.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param mixed  $data Result data.
+	 * @param string $message Optional success message.
+	 * @return array Success response.
+	 */
+	protected function success_response( $data = null, $message = '' ) {
+		$response = array(
+			'success' => true,
+		);
+
+		if ( ! empty( $message ) ) {
+			$response['message'] = $message;
+		}
+
+		if ( null !== $data ) {
+			$response['data'] = $data;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Return error response.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string|WP_Error $error Error message or WP_Error object.
+	 * @return array Error response.
+	 */
+	protected function error_response( $error ) {
+		$response = array(
+			'success' => false,
+		);
+
+		if ( is_wp_error( $error ) ) {
+			$response['error']   = $error->get_error_code();
+			$response['message'] = $error->get_error_message();
+		} else {
+			$response['error']   = 'command_error';
+			$response['message'] = $error;
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Log command activity.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $command Command name.
+	 * @param array  $args Command arguments.
+	 * @param mixed  $result Command result.
+	 */
+	protected function log_activity( $command, $args, $result ) {
+		if ( ! function_exists( 'wp_mcp_ai_log' ) ) {
+			return;
+		}
+
+		$success = is_array( $result ) && ! empty( $result['success'] );
+
+		wp_mcp_ai_log(
+			sprintf(
+				'Toolkit command executed: %s (status: %s)',
+				$command,
+				$success ? 'success' : 'error'
+			),
+			array(
+				'command' => $command,
+				'args'    => $args,
+				'success' => $success,
+			),
+			$success ? 'info' : 'error'
 		);
 	}
 
