@@ -661,10 +661,6 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 		 */
 		do_action( 'wp_mcp_ai_slash_command_audit_logged', $log_data );
 	}
-		 * @param array $log_data Audit log entry data.
-		 */
-		do_action( 'wp_mcp_ai_slash_command_audit_logged', $log_data );
-	}
 }
 
 /**
