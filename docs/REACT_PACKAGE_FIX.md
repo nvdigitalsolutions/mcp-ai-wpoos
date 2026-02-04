@@ -41,8 +41,8 @@ $workflow_bundled_packages = array(
 ```
 
 The detection now follows this priority order:
-1. **Priority 1**: Check Pro addon build directory: `addons/pro/build/workflow-builder/index.js` (production)
-2. **Priority 2**: Check base build directory: `build/workflow-builder/index.js` (legacy/backward compatibility)
+1. **Priority 1**: Check Pro addon build directory: `addons/pro/build/workflow-builder/workflow-builder.js` (production)
+2. **Priority 2**: Check base build directory: `build/workflow-builder/workflow-builder.js` (legacy/backward compatibility)
 3. **Priority 3**: Check node_modules: `node_modules/{package}` (development)
 
 ### 2. Moved Workflow Builder to Pro Addon
@@ -115,12 +115,12 @@ Created `bin/verify-react-packages.php` for manual verification of the package d
 
 ### In Production (with built bundle)
 ```
-✅ react: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
-✅ react-dom: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
-✅ reactflow: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
-✅ @dnd-kit/core: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
-✅ @dnd-kit/sortable: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
-✅ @dnd-kit/utilities: FOUND (bundled in addons/pro/build/workflow-builder/index.js)
+✅ react: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
+✅ react-dom: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
+✅ reactflow: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
+✅ @dnd-kit/core: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
+✅ @dnd-kit/sortable: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
+✅ @dnd-kit/utilities: FOUND (bundled in addons/pro/build/workflow-builder/workflow-builder.js)
 ```
 
 ### Before Build (neither node_modules nor bundle exists)
@@ -143,7 +143,7 @@ npm run build:workflow
 
 This will:
 1. Install all dependencies (including React packages) to node_modules
-2. Bundle React packages into `addons/pro/build/workflow-builder/index.js`
+2. Bundle React packages into `addons/pro/build/workflow-builder/workflow-builder.js`
 3. Make all React packages show as "FOUND" in Pro Settings
 
 ## Pro Feature Separation
