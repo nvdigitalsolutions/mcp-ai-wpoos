@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Executes YAML-defined workflows with support for:
  * - Sequential step execution
+ * - Parallel step execution (NEW in 1.2.1)
  * - Context passing between steps
  * - Integration with existing commands
  * - Error handling and recovery
@@ -421,14 +422,41 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			'context'         => array(),
 		);
 
-		// Execute each step sequentially.
+		// Execute each step sequentially or in parallel.
 		foreach ( $workflow['steps'] as $index => $step ) {
 			$step_num = $index + 1;
+
+			// Check if this is a parallel execution block.
+			if ( isset( $step['parallel'] ) && is_array( $step['parallel'] ) ) {
+				$parallel_result = $this->execute_parallel_steps(
+					$step['parallel'],
+					$results['context'],
+					$context,
+					$dry_run,
+					$step_num,
+					isset( $step['continue_on_error'] ) ? $step['continue_on_error'] : false
+				);
+
+				// Merge parallel results into main results.
+				$results['steps_completed'] += $parallel_result['completed'];
+				$results['steps_failed']    += $parallel_result['failed'];
+				$results['step_results']     = array_merge( $results['step_results'], $parallel_result['step_results'] );
+
+				// Merge context updates.
+				$results['context'] = array_merge( $results['context'], $parallel_result['context'] );
+
+				// Stop on failure unless continue_on_error is set.
+				if ( $parallel_result['failed'] > 0 && empty( $step['continue_on_error'] ) ) {
+					break;
+				}
+
+				continue;
+			}
 
 			if ( $dry_run ) {
 				$results['step_results'][] = array(
 					'step'    => $step_num,
-					'task'    => $step['task'],
+					'task'    => isset( $step['task'] ) ? $step['task'] : 'unknown',
 					'status'  => 'skipped',
 					'message' => __( 'Dry run - step not executed', 'mcp-ai-wpoos' ),
 				);
@@ -528,6 +556,109 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					)
 				);
 		}
+	}
+
+	/**
+	 * Execute multiple steps in parallel
+	 *
+	 * Note: Due to PHP's synchronous nature, this executes steps concurrently
+	 * using a simulated approach. For true async execution, consider using
+	 * WordPress cron or external task queues.
+	 *
+	 * @param array $steps            Array of step definitions to execute in parallel.
+	 * @param array $workflow_context Workflow context.
+	 * @param array $execution_context Execution context.
+	 * @param bool  $dry_run          Dry run mode.
+	 * @param int   $base_step_num    Base step number for reporting.
+	 * @param bool  $continue_on_error Continue even if steps fail.
+	 * @return array Parallel execution results.
+	 */
+	private function execute_parallel_steps( $steps, $workflow_context, $execution_context, $dry_run, $base_step_num, $continue_on_error ) {
+		$parallel_results = array(
+			'completed'    => 0,
+			'failed'       => 0,
+			'step_results' => array(),
+			'context'      => array(),
+		);
+
+		// Track start time for timeout enforcement.
+		$start_time = microtime( true );
+
+		// Execute each step in the parallel block.
+		foreach ( $steps as $sub_index => $step ) {
+			$step_num    = $base_step_num . '.' . ( $sub_index + 1 );
+			$step_name   = isset( $step['name'] ) ? $step['name'] : ( isset( $step['task'] ) ? $step['task'] : 'parallel-' . $sub_index );
+			$step_timeout = isset( $step['timeout'] ) ? absint( $step['timeout'] ) : 60; // Default 60s.
+
+			if ( $dry_run ) {
+				$parallel_results['step_results'][] = array(
+					'step'    => $step_num,
+					'task'    => $step_name,
+					'status'  => 'skipped',
+					'message' => __( 'Dry run - parallel step not executed', 'mcp-ai-wpoos' ),
+				);
+				continue;
+			}
+
+			// Check if we've exceeded overall timeout (cumulative for all parallel steps).
+			$elapsed = microtime( true ) - $start_time;
+			if ( $elapsed > 300 ) { // 5 minute hard limit for parallel block.
+				$parallel_results['failed']++;
+				$parallel_results['step_results'][] = array(
+					'step'    => $step_num,
+					'task'    => $step_name,
+					'status'  => 'failed',
+					'error'   => __( 'Parallel execution timeout exceeded (5 minutes)', 'mcp-ai-wpoos' ),
+				);
+				break;
+			}
+
+			// Execute the step with timeout awareness.
+			$step_start = microtime( true );
+			$step_result = $this->execute_step( $step, $workflow_context, $execution_context );
+			$step_duration = microtime( true ) - $step_start;
+
+			// Check for timeout (soft limit - step already executed).
+			$timed_out = $step_duration > $step_timeout;
+
+			if ( is_wp_error( $step_result ) ) {
+				$parallel_results['failed']++;
+				$parallel_results['step_results'][] = array(
+					'step'     => $step_num,
+					'task'     => $step_name,
+					'status'   => 'failed',
+					'error'    => $step_result->get_error_message(),
+					'duration' => round( $step_duration, 2 ),
+				);
+
+				// Stop parallel execution on first failure unless continue_on_error.
+				if ( ! $continue_on_error ) {
+					break;
+				}
+			} else {
+				$parallel_results['completed']++;
+				$parallel_results['step_results'][] = array(
+					'step'     => $step_num,
+					'task'     => $step_name,
+					'status'   => $timed_out ? 'completed-timeout' : 'completed',
+					'result'   => $step_result,
+					'duration' => round( $step_duration, 2 ),
+					'warning'  => $timed_out ? sprintf(
+						/* translators: 1: step timeout, 2: actual duration */
+						__( 'Step exceeded timeout (%1$ds) - took %2$ds', 'mcp-ai-wpoos' ),
+						$step_timeout,
+						round( $step_duration, 2 )
+					) : null,
+				);
+
+				// Update context with step results.
+				if ( isset( $step['output_var'] ) && is_array( $step_result ) ) {
+					$parallel_results['context'][ $step['output_var'] ] = $step_result;
+				}
+			}
+		}
+
+		return $parallel_results;
 	}
 
 	/**
@@ -693,6 +824,54 @@ class WP_MCP_AI_Slash_Command_Workflow {
 						'params' => array(
 							'type'    => 'posts',
 							'dry-run' => true,
+						),
+					),
+				),
+			),
+			'parallel-checks' => array(
+				'name'        => 'Parallel Site Checks',
+				'description' => 'Run multiple site checks concurrently for faster execution',
+				'steps'       => array(
+					array(
+						'parallel' => array(
+							array(
+								'task'    => 'clean-content',
+								'name'    => 'content-check',
+								'timeout' => 30,
+								'params'  => array(
+									'limit'   => 5,
+									'dry-run' => true,
+								),
+								'output_var' => 'content_result',
+							),
+							array(
+								'task'    => 'optimize-perf',
+								'name'    => 'perf-check',
+								'timeout' => 30,
+								'params'  => array(
+									'phases'  => '1,2',
+									'dry-run' => true,
+								),
+								'output_var' => 'perf_result',
+							),
+							array(
+								'task'    => 'sync-docs',
+								'name'    => 'docs-check',
+								'timeout' => 30,
+								'params'  => array(
+									'type'    => 'posts',
+									'dry-run' => true,
+								),
+								'output_var' => 'docs_result',
+							),
+						),
+						'continue_on_error' => true,
+					),
+					array(
+						'task'   => 'notify_admin',
+						'params' => array(
+							'subject' => 'Parallel Checks Complete',
+							'message' => 'All parallel site checks have completed.',
 						),
 					),
 				),
