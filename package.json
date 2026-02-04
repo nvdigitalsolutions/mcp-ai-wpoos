@@ -26,7 +26,7 @@
 		"minify:js:legacy": "uglifyjs assets/js/admin-settings.js -o assets/js/admin-settings.min.js -c -m && uglifyjs assets/js/chat.js -o assets/js/chat.min.js -c -m && uglifyjs assets/js/settings-dashboard.js -o assets/js/settings-dashboard.min.js -c -m && uglifyjs assets/js/user-chats.js -o assets/js/user-chats.min.js -c -m && uglifyjs assets/js/auth0-setup.js -o assets/js/auth0-setup.min.js -c -m && uglifyjs assets/js/mcp-diagnostic.js -o assets/js/mcp-diagnostic.min.js -c -m && uglifyjs assets/js/performance-blocks.js -o assets/js/performance-blocks.min.js -c -m",
 		"watch:css": "npm run minify:css -- --watch",
 		"watch:js": "npm run minify:js -- --watch",
-		"postinstall": "(cd addons/pro && npm install --legacy-peer-deps --omit=optional) || echo 'Pro addon install failed, continuing...' && npm run install:chartjs && npm run install:vectorizer && npm run install:vectorizer:fix && npm run build:js:pro || true",
+		"postinstall": "(cd addons/pro && npm install --legacy-peer-deps --omit=optional --no-optional) || echo 'Pro addon install failed, continuing...' && npm run install:chartjs && npm run install:vectorizer && npm run install:vectorizer:fix && npm run build:js:pro || true",
 		"install:chartjs": "cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js",
 		"install:vectorizer": "rm -rf assets/js/vendor/neplex-vectorizer && mkdir -p assets/js/vendor/neplex-vectorizer && cp -r node_modules/@neplex/vectorizer* assets/js/vendor/neplex-vectorizer/",
 		"install:vectorizer:fix": "find assets/js/vendor/neplex-vectorizer -maxdepth 2 -name '*.node' -type f -exec sh -c 'cp \"$1\" assets/js/vendor/neplex-vectorizer/vectorizer/' _ {} \\;"
@@ -70,6 +70,10 @@
 		"jest": "^30.2.0",
 		"jest-environment-jsdom": "^30.2.0",
 		"uglify-js": "^3.17.4"
+	},
+	"engines": {
+		"node": ">=18.0.0",
+		"npm": ">=10.0.0"
 	},
 	"keywords": [
 		"wordpress",
