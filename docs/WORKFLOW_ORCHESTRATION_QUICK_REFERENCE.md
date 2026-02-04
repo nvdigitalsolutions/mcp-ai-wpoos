@@ -4,7 +4,12 @@
 
 The `/workflow` slash command now supports advanced orchestration capabilities for building powerful, intelligent automation workflows.
 
-## New Features (v1.2.1)
+## Version History
+
+- **v1.2.1** - Parallel execution, conditional branching, loops, DAG support
+- **v1.2.2** - Performance metrics tracking, workflow visualization ⭐ NEW
+
+## New Features
 
 ### 1. Parallel Execution ⚡
 
@@ -263,6 +268,86 @@ steps:
 3. **Set appropriate timeouts** for parallel steps (default 60s)
 4. **Use dry-run mode** to test workflows safely
 5. **Limit max iterations** for loops to prevent runaway execution
+
+---
+
+## Performance Metrics 📊
+
+**NEW in v1.2.2**: Workflows now track and display performance metrics automatically.
+
+**Metrics Tracked:**
+- **Total Duration**: Complete workflow execution time (seconds)
+- **Steps Executed**: Count of all steps that ran
+- **Parallel Blocks**: Number of parallel execution blocks
+- **Loop Iterations**: Total iterations across all loops
+
+**Example Output:**
+```
+**Performance Metrics:**
+- Total Duration: 12.5s
+- Steps Executed: 8
+- Parallel Blocks: 1
+- Loop Iterations: 3
+```
+
+**No configuration needed** - metrics are automatically collected and displayed in workflow results.
+
+---
+
+## Workflow Visualization 🎨
+
+**NEW in v1.2.2**: Visualize workflow structure before execution.
+
+**Usage:**
+```bash
+# Visualize any workflow
+/workflow my-workflow --visualize
+
+# Short flag
+/workflow my-workflow -v
+```
+
+**Features:**
+- **Sequential flows**: Shows step execution order
+- **Parallel blocks**: Displays concurrent execution
+- **Conditional branches**: Shows THEN/ELSE paths
+- **Loop structures**: Indicates iterative steps
+- **DAG workflows**: Layer-based dependency visualization
+
+**Example for Sequential Workflow:**
+```
+1. next-task →
+2. clean-content →
+3. notify_admin →
+```
+
+**Example for Parallel Workflow:**
+```
+1. [Parallel Block ⇉]
+   ├─ clean-content
+   ├─ optimize-perf
+   └─ sync-docs
+```
+
+**Example for DAG Workflow:**
+```
+Layer 0:
+  analyze → [process_content, check_perf]
+
+Layer 1:
+  process_content → [finalize]
+  check_perf → [finalize]
+
+Layer 2:
+  finalize
+```
+
+**Legend:**
+- `→` Sequential flow
+- `⇉` Parallel execution
+- `↻` Loop
+- `⚡` Conditional branch
+- `⊕` Merge point (DAG)
 
 ---
 

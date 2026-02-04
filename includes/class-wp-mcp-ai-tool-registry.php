@@ -438,6 +438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
+				'visualize_workflow_metrics'         => 'wordpress-core',
 
 				// Excel and Spreadsheet Tools - Pro features.
 				'pro_excel'                          => 'external-tools',

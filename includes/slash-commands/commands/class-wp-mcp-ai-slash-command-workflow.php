@@ -57,6 +57,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		$dry_run   = isset( $flags['dry-run'] ) || isset( $flags['n'] );
 		$list_only = isset( $flags['list'] ) || isset( $flags['l'] );
 		$show_def  = isset( $flags['show'] ) || isset( $flags['s'] );
+		$visualize = isset( $flags['visualize'] ) || isset( $flags['v'] );
 
 		// List workflows.
 		if ( $list_only || 'list' === $action ) {
@@ -66,6 +67,15 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		// Show workflow definition.
 		if ( $show_def && $workflow_name ) {
 			return $this->show_workflow( $workflow_name );
+		}
+
+		// Visualize workflow structure.
+		if ( $visualize && $workflow_name ) {
+			$workflow = $this->load_workflow( $workflow_name );
+			if ( is_wp_error( $workflow ) ) {
+				return $workflow;
+			}
+			return $this->visualize_workflow( $workflow );
 		}
 
 		// Execute workflow.
@@ -170,6 +180,202 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 			$output .= "\n";
 		}
+
+		return $output;
+	}
+
+	/**
+	 * Visualize workflow structure
+	 *
+	 * Creates an ASCII visualization of the workflow showing:
+	 * - Sequential steps
+	 * - Parallel execution blocks
+	 * - Conditional branches
+	 * - Loop structures
+	 * - Step dependencies (DAG)
+	 *
+	 * @param array $workflow Workflow definition.
+	 * @return string Formatted visualization.
+	 */
+	private function visualize_workflow( $workflow ) {
+		$output = sprintf( "## Workflow Visualization: %s\n\n", esc_html( $workflow['name'] ) );
+
+		if ( ! empty( $workflow['description'] ) ) {
+			$output .= sprintf( "**Description:** %s\n\n", esc_html( $workflow['description'] ) );
+		}
+
+		// Check if workflow has dependencies (DAG).
+		if ( $this->has_step_dependencies( $workflow['steps'] ) ) {
+			$output .= $this->visualize_dag( $workflow['steps'] );
+		} else {
+			$output .= $this->visualize_sequential( $workflow['steps'] );
+		}
+
+		$output .= "\n**Legend:**\n";
+		$output .= "- `→` Sequential flow\n";
+		$output .= "- `⇉` Parallel execution\n";
+		$output .= "- `↻` Loop\n";
+		$output .= "- `⚡` Conditional branch\n";
+		$output .= "- `⊕` Merge point (DAG)\n";
+
+		return $output;
+	}
+
+	/**
+	 * Visualize workflow as sequential diagram
+	 *
+	 * @param array $steps Workflow steps.
+	 * @param int   $indent Indentation level.
+	 * @return string Visualization.
+	 */
+	private function visualize_sequential( $steps, $indent = 0 ) {
+		$output = '';
+		$prefix = str_repeat( '  ', $indent );
+
+		foreach ( $steps as $index => $step ) {
+			$step_num = $index + 1;
+
+			// Parallel block.
+			if ( isset( $step['parallel'] ) && is_array( $step['parallel'] ) ) {
+				$output .= $prefix . sprintf( "%d. [Parallel Block ⇉]\n", $step_num );
+				foreach ( $step['parallel'] as $sub_index => $sub_step ) {
+					$task_name = isset( $sub_step['name'] ) ? $sub_step['name'] : $sub_step['task'];
+					$output .= $prefix . sprintf( "   ├─ %s\n", esc_html( $task_name ) );
+				}
+				continue;
+			}
+
+			// Conditional block.
+			if ( isset( $step['condition'] ) ) {
+				$output .= $prefix . sprintf( "%d. [Conditional ⚡]: %s\n", $step_num, esc_html( $step['condition'] ) );
+				
+				if ( isset( $step['then'] ) ) {
+					$output .= $prefix . "   ├─ THEN:\n";
+					$then_steps = is_array( $step['then'] ) ? $step['then'] : array( $step['then'] );
+					foreach ( $then_steps as $then_step ) {
+						$task_name = isset( $then_step['name'] ) ? $then_step['name'] : $then_step['task'];
+						$output .= $prefix . sprintf( "   │  └─ %s\n", esc_html( $task_name ) );
+					}
+				}
+				
+				if ( isset( $step['else'] ) ) {
+					$output .= $prefix . "   └─ ELSE:\n";
+					$else_steps = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
+					foreach ( $else_steps as $else_step ) {
+						$task_name = isset( $else_step['name'] ) ? $else_step['name'] : $else_step['task'];
+						$output .= $prefix . sprintf( "      └─ %s\n", esc_html( $task_name ) );
+					}
+				}
+				continue;
+			}
+
+			// Loop block.
+			if ( isset( $step['repeat_until'] ) || isset( $step['repeat'] ) ) {
+				$condition = isset( $step['repeat_until'] ) ? $step['repeat_until'] : 'max iterations';
+				$output .= $prefix . sprintf( "%d. [Loop ↻]: until %s\n", $step_num, esc_html( $condition ) );
+				
+				if ( isset( $step['steps'] ) && is_array( $step['steps'] ) ) {
+					foreach ( $step['steps'] as $loop_step ) {
+						$task_name = isset( $loop_step['name'] ) ? $loop_step['name'] : $loop_step['task'];
+						$output .= $prefix . sprintf( "   ↻─ %s\n", esc_html( $task_name ) );
+					}
+				}
+				continue;
+			}
+
+			// Regular step.
+			$task_name = isset( $step['name'] ) ? $step['name'] : ( isset( $step['task'] ) ? $step['task'] : 'unknown' );
+			$output .= $prefix . sprintf( "%d. %s →\n", $step_num, esc_html( $task_name ) );
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Visualize workflow as DAG (Directed Acyclic Graph)
+	 *
+	 * @param array $steps Workflow steps with dependencies.
+	 * @return string Visualization.
+	 */
+	private function visualize_dag( $steps ) {
+		$output = "**DAG Structure:**\n\n```\n";
+
+		// Build dependency map.
+		$dep_map = array();
+		$reverse_deps = array(); // Track what depends on each step.
+
+		foreach ( $steps as $step ) {
+			$name = $step['name'];
+			$deps = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
+			$dep_map[ $name ] = $deps;
+
+			// Build reverse dependencies.
+			foreach ( $deps as $dep ) {
+				if ( ! isset( $reverse_deps[ $dep ] ) ) {
+					$reverse_deps[ $dep ] = array();
+				}
+				$reverse_deps[ $dep ][] = $name;
+			}
+		}
+
+		// Find root nodes (no dependencies).
+		$roots = array();
+		foreach ( $dep_map as $name => $deps ) {
+			if ( empty( $deps ) ) {
+				$roots[] = $name;
+			}
+		}
+
+		// Visualize layers.
+		$visited = array();
+		$layer = 0;
+
+		$current_layer = $roots;
+
+		while ( ! empty( $current_layer ) ) {
+			$output .= sprintf( "Layer %d:\n", $layer );
+			
+			foreach ( $current_layer as $node ) {
+				$dependents = isset( $reverse_deps[ $node ] ) ? $reverse_deps[ $node ] : array();
+				$output .= sprintf( "  %s", $node );
+				
+				if ( ! empty( $dependents ) ) {
+					$output .= sprintf( " → [%s]", implode( ', ', $dependents ) );
+				}
+				
+				$output .= "\n";
+				$visited[ $node ] = true;
+			}
+
+			// Find next layer (nodes whose dependencies are all visited).
+			$next_layer = array();
+			foreach ( $dep_map as $name => $deps ) {
+				if ( isset( $visited[ $name ] ) ) {
+					continue;
+				}
+
+				$all_deps_visited = true;
+				foreach ( $deps as $dep ) {
+					if ( ! isset( $visited[ $dep ] ) ) {
+						$all_deps_visited = false;
+						break;
+					}
+				}
+
+				if ( $all_deps_visited ) {
+					$next_layer[] = $name;
+				}
+			}
+
+			$current_layer = $next_layer;
+			$layer++;
+
+			if ( $layer > 20 ) { // Safety limit.
+				break;
+			}
+		}
+
+		$output .= "```\n\n";
 
 		return $output;
 	}
@@ -418,11 +624,20 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 * @return array Execution results.
 	 */
 	private function execute_workflow( $workflow, $dry_run, $context ) {
+		$workflow_start_time = microtime( true );
+
 		$results = array(
 			'steps_completed' => 0,
 			'steps_failed'    => 0,
 			'step_results'    => array(),
 			'context'         => array(),
+			'metrics'         => array(
+				'start_time'      => $workflow_start_time,
+				'total_duration'  => 0,
+				'steps_executed'  => 0,
+				'parallel_blocks' => 0,
+				'loop_iterations' => 0,
+			),
 		);
 
 		// Execute each step sequentially or in parallel.
@@ -528,6 +743,9 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				// Merge context updates.
 				$results['context'] = array_merge( $results['context'], $parallel_result['context'] );
 
+				// Track parallel execution metrics.
+				$results['metrics']['parallel_blocks']++;
+
 				// Stop on failure unless continue_on_error is set.
 				if ( $parallel_result['failed'] > 0 && empty( $step['continue_on_error'] ) ) {
 					break;
@@ -567,6 +785,9 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$results['steps_failed']    += $loop_result['failed'];
 				$results['step_results']     = array_merge( $results['step_results'], $loop_result['step_results'] );
 				$results['context']          = array_merge( $results['context'], $loop_result['context'] );
+
+				// Track loop execution metrics.
+				$results['metrics']['loop_iterations'] += $loop_result['iterations'];
 
 				// Add loop summary.
 				$results['step_results'][] = array(
@@ -634,6 +855,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				}
 			}
 		}
+
+		// Calculate final metrics.
+		$results['metrics']['total_duration'] = round( microtime( true ) - $workflow_start_time, 2 );
+		$results['metrics']['steps_executed'] = $results['steps_completed'] + $results['steps_failed'];
 
 		return $results;
 	}
@@ -1457,6 +1682,24 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$results['steps_failed']
 		);
 
+		// Add performance metrics if available.
+		if ( isset( $results['metrics'] ) && ! empty( $results['metrics']['total_duration'] ) ) {
+			$metrics = $results['metrics'];
+			$output .= "**Performance Metrics:**\n";
+			$output .= sprintf( "- Total Duration: %ss\n", $metrics['total_duration'] );
+			$output .= sprintf( "- Steps Executed: %d\n", $metrics['steps_executed'] );
+			
+			if ( $metrics['parallel_blocks'] > 0 ) {
+				$output .= sprintf( "- Parallel Blocks: %d\n", $metrics['parallel_blocks'] );
+			}
+			
+			if ( $metrics['loop_iterations'] > 0 ) {
+				$output .= sprintf( "- Loop Iterations: %d\n", $metrics['loop_iterations'] );
+			}
+			
+			$output .= "\n";
+		}
+
 		$output .= "### Step Results\n\n";
 
 		foreach ( $results['step_results'] as $step_result ) {
@@ -1497,6 +1740,23 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		if ( $dry_run ) {
 			$output .= "\n**Note:** This was a dry run. No changes were made.\n";
+		}
+
+		// Add Chart.js visualization option if metrics are available.
+		if ( isset( $results['metrics'] ) && ! empty( $results['metrics']['total_duration'] ) ) {
+			$output .= "\n---\n\n";
+			$output .= "**💡 Tip:** Visualize these metrics with interactive Chart.js charts using the `visualize_workflow_metrics` tool.\n\n";
+			$output .= "**Example:**\n";
+			$output .= "```json\n";
+			$output .= "{\n";
+			$output .= "  \"tool\": \"visualize_workflow_metrics\",\n";
+			$output .= "  \"arguments\": {\n";
+			$output .= "    \"workflow_results\": <these_results>,\n";
+			$output .= "    \"chart_type\": \"all\",\n";
+			$output .= "    \"save_attachment\": true\n";
+			$output .= "  }\n";
+			$output .= "}\n";
+			$output .= "```\n";
 		}
 
 		return $output;
