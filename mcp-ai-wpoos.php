@@ -1874,6 +1874,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
 		flush_rewrite_rules();
+
+		// Create slash command audit table.
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+			$audit = new WP_MCP_AI_Slash_Command_Audit();
+			$audit->create_table();
+		}
 	}
 }
 

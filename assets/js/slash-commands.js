@@ -20,6 +20,14 @@
 			this.commandCache = null;
 			this.cacheExpiry = 0;
 			this.debugMode = window.wpMcpAiDebug || false;
+			this.executionTimeout = 30000; // 30 seconds default timeout
+		}
+
+		/**
+		 * Generate correlation ID for request tracing
+		 */
+		generateCorrelationId() {
+			return 'slash_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 		}
 
 		/**
@@ -165,39 +173,69 @@
 		 */
 		async executeCommand(command) {
 			const startTime = Date.now();
-			console.log('[SlashCommands] ⚙️ Executing command:', command);
+			const correlationId = this.generateCorrelationId();
+			
+			console.log('[SlashCommands] 🚀 Executing command:', command, '| ID:', correlationId);
 			this.debug('Execution started at', new Date().toISOString());
 
-			// Show loading state
+			// Show loading state and ARIA announcement
 			this.setLoading(true);
+			this.announceToScreenReader('Executing command: ' + command.split(' ')[0]);
 
 			try {
 				this.debug('Sending command to REST API...');
-				const response = await this.sendCommand(command);
+				
+				// Create timeout promise
+				const timeoutPromise = new Promise((_, reject) => {
+					setTimeout(() => reject(new Error('Command execution timeout after ' + (this.executionTimeout / 1000) + ' seconds')), this.executionTimeout);
+				});
+				
+				// Race between command execution and timeout
+				const response = await Promise.race([
+					this.sendCommand(command, correlationId),
+					timeoutPromise
+				]);
+				
 				const duration = Date.now() - startTime;
 
 				this.debug('Command response received', {
+					correlationId: correlationId,
 					duration: duration + 'ms',
 					success: response.success,
 					hasResult: !!response.result
 				});
 
 				if (response.success) {
-					console.log('[SlashCommands] ✅ Command executed successfully in ' + duration + 'ms');
+					console.log('[SlashCommands] ✅ Command executed successfully in ' + duration + 'ms | ID:', correlationId);
 					this.displayResult(response.result, command);
+					this.announceToScreenReader('Command completed successfully');
+					
+					// Notify chat.js if available
+					this.notifyChatInterface('command-executed', { command, result: response.result, correlationId });
 				} else {
-					console.error('[SlashCommands] ❌ Command failed:', response.message);
+					console.error('[SlashCommands] ❌ Command failed:', response.message, '| ID:', correlationId);
 					this.displayError(response.message || 'Command execution failed');
+					this.announceToScreenReader('Command failed: ' + (response.message || 'Unknown error'));
 				}
 			} catch (error) {
 				const duration = Date.now() - startTime;
-				console.error('[SlashCommands] ❌ Error after ' + duration + 'ms:', error);
+				const isTimeout = error.message.includes('timeout');
+				
+				console.error('[SlashCommands] ❌ Error after ' + duration + 'ms:', error, '| ID:', correlationId);
 				this.debug('Error details:', {
+					correlationId: correlationId,
 					message: error.message,
 					stack: error.stack,
-					name: error.name
+					name: error.name,
+					isTimeout: isTimeout
 				});
-				this.displayError(error.message || 'Failed to execute command');
+				
+				const errorMsg = isTimeout ? 
+					'Command timed out. Please try again or contact support.' : 
+					(error.message || 'Failed to execute command');
+				
+				this.displayError(errorMsg);
+				this.announceToScreenReader('Command error: ' + errorMsg);
 			} finally {
 				this.setLoading(false);
 				this.chatInput.value = '';
@@ -207,28 +245,33 @@
 		/**
 		 * Send command to REST API
 		 */
-		async sendCommand(command) {
+		async sendCommand(command, correlationId) {
 			const endpoint = window.mcpAiData?.restUrl + '/mcp-ai/v1/slash-command';
 			const nonce = window.mcpAiData?.nonce;
 
 			this.debug('REST API request:', {
 				endpoint: endpoint,
 				hasNonce: !!nonce,
-				command: command
+				command: command,
+				correlationId: correlationId
 			});
 
 			if (!endpoint || !nonce) {
 				throw new Error('REST API configuration missing (restUrl or nonce)');
 			}
 
-			const requestPayload = { command };
+			const requestPayload = { 
+				command: command,
+				correlation_id: correlationId 
+			};
 			this.debug('Request payload:', requestPayload);
 
 			const response = await fetch(endpoint, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'X-WP-Nonce': nonce
+					'X-WP-Nonce': nonce,
+					'X-Correlation-ID': correlationId
 				},
 				body: JSON.stringify(requestPayload)
 			});
@@ -236,7 +279,8 @@
 			this.debug('Response status:', {
 				status: response.status,
 				statusText: response.statusText,
-				ok: response.ok
+				ok: response.ok,
+				correlationId: correlationId
 			});
 
 			if (!response.ok) {
@@ -248,6 +292,71 @@
 			const data = await response.json();
 			this.debug('Response data:', data);
 			return data;
+		}
+
+		/**
+		 * Announce message to screen readers
+		 */
+		announceToScreenReader(message) {
+			let announcer = document.getElementById('wp-mcp-ai-slash-announcer');
+			
+			if (!announcer) {
+				announcer = document.createElement('div');
+				announcer.id = 'wp-mcp-ai-slash-announcer';
+				announcer.className = 'screen-reader-text';
+				announcer.setAttribute('role', 'status');
+				announcer.setAttribute('aria-live', 'polite');
+				announcer.setAttribute('aria-atomic', 'true');
+				announcer.style.cssText = 'position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;';
+				document.body.appendChild(announcer);
+			}
+			
+			// Clear and set new message
+			announcer.textContent = '';
+			setTimeout(() => {
+				announcer.textContent = message;
+			}, 100);
+			
+			this.debug('Screen reader announcement:', message);
+		}
+
+		/**
+		 * Notify chat interface about slash command events
+		 */
+		notifyChatInterface(eventType, data) {
+			this.debug('Notifying chat interface:', eventType, data);
+			
+			// Dispatch custom event for chat.js to listen to
+			const event = new CustomEvent('slash-command-event', {
+				detail: {
+					type: eventType,
+					data: data,
+					timestamp: new Date().toISOString()
+				}
+			});
+			
+			window.dispatchEvent(event);
+			
+			// Also store in global state for direct access
+			if (!window.wpMcpAiSlashCommandState) {
+				window.wpMcpAiSlashCommandState = {
+					lastExecution: null,
+					history: []
+				};
+			}
+			
+			window.wpMcpAiSlashCommandState.lastExecution = {
+				type: eventType,
+				data: data,
+				timestamp: new Date().toISOString()
+			};
+			
+			window.wpMcpAiSlashCommandState.history.push(window.wpMcpAiSlashCommandState.lastExecution);
+			
+			// Keep only last 50 events
+			if (window.wpMcpAiSlashCommandState.history.length > 50) {
+				window.wpMcpAiSlashCommandState.history.shift();
+			}
 		}
 
 		/**
