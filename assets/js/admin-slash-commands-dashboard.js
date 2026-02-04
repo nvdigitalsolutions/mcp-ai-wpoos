@@ -451,6 +451,20 @@
 			div.textContent = text;
 			return div.innerHTML;
 		}
+
+		/**
+		 * Wrap callback with logging.
+		 *
+		 * @param {Function} callback Original callback function.
+		 * @param {string} context Context for logging (e.g., 'Test Tab', 'Workflow').
+		 * @return {Function} Wrapped callback with logging.
+		 */
+		loggedCallback(callback, context) {
+			return (response) => {
+				console.log(`[${context}] Response:`, response);
+				callback(response);
+			};
+		}
 	}
 
 	// Initialize when document is ready.

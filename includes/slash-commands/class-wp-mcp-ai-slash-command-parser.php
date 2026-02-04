@@ -47,8 +47,7 @@ class WP_MCP_AI_Slash_Command_Parser {
 		// Remove leading slash
 		$input = substr( $input, 1 );
 
-		// Extract command name (first word, allowing alphanumeric, underscores, and hyphens)
-		// Updated regex to include hyphens in command names (e.g., optimize-perf, clean-content)
+		// Extract command name (allowing alphanumeric, underscores, and hyphens for multi-word commands)
 		if ( ! preg_match( '/^([a-zA-Z0-9_-]+)(.*)$/s', $input, $matches ) ) {
 			return new WP_Error(
 				'invalid_command_name',

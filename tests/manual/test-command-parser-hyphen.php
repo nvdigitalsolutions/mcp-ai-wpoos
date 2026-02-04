@@ -4,15 +4,13 @@
  *
  * Run this from command line to verify the hyphen parsing fix.
  * Usage: php tests/manual/test-command-parser-hyphen.php
+ *
+ * This is a standalone script that doesn't require WordPress to be loaded.
  */
 
-// Define WordPress constants if not already defined.
-if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', dirname( __FILE__ ) . '/../../' );
-}
-
+// Define minimal constants needed for the parser class.
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-	define( 'WP_MCP_AI_PATH', dirname( __FILE__ ) . '/../../' );
+	define( 'WP_MCP_AI_PATH', dirname( dirname( __DIR__ ) ) . '/' );
 }
 
 // Load the parser class.
