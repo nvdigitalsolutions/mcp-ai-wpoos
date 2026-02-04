@@ -4097,49 +4097,110 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'industry' => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'general', 'ecommerce', 'blog', 'portfolio', 'corporate', 'nonprofit', 'education', 'healthcare', 'restaurant', 'real-estate', 'technology', 'finance' ),
+			),
+			'goals'    => array(
+				'type'     => 'string',
+				'required' => false,
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'site-research', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
 			$industry = isset( $args['industry'] ) ? sanitize_text_field( $args['industry'] ) : 'general';
-			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement';
+			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement,conversion';
+
+			// Parse and normalize goals.
+			$goals_array = array_map( 'trim', explode( ',', $goals ) );
+			$valid_goals = array( 'engagement', 'conversion', 'traffic', 'seo', 'performance', 'accessibility', 'security', 'mobile' );
+			$goals_array = array_intersect( $goals_array, $valid_goals );
+			if ( empty( $goals_array ) ) {
+				$goals_array = array( 'engagement', 'conversion' );
+			}
+
+			// Check for duplicate research (cache for 1 hour).
+			$cache_key = 'research_' . md5( $industry . implode( ',', $goals_array ) );
+			$cached = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				$cached['from_cache'] = true;
+				$this->log_activity( 'site-research', $args, array( 'cache_hit' => true ) );
+				return $this->success_response(
+					$cached,
+					__( 'Site research retrieved from cache.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Generate industry-specific recommendations.
+			$industry_recommendations = array(
+				'ecommerce'   => array(
+					array( 'category' => 'Design', 'suggestion' => __( 'Implement product filtering and search', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'Conversion', 'suggestion' => __( 'Add trust badges and secure checkout', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'Performance', 'suggestion' => __( 'Optimize product images and lazy loading', 'mcp-ai-wpoos' ), 'priority' => 'medium' ),
+				),
+				'blog'        => array(
+					array( 'category' => 'Content', 'suggestion' => __( 'Publish consistently with editorial calendar', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'SEO', 'suggestion' => __( 'Optimize for long-tail keywords', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'Engagement', 'suggestion' => __( 'Enable comments and social sharing', 'mcp-ai-wpoos' ), 'priority' => 'medium' ),
+				),
+				'general'     => array(
+					array( 'category' => 'Design', 'suggestion' => __( 'Use modern, mobile-first design approach', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'Performance', 'suggestion' => __( 'Optimize images and enable caching', 'mcp-ai-wpoos' ), 'priority' => 'high' ),
+					array( 'category' => 'SEO', 'suggestion' => __( 'Implement structured data and meta tags', 'mcp-ai-wpoos' ), 'priority' => 'medium' ),
+				),
+			);
+
+			$recommendations = isset( $industry_recommendations[ $industry ] ) ? $industry_recommendations[ $industry ] : $industry_recommendations['general'];
 
 			// Simulate research results.
 			$research = array(
-				'industry'       => $industry,
-				'goals'          => explode( ',', $goals ),
-				'recommendations' => array(
-					array(
-						'category' => 'Design',
-						'suggestion' => __( 'Use modern, mobile-first design approach', 'mcp-ai-wpoos' ),
-						'priority' => 'high',
-					),
-					array(
-						'category' => 'Performance',
-						'suggestion' => __( 'Optimize images and enable caching', 'mcp-ai-wpoos' ),
-						'priority' => 'high',
-					),
-					array(
-						'category' => 'SEO',
-						'suggestion' => __( 'Implement structured data and meta tags', 'mcp-ai-wpoos' ),
-						'priority' => 'medium',
-					),
+				'research_id'     => uniqid( 'research_', true ),
+				'industry'        => $industry,
+				'goals'           => $goals_array,
+				'recommendations' => $recommendations,
+				'competitors'     => array(
+					array( 'url' => 'example1.com', 'score' => 85, 'strengths' => array( 'Fast loading', 'Mobile-friendly' ) ),
+					array( 'url' => 'example2.com', 'score' => 78, 'strengths' => array( 'Good SEO', 'Clean design' ) ),
 				),
-				'competitors'    => array(
-					array( 'url' => 'example1.com', 'score' => 85 ),
-					array( 'url' => 'example2.com', 'score' => 78 ),
+				'from_cache'      => false,
+				'metadata'        => array(
+					'ip'                 => $validator->get_client_ip(),
+					'user_agent'         => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'recommendation_count' => count( $recommendations ),
+					'goals_count'        => count( $goals_array ),
 				),
 			);
+
+			// Cache research for 1 hour.
+			set_transient( $cache_key, $research, HOUR_IN_SECONDS );
 
 			$this->log_activity( 'site-research', $args, $research );
 
 			return $this->success_response(
 				$research,
 				sprintf(
-					/* translators: %s: industry name */
-					__( 'Site research completed for %s industry.', 'mcp-ai-wpoos' ),
-					$industry
+					/* translators: 1: industry name, 2: number of recommendations */
+					__( 'Site research completed for %1$s industry with %2$d recommendations.', 'mcp-ai-wpoos' ),
+					ucfirst( $industry ),
+					count( $recommendations )
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'site-research', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -4156,12 +4217,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command result.
 	 */
 	public function handle_booking_create( $args, $context ) {
-		// Validate required parameters.
-		$validation = $this->validate_args( $args, array( 'service', 'date', 'time' ) );
-		if ( is_wp_error( $validation ) ) {
-			return $this->error_response( $validation );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
@@ -4172,36 +4227,127 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'service'       => array(
+				'type'     => 'string',
+				'required' => true,
+				'min'      => 2,
+				'max'      => 100,
+			),
+			'date'          => array(
+				'type'     => 'string',
+				'required' => true,
+				'format'   => 'date',
+			),
+			'time'          => array(
+				'type'     => 'string',
+				'required' => true,
+			),
+			'customer_name' => array(
+				'type'     => 'string',
+				'required' => false,
+				'min'      => 2,
+				'max'      => 100,
+			),
+			'customer_email' => array(
+				'type'     => 'string',
+				'required' => false,
+				'format'   => 'email',
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'booking-create', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
+			// Normalize data.
 			$service = sanitize_text_field( $args['service'] );
 			$date = sanitize_text_field( $args['date'] );
 			$time = sanitize_text_field( $args['time'] );
-			$customer_name = isset( $args['customer_name'] ) ? sanitize_text_field( $args['customer_name'] ) : '';
+			$customer_name = isset( $args['customer_name'] ) ? $validator->normalize_name( $args['customer_name'] ) : '';
+			$customer_email = isset( $args['customer_email'] ) ? $validator->normalize_email( $args['customer_email'] ) : '';
+
+			// Validate date is not in the past.
+			$booking_datetime = strtotime( $date . ' ' . $time );
+			if ( $booking_datetime < current_time( 'timestamp' ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						__( 'Cannot create booking in the past. Please select a future date and time.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Validate time format (HH:MM).
+			if ( ! preg_match( '/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/', $time ) ) {
+				return $this->error_response(
+					new WP_Error(
+						'E002',
+						__( 'Invalid time format. Please use HH:MM format (e.g., 14:30).', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Check for double-booking (same date/time slot).
+			$bookings = get_option( 'wp_mcp_ai_bookings', array() );
+			foreach ( $bookings as $existing ) {
+				if ( $existing['date'] === $date && $existing['time'] === $time && 'cancelled' !== $existing['status'] ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							sprintf(
+								/* translators: 1: date, 2: time */
+								__( 'This time slot is already booked. %1$s at %2$s is unavailable. Please choose a different time.', 'mcp-ai-wpoos' ),
+								$date,
+								$time
+							)
+						)
+					);
+				}
+			}
 
 			// Create booking.
 			$booking_id = uniqid( 'booking_', true );
 			$booking = array(
-				'id'            => $booking_id,
-				'service'       => $service,
-				'date'          => $date,
-				'time'          => $time,
-				'customer_name' => $customer_name,
-				'status'        => 'pending',
-				'created'       => current_time( 'mysql' ),
-				'created_by'    => get_current_user_id(),
+				'id'             => $booking_id,
+				'service'        => $service,
+				'date'           => $date,
+				'time'           => $time,
+				'datetime'       => gmdate( 'Y-m-d H:i:s', $booking_datetime ),
+				'customer_name'  => $customer_name,
+				'customer_email' => $customer_email,
+				'status'         => 'pending',
+				'created'        => current_time( 'mysql' ),
+				'created_by'     => get_current_user_id(),
+				'metadata'       => array(
+					'ip'            => $validator->get_client_ip(),
+					'user_agent'    => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'booking_timestamp' => $booking_datetime,
+					'days_until'    => ceil( ( $booking_datetime - current_time( 'timestamp' ) ) / DAY_IN_SECONDS ),
+				),
 			);
 
 			// Save booking.
-			$bookings = get_option( 'wp_mcp_ai_bookings', array() );
 			$bookings[ $booking_id ] = $booking;
 			update_option( 'wp_mcp_ai_bookings', $bookings );
 
 			$result = array(
-				'booking_id'    => $booking_id,
-				'service'       => $service,
-				'date'          => $date,
-				'time'          => $time,
-				'status'        => 'pending',
+				'booking_id'     => $booking_id,
+				'service'        => $service,
+				'date'           => $date,
+				'time'           => $time,
+				'customer_name'  => $customer_name,
+				'status'         => 'pending',
+				'days_until'     => $booking['metadata']['days_until'],
+				'confirm_url'    => admin_url( "admin.php?page=wp-mcp-ai-bookings&action=confirm&booking={$booking_id}" ),
 			);
 
 			$this->log_activity( 'booking-create', $args, $result );
@@ -4209,14 +4355,16 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: 1: service name, 2: date */
-					__( 'Booking for %1$s on %2$s created successfully.', 'mcp-ai-wpoos' ),
+					/* translators: 1: service name, 2: date, 3: time */
+					__( 'Booking for %1$s on %2$s at %3$s created successfully.', 'mcp-ai-wpoos' ),
 					$service,
-					$date
+					$date,
+					$time
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'booking-create', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
@@ -4234,7 +4382,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 */
 	public function handle_product_recommend( $args, $context ) {
 		// Check capabilities.
-		if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'edit_shop_orders' ) ) {
+		if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'edit_shop_orders' ) && ! current_user_can( 'edit_posts' ) ) {
 			return $this->error_response(
 				new WP_Error(
 					'insufficient_permissions',
@@ -4243,27 +4391,130 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 
+		// Get validator instance.
+		$validator = new WP_MCP_AI_Slash_Command_Validator();
+
+		// Define validation schema.
+		$schema = array(
+			'customer_id' => array(
+				'type'     => 'integer',
+				'required' => false,
+				'min'      => 1,
+			),
+			'product_id'  => array(
+				'type'     => 'integer',
+				'required' => false,
+				'min'      => 1,
+			),
+			'count'       => array(
+				'type'     => 'integer',
+				'required' => false,
+				'min'      => 1,
+				'max'      => 50,
+			),
+			'type'        => array(
+				'type'     => 'string',
+				'required' => false,
+				'enum'     => array( 'similar', 'frequently-bought', 'personalized', 'trending', 'new-arrivals' ),
+			),
+		);
+
+		// Validate arguments against schema.
+		$validation_result = $validator->validate_schema( $args, $schema );
+		if ( is_wp_error( $validation_result ) ) {
+			$this->log_activity( 'product-recommend', $args, array( 'error' => $validation_result->get_error_message() ) );
+			return $this->error_response( $validation_result );
+		}
+
 		try {
 			$customer_id = isset( $args['customer_id'] ) ? absint( $args['customer_id'] ) : 0;
 			$product_id = isset( $args['product_id'] ) ? absint( $args['product_id'] ) : 0;
 			$count = isset( $args['count'] ) ? absint( $args['count'] ) : 5;
+			$type = isset( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'personalized';
 
-			// Simulate product recommendations.
+			// Validate count range.
+			if ( $count < 1 || $count > 50 ) {
+				return $this->error_response(
+					new WP_Error(
+						'E004',
+						sprintf(
+							/* translators: %d: count value */
+							__( 'Count must be between 1 and 50. You requested %d recommendations.', 'mcp-ai-wpoos' ),
+							$count
+						)
+					)
+				);
+			}
+
+			// Validate customer exists if customer_id provided.
+			if ( $customer_id > 0 ) {
+				$customer = get_user_by( 'id', $customer_id );
+				if ( ! $customer ) {
+					return $this->error_response(
+						new WP_Error(
+							'E002',
+							sprintf(
+								/* translators: %d: customer ID */
+								__( 'Customer ID %d not found. Please provide a valid customer ID.', 'mcp-ai-wpoos' ),
+								$customer_id
+							)
+						)
+					);
+				}
+			}
+
+			// Validate product exists if product_id provided.
+			if ( $product_id > 0 ) {
+				$product = get_post( $product_id );
+				if ( ! $product || 'product' !== $product->post_type ) {
+					return $this->error_response(
+						new WP_Error(
+							'E002',
+							sprintf(
+								/* translators: %d: product ID */
+								__( 'Product ID %d not found. Please provide a valid product ID.', 'mcp-ai-wpoos' ),
+								$product_id
+							)
+						)
+					);
+				}
+			}
+
+			// Generate recommendation reasons based on type.
+			$reasons = array(
+				'similar'           => __( 'Similar to your interests', 'mcp-ai-wpoos' ),
+				'frequently-bought' => __( 'Frequently bought together', 'mcp-ai-wpoos' ),
+				'personalized'      => __( 'Based on purchase history', 'mcp-ai-wpoos' ),
+				'trending'          => __( 'Trending in your area', 'mcp-ai-wpoos' ),
+				'new-arrivals'      => __( 'New arrival', 'mcp-ai-wpoos' ),
+			);
+
+			$reason = isset( $reasons[ $type ] ) ? $reasons[ $type ] : $reasons['personalized'];
+
+			// Simulate product recommendations (in production, would use actual recommendation algorithm).
 			$recommendations = array();
 			for ( $i = 1; $i <= $count; $i++ ) {
 				$recommendations[] = array(
 					'product_id' => 1000 + $i,
 					'title'      => "Recommended Product {$i}",
 					'score'      => 100 - ( $i * 5 ),
-					'reason'     => 'Based on purchase history',
+					'reason'     => $reason,
+					'price'      => number_format( ( $i * 19.99 ), 2 ),
 				);
 			}
 
 			$result = array(
 				'customer_id'      => $customer_id,
 				'product_id'       => $product_id,
+				'type'             => $type,
 				'recommendations'  => $recommendations,
 				'count'            => count( $recommendations ),
+				'metadata'         => array(
+					'ip'          => $validator->get_client_ip(),
+					'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+					'algorithm'   => $type,
+					'avg_score'   => array_sum( array_column( $recommendations, 'score' ) ) / count( $recommendations ),
+				),
 			);
 
 			$this->log_activity( 'product-recommend', $args, $result );
@@ -4271,13 +4522,15 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->success_response(
 				$result,
 				sprintf(
-					/* translators: %d: number of recommendations */
-					__( 'Found %d product recommendations.', 'mcp-ai-wpoos' ),
-					count( $recommendations )
+					/* translators: 1: number of recommendations, 2: recommendation type */
+					__( 'Found %1$d %2$s product recommendations.', 'mcp-ai-wpoos' ),
+					count( $recommendations ),
+					$type
 				)
 			);
 
 		} catch ( Exception $e ) {
+			$this->log_activity( 'product-recommend', $args, array( 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString() ) );
 			return $this->error_response( $e->getMessage() );
 		}
 	}
