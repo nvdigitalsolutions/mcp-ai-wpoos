@@ -88,7 +88,7 @@ class WP_MCP_AI_Slash_Command_Audit {
 	public function drop_table() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$result = $wpdb->query( "DROP TABLE IF EXISTS {$this->table_name}" );
 
 		if ( false !== $result ) {
