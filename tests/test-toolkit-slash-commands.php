@@ -286,4 +286,128 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 			);
 		}
 	}
+
+	/**
+	 * Test pro toolkit commands are registered when not in base version mode.
+	 *
+	 * @since 1.3.0
+	 */
+	public function test_pro_toolkit_commands_registered() {
+		// Skip if in base version mode.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Test skipped in base version mode' );
+		}
+
+		// Trigger registration.
+		do_action( 'init' );
+
+		// Test some pro toolkit commands are registered.
+		$pro_commands = array(
+			'aitool-create',          // AI Tool Builder
+			'analytics-dashboard',    // Analytics Pro
+			'architect-plan',         // Architect Agent
+			'floor-plan',             // Architectural Design
+			'booking-create',         // Calendar & Booking
+			'channel-create',         // Chat Channels
+			'lead-add',               // CRM
+			'track-add',              // DJ Management
+			'doc-create',             // Document Generation
+			'product-recommend',      // E-Commerce Pro
+			'player-analyze',         // Fantasy Football
+			'budget-create',          // Financial Planner
+			'image-edit',             // Image Production
+			'media-organize',         // Media Pro
+			'translate-content',      // Multilingual
+			'business-register',      // Regulatory & Registration
+			'site-research',          // Site Creator
+			'social-post',            // Social Media
+			'video-edit',             // Video Production
+		);
+
+		foreach ( $pro_commands as $command ) {
+			$this->assertTrue(
+				$this->handler->command_exists( $command ),
+				"Pro command '{$command}' should be registered"
+			);
+		}
+	}
+
+	/**
+	 * Test pro toolkit command count.
+	 *
+	 * @since 1.3.0
+	 */
+	public function test_pro_toolkit_command_count() {
+		// Skip if in base version mode.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Test skipped in base version mode' );
+		}
+
+		$manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+
+		// Define expected command counts for pro toolkits.
+		$expected_counts = array(
+			'ai_tool_builder'         => 10,
+			'analytics_pro'           => 12,
+			'architect_agent'         => 11,
+			'architectural_design'    => 16,
+			'calendar_booking'        => 12,
+			'chat_channels'           => 10,
+			'crm'                     => 14,
+			'dj_management'           => 11,
+			'document_generation'     => 13,
+			'ecommerce_pro'           => 15,
+			'fantasy_football'        => 12,
+			'financial_planner'       => 14,
+			'image_production'        => 13,
+			'media_pro'               => 11,
+			'multilingual'            => 12,
+			'regulatory_registration' => 15,
+			'site_creator'            => 14,
+			'social_media'            => 13,
+			'video_production'        => 14,
+		);
+
+		foreach ( $expected_counts as $toolkit_slug => $expected_count ) {
+			$commands = $manager->get_toolkit_commands( $toolkit_slug );
+
+			$this->assertCount(
+				$expected_count,
+				$commands,
+				"Toolkit '{$toolkit_slug}' should have {$expected_count} commands"
+			);
+		}
+	}
+
+	/**
+	 * Test pro toolkit command uses generic handler.
+	 *
+	 * @since 1.3.0
+	 */
+	public function test_pro_command_generic_handler() {
+		// Skip if in base version mode.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Test skipped in base version mode' );
+		}
+
+		// Set admin capabilities.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Trigger registration.
+		do_action( 'init' );
+
+		// Test a pro toolkit command.
+		$result = $this->handler->execute(
+			'/aitool-create --name="Test Tool"',
+			array(
+				'user_id' => $admin_id,
+			)
+		);
+
+		// Verify generic handler response.
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertStringContainsString( 'coming soon', strtolower( $result['message'] ) );
+	}
 }

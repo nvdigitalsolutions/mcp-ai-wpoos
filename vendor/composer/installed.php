@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/start-implementing-slash-commands',
+        'version' => 'dev-copilot/start-implementing-slash-commands',
+        'reference' => '6066e508d7939760118bbe2a132766a8761b7e46',
         'pretty_version' => 'dev-copilot/fix-configuration-page-setup',
         'version' => 'dev-copilot/fix-configuration-page-setup',
         'reference' => '9a790cae9d534f944923dd35bd109ad4aaf93ced',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/start-implementing-slash-commands',
+            'version' => 'dev-copilot/start-implementing-slash-commands',
+            'reference' => '6066e508d7939760118bbe2a132766a8761b7e46',
             'pretty_version' => 'dev-copilot/fix-configuration-page-setup',
             'version' => 'dev-copilot/fix-configuration-page-setup',
             'reference' => '9a790cae9d534f944923dd35bd109ad4aaf93ced',
