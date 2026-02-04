@@ -142,6 +142,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 				new WP_MCP_AI_Section_Performance();
 			}
 		}
+
+		// Load Pro Workflow Builder (Phase 2.0.0 - Visual workflow builder with ReactFlow).
+		$workflow_builder_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php';
+		if ( file_exists( $workflow_builder_file ) ) {
+			require_once $workflow_builder_file;
+		}
 	}
 }
 
