@@ -72,14 +72,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		}
 
 		// Enqueue the React-based workflow builder.
-		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/index.asset.php';
+		$asset_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/workflow-builder.asset.php';
 		
 		if ( file_exists( $asset_file ) ) {
 			$asset = require $asset_file;
 			
 			wp_enqueue_script(
 				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/index.js',
+				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.js',
 				$asset['dependencies'],
 				$asset['version'],
 				true
@@ -87,7 +87,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 
 			wp_enqueue_style(
 				'mcp-ai-pro-workflow-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/index.css',
+				WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/workflow-builder.css',
 				array(),
 				$asset['version']
 			);

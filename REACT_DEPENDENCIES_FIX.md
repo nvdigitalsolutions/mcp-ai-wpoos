@@ -17,7 +17,7 @@ The `check_package_installed()` method in `includes/admin/class-wp-mcp-ai-pro-se
 
 ```php
 // BEFORE (incorrect):
-$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js';
+$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
 
 // AFTER (correct):
 $workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
