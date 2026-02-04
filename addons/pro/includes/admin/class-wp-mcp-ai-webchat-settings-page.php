@@ -41,27 +41,221 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function render_overview_tab() {
 		?>
-		<h2><?php esc_html_e( 'WebChat Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
-		
-		<p><?php esc_html_e( 'Real-time WebRTC-based video chat integration with room management, participant tracking, and anonymous chat support.', 'mcp-ai-wpoos-pro' ); ?></p>
+		<div class="toolkit-overview" style="max-width: 1200px;">
+			<h2><?php esc_html_e( 'WebChat Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<p><?php esc_html_e( 'Real-time WebRTC-based peer-to-peer video chat integration with room management, participant tracking, and anonymous chat support. Enables decentralized, serverless chat directly on your WordPress site.', 'mcp-ai-wpoos-pro' ); ?></p>
 
-		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
-		<ul>
-			<li><?php esc_html_e( 'Room Creation: Build WebChat rooms with customizable settings', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'WebRTC Integration: Browser-based video and audio communication', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Participant Management: Track active participants and room capacity', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Anonymous Chat: Optional anonymous access for public rooms', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Status Tracking: Monitor active rooms and participant counts', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Customizable Signaling: Configure signaling server URLs', 'mcp-ai-wpoos-pro' ); ?></li>
-		</ul>
+			<div class="toolkit-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '🚀 Quick Start Guide', 'mcp-ai-wpoos-pro' ); ?></h3>
+				
+				<h4><?php esc_html_e( 'Step 1: Enable WebChat Integration', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p>
+					<?php
+					$settings_url = admin_url( 'admin.php?page=wp_mcp_ai_settings&tab=tools' );
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: Link to settings page */
+							__( 'Go to <a href="%s">Settings → NV oOS → Tools & Features</a>, click the <strong>Features</strong> tab, check <strong>"Enable WebChat Integration"</strong>, and save your changes.', 'mcp-ai-wpoos-pro' ),
+							esc_url( $settings_url )
+						)
+					);
+					?>
+				</p>
 
-		<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
-		<ul>
-			<li><?php esc_html_e( 'Virtual meetings and team collaboration', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Online tutoring and educational sessions', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Customer support and consultation calls', 'mcp-ai-wpoos-pro' ); ?></li>
-			<li><?php esc_html_e( 'Community events and webinars', 'mcp-ai-wpoos-pro' ); ?></li>
-		</ul>
+				<h4><?php esc_html_e( 'Step 2: Create a WebChat Room', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p>
+					<?php
+					$add_room_url = admin_url( 'post-new.php?post_type=mcp_ai_webchat' );
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: Link to add room page */
+							__( '<a href="%s">Create a new WebChat Room</a> with a title, description, and optional settings like max participants and signaling server URL.', 'mcp-ai-wpoos-pro' ),
+							esc_url( $add_room_url )
+						)
+					);
+					?>
+				</p>
+
+				<h4><?php esc_html_e( 'Step 3: Configure Room Settings', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'In the Room Details metabox, configure:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Room ID:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Auto-generated unique identifier for the chat room', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Max Participants:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Set capacity limit (2-100)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Signaling Server:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'WebSocket URL for WebRTC signaling (optional)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Active, Inactive, or Archived', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="toolkit-card" style="background: #f8f9fa; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '📋 Configuration Options', 'mcp-ai-wpoos-pro' ); ?></h3>
+				
+				<h4><?php esc_html_e( 'Default Settings', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'Configure global defaults in the Settings tab above:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Default Signaling Server URL:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Sets default WebSocket URL for all new rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Default Max Participants:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Default capacity for new rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Enable Anonymous Chat:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Allow non-authenticated users to join rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Enable WebChat Integration:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Master switch for WebChat features', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Room Configuration Example', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<pre style="background: #fff; padding: 15px; border: 1px solid #ddd; overflow-x: auto; font-size: 13px;">
+<strong><?php esc_html_e( 'Room Title:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Product Demo Meeting', 'mcp-ai-wpoos-pro' ); ?>
+
+<strong><?php esc_html_e( 'Room Description:', 'mcp-ai-wpoos-pro' ); ?></strong>
+<?php esc_html_e( 'Interactive product demonstration and Q&A session for potential customers.', 'mcp-ai-wpoos-pro' ); ?>
+
+
+<strong><?php esc_html_e( 'Room Settings:', 'mcp-ai-wpoos-pro' ); ?></strong>
+- <?php esc_html_e( 'Max Participants: 20', 'mcp-ai-wpoos-pro' ); ?>
+
+- <?php esc_html_e( 'Signaling Server: wss://signaling.yoursite.com', 'mcp-ai-wpoos-pro' ); ?>
+
+- <?php esc_html_e( 'Status: Active', 'mcp-ai-wpoos-pro' ); ?>
+
+- <?php esc_html_e( 'Anonymous Access: Enabled', 'mcp-ai-wpoos-pro' ); ?></pre>
+			</div>
+
+			<div class="toolkit-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '🔧 AI Integration', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p><?php esc_html_e( 'AI assistants can interact with WebChat rooms using the following tools:', 'mcp-ai-wpoos-pro' ); ?></p>
+				
+				<h4><code>send_webchat_message</code></h4>
+				<p><?php esc_html_e( 'Send AI-generated messages to WebChat rooms for moderation, automated responses, or announcements.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<pre style="background: #f8f9fa; padding: 15px; border: 1px solid #ddd; overflow-x: auto; font-size: 13px;">
+{
+  "room_id": "abc123xyz",
+  "message": "Welcome! I'm an AI assistant here to help.",
+  "sender_name": "Support Bot"
+}</pre>
+
+				<h4><code>create_webchat_room</code></h4>
+				<p><?php esc_html_e( 'AI can dynamically create rooms based on user requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<pre style="background: #f8f9fa; padding: 15px; border: 1px solid #ddd; overflow-x: auto; font-size: 13px;">
+{
+  "title": "Team Standup - Jan 15",
+  "description": "Daily team sync meeting",
+  "max_participants": 10,
+  "status": "active"
+}</pre>
+
+				<h4><code>list_webchat_rooms</code></h4>
+				<p><?php esc_html_e( 'AI can list available rooms to help users find active chats.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><code>get_webchat_room</code></h4>
+				<p><?php esc_html_e( 'Retrieve details about a specific room, including participant count.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><code>get_webchat_status</code></h4>
+				<p><?php esc_html_e( 'Monitor room status and participant activity in real-time.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+
+			<div class="toolkit-card" style="background: #fff3cd; border: 1px solid #ffc107; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '⚠️ Requirements', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li>
+						<strong><?php esc_html_e( 'Browser Extension:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: WebChat GitHub URL */
+								__( ' Users need the <a href="%s" target="_blank">WebChat browser extension</a> to participate in P2P chat rooms.', 'mcp-ai-wpoos-pro' ),
+								'https://github.com/molvqingtai/WebChat'
+							)
+						);
+						?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'HTTPS:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' WebRTC requires a secure HTTPS connection for video/audio streaming.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Modern Browser:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Chrome, Firefox, Safari, or Edge with WebRTC support.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Signaling Server (Optional):', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Custom WebSocket server for advanced signaling control.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+				</ul>
+			</div>
+
+			<div class="toolkit-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '✨ Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li><strong><?php esc_html_e( 'Decentralized Chat:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Peer-to-peer WebRTC communication without server-side message storage', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Room Management:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Create and manage multiple chat rooms with custom settings', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'WebRTC Video/Audio:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Browser-based video and audio communication', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Participant Tracking:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Monitor active participants and enforce room capacity', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Anonymous Access:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Optional anonymous access for public rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Privacy-First:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' End-to-end encrypted peer-to-peer messages', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'AI-Powered Moderation:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' AI assistants can send messages and moderate rooms', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="toolkit-card" style="background: #f8f9fa; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '💼 Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li><strong><?php esc_html_e( 'Virtual Meetings:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Team collaboration and remote standups', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Online Tutoring:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' One-on-one or group educational sessions', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Customer Support:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Live video consultation and troubleshooting', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Community Events:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Webinars, Q&A sessions, and virtual meetups', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Product Demos:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Interactive product demonstrations for prospects', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Healthcare:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( ' Telemedicine and remote patient consultations', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="toolkit-card" style="background: #e7f3ff; border: 1px solid #007cba; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '🔐 Privacy & Security', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li><?php esc_html_e( 'Messages are transmitted peer-to-peer and not stored on servers', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'WebRTC provides end-to-end encryption for all communications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Room IDs are unique and difficult to guess', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Optional authentication controls via WordPress user accounts', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Participant capacity limits prevent room flooding', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="toolkit-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin: 20px 0;">
+				<h3><?php esc_html_e( '📚 Learn More', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: WebChat GitHub URL */
+								__( '<a href="%s" target="_blank">WebChat Browser Extension Documentation</a>', 'mcp-ai-wpoos-pro' ),
+								'https://github.com/molvqingtai/WebChat'
+							)
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: WebRTC info URL */
+								__( '<a href="%s" target="_blank">Learn about WebRTC Technology</a>', 'mcp-ai-wpoos-pro' ),
+								'https://webrtc.org/'
+							)
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						$tools_tab_url = add_query_arg( 'tab', 'tools' );
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: Tools tab URL */
+								__( '<a href="%s">View Available WebChat Tools</a>', 'mcp-ai-wpoos-pro' ),
+								esc_url( $tools_tab_url )
+							)
+						);
+						?>
+					</li>
+				</ul>
+			</div>
+		</div>
 		<?php
 	}
 
