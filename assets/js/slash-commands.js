@@ -29,8 +29,8 @@
 				return;
 			}
 
-			// Find chat input elements
-			this.chatInput = document.querySelector('.mcp-chat-input, #mcp-chat-input, textarea[name="message"]');
+			// Find chat input elements - support multiple class name conventions
+			this.chatInput = document.querySelector('.wp-mcp-ai-chat__input, .mcp-chat-input, #mcp-chat-input, textarea[name="message"]');
 			if (!this.chatInput) {
 				console.warn('[SlashCommands] Chat input not found');
 				return;
@@ -170,7 +170,7 @@
 		 * Display command result in chat
 		 */
 		displayResult(result, command) {
-			const chatMessages = document.querySelector('.mcp-chat-messages, #mcp-chat-messages');
+			const chatMessages = document.querySelector('.wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
 			if (!chatMessages) {
 				console.warn('[SlashCommands] Chat messages container not found');
 				return;
@@ -192,7 +192,7 @@
 		 * Display error message
 		 */
 		displayError(message) {
-			const chatMessages = document.querySelector('.mcp-chat-messages, #mcp-chat-messages');
+			const chatMessages = document.querySelector('.wp-mcp-ai-chat__messages, .mcp-chat-messages, #mcp-chat-messages');
 			if (!chatMessages) {
 				alert('Error: ' + message);
 				return;
@@ -208,10 +208,10 @@
 		 */
 		createMessage(type, content) {
 			const messageDiv = document.createElement('div');
-			messageDiv.className = `mcp-chat-message mcp-chat-message-${type}`;
+			messageDiv.className = `wp-mcp-ai-chat__message wp-mcp-ai-chat__message--${type}`;
 
 			const contentDiv = document.createElement('div');
-			contentDiv.className = 'mcp-chat-message-content';
+			contentDiv.className = 'wp-mcp-ai-chat__message-content';
 
 			// Format content (support markdown if available)
 			if (typeof marked !== 'undefined' && type === 'assistant') {
