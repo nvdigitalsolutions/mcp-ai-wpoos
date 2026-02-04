@@ -245,6 +245,75 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
+			'product_launch_complete' => array(
+				'name'        => __( 'Complete Product Launch Workflow', 'mcp-ai-wpoos' ),
+				'description' => __( 'End-to-end product launch automation', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'bundle-create',
+						'params'  => array(
+							'name'     => '{product_name} Launch Bundle',
+							'products' => '{product_ids}',
+							'discount' => 15,
+						),
+					),
+					array(
+						'command' => 'discount-optimize',
+						'params'  => array(
+							'campaign-name' => '{product_name} Launch Sale',
+							'discount-type' => 'percentage',
+							'amount'        => 20,
+							'products'      => '{product_ids}',
+						),
+					),
+					array(
+						'command' => 'campaign-create',
+						'params'  => array(
+							'name'     => '{product_name} Launch Campaign',
+							'goal'     => 'conversions',
+							'duration' => 14,
+						),
+					),
+					array(
+						'command' => 'inventory-forecast',
+						'params'  => array( 'product-id' => '{previous.product_id}', 'period' => 30 ),
+					),
+				),
+			),
+			'social_campaign_automation' => array(
+				'name'        => __( 'Social Campaign Automation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Automated social media campaign from planning to execution', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'influencer-find',
+						'params'  => array( 'niche' => '{campaign_niche}', 'min-followers' => 5000 ),
+					),
+					array(
+						'command' => 'post-optimize',
+						'params'  => array(
+							'content'  => '{campaign_content}',
+							'platform' => '{target_platforms}',
+							'goal'     => 'engagement',
+						),
+					),
+					array(
+						'command' => 'campaign-create',
+						'params'  => array(
+							'name'     => '{campaign_name}',
+							'goal'     => '{campaign_goal}',
+							'duration' => 30,
+						),
+					),
+					array(
+						'command' => 'social-schedule',
+						'params'  => array(
+							'content'   => '{previous.optimized_content}',
+							'platforms' => '{target_platforms}',
+							'time'      => '{schedule_time}',
+						),
+					),
+				),
+			),
 		);
 
 		/**
