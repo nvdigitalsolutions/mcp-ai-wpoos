@@ -3892,6 +3892,30 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				}
 			}
 
+			// Check for duplicate operations on same attachment.
+			$operation_hash = md5( $attachment_id . $operation . serialize( $args ) );
+			$recent_operations = get_option( 'wp_mcp_ai_recent_image_operations', array() );
+			
+			// Check if identical operation was performed recently (within 1 hour).
+			foreach ( $recent_operations as $existing ) {
+				if ( isset( $existing['hash'] ) && $existing['hash'] === $operation_hash ) {
+					$time_diff = time() - strtotime( $existing['created'] );
+					if ( $time_diff < HOUR_IN_SECONDS ) {
+						return $this->error_response(
+							new WP_Error(
+								'E005',
+								sprintf(
+									/* translators: 1: minutes ago, 2: operation name */
+									__( 'Identical %2$s operation was performed %1$d minutes ago on this attachment. Please wait or modify your parameters.', 'mcp-ai-wpoos' ),
+									ceil( $time_diff / 60 ),
+									$operation
+								)
+							)
+						);
+					}
+				}
+			}
+
 			// Get file path and size.
 			$file_path = get_attached_file( $attachment_id );
 			$file_size = file_exists( $file_path ) ? filesize( $file_path ) : 0;
@@ -3919,6 +3943,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			$this->log_activity( 'image-edit', $args, $result );
+
+			// Store operation in recent history for duplicate detection.
+			$recent_operations[] = array(
+				'hash'          => $operation_hash,
+				'created'       => current_time( 'mysql' ),
+				'attachment_id' => $attachment_id,
+				'operation'     => $operation,
+			);
+			// Keep only last 100 operation entries.
+			$recent_operations = array_slice( $recent_operations, -100 );
+			update_option( 'wp_mcp_ai_recent_image_operations', $recent_operations );
 
 			return $this->success_response(
 				$result,
@@ -4013,8 +4048,31 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				);
 			}
 
-			// Check for cached translation (to avoid duplicate translations).
-			$cache_key = 'translation_' . md5( $content . $source_language . $target_language );
+			// Check for duplicate translations - explicit duplicate detection.
+			$translation_hash = md5( $content . $source_language . $target_language );
+			$recent_translations = get_option( 'wp_mcp_ai_recent_translations', array() );
+			
+			// Check if identical translation was requested recently (within 1 hour).
+			foreach ( $recent_translations as $existing ) {
+				if ( isset( $existing['hash'] ) && $existing['hash'] === $translation_hash ) {
+					$time_diff = time() - strtotime( $existing['created'] );
+					if ( $time_diff < HOUR_IN_SECONDS ) {
+						return $this->error_response(
+							new WP_Error(
+								'E005',
+								sprintf(
+									/* translators: %d: minutes ago */
+									__( 'Identical translation was requested %d minutes ago. Retrieving cached result.', 'mcp-ai-wpoos' ),
+									ceil( $time_diff / 60 )
+								)
+							)
+						);
+					}
+				}
+			}
+
+			// Check for cached translation (performance optimization).
+			$cache_key = 'translation_' . $translation_hash;
 			$cached = get_transient( $cache_key );
 			if ( false !== $cached ) {
 				$cached['from_cache'] = true;
@@ -4056,6 +4114,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			// Cache translation for 1 hour.
 			set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+			// Store translation in recent history for duplicate detection.
+			$recent_translations[] = array(
+				'hash'            => $translation_hash,
+				'created'         => current_time( 'mysql' ),
+				'source_language' => $source_language,
+				'target_language' => $target_language,
+			);
+			// Keep only last 100 translation entries.
+			$recent_translations = array_slice( $recent_translations, -100 );
+			update_option( 'wp_mcp_ai_recent_translations', $recent_translations );
 
 			$this->log_activity( 'translate-content', $args, $result );
 
@@ -4121,19 +4190,48 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		try {
-			$industry = isset( $args['industry'] ) ? sanitize_text_field( $args['industry'] ) : 'general';
+			// Normalize data.
+			$industry = isset( $args['industry'] ) ? strtolower( trim( sanitize_text_field( $args['industry'] ) ) ) : 'general';
 			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement,conversion';
 
 			// Parse and normalize goals.
-			$goals_array = array_map( 'trim', explode( ',', $goals ) );
+			$goals_array = array_map(
+				function( $goal ) {
+					return strtolower( trim( $goal ) );
+				},
+				explode( ',', $goals )
+			);
 			$valid_goals = array( 'engagement', 'conversion', 'traffic', 'seo', 'performance', 'accessibility', 'security', 'mobile' );
 			$goals_array = array_intersect( $goals_array, $valid_goals );
 			if ( empty( $goals_array ) ) {
 				$goals_array = array( 'engagement', 'conversion' );
 			}
 
-			// Check for duplicate research (cache for 1 hour).
-			$cache_key = 'research_' . md5( $industry . implode( ',', $goals_array ) );
+			// Check for duplicate research - explicit duplicate detection.
+			$research_hash = md5( $industry . implode( ',', $goals_array ) );
+			$recent_research = get_option( 'wp_mcp_ai_recent_research', array() );
+			
+			// Check if identical research was done recently (within 1 hour).
+			foreach ( $recent_research as $existing ) {
+				if ( isset( $existing['hash'] ) && $existing['hash'] === $research_hash ) {
+					$time_diff = time() - strtotime( $existing['created'] );
+					if ( $time_diff < HOUR_IN_SECONDS ) {
+						return $this->error_response(
+							new WP_Error(
+								'E005',
+								sprintf(
+									/* translators: %d: minutes ago */
+									__( 'Identical research was conducted %d minutes ago. Please wait or modify your research parameters.', 'mcp-ai-wpoos' ),
+									ceil( $time_diff / 60 )
+								)
+							)
+						);
+					}
+				}
+			}
+
+			// Check cache for performance (secondary to duplicate check).
+			$cache_key = 'research_' . $research_hash;
 			$cached = get_transient( $cache_key );
 			if ( false !== $cached ) {
 				$cached['from_cache'] = true;
@@ -4186,6 +4284,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			// Cache research for 1 hour.
 			set_transient( $cache_key, $research, HOUR_IN_SECONDS );
+
+			// Store research in recent history for duplicate detection.
+			$recent_research[] = array(
+				'hash'    => $research_hash,
+				'created' => current_time( 'mysql' ),
+				'industry' => $industry,
+				'goals'   => $goals_array,
+			);
+			// Keep only last 50 research entries.
+			$recent_research = array_slice( $recent_research, -50 );
+			update_option( 'wp_mcp_ai_recent_research', $recent_research );
 
 			$this->log_activity( 'site-research', $args, $research );
 
@@ -4297,7 +4406,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			// Check for double-booking (same date/time slot).
-			$bookings = get_option( 'wp_mcp_ai_bookings', array() );
+			$booking_hash = md5( $service . $customer_email . $date . $time );
 			foreach ( $bookings as $existing ) {
 				if ( $existing['date'] === $date && $existing['time'] === $time && 'cancelled' !== $existing['status'] ) {
 					return $this->error_response(
@@ -4312,12 +4421,22 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						)
 					);
 				}
+				// Check for duplicate booking (same customer, service, date, time).
+				if ( isset( $existing['booking_hash'] ) && $existing['booking_hash'] === $booking_hash && 'cancelled' !== $existing['status'] ) {
+					return $this->error_response(
+						new WP_Error(
+							'E005',
+							__( 'You already have an identical booking. Please check your existing bookings or contact support.', 'mcp-ai-wpoos' )
+						)
+					);
+				}
 			}
 
 			// Create booking.
 			$booking_id = uniqid( 'booking_', true );
 			$booking = array(
 				'id'             => $booking_id,
+				'booking_hash'   => $booking_hash,
 				'service'        => $service,
 				'date'           => $date,
 				'time'           => $time,
@@ -4427,10 +4546,11 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		try {
+			// Normalize data.
 			$customer_id = isset( $args['customer_id'] ) ? absint( $args['customer_id'] ) : 0;
 			$product_id = isset( $args['product_id'] ) ? absint( $args['product_id'] ) : 0;
 			$count = isset( $args['count'] ) ? absint( $args['count'] ) : 5;
-			$type = isset( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'personalized';
+			$type = isset( $args['type'] ) ? strtolower( trim( sanitize_text_field( $args['type'] ) ) ) : 'personalized';
 
 			// Validate count range.
 			if ( $count < 1 || $count > 50 ) {
@@ -4491,6 +4611,29 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			$reason = isset( $reasons[ $type ] ) ? $reasons[ $type ] : $reasons['personalized'];
 
+			// Check for duplicate recommendations - explicit duplicate detection.
+			$recommendation_hash = md5( $customer_id . $product_id . $type . $count );
+			$recent_recommendations = get_option( 'wp_mcp_ai_recent_recommendations', array() );
+			
+			// Check if identical recommendation was requested recently (within 1 hour).
+			foreach ( $recent_recommendations as $existing ) {
+				if ( isset( $existing['hash'] ) && $existing['hash'] === $recommendation_hash ) {
+					$time_diff = time() - strtotime( $existing['created'] );
+					if ( $time_diff < HOUR_IN_SECONDS ) {
+						return $this->error_response(
+							new WP_Error(
+								'E005',
+								sprintf(
+									/* translators: %d: minutes ago */
+									__( 'Identical recommendation request was made %d minutes ago. Please wait or modify your parameters.', 'mcp-ai-wpoos' ),
+									ceil( $time_diff / 60 )
+								)
+							)
+						);
+					}
+				}
+			}
+
 			// Simulate product recommendations (in production, would use actual recommendation algorithm).
 			$recommendations = array();
 			for ( $i = 1; $i <= $count; $i++ ) {
@@ -4518,6 +4661,18 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 
 			$this->log_activity( 'product-recommend', $args, $result );
+
+			// Store recommendation in recent history for duplicate detection.
+			$recent_recommendations[] = array(
+				'hash'        => $recommendation_hash,
+				'created'     => current_time( 'mysql' ),
+				'customer_id' => $customer_id,
+				'type'        => $type,
+				'count'       => $count,
+			);
+			// Keep only last 100 recommendation entries.
+			$recent_recommendations = array_slice( $recent_recommendations, -100 );
+			update_option( 'wp_mcp_ai_recent_recommendations', $recent_recommendations );
 
 			return $this->success_response(
 				$result,
