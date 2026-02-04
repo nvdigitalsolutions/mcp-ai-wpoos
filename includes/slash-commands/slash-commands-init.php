@@ -367,6 +367,12 @@ function wp_mcp_ai_load_toolkit_slash_commands() {
 	// Load toolkit manager.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-toolkit-manager.php';
 
+	// Load workflow orchestrator.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-workflow-orchestrator.php';
+
+	// Load performance optimizer.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-performance-optimizer.php';
+
 	// Initialize toolkit manager (singleton pattern).
 	WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
 
@@ -509,5 +515,68 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		},
 		20
 	);
+}
+
+/**
+ * Get workflow orchestrator instance.
+ *
+ * @since 1.3.0
+ *
+ * @return WP_MCP_AI_Slash_Command_Workflow_Orchestrator Orchestrator instance.
+ */
+function wp_mcp_ai_get_workflow_orchestrator() {
+	static $orchestrator = null;
+
+	if ( null === $orchestrator ) {
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		if ( class_exists( 'WP_MCP_AI_Slash_Command_Workflow_Orchestrator' ) ) {
+			$orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $handler );
+		}
+	}
+
+	return $orchestrator;
+}
+
+/**
+ * Get performance optimizer instance.
+ *
+ * @since 1.3.0
+ *
+ * @return WP_MCP_AI_Slash_Command_Performance_Optimizer Optimizer instance.
+ */
+function wp_mcp_ai_get_performance_optimizer() {
+	static $optimizer = null;
+
+	if ( null === $optimizer && class_exists( 'WP_MCP_AI_Slash_Command_Performance_Optimizer' ) ) {
+		$optimizer = new WP_MCP_AI_Slash_Command_Performance_Optimizer();
+	}
+
+	return $optimizer;
+}
+
+/**
+ * Execute a workflow.
+ *
+ * Helper function to execute workflows from anywhere in the plugin.
+ *
+ * @since 1.3.0
+ *
+ * @param string $workflow_name Workflow name.
+ * @param array  $params Workflow parameters.
+ * @param array  $context Execution context.
+ * @return array Workflow result.
+ */
+function wp_mcp_ai_execute_workflow( $workflow_name, $params = array(), $context = array() ) {
+	$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
+
+	if ( ! $orchestrator ) {
+		return array(
+			'success' => false,
+			'error'   => 'orchestrator_not_available',
+			'message' => __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	return $orchestrator->execute_workflow( $workflow_name, $params, $context );
 }
 
