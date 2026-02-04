@@ -248,9 +248,13 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_League implements WP_MCP_AI_Tool_Interface
 	protected function get_roster_settings( $settings ) {
 		$roster = isset( $settings['rosterSettings'] ) ? $settings['rosterSettings'] : array();
 
+		// Safely get lineup slot counts, ensuring it's an array before using array_sum.
+		$lineup_slots = isset( $roster['lineupSlotCounts'] ) ? $roster['lineupSlotCounts'] : array();
+		$roster_size  = is_array( $lineup_slots ) ? array_sum( $lineup_slots ) : 0;
+
 		return array(
-			'roster_size' => isset( $roster['lineupSlotCounts'] ) ? array_sum( $roster['lineupSlotCounts'] ) : 0,
-			'positions'   => isset( $roster['lineupSlotCounts'] ) ? $roster['lineupSlotCounts'] : array(),
+			'roster_size' => $roster_size,
+			'positions'   => is_array( $lineup_slots ) ? $lineup_slots : array(),
 		);
 	}
 

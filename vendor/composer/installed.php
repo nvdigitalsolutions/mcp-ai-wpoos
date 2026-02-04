@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-url-format-issues',
-        'version' => 'dev-copilot/fix-url-format-issues',
-        'reference' => '98dfad25dd52165b265d5c308cd316acb0b4e37e',
+        'pretty_version' => 'dev-copilot/fix-fatal-error-espn-league',
+        'version' => 'dev-copilot/fix-fatal-error-espn-league',
+        'reference' => 'c9af7f12e52977dadda795d470f43cbe08afce25',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-url-format-issues',
-            'version' => 'dev-copilot/fix-url-format-issues',
-            'reference' => '98dfad25dd52165b265d5c308cd316acb0b4e37e',
+            'pretty_version' => 'dev-copilot/fix-fatal-error-espn-league',
+            'version' => 'dev-copilot/fix-fatal-error-espn-league',
+            'reference' => 'c9af7f12e52977dadda795d470f43cbe08afce25',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
