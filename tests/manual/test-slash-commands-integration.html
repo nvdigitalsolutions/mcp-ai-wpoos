@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slash Commands Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-chat {
+            border: 2px solid #333;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #0073aa;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .messages {
+            margin-top: 15px;
+            min-height: 200px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .message--user {
+            background: #e3f2fd;
+        }
+        .message--assistant {
+            background: #f1f8e9;
+        }
+        .message--error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Slash Commands Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Setup</h2>
+        <p>This page tests the slash command system integration with the chat client.</p>
+        <div id="setup-status" class="status">
+            <strong>Setup Status:</strong>
+            <ul>
+                <li id="script-status">Loading scripts...</li>
+                <li id="handler-status">Checking handler...</li>
+                <li id="endpoint-status">Checking REST endpoint...</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Chat Interface Test</h2>
+        <p>Try typing slash commands like <code>/help</code> in the textarea below and press "Send".</p>
+        
+        <div class="test-chat">
+            <form id="test-chat-form">
+                <textarea 
+                    id="test-chat-input" 
+                    class="wp-mcp-ai-chat__input" 
+                    rows="3" 
+                    placeholder="Type /help or other slash commands..."
+                    required
+                ></textarea>
+                <button type="submit">Send</button>
+            </form>
+            
+            <div class="messages" id="test-messages"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Available Commands</h2>
+        <div id="commands-list">Loading commands...</div>
+    </div>
+
+    <script>
+        // Mock WordPress REST API data
+        window.mcpAiData = {
+            restUrl: window.location.origin + '/wp-json/',
+            nonce: 'test-nonce-' + Date.now()
+        };
+
+        // Mock slash command handler
+        class MockSlashCommandHandler {
+            constructor() {
+                this.commands = {
+                    'help': {
+                        description: 'Display help information',
+                        usage: '/help [command]'
+                    },
+                    'next-task': {
+                        description: 'Get next task suggestion',
+                        usage: '/next-task'
+                    },
+                    'ship': {
+                        description: 'Ship content',
+                        usage: '/ship [post_id]'
+                    }
+                };
+            }
+
+            execute(command) {
+                const cmdName = command.replace('/', '').split(' ')[0];
+                if (this.commands[cmdName]) {
+                    return {
+                        success: true,
+                        result: `Executed: ${command}\n\nCommand: ${this.commands[cmdName].description}\nUsage: ${this.commands[cmdName].usage}`
+                    };
+                }
+                return {
+                    success: false,
+                    message: `Command not found: ${cmdName}`
+                };
+            }
+
+            get_commands() {
+                return this.commands;
+            }
+        }
+
+        // Create mock handler
+        window.wp_mcp_ai_slash_command_handler = new MockSlashCommandHandler();
+
+        // Check setup
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check script loading
+            const scriptStatus = document.getElementById('script-status');
+            if (typeof SlashCommandsHandler !== 'undefined') {
+                scriptStatus.textContent = '✓ Slash commands script loaded';
+                scriptStatus.style.color = 'green';
+            } else {
+                scriptStatus.textContent = '✗ Slash commands script not loaded (using mock)';
+                scriptStatus.style.color = 'orange';
+            }
+
+            // Check handler
+            const handlerStatus = document.getElementById('handler-status');
+            if (window.wp_mcp_ai_slash_command_handler) {
+                handlerStatus.textContent = '✓ Slash command handler available';
+                handlerStatus.style.color = 'green';
+            } else {
+                handlerStatus.textContent = '✗ Slash command handler not found';
+                handlerStatus.style.color = 'red';
+            }
+
+            // Check REST endpoint (would need actual WordPress)
+            const endpointStatus = document.getElementById('endpoint-status');
+            endpointStatus.textContent = '⚠ REST endpoint check requires WordPress environment';
+            endpointStatus.style.color = 'gray';
+
+            // Load commands list
+            loadCommandsList();
+
+            // Setup form handler
+            setupChatForm();
+        });
+
+        function loadCommandsList() {
+            const commandsList = document.getElementById('commands-list');
+            const handler = window.wp_mcp_ai_slash_command_handler;
+            
+            if (!handler) {
+                commandsList.innerHTML = '<p class="error">Handler not available</p>';
+                return;
+            }
+
+            const commands = handler.get_commands();
+            let html = '<ul>';
+            for (const [name, config] of Object.entries(commands)) {
+                html += `<li><strong>/${name}</strong> - ${config.description}<br><code>${config.usage}</code></li>`;
+            }
+            html += '</ul>';
+            commandsList.innerHTML = html;
+        }
+
+        function setupChatForm() {
+            const form = document.getElementById('test-chat-form');
+            const input = document.getElementById('test-chat-input');
+            const messages = document.getElementById('test-messages');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const value = input.value.trim();
+                if (!value) return;
+
+                // Add user message
+                addMessage('user', value);
+
+                // Check if it's a slash command
+                if (value.startsWith('/')) {
+                    executeSlashCommand(value);
+                } else {
+                    addMessage('assistant', 'Not a slash command. Try typing /help');
+                }
+
+                // Clear input
+                input.value = '';
+            });
+        }
+
+        function executeSlashCommand(command) {
+            const handler = window.wp_mcp_ai_slash_command_handler;
+            
+            if (!handler) {
+                addMessage('error', 'Slash command handler not available');
+                return;
+            }
+
+            const result = handler.execute(command);
+            
+            if (result.success) {
+                addMessage('assistant', result.result);
+            } else {
+                addMessage('error', result.message || 'Command execution failed');
+            }
+        }
+
+        function addMessage(type, content) {
+            const messages = document.getElementById('test-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message--${type}`;
+            messageDiv.textContent = content;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
