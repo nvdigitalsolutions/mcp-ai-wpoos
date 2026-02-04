@@ -26,7 +26,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'wp-mcp-ai-pro-workflow-builder';
+	const PAGE_SLUG = 'nvoos-pro-workflow-builder';
 
 	/**
 	 * Constructor.
@@ -49,7 +49,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 */
 	public function register_page() {
 		add_submenu_page(
-			'wp-mcp-ai-settings',
+			'nvoos-pro-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),
 			__( 'Pro Workflows', 'mcp-ai-wpoos' ),
 			'manage_options',
@@ -66,7 +66,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( strpos( $hook, self::PAGE_SLUG ) === false ) {
+		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
+		if ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 

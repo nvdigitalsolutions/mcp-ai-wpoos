@@ -1048,14 +1048,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
 				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
 				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js';
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
 					if ( file_exists( $workflow_build_path ) ) {
 						return true;
 					}
 				}
 				// Priority 2: Check base build directory (legacy/development location).
 				// NOTE: This should be moved to pro addon directory as per project standards.
-				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.js';
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
 				if ( file_exists( $legacy_workflow_build_path ) ) {
 					return true;
 				}

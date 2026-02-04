@@ -43,7 +43,7 @@ Map your old workflow steps to new node types:
 ### Step 2: Accessing Your Workflows
 
 1. **Old Location:** NV oOS → Workflows
-2. **New Location:** NV oOS → Pro Workflows
+2. **New Location:** NV oOS Pro → Pro Workflows
 
 Both interfaces are available during the transition period.
 
