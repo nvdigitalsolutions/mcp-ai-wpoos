@@ -24,8 +24,11 @@ composer.phar
 /build/mcp-ai-wpoos-pro/
 /build/mcp-ai-wpoos-core/
 
-# Allow workflow-builder compiled assets (needed for plugin to work)
-!/build/workflow-builder/
+# Ignore base build directory (workflow builder moved to pro addon)
+/build/workflow-builder/
+
+# Allow workflow-builder compiled assets in Pro addon (needed for plugin to work)
+!/addons/pro/build/workflow-builder/
 
 # Ignore ZIP files everywhere except in build directory
 *.zip
