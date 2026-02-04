@@ -187,6 +187,64 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
+			'ecommerce_inventory_management' => array(
+				'name'        => __( 'E-Commerce Inventory Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Comprehensive inventory forecasting and management workflow', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'inventory-forecast',
+						'params'  => array( 'period' => 30, 'include-seasonal' => true ),
+					),
+					array(
+						'command' => 'ecom-analytics',
+						'params'  => array( 'metrics' => 'low-stock,stock-out-risk', 'format' => 'json' ),
+					),
+					array(
+						'command' => 'customer-segment',
+						'params'  => array( 'criteria' => 'rfm', 'min-orders' => 3 ),
+					),
+				),
+			),
+			'social_content_planning' => array(
+				'name'        => __( 'Social Content Planning', 'mcp-ai-wpoos' ),
+				'description' => __( 'Strategic social media content planning workflow', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'competitor-track',
+						'params'  => array( 'competitor' => '{competitor_handle}', 'platform' => '{platform}' ),
+					),
+					array(
+						'command' => 'content-calendar',
+						'params'  => array( 'action' => 'create', 'period' => 30 ),
+					),
+					array(
+						'command' => 'social-schedule',
+						'params'  => array(
+							'content'   => '{post_content}',
+							'platforms' => '{platforms}',
+							'time'      => '{schedule_time}',
+						),
+					),
+				),
+			),
+			'video_post_production' => array(
+				'name'        => __( 'Video Post Production Workflow', 'mcp-ai-wpoos' ),
+				'description' => __( 'Complete video post-production pipeline', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'video-merge',
+						'params'  => array( 'videos' => '{video_clips}', 'transitions' => true ),
+					),
+					array(
+						'command' => 'video-thumbnail',
+						'params'  => array( 'video-id' => '{previous.video_id}', 'count' => 5 ),
+					),
+					array(
+						'command' => 'video-compress',
+						'params'  => array( 'video-id' => '{previous.video_id}', 'quality' => 'medium' ),
+					),
+				),
+			),
 		);
 
 		/**
