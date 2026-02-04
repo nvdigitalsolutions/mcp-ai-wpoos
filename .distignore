@@ -111,7 +111,7 @@ verify-*.php
 verify-*.sh
 
 # Build output and build-time directories (not needed in SVN)
-build
+# Note: build/workflow-builder/ is included (contains pre-built visual builder assets)
 svn-*
 addons
 core
