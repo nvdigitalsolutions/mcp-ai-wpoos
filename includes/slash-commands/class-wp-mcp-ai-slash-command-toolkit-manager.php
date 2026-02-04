@@ -103,22 +103,58 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		 *
 		 * @param array $commands Toolkit commands keyed by toolkit slug.
 		 */
+		// Define base version check constant if not already defined.
+		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
+			define( 'WP_MCP_AI_BASE_VERSION', false );
+		}
+
+		// Build toolkit commands array - start with core toolkits.
+		$commands = array(
+			'content_publishing'     => $this->get_content_publishing_commands(),
+			'media_processing'       => $this->get_media_processing_commands(),
+			'data_analytics'         => $this->get_data_analytics_commands(),
+			'ecommerce_business'     => $this->get_ecommerce_commands(),
+			'developer_technical'    => $this->get_developer_commands(),
+			'security_compliance'    => $this->get_security_commands(),
+			'research_discovery'     => $this->get_research_commands(),
+			'geospatial_location'    => $this->get_geospatial_commands(),
+			'workflow_automation'    => $this->get_workflow_commands(),
+			'communication_outreach' => $this->get_communication_commands(),
+			'integration_external'   => $this->get_integration_commands(),
+			'ai_model_management'    => $this->get_ai_commands(),
+		);
+
+		// Add pro toolkit commands if not in base version mode.
+		if ( ! WP_MCP_AI_BASE_VERSION ) {
+			$commands = array_merge(
+				$commands,
+				array(
+					'ai_tool_builder'            => $this->get_ai_tool_builder_commands(),
+					'analytics_pro'              => $this->get_analytics_pro_commands(),
+					'architect_agent'            => $this->get_architect_agent_commands(),
+					'architectural_design'       => $this->get_architectural_design_commands(),
+					'calendar_booking'           => $this->get_calendar_booking_commands(),
+					'chat_channels'              => $this->get_chat_channels_commands(),
+					'crm'                        => $this->get_crm_commands(),
+					'dj_management'              => $this->get_dj_management_commands(),
+					'document_generation'        => $this->get_document_generation_commands(),
+					'ecommerce_pro'              => $this->get_ecommerce_pro_commands(),
+					'fantasy_football'           => $this->get_fantasy_football_commands(),
+					'financial_planner'          => $this->get_financial_planner_commands(),
+					'image_production'           => $this->get_image_production_commands(),
+					'media_pro'                  => $this->get_media_pro_commands(),
+					'multilingual'               => $this->get_multilingual_commands(),
+					'regulatory_registration'    => $this->get_regulatory_registration_commands(),
+					'site_creator'               => $this->get_site_creator_commands(),
+					'social_media'               => $this->get_social_media_commands(),
+					'video_production'           => $this->get_video_production_commands(),
+				)
+			);
+		}
+
 		$this->toolkit_commands = apply_filters(
 			'wp_mcp_ai_toolkit_commands',
-			array(
-				'content_publishing'     => $this->get_content_publishing_commands(),
-				'media_processing'       => $this->get_media_processing_commands(),
-				'data_analytics'         => $this->get_data_analytics_commands(),
-				'ecommerce_business'     => $this->get_ecommerce_commands(),
-				'developer_technical'    => $this->get_developer_commands(),
-				'security_compliance'    => $this->get_security_commands(),
-				'research_discovery'     => $this->get_research_commands(),
-				'geospatial_location'    => $this->get_geospatial_commands(),
-				'workflow_automation'    => $this->get_workflow_commands(),
-				'communication_outreach' => $this->get_communication_commands(),
-				'integration_external'   => $this->get_integration_commands(),
-				'ai_model_management'    => $this->get_ai_commands(),
-			)
+			$commands
 		);
 	}
 
@@ -1756,5 +1792,890 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 */
 	public function handle_model_deploy( $args, $context ) {
 		return $this->handle_generic_command( $args, $context );
+	}
+
+	// ========================================================================
+	// PRO TOOLKIT COMMANDS (19 Toolkits)
+	// ========================================================================
+
+	/**
+	 * Get AI Tool Builder toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_ai_tool_builder_commands() {
+		return array(
+			array(
+				'name'   => 'aitool-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create new AI tool', 'mcp-ai-wpoos' ),
+					'usage'       => '/aitool-create --name="My Tool" --type=prompt',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'aitool-test',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Test AI tool functionality', 'mcp-ai-wpoos' ),
+					'usage'       => '/aitool-test --tool_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'aitool-deploy',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Deploy AI tool to production', 'mcp-ai-wpoos' ),
+					'usage'       => '/aitool-deploy --tool_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'aitool-version',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Manage tool versions', 'mcp-ai-wpoos' ),
+					'usage'       => '/aitool-version --tool_id=123 --version=1.2',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'prompt-optimize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Optimize AI prompts', 'mcp-ai-wpoos' ),
+					'usage'       => '/prompt-optimize --prompt_id=456',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'prompt-library',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Access prompt templates', 'mcp-ai-wpoos' ),
+					'usage'       => '/prompt-library --search="SEO"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'tool-monitor',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Monitor tool usage and performance', 'mcp-ai-wpoos' ),
+					'usage'       => '/tool-monitor --tool_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'tool-marketplace',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Browse/share tools', 'mcp-ai-wpoos' ),
+					'usage'       => '/tool-marketplace --category="content"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'integration-add',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Add tool integrations', 'mcp-ai-wpoos' ),
+					'usage'       => '/integration-add --tool_id=123 --service="slack"',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+			array(
+				'name'   => 'aitool-analytics',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'View tool analytics', 'mcp-ai-wpoos' ),
+					'usage'       => '/aitool-analytics --tool_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'ai_tool_builder',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Analytics Pro toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_analytics_pro_commands() {
+		return array(
+			array(
+				'name'   => 'analytics-dashboard',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create custom dashboards', 'mcp-ai-wpoos' ),
+					'usage'       => '/analytics-dashboard --name="Sales Overview"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'metric-define',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Define custom metrics', 'mcp-ai-wpoos' ),
+					'usage'       => '/metric-define --name="Conversion Rate"',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'metric-track',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Track metric performance', 'mcp-ai-wpoos' ),
+					'usage'       => '/metric-track --metric_id=789',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'goal-set',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Set analytics goals', 'mcp-ai-wpoos' ),
+					'usage'       => '/goal-set --metric="revenue" --target=10000',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'funnel-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Analyze conversion funnels', 'mcp-ai-wpoos' ),
+					'usage'       => '/funnel-analyze --funnel="checkout"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'cohort-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Cohort analysis', 'mcp-ai-wpoos' ),
+					'usage'       => '/cohort-analyze --cohort="monthly"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'attribution-model',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Attribution modeling', 'mcp-ai-wpoos' ),
+					'usage'       => '/attribution-model --type="last-click"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'segment-advanced',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Advanced segmentation', 'mcp-ai-wpoos' ),
+					'usage'       => '/segment-advanced --criteria="high-value"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'predict-churn',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Churn prediction', 'mcp-ai-wpoos' ),
+					'usage'       => '/predict-churn --segment="customers"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'ltv-calculate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Customer lifetime value', 'mcp-ai-wpoos' ),
+					'usage'       => '/ltv-calculate --segment="all"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'analytics-export',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Export analytics data', 'mcp-ai-wpoos' ),
+					'usage'       => '/analytics-export --format=csv --date-range="last-30-days"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+			array(
+				'name'   => 'alert-configure',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Configure analytics alerts', 'mcp-ai-wpoos' ),
+					'usage'       => '/alert-configure --metric="revenue" --threshold=low',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'analytics_pro',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Architect Agent toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_architect_agent_commands() {
+		return array(
+			array(
+				'name'   => 'architect-plan',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create development plan', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-plan --project="E-commerce Site"',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-scaffold',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Scaffold project structure', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-scaffold --type=plugin',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-review',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Review architecture design', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-review --project_id=123',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-refactor',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Suggest refactoring', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-refactor --file=class-example.php',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-document',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Generate architecture docs', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-document --project_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-diagram',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create architecture diagrams', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-diagram --type="class-diagram"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Analyze codebase', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-analyze --path=includes/',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-migrate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Plan migrations', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-migrate --from=v1.0 --to=v2.0',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-optimize',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Optimize architecture', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-optimize --focus="performance"',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-test',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Generate test suites', 'mcp-ai-wpoos' ),
+					'usage'       => '/architect-test --class="WP_MCP_AI_Tool"',
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+			array(
+				'name'   => 'architect-deploy',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Deployment strategy', 'mcp-ai-wpoos' ),
+					'capability'  => 'manage_options',
+					'toolkit'     => 'architect_agent',
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get Architectural Design toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_architectural_design_commands() {
+		return array(
+			array(
+				'name'   => 'floor-plan',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Generate floor plans', 'mcp-ai-wpoos' ),
+					'usage'       => '/floor-plan --sqft=2000 --bedrooms=3',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'blueprint-create',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Create blueprints', 'mcp-ai-wpoos' ),
+					'usage'       => '/blueprint-create --project_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => '3d-model',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Generate 3D models', 'mcp-ai-wpoos' ),
+					'usage'       => '/3d-model --design_id=456',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'space-calculate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Calculate space requirements', 'mcp-ai-wpoos' ),
+					'usage'       => '/space-calculate --room-type="office"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'compliance-check',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Building code compliance', 'mcp-ai-wpoos' ),
+					'usage'       => '/compliance-check --project_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'cost-estimate',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Construction cost estimation', 'mcp-ai-wpoos' ),
+					'usage'       => '/cost-estimate --project_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'material-specify',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Material specifications', 'mcp-ai-wpoos' ),
+					'usage'       => '/material-specify --category="flooring"',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'lighting-plan',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Lighting design', 'mcp-ai-wpoos' ),
+					'usage'       => '/lighting-plan --room_id=789',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'hvac-design',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'HVAC system design', 'mcp-ai-wpoos' ),
+					'usage'       => '/hvac-design --sqft=2000',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'plumbing-layout',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Plumbing layout', 'mcp-ai-wpoos' ),
+					'usage'       => '/plumbing-layout --floor_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'electrical-plan',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Electrical planning', 'mcp-ai-wpoos' ),
+					'usage'       => '/electrical-plan --floor_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'structural-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Structural analysis', 'mcp-ai-wpoos' ),
+					'usage'       => '/structural-analyze --design_id=456',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'accessibility-check',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'ADA compliance check', 'mcp-ai-wpoos' ),
+					'usage'       => '/accessibility-check --project_id=123',
+					'capability'  => 'manage_options',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'energy-analyze',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Energy efficiency analysis', 'mcp-ai-wpoos' ),
+					'usage'       => '/energy-analyze --project_id=123',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'render-3d',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( '3D rendering', 'mcp-ai-wpoos' ),
+					'usage'       => '/render-3d --model_id=789 --quality=high',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+			array(
+				'name'   => 'cad-export',
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => __( 'Export to CAD formats', 'mcp-ai-wpoos' ),
+					'usage'       => '/cad-export --design_id=456 --format=dwg',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'architectural_design',
+				),
+			),
+		);
+	}
+
+	// Continue with remaining pro toolkit command definitions...
+	// Due to length, I'll add them in the next edit operation.
+
+	/**
+	 * Get Calendar & Booking toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_calendar_booking_commands() {
+		$commands = array();
+		$command_names = array( 'booking-create', 'booking-manage', 'availability-set', 'calendar-sync', 'reminder-send', 'booking-confirm', 'reschedule', 'cancel-booking', 'waitlist-manage', 'booking-report', 'resource-schedule', 'buffer-time' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'calendar_booking',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Chat Channels toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_chat_channels_commands() {
+		$commands = array();
+		$command_names = array( 'channel-create', 'channel-join', 'message-broadcast', 'thread-create', 'mention-user', 'channel-archive', 'chat-search', 'file-share', 'chat-integrate', 'chat-analytics' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'chat_channels',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get CRM toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_crm_commands() {
+		$commands = array();
+		$command_names = array( 'lead-add', 'lead-qualify', 'lead-assign', 'contact-create', 'contact-merge', 'deal-create', 'deal-move', 'activity-log', 'follow-up', 'email-sequence', 'crm-report', 'pipeline-view', 'contact-segment', 'crm-sync' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'crm',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get DJ Management toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_dj_management_commands() {
+		$commands = array();
+		$command_names = array( 'track-add', 'playlist-create', 'playlist-analyze', 'bpm-match', 'key-match', 'setlist-plan', 'event-plan', 'track-recommend', 'mix-analyze', 'library-organize', 'event-report' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'dj_management',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Document Generation toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_document_generation_commands() {
+		$commands = array();
+		$command_names = array( 'doc-create', 'pdf-generate', 'doc-merge', 'template-create', 'variable-fill', 'doc-sign', 'doc-approve', 'doc-version', 'doc-export', 'doc-watermark', 'doc-secure', 'doc-batch', 'doc-archive' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'document_generation',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get E-Commerce Pro toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_ecommerce_pro_commands() {
+		$commands = array();
+		$command_names = array( 'product-recommend', 'upsell-suggest', 'crosssell-suggest', 'bundle-create', 'discount-optimize', 'abandoned-recover', 'subscription-manage', 'wholesale-pricing', 'marketplace-sync', 'shipping-optimize', 'tax-calculate', 'fraud-detect', 'return-process', 'supplier-sync', 'ecom-analytics' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_pro',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Fantasy Football toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_fantasy_football_commands() {
+		$commands = array();
+		$command_names = array( 'player-analyze', 'draft-strategy', 'draft-mock', 'waiver-recommend', 'trade-analyze', 'lineup-optimize', 'matchup-preview', 'injury-track', 'projection-update', 'league-standings', 'stats-compare', 'sleeper-identify' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'fantasy_football',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Financial Planner toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_financial_planner_commands() {
+		$commands = array();
+		$command_names = array( 'budget-create', 'budget-track', 'investment-analyze', 'portfolio-optimize', 'retirement-plan', 'retirement-calc', 'debt-analyze', 'debt-payoff', 'goal-set', 'goal-track', 'tax-estimate', 'networth-calc', 'cashflow-analyze', 'finance-report' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'financial_planner',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Image Production toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_image_production_commands() {
+		$commands = array();
+		$command_names = array( 'image-edit', 'image-enhance', 'background-remove', 'image-upscale', 'image-restore', 'color-correct', 'image-crop', 'image-filter', 'image-collage', 'image-template', 'image-batch-edit', 'image-watermark', 'image-metadata' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'upload_files',
+					'toolkit'     => 'image_production',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Media Pro toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_media_pro_commands() {
+		$commands = array();
+		$command_names = array( 'media-organize', 'media-tag', 'media-search', 'media-backup', 'media-cdn', 'media-optimize-bulk', 'media-migrate', 'media-duplicate', 'media-unused', 'media-analytics', 'media-permission' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'upload_files',
+					'toolkit'     => 'media_pro',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Multilingual toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_multilingual_commands() {
+		$commands = array();
+		$command_names = array( 'translate-content', 'translate-bulk', 'locale-switch', 'glossary-manage', 'translate-check', 'language-detect', 'rtl-convert', 'locale-sync', 'translate-export', 'translate-import', 'language-fallback', 'multilingual-seo' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'multilingual',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Regulatory & Registration toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_regulatory_registration_commands() {
+		$commands = array();
+		$command_names = array( 'business-register', 'license-apply', 'permit-apply', 'compliance-check', 'filing-submit', 'ein-apply', 'trademark-search', 'patent-search', 'incorporation-docs', 'annual-report', 'regulatory-alert', 'license-renew', 'compliance-report', 'registration-track', 'regulatory-research' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'manage_options',
+					'toolkit'     => 'regulatory_registration',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Site Creator toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_site_creator_commands() {
+		$commands = array();
+		$command_names = array( 'site-research', 'competitor-analyze', 'site-plan', 'page-create', 'section-create', 'widget-create', 'template-create', 'template-apply', 'site-scaffold', 'design-system', 'component-library', 'responsive-test', 'site-export', 'site-deploy' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_theme_options',
+					'toolkit'     => 'site_creator',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Social Media toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_social_media_commands() {
+		$commands = array();
+		$command_names = array( 'social-post', 'social-schedule', 'social-calendar', 'hashtag-suggest', 'post-optimize', 'social-engage', 'social-monitor', 'influencer-find', 'campaign-create', 'social-analytics', 'competitor-track', 'trend-identify', 'social-report' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'social_media',
+				),
+			);
+		}
+		return $commands;
+	}
+
+	/**
+	 * Get Video Production toolkit commands.
+	 *
+	 * @since 1.3.0
+	 * @return array Command definitions.
+	 */
+	protected function get_video_production_commands() {
+		$commands = array();
+		$command_names = array( 'video-edit', 'video-trim', 'video-merge', 'video-effect', 'video-transition', 'video-subtitle', 'video-voiceover', 'video-music', 'video-template', 'video-storyboard', 'video-render', 'video-publish', 'video-analytics', 'video-thumbnail' );
+		foreach ( $command_names as $name ) {
+			$commands[] = array(
+				'name'   => $name,
+				'config' => array(
+					'handler'     => array( $this, 'handle_generic_command' ),
+					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
+					'capability'  => 'upload_files',
+					'toolkit'     => 'video_production',
+				),
+			);
+		}
+		return $commands;
 	}
 }
