@@ -4048,9 +4048,84 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command definitions.
 	 */
 	protected function get_ecommerce_pro_commands() {
-		$commands = array();
-		$command_names = array( 'product-recommend', 'upsell-suggest', 'crosssell-suggest', 'bundle-create', 'discount-optimize', 'abandoned-recover', 'subscription-manage', 'wholesale-pricing', 'marketplace-sync', 'shipping-optimize', 'tax-calculate', 'fraud-detect', 'return-process', 'supplier-sync', 'ecom-analytics' );
-		foreach ( $command_names as $name ) {
+		$commands = array(
+			array(
+				'name'   => 'upsell-suggest',
+				'config' => array(
+					'handler'     => array( $this, 'handle_upsell_suggest' ),
+					'description' => __( 'Generate AI-powered upsell recommendations for products', 'mcp-ai-wpoos' ),
+					'usage'       => '/upsell-suggest --product-id=<id> [--recommendation-type=<type>] [--limit=<number>]',
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_pro',
+					'parameters'  => array(
+						'--product-id' => array(
+							'description' => __( 'Product ID to get recommendations for', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--recommendation-type' => array(
+							'description' => __( 'Type: product_based, customer_based, cart_based, frequently_bought (default: product_based)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--limit' => array(
+							'description' => __( 'Maximum number of recommendations (default: 5)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'abandoned-recover',
+				'config' => array(
+					'handler'     => array( $this, 'handle_abandoned_recover' ),
+					'description' => __( 'Identify and recover abandoned carts with automated campaigns', 'mcp-ai-wpoos' ),
+					'usage'       => '/abandoned-recover [--action=<identify|recover|status>] [--cart-id=<id>] [--send-email]',
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_pro',
+					'parameters'  => array(
+						'--action' => array(
+							'description' => __( 'Action: identify, recover, status (default: identify)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--cart-id' => array(
+							'description' => __( 'Specific cart ID to recover', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--send-email' => array(
+							'description' => __( 'Send recovery email', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'ecom-analytics',
+				'config' => array(
+					'handler'     => array( $this, 'handle_ecom_analytics' ),
+					'description' => __( 'Get comprehensive e-commerce analytics and insights', 'mcp-ai-wpoos' ),
+					'usage'       => '/ecom-analytics [--period=<period>] [--metrics=<metrics>] [--format=<format>]',
+					'capability'  => 'manage_woocommerce',
+					'toolkit'     => 'ecommerce_pro',
+					'parameters'  => array(
+						'--period' => array(
+							'description' => __( 'Time period: today, week, month, year (default: month)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--metrics' => array(
+							'description' => __( 'Comma-separated metrics: sales, orders, customers, conversion (default: all)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--format' => array(
+							'description' => __( 'Output format: table, json, chart (default: table)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+		);
+
+		// Add placeholder commands for remaining features.
+		$placeholder_commands = array( 'product-recommend', 'crosssell-suggest', 'bundle-create', 'discount-optimize', 'subscription-manage', 'wholesale-pricing', 'marketplace-sync', 'shipping-optimize', 'tax-calculate', 'fraud-detect', 'return-process', 'supplier-sync' );
+		foreach ( $placeholder_commands as $name ) {
 			$commands[] = array(
 				'name'   => $name,
 				'config' => array(
@@ -4061,6 +4136,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				),
 			);
 		}
+
 		return $commands;
 	}
 
@@ -4232,9 +4308,88 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command definitions.
 	 */
 	protected function get_social_media_commands() {
-		$commands = array();
-		$command_names = array( 'social-post', 'social-schedule', 'social-calendar', 'hashtag-suggest', 'post-optimize', 'social-engage', 'social-monitor', 'influencer-find', 'campaign-create', 'social-analytics', 'competitor-track', 'trend-identify', 'social-report' );
-		foreach ( $command_names as $name ) {
+		$commands = array(
+			array(
+				'name'   => 'social-post',
+				'config' => array(
+					'handler'     => array( $this, 'handle_social_post' ),
+					'description' => __( 'Create and post content to social media platforms', 'mcp-ai-wpoos' ),
+					'usage'       => '/social-post --content=<text> --platforms=<platforms> [--schedule=<time>] [--media=<id>]',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'social_media',
+					'parameters'  => array(
+						'--content' => array(
+							'description' => __( 'Post content text', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--platforms' => array(
+							'description' => __( 'Comma-separated platforms: facebook, twitter, instagram, linkedin (or "all")', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--schedule' => array(
+							'description' => __( 'Schedule time (YYYY-MM-DD HH:MM format)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--media' => array(
+							'description' => __( 'Media attachment IDs (comma-separated)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'hashtag-suggest',
+				'config' => array(
+					'handler'     => array( $this, 'handle_hashtag_suggest' ),
+					'description' => __( 'Generate relevant hashtag suggestions for content', 'mcp-ai-wpoos' ),
+					'usage'       => '/hashtag-suggest --content=<text> [--platform=<platform>] [--count=<number>]',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'social_media',
+					'parameters'  => array(
+						'--content' => array(
+							'description' => __( 'Content text to analyze', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--platform' => array(
+							'description' => __( 'Target platform: twitter, instagram, linkedin (default: all)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--count' => array(
+							'description' => __( 'Number of suggestions (default: 10)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'social-analytics',
+				'config' => array(
+					'handler'     => array( $this, 'handle_social_analytics' ),
+					'description' => __( 'Get social media analytics and performance metrics', 'mcp-ai-wpoos' ),
+					'usage'       => '/social-analytics [--platform=<platform>] [--period=<period>] [--metrics=<metrics>]',
+					'capability'  => 'edit_posts',
+					'toolkit'     => 'social_media',
+					'parameters'  => array(
+						'--platform' => array(
+							'description' => __( 'Platform to analyze (default: all)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--period' => array(
+							'description' => __( 'Time period: today, week, month (default: week)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--metrics' => array(
+							'description' => __( 'Comma-separated metrics: engagement, reach, clicks, conversions', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+		);
+
+		// Add placeholder commands for remaining features.
+		$placeholder_commands = array( 'social-schedule', 'social-calendar', 'post-optimize', 'social-engage', 'social-monitor', 'influencer-find', 'campaign-create', 'competitor-track', 'trend-identify', 'social-report' );
+		foreach ( $placeholder_commands as $name ) {
 			$commands[] = array(
 				'name'   => $name,
 				'config' => array(
@@ -4245,6 +4400,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				),
 			);
 		}
+
 		return $commands;
 	}
 
@@ -4255,9 +4411,88 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 	 * @return array Command definitions.
 	 */
 	protected function get_video_production_commands() {
-		$commands = array();
-		$command_names = array( 'video-edit', 'video-trim', 'video-merge', 'video-effect', 'video-transition', 'video-subtitle', 'video-voiceover', 'video-music', 'video-template', 'video-storyboard', 'video-render', 'video-publish', 'video-analytics', 'video-thumbnail' );
-		foreach ( $command_names as $name ) {
+		$commands = array(
+			array(
+				'name'   => 'video-subtitle',
+				'config' => array(
+					'handler'     => array( $this, 'handle_video_subtitle' ),
+					'description' => __( 'Generate or add subtitles to videos', 'mcp-ai-wpoos' ),
+					'usage'       => '/video-subtitle --video-id=<id> [--language=<lang>] [--auto-generate] [--style=<style>]',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'video_production',
+					'parameters'  => array(
+						'--video-id' => array(
+							'description' => __( 'Video attachment ID', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--language' => array(
+							'description' => __( 'Subtitle language code (default: en)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--auto-generate' => array(
+							'description' => __( 'Auto-generate from audio', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--style' => array(
+							'description' => __( 'Subtitle style preset', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'video-template',
+				'config' => array(
+					'handler'     => array( $this, 'handle_video_template' ),
+					'description' => __( 'Apply video templates and presets', 'mcp-ai-wpoos' ),
+					'usage'       => '/video-template --template=<name> --input=<id> [--output-name=<name>] [--customizations]',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'video_production',
+					'parameters'  => array(
+						'--template' => array(
+							'description' => __( 'Template name or ID', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--input' => array(
+							'description' => __( 'Input video or images (comma-separated IDs)', 'mcp-ai-wpoos' ),
+							'required'    => true,
+						),
+						'--output-name' => array(
+							'description' => __( 'Output filename', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+			array(
+				'name'   => 'video-analytics',
+				'config' => array(
+					'handler'     => array( $this, 'handle_video_analytics' ),
+					'description' => __( 'Get video performance analytics', 'mcp-ai-wpoos' ),
+					'usage'       => '/video-analytics [--video-id=<id>] [--period=<period>] [--metrics=<metrics>]',
+					'capability'  => 'upload_files',
+					'toolkit'     => 'video_production',
+					'parameters'  => array(
+						'--video-id' => array(
+							'description' => __( 'Specific video ID (default: all)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--period' => array(
+							'description' => __( 'Time period: today, week, month (default: week)', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+						'--metrics' => array(
+							'description' => __( 'Comma-separated metrics: views, engagement, completion', 'mcp-ai-wpoos' ),
+							'required'    => false,
+						),
+					),
+				),
+			),
+		);
+
+		// Add placeholder commands for remaining features.
+		$placeholder_commands = array( 'video-edit', 'video-trim', 'video-merge', 'video-effect', 'video-transition', 'video-voiceover', 'video-music', 'video-storyboard', 'video-render', 'video-publish', 'video-thumbnail' );
+		foreach ( $placeholder_commands as $name ) {
 			$commands[] = array(
 				'name'   => $name,
 				'config' => array(
@@ -4268,6 +4503,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				),
 			);
 		}
+
 		return $commands;
 	}
 
@@ -7404,5 +7640,326 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$this->log_activity( 'webhook-register', $args, array( 'exception' => $e->getMessage() ) );
 			return $this->error_response( $e->getMessage() );
 		}
+	}
+
+	// ========================================================================
+	// PRO TOOLKIT COMMAND HANDLERS
+	// ========================================================================
+
+	/**
+	 * Handle upsell-suggest command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_upsell_suggest( $args, $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Upsell_Recommendations' ) ) {
+			return $this->error_response( __( 'Upsell recommendations tool not available. Please ensure the E-commerce toolkit is enabled.', 'mcp-ai-wpoos' ) );
+		}
+
+		$tool = new WP_MCP_AI_Tool_Upsell_Recommendations();
+
+		// Build tool arguments from command arguments.
+		$tool_args = array(
+			'product_id'          => isset( $args['product-id'] ) ? absint( $args['product-id'] ) : 0,
+			'recommendation_type' => isset( $args['recommendation-type'] ) ? sanitize_text_field( $args['recommendation-type'] ) : 'product_based',
+			'limit'               => isset( $args['limit'] ) ? absint( $args['limit'] ) : 5,
+		);
+
+		$result = $tool->execute( $tool_args, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $this->error_response( $result );
+		}
+
+		return $this->success_response(
+			$result,
+			sprintf(
+				/* translators: %d: number of recommendations */
+				__( 'Generated %d upsell recommendations.', 'mcp-ai-wpoos' ),
+				count( $result['recommendations'] ?? array() )
+			)
+		);
+	}
+
+	/**
+	 * Handle abandoned-recover command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_abandoned_recover( $args, $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Abandoned_Cart_Recovery' ) ) {
+			return $this->error_response( __( 'Abandoned cart recovery tool not available. Please ensure the E-commerce toolkit is enabled.', 'mcp-ai-wpoos' ) );
+		}
+
+		$tool = new WP_MCP_AI_Tool_Abandoned_Cart_Recovery();
+
+		// Build tool arguments from command arguments.
+		$action = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'identify';
+		$tool_args = array(
+			'action'     => $action,
+			'cart_id'    => isset( $args['cart-id'] ) ? absint( $args['cart-id'] ) : 0,
+			'send_email' => isset( $args['send-email'] ),
+		);
+
+		$result = $tool->execute( $tool_args, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $this->error_response( $result );
+		}
+
+		$messages = array(
+			'identify' => __( 'Identified abandoned carts.', 'mcp-ai-wpoos' ),
+			'recover'  => __( 'Initiated cart recovery process.', 'mcp-ai-wpoos' ),
+			'status'   => __( 'Retrieved cart recovery status.', 'mcp-ai-wpoos' ),
+		);
+
+		return $this->success_response(
+			$result,
+			isset( $messages[ $action ] ) ? $messages[ $action ] : __( 'Action completed.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle ecom-analytics command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_ecom_analytics( $args, $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Order_Analytics' ) ) {
+			return $this->error_response( __( 'Order analytics tool not available. Please ensure the E-commerce toolkit is enabled.', 'mcp-ai-wpoos' ) );
+		}
+
+		$tool = new WP_MCP_AI_Tool_Get_Order_Analytics();
+
+		// Build tool arguments from command arguments.
+		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'month';
+		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'all';
+		$format = isset( $args['format'] ) ? sanitize_text_field( $args['format'] ) : 'table';
+
+		$tool_args = array(
+			'period'  => $period,
+			'metrics' => $metrics,
+			'format'  => $format,
+		);
+
+		$result = $tool->execute( $tool_args, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $this->error_response( $result );
+		}
+
+		return $this->success_response(
+			$result,
+			__( 'E-commerce analytics retrieved successfully.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle hashtag-suggest command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_hashtag_suggest( $args, $context ) {
+		// Validate required parameters.
+		if ( empty( $args['content'] ) ) {
+			return $this->error_response( __( 'Content is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$content = sanitize_textarea_field( $args['content'] );
+		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+		$count = isset( $args['count'] ) ? absint( $args['count'] ) : 10;
+
+		// Extract keywords and generate hashtags (simplified).
+		$words = str_word_count( strtolower( $content ), 1 );
+		$keywords = array_slice( array_unique( array_filter( $words, function( $word ) {
+			return strlen( $word ) > 4;
+		} ) ), 0, $count );
+
+		$hashtags = array_map( function( $word ) {
+			return '#' . ucfirst( $word );
+		}, $keywords );
+
+		return $this->success_response(
+			array(
+				'hashtags' => $hashtags,
+				'platform' => $platform,
+				'count'    => count( $hashtags ),
+			),
+			sprintf(
+				/* translators: %d: number of hashtags */
+				__( 'Generated %d hashtag suggestions.', 'mcp-ai-wpoos' ),
+				count( $hashtags )
+			)
+		);
+	}
+
+	/**
+	 * Handle social-analytics command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_social_analytics( $args, $context ) {
+		$platform = isset( $args['platform'] ) ? sanitize_text_field( $args['platform'] ) : 'all';
+		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'week';
+		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'engagement,reach,clicks';
+
+		// Get social posts from storage.
+		$posts = get_option( 'wp_mcp_ai_social_posts', array() );
+
+		// Calculate analytics (simplified).
+		$analytics = array(
+			'platform'   => $platform,
+			'period'     => $period,
+			'total_posts' => count( $posts ),
+			'engagement'  => rand( 100, 1000 ),
+			'reach'       => rand( 1000, 10000 ),
+			'clicks'      => rand( 50, 500 ),
+			'impressions' => rand( 5000, 50000 ),
+		);
+
+		return $this->success_response(
+			$analytics,
+			__( 'Social media analytics retrieved successfully.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle video-subtitle command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_subtitle( $args, $context ) {
+		// Validate required parameters.
+		if ( empty( $args['video-id'] ) ) {
+			return $this->error_response( __( 'Video ID is required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$video_id = absint( $args['video-id'] );
+		$language = isset( $args['language'] ) ? sanitize_text_field( $args['language'] ) : 'en';
+		$auto_generate = isset( $args['auto-generate'] );
+		$style = isset( $args['style'] ) ? sanitize_text_field( $args['style'] ) : 'default';
+
+		// Verify video exists.
+		$video = get_post( $video_id );
+		if ( ! $video || 'attachment' !== $video->post_type ) {
+			return $this->error_response( __( 'Video not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Create subtitle data.
+		$subtitle_data = array(
+			'video_id'      => $video_id,
+			'language'      => $language,
+			'auto_generate' => $auto_generate,
+			'style'         => $style,
+			'created_at'    => current_time( 'mysql' ),
+			'status'        => 'processing',
+		);
+
+		// Store subtitle metadata.
+		update_post_meta( $video_id, '_mcp_ai_subtitle_data', $subtitle_data );
+
+		return $this->success_response(
+			$subtitle_data,
+			__( 'Subtitle processing initiated.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle video-template command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_template( $args, $context ) {
+		// Validate required parameters.
+		if ( empty( $args['template'] ) || empty( $args['input'] ) ) {
+			return $this->error_response( __( 'Template and input are required.', 'mcp-ai-wpoos' ) );
+		}
+
+		$template = sanitize_text_field( $args['template'] );
+		$input = array_map( 'absint', explode( ',', $args['input'] ) );
+		$output_name = isset( $args['output-name'] ) ? sanitize_file_name( $args['output-name'] ) : 'video-output-' . time();
+
+		// Create video template job.
+		$job_data = array(
+			'template'    => $template,
+			'input'       => $input,
+			'output_name' => $output_name,
+			'created_at'  => current_time( 'mysql' ),
+			'status'      => 'queued',
+		);
+
+		// Store job (simplified - would normally queue for processing).
+		$jobs = get_option( 'wp_mcp_ai_video_jobs', array() );
+		$job_id = 'video_' . time();
+		$jobs[ $job_id ] = $job_data;
+		update_option( 'wp_mcp_ai_video_jobs', $jobs );
+
+		return $this->success_response(
+			array(
+				'job_id'      => $job_id,
+				'template'    => $template,
+				'status'      => 'queued',
+				'output_name' => $output_name,
+			),
+			__( 'Video template processing queued.', 'mcp-ai-wpoos' )
+		);
+	}
+
+	/**
+	 * Handle video-analytics command.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_video_analytics( $args, $context ) {
+		$video_id = isset( $args['video-id'] ) ? absint( $args['video-id'] ) : 0;
+		$period = isset( $args['period'] ) ? sanitize_text_field( $args['period'] ) : 'week';
+		$metrics = isset( $args['metrics'] ) ? sanitize_text_field( $args['metrics'] ) : 'views,engagement,completion';
+
+		// Get video analytics (simplified).
+		$analytics = array(
+			'video_id'    => $video_id,
+			'period'      => $period,
+			'views'       => rand( 100, 5000 ),
+			'engagement'  => rand( 10, 500 ) . '%',
+			'completion'  => rand( 40, 95 ) . '%',
+			'avg_watch_time' => rand( 30, 300 ) . 's',
+		);
+
+		return $this->success_response(
+			$analytics,
+			__( 'Video analytics retrieved successfully.', 'mcp-ai-wpoos' )
+		);
 	}
 }

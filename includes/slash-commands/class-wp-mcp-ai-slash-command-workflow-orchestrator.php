@@ -108,6 +108,85 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
+			'abandoned_cart_campaign' => array(
+				'name'        => __( 'Abandoned Cart Recovery Campaign', 'mcp-ai-wpoos' ),
+				'description' => __( 'Automated workflow to identify and recover abandoned carts', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'abandoned-recover',
+						'params'  => array( 'action' => 'identify' ),
+					),
+					array(
+						'command' => 'abandoned-recover',
+						'params'  => array( 'action' => 'recover', 'send-email' => true ),
+					),
+					array(
+						'command' => 'ecom-analytics',
+						'params'  => array( 'metrics' => 'recovery-rate,revenue' ),
+					),
+				),
+			),
+			'social_media_campaign' => array(
+				'name'        => __( 'Multi-Platform Social Media Campaign', 'mcp-ai-wpoos' ),
+				'description' => __( 'Create and publish content across all social platforms', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'hashtag-suggest',
+						'params'  => array( 'content' => '{post_content}', 'count' => 10 ),
+					),
+					array(
+						'command' => 'social-post',
+						'params'  => array(
+							'content'   => '{post_content}',
+							'platforms' => 'facebook,twitter,instagram,linkedin',
+						),
+					),
+					array(
+						'command' => 'social-analytics',
+						'params'  => array( 'period' => 'today' ),
+					),
+				),
+			),
+			'video_marketing_workflow' => array(
+				'name'        => __( 'Video Marketing Production', 'mcp-ai-wpoos' ),
+				'description' => __( 'Complete video creation and distribution workflow', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'video-template',
+						'params'  => array( 'template' => '{template_name}', 'input' => '{video_assets}' ),
+					),
+					array(
+						'command' => 'video-subtitle',
+						'params'  => array( 'video-id' => '{previous.video_id}', 'auto-generate' => true ),
+					),
+					array(
+						'command' => 'social-post',
+						'params'  => array(
+							'content'   => '{video_description}',
+							'platforms' => 'youtube,facebook,instagram',
+							'media'     => '{previous.video_id}',
+						),
+					),
+				),
+			),
+			'ecommerce_upsell_optimization' => array(
+				'name'        => __( 'E-Commerce Upsell Optimization', 'mcp-ai-wpoos' ),
+				'description' => __( 'Analyze and optimize product upsells and cross-sells', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'ecom-analytics',
+						'params'  => array( 'metrics' => 'top-products', 'period' => 'month' ),
+					),
+					array(
+						'command' => 'upsell-suggest',
+						'params'  => array(
+							'product-id'          => '{previous.top_product_id}',
+							'recommendation-type' => 'frequently_bought',
+							'limit'               => 10,
+						),
+					),
+				),
+			),
 		);
 
 		/**
