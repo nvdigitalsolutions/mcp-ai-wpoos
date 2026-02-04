@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-package-references-issues',
-        'version' => 'dev-copilot/fix-package-references-issues',
-        'reference' => '61b947f8f60dff2b774feb9a02ff2193d18e6282',
+        'pretty_version' => 'dev-copilot/implement-workflow-builder-ui',
+        'version' => 'dev-copilot/implement-workflow-builder-ui',
+        'reference' => '6c505d26bb44fd7a094c942ed1f6c712c9e0b87d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-package-references-issues',
-            'version' => 'dev-copilot/fix-package-references-issues',
-            'reference' => '61b947f8f60dff2b774feb9a02ff2193d18e6282',
+            'pretty_version' => 'dev-copilot/implement-workflow-builder-ui',
+            'version' => 'dev-copilot/implement-workflow-builder-ui',
+            'reference' => '6c505d26bb44fd7a094c942ed1f6c712c9e0b87d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
