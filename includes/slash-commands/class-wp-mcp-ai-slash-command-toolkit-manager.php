@@ -1809,7 +1809,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			array(
 				'name'   => 'aitool-create',
 				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
+					'handler'     => array( $this, 'handle_aitool_create' ),
 					'description' => __( 'Create new AI tool', 'mcp-ai-wpoos' ),
 					'usage'       => '/aitool-create --name="My Tool" --type=prompt',
 					'capability'  => 'manage_options',
@@ -1859,7 +1859,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			array(
 				'name'   => 'prompt-library',
 				'config' => array(
-					'handler'     => array( $this, 'handle_generic_command' ),
+					'handler'     => array( $this, 'handle_prompt_library' ),
 					'description' => __( 'Access prompt templates', 'mcp-ai-wpoos' ),
 					'usage'       => '/prompt-library --search="SEO"',
 					'capability'  => 'edit_posts',
@@ -2677,5 +2677,209 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			);
 		}
 		return $commands;
+	}
+
+	// ========================================================================
+	// HIGH-PRIORITY COMMAND HANDLERS
+	// ========================================================================
+
+	/**
+	 * Handle aitool-create command.
+	 *
+	 * Creates a new AI tool with specified configuration.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_aitool_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'name' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create AI tools.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$tool_name = sanitize_text_field( $args['name'] );
+			$tool_type = isset( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'prompt';
+			$description = isset( $args['description'] ) ? sanitize_text_field( $args['description'] ) : '';
+
+			// Create custom post type for AI tool.
+			$tool_data = array(
+				'post_title'   => $tool_name,
+				'post_content' => $description,
+				'post_status'  => 'draft',
+				'post_type'    => 'mcp_ai_tool',
+				'post_author'  => get_current_user_id(),
+			);
+
+			$tool_id = wp_insert_post( $tool_data );
+
+			if ( is_wp_error( $tool_id ) ) {
+				return $this->error_response( $tool_id );
+			}
+
+			// Add metadata.
+			update_post_meta( $tool_id, '_wp_mcp_ai_tool_type', $tool_type );
+			update_post_meta( $tool_id, '_wp_mcp_ai_tool_status', 'draft' );
+			update_post_meta( $tool_id, '_wp_mcp_ai_tool_version', '1.0.0' );
+			update_post_meta( $tool_id, '_wp_mcp_ai_tool_created_via_command', true );
+			update_post_meta( $tool_id, '_wp_mcp_ai_tool_created_date', current_time( 'mysql' ) );
+
+			$result = array(
+				'tool_id'     => $tool_id,
+				'name'        => $tool_name,
+				'type'        => $tool_type,
+				'status'      => 'draft',
+				'version'     => '1.0.0',
+				'edit_url'    => admin_url( "post.php?post={$tool_id}&action=edit" ),
+			);
+
+			$this->log_activity( 'aitool-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: tool name */
+					__( 'AI Tool "%s" created successfully! Ready for configuration.', 'mcp-ai-wpoos' ),
+					$tool_name
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle prompt-library command.
+	 *
+	 * Access and search prompt templates library.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_prompt_library( $args, $context ) {
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to access the prompt library.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$search_term = isset( $args['search'] ) ? sanitize_text_field( $args['search'] ) : '';
+			$category = isset( $args['category'] ) ? sanitize_text_field( $args['category'] ) : 'all';
+
+			// Define default prompt library.
+			$prompt_library = array(
+				array(
+					'id'          => 'seo-meta-description',
+					'name'        => __( 'SEO Meta Description Generator', 'mcp-ai-wpoos' ),
+					'category'    => 'SEO',
+					'description' => __( 'Generate SEO-optimized meta descriptions', 'mcp-ai-wpoos' ),
+					'template'    => 'Write a compelling meta description (max 160 characters) for: {topic}',
+					'tags'        => array( 'seo', 'meta', 'description' ),
+				),
+				array(
+					'id'          => 'blog-post-outline',
+					'name'        => __( 'Blog Post Outline', 'mcp-ai-wpoos' ),
+					'category'    => 'Content',
+					'description' => __( 'Create a comprehensive blog post outline', 'mcp-ai-wpoos' ),
+					'template'    => 'Create a detailed outline for a blog post about: {topic}. Include introduction, main points, and conclusion.',
+					'tags'        => array( 'blog', 'content', 'outline' ),
+				),
+				array(
+					'id'          => 'social-media-caption',
+					'name'        => __( 'Social Media Caption', 'mcp-ai-wpoos' ),
+					'category'    => 'Social Media',
+					'description' => __( 'Generate engaging social media captions', 'mcp-ai-wpoos' ),
+					'template'    => 'Write an engaging {platform} caption for: {content}. Include relevant hashtags.',
+					'tags'        => array( 'social', 'caption', 'engagement' ),
+				),
+				array(
+					'id'          => 'product-description',
+					'name'        => __( 'Product Description', 'mcp-ai-wpoos' ),
+					'category'    => 'E-Commerce',
+					'description' => __( 'Create compelling product descriptions', 'mcp-ai-wpoos' ),
+					'template'    => 'Write a compelling product description for: {product_name}. Highlight key features and benefits.',
+					'tags'        => array( 'ecommerce', 'product', 'description' ),
+				),
+				array(
+					'id'          => 'email-subject-line',
+					'name'        => __( 'Email Subject Line', 'mcp-ai-wpoos' ),
+					'category'    => 'Email Marketing',
+					'description' => __( 'Generate attention-grabbing email subject lines', 'mcp-ai-wpoos' ),
+					'template'    => 'Create 5 compelling email subject lines for: {campaign_topic}. Focus on {goal}.',
+					'tags'        => array( 'email', 'subject', 'marketing' ),
+				),
+			);
+
+			// Filter by search term.
+			$filtered_prompts = $prompt_library;
+			if ( ! empty( $search_term ) ) {
+				$filtered_prompts = array_filter(
+					$prompt_library,
+					function( $prompt ) use ( $search_term ) {
+						$search_lower = strtolower( $search_term );
+						return stripos( $prompt['name'], $search_term ) !== false
+							|| stripos( $prompt['description'], $search_term ) !== false
+							|| stripos( $prompt['category'], $search_term ) !== false
+							|| in_array( $search_lower, array_map( 'strtolower', $prompt['tags'] ), true );
+					}
+				);
+			}
+
+			// Filter by category.
+			if ( 'all' !== $category ) {
+				$filtered_prompts = array_filter(
+					$filtered_prompts,
+					function( $prompt ) use ( $category ) {
+						return strtolower( $prompt['category'] ) === strtolower( $category );
+					}
+				);
+			}
+
+			$result = array(
+				'total_prompts'    => count( $prompt_library ),
+				'filtered_prompts' => count( $filtered_prompts ),
+				'search_term'      => $search_term,
+				'category'         => $category,
+				'prompts'          => array_values( $filtered_prompts ),
+				'categories'       => array_unique( array_column( $prompt_library, 'category' ) ),
+			);
+
+			$this->log_activity( 'prompt-library', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of prompts found */
+					__( 'Found %d prompt templates.', 'mcp-ai-wpoos' ),
+					count( $filtered_prompts )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
 	}
 }
