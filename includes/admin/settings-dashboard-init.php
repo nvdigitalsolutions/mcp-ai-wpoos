@@ -144,6 +144,11 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.
 		$GLOBALS['wp_mcp_ai_custom_filters_applicator'] = $container->get( 'admin.custom_filters_applicator' );
+
+		// Initialize workflow editor page (Phase 1 feature).
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-workflow-editor-page.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-workflow-editor-page.php';
+		}
 	} catch ( Throwable $e ) {
 		// Log the error if logging is enabled.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

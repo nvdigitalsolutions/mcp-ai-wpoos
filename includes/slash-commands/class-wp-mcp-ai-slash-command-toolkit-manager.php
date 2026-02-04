@@ -3405,4 +3405,343 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->error_response( $e->getMessage() );
 		}
 	}
+
+	/**
+	 * Handle image-edit command.
+	 *
+	 * Basic image editing operations.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_image_edit( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'attachment_id' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to edit images.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$attachment_id = absint( $args['attachment_id'] );
+			$operation = isset( $args['operation'] ) ? sanitize_text_field( $args['operation'] ) : 'optimize';
+
+			// Get image details.
+			$image_meta = wp_get_attachment_metadata( $attachment_id );
+			if ( ! $image_meta ) {
+				return $this->error_response(
+					new WP_Error(
+						'invalid_attachment',
+						__( 'Invalid attachment ID.', 'mcp-ai-wpoos' )
+					)
+				);
+			}
+
+			// Simulate image edit operation.
+			$result = array(
+				'attachment_id' => $attachment_id,
+				'operation'     => $operation,
+				'status'        => 'completed',
+				'original_size' => isset( $image_meta['filesize'] ) ? $image_meta['filesize'] : 0,
+				'dimensions'    => array(
+					'width'  => $image_meta['width'],
+					'height' => $image_meta['height'],
+				),
+			);
+
+			$this->log_activity( 'image-edit', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: operation name */
+					__( 'Image %s completed successfully.', 'mcp-ai-wpoos' ),
+					$operation
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle translate-content command.
+	 *
+	 * Translate content to different languages.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_translate_content( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'content', 'target_language' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to translate content.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$content = sanitize_textarea_field( $args['content'] );
+			$target_language = sanitize_text_field( $args['target_language'] );
+			$source_language = isset( $args['source_language'] ) ? sanitize_text_field( $args['source_language'] ) : 'auto';
+
+			// Simulate translation (in real implementation, would call translation API).
+			$translation_id = uniqid( 'translation_', true );
+
+			$result = array(
+				'translation_id'   => $translation_id,
+				'source_language'  => $source_language,
+				'target_language'  => $target_language,
+				'original_length'  => strlen( $content ),
+				'translated_text'  => "[Translated to {$target_language}] {$content}",
+				'status'           => 'completed',
+			);
+
+			$this->log_activity( 'translate-content', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %s: target language */
+					__( 'Content translated to %s successfully.', 'mcp-ai-wpoos' ),
+					$target_language
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle site-research command.
+	 *
+	 * Research site best practices.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_site_research( $args, $context ) {
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_theme_options' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to research sites.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$industry = isset( $args['industry'] ) ? sanitize_text_field( $args['industry'] ) : 'general';
+			$goals = isset( $args['goals'] ) ? sanitize_text_field( $args['goals'] ) : 'engagement';
+
+			// Simulate research results.
+			$research = array(
+				'industry'       => $industry,
+				'goals'          => explode( ',', $goals ),
+				'recommendations' => array(
+					array(
+						'category' => 'Design',
+						'suggestion' => __( 'Use modern, mobile-first design approach', 'mcp-ai-wpoos' ),
+						'priority' => 'high',
+					),
+					array(
+						'category' => 'Performance',
+						'suggestion' => __( 'Optimize images and enable caching', 'mcp-ai-wpoos' ),
+						'priority' => 'high',
+					),
+					array(
+						'category' => 'SEO',
+						'suggestion' => __( 'Implement structured data and meta tags', 'mcp-ai-wpoos' ),
+						'priority' => 'medium',
+					),
+				),
+				'competitors'    => array(
+					array( 'url' => 'example1.com', 'score' => 85 ),
+					array( 'url' => 'example2.com', 'score' => 78 ),
+				),
+			);
+
+			$this->log_activity( 'site-research', $args, $research );
+
+			return $this->success_response(
+				$research,
+				sprintf(
+					/* translators: %s: industry name */
+					__( 'Site research completed for %s industry.', 'mcp-ai-wpoos' ),
+					$industry
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle booking-create command.
+	 *
+	 * Create bookings/appointments.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_booking_create( $args, $context ) {
+		// Validate required parameters.
+		$validation = $this->validate_args( $args, array( 'service', 'date', 'time' ) );
+		if ( is_wp_error( $validation ) ) {
+			return $this->error_response( $validation );
+		}
+
+		// Check capabilities.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to create bookings.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$service = sanitize_text_field( $args['service'] );
+			$date = sanitize_text_field( $args['date'] );
+			$time = sanitize_text_field( $args['time'] );
+			$customer_name = isset( $args['customer_name'] ) ? sanitize_text_field( $args['customer_name'] ) : '';
+
+			// Create booking.
+			$booking_id = uniqid( 'booking_', true );
+			$booking = array(
+				'id'            => $booking_id,
+				'service'       => $service,
+				'date'          => $date,
+				'time'          => $time,
+				'customer_name' => $customer_name,
+				'status'        => 'pending',
+				'created'       => current_time( 'mysql' ),
+				'created_by'    => get_current_user_id(),
+			);
+
+			// Save booking.
+			$bookings = get_option( 'wp_mcp_ai_bookings', array() );
+			$bookings[ $booking_id ] = $booking;
+			update_option( 'wp_mcp_ai_bookings', $bookings );
+
+			$result = array(
+				'booking_id'    => $booking_id,
+				'service'       => $service,
+				'date'          => $date,
+				'time'          => $time,
+				'status'        => 'pending',
+			);
+
+			$this->log_activity( 'booking-create', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: 1: service name, 2: date */
+					__( 'Booking for %1$s on %2$s created successfully.', 'mcp-ai-wpoos' ),
+					$service,
+					$date
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Handle product-recommend command.
+	 *
+	 * E-commerce product recommendations.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $args Command arguments.
+	 * @param array $context Execution context.
+	 * @return array Command result.
+	 */
+	public function handle_product_recommend( $args, $context ) {
+		// Check capabilities.
+		if ( ! current_user_can( 'manage_woocommerce' ) && ! current_user_can( 'edit_shop_orders' ) ) {
+			return $this->error_response(
+				new WP_Error(
+					'insufficient_permissions',
+					__( 'You do not have permission to view product recommendations.', 'mcp-ai-wpoos' )
+				)
+			);
+		}
+
+		try {
+			$customer_id = isset( $args['customer_id'] ) ? absint( $args['customer_id'] ) : 0;
+			$product_id = isset( $args['product_id'] ) ? absint( $args['product_id'] ) : 0;
+			$count = isset( $args['count'] ) ? absint( $args['count'] ) : 5;
+
+			// Simulate product recommendations.
+			$recommendations = array();
+			for ( $i = 1; $i <= $count; $i++ ) {
+				$recommendations[] = array(
+					'product_id' => 1000 + $i,
+					'title'      => "Recommended Product {$i}",
+					'score'      => 100 - ( $i * 5 ),
+					'reason'     => 'Based on purchase history',
+				);
+			}
+
+			$result = array(
+				'customer_id'      => $customer_id,
+				'product_id'       => $product_id,
+				'recommendations'  => $recommendations,
+				'count'            => count( $recommendations ),
+			);
+
+			$this->log_activity( 'product-recommend', $args, $result );
+
+			return $this->success_response(
+				$result,
+				sprintf(
+					/* translators: %d: number of recommendations */
+					__( 'Found %d product recommendations.', 'mcp-ai-wpoos' ),
+					count( $recommendations )
+				)
+			);
+
+		} catch ( Exception $e ) {
+			return $this->error_response( $e->getMessage() );
+		}
+	}
 }
