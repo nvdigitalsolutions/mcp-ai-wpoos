@@ -439,17 +439,20 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 * @return array Array of commands with metadata.
 	 */
 	private function get_available_commands() {
-		$handler = WP_MCP_AI_Slash_Command_Handler::get_instance();
-		$commands = $handler->get_registered_commands();
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		if ( ! $handler ) {
+			return array();
+		}
+
+		$commands = $handler->get_commands();
 
 		$formatted = array();
-		foreach ( $commands as $name => $command_obj ) {
-			$definition = $command_obj->get_definition();
+		foreach ( $commands as $name => $config ) {
 			$formatted[] = array(
 				'name'        => $name,
-				'description' => $definition['description'] ?? '',
-				'aliases'     => $definition['aliases'] ?? array(),
-				'capability'  => $definition['required_capability'] ?? 'read',
+				'description' => $config['description'] ?? '',
+				'aliases'     => $config['aliases'] ?? array(),
+				'capability'  => $config['capability'] ?? 'read',
 			);
 		}
 
@@ -548,8 +551,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		}
 
 		// Execute command.
-		$handler = WP_MCP_AI_Slash_Command_Handler::get_instance();
-		$result = $handler->handle( $command, array( 'user_id' => get_current_user_id() ) );
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		if ( ! $handler ) {
+			wp_send_json_error( array( 'message' => __( 'Slash commands system not initialized.', 'mcp-ai-wpoos' ) ) );
+		}
+		$result = $handler->execute( $command, array( 'user_id' => get_current_user_id() ) );
 
 		// Log execution.
 		$this->log_execution( 'command', $command, $result );
@@ -586,8 +592,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 		// Execute workflow via command.
 		$command = '/workflow ' . $workflow;
-		$handler = WP_MCP_AI_Slash_Command_Handler::get_instance();
-		$result = $handler->handle( $command, array( 'user_id' => get_current_user_id() ) );
+		$handler = wp_mcp_ai_get_slash_command_handler();
+		if ( ! $handler ) {
+			wp_send_json_error( array( 'message' => __( 'Slash commands system not initialized.', 'mcp-ai-wpoos' ) ) );
+		}
+		$result = $handler->execute( $command, array( 'user_id' => get_current_user_id() ) );
 
 		// Log execution.
 		$this->log_execution( 'workflow', $workflow, $result );
