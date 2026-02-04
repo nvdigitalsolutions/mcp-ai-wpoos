@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-syntax-error-issue',
-        'version' => 'dev-copilot/fix-syntax-error-issue',
-        'reference' => 'a0aa9ee36bed0cdd93182899accc14c9dd5d12c2',
+        'pretty_version' => 'dev-copilot/fix-workflow-builder-redirect',
+        'version' => 'dev-copilot/fix-workflow-builder-redirect',
+        'reference' => '2440eccc6005d920d39435eebc4c78818a3fc9c6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-syntax-error-issue',
-            'version' => 'dev-copilot/fix-syntax-error-issue',
-            'reference' => 'a0aa9ee36bed0cdd93182899accc14c9dd5d12c2',
+            'pretty_version' => 'dev-copilot/fix-workflow-builder-redirect',
+            'version' => 'dev-copilot/fix-workflow-builder-redirect',
+            'reference' => '2440eccc6005d920d39435eebc4c78818a3fc9c6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
