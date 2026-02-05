@@ -517,31 +517,15 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	);
 
 	// Localize script with REST API data.
-	// Get base REST URL for this namespace.
-	$rest_url_raw                  = rest_url( WP_MCP_AI_REST::REST_NAMESPACE );
-	$rest_url_normalised           = WP_MCP_AI_Request_Context::normalise_rest_url( $rest_url_raw );
-	$rest_base                     = trailingslashit( $rest_url_normalised );
-	$slash_command_endpoint        = $rest_base . 'slash-command';
-	$slash_command_list_endpoint   = $rest_base . 'slash-command/list';
-	
-	// Debug logging to troubleshoot URL construction.
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( '[WP_MCP_AI] Slash Command URL Construction Debug:' );
-		error_log( '  REST_NAMESPACE: ' . WP_MCP_AI_REST::REST_NAMESPACE );
-		error_log( '  rest_url() output: ' . $rest_url_raw );
-		error_log( '  After normalise_rest_url(): ' . $rest_url_normalised );
-		error_log( '  After trailingslashit(): ' . $rest_base );
-		error_log( '  Final slashCommandEndpoint: ' . $slash_command_endpoint );
-		error_log( '  Final slashCommandListEndpoint: ' . $slash_command_list_endpoint );
-	}
-	
+	// Use rest_url() with full paths to match the pattern used in chat.js
+	// This avoids potential issues with string concatenation and WordPress filters.
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl'                  => esc_url_raw( $rest_base ),
-			'slashCommandEndpoint'     => esc_url_raw( $slash_command_endpoint ),
-			'slashCommandListEndpoint' => esc_url_raw( $slash_command_list_endpoint ),
+			'restUrl'                  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command' ) ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command/list' ) ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);
