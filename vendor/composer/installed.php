@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-loading',
+        'version' => 'dev-copilot/fix-pro-workflow-builder-loading',
+        'reference' => 'ea327caa12e2011543f3023fdd7cfe8cd1c97b11',
         'pretty_version' => 'dev-copilot/fix-pro-features-page-issue',
         'version' => 'dev-copilot/fix-pro-features-page-issue',
         'reference' => '21e988823068424dc119af0e96afd02947d8e968',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-loading',
+            'version' => 'dev-copilot/fix-pro-workflow-builder-loading',
+            'reference' => 'ea327caa12e2011543f3023fdd7cfe8cd1c97b11',
             'pretty_version' => 'dev-copilot/fix-pro-features-page-issue',
             'version' => 'dev-copilot/fix-pro-features-page-issue',
             'reference' => '21e988823068424dc119af0e96afd02947d8e968',
