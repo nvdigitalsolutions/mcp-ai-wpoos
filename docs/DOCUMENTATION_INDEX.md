@@ -1,14 +1,24 @@
 # NV oOS Documentation Index
 
-**Last Updated:** February 1, 2026  
+**Last Updated:** February 5, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 667+ files (654+ in docs/ folder, 7 PHPCS files, 6 essential files in root)
+**Total Documentation:** 550+ files (540+ in docs/ folder, 3 essential files in root, 50+ archived)
 
-> **📌 FEBRUARY 5, 2026 UPDATE (LATEST):** ⭐
+> **📌 FEBRUARY 5, 2026 UPDATE (LATEST):** ⭐⭐⭐
+> - **Major Documentation Reorganization Complete** - Root directory and docs/ cleaned and consolidated
+> - **Root Directory**: 46 markdown files → 3 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md)
+> - **Archived**: 50+ files from root → `/archive/2025/` (Phase 6, fixes, status reports, slash commands, workflow builder, production)
+> - **Docs Consolidated**: 19 duplicate/outdated files → `/docs/archive/2025/` (DeepSeek V4, WordPress.org, Pro Dashboard, Pro Toolkit)
+> - **Archive Indexes Created**: Comprehensive navigation in both archive directories
+> - **No Content Lost**: All information preserved with organized indexes for reference
+> - **Improved Navigation**: Focus on current, maintained documentation
+> - **See**: [Root Archive](../archive/README.md), [Docs Archive](archive/2025/README.md)
+
+> **📌 FEBRUARY 5, 2026 UPDATE (EARLIER):** ⭐
 > - **NPM Package Distribution Documentation Complete** - Comprehensive analysis for extracting JavaScript components as standalone NPM packages
 > - **4 Strategic Documents**: Strategy blueprint, extraction guide, component analysis, quick reference (1,582 lines)
 > - **67 JavaScript Files Analyzed**: 15+ extractable components identified with priority rankings
