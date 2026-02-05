@@ -15,11 +15,19 @@ import './styles/workflow-builder.css';
 /**
  * Initialize the Workflow Builder application
  */
-document.addEventListener( 'DOMContentLoaded', () => {
+const initWorkflowBuilder = () => {
 	const container = document.getElementById( 'mcp-ai-pro-workflow-builder-root' );
 	
 	if ( container ) {
 		const root = createRoot( container );
 		root.render( <WorkflowBuilder /> );
 	}
-} );
+};
+
+// Initialize immediately if DOM is ready, otherwise wait for DOMContentLoaded
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', initWorkflowBuilder );
+} else {
+	// DOM already loaded (script loaded in footer)
+	initWorkflowBuilder();
+}
