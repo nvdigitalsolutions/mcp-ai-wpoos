@@ -64,7 +64,7 @@
 			} else {
 				// Fallback to direct API call
 				try {
-					const endpoint = window.mcpAiData?.restUrl + '/mcp-ai/v1/slash-command/list';
+					const endpoint = window.mcpAiData?.restUrl + 'slash-command/list';
 					const nonce = window.mcpAiData?.nonce;
 
 					const response = await fetch(endpoint, {

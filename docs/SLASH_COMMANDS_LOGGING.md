@@ -249,7 +249,7 @@ console.log(window.mcpAiData);
 **Check available commands:**
 ```javascript
 // In browser console
-fetch(window.mcpAiData.restUrl + '/mcp-ai/v1/slash-command/list', {
+fetch(window.mcpAiData.restUrl + 'slash-command/list', {
   headers: { 'X-WP-Nonce': window.mcpAiData.nonce }
 })
 .then(r => r.json())
@@ -509,7 +509,7 @@ For commands that legitimately take > 30 seconds, use **async execution**:
 
 ```javascript
 // Request async execution
-fetch(mcpAiData.restUrl + '/mcp-ai/v1/slash-command', {
+fetch(mcpAiData.restUrl + 'slash-command', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
