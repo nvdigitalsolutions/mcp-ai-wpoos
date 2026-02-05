@@ -17,14 +17,16 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 	/**
 	 * Test that endpoint URLs are constructed with proper pattern.
 	 *
-	 * This test validates the fix for PR #3580 where the URL
+	 * This test validates the fix for the URL duplication issue where the URL
 	 * was incorrectly generated as:
 	 * /wp-json/mcp-ai/v1//mcp-ai/v1/slash-command/list
 	 * instead of:
 	 * /wp-json/mcp-ai/v1/slash-command/list
 	 *
-	 * The fix provides complete endpoint URLs (like chat.js does) rather than
-	 * requiring JavaScript concatenation.
+	 * The fix uses a base URL approach: get the namespace base URL once,
+	 * then construct endpoints using string concatenation. This provides
+	 * complete endpoint URLs (like chat.js does) and avoids potential issues
+	 * with WordPress filters modifying rest_url() calls.
 	 */
 	public function test_rest_url_uses_constant() {
 		// Initialize slash commands.
