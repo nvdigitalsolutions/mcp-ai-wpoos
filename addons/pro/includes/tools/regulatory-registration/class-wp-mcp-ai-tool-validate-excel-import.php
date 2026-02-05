@@ -100,6 +100,39 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * Convert a URL to a local file path if it's a WordPress upload URL.
+	 *
+	 * @param string $path_or_url File path or URL.
+	 * @return string Local file path.
+	 */
+	private function resolve_file_path( $path_or_url ) {
+		// If it's already a local path, return it.
+		if ( file_exists( $path_or_url ) ) {
+			return $path_or_url;
+		}
+
+		// Check if it's a URL.
+		if ( filter_var( $path_or_url, FILTER_VALIDATE_URL ) ) {
+			$upload_dir = wp_upload_dir();
+			$base_url   = $upload_dir['baseurl'];
+			$base_path  = $upload_dir['basedir'];
+
+			// Normalize URLs to handle http/https differences.
+			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
+			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
+
+			// If it's a WordPress upload URL, convert to local path.
+			if ( strpos( $normalized_url, $normalized_base_url ) === 0 ) {
+				$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
+				return $base_path . $relative_path;
+			}
+		}
+
+		// Return as-is if we can't resolve it.
+		return $path_or_url;
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -131,6 +164,9 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		$field_mapping    = $arguments['field_mapping'];
 		$check_duplicates = isset( $arguments['check_duplicates'] ) ? (bool) $arguments['check_duplicates'] : true;
 		$start_row        = ! empty( $arguments['start_row'] ) ? absint( $arguments['start_row'] ) : 2;
+
+		// Resolve URL to local path if needed.
+		$file_path = $this->resolve_file_path( $file_path );
 
 		// Verify file exists.
 		if ( ! file_exists( $file_path ) ) {
