@@ -521,8 +521,10 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl' => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
-			'nonce'   => wp_create_nonce( 'wp_rest' ),
+			'restUrl'                 => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+			'slashCommandEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command' ) ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command/list' ) ) ),
+			'nonce'                   => wp_create_nonce( 'wp_rest' ),
 		)
 	);
 
