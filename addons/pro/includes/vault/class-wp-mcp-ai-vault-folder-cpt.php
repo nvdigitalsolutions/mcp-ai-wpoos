@@ -40,6 +40,7 @@ class WP_MCP_AI_Vault_Folder_CPT {
 		// This is necessary because this class is instantiated during the 'init' hook,
 		// and adding another 'init' action at that point won't fire until the next request.
 		$this->register_post_type();
+		add_action( 'init', array( $this, 'register_meta' ), 20 );
 	}
 
 	/**
@@ -108,6 +109,62 @@ class WP_MCP_AI_Vault_Folder_CPT {
 			$admin_role->add_cap( 'publish_vault_folders' );
 			$admin_role->add_cap( 'read_private_vault_folders' );
 		}
+	}
+
+	/**
+	 * Register metadata for vault folders.
+	 *
+	 * Registers all metadata fields used by vault folders with proper
+	 * sanitization, authorization, and REST API exposure settings.
+	 *
+	 * @since 1.3.0
+	 */
+	public function register_meta() {
+		// Register _bitwarden_folder_id metadata for sync.
+		register_post_meta(
+			'mcp_vault_folder',
+			'_bitwarden_folder_id',
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Bitwarden folder ID for synchronization (internal use only).', 'mcp-ai-wpoos-pro' ),
+				'single'            => true,
+				'show_in_rest'      => false,
+				'sanitize_callback' => 'sanitize_text_field',
+				'auth_callback'     => array( $this, 'check_vault_folder_permission' ),
+			)
+		);
+	}
+
+	/**
+	 * Check if current user has permission to access/edit vault folder.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param bool   $allowed  Whether the user can access the meta key.
+	 * @param string $meta_key The meta key being accessed.
+	 * @param int    $object_id The object ID (post ID).
+	 * @param int    $user_id  The user ID.
+	 * @return bool Whether the user has permission.
+	 */
+	public function check_vault_folder_permission( $allowed, $meta_key, $object_id, $user_id ) {
+		// If no user is logged in, deny access.
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		// Administrators with edit_others_vault_folders can access all folders.
+		if ( current_user_can( 'edit_others_vault_folders' ) ) {
+			return true;
+		}
+
+		// Check if user owns this vault folder.
+		$post = get_post( $object_id );
+		if ( ! $post || 'mcp_vault_folder' !== $post->post_type ) {
+			return false;
+		}
+
+		// User must own the folder or have edit_others_vault_folders capability.
+		return ( (int) $post->post_author === $user_id && current_user_can( 'edit_own_vault_folders' ) );
 	}
 }
 
