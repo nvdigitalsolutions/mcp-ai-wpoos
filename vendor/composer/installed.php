@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/restore-pro-workflow-builder',
+        'version' => 'dev-copilot/restore-pro-workflow-builder',
+        'reference' => 'fe0c6f6ded58776260808b5c5a34336b6476a325',
         'pretty_version' => 'dev-copilot/fix-slash-command-url',
         'version' => 'dev-copilot/fix-slash-command-url',
         'reference' => '7031f36e73970014575560631be38cbbb9e62333',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/restore-pro-workflow-builder',
+            'version' => 'dev-copilot/restore-pro-workflow-builder',
+            'reference' => 'fe0c6f6ded58776260808b5c5a34336b6476a325',
             'pretty_version' => 'dev-copilot/fix-slash-command-url',
             'version' => 'dev-copilot/fix-slash-command-url',
             'reference' => '7031f36e73970014575560631be38cbbb9e62333',

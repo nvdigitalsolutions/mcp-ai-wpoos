@@ -369,27 +369,20 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 }
 
 /**
- * Initialize the pro workflow builder page after all dependencies are loaded.
+ * Initialize the pro workflow builder page.
  *
- * This function is hooked to 'admin_init' (priority 10) to ensure all required
- * classes (WP_MCP_AI_Pattern_Workflow_Templates, WP_MCP_AI_Pattern_Constants)
- * are loaded before instantiation.
+ * Instantiated immediately when file is loaded (during plugins_loaded) to ensure
+ * the admin_menu hook registration in the constructor happens before WordPress
+ * processes the admin_menu action.
  *
- * The admin_menu hook (priority 26) is registered in the constructor, which will
- * fire properly since WordPress triggers admin_menu after admin_init.
- *
- * WordPress Hook Order:
- * 1. plugins_loaded (priority 15) - Pro plugin loads, includes this file
- * 2. plugins_loaded (priority 20) - Toolkit Enhancement loads Pattern classes
- * 3. admin_init (priority 10) - This function runs, instantiates the class
- * 4. admin_menu (priority 26) - Class registers its menu page
+ * Correct WordPress Hook Order:
+ * 1. plugins_loaded - Pro plugin loads, includes this file, instantiates class
+ * 2. admin_menu (priority 25) - Parent menu 'nvoos-pro-dashboard' registers
+ * 3. admin_menu (priority 26) - This class registers its submenu page
+ * 4. admin_init - Other initialization (too late for menu registration)
  *
  * @since 2.0.0
  */
-function wp_mcp_ai_pro_init_workflow_builder_page() {
-	if ( ! is_admin() || ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
-		return;
-	}
+if ( is_admin() && ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
 	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
-add_action( 'admin_init', 'wp_mcp_ai_pro_init_workflow_builder_page', 10 );
