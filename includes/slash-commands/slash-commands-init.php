@@ -517,19 +517,15 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	);
 
 	// Localize script with REST API data.
-	// Get base REST URL once and build endpoints with string concatenation.
-	// This matches the pattern used in chat.js and avoids potential issues with WordPress
-	// filters that can cause rest_url() to duplicate namespace paths.
-	// See: docs/implementation-history/2025/fixes/misc/cron-status-endpoint-fix.md
-	$base_rest_url = trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) );
-	
+	// Use the same pattern as class-wp-mcp-ai-rest.php: call rest_url() with the full path
+	// for each endpoint. This ensures proper URL generation across all WordPress configurations.
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl'                  => esc_url_raw( $base_rest_url ),
-			'slashCommandEndpoint'     => esc_url_raw( $base_rest_url . 'slash-command' ),
-			'slashCommandListEndpoint' => esc_url_raw( $base_rest_url . 'slash-command/list' ),
+			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command' ) ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command/list' ) ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);
