@@ -76,14 +76,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	public function enqueue_assets( $hook ) {
 		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
 		// Also check via $_GET for additional safety (following pattern from Orchestration Dashboard).
-		$is_workflow_page = ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG === $hook ) ||
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
-			( isset( $_GET['page'] ) && self::PAGE_SLUG === $_GET['page'] );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+		$get_page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+		$is_workflow_page = ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG === $hook ) || ( self::PAGE_SLUG === $get_page );
 
 		// Debug logging for troubleshooting asset enqueue issues.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-			error_log( sprintf( 'Workflow Builder: Hook=%s, GET page=%s, Is workflow page=%s', $hook, isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : 'not set', $is_workflow_page ? 'YES' : 'NO' ) );
+			error_log( sprintf( 'Workflow Builder: Hook=%s, GET page=%s, Is workflow page=%s', $hook, $get_page ? $get_page : 'not set', $is_workflow_page ? 'YES' : 'NO' ) );
 		}
 
 		if ( ! $is_workflow_page ) {
