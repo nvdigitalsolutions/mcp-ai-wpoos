@@ -428,18 +428,16 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 		$highest_column = $worksheet->getHighestColumn();
 		$header_name    = strtolower( trim( $header_name ) );
 
-		// Iterate through columns.
-		for ( $col = 'A'; $col !== $highest_column; ++$col ) {
+		// Use PhpSpreadsheet's column index methods for proper iteration.
+		$highest_col_index = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString( $highest_column );
+
+		// Iterate through columns using numeric index.
+		for ( $col_index = 1; $col_index <= $highest_col_index; ++$col_index ) {
+			$col        = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex( $col_index );
 			$cell_value = $worksheet->getCell( $col . ( $header_row + 1 ) )->getValue();
 			if ( strtolower( trim( (string) $cell_value ) ) === $header_name ) {
 				return $col;
 			}
-		}
-
-		// Check the last column.
-		$cell_value = $worksheet->getCell( $highest_column . ( $header_row + 1 ) )->getValue();
-		if ( strtolower( trim( (string) $cell_value ) ) === $header_name ) {
-			return $highest_column;
 		}
 
 		return null;
@@ -494,7 +492,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 		// Common section marker patterns.
 		$marker_patterns = array(
 			'these items are not in the final list',
-			'these items are not in the in the finale list',
+			'these items are not in the in the final list',
 			'remove list',
 			'parfumes',
 			'light orange colour item',
