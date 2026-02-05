@@ -42,6 +42,8 @@ class WP_MCP_AI_Vault_Item_CPT {
 		// and adding another 'init' action at that point won't fire until the next request.
 		$this->register_post_type();
 		add_action( 'init', array( $this, 'register_meta' ), 20 );
+		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
+		add_action( 'save_post_mcp_vault_item', array( $this, 'save_vault_item_meta' ), 10, 2 );
 	}
 
 	/**
@@ -493,6 +495,325 @@ class WP_MCP_AI_Vault_Item_CPT {
 
 		// User must own the item or have edit_others_vault_items capability.
 		return ( (int) $post->post_author === $user_id && current_user_can( 'edit_own_vault_items' ) );
+	}
+
+	/**
+	 * Register meta boxes for vault items.
+	 *
+	 * Adds custom meta boxes to the vault item edit screen for entering
+	 * login credentials, item settings, and notes.
+	 *
+	 * @since 1.3.0
+	 */
+	public function register_meta_boxes() {
+		add_meta_box(
+			'mcp_vault_login_details',
+			__( 'Login Details', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_login_details_metabox' ),
+			'mcp_vault_item',
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
+			'mcp_vault_item_settings',
+			__( 'Item Settings', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_item_settings_metabox' ),
+			'mcp_vault_item',
+			'side',
+			'default'
+		);
+
+		add_meta_box(
+			'mcp_vault_notes',
+			__( 'Secure Notes', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_notes_metabox' ),
+			'mcp_vault_item',
+			'normal',
+			'default'
+		);
+	}
+
+	/**
+	 * Render login details metabox.
+	 *
+	 * Displays fields for username, password, and URLs.
+	 * Password field is masked and stored encrypted.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_login_details_metabox( $post ) {
+		wp_nonce_field( 'mcp_vault_item_meta', 'mcp_vault_item_meta_nonce' );
+
+		// Get encryption service.
+		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+
+		// Get encrypted username.
+		$username_encrypted = get_post_meta( $post->ID, '_vault_username_encrypted', true );
+		$username           = '';
+		if ( ! empty( $username_encrypted ) ) {
+			$username_data = json_decode( $username_encrypted, true );
+			if ( $username_data ) {
+				$decrypted_username = $encryption_service->decrypt( $username_data, get_current_user_id() );
+				if ( ! is_wp_error( $decrypted_username ) ) {
+					$username = $decrypted_username;
+				}
+			}
+		}
+
+		// Get encrypted password (don't decrypt for display - security).
+		$password_encrypted = get_post_meta( $post->ID, '_vault_password_encrypted', true );
+		$has_password       = ! empty( $password_encrypted );
+
+		// Get URIs.
+		$uris = get_post_meta( $post->ID, '_vault_uris', true );
+		if ( ! is_array( $uris ) ) {
+			$uris = array();
+		}
+		$primary_uri = isset( $uris[0] ) ? $uris[0] : '';
+
+		?>
+		<table class="form-table">
+			<tr>
+				<th><label for="vault_username"><?php esc_html_e( 'Username', 'mcp-ai-wpoos-pro' ); ?></label></th>
+				<td>
+					<input type="text" id="vault_username" name="vault_username" value="<?php echo esc_attr( $username ); ?>" class="regular-text" autocomplete="off" />
+					<p class="description"><?php esc_html_e( 'Username, email, or account identifier (stored encrypted)', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="vault_password"><?php esc_html_e( 'Password', 'mcp-ai-wpoos-pro' ); ?></label></th>
+				<td>
+					<input type="password" id="vault_password" name="vault_password" value="" class="regular-text" autocomplete="new-password" placeholder="<?php echo $has_password ? esc_attr__( '••••••••', 'mcp-ai-wpoos-pro' ) : ''; ?>" />
+					<p class="description">
+						<?php
+						if ( $has_password ) {
+							esc_html_e( 'Leave blank to keep existing password. Enter new password to update (stored encrypted with AES-256-GCM)', 'mcp-ai-wpoos-pro' );
+						} else {
+							esc_html_e( 'Password will be encrypted using AES-256-GCM before storage', 'mcp-ai-wpoos-pro' );
+						}
+						?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th><label for="vault_uri"><?php esc_html_e( 'Website URL', 'mcp-ai-wpoos-pro' ); ?></label></th>
+				<td>
+					<input type="url" id="vault_uri" name="vault_uri" value="<?php echo esc_attr( $primary_uri ); ?>" class="regular-text" placeholder="https://example.com" />
+					<p class="description"><?php esc_html_e( 'Primary website URL where these credentials are used', 'mcp-ai-wpoos-pro' ); ?></p>
+				</td>
+			</tr>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Render item settings metabox.
+	 *
+	 * Displays item type, folder, and favorite status.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_item_settings_metabox( $post ) {
+		$item_type    = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id    = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$is_favorite  = get_post_meta( $post->ID, '_vault_favorite', true );
+
+		// Default to 'login' type.
+		if ( empty( $item_type ) ) {
+			$item_type = 'login';
+		}
+
+		// Get available folders.
+		$folders = get_posts(
+			array(
+				'post_type'      => 'mcp_vault_folder',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		?>
+		<div class="mcp-vault-item-settings">
+			<p>
+				<label for="vault_item_type"><strong><?php esc_html_e( 'Item Type', 'mcp-ai-wpoos-pro' ); ?></strong></label><br>
+				<select id="vault_item_type" name="vault_item_type" style="width: 100%;">
+					<option value="login" <?php selected( $item_type, 'login' ); ?>><?php esc_html_e( 'Login', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="note" <?php selected( $item_type, 'note' ); ?>><?php esc_html_e( 'Secure Note', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="card" <?php selected( $item_type, 'card' ); ?>><?php esc_html_e( 'Payment Card', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="identity" <?php selected( $item_type, 'identity' ); ?>><?php esc_html_e( 'Identity', 'mcp-ai-wpoos-pro' ); ?></option>
+				</select>
+			</p>
+
+			<p>
+				<label for="vault_folder_id"><strong><?php esc_html_e( 'Folder', 'mcp-ai-wpoos-pro' ); ?></strong></label><br>
+				<select id="vault_folder_id" name="vault_folder_id" style="width: 100%;">
+					<option value="0"><?php esc_html_e( '(No Folder)', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $folders as $folder ) : ?>
+						<option value="<?php echo esc_attr( $folder->ID ); ?>" <?php selected( $folder_id, $folder->ID ); ?>>
+							<?php echo esc_html( $folder->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</p>
+
+			<p>
+				<label>
+					<input type="checkbox" name="vault_favorite" value="1" <?php checked( $is_favorite, '1' ); ?> />
+					<?php esc_html_e( 'Mark as Favorite', 'mcp-ai-wpoos-pro' ); ?>
+				</label>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render secure notes metabox.
+	 *
+	 * Displays encrypted notes field.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_Post $post Current post object.
+	 */
+	public function render_notes_metabox( $post ) {
+		// Get encryption service.
+		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+
+		// Get encrypted notes.
+		$notes_encrypted = get_post_meta( $post->ID, '_vault_notes_encrypted', true );
+		$notes           = '';
+		if ( ! empty( $notes_encrypted ) ) {
+			$notes_data = json_decode( $notes_encrypted, true );
+			if ( $notes_data ) {
+				$decrypted_notes = $encryption_service->decrypt( $notes_data, get_current_user_id() );
+				if ( ! is_wp_error( $decrypted_notes ) ) {
+					$notes = $decrypted_notes;
+				}
+			}
+		}
+
+		?>
+		<p>
+			<label for="vault_notes"><?php esc_html_e( 'Additional Notes', 'mcp-ai-wpoos-pro' ); ?></label>
+		</p>
+		<textarea id="vault_notes" name="vault_notes" rows="6" style="width: 100%;" placeholder="<?php esc_attr_e( 'Additional secure notes or information (stored encrypted)', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $notes ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Notes are encrypted using AES-256-GCM before storage', 'mcp-ai-wpoos-pro' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Save vault item metadata with OWASP-compliant sanitization and encryption.
+	 *
+	 * Handles saving of all vault item fields with proper:
+	 * - Nonce verification
+	 * - Capability checks
+	 * - Input sanitization
+	 * - Encryption of sensitive fields
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public function save_vault_item_meta( $post_id, $post ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['mcp_vault_item_meta_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_vault_item_meta_nonce'] ) ), 'mcp_vault_item_meta' ) ) {
+			return;
+		}
+
+		// Check autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_own_vault_items' ) && ! current_user_can( 'edit_others_vault_items' ) ) {
+			return;
+		}
+
+		// Verify post type.
+		if ( 'mcp_vault_item' !== $post->post_type ) {
+			return;
+		}
+
+		// Get encryption service.
+		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+		$user_id            = get_current_user_id();
+
+		// Save item type.
+		if ( isset( $_POST['vault_item_type'] ) ) {
+			$item_type = sanitize_text_field( wp_unslash( $_POST['vault_item_type'] ) );
+			update_post_meta( $post_id, '_vault_item_type', $item_type );
+		}
+
+		// Save folder ID.
+		if ( isset( $_POST['vault_folder_id'] ) ) {
+			$folder_id = absint( $_POST['vault_folder_id'] );
+			update_post_meta( $post_id, '_vault_folder_id', $folder_id );
+		}
+
+		// Save favorite status.
+		$is_favorite = isset( $_POST['vault_favorite'] ) && '1' === $_POST['vault_favorite'] ? '1' : '0';
+		update_post_meta( $post_id, '_vault_favorite', $is_favorite );
+
+		// Save username (encrypted).
+		if ( isset( $_POST['vault_username'] ) ) {
+			$username = sanitize_text_field( wp_unslash( $_POST['vault_username'] ) );
+			if ( ! empty( $username ) ) {
+				$encrypted_username = $encryption_service->encrypt( $username, $user_id );
+				if ( ! is_wp_error( $encrypted_username ) ) {
+					update_post_meta( $post_id, '_vault_username_encrypted', wp_json_encode( $encrypted_username ) );
+				}
+			} else {
+				// Clear username if empty.
+				delete_post_meta( $post_id, '_vault_username_encrypted' );
+			}
+		}
+
+		// Save password (encrypted) - only if provided.
+		if ( isset( $_POST['vault_password'] ) && ! empty( $_POST['vault_password'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password should not be sanitized as it may contain special characters.
+			$password = wp_unslash( $_POST['vault_password'] );
+			$encrypted_password = $encryption_service->encrypt( $password, $user_id );
+			if ( ! is_wp_error( $encrypted_password ) ) {
+				update_post_meta( $post_id, '_vault_password_encrypted', wp_json_encode( $encrypted_password ) );
+			}
+			// Clear password from memory.
+			unset( $password );
+		}
+
+		// Save URI.
+		if ( isset( $_POST['vault_uri'] ) ) {
+			$uri = esc_url_raw( wp_unslash( $_POST['vault_uri'] ) );
+			if ( ! empty( $uri ) ) {
+				$uris = array( $uri );
+				update_post_meta( $post_id, '_vault_uris', $uris );
+			} else {
+				// Clear URIs if empty.
+				delete_post_meta( $post_id, '_vault_uris' );
+			}
+		}
+
+		// Save notes (encrypted).
+		if ( isset( $_POST['vault_notes'] ) ) {
+			$notes = sanitize_textarea_field( wp_unslash( $_POST['vault_notes'] ) );
+			if ( ! empty( $notes ) ) {
+				$encrypted_notes = $encryption_service->encrypt( $notes, $user_id );
+				if ( ! is_wp_error( $encrypted_notes ) ) {
+					update_post_meta( $post_id, '_vault_notes_encrypted', wp_json_encode( $encrypted_notes ) );
+				}
+			} else {
+				// Clear notes if empty.
+				delete_post_meta( $post_id, '_vault_notes_encrypted' );
+			}
+		}
 	}
 }
 
