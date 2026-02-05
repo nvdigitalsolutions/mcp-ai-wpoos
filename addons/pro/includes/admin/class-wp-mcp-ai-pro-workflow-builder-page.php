@@ -67,6 +67,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 
 	/**
+	 * Check if debug logging is enabled.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return bool True if debug logging is enabled, false otherwise.
+	 */
+	private function is_debug_logging_enabled() {
+		return defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+	}
+
+	/**
 	 * Enqueue admin assets.
 	 *
 	 * @since 2.0.0
@@ -75,7 +86,15 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 */
 	public function enqueue_assets( $hook ) {
 		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
-		if ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
+		$expected_hook = 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG;
+
+		// Debug logging for troubleshooting asset enqueue issues.
+		if ( $this->is_debug_logging_enabled() ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Workflow Builder: Hook=%s, Expected=%s, Match=%s', $hook, $expected_hook, ( $expected_hook === $hook ) ? 'YES' : 'NO' ) );
+		}
+
+		if ( $expected_hook !== $hook ) {
 			return;
 		}
 
@@ -84,6 +103,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		
 		if ( file_exists( $asset_file ) ) {
 			$asset = require $asset_file;
+			
+			// Debug logging.
+			if ( $this->is_debug_logging_enabled() ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+				error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
+			}
 			
 			wp_enqueue_script(
 				'mcp-ai-pro-workflow-builder',
@@ -101,6 +126,12 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			);
 		} else {
 			// Fallback for development - load from src.
+			// Debug logging.
+			if ( $this->is_debug_logging_enabled() ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+				error_log( 'Workflow Builder: Built assets not found, using development fallback' );
+			}
+			
 			wp_enqueue_script(
 				'mcp-ai-pro-workflow-builder',
 				WP_MCP_AI_URL . 'src/workflow-builder/index.jsx',
@@ -337,9 +368,28 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 }
 
-// Initialize the admin interface.
-// Instantiate directly (not on admin_init) so the admin_menu hook can fire properly.
-// The admin_menu hook fires before admin_init, so instantiation must happen earlier.
-if ( is_admin() && ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
+/**
+ * Initialize the pro workflow builder page after all dependencies are loaded.
+ *
+ * This function is hooked to 'admin_init' (priority 10) to ensure all required
+ * classes (WP_MCP_AI_Pattern_Workflow_Templates, WP_MCP_AI_Pattern_Constants)
+ * are loaded before instantiation.
+ *
+ * The admin_menu hook (priority 26) is registered in the constructor, which will
+ * fire properly since WordPress triggers admin_menu after admin_init.
+ *
+ * WordPress Hook Order:
+ * 1. plugins_loaded (priority 15) - Pro plugin loads, includes this file
+ * 2. plugins_loaded (priority 20) - Toolkit Enhancement loads Pattern classes
+ * 3. admin_init (priority 10) - This function runs, instantiates the class
+ * 4. admin_menu (priority 26) - Class registers its menu page
+ *
+ * @since 2.0.0
+ */
+function wp_mcp_ai_pro_init_workflow_builder_page() {
+	if ( ! is_admin() || ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
+		return;
+	}
 	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
+add_action( 'admin_init', 'wp_mcp_ai_pro_init_workflow_builder_page', 10 );
