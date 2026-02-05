@@ -158,15 +158,36 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 */
 	protected function get_workflow_templates() {
 		// Cache the templates class instance to avoid repeated instantiation.
-		if ( null === $this->templates_instance && class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) ) {
-			$this->templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
+		// Check for both the class and the constants it depends on.
+		if ( null === $this->templates_instance && 
+			class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) && 
+			class_exists( 'WP_MCP_AI_Pattern_Constants' ) ) {
+			try {
+				$this->templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
+			} catch ( Exception $e ) {
+				// Log error if debugging is enabled.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP_MCP_AI: Failed to instantiate workflow templates: ' . $e->getMessage() );
+				}
+				return array();
+			}
 		}
 
 		if ( ! $this->templates_instance ) {
 			return array();
 		}
 
-		return $this->templates_instance->get_all_templates();
+		try {
+			return $this->templates_instance->get_all_templates();
+		} catch ( Exception $e ) {
+			// Log error if debugging is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WP_MCP_AI: Failed to get workflow templates: ' . $e->getMessage() );
+			}
+			return array();
+		}
 	}
 
 	/**
@@ -316,7 +337,19 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 }
 
-// Initialize the pro workflow builder page if pro version is enabled.
-if ( is_admin() && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
+/**
+ * Initialize the pro workflow builder page after all dependencies are loaded.
+ *
+ * This function is hooked to 'admin_init' (priority 10) to ensure all required
+ * classes (WP_MCP_AI_Pattern_Workflow_Templates, WP_MCP_AI_Pattern_Constants)
+ * are loaded before instantiation.
+ *
+ * @since 2.0.0
+ */
+function wp_mcp_ai_pro_init_workflow_builder_page() {
+	if ( ! is_admin() || ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
+		return;
+	}
 	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
+add_action( 'admin_init', 'wp_mcp_ai_pro_init_workflow_builder_page', 10 );
