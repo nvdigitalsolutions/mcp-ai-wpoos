@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/start-phase-six-testing',
         'version' => 'dev-copilot/start-phase-six-testing',
-        'reference' => '739721eecbd4d6e7632543d89208f528868dcdbf',
+        'reference' => '7cc5277d25ded1b2d8e6e47c9a0e4899b1bc3e53',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/start-phase-six-testing',
             'version' => 'dev-copilot/start-phase-six-testing',
-            'reference' => '739721eecbd4d6e7632543d89208f528868dcdbf',
+            'reference' => '7cc5277d25ded1b2d8e6e47c9a0e4899b1bc3e53',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
