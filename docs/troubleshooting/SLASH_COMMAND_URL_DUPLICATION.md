@@ -15,24 +15,34 @@ This issue was caused by JavaScript string concatenation of the REST API base UR
 
 ## Solution
 
-**Fixed in PR #3587** (included in version 1.1.0+)
+**Fixed by using base URL + path concatenation approach**
 
-The fix provides complete endpoint URLs directly from PHP (similar to how chat.js handles endpoints), eliminating the need for JavaScript concatenation.
+The fix constructs endpoint URLs by:
+1. Getting the namespace base URL once via `rest_url('mcp-ai/v1')`
+2. Adding a trailing slash to create the base
+3. Concatenating endpoint paths as simple strings
+
+This approach is more robust than calling `rest_url()` with the full path for each endpoint, as it:
+- Calls `rest_url()` only once for the namespace
+- Avoids potential WordPress filter issues that might modify paths
+- Uses simple string concatenation for endpoint paths
+- Cannot result in namespace duplication
 
 ### Changes Made
 
 **PHP** (`includes/slash-commands/slash-commands-init.php`):
 ```php
-'slashCommandEndpoint'    => rest_url('mcp-ai/v1/slash-command'),
-'slashCommandListEndpoint' => rest_url('mcp-ai/v1/slash-command/list'),
+// Get base REST URL for this namespace once
+$rest_base = trailingslashit( rest_url('mcp-ai/v1') );
+
+// Construct endpoints using base + path
+'slashCommandEndpoint'     => $rest_base . 'slash-command',
+'slashCommandListEndpoint' => $rest_base . 'slash-command/list',
 ```
 
-**JavaScript** (`assets/js/slash-commands.js`, `assets/js/command-autocomplete.js`):
+**JavaScript** (already correct - no changes needed):
 ```javascript
-// Before (caused duplication)
-const endpoint = window.mcpAiData?.restUrl + 'slash-command/list';
-
-// After (correct)
+// Direct usage - no concatenation
 const endpoint = window.mcpAiData?.slashCommandListEndpoint;
 ```
 
