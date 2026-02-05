@@ -21,6 +21,8 @@
 			this.cacheExpiry = 0;
 			this.debugMode = window.wpMcpAiDebug || false;
 			this.executionTimeout = 30000; // 30 seconds default timeout
+			this.initRetryCount = 0;
+			this.maxInitRetries = 50; // Maximum 5 seconds of retries (50 * 100ms)
 		}
 
 		/**
@@ -48,22 +50,39 @@
 				return;
 			}
 
+			// Check if mcpAiData is available - retry if not
+			if (!window.mcpAiData || !window.mcpAiData.slashCommandListEndpoint) {
+				this.initRetryCount++;
+				if (this.initRetryCount > this.maxInitRetries) {
+					console.error('[SlashCommands] Failed to initialize: mcpAiData not available after ' + this.maxInitRetries + ' retries');
+					return;
+				}
+				this.debug('mcpAiData not yet available, will retry in 100ms (attempt ' + this.initRetryCount + '/' + this.maxInitRetries + ')');
+				const self = this;
+				setTimeout(function() {
+					self.init();
+				}, 100);
+				return;
+			}
+
 			this.debug('Starting initialization...', {
 				readyState: document.readyState,
-				timestamp: new Date().toISOString()
+				timestamp: new Date().toISOString(),
+				retries: this.initRetryCount
 			});
 
-			// Check if mcpAiData is available
-			if (!window.mcpAiData) {
-				console.warn('[SlashCommands] mcpAiData not available - REST API calls may fail');
-			} else {
-				this.debug('mcpAiData available:', {
-					hasRestUrl: !!window.mcpAiData.restUrl,
-					hasSlashCommandEndpoint: !!window.mcpAiData.slashCommandEndpoint,
-					hasSlashCommandListEndpoint: !!window.mcpAiData.slashCommandListEndpoint,
-					hasNonce: !!window.mcpAiData.nonce
-				});
-			}
+			this.debug('mcpAiData available:', {
+				hasRestUrl: !!window.mcpAiData.restUrl,
+				hasSlashCommandEndpoint: !!window.mcpAiData.slashCommandEndpoint,
+				hasSlashCommandListEndpoint: !!window.mcpAiData.slashCommandListEndpoint,
+				hasNonce: !!window.mcpAiData.nonce
+			});
+			// Always log endpoint URLs (not just in debug mode) to help troubleshoot URL issues in production
+			console.log('[SlashCommands] Endpoint URLs:', {
+				restUrl: window.mcpAiData.restUrl,
+				slashCommandEndpoint: window.mcpAiData.slashCommandEndpoint,
+				slashCommandListEndpoint: window.mcpAiData.slashCommandListEndpoint
+			});
 
 			// Find chat input elements - support multiple class name conventions
 			this.chatInput = document.querySelector('.wp-mcp-ai-chat__input, .mcp-chat-input, #mcp-chat-input, textarea[name="message"]');

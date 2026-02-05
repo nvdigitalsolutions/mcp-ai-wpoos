@@ -517,16 +517,15 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	);
 
 	// Localize script with REST API data.
-	// Get base REST URL for this namespace.
-	$rest_base = trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) );
-	
+	// Use rest_url() with full paths to match the pattern used in chat.js
+	// This avoids potential issues with string concatenation and WordPress filters.
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl'                  => esc_url_raw( $rest_base ),
-			'slashCommandEndpoint'     => esc_url_raw( $rest_base . 'slash-command' ),
-			'slashCommandListEndpoint' => esc_url_raw( $rest_base . 'slash-command/list' ),
+			'restUrl'                  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command' ) ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command/list' ) ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);
