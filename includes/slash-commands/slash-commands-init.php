@@ -521,7 +521,7 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl' => esc_url_raw( trailingslashit( rest_url( 'mcp-ai/v1' ) ) ),
+			'restUrl' => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
 		)
 	);
