@@ -109,7 +109,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	public static function render_page() {
 		// Get assistant from settings.
-		$settings     = get_option( 'wp_mcp_ai_regulatory_product_settings', array() );
+		$settings     = get_option( 'wp_mcp_ai_reg_product_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
 
 		// If no assistant configured or invalid, get the first available assistant.

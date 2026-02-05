@@ -32,7 +32,7 @@ class WP_MCP_AI_Regulatory_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_
 		$this->page_slug   = 'regulatory-product-settings';
 		$this->page_title  = __( 'Regulatory Product Settings', 'mcp-ai-wpoos-pro' );
 		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
-		$this->option_name = 'wp_mcp_ai_regulatory_product_settings';
+		$this->option_name = 'wp_mcp_ai_reg_product_settings';
 
 		parent::__construct();
 	}
