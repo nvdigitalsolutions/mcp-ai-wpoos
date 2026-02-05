@@ -70,16 +70,16 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
-		// Check if the Pro Dashboard menu exists.
+		// Pro orchestration dashboard should now be under the main NV oOS menu.
 		$this->assertArrayHasKey(
-			'nvoos-pro-dashboard',
+			'wp-mcp-ai-dashboard',
 			$submenu,
-			'Pro Dashboard menu should be registered'
+			'Main NV oOS menu should be registered'
 		);
 
-		// Find the Pro orchestration dashboard in the Pro submenu.
+		// Find the Pro orchestration dashboard in the main NV oOS submenu.
 		$pro_orchestration_found = false;
-		foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
+		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
 			if ( isset( $item[2] ) && 'mcp-ai-orchestration-pro' === $item[2] ) {
 				$pro_orchestration_found = true;
 				$this->assertStringContainsString(
@@ -93,7 +93,7 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 
 		$this->assertTrue(
 			$pro_orchestration_found,
-			'Pro orchestration dashboard should be registered in Pro submenu'
+			'Pro orchestration dashboard should be registered in main NV oOS submenu'
 		);
 	}
 
@@ -115,18 +115,18 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		$base_slug = null;
 		if ( isset( $submenu['wp-mcp-ai-dashboard'] ) ) {
 			foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
-				if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
+				if ( isset( $item[2] ) && 'mcp-ai-orchestration' === $item[2] ) {
 					$base_slug = $item[2];
 					break;
 				}
 			}
 		}
 
-		// Get Pro orchestration slug from Pro menu.
+		// Get Pro orchestration slug from the same main menu (both are now under wp-mcp-ai-dashboard).
 		$pro_slug = null;
-		if ( isset( $submenu['nvoos-pro-dashboard'] ) ) {
-			foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
-				if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
+		if ( isset( $submenu['wp-mcp-ai-dashboard'] ) ) {
+			foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
+				if ( isset( $item[2] ) && 'mcp-ai-orchestration-pro' === $item[2] ) {
 					$pro_slug = $item[2];
 					break;
 				}
