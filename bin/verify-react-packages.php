@@ -49,14 +49,14 @@ echo "\n";
 function check_react_package( $package ) {
 	// Priority 1: Check for built workflow-builder bundle in Pro addon directory.
 	if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-		$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js';
+		$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
 		if ( file_exists( $workflow_build_path ) ) {
 			return $workflow_build_path;
 		}
 	}
 
 	// Priority 2: Check base build directory (legacy/development location).
-	$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/index.js';
+	$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
 	if ( file_exists( $legacy_workflow_build_path ) ) {
 		return $legacy_workflow_build_path;
 	}

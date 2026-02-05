@@ -101,8 +101,8 @@ class WP_MCP_AI_Pro_Settings_React_Packages_Test extends WP_UnitTestCase {
 		$result = $method->invoke( null, 'react' );
 
 		// Check expected paths would be tested:
-		// 1. WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js' (if Pro is active)
-		// 2. WP_MCP_AI_PATH . 'build/workflow-builder/index.js' (legacy)
+		// 1. WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js' (if Pro is active)
+		// 2. WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js' (legacy)
 		// 3. WP_MCP_AI_PATH . 'node_modules/react' (development)
 
 		// The result depends on environment, but method should not throw errors.
@@ -155,11 +155,11 @@ class WP_MCP_AI_Pro_Settings_React_Packages_Test extends WP_UnitTestCase {
 
 		// Priority 1: Pro addon build.
 		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$expected_paths[] = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/index.js';
+			$expected_paths[] = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
 		}
 
 		// Priority 2: Base build (legacy).
-		$expected_paths[] = WP_MCP_AI_PATH . 'build/workflow-builder/index.js';
+		$expected_paths[] = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
 
 		// Priority 3: node_modules (development).
 		$expected_paths[] = WP_MCP_AI_PATH . 'node_modules/react';
