@@ -107,6 +107,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Initialize WordPress hooks.
 		 *
 		 * Separates hook registration from initialization for better testability.
+		 * Initializes delegate pages immediately so their admin_menu hooks register
+		 * before the admin_menu hook fires.
 		 *
 		 * @return void
 		 */
@@ -114,22 +116,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_menu', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
-		}
-
-		/**
-		 * Lazy initialization of delegate pages.
-		 *
-		 * Defers delegate instantiation until admin_init for better performance
-		 * and to ensure all plugins are loaded.
-		 *
-		 * @return void
-		 */
-		public function lazy_init_delegates() {
-			if ( ! $this->delegates_initialized ) {
-				$this->init_delegate_pages();
-				$this->delegates_initialized = true;
-			}
+			
+			// Initialize delegate pages immediately (not on admin_init hook).
+			// The admin_menu hook fires before admin_init, so delegates must be
+			// instantiated early so their menu registration hooks are active.
+			$this->init_delegate_pages();
+			$this->delegates_initialized = true;
 		}
 
 		/**
