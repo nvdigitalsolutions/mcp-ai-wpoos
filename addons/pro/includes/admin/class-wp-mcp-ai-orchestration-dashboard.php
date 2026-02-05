@@ -33,7 +33,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'nvoos-pro-dashboard',
+			'wp-mcp-ai-dashboard',
 			__( 'Real-Time Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
 			__( 'Orchestration Monitor', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
@@ -49,9 +49,10 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	public function enqueue_assets( $hook ) {
 		// Check for orchestration page.
-		// Hook format: 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro'
+		// Hook format: 'nv-oos_page_mcp-ai-orchestration-pro'
+		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Also check via $_GET for additional safety.
-		$is_orchestration_page = ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' === $hook ) ||
+		$is_orchestration_page = ( 'nv-oos_page_mcp-ai-orchestration-pro' === $hook ) ||
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
 

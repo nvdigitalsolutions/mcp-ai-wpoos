@@ -57,7 +57,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 */
 	public function register_page() {
 		add_submenu_page(
-			'nvoos-pro-dashboard',
+			'wp-mcp-ai-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),
 			__( 'Pro Workflows', 'mcp-ai-wpoos' ),
 			'manage_options',
@@ -85,8 +85,11 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
-		$expected_hook = 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG;
+		// Hook format: {sanitized_parent_title}_page_{PAGE_SLUG}
+		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
+		// Submenu slug: "nvoos-pro-workflow-builder"
+		// Expected hook: nv-oos_page_nvoos-pro-workflow-builder
+		$expected_hook = 'nv-oos_page_' . self::PAGE_SLUG;
 
 		// Debug logging for troubleshooting asset enqueue issues.
 		if ( $this->is_debug_logging_enabled() ) {
