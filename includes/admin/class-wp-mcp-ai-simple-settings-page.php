@@ -184,7 +184,9 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
 					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 					<input type="hidden" name="redirect_page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
-					<input type="hidden" name="save_all_tabs" value="1" />
+					<!-- REMOVED save_all_tabs=1 to prevent data loss from other tabs -->
+					<!-- Simple Settings only displays General OR Providers fields, not all tabs -->
+					<!-- Setting save_all_tabs=1 would sanitize all 8 tabs and wipe settings from invisible tabs -->
 
 					<?php foreach ( $grouped_fields as $group_name => $group_fields ) : ?>
 						<?php if ( ! empty( $group_fields ) ) : ?>

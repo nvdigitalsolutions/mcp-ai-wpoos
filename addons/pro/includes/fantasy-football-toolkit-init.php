@@ -2,8 +2,8 @@
 /**
  * Fantasy Football Toolkit Initialization
  *
- * Initializes the Fantasy Football toolkit including CPT, settings page,
- * and research page. Only loads when FF toolkit is enabled in settings.
+ * Initializes the Fantasy Football toolkit including CPTs (Teams & Players),
+ * settings page, and research page. Only loads when FF toolkit is enabled in settings.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Load Fantasy Team CPT.
 require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football/class-wp-mcp-ai-fantasy-team-cpt.php';
+
+// Load Fantasy Player CPT.
+require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football/class-wp-mcp-ai-fantasy-player-cpt.php';
 
 // Load Fantasy Football Settings page (admin only).
 if ( is_admin() ) {
@@ -38,6 +41,9 @@ function wp_mcp_ai_init_fantasy_football_toolkit() {
 
 	// Initialize Fantasy Team CPT.
 	WP_MCP_AI_Fantasy_Team_CPT::init();
+
+	// Initialize Fantasy Player CPT.
+	WP_MCP_AI_Fantasy_Player_CPT::init();
 
 	// Initialize settings and research pages (admin only).
 	if ( is_admin() ) {

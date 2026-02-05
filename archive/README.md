@@ -22,6 +22,27 @@ WordPress.org plugin directory submission documentation:
 - `SUBMISSION_READY_SUMMARY.txt` - Final submission readiness report
 - `WORDPRESS_ORG_SUBMISSION_VERIFIED.md` - Submission verification and compliance
 
+### `/2025/` (NEW - February 2026)
+Documentation from root directory reorganization (50+ files):
+
+#### `/2025/phase-6/` (13 files)
+Phase 6 implementation status reports and summaries
+
+#### `/2025/fixes/` (19 files)
+Bug fix documentation and implementation summaries
+
+#### `/2025/status-reports/` (6 files)
+Project completion status reports
+
+#### `/2025/slash-commands/` (5 files)
+Slash commands implementation history
+
+#### `/2025/workflow-builder/` (5 files)
+Workflow builder development documentation
+
+#### `/2025/production/` (4 files)
+Production deployment guides (superseded by docs/deployment/)
+
 ## Current Documentation
 
 For active, up-to-date documentation, please refer to:

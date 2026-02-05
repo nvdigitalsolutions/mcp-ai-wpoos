@@ -27,8 +27,14 @@ module.exports = {
 	// Module paths
 	modulePaths: [ '<rootDir>' ],
 
-	// Setup files
-	setupFilesAfterEnv: [ '<rootDir>/tests/js/setup.js' ],
+	// Setup files - use absolute path to ensure Jest can find it
+	setupFilesAfterEnv: [
+		'<rootDir>/tests/js/setup.js',
+	],
+
+	// Ensure proper module resolution
+	resolver: undefined,
+	moduleDirectories: [ 'node_modules', '<rootDir>' ],
 
 	// Transform files
 	transform: {
@@ -50,6 +56,12 @@ module.exports = {
 		'/node_modules/',
 		'/vendor/',
 		'/.git/',
+		'/addons/pro/assets/vendor/',
+	],
+
+	// Module path ignore patterns to avoid naming collisions
+	modulePathIgnorePatterns: [
+		'<rootDir>/addons/pro/assets/vendor/',
 	],
 
 	// Coverage thresholds (start low, increase over time)

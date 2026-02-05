@@ -266,8 +266,27 @@ class WP_MCP_AI_Quiz_Research_Page {
 							<?php
 							// Render chat interface with comprehensive quiz tools.
 							// Includes research, creation, discovery, and content search tools.
+							$quiz_tools = array(
+								// Quiz management tools.
+								'research_quiz_topic',
+								'create_quiz',
+								'list_quizzes',
+								'get_quiz',
+								'update_quiz',
+								'delete_quiz',
+								// Quiz analytics and grading tools.
+								'get_quiz_analytics',
+								'get_quiz_results',
+								'get_quiz_submissions',
+								'grade_quiz',
+								'submit_quiz_answer',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_quiz_topic,create_quiz,list_quizzes,get_quiz,web_search,search_content,semantic_content_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $quiz_tools ) ) . '"]'
 							);
 							?>
 						</div>

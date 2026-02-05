@@ -205,6 +205,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
 
+			// Register Slash Command REST endpoints.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
+			add_action(
+				'rest_api_init',
+				function() {
+					$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
+					$controller->register_routes();
+				}
+			);
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );

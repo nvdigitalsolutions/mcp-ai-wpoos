@@ -645,6 +645,33 @@ class WP_MCP_AI_REST_Validator {
 			$system_prompt_source     = 'assistant_config';
 		}
 
+		// Inject current date/time context to help AI models understand temporal context.
+		// AI models have training cutoffs and need explicit current date information for accurate responses.
+		if ( ! empty( $options['system_prompt'] ) ) {
+			$current_date_context = sprintf(
+				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s\n- Current Time: %s UTC",
+				gmdate( 'l, F j, Y' ),  // e.g., "Monday, February 3, 2026"
+				gmdate( 'Y' ),           // e.g., "2026"
+				gmdate( 'H:i:s' )       // e.g., "14:30:45"
+			);
+
+			/**
+			 * Filter the current date context injected into system prompts.
+			 *
+			 * @param string $current_date_context  The date context string to inject.
+			 * @param array  $options               Current options array.
+			 * @param array  $assistant_config      Assistant configuration.
+			 *
+			 * @since 1.0.0
+			 */
+			$current_date_context = apply_filters( 'wp_mcp_ai_current_date_context', $current_date_context, $options, $assistant_config );
+
+			// Only inject if not empty after filtering.
+			if ( ! empty( $current_date_context ) ) {
+				$options['system_prompt'] .= $current_date_context;
+			}
+		}
+
 		// Comprehensive debug logging for system_prompt propagation across all providers.
 		// This helps diagnose issues where assistant defaults may not be reaching the LLM.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

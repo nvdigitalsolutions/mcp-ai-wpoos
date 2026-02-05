@@ -177,13 +177,23 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 	 * @return string|WP_Error New access token or error.
 	 */
 	protected function refresh_access_token( $user_id, $refresh_token ) {
-		$client_id     = get_option( 'wp_mcp_ai_yahoo_client_id' );
-		$client_secret = get_option( 'wp_mcp_ai_yahoo_client_secret' );
+		// Get credentials from centralized settings.
+		$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+		$client_id     = isset( $settings['yahoo_client_id'] ) ? trim( $settings['yahoo_client_id'] ) : '';
+		$client_secret = isset( $settings['yahoo_client_secret'] ) ? trim( $settings['yahoo_client_secret'] ) : '';
+
+		// Fallback to legacy options for backward compatibility.
+		if ( empty( $client_id ) ) {
+			$client_id = get_option( 'wp_mcp_ai_yahoo_client_id' );
+		}
+		if ( empty( $client_secret ) ) {
+			$client_secret = get_option( 'wp_mcp_ai_yahoo_client_secret' );
+		}
 
 		if ( empty( $client_id ) || empty( $client_secret ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',
-				__( 'Yahoo API credentials are not configured.', 'mcp-ai-wpoos' )
+				__( 'Yahoo API credentials are not configured. Please configure them in Settings → NV oOS → Tools → Connections → Yahoo Sports.', 'mcp-ai-wpoos' )
 			);
 		}
 

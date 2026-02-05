@@ -413,27 +413,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'    => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
-									'generic'      => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
-									'isams'        => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
-									'flowhub'      => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
-									'payhere'      => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
-									'quickbooks'   => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
-									'ezuite_erp'   => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
-									'gmail'        => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
-									'google_drive' => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'wordpress'         => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
+									'generic'           => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
+									'isams'             => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
+									'flowhub'           => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
+									'payhere'           => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
+									'quickbooks'        => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'ezuite_erp'        => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+									'gmail'             => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
+									'google_drive'      => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'telegram'          => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
+									'whatsapp'          => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
+									'slack'             => __( 'Slack', 'mcp-ai-wpoos-pro' ),
+									'discord'           => __( 'Discord', 'mcp-ai-wpoos-pro' ),
+									'microsoft_teams'   => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
+									'facebook_messenger' => __( 'Messenger', 'mcp-ai-wpoos-pro' ),
+									'webchat'           => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
-									'wordpress'    => '#2271b1',
-									'generic'      => '#50575e',
-									'isams'        => '#d63638',
-									'flowhub'      => '#00a32a',
-									'payhere'      => '#f0b849',
-									'quickbooks'   => '#2c9f47',
-									'ezuite_erp'   => '#8c50a7',
-									'gmail'        => '#ea4335', // Google red color
-									'google_drive' => '#4285f4', // Google blue color
+									'wordpress'         => '#2271b1',
+									'generic'           => '#50575e',
+									'isams'             => '#d63638',
+									'flowhub'           => '#00a32a',
+									'payhere'           => '#f0b849',
+									'quickbooks'        => '#2c9f47',
+									'ezuite_erp'        => '#8c50a7',
+									'gmail'             => '#ea4335', // Google red color
+									'google_drive'      => '#4285f4', // Google blue color
+									'telegram'          => '#0088cc', // Telegram blue
+									'whatsapp'          => '#25d366', // WhatsApp green
+									'slack'             => '#4a154b', // Slack purple
+									'discord'           => '#5865f2', // Discord blurple
+									'microsoft_teams'   => '#6264a7', // Teams purple
+									'facebook_messenger' => '#0084ff', // Messenger blue
+									'webchat'           => '#ff6b6b', // WebChat coral red
 								);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -674,6 +688,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
 								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="telegram" <?php selected( $connection_type, 'telegram' ); ?>>
+								<?php esc_html_e( 'Telegram (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="whatsapp" <?php selected( $connection_type, 'whatsapp' ); ?>>
+								<?php esc_html_e( 'WhatsApp Business (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="slack" <?php selected( $connection_type, 'slack' ); ?>>
+								<?php esc_html_e( 'Slack (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="discord" <?php selected( $connection_type, 'discord' ); ?>>
+								<?php esc_html_e( 'Discord (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="microsoft_teams" <?php selected( $connection_type, 'microsoft_teams' ); ?>>
+								<?php esc_html_e( 'Microsoft Teams (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="facebook_messenger" <?php selected( $connection_type, 'facebook_messenger' ); ?>>
+								<?php esc_html_e( 'Facebook Messenger (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="webchat" <?php selected( $connection_type, 'webchat' ); ?>>
+								<?php esc_html_e( 'WebChat P2P (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">

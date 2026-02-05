@@ -462,6 +462,7 @@
 			// correct field sanitization in subtab-aware sections.
 			const urlParams = new URLSearchParams(window.location.search);
 			const currentSubtab = urlParams.get('subtab');
+			const currentConnection = urlParams.get('connection');
 			
 			// Find all subtab hidden fields in the form.
 			const $subtabFields = $form.find('input[type="hidden"][name^="subtab_"]');
@@ -474,10 +475,11 @@
 					const oldValue = $hiddenField.val();
 					
 					// Determine the correct subtab value to use:
-					// 1. If URL has subtab parameter, use it
-					// 2. Otherwise, keep the existing field value (from PHP rendering)
-					// 3. As last resort, try to detect from active subtab link
-					let newValue = currentSubtab;
+					// 1. If URL has connection parameter, use it (for Integrations section)
+					// 2. If URL has subtab parameter, use it (for other sections)
+					// 3. Otherwise, keep the existing field value (from PHP rendering)
+					// 4. As last resort, try to detect from active subtab link
+					let newValue = currentConnection || currentSubtab;
 					
 					if (!newValue) {
 						// No URL parameter - check if field already has a valid value.
@@ -1084,6 +1086,104 @@
 	}
 
 	/**
+	 * Initialize Yahoo Sports connection test handlers.
+	 */
+	function initYahooHandlers() {
+		// Test Yahoo connection
+		$('#wp-mcp-ai-test-yahoo-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-yahoo-test-result');
+			const clientId = $('input[name="wp_mcp_ai_settings[yahoo_client_id]"]').val();
+			const clientSecret = $('input[name="wp_mcp_ai_settings[yahoo_client_secret]"]').val();
+
+			if (!clientId || !clientSecret) {
+				$result.html('<span style="color: #d63638;">Please enter both Client ID and Client Secret first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Validating Yahoo credentials...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_yahoo_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					client_id: clientId,
+					client_secret: clientSecret
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						let message = '✓ ' + response.data.message;
+						if (response.data.note) {
+							message += '<br><small>' + response.data.note + '</small>';
+						}
+						$result.html('<span style="color: #00a32a;">' + message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection test failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Remove.bg connection test handlers.
+	 */
+	function initRemovebgHandlers() {
+		// Test remove.bg connection
+		$('#wp-mcp-ai-test-removebg-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-removebg-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[removebg_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to remove.bg...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_removebg_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
 	 * Initialize Cloudflare connection test handlers.
 	 */
 	function initCloudflareHandlers() {
@@ -1368,6 +1468,104 @@
 		});
 	}
 
+	/**
+	 * Initialize Mubert connection test handlers.
+	 */
+	function initMubertHandlers() {
+		// Test Mubert connection
+		$('#wp-mcp-ai-test-mubert-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-mubert-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[mubert_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Mubert...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_mubert_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Flowhub connection test handlers.
+	 */
+	function initFlowhubHandlers() {
+		// Test Flowhub connection
+		$('#wp-mcp-ai-test-flowhub-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-flowhub-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[flowhub_api_key]"]').val();
+			const clientId = $('input[name="wp_mcp_ai_settings[flowhub_client_id]"]').val();
+			const clientSecret = $('input[name="wp_mcp_ai_settings[flowhub_client_secret]"]').val();
+			const locationId = $('input[name="wp_mcp_ai_settings[flowhub_location_id]"]').val();
+
+			if (!apiKey || !clientId || !clientSecret || !locationId) {
+				$result.html('<span style="color: #d63638;">Please enter all Flowhub credentials first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Flowhub...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_flowhub_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey,
+					client_id: clientId,
+					client_secret: clientSecret,
+					location_id: locationId
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
@@ -1376,6 +1574,10 @@
 		// Initialize connection test handlers if wpMcpAiAdmin is available
 		if (typeof wpMcpAiAdmin !== 'undefined') {
 			initBraveSearchHandlers();
+			initYahooHandlers();
+			initRemovebgHandlers();
+			initMubertHandlers();
+			initFlowhubHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
 			initISAMSHandlers();

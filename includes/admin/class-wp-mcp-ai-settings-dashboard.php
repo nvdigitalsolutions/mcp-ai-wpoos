@@ -53,6 +53,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_plaid_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -204,6 +205,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
 				)
 			);
+
+			// Register settings sections with WordPress Settings API.
+			// Each section is added to allow WordPress to properly track and manage them.
+			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+			foreach ( $tabs as $tab_id => $tab_config ) {
+				$sections = WP_MCP_AI_Settings_Registry::get_sections( $tab_id );
+				foreach ( $sections as $section ) {
+					add_settings_section(
+						$section->get_id(),
+						$section->get_title(),
+						'__return_false', // Rendering is handled by section's render_wrapper() method.
+						self::PAGE_SLUG
+					);
+				}
+			}
 		}
 
 		/**
@@ -284,7 +300,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Find subtab from section-specific subtab fields (subtab_sectionid format).
+			// Find subtab from explicit 'subtab' field first (for parent-level subtabs),
+			// then from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			// IMPORTANT: Many sections use subtabs with critical data tables:
 			// - Providers tab: Each provider (OpenAI, Gemini, Ollama, etc.) has its own subtab
@@ -293,17 +310,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// - Tools tab: Tool categories and individual tool configurations
 			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
-			foreach ( $_POST as $key => $value ) {
-				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-					$active_subtab = sanitize_key( $value );
-					break; // Use the first subtab found.
+
+			// PRIORITY 1: Check for explicit 'subtab' field first (used for parent-level subtabs).
+			// This ensures that when nested sections are present (e.g., Tools > Connections > Google Drive),
+			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 258 via check_admin_referer().
+			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
+				$active_subtab = sanitize_key( $_POST['subtab'] );
+			}
+
+			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
+			if ( empty( $active_subtab ) ) {
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
+						$active_subtab = sanitize_key( $value );
+						break; // Use the first subtab found.
+					}
 				}
 			}
 
-			// Fallback to legacy 'subtab' field for backward compatibility.
-			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
-				$active_subtab = sanitize_key( $_POST['subtab'] );
-			}
+			// Check for 'connection' parameter (used in Integrations section).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
+			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( $_POST['connection'] ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -478,6 +506,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'cloudflare_api_token',
 					'brave_search_api_key',
 					'mubert_api_key',
+					'removebg_api_key',
 					// Add more sensitive keys from integrations.
 					'gmail_client_secret',
 					'gmail_refresh_token',
@@ -488,6 +517,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'meta_access_token',
 					'tiktok_access_token',
 					'tiktok_client_secret',
+					'yahoo_client_id',
+					'yahoo_client_secret',
 				);
 
 				foreach ( $sensitive_keys as $key ) {
@@ -755,6 +786,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
 			if ( ! empty( $active_subtab ) ) {
 				$redirect_args['subtab'] = $active_subtab;
+			}
+
+			// Preserve connection parameter for Integrations section connections.
+			if ( ! empty( $active_connection ) ) {
+				$redirect_args['connection'] = $active_connection;
 			}
 
 			// Preserve view parameter for sections with view-based navigation (e.g., Orchestration, Token Manager).

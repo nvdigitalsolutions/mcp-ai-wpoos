@@ -29,7 +29,7 @@ class WP_MCP_AI_Architect_Agent_Settings_Page {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 20 );
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 100 );
 	}
 
 	/**

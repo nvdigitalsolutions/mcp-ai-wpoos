@@ -1,0 +1,14 @@
+--- a/src/Provider/AbstractProvider.php
++++ b/src/Provider/AbstractProvider.php
+@@ -418,9 +418,9 @@
+             $options['scope'] = $this->getDefaultScopes();
+         }
+ 
++        // Remove deprecated 'approval_prompt' parameter to avoid conflicts with 'prompt'
+         $options += [
+-            'response_type'   => 'code',
+-            'approval_prompt' => 'auto'
++            'response_type' => 'code'
+         ];
+ 
+         if (is_array($options['scope'])) {

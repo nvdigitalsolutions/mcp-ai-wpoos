@@ -1266,14 +1266,21 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 ## 📚 Documentation
 
-NV oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
+NV oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation reorganized February 2026** - Root directory cleaned (50+ files archived), docs consolidated for better navigation.
 
-### Quick Links
+### 📖 Documentation Hub
+- **[Documentation Hub](docs/README.md)** ⭐ **Start here** - Central navigation with organized categories
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 550+ documentation files
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
-- **[Tool Reference](docs/reference/tools/tool-reference.md)** - Detailed guide to all 105 built-in tools
+
+### Essential References
+- **[Tool Reference](docs/reference/tools/tool-reference.md)** - All 398 tools documented (141 base + 257 Pro)
 - **[REST API Documentation](docs/reference/api/rest-api.md)** - Complete API reference with examples
-- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
+- **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Test results and code quality analysis
+
+### 📦 Archive
+- **[Historical Documentation](archive/README.md)** - 50+ archived files from 2024-2025 development (Phase 6, fixes, status reports)
+- **[Docs Archive](docs/archive/)** - Consolidated implementation history and superseded documentation
 
 ### For New Users
 - **[Use Cases & Quickstart Guides](docs/getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering 7 major use cases with step-by-step quickstarts
