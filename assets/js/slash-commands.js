@@ -59,6 +59,8 @@
 			} else {
 				this.debug('mcpAiData available:', {
 					hasRestUrl: !!window.mcpAiData.restUrl,
+					hasSlashCommandEndpoint: !!window.mcpAiData.slashCommandEndpoint,
+					hasSlashCommandListEndpoint: !!window.mcpAiData.slashCommandListEndpoint,
 					hasNonce: !!window.mcpAiData.nonce
 				});
 			}
@@ -246,7 +248,7 @@
 		 * Send command to REST API
 		 */
 		async sendCommand(command, correlationId) {
-			const endpoint = window.mcpAiData?.restUrl + 'slash-command';
+			const endpoint = window.mcpAiData?.slashCommandEndpoint;
 			const nonce = window.mcpAiData?.nonce;
 
 			this.debug('REST API request:', {
@@ -257,7 +259,7 @@
 			});
 
 			if (!endpoint || !nonce) {
-				throw new Error('REST API configuration missing (restUrl or nonce)');
+				throw new Error('REST API configuration missing (slashCommandEndpoint or nonce)');
 			}
 
 			const requestPayload = { 
@@ -459,7 +461,7 @@
 			}
 
 			try {
-				const endpoint = window.mcpAiData?.restUrl + 'slash-command/list';
+				const endpoint = window.mcpAiData?.slashCommandListEndpoint;
 				const nonce = window.mcpAiData?.nonce;
 
 				const response = await fetch(endpoint, {

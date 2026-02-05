@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
-        'version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
-        'reference' => '10cda38a1b3131747ec378392589cc0a9bae5ba5',
+        'pretty_version' => 'dev-copilot/fix-slash-command-url',
+        'version' => 'dev-copilot/fix-slash-command-url',
+        'reference' => '7031f36e73970014575560631be38cbbb9e62333',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
-            'version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
-            'reference' => '10cda38a1b3131747ec378392589cc0a9bae5ba5',
+            'pretty_version' => 'dev-copilot/fix-slash-command-url',
+            'version' => 'dev-copilot/fix-slash-command-url',
+            'reference' => '7031f36e73970014575560631be38cbbb9e62333',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
