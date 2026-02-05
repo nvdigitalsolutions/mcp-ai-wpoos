@@ -49,7 +49,7 @@
 		"reactflow": "^11.10.4"
 	},
 	"optionalDependencies": {
-		"@langchain/community": "^0.3.14",
+		"@langchain/community": "^1.1.12",
 		"@langchain/core": "^0.3.20",
 		"langchain": "^0.3.6"
 	},
