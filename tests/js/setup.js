@@ -7,7 +7,7 @@
  * @package WP_MCP_AI
  */
 
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Mock WordPress globals
 global.wp = {

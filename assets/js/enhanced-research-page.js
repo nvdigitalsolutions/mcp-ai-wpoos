@@ -316,9 +316,250 @@
 		});
 	}
 
+	/**
+	 * Initialize Excel preview functionality for registration products.
+	 */
+	function initExcelPreview() {
+		// Handle "Preview Excel File" button click
+		$(document).on('click', '.wp-mcp-ai-select-excel-file', function(e) {
+			e.preventDefault();
+			
+			// Open WordPress media library
+			if (typeof wp !== 'undefined' && wp.media) {
+				const mediaFrame = wp.media({
+					title: 'Select Excel File to Preview',
+					button: {
+						text: 'Preview File'
+					},
+					library: {
+						type: ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv']
+					},
+					multiple: false
+				});
+
+				mediaFrame.on('select', function() {
+					const attachment = mediaFrame.state().get('selection').first().toJSON();
+					previewExcelFile(attachment);
+				});
+
+				mediaFrame.open();
+			}
+		});
+
+		// Handle close preview button
+		$(document).on('click', '.wp-mcp-ai-close-preview', function(e) {
+			e.preventDefault();
+			$('#wp-mcp-ai-product-preview').fadeOut();
+		});
+
+		// Handle preview pagination
+		$(document).on('click', '.wp-mcp-ai-preview-prev, .wp-mcp-ai-preview-next', function(e) {
+			e.preventDefault();
+			const $btn = $(this);
+			const isNext = $btn.hasClass('wp-mcp-ai-preview-next');
+			const $preview = $('#wp-mcp-ai-product-preview');
+			const currentPage = parseInt($preview.data('current-page') || 1);
+			const totalPages = parseInt($preview.data('total-pages') || 1);
+			
+			let newPage = currentPage;
+			if (isNext && currentPage < totalPages) {
+				newPage = currentPage + 1;
+			} else if (!isNext && currentPage > 1) {
+				newPage = currentPage - 1;
+			}
+			
+			if (newPage !== currentPage) {
+				displayExcelPage(newPage);
+			}
+		});
+
+		// Handle import Excel data button
+		$(document).on('click', '.wp-mcp-ai-import-excel-data', function(e) {
+			e.preventDefault();
+			
+			const $btn = $(this);
+			const $preview = $('#wp-mcp-ai-product-preview');
+			const fileUrl = $preview.data('file-url');
+			
+			if (!fileUrl) {
+				alert('No file selected for import.');
+				return;
+			}
+			
+			// Disable button
+			$btn.prop('disabled', true);
+			const originalText = $btn.text();
+			$btn.text('Importing...');
+			
+			// Call import via assistant chat
+			const $chatInput = $('.wp-mcp-ai-chat-input, #wp-mcp-ai-message-input, textarea[name="message"]').first();
+			if ($chatInput.length) {
+				const importMessage = 'Import all products from the Excel file at: ' + fileUrl;
+				$chatInput.val(importMessage);
+				
+				// Auto-submit
+				const $submitBtn = $chatInput.closest('form').find('.wp-mcp-ai-send-button, button[type="submit"]').first();
+				if ($submitBtn.length && $submitBtn.is(':visible')) {
+					setTimeout(function() {
+						$submitBtn.trigger('click');
+						$btn.prop('disabled', false).text(originalText);
+						$('#wp-mcp-ai-product-preview').fadeOut();
+					}, 100);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Preview an Excel file from the media library.
+	 *
+	 * @param {Object} attachment WordPress media attachment object.
+	 */
+	function previewExcelFile(attachment) {
+		const $preview = $('#wp-mcp-ai-product-preview');
+		const $loading = $preview.find('.wp-mcp-ai-preview-loading');
+		const $data = $preview.find('.wp-mcp-ai-preview-data');
+		
+		// Show preview container
+		$preview.show();
+		$loading.show();
+		$data.hide();
+		
+		// Store file info
+		$preview.data('file-url', attachment.url);
+		$preview.data('file-id', attachment.id);
+		
+		// Request preview data
+		$.ajax({
+			url: wpMcpAiResearchPage.ajaxUrl,
+			type: 'POST',
+			data: {
+				action: 'wp_mcp_ai_preview_excel',
+				nonce: wpMcpAiResearchPage.nonce,
+				file_id: attachment.id,
+				file_url: attachment.url
+			},
+			success: function(response) {
+				if (response.success && response.data) {
+					displayExcelPreview(response.data);
+				} else {
+					$loading.html('<div class="notice notice-error"><p>' + (response.data?.message || 'Failed to preview file.') + '</p></div>');
+				}
+			},
+			error: function(xhr, status, error) {
+				$loading.html('<div class="notice notice-error"><p>Error loading preview: ' + error + '</p></div>');
+			}
+		});
+	}
+
+	/**
+	 * Display Excel preview data.
+	 *
+	 * @param {Object} data Preview data from server.
+	 */
+	function displayExcelPreview(data) {
+		const $preview = $('#wp-mcp-ai-product-preview');
+		const $loading = $preview.find('.wp-mcp-ai-preview-loading');
+		const $data = $preview.find('.wp-mcp-ai-preview-data');
+		
+		// Store data
+		$preview.data('preview-data', data);
+		$preview.data('current-page', 1);
+		$preview.data('total-pages', Math.ceil((data.rows?.length || 0) / 10));
+		
+		// Update header
+		$data.find('.wp-mcp-ai-preview-title').text(data.filename || 'Excel File');
+		$data.find('.wp-mcp-ai-preview-meta').text(
+			(data.rows?.length || 0) + ' rows, ' + (data.columns?.length || 0) + ' columns'
+		);
+		
+		// Display first page
+		displayExcelPage(1);
+		
+		// Show data, hide loading
+		$loading.hide();
+		$data.show();
+	}
+
+	/**
+	 * Display a specific page of Excel data.
+	 *
+	 * @param {number} page Page number (1-indexed).
+	 */
+	function displayExcelPage(page) {
+		const $preview = $('#wp-mcp-ai-product-preview');
+		const data = $preview.data('preview-data');
+		
+		if (!data || !data.rows || !data.columns) {
+			return;
+		}
+		
+		const rowsPerPage = 10;
+		const startIdx = (page - 1) * rowsPerPage;
+		const endIdx = Math.min(startIdx + rowsPerPage, data.rows.length);
+		const pageRows = data.rows.slice(startIdx, endIdx);
+		
+		// Build table
+		const $table = $preview.find('.wp-mcp-ai-preview-table');
+		const $thead = $table.find('thead');
+		const $tbody = $table.find('tbody');
+		
+		// Clear table
+		$thead.empty();
+		$tbody.empty();
+		
+		// Add header
+		let headerHtml = '<tr>';
+		data.columns.forEach(function(col) {
+			headerHtml += '<th>' + escapeHtml(col) + '</th>';
+		});
+		headerHtml += '</tr>';
+		$thead.html(headerHtml);
+		
+		// Add rows
+		pageRows.forEach(function(row) {
+			let rowHtml = '<tr>';
+			data.columns.forEach(function(col) {
+				rowHtml += '<td>' + escapeHtml(row[col] || '') + '</td>';
+			});
+			rowHtml += '</tr>';
+			$tbody.append(rowHtml);
+		});
+		
+		// Update pagination
+		const totalPages = Math.ceil(data.rows.length / rowsPerPage);
+		$preview.data('current-page', page);
+		$preview.data('total-pages', totalPages);
+		
+		$preview.find('.wp-mcp-ai-preview-current-page').text(page);
+		$preview.find('.wp-mcp-ai-preview-total-pages').text(totalPages);
+		
+		$preview.find('.wp-mcp-ai-preview-prev').prop('disabled', page <= 1);
+		$preview.find('.wp-mcp-ai-preview-next').prop('disabled', page >= totalPages);
+		
+		if (totalPages > 1) {
+			$preview.find('.wp-mcp-ai-preview-pagination').show();
+		} else {
+			$preview.find('.wp-mcp-ai-preview-pagination').hide();
+		}
+	}
+
+	/**
+	 * Escape HTML to prevent XSS.
+	 *
+	 * @param {string} str String to escape.
+	 * @return {string} Escaped string.
+	 */
+	function escapeHtml(str) {
+		const div = document.createElement('div');
+		div.textContent = str;
+		return div.innerHTML;
+	}
+
 	// Initialize on document ready
 	$(document).ready(function() {
 		initEnhancedResearchPage();
+		initExcelPreview();
 	});
 
 })(jQuery);

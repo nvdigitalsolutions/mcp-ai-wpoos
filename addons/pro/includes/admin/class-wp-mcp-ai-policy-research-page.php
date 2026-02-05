@@ -229,10 +229,22 @@ class WP_MCP_AI_Policy_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive policy tools.
-							// Includes research, creation, management, and content discovery tools.
+							// Render chat interface with comprehensive policy management tools.
+							$policy_tools = array(
+								// Policy management.
+								'research_policy',
+								'create_policy',
+								'get_policy',
+								'list_policies',
+								'update_policy',
+								// Research tools.
+								'web_search',
+								'deep_research',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_policy,create_policy,get_policy,web_search,deep_research,search_content,semantic_content_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $policy_tools ) ) . '"]'
 							);
 							?>
 						</div>

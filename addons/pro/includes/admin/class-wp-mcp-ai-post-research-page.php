@@ -231,8 +231,26 @@ class WP_MCP_AI_Post_Research_Page {
 							<?php
 							// Render chat interface with comprehensive post tools.
 							// Includes creation, management, research, and content discovery tools.
+							$post_tools = array(
+								// Post management.
+								'create_post',
+								'save_post',
+								'get_recent_posts',
+								'research_post',
+								// SEO and optimization.
+								'get_rankmath_seo',
+								// Image tools.
+								'generate_image_caption',
+								'generate_image_alt_text',
+								'generate_openai_image',
+								// Research tools.
+								'web_search',
+								'deep_research',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_post,save_post,get_recent_posts,web_search,deep_research,search_content,semantic_content_search,get_rankmath_seo,generate_image_caption"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $post_tools ) ) . '"]'
 							);
 							?>
 						</div>

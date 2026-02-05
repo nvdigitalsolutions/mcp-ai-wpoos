@@ -85,7 +85,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				'cloudways_api_key'                  => 'password',
 				'mailjet_api_key'                    => 'password',
 				'mailjet_api_secret'                 => 'password',
-				'mailjet_client_secret'              => 'password',
+				'mailjet_webhook_secret'             => 'password',
 				'removebg_api_key'                   => 'password',
 				'quickbooks_api_key'                 => 'password',
 				'quickbooks_client_secret'           => 'password',

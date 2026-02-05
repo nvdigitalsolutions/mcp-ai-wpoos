@@ -1,14 +1,33 @@
 # NV oOS Documentation Index
 
-**Last Updated:** February 1, 2026  
+**Last Updated:** February 5, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 667+ files (654+ in docs/ folder, 7 PHPCS files, 6 essential files in root)
+**Total Documentation:** 550+ files (540+ in docs/ folder, 3 essential files in root, 50+ archived)
 
-> **📌 FEBRUARY 1, 2026 UPDATE (LATEST):** ⭐
+> **📌 FEBRUARY 5, 2026 UPDATE (LATEST):** ⭐⭐⭐
+> - **Major Documentation Reorganization Complete** - Root directory and docs/ cleaned and consolidated
+> - **Root Directory**: 46 markdown files → 3 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md)
+> - **Archived**: 50+ files from root → `/archive/2025/` (Phase 6, fixes, status reports, slash commands, workflow builder, production)
+> - **Docs Consolidated**: 19 duplicate/outdated files → `/docs/archive/2025/` (DeepSeek V4, WordPress.org, Pro Dashboard, Pro Toolkit)
+> - **Archive Indexes Created**: Comprehensive navigation in both archive directories
+> - **No Content Lost**: All information preserved with organized indexes for reference
+> - **Improved Navigation**: Focus on current, maintained documentation
+> - **See**: [Root Archive](../archive/README.md), [Docs Archive](archive/2025/README.md)
+
+> **📌 FEBRUARY 5, 2026 UPDATE (EARLIER):** ⭐
+> - **NPM Package Distribution Documentation Complete** - Comprehensive analysis for extracting JavaScript components as standalone NPM packages
+> - **4 Strategic Documents**: Strategy blueprint, extraction guide, component analysis, quick reference (1,582 lines)
+> - **67 JavaScript Files Analyzed**: 15+ extractable components identified with priority rankings
+> - **Key Finding**: YES - Multiple components ready for NPM distribution with minimal/zero modifications
+> - **High Priority Components**: Markdown renderer (0/10 WP dependency), event system (0-2/10), storage utilities (1/10)
+> - **Timeline**: 8-12 weeks for first three packages, 2-3 weeks for pilot
+> - **Start Here**: [NPM_PACKAGE_DISTRIBUTION.md](NPM_PACKAGE_DISTRIBUTION.md) → [Full Documentation](npm-packages/README.md)
+
+> **📌 FEBRUARY 1, 2026 UPDATE:** ⭐
 > - **PHPCS Documentation Suite Complete** - Comprehensive PHPCS compliance documentation added
 > - **7 PHPCS Documents**: Master index, flowchart, implementation plan, quick reference, detailed analysis, summaries
 > - **667 Violations Analyzed**: 91 fixable, 127 to suppress, 469 intentional
@@ -778,6 +797,31 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 ## 📖 Core Documentation
 
+### NPM Package Distribution Documentation ⭐ **NEW (Feb 5, 2026)**
+
+**Can parts of this plugin be distributed as NPM packages? YES!**
+
+- **[NPM_PACKAGE_DISTRIBUTION.md](NPM_PACKAGE_DISTRIBUTION.md)** ⭐ **NEW**
+  - Quick start guide for NPM package extraction
+  - Executive summary with key findings (67 JS files analyzed, 15+ extractable components)
+  - Timeline: 8-12 weeks for first three packages, 2-3 weeks for pilot
+  - Resource requirements: 1-2 developers at 50-75% time
+  - [Full Documentation →](npm-packages/README.md)
+
+**Complete NPM Package Documentation Suite** (1,582 lines, 42KB):
+- **[npm-packages/README.md](npm-packages/README.md)** - Index and quick reference
+- **[npm-packages/STRATEGY_BLUEPRINT.md](npm-packages/STRATEGY_BLUEPRINT.md)** - Decision-making framework
+- **[npm-packages/EXTRACTION_GUIDE.md](npm-packages/EXTRACTION_GUIDE.md)** - Technical implementation
+- **[npm-packages/COMPONENT_ANALYSIS.md](npm-packages/COMPONENT_ANALYSIS.md)** - Detailed component evaluation
+
+**Key Findings:**
+- ✅ Tier 1 Components (Ready Now): Markdown renderer (0/10 WP dep), event system (0-2/10), storage utilities (1/10)
+- ⚙️ Tier 2 Components (Minor Changes): Audio toolkit, transcription, file uploads
+- ❌ Not Suitable: Admin interfaces, REST endpoints, WordPress-specific code
+- 💰 Low risk, high value opportunity for brand building and community engagement
+
+---
+
 ### 🆕 Key Reference Documents - MASTER CONSOLIDATION
 
 **🎯 START HERE - Consolidated Master Documents:**
@@ -1149,6 +1193,7 @@ Essential files only (reduced from 30 to 5 files):
 
 ### Plugin Dependencies
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)
+- [Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor)
 - [Elementor Developer Documentation](https://developers.elementor.com/)
 - [WooCommerce Documentation](https://woocommerce.com/documentation/)
 

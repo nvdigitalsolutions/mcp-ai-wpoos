@@ -567,6 +567,104 @@ window.wpMcpAiSaveExpandedState = function() {
     }
 
     /**
+     * Initialize Yahoo Sports connection test handler
+     */
+    function initYahooHandlers() {
+        // Test Yahoo connection
+        $('#wp-mcp-ai-test-yahoo-connection').on('click', function (e) {
+            e.preventDefault();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-yahoo-test-result');
+            const clientId = $('input[name="wp_mcp_ai_settings[yahoo_client_id]"]').val();
+            const clientSecret = $('input[name="wp_mcp_ai_settings[yahoo_client_secret]"]').val();
+
+            if (!clientId || !clientSecret) {
+                $result.html('<span style="color: #d63638;">Please enter both Client ID and Client Secret first.</span>');
+                return;
+            }
+
+            $button.prop('disabled', true).text('Testing...');
+            $result.html('<span style="color: #3c434a;">Validating Yahoo credentials...</span>');
+
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_test_yahoo_connection',
+                    nonce: wpMcpAiAdmin.nonce,
+                    client_id: clientId,
+                    client_secret: clientSecret
+                }
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        let message = '✓ ' + response.data.message;
+                        if (response.data.note) {
+                            message += '<br><small>' + response.data.note + '</small>';
+                        }
+                        $result.html('<span style="color: #00a32a;">' + message + '</span>');
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                    }
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection test failed') + '</span>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
+                }
+            });
+        });
+    }
+
+    /**
+     * Initialize remove.bg connection test handler
+     */
+    function initRemovebgHandlers() {
+        // Test remove.bg connection
+        $('#wp-mcp-ai-test-removebg-connection').on('click', function (e) {
+            e.preventDefault();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-removebg-test-result');
+            const apiKey = $('input[name="wp_mcp_ai_settings[removebg_api_key]"]').val();
+
+            if (!apiKey) {
+                $result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+                return;
+            }
+
+            $button.prop('disabled', true).text('Testing...');
+            $result.html('<span style="color: #3c434a;">Connecting to remove.bg...</span>');
+
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_test_removebg_connection',
+                    nonce: wpMcpAiAdmin.nonce,
+                    api_key: apiKey
+                }
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                    }
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
+                }
+            });
+        });
+    }
+
+    /**
      * Initialize Flowhub connection test handler
      */
     function initFlowhubHandlers() {
@@ -751,6 +849,8 @@ window.wpMcpAiSaveExpandedState = function() {
         initCloudflareHandlers();
         initBraveSearchHandlers();
         initMubertHandlers();
+        initYahooHandlers();
+        initRemovebgHandlers();
         initFlowhubHandlers();
         initTokenUsageHandlers();
         initProviderPriorityList();

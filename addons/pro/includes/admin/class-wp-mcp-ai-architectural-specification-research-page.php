@@ -260,9 +260,22 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with specification-focused tools.
+							// Render chat interface with comprehensive architectural specification tools.
+							$spec_tools = array(
+								// Material and cost analysis.
+								'generate_material_schedule',
+								'estimate_construction_cost',
+								// Code compliance and structural analysis.
+								'check_building_code_compliance',
+								'analyze_structural_feasibility',
+								'calculate_sustainability_metrics',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_material_schedule,estimate_construction_cost,check_building_code_compliance,analyze_structural_feasibility,calculate_sustainability_metrics,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $spec_tools ) ) . '"]'
 							);
 							?>
 						</div>

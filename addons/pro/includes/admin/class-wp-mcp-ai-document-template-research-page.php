@@ -250,9 +250,36 @@ class WP_MCP_AI_Document_Template_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with document generation tools.
+							// Render chat interface with comprehensive document generation tools.
+							$doc_tools = array(
+								// Advanced document generation (Pro).
+								'pro_pdf_document',
+								'pro_word_document',
+								'pro_excel_document',
+								// Basic document generation.
+								'generate_pdf',
+								'generate_word',
+								'generate_excel',
+								'html_to_pdf',
+								// Email template generation.
+								'generate_email_template',
+								// Template management.
+								'create_template',
+								'list_templates',
+								'instantiate_template',
+								'seed_template_library',
+								// Media templates.
+								'create_media_template',
+								'list_media_templates',
+								'apply_media_template',
+								'apply_collection_template',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_pdf,generate_word,generate_excel,html_to_pdf,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $doc_tools ) ) . '"]'
 							);
 							?>
 						</div>

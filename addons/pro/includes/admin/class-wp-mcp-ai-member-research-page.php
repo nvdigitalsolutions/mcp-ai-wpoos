@@ -77,11 +77,23 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 */
 	protected function get_available_tools() {
 		return array(
+			// Core member management.
 			'create_member',
 			'update_member',
+			'delete_member',
+			'get_member',
 			'list_members',
+			// Health & wellness.
 			'get_member_health_summary',
 			'research_health_member',
+			'generate_health_chart',
+			'guide_health_record_creation',
+			'parse_health_information',
+			'analyze_loop_health',
+			// General research tools.
+			'web_search',
+			'search_content',
+			'semantic_content_search',
 		);
 	}
 

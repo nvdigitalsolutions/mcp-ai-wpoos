@@ -43,11 +43,12 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		?>
 		<h2><?php esc_html_e( 'Fantasy Football Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 		
-		<p><?php esc_html_e( 'Comprehensive fantasy football management system with Yahoo Fantasy Sports API integration, AI-powered team logo generation, league reports, and player research.', 'mcp-ai-wpoos-pro' ); ?></p>
+		<p><?php esc_html_e( 'Comprehensive fantasy football management system with Yahoo Fantasy Sports and ESPN Fantasy Football API integrations, AI-powered team logo generation, league reports, and player research.', 'mcp-ai-wpoos-pro' ); ?></p>
 
 		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 		<ul>
 			<li><?php esc_html_e( 'Yahoo Fantasy Sports Integration: Connect with Yahoo Fantasy Sports API to sync leagues, rosters, and player data', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'ESPN Fantasy Football Integration: Access ESPN leagues with support for both public and private leagues', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'League Management: Track team standings, win/loss records, and points for/against', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'Trade Analysis: AI-powered trade analyzer to evaluate potential trades', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'Team Branding: Generate custom team logos with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -72,15 +73,29 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 	 */
 	protected function get_tools_list() {
 		return array(
-			'yahoo_ff_auth'           => __( 'Yahoo Fantasy Sports Authentication', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_get_leagues'    => __( 'Get User Leagues', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_get_roster'     => __( 'Get Team Roster', 'mcp-ai-wpoos-pro' ),
+			// Yahoo Fantasy Football API tools.
+			'yahoo_ff_auth'             => __( 'Yahoo Fantasy Sports Authentication', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_get_leagues'      => __( 'Get User Leagues', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_get_roster'       => __( 'Get Team Roster', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_get_player_stats' => __( 'Get Player Statistics', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_trade_analyzer' => __( 'Analyze Trade Proposals', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_trade_analyzer'   => __( 'Analyze Trade Proposals', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_league_standings' => __( 'Get League Standings', 'mcp-ai-wpoos-pro' ),
-			'ff_generate_team_logo'   => __( 'Generate Team Logo', 'mcp-ai-wpoos-pro' ),
-			'ff_create_league_report' => __( 'Create League Report', 'mcp-ai-wpoos-pro' ),
-			'ff_player_research'      => __( 'Player Research & Watchlist', 'mcp-ai-wpoos-pro' ),
+			// ESPN Fantasy Football API tools.
+			'espn_fantasy_get_league'     => __( 'ESPN: Get League Info', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_teams'      => __( 'ESPN: Get Teams', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_roster'     => __( 'ESPN: Get Team Roster', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_standings'  => __( 'ESPN: Get League Standings', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_analyze_lineup' => __( 'ESPN: Analyze Lineup', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_sync_league'    => __( 'ESPN: Sync League Data', 'mcp-ai-wpoos-pro' ),
+			// Fantasy Football specific tools.
+			'ff_generate_team_logo'     => __( 'Generate Team Logo', 'mcp-ai-wpoos-pro' ),
+			'ff_create_league_report'   => __( 'Create League Report', 'mcp-ai-wpoos-pro' ),
+			'ff_player_research'        => __( 'Player Research & Watchlist', 'mcp-ai-wpoos-pro' ),
+			// Research and analysis tools.
+			'web_search'                => __( 'Web Search', 'mcp-ai-wpoos-pro' ),
+			'deep_research'             => __( 'Deep Research', 'mcp-ai-wpoos-pro' ),
+			'search_content'            => __( 'Search Site Content', 'mcp-ai-wpoos-pro' ),
+			'semantic_content_search'   => __( 'Semantic Content Search', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -91,7 +106,7 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		// Call parent to register base fields (assistant).
 		parent::register_settings();
 
-		// Add Yahoo API Credentials section.
+		// Add Yahoo API Credentials notice section - credentials now managed in Connections.
 		add_settings_section(
 			$this->option_name . '_yahoo_api_section',
 			__( 'Yahoo Fantasy Sports API', 'mcp-ai-wpoos-pro' ),
@@ -99,29 +114,12 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 			$this->option_name
 		);
 
-		add_settings_field(
-			'yahoo_client_id',
-			__( 'Yahoo Client ID', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_text_field' ),
-			$this->option_name,
-			$this->option_name . '_yahoo_api_section',
-			array(
-				'id'          => 'yahoo_client_id',
-				'placeholder' => __( 'Consumer Key from Yahoo Developer', 'mcp-ai-wpoos-pro' ),
-			)
-		);
-
-		add_settings_field(
-			'yahoo_client_secret',
-			__( 'Yahoo Client Secret', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_text_field' ),
-			$this->option_name,
-			$this->option_name . '_yahoo_api_section',
-			array(
-				'id'          => 'yahoo_client_secret',
-				'type'        => 'password',
-				'placeholder' => __( 'Consumer Secret from Yahoo Developer', 'mcp-ai-wpoos-pro' ),
-			)
+		// Add ESPN API Credentials notice section - credentials now managed in Connections.
+		add_settings_section(
+			$this->option_name . '_espn_api_section',
+			__( 'ESPN Fantasy Football API', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_espn_api_section' ),
+			$this->option_name
 		);
 
 		// Default Preferences section.
@@ -235,9 +233,28 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		<p>
 			<?php
 			printf(
-				/* translators: %s: Yahoo Developer URL */
-				esc_html__( 'Enter your Yahoo Fantasy Sports API credentials. Get them from %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %1$s: URL to connections settings, %2$s: Yahoo Developer URL */
+				esc_html__( 'Yahoo Fantasy Sports API credentials are now managed in the %1$s. Once configured there, the credentials will be automatically available to all Fantasy Football tools. To create your Yahoo application and get credentials, visit %2$s.', 'mcp-ai-wpoos-pro' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=yahoo_sports' ) ) . '">' . esc_html__( 'Connections Settings', 'mcp-ai-wpoos-pro' ) . '</a>',
 				'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render ESPN API section description.
+	 */
+	public function render_espn_api_section() {
+		?>
+		<p>
+			<?php
+			printf(
+				/* translators: %1$s: URL to connections settings, %2$s: ESPN authentication guide URL */
+				esc_html__( 'ESPN Fantasy Football API credentials (S2 and SWID cookies) are now managed in the %1$s. Once configured there, they will be automatically available to all ESPN Fantasy tools. ESPN works with both public and private leagues - authentication is only required for private leagues. For instructions on obtaining these cookies, see %2$s.', 'mcp-ai-wpoos-pro' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=espn_sports' ) ) . '">' . esc_html__( 'Connections Settings', 'mcp-ai-wpoos-pro' ) . '</a>',
+				'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
 			);
 			?>
 		</p>
@@ -366,8 +383,8 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 	public function sanitize_settings( $input ) {
 		$sanitized = parent::sanitize_settings( $input );
 
-		// Text fields.
-		$text_fields = array( 'yahoo_client_id', 'yahoo_client_secret', 'default_season', 'default_logo_style' );
+		// Text fields (yahoo credentials removed - now in Connections settings).
+		$text_fields = array( 'default_season', 'default_logo_style' );
 		foreach ( $text_fields as $field ) {
 			if ( isset( $input[ $field ] ) ) {
 				$sanitized[ $field ] = sanitize_text_field( $input[ $field ] );

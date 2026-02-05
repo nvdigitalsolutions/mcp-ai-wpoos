@@ -582,6 +582,9 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 // Provides 9 core orchestration tools for autonomous AI workflows.
 require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 
+// Load slash commands system (Phase 1 PRO_PLUGIN_ENHANCEMENT).
+require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
@@ -694,6 +697,10 @@ if ( is_admin() ) {
 
 	// Load Multi-Agent Dashboard.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
+
+	// Load Slash Commands Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
+	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
 
 	// Load ISO 27001 Asset Inventory System (Control A.5.9).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
@@ -1867,6 +1874,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
 		flush_rewrite_rules();
+
+		// Create slash command audit table.
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+			$audit = new WP_MCP_AI_Slash_Command_Audit();
+			$audit->create_table();
+		}
 	}
 }
 

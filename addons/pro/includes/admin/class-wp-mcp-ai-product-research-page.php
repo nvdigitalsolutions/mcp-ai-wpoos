@@ -259,10 +259,50 @@ class WP_MCP_AI_Product_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive product tools.
-							// Includes research, creation, competitor analysis, and catalog management.
+							// Render chat interface with comprehensive WooCommerce product tools.
+							$product_tools = array(
+								// Product research and creation.
+								'research_product',
+								'create_woo_product',
+								'create_product_advanced',
+								'scrape_product',
+								// Product management.
+								'get_woo_products',
+								'bulk_update_products',
+								'import_products_csv',
+								'export_products_report',
+								// Inventory management.
+								'sync_product_inventory',
+								'track_inventory_movement',
+								'inventory_forecast',
+								'low_stock_alert_automation',
+								// Order management.
+								'get_woo_recent_orders',
+								'get_order_analytics',
+								'process_order_workflow',
+								'bulk_order_status_update',
+								'generate_invoice_pdf',
+								'refund_order_advanced',
+								// Customer analytics.
+								'segment_customers',
+								'customer_lifetime_value',
+								'export_customer_data',
+								'abandoned_cart_recovery',
+								// Sales optimization.
+								'upsell_recommendations',
+								'create_discount_campaign',
+								'sales_performance_dashboard',
+								// Image generation.
+								'generate_openai_image',
+								'generate_image_alt_text',
+								'generate_image_caption',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_product,create_woo_product,scrape_product,get_woo_products,get_woo_recent_orders,web_search,search_content,generate_openai_image,generate_image_alt_text"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $product_tools ) ) . '"]'
 							);
 							?>
 						</div>

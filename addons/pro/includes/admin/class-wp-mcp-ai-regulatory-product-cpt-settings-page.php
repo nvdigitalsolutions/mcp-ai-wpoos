@@ -32,9 +32,33 @@ class WP_MCP_AI_Regulatory_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_
 		$this->page_slug   = 'regulatory-product-settings';
 		$this->page_title  = __( 'Regulatory Product Settings', 'mcp-ai-wpoos-pro' );
 		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
-		$this->option_name = 'wp_mcp_ai_regulatory_product_settings';
+		$this->option_name = 'wp_mcp_ai_reg_product_settings';
 
 		parent::__construct();
+
+		// Migrate settings from old option name if needed.
+		$this->migrate_settings_if_needed();
+	}
+
+	/**
+	 * Migrate settings from old option name to new shorter name.
+	 *
+	 * @since 1.2.0
+	 */
+	private function migrate_settings_if_needed() {
+		$old_option_name = 'wp_mcp_ai_regulatory_product_settings';
+		$new_option_name = 'wp_mcp_ai_reg_product_settings';
+
+		// Check if old option exists and new option doesn't.
+		$old_settings = get_option( $old_option_name, false );
+		$new_settings = get_option( $new_option_name, false );
+
+		if ( false !== $old_settings && false === $new_settings ) {
+			// Migrate settings from old to new option name.
+			update_option( $new_option_name, $old_settings );
+			// Delete old option to avoid confusion.
+			delete_option( $old_option_name );
+		}
 	}
 
 	/**

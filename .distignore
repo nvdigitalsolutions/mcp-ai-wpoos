@@ -31,10 +31,14 @@ node_modules
 vendor-dev
 composer.json
 composer.lock
+package.json
 package-lock.json
 babel.config.js
 jest.config.js
 esbuild.config.js
+webpack.config.js
+tsconfig.json
+.npmrc
 
 # Development scripts
 bin
@@ -65,7 +69,9 @@ docs
 Makefile
 Gruntfile.js
 Gulpfile.js
-webpack.config.js
+
+# Source files (only include built bundles)
+src/
 
 # Archives
 *.zip
@@ -105,7 +111,7 @@ verify-*.php
 verify-*.sh
 
 # Build output and build-time directories (not needed in SVN)
-build
+# Note: build/workflow-builder/ is included (contains pre-built visual builder assets)
 svn-*
 addons
 core

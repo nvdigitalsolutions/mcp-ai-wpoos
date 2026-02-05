@@ -672,6 +672,7 @@ foreach ( $stats as $component => $data ) {
 - [Performance Testing Guide](../../developer/testing/performance-testing-guide.md)
 - [NV oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)
+- [Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor)
 - [Elementor Developer Docs](https://developers.elementor.com/)
 
 ## Support

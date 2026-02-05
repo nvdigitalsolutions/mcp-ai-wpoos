@@ -229,10 +229,30 @@ class WP_MCP_AI_Project_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive project tools.
-							// Includes research, creation, task management, and calendar tools.
+							// Render chat interface with comprehensive project management tools.
+							$project_tools = array(
+								// Project management.
+								'research_project',
+								'create_project',
+								'list_projects',
+								'update_project',
+								'delete_project',
+								// Task management.
+								'create_task',
+								'list_tasks',
+								'update_task',
+								'delete_task',
+								// Event management.
+								'create_event',
+								'list_events',
+								'get_calendar_view',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_project,create_project,list_projects,create_task,list_tasks,create_event,list_events,get_calendar_view,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $project_tools ) ) . '"]'
 							);
 							?>
 						</div>

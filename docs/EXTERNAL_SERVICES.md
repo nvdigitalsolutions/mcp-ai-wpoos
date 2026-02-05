@@ -89,7 +89,34 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 ---
 
-### 3. Ollama (Self-Hosted)
+### 3. Anthropic API (Claude)
+
+**Service URL:** `https://api.anthropic.com/v1/messages`  
+**Purpose:** Core AI functionality (chat, vision, document analysis)  
+**Data Sent:**
+- Chat messages and conversation history
+- System prompts and instructions
+- File attachments (images, documents)
+- Tool execution results
+
+**When Used:**
+- Every time an AI assistant is used with Anthropic as the provider
+- Vision and document analysis features
+
+**Legal & Privacy:**
+- **Terms of Service:** https://www.anthropic.com/legal/consumer-terms
+- **Privacy Policy:** https://www.anthropic.com/legal/privacy
+- **Commercial Terms:** https://www.anthropic.com/legal/commercial-terms
+- **Usage Policy:** https://www.anthropic.com/legal/aup
+- **Data Usage:** Anthropic does not train models on API data (Claude API)
+- **Data Retention:** Review Anthropic's privacy policy for retention details
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-anthropic-client.php`
+
+---
+
+### 4. Ollama (Self-Hosted)
 
 **Service URL:** Your local server (typically `http://localhost:11434`)  
 **Purpose:** Privacy-focused local AI processing  
@@ -108,7 +135,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 ---
 
-### 4. LM Studio (Self-Hosted)
+### 5. LM Studio (Self-Hosted)
 
 **Service URL:** Your local computer (typically `http://localhost:1234`)  
 **Purpose:** Local AI with function calling support  
@@ -127,7 +154,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 ---
 
-### 5. Cloudflare Workers AI
+### 6. Cloudflare Workers AI
 
 **Service URL:** `https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}`  
 **Purpose:** AI image generation and inference  
@@ -141,6 +168,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 - **Terms of Service:** https://www.cloudflare.com/terms/
 - **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
 - **Workers AI Docs:** https://developers.cloudflare.com/workers-ai/
+- **Data Usage:** Review Cloudflare's privacy policy for data handling details
 
 **Related Files:**
 - `includes/class-wp-mcp-ai-cloudflare-client.php`
@@ -152,7 +180,7 @@ These are the core AI services that power the plugin's assistant functionality. 
 
 These services provide real-world data for AI assistants (weather, news, search, etc.).
 
-### 6. Brave Search API
+### 7. Brave Search API
 
 **Service URL:** `https://api.search.brave.com/res/v1/web/search`  
 **Purpose:** Web search functionality for AI assistants  
@@ -175,7 +203,7 @@ These services provide real-world data for AI assistants (weather, news, search,
 
 ---
 
-### 7. Open-Meteo Weather API
+### 8. Open-Meteo Weather API
 
 **Service URL:** `https://api.open-meteo.com`  
 **Purpose:** Weather forecasts and historical weather data  
@@ -197,7 +225,7 @@ These services provide real-world data for AI assistants (weather, news, search,
 
 ---
 
-### 8. ReliefWeb API (UN OCHA)
+### 9. ReliefWeb API (UN OCHA)
 
 **Service URL:** `https://api.reliefweb.int/v1/reports`  
 **Purpose:** Humanitarian disaster and emergency reports  
@@ -218,7 +246,7 @@ These services provide real-world data for AI assistants (weather, news, search,
 
 ---
 
-### 9. Hugging Face Datasets API
+### 10. Hugging Face Datasets API
 
 **Service URL:** `https://huggingface.co/api/datasets`  
 **Purpose:** Access to public machine learning datasets  
@@ -232,6 +260,7 @@ These services provide real-world data for AI assistants (weather, news, search,
 - **Terms of Service:** https://huggingface.co/terms-of-service
 - **Privacy Policy:** https://huggingface.co/privacy
 - **Dataset Licenses:** Varies by dataset (check individual dataset pages)
+- **Data Usage:** Review Hugging Face's privacy policy for data handling details
 
 **Related Files:**
 - `includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php`
@@ -243,7 +272,7 @@ These services provide real-world data for AI assistants (weather, news, search,
 
 These services provide libraries and assets used by the plugin.
 
-### 10. jsDelivr CDN
+### 11. jsDelivr CDN
 
 **Service URL:** `https://cdn.jsdelivr.net`  
 **Purpose:** Chart.js library for data visualization  
@@ -270,7 +299,7 @@ These services provide libraries and assets used by the plugin.
 
 These services are **only used if you explicitly configure OAuth integrations**. They are entirely optional.
 
-### 11. GitHub API
+### 12. GitHub API
 
 **Service URL:** `https://api.github.com`  
 **Purpose:** Repository management, code search, issue tracking, pull requests  
@@ -295,7 +324,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 ---
 
-### 12. Cloudways API
+### 13. Cloudways API
 
 **Service URL:** `https://api.cloudways.com/api/v1`  
 **Purpose:** Server management for Cloudways hosting customers  
@@ -316,7 +345,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 ---
 
-### 13. QuickBooks API (Intuit)
+### 14. QuickBooks API (Intuit)
 
 **Service URL:** `https://appcenter.intuit.com/connect/oauth2`  
 **Purpose:** Accounting and financial data integration  
@@ -337,7 +366,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 ---
 
-### 14. Mailjet API
+### 15. Mailjet API
 
 **Service URL:** `https://app.mailjet.com/oauth/authorize`  
 **Purpose:** Email marketing and transactional email  
@@ -359,7 +388,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 ---
 
-### 15. Flowhub API
+### 16. Flowhub API
 
 **Service URL:** `https://api.flowhub.com` (if applicable)  
 **Purpose:** Cannabis retail inventory management  
@@ -384,7 +413,7 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 These are official WordPress.org services used for plugin functionality.
 
-### 16. WordPress.org Core API
+### 17. WordPress.org Core API
 
 **Service URL:** `https://api.wordpress.org/core/serve-happy/1.0/`  
 **Purpose:** PHP version compatibility check for site health  
@@ -473,19 +502,23 @@ When adding a new external service integration:
 
 | Service | Status | Last Verified | Notes |
 |---------|--------|---------------|-------|
-| OpenAI API | Active | 2026-01 | Stable |
-| Google Gemini | Active | 2026-01 | Stable |
-| Ollama | Active | 2026-01 | Self-hosted |
-| LM Studio | Active | 2026-01 | Self-hosted |
-| Brave Search | Active | 2026-01 | Requires API key |
-| Open-Meteo | Active | 2026-01 | Free tier available |
-| ReliefWeb | Active | 2026-01 | Public API |
-| Chart.js CDN | Active | 2026-01 | To be replaced with local |
-| GitHub API | Active | 2026-01 | OAuth required |
-| Cloudways | Active | 2026-01 | OAuth required |
-| QuickBooks | Active | 2026-01 | OAuth required |
-| Mailjet | Active | 2026-01 | OAuth required |
-| WordPress.org | Active | 2026-01 | Core service |
+| OpenAI API | Active | 2026-02 | Stable |
+| Google Gemini | Active | 2026-02 | Stable |
+| Anthropic (Claude) | Active | 2026-02 | Stable |
+| Ollama | Active | 2026-02 | Self-hosted |
+| LM Studio | Active | 2026-02 | Self-hosted |
+| Cloudflare Workers AI | Active | 2026-02 | Image generation |
+| Brave Search | Active | 2026-02 | Requires API key |
+| Open-Meteo | Active | 2026-02 | Free tier available |
+| ReliefWeb | Active | 2026-02 | Public API |
+| Hugging Face | Active | 2026-02 | Dataset access |
+| Chart.js CDN | Active | 2026-02 | To be replaced with local |
+| GitHub API | Active | 2026-02 | OAuth required |
+| Cloudways | Active | 2026-02 | OAuth required |
+| QuickBooks | Active | 2026-02 | OAuth required |
+| Mailjet | Active | 2026-02 | OAuth required |
+| Flowhub | Active | 2026-02 | Cannabis retail |
+| WordPress.org | Active | 2026-02 | Core service |
 
 ---
 
