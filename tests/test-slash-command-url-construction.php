@@ -15,13 +15,16 @@
 class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 
 	/**
-	 * Test that restUrl is constructed with proper pattern.
+	 * Test that endpoint URLs are constructed with proper pattern.
 	 *
 	 * This test validates the fix for PR #3580 where the URL
 	 * was incorrectly generated as:
 	 * /wp-json/mcp-ai/v1//mcp-ai/v1/slash-command/list
 	 * instead of:
 	 * /wp-json/mcp-ai/v1/slash-command/list
+	 *
+	 * The fix provides complete endpoint URLs (like chat.js does) rather than
+	 * requiring JavaScript concatenation.
 	 */
 	public function test_rest_url_uses_constant() {
 		// Initialize slash commands.
@@ -40,33 +43,45 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 
 		$data = json_decode( $matches[1], true );
 		$this->assertIsArray( $data, 'mcpAiData should be valid JSON' );
-		$this->assertArrayHasKey( 'restUrl', $data, 'mcpAiData should have restUrl key' );
+		
+		// Check that specific endpoint URLs are provided.
+		$this->assertArrayHasKey( 'slashCommandEndpoint', $data, 'mcpAiData should have slashCommandEndpoint key' );
+		$this->assertArrayHasKey( 'slashCommandListEndpoint', $data, 'mcpAiData should have slashCommandListEndpoint key' );
 
-		$rest_url = $data['restUrl'];
+		// Also check backward compatibility with restUrl.
+		$this->assertArrayHasKey( 'restUrl', $data, 'mcpAiData should have restUrl key for backward compatibility' );
 
-		// Verify URL ends with trailing slash.
-		$this->assertStringEndsWith( '/', $rest_url, 'restUrl should have a trailing slash' );
-
-		// Verify URL contains /mcp-ai/v1/ exactly once.
-		$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'restUrl should contain /mcp-ai/v1/' );
-
+		// Test slashCommandEndpoint.
+		$slash_command_endpoint = $data['slashCommandEndpoint'];
+		$this->assertStringEndsWith( '/slash-command', $slash_command_endpoint, 'slashCommandEndpoint should end with /slash-command' );
+		
 		// Count occurrences of 'mcp-ai/v1' - should be exactly 1.
-		$count = substr_count( $rest_url, 'mcp-ai/v1' );
-		$this->assertEquals( 1, $count, 'restUrl should contain mcp-ai/v1 exactly once, not duplicated' );
+		$count = substr_count( $slash_command_endpoint, 'mcp-ai/v1' );
+		$this->assertEquals( 1, $count, 'slashCommandEndpoint should contain mcp-ai/v1 exactly once, not duplicated' );
 
 		// Verify no double slashes (except in protocol).
-		$url_without_protocol = preg_replace( '#^https?://#', '', $rest_url );
-		$this->assertStringNotContainsString( '//', $url_without_protocol, 'restUrl should not contain double slashes in path' );
+		$url_without_protocol = preg_replace( '#^https?://#', '', $slash_command_endpoint );
+		$this->assertStringNotContainsString( '//', $url_without_protocol, 'slashCommandEndpoint should not contain double slashes in path' );
 
-		// Simulate JavaScript concatenation.
-		$endpoint_url = $rest_url . 'slash-command/list';
+		// Test slashCommandListEndpoint.
+		$slash_command_list_endpoint = $data['slashCommandListEndpoint'];
+		$this->assertStringEndsWith( '/slash-command/list', $slash_command_list_endpoint, 'slashCommandListEndpoint should end with /slash-command/list' );
 
-		// Verify final URL format is correct.
-		$this->assertStringEndsWith( '/mcp-ai/v1/slash-command/list', $endpoint_url, 'Final endpoint URL should be correctly formed' );
+		// Count occurrences of 'mcp-ai/v1' - should be exactly 1.
+		$count = substr_count( $slash_command_list_endpoint, 'mcp-ai/v1' );
+		$this->assertEquals( 1, $count, 'slashCommandListEndpoint should contain mcp-ai/v1 exactly once, not duplicated' );
 
-		// Verify the endpoint doesn't have duplicate namespace.
-		$namespace_count = substr_count( $endpoint_url, 'mcp-ai/v1' );
-		$this->assertEquals( 1, $namespace_count, 'Final endpoint URL should contain namespace exactly once' );
+		// Verify no double slashes (except in protocol).
+		$url_without_protocol = preg_replace( '#^https?://#', '', $slash_command_list_endpoint );
+		$this->assertStringNotContainsString( '//', $url_without_protocol, 'slashCommandListEndpoint should not contain double slashes in path' );
+
+		// Test backward compatibility with restUrl.
+		$rest_url = $data['restUrl'];
+		$this->assertStringEndsWith( '/', $rest_url, 'restUrl should have a trailing slash' );
+		$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'restUrl should contain /mcp-ai/v1/' );
+		
+		$count = substr_count( $rest_url, 'mcp-ai/v1' );
+		$this->assertEquals( 1, $count, 'restUrl should contain mcp-ai/v1 exactly once, not duplicated' );
 	}
 
 	/**
