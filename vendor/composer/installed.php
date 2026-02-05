@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-issue',
-        'version' => 'dev-copilot/fix-pro-workflow-builder-issue',
-        'reference' => '65706302dfd31307ca7c1abbf766373efca4f628',
+        'pretty_version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
+        'version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
+        'reference' => '10cda38a1b3131747ec378392589cc0a9bae5ba5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-pro-workflow-builder-issue',
-            'version' => 'dev-copilot/fix-pro-workflow-builder-issue',
-            'reference' => '65706302dfd31307ca7c1abbf766373efca4f628',
+            'pretty_version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
+            'version' => 'dev-copilot/fix-empty-password-vault-cpt-page',
+            'reference' => '10cda38a1b3131747ec378392589cc0a9bae5ba5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
