@@ -12,6 +12,12 @@ import { createRoot } from '@wordpress/element';
 import WorkflowBuilder from './components/WorkflowBuilder';
 import './styles/workflow-builder.css';
 
+// Constants for retry logic
+const MAX_INIT_ATTEMPTS = 10;
+const INITIAL_DELAY_MS = 50;
+const BACKOFF_MULTIPLIER = 1.5;
+const MAX_DELAY_MS = 500;
+
 /**
  * Initialize the Workflow Builder application
  * 
@@ -23,9 +29,9 @@ const initWorkflowBuilder = ( attempt = 1 ) => {
 	if ( container ) {
 		const root = createRoot( container );
 		root.render( <WorkflowBuilder /> );
-	} else if ( attempt < 10 ) {
-		// Container not found yet, retry with exponential backoff (max 10 attempts)
-		const delay = Math.min( 50 * Math.pow( 1.5, attempt - 1 ), 500 );
+	} else if ( attempt < MAX_INIT_ATTEMPTS ) {
+		// Container not found yet, retry with exponential backoff
+		const delay = Math.min( INITIAL_DELAY_MS * Math.pow( BACKOFF_MULTIPLIER, attempt - 1 ), MAX_DELAY_MS );
 		setTimeout( () => initWorkflowBuilder( attempt + 1 ), delay );
 	} else {
 		// eslint-disable-next-line no-console
@@ -39,15 +45,7 @@ const initWorkflowBuilder = ( attempt = 1 ) => {
 const startInit = () => {
 	// Use requestAnimationFrame to defer execution to next browser paint
 	// This ensures the DOM is fully ready and all elements are accessible
-	if ( typeof requestAnimationFrame !== 'undefined' ) {
-		requestAnimationFrame( () => {
-			// Additional timeout to ensure DOM elements are fully rendered
-			setTimeout( initWorkflowBuilder, 0 );
-		} );
-	} else {
-		// Fallback for older browsers
-		setTimeout( initWorkflowBuilder, 0 );
-	}
+	requestAnimationFrame( initWorkflowBuilder );
 };
 
 // Initialize based on document ready state
