@@ -67,6 +67,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 
 	/**
+	 * Check if debug logging is enabled.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return bool True if debug logging is enabled, false otherwise.
+	 */
+	private function is_debug_logging_enabled() {
+		return defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+	}
+
+	/**
 	 * Enqueue admin assets.
 	 *
 	 * @since 2.0.0
@@ -75,18 +86,15 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 */
 	public function enqueue_assets( $hook ) {
 		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
-		// Also check via $_GET for additional safety (following pattern from Orchestration Dashboard).
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
-		$get_page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-		$is_workflow_page = ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG === $hook ) || ( self::PAGE_SLUG === $get_page );
+		$expected_hook = 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG;
 
 		// Debug logging for troubleshooting asset enqueue issues.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+		if ( $this->is_debug_logging_enabled() ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-			error_log( sprintf( 'Workflow Builder: Hook=%s, GET page=%s, Is workflow page=%s', $hook, $get_page ? $get_page : 'not set', $is_workflow_page ? 'YES' : 'NO' ) );
+			error_log( sprintf( 'Workflow Builder: Hook=%s, Expected=%s, Match=%s', $hook, $expected_hook, ( $expected_hook === $hook ) ? 'YES' : 'NO' ) );
 		}
 
-		if ( ! $is_workflow_page ) {
+		if ( $expected_hook !== $hook ) {
 			return;
 		}
 
@@ -97,7 +105,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			$asset = require $asset_file;
 			
 			// Debug logging.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			if ( $this->is_debug_logging_enabled() ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
 				error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
 			}
@@ -119,7 +127,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		} else {
 			// Fallback for development - load from src.
 			// Debug logging.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			if ( $this->is_debug_logging_enabled() ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
 				error_log( 'Workflow Builder: Built assets not found, using development fallback' );
 			}

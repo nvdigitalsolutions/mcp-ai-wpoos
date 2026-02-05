@@ -132,7 +132,7 @@ add_action( 'admin_init', 'wp_mcp_ai_pro_init_workflow_builder_page', 10 );
 - ✅ Added comprehensive documentation of the hook timeline
 - ✅ Explained why this pattern works and eliminates the race condition
 
-### Change 2: Enhanced Asset Enqueuing with Fallback
+### Change 2: Enhanced Asset Enqueuing with Debug Logging
 
 **Before (lines 76-80):**
 ```php
@@ -143,38 +143,67 @@ public function enqueue_assets( $hook ) {
 	}
 ```
 
-**After (lines 76-91):**
+**After (lines 69-99):**
 ```php
+/**
+ * Check if debug logging is enabled.
+ *
+ * @since 2.0.0
+ *
+ * @return bool True if debug logging is enabled, false otherwise.
+ */
+private function is_debug_logging_enabled() {
+	return defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+}
+
+/**
+ * Enqueue admin assets.
+ *
+ * @since 2.0.0
+ *
+ * @param string $hook Current admin page hook.
+ */
 public function enqueue_assets( $hook ) {
 	// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
-	// Also check via $_GET for additional safety (following pattern from Orchestration Dashboard).
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
-	$get_page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-	$is_workflow_page = ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG === $hook ) || ( self::PAGE_SLUG === $get_page );
+	$expected_hook = 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG;
 
 	// Debug logging for troubleshooting asset enqueue issues.
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+	if ( $this->is_debug_logging_enabled() ) {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-		error_log( sprintf( 'Workflow Builder: Hook=%s, GET page=%s, Is workflow page=%s', $hook, $get_page ? $get_page : 'not set', $is_workflow_page ? 'YES' : 'NO' ) );
+		error_log( sprintf( 'Workflow Builder: Hook=%s, Expected=%s, Match=%s', $hook, $expected_hook, ( $expected_hook === $hook ) ? 'YES' : 'NO' ) );
 	}
 
-	if ( ! $is_workflow_page ) {
+	if ( $expected_hook !== $hook ) {
 		return;
 	}
 ```
 
 **Key Points:**
-- ✅ Follows the pattern from Orchestration Dashboard (proven to work)
-- ✅ Adds `$_GET['page']` fallback check with proper sanitization
-- ✅ Adds debug logging to help diagnose future issues
-- ✅ All user input is sanitized using `sanitize_text_field()` and `wp_unslash()`
+- ✅ Uses only the `$hook` parameter (provided by WordPress, reliable and secure)
+- ✅ Adds `is_debug_logging_enabled()` helper method to reduce code duplication
+- ✅ Improved debug messages show expected vs actual hook values
+- ✅ No nonce bypass or user input handling concerns
 
 ### Change 3: Debug Logging for Asset Loading
 
-**Added at lines 100-103 and 122-125:**
+**Added helper method at lines 69-78:**
+```php
+/**
+ * Check if debug logging is enabled.
+ *
+ * @since 2.0.0
+ *
+ * @return bool True if debug logging is enabled, false otherwise.
+ */
+private function is_debug_logging_enabled() {
+	return defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG;
+}
+```
+
+**Added at lines 108-110 and 130-132:**
 ```php
 // Debug logging.
-if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+if ( $this->is_debug_logging_enabled() ) {
 	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
 	error_log( sprintf( 'Workflow Builder: Enqueuing built assets from %s', $asset_file ) );
 }
@@ -184,6 +213,7 @@ if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_
 - ✅ Helps diagnose if assets are being found and loaded
 - ✅ Only logs when `WP_DEBUG` and `WP_DEBUG_LOG` are both enabled
 - ✅ Clear, actionable log messages
+- ✅ Helper method reduces code duplication
 
 ## Testing
 
@@ -206,7 +236,7 @@ if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_
    
    Check the debug log for these messages:
    ```
-   Workflow Builder: Hook=nvoos-pro-dashboard_page_nvoos-pro-workflow-builder, GET page=nvoos-pro-workflow-builder, Is workflow page=YES
+   Workflow Builder: Hook=nvoos-pro-dashboard_page_nvoos-pro-workflow-builder, Expected=nvoos-pro-dashboard_page_nvoos-pro-workflow-builder, Match=YES
    Workflow Builder: Enqueuing built assets from /path/to/addons/pro/build/workflow-builder/workflow-builder.asset.php
    ```
 
@@ -232,9 +262,9 @@ The documented fix described the problem and solution correctly, but the actual 
 This fix follows WordPress core best practices:
 
 1. **Hook Priority Management:** Uses appropriate hook priorities to ensure correct loading order
-2. **Defensive Programming:** Adds fallback checks and error handling
+2. **Code Maintainability:** Extracts reusable helper methods to reduce duplication
 3. **Debug Logging:** Conditional logging that respects `WP_DEBUG` settings
-4. **Input Sanitization:** All user input is sanitized before use
+4. **Secure Implementation:** Uses WordPress-provided `$hook` parameter exclusively
 5. **Documentation:** Clear PHPDoc comments explaining the hook timeline
 
 ## Prevention Guidelines
