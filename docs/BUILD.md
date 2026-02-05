@@ -26,8 +26,8 @@ All Symfony components are included in production builds and provide enterprise-
 ## Prerequisites
 
 ### For Asset Building
-- Node.js (v20 or higher)
-- npm (v10 or higher)
+- Node.js (v14 or higher)
+- npm (v6 or higher)
 
 ### For PHP Development
 - PHP 7.4 or higher
