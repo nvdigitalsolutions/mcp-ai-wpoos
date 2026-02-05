@@ -1074,7 +1074,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				<form id="wp-mcp-ai-settings-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wp_mcp_ai_save_settings' ); ?>
-					<?php settings_fields( 'wp_mcp_ai_settings_group' ); ?>
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
 					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 
