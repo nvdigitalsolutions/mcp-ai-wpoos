@@ -50,6 +50,7 @@ composer.phar
 !/vendor/paragonie/
 !/vendor/php-http/
 !/vendor/phpseclib/
+!/vendor/phpoffice/
 !/vendor/psr/
 !/vendor/rahul900day/
 !/vendor/ralouphie/
