@@ -44,7 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 *
 		 * @param mixed ...$args Variable arguments passed by WordPress hooks (not used).
 		 */
-		public function safe_ajax_handler( ...$args ) {
+		public function safe_ajax_handler( ...$args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter accepts variable WordPress hook arguments.
 			// Clean any previous output.
 			$this->clean_all_buffers();
 
@@ -59,6 +59,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
+				'wp_ajax_wp_mcp_ai_test_plaid_connection' => 'handle_test_plaid_connection',
+				'wp_ajax_wp_mcp_ai_test_yahoo_connection' => 'handle_test_yahoo_connection',
+				'wp_ajax_wp_mcp_ai_test_removebg_connection' => 'handle_test_removebg_connection',
 				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
 				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
@@ -866,6 +869,271 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $result['message'],
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Plaid API connection.
+		 *
+		 * Tests the Plaid connection by attempting to create a link token, which validates
+		 * the client ID and secret without requiring actual bank linking.
+		 */
+		public function handle_test_plaid_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$client_id   = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+			$secret      = isset( $_POST['secret'] ) ? sanitize_text_field( wp_unslash( $_POST['secret'] ) ) : '';
+			$environment = isset( $_POST['environment'] ) ? sanitize_text_field( wp_unslash( $_POST['environment'] ) ) : 'sandbox';
+
+			if ( empty( $client_id ) || empty( $secret ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide both Plaid Client ID and Secret.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Validate environment.
+			if ( ! in_array( $environment, array( 'sandbox', 'development', 'production' ), true ) ) {
+				$environment = 'sandbox';
+			}
+
+			// Determine Plaid API base URL based on environment.
+			$base_urls = array(
+				'sandbox'     => 'https://sandbox.plaid.com',
+				'development' => 'https://development.plaid.com',
+				'production'  => 'https://production.plaid.com',
+			);
+
+			$base_url = $base_urls[ $environment ];
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 10, $timeout );
+
+			// Test the connection by creating a link token.
+			// This validates credentials without requiring actual bank linking.
+			$api_url = $base_url . '/link/token/create';
+
+			$body = wp_json_encode(
+				array(
+					'client_id'    => $client_id,
+					'secret'       => $secret,
+					'user'         => array(
+						'client_user_id' => 'test_user_' . uniqid(),
+					),
+					'client_name'  => get_bloginfo( 'name' ),
+					'products'     => array( 'transactions' ),
+					'country_codes' => array( 'US' ),
+					'language'     => 'en',
+				)
+			);
+
+			$response = wp_remote_post(
+				$api_url,
+				array(
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'    => $body,
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$response_data = json_decode( $response_body, true );
+
+			if ( 200 === $response_code && isset( $response_data['link_token'] ) ) {
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Environment name */
+							__( 'Successfully connected to Plaid %s environment! Your credentials are valid.', 'mcp-ai-wpoos' ),
+							ucfirst( $environment )
+						),
+					)
+				);
+				return;
+			}
+
+			// Handle error response.
+			$error_message = __( 'Invalid credentials or connection error.', 'mcp-ai-wpoos' );
+
+			if ( isset( $response_data['error_message'] ) ) {
+				$error_message = sanitize_text_field( $response_data['error_message'] );
+			} elseif ( isset( $response_data['error_code'] ) ) {
+				$error_message = sprintf(
+					/* translators: %s: Error code */
+					__( 'Plaid error: %s', 'mcp-ai-wpoos' ),
+					sanitize_text_field( $response_data['error_code'] )
+				);
+			}
+
+			wp_send_json_error(
+				array(
+					'message'       => $error_message,
+					'response_code' => $response_code,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Yahoo Sports API connection.
+		 *
+		 * Note: This performs basic validation only. Yahoo uses OAuth 1.0a which requires
+		 * request signing for full API validation. Complete OAuth verification is handled
+		 * by the Yahoo FF Auth tool during the actual authentication flow.
+		 */
+		public function handle_test_yahoo_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$client_id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+			$client_secret = isset( $_POST['client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['client_secret'] ) ) : '';
+
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide both Yahoo Client ID and Client Secret.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Perform basic format validation: Check minimum credential length.
+			// Yahoo credentials are typically 50+ characters, but we use a conservative check.
+			if ( strlen( $client_id ) < 10 ) {
+				wp_send_json_error( array( 'message' => __( 'Yahoo Client ID appears to be too short. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( strlen( $client_secret ) < 10 ) {
+				wp_send_json_error( array( 'message' => __( 'Yahoo Client Secret appears to be too short. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Basic validation passed - credentials format looks correct.
+			// Full OAuth 1.0a validation (which requires request signing) happens during
+			// the actual authentication flow via the Yahoo FF Auth tool.
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: Client ID length, 2: Client Secret length */
+						__( 'Credentials format validated (Client ID: %1$d chars, Secret: %2$d chars). Use the Yahoo Fantasy Football tools to complete OAuth authentication.', 'mcp-ai-wpoos' ),
+						strlen( $client_id ),
+						strlen( $client_secret )
+					),
+					'note'    => __( 'Note: These credentials passed format validation. Full OAuth verification occurs during authentication via the Yahoo FF Auth tool.', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test remove.bg API connection.
+		 */
+		public function handle_test_removebg_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a remove.bg API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Test the connection by checking account info endpoint.
+			$account_url = 'https://api.remove.bg/v1.0/account';
+
+			$response = wp_remote_get(
+				$account_url,
+				array(
+					'headers' => array(
+						'X-Api-Key' => $api_key,
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 403 === $response_code || 401 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your remove.bg API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 429 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your API key is valid but you have exceeded your rate limit.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Invalid API key or connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $data['errors'] ) && is_array( $data['errors'] ) && ! empty( $data['errors'][0]['title'] ) ) {
+					$error_message = sanitize_text_field( $data['errors'][0]['title'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			// Success - optionally include account info.
+			$success_message = __( 'Successfully connected to remove.bg API!', 'mcp-ai-wpoos' );
+			if ( isset( $data['data']['attributes']['credits']['total'] ) ) {
+				$credits = absint( $data['data']['attributes']['credits']['total'] );
+				$success_message .= ' ' . sprintf(
+					/* translators: %d: number of API credits */
+					__( 'Account has %d API credits remaining.', 'mcp-ai-wpoos' ),
+					$credits
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => $success_message,
 				)
 			);
 		}

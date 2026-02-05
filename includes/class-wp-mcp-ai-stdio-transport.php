@@ -506,7 +506,7 @@ class WP_MCP_AI_STDIO_Transport {
 	 * @param array $params Request parameters.
 	 * @return array Prompts list.
 	 */
-	protected function handle_prompts_list( $params ) {
+	protected function handle_prompts_list( $params ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for filtering.
 		$prompts = array();
 
 		$query = new WP_Query(

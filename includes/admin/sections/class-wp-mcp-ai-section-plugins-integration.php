@@ -333,7 +333,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 
 			foreach ( $fields as $key => $field ) {
 				if ( 'html' === $field['type'] ) {
-					echo $field['content'];
+					echo wp_kses_post( $field['content'] );
 				} else {
 					$this->render_field( $key, $field );
 				}

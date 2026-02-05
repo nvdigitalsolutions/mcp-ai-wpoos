@@ -282,7 +282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param string $slug Tool slug.
 		 * @return string|null Required capability or null.
 		 */
-		public function get_tool_capability( $slug ) {
+		public function get_tool_capability( $slug ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 			// This method is referenced but not yet implemented.
 			// For now, return null to maintain compatibility.
 			return null;
@@ -422,6 +422,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Media and content moderation (AI-powered).
 				'generate_image_alt_text'            => 'wordpress-core',
 				'generate_image_caption'             => 'wordpress-core',
+				'analyze_image'                      => 'wordpress-core',
+				'extract_image_text'                 => 'wordpress-core',
 				'analyze_video'                      => 'wordpress-core',
 				'generate_video_caption'             => 'wordpress-core',
 				'analyze_comment_content'            => 'wordpress-core',
@@ -436,6 +438,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
+				'visualize_workflow_metrics'         => 'wordpress-core',
+				'validate_workflow'                  => 'wordpress-core',
 
 				// Excel and Spreadsheet Tools - Pro features.
 				'pro_excel'                          => 'external-tools',
@@ -579,6 +583,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'huggingface_recommended_datasets'   => 'external-tools',
 			);
 
+			// Fantasy Football tool mappings are now handled by the Pro addon.
 			// Quiz tool mappings are now handled by the Pro addon.
 
 			/**
@@ -952,6 +957,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Check_Site_Security'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
 				'WP_MCP_AI_Tool_Generate_Image_Alt_Text'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text.php',
 				'WP_MCP_AI_Tool_Generate_Image_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php',
+				'WP_MCP_AI_Tool_Analyze_Image'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-image.php',
+				'WP_MCP_AI_Tool_Extract_Image_Text'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-image-text.php',
 				'WP_MCP_AI_Tool_Analyze_Video'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-video.php',
 				'WP_MCP_AI_Tool_Generate_Video_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
@@ -1011,6 +1018,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Additional tools that require third-party plugins or external API credentials.
 			$extended_tools = array(
+				// Yahoo Fantasy Football Toolkit.
+				'WP_MCP_AI_Tool_Yahoo_FF_Auth'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Roster'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
+				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
+				'WP_MCP_AI_Tool_FF_Create_League_Report'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
+				'WP_MCP_AI_Tool_FF_Player_Research'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
 				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
@@ -1110,7 +1127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		/**
 		 * Automatically disable tools marked with "bug" status.
 		 *
-		 * Reads the tool-status.txt file and disables any tools with "bug" status
+		 * Reads the docs/tool-status.txt file and disables any tools with "bug" status
 		 * to prevent them from being used until the bugs are resolved.
 		 */
 		protected function auto_disable_bug_tools() {
@@ -1130,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
-		 * Load tool status labels from tool-status.txt file.
+		 * Load tool status labels from docs/tool-status.txt file.
 		 *
 		 * @return array Associative array of tool slug => status label.
 		 */
@@ -1143,7 +1160,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			}
 
 			$status_labels = array();
-			$status_file   = WP_MCP_AI_PATH . 'tool-status.txt';
+			$status_file   = WP_MCP_AI_PATH . 'docs/tool-status.txt';
 
 			// Check if file exists.
 			if ( ! file_exists( $status_file ) ) {
@@ -1249,7 +1266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
 		 * @return bool Whether the tool was registered.
 		 */
-		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) {
+		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware registration.
 			// For now, use legacy registration.
 			return $this->register_tool( $tool );
 		}

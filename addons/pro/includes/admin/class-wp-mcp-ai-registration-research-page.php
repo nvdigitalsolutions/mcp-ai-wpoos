@@ -39,6 +39,41 @@ class WP_MCP_AI_Registration_Research_Page {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_registration_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_registration', array( __CLASS__, 'ajax_handle_import' ) );
+		add_action( 'admin_init', array( __CLASS__, 'handle_assistant_update' ) );
+	}
+
+	/**
+	 * Handle assistant update form submission.
+	 */
+	public static function handle_assistant_update() {
+		// Check if this is our form submission.
+		if ( ! isset( $_POST['action'] ) || 'update_registration_assistant' !== $_POST['action'] ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_nonce'] ) ), 'wp_mcp_ai_registration_research_assistant' ) ) {
+			return;
+		}
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		// Get and validate assistant ID.
+		$assistant_id = isset( $_POST['registration_assistant_id'] ) ? absint( $_POST['registration_assistant_id'] ) : 0;
+
+		if ( $assistant_id > 0 && 'publish' === get_post_status( $assistant_id ) ) {
+			// Update settings with new assistant ID.
+			$settings                 = get_option( 'wp_mcp_ai_registration_settings', array() );
+			$settings['assistant_id'] = $assistant_id;
+			update_option( 'wp_mcp_ai_registration_settings', $settings );
+
+			// Redirect back to the research page with success message.
+			wp_safe_redirect( add_query_arg( 'assistant_updated', '1', wp_get_referer() ) );
+			exit;
+		}
 	}
 
 	/**
@@ -134,6 +169,17 @@ class WP_MCP_AI_Registration_Research_Page {
 
 			<hr class="wp-header-end">
 
+			<?php
+			// Display success message if assistant was updated.
+			if ( isset( $_GET['assistant_updated'] ) && '1' === $_GET['assistant_updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				?>
+				<div class="notice notice-success is-dismissible">
+					<p><?php esc_html_e( 'AI Assistant updated successfully!', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+				<?php
+			endif;
+			?>
+
 			<?php self::render_chat_interface( $assistant_id ); ?>
 		</div>
 		<?php
@@ -145,12 +191,65 @@ class WP_MCP_AI_Registration_Research_Page {
 	 * @param int $assistant_id Assistant ID.
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
+		// Get all available assistants for the dropdown.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
 		?>
-			<div class="wp-mcp-ai-research-container">
+			<div class="wrap-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
+					<!-- Assistant Selector Section -->
+					<div class="wp-mcp-ai-assistant-selector">
+						<h3><?php esc_html_e( 'Select AI Assistant', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<?php if ( ! empty( $assistants ) ) : ?>
+							<form method="post" action="" id="wp-mcp-ai-assistant-form">
+								<?php wp_nonce_field( 'wp_mcp_ai_registration_research_assistant', 'wp_mcp_ai_nonce' ); ?>
+								<input type="hidden" name="action" value="update_registration_assistant" />
+								<select name="registration_assistant_id" id="registration-assistant-select" class="widefat">
+									<?php foreach ( $assistants as $asst ) : ?>
+										<option value="<?php echo esc_attr( $asst->ID ); ?>" <?php selected( $asst->ID, $assistant_id ); ?>>
+											<?php echo esc_html( $asst->post_title ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p>
+									<button type="submit" class="button button-primary">
+										<?php esc_html_e( 'Update Assistant', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</p>
+								<p class="description">
+									<?php esc_html_e( 'Select the AI assistant to use for registration research. You can also configure the default assistant in', 'mcp-ai-wpoos-pro' ); ?>
+									<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=registration-settings' ) ); ?>">
+										<?php esc_html_e( 'Settings', 'mcp-ai-wpoos-pro' ); ?>
+									</a>.
+								</p>
+							</form>
+						<?php else : ?>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No assistants found. <a href="%s">Create an assistant</a> first.', 'mcp-ai-wpoos-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
+						<?php endif; ?>
+					</div>
+
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
+							<li><?php esc_html_e( 'Select an AI assistant above', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><?php esc_html_e( 'Search existing registrations or research country requirements', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><?php esc_html_e( 'Review submission timelines and document checklists', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><?php esc_html_e( 'Create registrations linked to products and countries', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -231,9 +330,84 @@ class WP_MCP_AI_Registration_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive registration tools.
+							// Render chat interface with comprehensive regulatory registration tools.
+							// Include all regulatory registration toolkit tools to enable full management capabilities.
+							$reg_tools = array(
+								// Core product management.
+								'create_reg_product',
+								'update_reg_product',
+								'delete_reg_product',
+								'duplicate_reg_product',
+								'get_reg_product',
+								'list_reg_products',
+								'search_reg_products',
+								'validate_reg_product',
+								// Registration management.
+								'create_registration',
+								'get_registration',
+								'list_registrations',
+								'list_registrations_by_country',
+								'list_expiring_registrations',
+								'update_registration_status',
+								'approve_registration',
+								'submit_registration',
+								'renew_registration',
+								'get_registration_timeline',
+								'submit_to_authority',
+								// Document management.
+								'upload_reg_document',
+								'get_reg_document',
+								'update_reg_document',
+								'list_reg_documents',
+								'validate_document_checklist',
+								'track_document_version',
+								'check_document_expiry',
+								// Excel import/export.
+								'import_products_from_excel',
+								'export_products_to_excel',
+								'validate_excel_import',
+								'import_registrations_from_excel',
+								'export_registrations_to_excel',
+								// Compliance & validation.
+								'check_product_compliance',
+								'validate_inci_ingredients',
+								'check_hs_code',
+								'get_regulatory_requirements',
+								'get_regulatory_updates',
+								'add_regulatory_requirement',
+								'check_authority_status',
+								// Reports & analytics.
+								'generate_compliance_report',
+								'generate_compliance_certificate',
+								'generate_cost_analysis',
+								'generate_country_performance',
+								'generate_expiry_forecast',
+								'generate_pipeline_report',
+								'generate_pdf_dossier',
+								'generate_submission_pack',
+								'generate_cover_letter',
+								// Notifications.
+								'configure_email_notifications',
+								'send_expiry_alerts',
+								'send_status_change_notification',
+								'get_notification_history',
+								// Workflow automation.
+								'create_workflow_rule',
+								'update_workflow_rule',
+								'delete_workflow_rule',
+								'list_workflow_rules',
+								'test_workflow_rule',
+								'get_workflow_execution_log',
+								// Authority integrations.
+								'sync_with_mohap',
+								'sync_with_nmra',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_registration,list_registrations,get_registration,list_reg_products,get_reg_product,check_product_compliance,web_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -349,9 +523,9 @@ class WP_MCP_AI_Registration_Research_Page {
 	 */
 	protected static function get_import_formats() {
 		return array(
-			'csv'   => 'CSV',
-			'xlsx'  => 'Excel',
-			'json'  => 'JSON',
+			'csv'  => 'CSV',
+			'xlsx' => 'Excel',
+			'json' => 'JSON',
 		);
 	}
 
@@ -392,7 +566,7 @@ class WP_MCP_AI_Registration_Research_Page {
 			$has_submission = ! empty( $meta['submission_date'][0] ?? '' );
 
 			if ( $has_product && $has_country && $has_submission ) {
-				$complete++;
+				++$complete;
 			} else {
 				if ( ! $has_product ) {
 					$missing_items[] = sprintf( '%s: Missing product link', $registration->post_title );

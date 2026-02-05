@@ -27,7 +27,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_system_status' );
@@ -52,7 +52,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_system_status' );
@@ -62,7 +62,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 
 		// Cron status should be an array.
 		$this->assertIsArray( $status['cron'], 'Cron status should be an array' );
-		
+
 		// If WP_MCP_AI_Cron_Status_Service is available, cron should have metrics.
 		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
 			$this->assertArrayHasKey( 'active', $status['cron'], 'Cron status should have active key' );
@@ -80,7 +80,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_system_status' );
@@ -90,7 +90,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 
 		// Async status should be an array.
 		$this->assertIsArray( $status['async'], 'Async status should be an array' );
-		
+
 		// If WP_MCP_AI_Async_Health_Monitor is available, async should have metrics.
 		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
 			$this->assertArrayHasKey( 'status', $status['async'], 'Async status should have status key' );
@@ -108,7 +108,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_system_status' );
@@ -118,7 +118,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 
 		// Health status should be an array.
 		$this->assertIsArray( $status['health'], 'Health status should be an array' );
-		
+
 		// If WP_MCP_AI_Orchestration_Health_Service is available, health should have metrics.
 		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
 			$this->assertArrayHasKey( 'status', $status['health'], 'Health status should have status key' );
@@ -136,7 +136,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_system_status' );
@@ -148,10 +148,10 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		$this->assertIsArray( $status['sse'], 'SSE status should be an array' );
 		$this->assertArrayHasKey( 'available', $status['sse'], 'SSE status should have available key' );
 		$this->assertArrayHasKey( 'endpoint', $status['sse'], 'SSE status should have endpoint key' );
-		
+
 		// Available should be boolean.
 		$this->assertIsBool( $status['sse']['available'], 'SSE available should be boolean' );
-		
+
 		// Endpoint should be a string.
 		$this->assertIsString( $status['sse']['endpoint'], 'SSE endpoint should be string' );
 	}
@@ -165,7 +165,7 @@ class Test_Orchestration_System_Status extends WP_UnitTestCase {
 		}
 
 		$dashboard = new WP_MCP_AI_Orchestration_Dashboard();
-		
+
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $dashboard );
 		$method     = $reflection->getMethod( 'get_dashboard_data' );

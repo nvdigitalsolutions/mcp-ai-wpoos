@@ -158,16 +158,14 @@ class WP_MCP_AI_OpenAI_File_Service {
 				// Transient still exists, use it.
 				$cached_data['cache_key'] = $cache_key;
 				$tracked_files[]          = $cached_data;
-			} else {
+			} elseif ( is_array( $file_data ) && isset( $file_data['file_id'], $file_data['uploaded_at'] ) ) {
 				// Transient expired, but we need the tracking data for cleanup.
 				// Use the file_id and uploaded_at from the tracking list.
-				if ( is_array( $file_data ) && isset( $file_data['file_id'], $file_data['uploaded_at'] ) ) {
-					$tracked_files[] = array(
-						'cache_key'   => $cache_key,
-						'file_id'     => $file_data['file_id'],
-						'uploaded_at' => $file_data['uploaded_at'],
-					);
-				}
+				$tracked_files[] = array(
+					'cache_key'   => $cache_key,
+					'file_id'     => $file_data['file_id'],
+					'uploaded_at' => $file_data['uploaded_at'],
+				);
 			}
 		}
 

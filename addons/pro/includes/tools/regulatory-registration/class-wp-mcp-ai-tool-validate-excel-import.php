@@ -44,25 +44,25 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'file_path'         => array(
+				'file_path'        => array(
 					'type'        => 'string',
 					'description' => __( 'Path to Excel file to validate (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'import_type'       => array(
+				'import_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Type of import to validate (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'products', 'registrations' ),
 				),
-				'field_mapping'     => array(
+				'field_mapping'    => array(
 					'type'        => 'object',
 					'description' => __( 'Field mapping to validate against (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'check_duplicates'  => array(
+				'check_duplicates' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for duplicate records (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'start_row'         => array(
+				'start_row'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Starting row number (optional, default: 2)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -100,6 +100,39 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
+	 * Convert a URL to a local file path if it's a WordPress upload URL.
+	 *
+	 * @param string $path_or_url File path or URL.
+	 * @return string Local file path.
+	 */
+	private function resolve_file_path( $path_or_url ) {
+		// If it's already a local path, return it.
+		if ( file_exists( $path_or_url ) ) {
+			return $path_or_url;
+		}
+
+		// Check if it's a URL.
+		if ( filter_var( $path_or_url, FILTER_VALIDATE_URL ) ) {
+			$upload_dir = wp_upload_dir();
+			$base_url   = $upload_dir['baseurl'];
+			$base_path  = $upload_dir['basedir'];
+
+			// Normalize URLs to handle http/https differences.
+			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
+			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
+
+			// If it's a WordPress upload URL, convert to local path.
+			if ( strpos( $normalized_url, $normalized_base_url ) === 0 ) {
+				$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
+				return $base_path . $relative_path;
+			}
+		}
+
+		// Return as-is if we can't resolve it.
+		return $path_or_url;
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
@@ -132,18 +165,21 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		$check_duplicates = isset( $arguments['check_duplicates'] ) ? (bool) $arguments['check_duplicates'] : true;
 		$start_row        = ! empty( $arguments['start_row'] ) ? absint( $arguments['start_row'] ) : 2;
 
+		// Resolve URL to local path if needed.
+		$file_path = $this->resolve_file_path( $file_path );
+
 		// Verify file exists.
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'Excel file not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$validation_results = array(
-			'valid'              => true,
-			'total_rows'         => 0,
-			'valid_rows'         => 0,
-			'errors'             => array(),
-			'warnings'           => array(),
-			'duplicates'         => array(),
+			'valid'      => true,
+			'total_rows' => 0,
+			'valid_rows' => 0,
+			'errors'     => array(),
+			'warnings'   => array(),
+			'duplicates' => array(),
 		);
 
 		// Simulate reading Excel data.
@@ -159,16 +195,16 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 
 		foreach ( $sample_data as $index => $row_data ) {
 			$row_number = $start_row + $index;
-			$has_error = false;
+			$has_error  = false;
 
 			// Map fields.
 			$record_data = array();
-			$col_index = 0;
+			$col_index   = 0;
 			foreach ( $field_mapping as $field => $column ) {
 				if ( isset( $row_data[ $col_index ] ) ) {
 					$record_data[ $field ] = $row_data[ $col_index ];
 				}
-				$col_index++;
+				++$col_index;
 			}
 
 			// Validate required fields based on import type.
@@ -197,7 +233,7 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 				$primary_field = 'products' === $import_type ? 'name' : 'product_name';
 				if ( ! empty( $record_data[ $primary_field ] ) ) {
 					$record_key = strtolower( trim( $record_data[ $primary_field ] ) );
-					
+
 					if ( isset( $seen_records[ $record_key ] ) ) {
 						$validation_results['warnings'][] = sprintf(
 							/* translators: 1: row number, 2: first row number */
@@ -213,7 +249,7 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 			}
 
 			if ( ! $has_error ) {
-				$validation_results['valid_rows']++;
+				++$validation_results['valid_rows'];
 			}
 		}
 

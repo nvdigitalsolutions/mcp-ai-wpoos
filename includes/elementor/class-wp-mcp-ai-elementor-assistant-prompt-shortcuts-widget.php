@@ -188,18 +188,18 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		if ( '' !== $title ) {
 			$title_output = $this->format_text_inline( $title );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
 			if ( '' !== $title_output ) {
-				echo '<h3 class="wp-mcp-ai-assistant-prompt-shortcuts__title">' . $title_output . '</h3>';
+				echo '<h3 class="wp-mcp-ai-assistant-prompt-shortcuts__title">' . wp_kses_post( $title_output ) . '</h3>';
 			}
 		}
 
 		if ( ! $assistant_id || ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$empty_output = $this->format_text_inline( $empty_message );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
 			if ( '' !== $empty_output ) {
-				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $empty_output . '</p>';
+				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . wp_kses_post( $empty_output ) . '</p>';
 			}
 
 			echo '</div>';
@@ -212,9 +212,9 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		if ( empty( $shortcuts ) ) {
 			$no_shortcuts_output = $this->format_text_inline( $no_shortcuts_msg );
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
 			if ( '' !== $no_shortcuts_output ) {
-				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $no_shortcuts_output . '</p>';
+				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . wp_kses_post( $no_shortcuts_output ) . '</p>';
 			}
 
 			echo '</div>';
@@ -235,9 +235,9 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 
 			echo '<li class="wp-mcp-ai-assistant-prompt-shortcuts__item">';
 
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
 			if ( '' !== $label_text ) {
-				echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__label">' . $label_text . '</span>';
+				echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__label">' . wp_kses_post( $label_text ) . '</span>';
 			}
 
 			if ( $show_tool ) {

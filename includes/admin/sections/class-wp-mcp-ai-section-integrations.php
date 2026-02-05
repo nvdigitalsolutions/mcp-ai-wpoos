@@ -77,9 +77,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$gmail_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
-			$drive_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
-			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<em>(Pro Version required)</em>', 'mcp-ai-wpoos' );
+			$gmail_notice  = $is_pro_active ? ' <em>' . __( '(Pro also supports multiple connections via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>' : ' <em>' . __( '(Base supports 1 connection. Pro enables multiple via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>';
+			$drive_notice  = $is_pro_active ? ' <em>' . __( '(Pro also supports multiple connections via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>' : ' <em>' . __( '(Base supports 1 connection. Pro enables multiple via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>';
+			$pro_notice    = $is_pro_active ? '' : ' <em>' . __( '(Pro Version required)', 'mcp-ai-wpoos' ) . '</em>';
 
 			return array(
 				// Gmail OAuth.
@@ -209,15 +209,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'mailjet_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key for Mailjet email service integration.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'Get this from your Mailjet account under API Keys.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
 				'mailjet_api_secret'                => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet API Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API secret for Mailjet email service.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'Mailjet Secret Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Mailjet uses Basic Authentication (API Key + Secret Key), not OAuth.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -225,7 +225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'mailjet_from_email'                => array(
 					'type'        => 'email',
 					'label'       => __( 'Mailjet From Email', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" email address for Mailjet messages.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description' => __( 'Default "from" email address for Mailjet messages. Must be a verified sender in your Mailjet account.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder' => 'noreply@example.com',
 					'disabled'    => ! $is_pro_active,
 				),
@@ -236,17 +236,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => 'My Site',
 					'disabled'    => ! $is_pro_active,
 				),
-				'mailjet_client_id'                 => array(
-					'type'        => 'text',
-					'label'       => __( 'Mailjet OAuth Client ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'OAuth 2.0 Client ID from Mailjet developer portal for 1-click connection.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'mailjet_client_secret'             => array(
+				'mailjet_webhook_secret'            => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet OAuth Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Mailjet developer portal for 1-click connection.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'Mailjet Webhook Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Optional secret for verifying webhook requests from Mailjet.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -366,6 +359,84 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Plaid (Financial Services).
+				'plaid_client_id'                   => array(
+					'type'         => 'text',
+					'label'        => __( 'Plaid Client ID', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Plaid Dashboard */
+						__( 'Client ID from Plaid dashboard for financial account integration. Get your credentials from %s. Used for optional bank account sync in Financial Planner Toolkit.', 'mcp-ai-wpoos' ),
+						'<a href="https://dashboard.plaid.com/" target="_blank">Plaid Dashboard</a>'
+					) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'plaid_secret'                      => array(
+					'type'         => 'password',
+					'label'        => __( 'Plaid Secret Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+				'plaid_environment'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'Plaid Environment', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'options'     => array(
+						'sandbox'     => __( 'Sandbox (Testing)', 'mcp-ai-wpoos' ),
+						'development' => __( 'Development', 'mcp-ai-wpoos' ),
+						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'sandbox',
+					'disabled'    => ! $is_pro_active,
+				),
+
+				// Yahoo Fantasy Sports.
+				'yahoo_client_id'                   => array(
+					'type'         => 'text',
+					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Yahoo Developer */
+						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.', 'mcp-ai-wpoos' ),
+						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
+					) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'yahoo_client_secret'               => array(
+					'type'         => 'password',
+					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+
+				// ESPN Fantasy Sports.
+				'espn_fantasy_espn_s2'              => array(
+					'type'         => 'password',
+					'label'        => __( 'ESPN S2 Cookie', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to ESPN authentication docs */
+						__( 'ESPN S2 authentication cookie for accessing private leagues. Required along with SWID cookie. See %s for how to obtain these cookies from your browser.', 'mcp-ai-wpoos' ),
+						'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
+					) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+				'espn_fantasy_swid'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'ESPN SWID Cookie', 'mcp-ai-wpoos' ),
+					'description'  => __( 'ESPN SWID authentication cookie for accessing private leagues. Required along with S2 cookie. Extract from browser after logging into ESPN Fantasy.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
 				// Use admin.php?page=wp-mcp-ai-remote-sites to manage these connections.
 			);
@@ -435,7 +506,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'mailjet',
 					'label'  => $is_pro_active ? __( 'Mailjet', 'mcp-ai-wpoos' ) : __( 'Mailjet (Pro)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email-alt',
-					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_client_id', 'mailjet_client_secret' ),
+					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
 					'pro'    => true,
 				),
 				// QuickBooks and iSAMS moved to Remote Sites.
@@ -443,7 +514,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'google_analytics',
 					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-bar',
-					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json', 'ita_tariff_api_key' ),
+					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json' ),
+					'pro'    => true,
+				),
+				'ita_tariff'       => array(
+					'id'     => 'ita_tariff',
+					'label'  => $is_pro_active ? __( 'Trade.gov Tariff Rates', 'mcp-ai-wpoos' ) : __( 'Trade.gov Tariff Rates (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-site',
+					'fields' => array( 'ita_tariff_api_key' ),
 					'pro'    => true,
 				),
 				'meta'             => array(
@@ -457,6 +535,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'plaid'            => array(
+					'id'     => 'plaid',
+					'label'  => $is_pro_active ? __( 'Plaid', 'mcp-ai-wpoos' ) : __( 'Plaid (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-money-alt',
+					'fields' => array( 'plaid_client_id', 'plaid_secret', 'plaid_environment' ),
+					'pro'    => true,
+				),
+				'yahoo_sports'     => array(
+					'id'     => 'yahoo_sports',
+					'label'  => $is_pro_active ? __( 'Yahoo Sports', 'mcp-ai-wpoos' ) : __( 'Yahoo Sports (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-awards',
+					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret' ),
+					'pro'    => true,
+				),
+				'espn_sports'      => array(
+					'id'     => 'espn_sports',
+					'label'  => $is_pro_active ? __( 'ESPN Sports', 'mcp-ai-wpoos' ) : __( 'ESPN Sports (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-awards',
+					'fields' => array( 'espn_fantasy_espn_s2', 'espn_fantasy_swid' ),
+					'pro'    => true,
 				),
 				// iSAMS moved to Remote Sites.
 			);
@@ -473,26 +572,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
 			// Use section-specific field name to avoid conflicts with other sections.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
 			$subtab_field_name = 'subtab_' . $this->get_id();
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['connection'] ) ) {
 				// Legacy parameter for backwards compatibility.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST['connection'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['connection'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 				$subtab = sanitize_key( $_GET['connection'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST['subtab'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				// Only use 'subtab' if it's one of our integration subtabs.
 
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 				$potential_subtab = sanitize_key( $_GET['subtab'] );
 				if ( isset( $subtab_groups[ $potential_subtab ] ) ) {
 					$subtab = $potential_subtab;
 				}
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
 			// Default to 'gmail' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
@@ -546,6 +656,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'mubert':
 					$this->render_mubert_footer();
+					break;
+				case 'yahoo_sports':
+					$this->render_yahoo_sports_footer();
+					break;
+				case 'espn_sports':
+					$this->render_espn_sports_footer();
+					break;
+				case 'removebg':
+					$this->render_removebg_footer();
 					break;
 				// PayHere, Flowhub, QuickBooks, and iSAMS moved to Remote Sites.
 				case 'meta':
@@ -974,6 +1093,347 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Used by the generate_music tool for AI-powered music creation', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Supports track durations from 15 seconds to 25 minutes', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Yahoo Sports footer content.
+		 */
+		private function render_yahoo_sports_footer() {
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$user_id         = get_current_user_id();
+			$yahoo_connected = ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', true ) ) && ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', true ) );
+			$has_credentials = ! empty( $settings['yahoo_client_id'] ) && ! empty( $settings['yahoo_client_secret'] );
+			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+			// Generate OAuth state and build direct link to Yahoo OAuth (similar to Gmail).
+			if ( $has_credentials ) {
+				$state     = wp_generate_uuid4();
+				$transient = 'wp_mcp_ai_yahoo_oauth_state_' . md5( $state );
+
+				set_transient(
+					$transient,
+					array(
+						'user_id' => $user_id,
+						'time'    => time(),
+					),
+					10 * MINUTE_IN_SECONDS
+				);
+
+				// Build redirect URI.
+				$base_url     = admin_url( 'admin.php' );
+				$redirect_uri = add_query_arg(
+					array( 'wp_mcp_ai_oauth' => 'yahoo_callback' ),
+					$base_url
+				);
+
+				// Build Yahoo OAuth authorization URL.
+				$oauth_connect_url = add_query_arg(
+					array(
+						'client_id'     => rawurlencode( $settings['yahoo_client_id'] ),
+						'redirect_uri'  => rawurlencode( $redirect_uri ),
+						'response_type' => 'code',
+						'scope'         => 'fspt-r', // Fantasy Sports Read access - required for reading user's fantasy football leagues, rosters, and stats. Yahoo uses 'fspt-w' for write access if needed in the future.
+						'state'         => $state,
+					),
+					'https://api.login.yahoo.com/oauth2/request_auth'
+				);
+			} else {
+				$oauth_connect_url = '#';
+			}
+
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$yahoo_success = isset( $_GET['yahoo_success'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$yahoo_error = isset( $_GET['yahoo_error'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_error'] ) ) : '';
+		?>
+		<?php if ( $yahoo_success ) : ?>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div class="notice notice-success inline" style="margin: 0 0 15px;">
+					<p><?php echo esc_html( $yahoo_success ); ?></p>
+				</div>
+			</td>
+		</tr>
+	<?php endif; ?>
+		<?php if ( $yahoo_error ) : ?>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div class="notice notice-error inline" style="margin: 0 0 15px;">
+					<p><?php echo esc_html( $yahoo_error ); ?></p>
+				</div>
+			</td>
+		</tr>
+	<?php endif; ?>
+	<tr>
+		<th scope="row"><?php esc_html_e( 'Yahoo Sports Connection', 'mcp-ai-wpoos' ); ?></th>
+		<td>
+			<?php if ( $yahoo_connected ) : ?>
+				<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+					<p style="margin: 0; color: #155724;">
+						<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+						<strong><?php esc_html_e( 'Connected to Yahoo Sports', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+				</div>
+				<p>
+					<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+						<?php esc_html_e( 'Reconnect Yahoo Account', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+				<p class="description">
+					<?php
+					echo wp_kses_post(
+						__(
+							'Your Yahoo account is connected. You can now use Yahoo Fantasy Football tools to access your leagues.',
+							'mcp-ai-wpoos'
+						)
+					);
+					?>
+				</p>
+			<?php elseif ( $has_credentials && $is_pro_active ) : ?>
+				<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+					<p style="margin: 0; color: #856404;">
+						<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+						<strong><?php esc_html_e( 'Yahoo Sports Not Connected', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+				</div>
+				<p>
+					<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+						<?php esc_html_e( 'Connect Yahoo Account', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+				<p class="description">
+					<?php
+					echo wp_kses_post(
+						__(
+							'Click the button above to authorize access to your Yahoo Fantasy Football account.',
+							'mcp-ai-wpoos'
+						)
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p class="description">
+					<?php esc_html_e( 'Enter your Yahoo Client ID and Secret in the fields above and save to enable the Connect Yahoo Account button.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php endif; ?>
+			<p>
+				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo ! $is_pro_active ? 'disabled' : ''; ?>>
+					<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span id="wp-mcp-ai-yahoo-test-result" style="margin-left: 10px;"></span>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Enter your Yahoo Client ID and Secret in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+			</p>
+		</td>
+	</tr>
+	<tr>
+		<th scope="row"></th>
+		<td>
+			<div style="margin: 1rem 0;">
+				<h4><?php esc_html_e( 'About Yahoo Sports Integration', 'mcp-ai-wpoos' ); ?></h4>
+				<p class="description" style="margin-bottom: 10px;">
+					<?php esc_html_e( 'Connect to Yahoo Fantasy Sports API to access your fantasy football leagues, rosters, and player statistics.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<p class="description">
+					<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<ol style="margin-left: 20px;">
+					<li>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: URL to Yahoo Developer Network */
+								__( 'Create a Yahoo app at <a href="%s" target="_blank">Yahoo Developer Network</a>', 'mcp-ai-wpoos' ),
+								'https://developer.yahoo.com/apps/'
+							)
+						);
+						?>
+					</li>
+					<li><?php esc_html_e( 'Set the redirect URI to match your WordPress site', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Copy your Client ID (Consumer Key) and Client Secret (Consumer Secret)', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Paste them into the fields above and save', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Click "Connect Yahoo Account" to authenticate via OAuth', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Use the Yahoo Fantasy Football tools to access your leagues', 'mcp-ai-wpoos' ); ?></li>
+				</ol>
+				<?php if ( $is_pro_active ) : ?>
+					<p class="description" style="margin-top: 1rem;">
+						<strong><?php esc_html_e( 'Available Tools:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><strong>yahoo_ff_auth</strong> - <?php esc_html_e( 'Authenticate with Yahoo and manage authorization tokens', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>yahoo_ff_get_leagues</strong> - <?php esc_html_e( 'Get your fantasy football leagues and team information', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+				<?php else : ?>
+					<p class="description" style="margin-top: 1rem; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107;">
+						<strong><?php esc_html_e( 'Pro Feature:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Yahoo Sports integration requires the Pro addon to be active.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php endif; ?>
+			</div>
+		</td>
+	</tr>
+		<?php
+		}
+
+		/**
+		 * Render ESPN Sports footer content.
+		 */
+		private function render_espn_sports_footer() {
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_espn_s2   = ! empty( $settings['espn_fantasy_espn_s2'] );
+			$has_swid      = ! empty( $settings['espn_fantasy_swid'] );
+			$has_both      = $has_espn_s2 && $has_swid;
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'ESPN Sports Connection', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<?php if ( $has_both ) : ?>
+					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #155724;">
+							<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+							<strong><?php esc_html_e( 'ESPN Credentials Configured', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Your ESPN S2 and SWID cookies are saved. ESPN Fantasy tools can now access private leagues.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
+				<?php elseif ( $has_espn_s2 || $has_swid ) : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'Incomplete ESPN Configuration', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php esc_html_e( 'Both ESPN S2 and SWID cookies are required to access private leagues. Please provide both values.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php else : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-info" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'ESPN Credentials Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php esc_html_e( 'ESPN S2 and SWID cookies are only required for private leagues. Public leagues can be accessed without authentication.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div style="margin: 1rem 0;">
+					<h4><?php esc_html_e( 'About ESPN Sports Integration', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description" style="margin-bottom: 10px;">
+						<?php esc_html_e( 'Connect to ESPN Fantasy Football API to access league information, team rosters, standings, and player statistics. Public leagues work without authentication; private leagues require ESPN S2 and SWID cookies.', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions for Private Leagues:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li><?php esc_html_e( 'Log in to ESPN Fantasy at fantasy.espn.com in your browser', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Open your browser\'s Developer Tools (F12)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Go to the Application/Storage tab and find Cookies', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Locate the "espn_s2" cookie and copy its value', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Locate the "SWID" cookie and copy its value (includes curly braces)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Paste both values into the fields above and save', 'mcp-ai-wpoos' ); ?></li>
+					</ol>
+					<?php if ( $is_pro_active ) : ?>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Available Tools:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><strong>espn_fantasy_get_league</strong> - <?php esc_html_e( 'Retrieve ESPN Fantasy Football league information', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_teams</strong> - <?php esc_html_e( 'Get all teams in an ESPN league', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_roster</strong> - <?php esc_html_e( 'Get a team\'s roster with player details', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_standings</strong> - <?php esc_html_e( 'Get league standings with win/loss records', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_analyze_lineup</strong> - <?php esc_html_e( 'Analyze optimal lineup configurations', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_sync_league</strong> - <?php esc_html_e( 'Sync ESPN league data to WordPress', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+					<?php else : ?>
+						<p class="description" style="margin-top: 1rem; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107;">
+							<strong><?php esc_html_e( 'Pro Feature:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'ESPN Sports integration requires the Pro addon to be active.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+			</td>
+		</tr>
+		<?php
+		}
+
+		/**
+		 * Render remove.bg footer content.
+		 */
+		private function render_removebg_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'remove.bg Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-removebg-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-removebg-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your remove.bg API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'About remove.bg Integration', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description" style="margin-bottom: 10px;">
+							<?php esc_html_e( 'Automatically remove backgrounds from images using AI-powered background removal service.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: URL to remove.bg API */
+										__( 'Get your API key from <a href="%s" target="_blank">remove.bg API</a>', 'mcp-ai-wpoos' ),
+										'https://www.remove.bg/api'
+									)
+								);
+								?>
+							</li>
+							<li><?php esc_html_e( 'Free tier includes 50 API calls per month', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Paste your API key into the field above and save', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click "Test Connection" to verify your API key', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Use the background removal tools with your images', 'mcp-ai-wpoos' ); ?></li>
+						</ol>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Features:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><?php esc_html_e( 'AI-powered background removal for images', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Supports various image formats (PNG, JPG, etc.)', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Alternative: Free Python rembg library (no API key needed)', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+					</div>
 				</td>
 			</tr>
 			<?php
@@ -1433,94 +1893,71 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Mailjet footer content.
 		 */
 		private function render_mailjet_footer() {
-			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-			$mailjet_connected = ! empty( $settings['mailjet_connected'] );
-			$has_credentials   = ! empty( $settings['mailjet_client_id'] ) && ! empty( $settings['mailjet_client_secret'] );
-			$oauth_connect_url = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_oauth_start' ),
-				'wp_mcp_ai_mailjet_oauth_start'
-			);
-			$disconnect_url    = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_disconnect' ),
-				'wp_mcp_ai_mailjet_disconnect'
-			);
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
+			$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
 			?>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Mailjet Connection', 'mcp-ai-wpoos' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
 				<td>
-					<?php if ( $mailjet_connected ) : ?>
+					<?php if ( $has_credentials ) : ?>
 						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #155724;">
-								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-								<strong><?php esc_html_e( 'Connected to Mailjet', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
-								<?php esc_html_e( 'Reconnect Mailjet Account', 'mcp-ai-wpoos' ); ?>
-							</a>
-							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
-								<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
-							</a>
+						<p style="margin: 0; color: #155724;">
+						<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+						<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
 						</p>
+						</div>
 						<p class="description">
-							<?php
+						<?php
 							echo wp_kses_post(
 								__(
-									'Your Mailjet account is connected. You can now use email sending and campaign management tools.',
+									'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
 									'mcp-ai-wpoos'
 								)
 							);
-							?>
-						</p>
-					<?php elseif ( $has_credentials ) : ?>
-						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #856404;">
-								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
-								<strong><?php esc_html_e( 'Mailjet Not Connected', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
-								<?php esc_html_e( 'Connect Mailjet Account', 'mcp-ai-wpoos' ); ?>
-							</a>
-						</p>
-						<p class="description">
-							<?php
-							echo wp_kses_post(
-								__(
-									'Click the button above to authorize WP MCP AI to access your Mailjet account. You will be redirected to Mailjet to grant permissions.',
-									'mcp-ai-wpoos'
-								)
-							);
-							?>
-						</p>
-					<?php else : ?>
-						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #721c24;">
-								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-								<strong><?php esc_html_e( 'Mailjet OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p class="description">
-							<?php esc_html_e( 'Enter your Mailjet OAuth Client ID and Client Secret in the fields above, then save settings. After that, you can connect using the button that will appear here.', 'mcp-ai-wpoos' ); ?>
-						</p>
-					<?php endif; ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"></th>
-				<td>
-					<p class="description">
-						<strong><?php esc_html_e( 'Mailjet Integration:', 'mcp-ai-wpoos' ); ?></strong>
+						?>
 					</p>
-					<ul style="list-style: disc; margin-left: 20px;">
-						<li><?php esc_html_e( 'Create an OAuth app in your Mailjet developer portal', 'mcp-ai-wpoos' ); ?></li>
-						<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
-						<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
-					</ul>
-				</td>
-			</tr>
+				<?php else : ?>
+					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+					<p style="margin: 0; color: #721c24;">
+					<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+					<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					</div>
+<p class="description">
+					<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
+</p>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
+				<button type="button" class="button" onclick="(function(btn){try{var input=document.getElementById('mailjet_webhook_url');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(input.value).then(function(){btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}).catch(function(){input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);});}else{input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}}catch(e){console.error('Copy failed:',e);alert('<?php esc_attr_e( 'Failed to copy. Please copy manually.', 'mcp-ai-wpoos' ); ?>');}})(this);">
+					<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+</button>
+				<p class="description">
+					<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
+</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<p class="description">
+					<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+</td>
+			</td>
+		</tr>
 			<?php
 		}
 
@@ -1712,7 +2149,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 							// Otherwise link directly to the integration subtab.
 
-							$current_tab           = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
+							$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
 							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
 
 							$url_args = array(
@@ -1743,6 +2182,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 					<!-- Hidden field to preserve subtab during form submission -->
 					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					
+					<?php
+					// If accessed via connection parameter (e.g., from Tools > Connections),
+					// preserve it for redirect after save.
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
+					if ( isset( $_GET['connection'] ) ) :
+						?>
+						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<?php
+					endif;
+					?>
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">

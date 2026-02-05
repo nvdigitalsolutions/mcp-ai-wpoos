@@ -115,7 +115,7 @@ Claude Code is a **terminal-based coding assistant** that:
 | Code execution | Tool execution system |
 | Multi-step workflows | Agentic loops |
 | Context management | Message transcripts, session state |
-| Tool calling | Tool Registry with 65+ tools |
+| Tool calling | Tool Registry with 519 tools |
 
 ### When CLI Integration WOULD Make Sense
 

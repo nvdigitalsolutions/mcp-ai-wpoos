@@ -64,8 +64,8 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// LangChain libraries from CDN (loaded on-demand).
 		// Note: These are loaded via import() in the orchestration client for lazy loading.
 		// We register them here for dependency management only.
-		$langchain_version = '0.3.6';
-		$langchain_core_version = '0.3.20';
+		$langchain_version           = '0.3.6';
+		$langchain_core_version      = '0.3.20';
 		$langchain_community_version = '0.3.14';
 
 		// Register CDN scripts (for reference, not directly enqueued).
@@ -126,11 +126,11 @@ class WP_MCP_AI_LangChain_Enqueue {
 			'wp-mcp-ai-langchain-orchestration',
 			'wpMcpAiLangChain',
 			array(
-				'enabled' => true,
+				'enabled'       => true,
 				'maxIterations' => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
-				'verbose' => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'cdnUrls' => array(
-					'core' => 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
+				'verbose'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'cdnUrls'       => array(
+					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
 					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
 					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm',
 				),
@@ -188,10 +188,10 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		// Check if page has mcp-ai-chat widget.
 		$elements_data = $document->get_elements_data();
-		$json_data = wp_json_encode( $elements_data );
+		$json_data     = wp_json_encode( $elements_data );
 
 		return ( false !== strpos( $json_data, 'mcp-ai-chat' ) ||
-		         false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
+				false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
 	}
 
 	/**

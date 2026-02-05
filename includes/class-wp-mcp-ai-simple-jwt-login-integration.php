@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 		 * @param WP_REST_Request    $request Current REST request.
 		 * @return true|WP_Error|null
 		 */
-		public function pre_validate_bearer_token( $pre, $token, $request ) {
+		public function pre_validate_bearer_token( $pre, $token, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			if ( null !== $pre ) {
 				return $pre;
 			}
@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 		 * @param WP_REST_Request $request  Current REST request.
 		 * @return int|null|WP_Error
 		 */
-		public function map_bearer_to_user_id( $mapped, $payload, $request ) {
+		public function map_bearer_to_user_id( $mapped, $payload, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			if ( $mapped instanceof WP_Error ) {
 				return $mapped;
 			}

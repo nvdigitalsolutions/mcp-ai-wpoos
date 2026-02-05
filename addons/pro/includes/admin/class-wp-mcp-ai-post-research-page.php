@@ -231,8 +231,26 @@ class WP_MCP_AI_Post_Research_Page {
 							<?php
 							// Render chat interface with comprehensive post tools.
 							// Includes creation, management, research, and content discovery tools.
+							$post_tools = array(
+								// Post management.
+								'create_post',
+								'save_post',
+								'get_recent_posts',
+								'research_post',
+								// SEO and optimization.
+								'get_rankmath_seo',
+								// Image tools.
+								'generate_image_caption',
+								'generate_image_alt_text',
+								'generate_openai_image',
+								// Research tools.
+								'web_search',
+								'deep_research',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_post,save_post,get_recent_posts,web_search,deep_research,search_content,semantic_content_search,get_rankmath_seo,generate_image_caption"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $post_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -613,9 +631,9 @@ class WP_MCP_AI_Post_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get post statistics.
-		$total_posts = wp_count_posts( 'post' );
+		$total_posts     = wp_count_posts( 'post' );
 		$published_count = isset( $total_posts->publish ) ? $total_posts->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$posts = get_posts(
 			array(
@@ -626,27 +644,27 @@ class WP_MCP_AI_Post_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_image = 0;
-		$with_excerpt = 0;
+		$with_image     = 0;
+		$with_excerpt   = 0;
 
 		foreach ( $posts as $post ) {
 			$has_image    = has_post_thumbnail( $post->ID );
 			$has_excerpt  = ! empty( $post->post_excerpt );
 			$has_category = ! empty( wp_get_post_categories( $post->ID ) );
-			
+
 			if ( $has_image ) {
-				$with_image++;
+				++$with_image;
 			}
 			if ( $has_excerpt ) {
-				$with_excerpt++;
+				++$with_excerpt;
 			}
 			if ( $has_image && $has_excerpt && $has_category ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Post Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

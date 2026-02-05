@@ -13,6 +13,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load migration class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/migrations/class-wp-mcp-ai-migrate-requirement-post-type.php';
+
+// Run migration on admin init (only once).
+add_action(
+	'admin_init',
+	function () {
+		// Only run migration if needed.
+		$status = WP_MCP_AI_Migrate_Requirement_Post_Type::get_status();
+		if ( $status['needs_migration'] && ! $status['migration_completed'] ) {
+			// Run migration automatically.
+			$result = WP_MCP_AI_Migrate_Requirement_Post_Type::run();
+
+			// Log result.
+			if ( 'success' === $result['status'] && function_exists( 'wp_mcp_ai_log_activity' ) ) {
+				wp_mcp_ai_log_activity(
+					'migration_requirement_post_type',
+					sprintf( 'Migrated %d requirements from mcp_ai_reg_requirement to mcp_ai_requirement', $result['migrated'] )
+				);
+			}
+		}
+	}
+);
+
 // Load Regulatory Registration CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-regulatory-registration-cpt.php';
 
@@ -25,14 +49,14 @@ if ( is_admin() ) {
 	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		// Load Toolkit Settings Page.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-regulatory-registration-toolkit-settings-page.php';
+		// Load CPT Settings Page (uses Quiz Toolkit pattern).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-regulatory-product-cpt-settings-page.php';
 
-		// Load Product settings and research pages.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-settings-page.php';
+		// Load Product research page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php';
 
-		// Load Registration tracking dashboard and research page.
+		// Load Registration settings, dashboard, and research pages.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-dashboard-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-research-page.php';
 
@@ -63,7 +87,7 @@ function wp_mcp_ai_enqueue_regulatory_registration_admin_styles( $hook ) {
 			'mcp_ai_registration',
 			'mcp_ai_reg_document',
 			'mcp_ai_reg_country',
-			'mcp_ai_reg_requirement',
+			'mcp_ai_requirement',
 		),
 		true
 	) ) {
@@ -156,15 +180,15 @@ function wp_mcp_ai_reg_add_default_statuses() {
 
 	// Add default statuses based on industry best practices.
 	$default_statuses = array(
-		'Draft'              => 'Initial registration draft',
-		'Pending Documents'  => 'Waiting for required documents',
+		'Draft'                => 'Initial registration draft',
+		'Pending Documents'    => 'Waiting for required documents',
 		'Ready for Submission' => 'All documents ready, awaiting submission',
-		'Submitted'          => 'Application submitted to authority',
-		'Under Review'       => 'Under review by regulatory authority',
-		'Approved'           => 'Registration approved',
-		'Rejected'           => 'Registration rejected',
-		'On Hold'            => 'Registration on hold',
-		'Renewal Due'        => 'Registration renewal required',
+		'Submitted'            => 'Application submitted to authority',
+		'Under Review'         => 'Under review by regulatory authority',
+		'Approved'             => 'Registration approved',
+		'Rejected'             => 'Registration rejected',
+		'On Hold'              => 'Registration on hold',
+		'Renewal Due'          => 'Registration renewal required',
 	);
 
 	foreach ( $default_statuses as $name => $description ) {
@@ -204,19 +228,19 @@ function wp_mcp_ai_reg_add_default_document_types() {
 
 	// Add default document types based on common regulatory requirements.
 	$default_doc_types = array(
-		'LOA'                         => 'Letter of Authorization',
-		'Manufacturer Declaration'    => 'Manufacturer declaration document',
-		'Artwork'                     => 'Product artwork and labeling',
-		'Formula Certificate'         => 'Product formula certificate',
-		'Certificate of Analysis'     => 'Certificate of Analysis (CoA)',
-		'Free Sale Certificate'       => 'Certificate of Free Sale',
-		'Sample Import License'       => 'License for importing product samples',
-		'MSDS'                        => 'Material Safety Data Sheet',
-		'GMP Certificate'             => 'Good Manufacturing Practice certificate',
-		'ISO Certificate'             => 'ISO certification document',
-		'Registration Certificate'    => 'Official registration certificate',
-		'Payment Receipt'             => 'Payment receipt or proof',
-		'INCI List'                   => 'International Nomenclature Cosmetic Ingredient list',
+		'LOA'                      => 'Letter of Authorization',
+		'Manufacturer Declaration' => 'Manufacturer declaration document',
+		'Artwork'                  => 'Product artwork and labeling',
+		'Formula Certificate'      => 'Product formula certificate',
+		'Certificate of Analysis'  => 'Certificate of Analysis (CoA)',
+		'Free Sale Certificate'    => 'Certificate of Free Sale',
+		'Sample Import License'    => 'License for importing product samples',
+		'MSDS'                     => 'Material Safety Data Sheet',
+		'GMP Certificate'          => 'Good Manufacturing Practice certificate',
+		'ISO Certificate'          => 'ISO certification document',
+		'Registration Certificate' => 'Official registration certificate',
+		'Payment Receipt'          => 'Payment receipt or proof',
+		'INCI List'                => 'International Nomenclature Cosmetic Ingredient list',
 	);
 
 	foreach ( $default_doc_types as $name => $description ) {
@@ -294,7 +318,7 @@ function wp_mcp_ai_reg_add_default_countries() {
 				'post_type'    => 'mcp_ai_reg_country',
 				'post_status'  => 'publish',
 				'meta_input'   => array(
-					'country_code'        => $country['code'],
+					'country_code'         => $country['code'],
 					'regulatory_authority' => $country['authority'],
 				),
 			)

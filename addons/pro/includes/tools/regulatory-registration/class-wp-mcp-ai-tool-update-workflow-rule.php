@@ -135,27 +135,27 @@ class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		$updated_fields = array();
 
 		if ( ! empty( $arguments['name'] ) ) {
-			$rule['name'] = sanitize_text_field( $arguments['name'] );
+			$rule['name']     = sanitize_text_field( $arguments['name'] );
 			$updated_fields[] = 'name';
 		}
 
 		if ( isset( $arguments['description'] ) ) {
 			$rule['description'] = sanitize_textarea_field( $arguments['description'] );
-			$updated_fields[] = 'description';
+			$updated_fields[]    = 'description';
 		}
 
 		if ( ! empty( $arguments['trigger'] ) && is_array( $arguments['trigger'] ) ) {
-			$rule['trigger'] = $arguments['trigger'];
+			$rule['trigger']  = $arguments['trigger'];
 			$updated_fields[] = 'trigger';
 		}
 
 		if ( ! empty( $arguments['actions'] ) && is_array( $arguments['actions'] ) ) {
-			$rule['actions'] = $arguments['actions'];
+			$rule['actions']  = $arguments['actions'];
 			$updated_fields[] = 'actions';
 		}
 
 		if ( isset( $arguments['enabled'] ) ) {
-			$rule['enabled'] = (bool) $arguments['enabled'];
+			$rule['enabled']  = (bool) $arguments['enabled'];
 			$updated_fields[] = 'enabled';
 		}
 
@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_Update_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		update_option( 'wp_mcp_ai_workflow_rules', $workflow_rules );
 
 		// Log update.
-		$workflow_log = get_option( 'wp_mcp_ai_workflow_log', array() );
+		$workflow_log   = get_option( 'wp_mcp_ai_workflow_log', array() );
 		$workflow_log[] = array(
 			'timestamp'      => current_time( 'mysql' ),
 			'user_id'        => $current_user_id,

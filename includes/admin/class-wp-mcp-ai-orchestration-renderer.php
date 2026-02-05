@@ -116,6 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 *
 		 * @param array $presets Available presets configuration.
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If presets array is invalid or empty.
 		 */
 		public static function render_presets_selector( $presets ) { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
 			try {
@@ -267,6 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * the UI never breaks even if monitoring fails.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If health service is not available.
 		 */
 		public static function render_health_status() {
 			try {
@@ -361,6 +363,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * Render memory usage progress bar.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If health service is not available.
 		 */
 		public static function render_memory_progress() {
 			try {
@@ -435,6 +438,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * Render predictive insights panel.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If health service is not available.
 		 */
 		public static function render_predictive_insights() {
 			try {
@@ -518,6 +522,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 *
 		 * @param int $max_tokens Current max tokens limit from resource manager.
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If max tokens value is invalid.
 		 */
 		public static function render_token_budget_explanation( $max_tokens ) {
 			try {

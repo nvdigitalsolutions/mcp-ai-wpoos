@@ -138,27 +138,27 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	 */
 	protected function get_validation_schema() {
 		return array(
-			'required_fields'     => array(
+			'required_fields'    => array(
 				'sku'         => __( 'SKU (Stock Keeping Unit)', 'mcp-ai-wpoos-pro' ),
 				'title'       => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
 				'price'       => __( 'Price', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
 				'image'       => __( 'Product Image', 'mcp-ai-wpoos-pro' ),
 			),
-			'recommended_fields'  => array(
+			'recommended_fields' => array(
 				'category'       => __( 'Category', 'mcp-ai-wpoos-pro' ),
 				'tags'           => __( 'Tags', 'mcp-ai-wpoos-pro' ),
 				'stock_quantity' => __( 'Stock Quantity', 'mcp-ai-wpoos-pro' ),
 				'weight'         => __( 'Weight', 'mcp-ai-wpoos-pro' ),
 				'dimensions'     => __( 'Dimensions', 'mcp-ai-wpoos-pro' ),
 			),
-			'validation_rules'    => array(
-				'sku'   => array(
+			'validation_rules'   => array(
+				'sku'            => array(
 					'type'       => 'string',
 					'unique'     => true,
 					'max_length' => 100,
 				),
-				'price' => array(
+				'price'          => array(
 					'type'      => 'numeric',
 					'min_value' => 0,
 				),
@@ -167,7 +167,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 					'min_value' => 0,
 				),
 			),
-			'quality_dimensions'  => array(
+			'quality_dimensions' => array(
 				'accuracy'     => __( 'Data matches reality (prices, specs, etc.)', 'mcp-ai-wpoos-pro' ),
 				'completeness' => __( '97-99% of attributes filled (industry standard)', 'mcp-ai-wpoos-pro' ),
 				'consistency'  => __( 'Uniform data across all channels', 'mcp-ai-wpoos-pro' ),
@@ -223,7 +223,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 				continue; // Skip malformed rows.
 			}
 
-			$product = array_combine( $headers, $values );
+			$product    = array_combine( $headers, $values );
 			$products[] = $this->normalize_product_data( $product );
 		}
 
@@ -287,24 +287,24 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	protected function normalize_product_data( $product ) {
 		// Map common field variations to standard fields.
 		$field_map = array(
-			'name'           => 'title',
-			'product_name'   => 'title',
-			'product_title'  => 'title',
-			'desc'           => 'description',
-			'product_desc'   => 'description',
-			'cost'           => 'price',
-			'regular_price'  => 'price',
-			'product_id'     => 'sku',
-			'id'             => 'sku',
-			'stock'          => 'stock_quantity',
-			'inventory'      => 'stock_quantity',
-			'qty'            => 'stock_quantity',
+			'name'          => 'title',
+			'product_name'  => 'title',
+			'product_title' => 'title',
+			'desc'          => 'description',
+			'product_desc'  => 'description',
+			'cost'          => 'price',
+			'regular_price' => 'price',
+			'product_id'    => 'sku',
+			'id'            => 'sku',
+			'stock'         => 'stock_quantity',
+			'inventory'     => 'stock_quantity',
+			'qty'           => 'stock_quantity',
 		);
 
 		$normalized = array();
 		foreach ( $product as $key => $value ) {
-			$key_lower = strtolower( trim( $key ) );
-			$mapped_key = isset( $field_map[ $key_lower ] ) ? $field_map[ $key_lower ] : $key_lower;
+			$key_lower                 = strtolower( trim( $key ) );
+			$mapped_key                = isset( $field_map[ $key_lower ] ) ? $field_map[ $key_lower ] : $key_lower;
 			$normalized[ $mapped_key ] = trim( $value );
 		}
 
@@ -324,7 +324,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 			'fields'         => 'ids',
 		);
 
-		$products = get_posts( $args );
+		$products       = get_posts( $args );
 		$total_products = count( $products );
 
 		if ( 0 === $total_products ) {
@@ -334,16 +334,16 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 			);
 		}
 
-		$schema = $this->get_validation_schema();
-		$required_fields = array_keys( $schema['required_fields'] );
+		$schema             = $this->get_validation_schema();
+		$required_fields    = array_keys( $schema['required_fields'] );
 		$recommended_fields = array_keys( $schema['recommended_fields'] );
-		
-		$total_fields = count( $required_fields ) + count( $recommended_fields );
-		$filled_count = 0;
+
+		$total_fields  = count( $required_fields ) + count( $recommended_fields );
+		$filled_count  = 0;
 		$missing_items = array();
 
 		// Sample first 10 products for completeness check.
-		$sample_products = array_slice( $products, 0, 10 );
+		$sample_products  = array_slice( $products, 0, 10 );
 		$products_checked = 0;
 
 		foreach ( $sample_products as $product_id ) {
@@ -352,48 +352,48 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 				continue;
 			}
 
-			$products_checked++;
+			++$products_checked;
 			$product_filled = 0;
 
 			// Check required fields.
 			if ( $product->get_sku() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_name() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_price() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_description() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_image_id() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 
 			// Check recommended fields.
 			if ( $product->get_category_ids() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_tag_ids() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_stock_quantity() !== null ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_weight() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 			if ( $product->get_length() || $product->get_width() || $product->get_height() ) {
-				$product_filled++;
+				++$product_filled;
 			}
 
 			$filled_count += $product_filled;
 		}
 
 		$average_filled = $products_checked > 0 ? $filled_count / $products_checked : 0;
-		$percentage = round( ( $average_filled / $total_fields ) * 100 );
+		$percentage     = round( ( $average_filled / $total_fields ) * 100 );
 
 		// Identify missing data across sampled products.
 		if ( $percentage < 97 ) {
@@ -419,7 +419,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	 */
 	protected function calculate_item_quality_score( $item ) {
 		$schema = $this->get_validation_schema();
-		$score = 100;
+		$score  = 100;
 		$issues = array();
 
 		// Get actual product if we have an ID.
@@ -434,23 +434,23 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 
 		// Check required fields (20 points each).
 		if ( ! $product->get_sku() ) {
-			$score -= 20;
+			$score   -= 20;
 			$issues[] = 'missing_sku';
 		}
 		if ( ! $product->get_name() ) {
-			$score -= 20;
+			$score   -= 20;
 			$issues[] = 'missing_name';
 		}
 		if ( ! $product->get_price() ) {
-			$score -= 20;
+			$score   -= 20;
 			$issues[] = 'missing_price';
 		}
 		if ( ! $product->get_description() ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_description';
 		}
 		if ( ! $product->get_image_id() ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_image';
 		}
 
@@ -467,13 +467,13 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 
 		// Determine quality level.
 		if ( $score >= 80 ) {
-			$level = 'high';
+			$level  = 'high';
 			$status = __( 'Excellent', 'mcp-ai-wpoos-pro' );
 		} elseif ( $score >= 50 ) {
-			$level = 'medium';
+			$level  = 'medium';
 			$status = __( 'Good', 'mcp-ai-wpoos-pro' );
 		} else {
-			$level = 'low';
+			$level  = 'low';
 			$status = __( 'Needs Improvement', 'mcp-ai-wpoos-pro' );
 		}
 

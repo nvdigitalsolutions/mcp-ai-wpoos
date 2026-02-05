@@ -159,11 +159,11 @@ class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP
 
 		// Placeholder for actual electronic submission.
 		$submission_result = array(
-			'status'            => 'submitted',
-			'tracking_id'       => $submission_reference,
-			'submission_date'   => current_time( 'mysql' ),
-			'estimated_review'  => gmdate( 'Y-m-d', strtotime( '+30 days' ) ),
-			'documents_count'   => $document_count,
+			'status'           => 'submitted',
+			'tracking_id'      => $submission_reference,
+			'submission_date'  => current_time( 'mysql' ),
+			'estimated_review' => gmdate( 'Y-m-d', strtotime( '+30 days' ) ),
+			'documents_count'  => $document_count,
 		);
 
 		// Update registration status to submitted.
@@ -187,11 +187,11 @@ class WP_MCP_AI_Tool_Submit_To_Authority implements WP_MCP_AI_Tool_Interface, WP
 			$submission_log = array();
 		}
 		$submission_log[] = array(
-			'timestamp'  => current_time( 'mysql' ),
-			'user_id'    => $current_user_id,
-			'type'       => $submission_type,
-			'priority'   => $priority,
-			'reference'  => $submission_reference,
+			'timestamp' => current_time( 'mysql' ),
+			'user_id'   => $current_user_id,
+			'type'      => $submission_type,
+			'priority'  => $priority,
+			'reference' => $submission_reference,
 		);
 		update_post_meta( $registration_id, '_submission_log', $submission_log );
 

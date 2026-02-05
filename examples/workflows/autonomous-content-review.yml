@@ -1,0 +1,32 @@
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: Autonomous Content Review
+  description: Loop-based workflow that continuously reviews content until quality is acceptable
+  steps:
+    - repeat_until: '{{quality_score}} >= 8'
+      max_iterations: 5
+      steps:
+        - task: clean-content
+          params:
+            limit: 3
+            phase: 1
+          output_var: clean_result
+        
+        - task: next-task
+          params:
+            type: drafts
+            limit: 3
+          output_var: quality_score
+        
+        - task: wait
+          params:
+            seconds: 2
+    
+    - task: notify_admin
+      params:
+        subject: 'Autonomous Content Review Complete'
+        message: 'Content review completed with quality score: {{quality_score}}'

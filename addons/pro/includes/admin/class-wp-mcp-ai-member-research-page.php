@@ -23,13 +23,11 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->post_type      = 'mcp_ai_member';
-		$this->page_title     = __( 'Research & Add Members', 'mcp-ai-wpoos-pro' );
-		$this->menu_title     = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
-		$this->page_slug      = 'member-research';
-		$this->settings_key   = 'wp_mcp_ai_member_settings';
-		$this->capability     = 'edit_posts';
-		$this->research_title = __( 'Family Member & Pet Research', 'mcp-ai-wpoos-pro' );
+		$this->post_type  = 'mcp_ai_member';
+		$this->page_title = __( 'Research & Add Members', 'mcp-ai-wpoos-pro' );
+		$this->menu_title = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
+		$this->page_slug  = 'member-research';
+		$this->capability = 'edit_posts';
 
 		parent::__construct( 'health' );
 	}
@@ -79,11 +77,23 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 */
 	protected function get_available_tools() {
 		return array(
+			// Core member management.
 			'create_member',
 			'update_member',
+			'delete_member',
+			'get_member',
 			'list_members',
+			// Health & wellness.
 			'get_member_health_summary',
 			'research_health_member',
+			'generate_health_chart',
+			'guide_health_record_creation',
+			'parse_health_information',
+			'analyze_loop_health',
+			// General research tools.
+			'web_search',
+			'search_content',
+			'semantic_content_search',
 		);
 	}
 

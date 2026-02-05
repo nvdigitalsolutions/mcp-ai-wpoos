@@ -436,12 +436,12 @@ class WP_MCP_AI_Cache_Helper {
 		);
 
 		$stats = array(
-			'transient_count'   => (int) $transient_count,
-			'object_cache'      => self::has_object_cache(),
-			'caching_enabled'   => self::is_caching_enabled(),
-			'cache_group'       => self::CACHE_GROUP,
-			'cache_prefix'      => self::CACHE_PREFIX,
-			'default_ttl'       => self::DEFAULT_EXPIRATION,
+			'transient_count' => (int) $transient_count,
+			'object_cache'    => self::has_object_cache(),
+			'caching_enabled' => self::is_caching_enabled(),
+			'cache_group'     => self::CACHE_GROUP,
+			'cache_prefix'    => self::CACHE_PREFIX,
+			'default_ttl'     => self::DEFAULT_EXPIRATION,
 		);
 
 		// Add object cache stats if available.
@@ -465,14 +465,14 @@ class WP_MCP_AI_Cache_Helper {
 	 */
 	public static function remember( $key, $callback, $expiration = self::DEFAULT_EXPIRATION ) {
 		$cached = self::get( $key );
-		
+
 		// Check if cache exists (wrapped in array).
 		if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
 			return $cached['__cached_value__'];
 		}
 
 		$value = call_user_func( $callback );
-		
+
 		// Wrap value to distinguish from cache miss.
 		self::set( $key, array( '__cached_value__' => $value ), $expiration );
 
@@ -495,7 +495,7 @@ class WP_MCP_AI_Cache_Helper {
 	public static function remember_with_lock( $key, $callback, $expiration = self::DEFAULT_EXPIRATION, $lock_ttl = 30 ) {
 		// Try to get from cache.
 		$cached = self::get( $key );
-		
+
 		// Check if cache exists (wrapped in array).
 		if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
 			return $cached['__cached_value__'];
@@ -509,7 +509,7 @@ class WP_MCP_AI_Cache_Helper {
 			// Lock exists, wait briefly and try to get cached value.
 			usleep( 100000 ); // 100ms.
 			$cached = self::get( $key );
-			
+
 			// Check if cache was populated while waiting.
 			if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
 				return $cached['__cached_value__'];

@@ -123,8 +123,8 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 
 		$result = array(
-			'message'  => $summary_text, // Chat client display
-			'summary'  => $summary_text, // Backward compatibility
+			'message'  => $summary_text, // Chat client display.
+			'summary'  => $summary_text, // Backward compatibility.
 			'job_id'   => $job_id,
 			'hook'     => $hook,
 			'schedule' => $schedule,
@@ -168,17 +168,11 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -196,7 +190,6 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

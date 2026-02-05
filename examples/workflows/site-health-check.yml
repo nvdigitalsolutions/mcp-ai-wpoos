@@ -1,0 +1,39 @@
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: Site Health Check
+  description: Parallel execution workflow for fast site health checks
+  steps:
+    - parallel:
+        - task: optimize-perf
+          name: performance_check
+          timeout: 60
+          params:
+            phases: '1,2,3,4,5'
+            dry-run: true
+          output_var: perf_result
+        
+        - task: clean-content
+          name: content_check
+          timeout: 45
+          params:
+            limit: 10
+            dry-run: true
+          output_var: content_result
+        
+        - task: sync-docs
+          name: docs_check
+          timeout: 30
+          params:
+            dry-run: true
+          output_var: docs_result
+      
+      continue_on_error: true
+    
+    - task: notify_admin
+      params:
+        subject: 'Site Health Check Complete'
+        message: 'All health checks completed. Performance: {{perf_result}}, Content: {{content_result}}, Docs: {{docs_result}}'

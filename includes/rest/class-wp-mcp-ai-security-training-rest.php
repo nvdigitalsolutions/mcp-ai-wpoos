@@ -99,7 +99,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function get_modules( $request ) {
+	public function get_modules( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$args = array(
 			'post_type'      => 'mcp_ai_training',
 			'post_status'    => 'publish',
@@ -144,7 +144,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function get_user_completions( $request ) {
+	public function get_user_completions( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$user_id     = get_current_user_id();
 		$completions = WP_MCP_AI_Security_Training::get_instance()->get_user_completions( $user_id );
 
@@ -204,7 +204,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function get_statistics( $request ) {
+	public function get_statistics( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$stats = WP_MCP_AI_Security_Training::get_instance()->get_training_statistics();
 
 		return new WP_REST_Response(
@@ -222,7 +222,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_user_permission( $request ) {
+	public function check_user_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
 		return is_user_logged_in();
 	}
 
@@ -232,7 +232,7 @@ class WP_MCP_AI_Security_Training_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_admin_permission( $request ) {
+	public function check_admin_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
 		return current_user_can( 'manage_options' );
 	}
 }

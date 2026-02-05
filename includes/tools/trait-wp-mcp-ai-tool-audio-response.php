@@ -144,14 +144,17 @@ trait WP_MCP_AI_Tool_Audio_Response {
 		$metadata_parts = array();
 
 		if ( ! empty( $result['voice'] ) ) {
+			/* translators: %s: Voice name */
 			$metadata_parts[] = sprintf( __( 'Voice: %s', 'mcp-ai-wpoos' ), esc_html( $result['voice'] ) );
 		}
 
 		if ( ! empty( $result['model'] ) ) {
+			/* translators: %s: Model name */
 			$metadata_parts[] = sprintf( __( 'Model: %s', 'mcp-ai-wpoos' ), esc_html( $result['model'] ) );
 		}
 
 		if ( ! empty( $result['format'] ) ) {
+			/* translators: %s: Audio format */
 			$metadata_parts[] = sprintf( __( 'Format: %s', 'mcp-ai-wpoos' ), strtoupper( esc_html( $result['format'] ) ) );
 		}
 

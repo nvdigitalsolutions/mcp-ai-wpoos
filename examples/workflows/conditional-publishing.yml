@@ -1,0 +1,32 @@
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: Conditional Publishing
+  description: Workflow that makes publishing decisions based on draft count
+  steps:
+    - task: next-task
+      params:
+        type: drafts
+        limit: 20
+      output_var: draft_count
+    
+    - condition: '{{draft_count}} > 5'
+      then:
+        - task: ship
+          params:
+            limit: 5
+            publish: true
+        
+        - task: notify_admin
+          params:
+            subject: 'Posts Published'
+            message: '5 posts published from {{draft_count}} available drafts'
+      
+      else:
+        - task: notify_admin
+          params:
+            subject: 'Low Draft Count'
+            message: 'Only {{draft_count}} drafts available. Consider creating more content before publishing.'

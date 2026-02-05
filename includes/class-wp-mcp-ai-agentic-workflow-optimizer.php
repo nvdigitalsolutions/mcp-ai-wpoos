@@ -114,7 +114,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 * @param array  $arguments Tool arguments.
 	 * @param array  $context   Execution context.
 	 */
-	public function cache_tool_result( $result, $tool_name, $arguments, $context ) {
+	public function cache_tool_result( $result, $tool_name, $arguments, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware caching.
 		// Don't cache errors or non-cacheable tools.
 		if ( is_wp_error( $result ) || ! $this->is_cacheable_tool( $tool_name ) ) {
 			return;
@@ -203,7 +203,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 * @param array  $result    Raw result data.
 	 * @return string Possibly compressed content.
 	 */
-	public function maybe_compress_result( $content, $result ) {
+	public function maybe_compress_result( $content, $result ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for content-type detection.
 		// Only compress if content is large enough.
 		if ( strlen( $content ) < self::COMPRESSION_THRESHOLD ) {
 			return $content;
@@ -365,7 +365,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 * @param int $assistant_id Assistant post ID.
 	 * @return array Array of iteration counts.
 	 */
-	protected function get_iteration_history( $assistant_id ) {
+	protected function get_iteration_history( $assistant_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		// This would query chat transcripts for historical data.
 		// Placeholder implementation.
 		return array();

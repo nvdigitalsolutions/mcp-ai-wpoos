@@ -44,11 +44,11 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'rule_id'         => array(
+				'rule_id'          => array(
 					'type'        => 'string',
 					'description' => __( 'Rule ID to test (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'test_data'       => array(
+				'test_data'        => array(
 					'type'        => 'object',
 					'description' => __( 'Test data to simulate (optional)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Validate trigger.
 		if ( empty( $rule['trigger']['event'] ) ) {
-			$test_results['valid'] = false;
+			$test_results['valid']    = false;
 			$test_results['errors'][] = __( 'Trigger event is not configured.', 'mcp-ai-wpoos-pro' );
 		}
 
@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 				$registration = get_post( absint( $test_data['registration_id'] ) );
 				if ( ! $registration ) {
 					$test_results['warnings'][] = __( 'Test registration not found.', 'mcp-ai-wpoos-pro' );
-					$trigger_matched = false;
+					$trigger_matched            = false;
 				}
 			}
 
@@ -155,12 +155,12 @@ class WP_MCP_AI_Tool_Test_Workflow_Rule implements WP_MCP_AI_Tool_Interface, WP_
 		// Validate actions.
 		if ( $validate_actions ) {
 			if ( empty( $rule['actions'] ) || ! is_array( $rule['actions'] ) ) {
-				$test_results['valid'] = false;
+				$test_results['valid']    = false;
 				$test_results['errors'][] = __( 'No actions configured.', 'mcp-ai-wpoos-pro' );
 			} else {
 				foreach ( $rule['actions'] as $index => $action ) {
 					if ( empty( $action['type'] ) ) {
-						$test_results['valid'] = false;
+						$test_results['valid']    = false;
 						$test_results['errors'][] = sprintf(
 							/* translators: %d: action index */
 							__( 'Action %d: Type is not specified.', 'mcp-ai-wpoos-pro' ),

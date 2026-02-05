@@ -40,7 +40,7 @@ class WP_MCP_AI_Orchestration_Presets {
 	 */
 	public function get_presets() {
 		$built_in_presets = array(
-			'research'         => array(
+			'research'          => array(
 				'name'        => __( 'Research & Analysis', 'mcp-ai-wpoos' ),
 				'description' => __( 'Optimized for multi-source research and synthesis. Uses agent teams and reasoning mode.', 'mcp-ai-wpoos' ),
 				'category'    => 'research',
@@ -55,7 +55,7 @@ class WP_MCP_AI_Orchestration_Presets {
 					'max_delegation_depth' => 3,
 				),
 			),
-			'code_generation'  => array(
+			'code_generation'   => array(
 				'name'        => __( 'Code Generation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Enhanced for coding tasks with validation and security scanning. Activates reasoning mode automatically.', 'mcp-ai-wpoos' ),
 				'category'    => 'development',
@@ -69,32 +69,32 @@ class WP_MCP_AI_Orchestration_Presets {
 					'temperature'          => 0.3,
 				),
 			),
-			'multi_agent'      => array(
+			'multi_agent'       => array(
 				'name'        => __( 'Multi-Agent Collaboration', 'mcp-ai-wpoos' ),
 				'description' => __( 'Team-based approach for complex tasks requiring multiple perspectives and validation.', 'mcp-ai-wpoos' ),
 				'category'    => 'collaboration',
 				'settings'    => array(
-					'enable_agent_teams'   => true,
-					'team_composition'     => 'auto',
-					'delegation_enabled'   => true,
-					'result_aggregation'   => 'consensus',
-					'enable_critic_role'   => true,
-					'tool_preferences'     => array( 'create_agent_team', 'delegate_to_agent', 'aggregate_agent_results', 'execute_workflow' ),
-					'max_team_size'        => 5,
+					'enable_agent_teams' => true,
+					'team_composition'   => 'auto',
+					'delegation_enabled' => true,
+					'result_aggregation' => 'consensus',
+					'enable_critic_role' => true,
+					'tool_preferences'   => array( 'create_agent_team', 'delegate_to_agent', 'aggregate_agent_results', 'execute_workflow' ),
+					'max_team_size'      => 5,
 				),
 			),
-			'speed_optimized'  => array(
+			'speed_optimized'   => array(
 				'name'        => __( 'Speed Optimized', 'mcp-ai-wpoos' ),
 				'description' => __( 'Fastest response time with standard quality. Maximizes caching and parallel execution.', 'mcp-ai-wpoos' ),
 				'category'    => 'performance',
 				'settings'    => array(
-					'load_balancing'       => 'speed-optimized',
-					'enable_caching'       => true,
-					'cache_aggressive'     => true,
-					'enable_prediction'    => true,
-					'parallel_execution'   => 'aggressive',
-					'skip_validation'      => true,
-					'temperature'          => 0.7,
+					'load_balancing'     => 'speed-optimized',
+					'enable_caching'     => true,
+					'cache_aggressive'   => true,
+					'enable_prediction'  => true,
+					'parallel_execution' => 'aggressive',
+					'skip_validation'    => true,
+					'temperature'        => 0.7,
 				),
 			),
 			'quality_optimized' => array(
@@ -102,13 +102,13 @@ class WP_MCP_AI_Orchestration_Presets {
 				'description' => __( 'Highest quality output with reasoning, validation, and multi-step verification.', 'mcp-ai-wpoos' ),
 				'category'    => 'quality',
 				'settings'    => array(
-					'load_balancing'       => 'quality-optimized',
-					'reasoning_mode'       => 'enabled',
-					'enable_verification'  => true,
-					'enable_critic_role'   => true,
-					'tool_preferences'     => array( 'validate_reasoning_chain', 'enable_reasoning_mode' ),
-					'temperature'          => 0.2,
-					'require_confidence'   => 0.8,
+					'load_balancing'      => 'quality-optimized',
+					'reasoning_mode'      => 'enabled',
+					'enable_verification' => true,
+					'enable_critic_role'  => true,
+					'tool_preferences'    => array( 'validate_reasoning_chain', 'enable_reasoning_mode' ),
+					'temperature'         => 0.2,
+					'require_confidence'  => 0.8,
 				),
 			),
 		);
@@ -117,7 +117,7 @@ class WP_MCP_AI_Orchestration_Presets {
 		$custom_presets = get_option( self::CUSTOM_PRESETS_OPTION, array() );
 		if ( is_array( $custom_presets ) ) {
 			foreach ( $custom_presets as $key => $preset ) {
-				$preset['custom'] = true;
+				$preset['custom']         = true;
 				$built_in_presets[ $key ] = $preset;
 			}
 		}
@@ -311,7 +311,7 @@ class WP_MCP_AI_Orchestration_Presets {
 	 * @return array Recommended presets with confidence scores.
 	 */
 	public function recommend_preset_for_task( $task_description ) {
-		$task_lower = strtolower( $task_description );
+		$task_lower      = strtolower( $task_description );
 		$recommendations = array();
 
 		// Simple keyword-based recommendations.

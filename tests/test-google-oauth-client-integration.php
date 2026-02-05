@@ -28,14 +28,14 @@ class Test_Google_OAuth_Client_Integration extends WP_UnitTestCase {
 		$client = new Google_Client();
 		$client->setClientId( 'test-client-id' );
 		$client->setClientSecret( 'test-client-secret' );
-		
+
 		// Set redirect URI using WordPress admin_url and add_query_arg.
 		$redirect_uri = add_query_arg(
 			array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
 			admin_url( 'admin.php' )
 		);
 		$client->setRedirectUri( $redirect_uri );
-		
+
 		$client->addScope( 'https://www.googleapis.com/auth/gmail.readonly' );
 		$client->setAccessType( 'offline' );
 		$client->setIncludeGrantedScopes( true );
@@ -85,7 +85,7 @@ class Test_Google_OAuth_Client_Integration extends WP_UnitTestCase {
 			'prompt'                 => 'consent',
 			'state'                  => 'test-state-12345',
 		);
-		$manual_url = add_query_arg( $manual_params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+		$manual_url    = add_query_arg( $manual_params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
 		// Parse manual URL.
 		$manual_parsed = wp_parse_url( $manual_url );
@@ -112,7 +112,7 @@ class Test_Google_OAuth_Client_Integration extends WP_UnitTestCase {
 			parse_str( $google_parsed['query'], $google_query_params );
 
 			$this->assertArrayHasKey( 'redirect_uri', $google_query_params, 'Google Client URL should have redirect_uri parameter' );
-			
+
 			// The redirect URIs should be functionally equivalent (Google_Client may encode differently but decode to same value).
 			$this->assertEquals(
 				urldecode( $manual_query_params['redirect_uri'] ),
@@ -153,7 +153,7 @@ class Test_Google_OAuth_Client_Integration extends WP_UnitTestCase {
 
 		// Verify it's a valid URL.
 		$this->assertNotEmpty( $redirect_uri, 'Redirect URI should not be empty' );
-		
+
 		$parsed = wp_parse_url( $redirect_uri );
 		$this->assertNotFalse( $parsed, 'Redirect URI should be a valid URL' );
 		$this->assertArrayHasKey( 'scheme', $parsed, 'Redirect URI should have a scheme' );

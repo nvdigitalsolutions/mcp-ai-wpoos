@@ -79,7 +79,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				$prev_output = $previous_pricing[ $model_name ]['output'];
 
 				// Detect price changes.
-				if ( $prev_input != $input_cost || $prev_output != $output_cost ) {
+				if ( $prev_input !== $input_cost || $prev_output !== $output_cost ) {
 					$price_changes[] = array(
 						'model'       => $model_name,
 						'provider'    => isset( $model['provider'] ) ? $model['provider'] : 'unknown',

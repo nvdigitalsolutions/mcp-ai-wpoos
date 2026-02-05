@@ -118,31 +118,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'enable_media_toolkit'                       => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
-				'enable_document_generation_toolkit'         => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-				'enable_quiz_system'                         => __( 'Quiz System', 'mcp-ai-wpoos' ),
-				'enable_project_management'                  => __( 'Project Management', 'mcp-ai-wpoos' ),
-				'enable_health_wellness_management'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
-				'enable_places_management'                   => __( 'Places Management', 'mcp-ai-wpoos' ),
-				'enable_eca_management'                      => __( 'ECA Management', 'mcp-ai-wpoos' ),
-				'enable_crm_toolkit'                         => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ecommerce_toolkit'                   => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-				'enable_social_media_toolkit'                => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_analytics_toolkit'                   => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
-				'enable_multilingual_toolkit'                => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
-				'enable_video_production_toolkit'            => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ai_tool_builder_toolkit'             => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
-				'enable_architect_agent_toolkit'             => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
-				'enable_architectural_design_toolkit'        => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
-				'enable_calendar_booking_toolkit'            => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
-				'enable_dj_management_toolkit'               => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_financial_planner_toolkit'           => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
-				'enable_image_production_toolkit'            => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_regulatory_registration_toolkit'     => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
-				'enable_woocommerce_tools'                   => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
-				'enable_jetengine_tools'                     => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
-				'enable_site_creator'                        => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'enable_ai_cpt_management'                   => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+				'enable_media_toolkit'                   => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+				'enable_document_generation_toolkit'     => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+				'enable_quiz_system'                     => __( 'Quiz System', 'mcp-ai-wpoos' ),
+				'enable_project_management'              => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'enable_health_wellness_management'      => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+				'enable_places_management'               => __( 'Places Management', 'mcp-ai-wpoos' ),
+				'enable_eca_management'                  => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_crm_toolkit'                     => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ecommerce_toolkit'               => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+				'enable_social_media_toolkit'            => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_analytics_toolkit'               => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+				'enable_multilingual_toolkit'            => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+				'enable_video_production_toolkit'        => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ai_tool_builder_toolkit'         => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architect_agent_toolkit'         => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architectural_design_toolkit'    => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+				'enable_calendar_booking_toolkit'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_chat_channels_toolkit'           => __( 'Chat Channels Toolkit', 'mcp-ai-wpoos' ),
+				'enable_dj_management_toolkit'           => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_regulatory_registration_toolkit' => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_webchat_integration'             => __( 'WebChat Integration', 'mcp-ai-wpoos' ),
+				'enable_woocommerce_tools'               => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
+				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
+				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
+				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+				'enable_fantasy_football'                => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -281,7 +284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'media_toolkit'                => array(
+				'media_toolkit'                   => array(
 					'name'          => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_media_toolkit'] ),
@@ -296,7 +299,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'document_generation'          => array(
+				'document_generation'             => array(
 					'name'          => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
@@ -310,7 +313,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'project_management'           => array(
+				'project_management'              => array(
 					'name'          => __( 'Project Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_project_management'] ),
@@ -322,7 +325,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'places_management'            => array(
+				'places_management'               => array(
 					'name'          => __( 'Places Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_places_management'] ),
@@ -334,7 +337,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'health_wellness_management'   => array(
+				'health_wellness_management'      => array(
 					'name'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_health_wellness_management'] ),
@@ -346,7 +349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'quiz_system'                  => array(
+				'quiz_system'                     => array(
 					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_quiz_system'] ),
@@ -359,7 +362,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'eca_management'               => array(
+				'eca_management'                  => array(
 					'name'          => __( 'ECA Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_eca_management'] ),
@@ -373,7 +376,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'crm_toolkit'                  => array(
+				'crm_toolkit'                     => array(
 					'name'          => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_crm_toolkit'] ),
@@ -396,7 +399,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'code_formatting'              => array(
+				'code_formatting'                 => array(
 					'name'          => __( 'Code Formatting', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
 					'enabled'       => true,
@@ -409,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ecommerce_toolkit'            => array(
+				'ecommerce_toolkit'               => array(
 					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
@@ -428,7 +431,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'social_media_toolkit'         => array(
+				'social_media_toolkit'            => array(
 					'name'          => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_social_media_toolkit'] ),
@@ -451,7 +454,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'monitor_trends tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'analytics_toolkit'            => array(
+				'analytics_toolkit'               => array(
 					'name'          => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_analytics_toolkit'] ),
@@ -472,7 +475,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_insights tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'multilingual_toolkit'         => array(
+				'multilingual_toolkit'            => array(
 					'name'          => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_multilingual_toolkit'] ),
@@ -489,7 +492,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'batch_translate tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'video_production_toolkit'     => array(
+				'video_production_toolkit'        => array(
 					'name'          => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_video_production_toolkit'] ),
@@ -510,7 +513,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'trim_video tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ai_tool_builder_toolkit'      => array(
+				'ai_tool_builder_toolkit'         => array(
 					'name'          => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation capabilities.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ai_tool_builder_toolkit'] ),
@@ -526,7 +529,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'validate_tool tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'architect_agent_toolkit'      => array(
+				'architect_agent_toolkit'         => array(
 					'name'          => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Self-editing capabilities for AI agents with file operations, shell commands, git integration, and code search. Achieves GitHub Copilot CLI parity.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_architect_agent_toolkit'] ),
@@ -541,7 +544,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'search_codebase tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'architectural_design_toolkit' => array(
+				'architectural_design_toolkit'    => array(
 					'name'          => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_architectural_design_toolkit'] ),
@@ -558,7 +561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'optimize_layout tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'calendar_booking_toolkit'     => array(
+				'calendar_booking_toolkit'        => array(
 					'name'          => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Appointment scheduling, availability management, calendar synchronization, booking management, and automated reminder system.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_calendar_booking_toolkit'] ),
@@ -576,7 +579,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'reschedule_appointment tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'dj_management_toolkit'        => array(
+				'dj_management_toolkit'           => array(
 					'name'          => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Equipment tracking, playlist management, event scheduling, client management, and music library organization for DJs and event organizers.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_dj_management_toolkit'] ),
@@ -595,7 +598,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_invoices tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'financial_planner_toolkit'    => array(
+				'financial_planner_toolkit'       => array(
 					'name'          => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Retirement planning, budgeting, investment tracking, debt management, and financial goal planning with advanced analytics.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_financial_planner_toolkit'] ),
@@ -615,7 +618,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_financial_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'image_production_toolkit'           => array(
+				'image_production_toolkit'        => array(
 					'name'          => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_image_production_toolkit'] ),
@@ -634,7 +637,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'create_thumbnail tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'regulatory_registration_toolkit'    => array(
+				'regulatory_registration_toolkit' => array(
 					'name'          => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Comprehensive regulatory product registration and compliance management for multi-country regulatory submissions (NMRA, MOHAP, SFDA). Features product registration tracking, document management, compliance validation, PDF generation, and multi-country support with registration timeline tracking and expiry notifications.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_regulatory_registration_toolkit'] ),
@@ -683,6 +686,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'sync_with_sfda tool', 'mcp-ai-wpoos' ),
 						__( 'validate_excel_import tool', 'mcp-ai-wpoos' ),
 						__( 'configure_email_notifications tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'fantasy_football'                => array(
+					'name'          => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Yahoo Fantasy Sports integration with team management, player research, trade analysis, and league reporting.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_fantasy_football'] ),
+					'category'      => 'sports',
+					'php_functions' => array(),
+					'npm_packages'  => array(),
+					'tools_count'   => 9,
+					'tools'         => array(
+						__( 'yahoo_ff_auth tool', 'mcp-ai-wpoos' ),
+						__( 'yahoo_ff_get_leagues tool', 'mcp-ai-wpoos' ),
+						__( 'yahoo_ff_get_roster tool', 'mcp-ai-wpoos' ),
+						__( 'yahoo_ff_get_player_stats tool', 'mcp-ai-wpoos' ),
+						__( 'yahoo_ff_league_standings tool', 'mcp-ai-wpoos' ),
+						__( 'yahoo_ff_trade_analyzer tool', 'mcp-ai-wpoos' ),
+						__( 'ff_player_research tool', 'mcp-ai-wpoos' ),
+						__( 'ff_create_league_report tool', 'mcp-ai-wpoos' ),
+						__( 'ff_generate_team_logo tool', 'mcp-ai-wpoos' ),
 					),
 				),
 			);
@@ -1010,6 +1033,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/chat-bundle.min.js' );
 			}
 
+			// Check for React packages bundled into workflow-builder via @wordpress/scripts.
+			// These packages (react, react-dom, reactflow, @dnd-kit/*) are build-time dependencies
+			// that get compiled into the workflow builder bundle for production.
+			// The workflow builder is a PRO feature.
+			$workflow_bundled_packages = array(
+				'react',
+				'react-dom',
+				'reactflow',
+				'@dnd-kit/core',
+				'@dnd-kit/sortable',
+				'@dnd-kit/utilities',
+			);
+			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
+				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
+				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
+					if ( file_exists( $workflow_build_path ) ) {
+						return true;
+					}
+				}
+				// Priority 2: Check base build directory (legacy/development location).
+				// NOTE: This should be moved to pro addon directory as per project standards.
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
+				if ( file_exists( $legacy_workflow_build_path ) ) {
+					return true;
+				}
+				// Priority 3: Check base node_modules (development).
+				// These packages are in base package.json but used for Pro feature.
+				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				// If none exist, return false (not installed/bundled).
+				return false;
+			}
+
 			// Check for document generation packages bundled into local scripts.
 			$script_bundled_packages = array(
 				'pdfkit'  => 'generate-pdf.bundle.js',
@@ -1150,7 +1209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<td><strong><?php esc_html_e( 'Base Version Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
 							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['base_version'] ? 'active' : 'inactive' ); ?>">
-								<?php echo $status['base_version'] ? esc_html__( 'Active (35 core tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (65+ tools)', 'mcp-ai-wpoos' ); ?>
+								<?php echo $status['base_version'] ? esc_html__( 'Active (165 base tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (519 total tools)', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
 					</tr>
@@ -1365,6 +1424,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <!-- NPM Production: WebGPU/WebAssembly Section -->
 <div style="margin-top: 30px;">
 			<?php self::render_webgpu_webassembly_section(); ?>
+</div>
+
+<!-- Visual Workflow Builder Card -->
+<div style="margin-top: 30px;">
+			<?php self::render_visual_workflow_builder_card(); ?>
 </div>
 
 <!-- Pro Toolkit Features Card -->
@@ -2021,6 +2085,257 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</tr>
 			</tbody>
 		</table>
+	</div>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render Visual Workflow Builder card.
+		 *
+		 * Displays information about the React-based visual workflow builder Pro feature.
+		 *
+		 * @since 1.2.0
+		 * @return void
+		 */
+		private static function render_visual_workflow_builder_card() {
+			?>
+<div class="wp-mcp-ai-settings-card">
+	<h2>
+		<span class="dashicons dashicons-networking" style="color: #2271b1;"></span>
+		<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
+		<span class="pro-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
+	</h2>
+
+	<div class="notice notice-info inline" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Modern React-Based Workflow Editor', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Professional drag-and-drop workflow builder powered by React Flow. Create complex automation workflows visually without writing code.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+		
+		<!-- Key Features -->
+		<div style="border: 1px solid #2271b1; padding: 15px; background: #f0f6fc; border-radius: 4px;">
+			<h3 style="margin: 0 0 15px 0; color: #2271b1;">
+				<span class="dashicons dashicons-star-filled"></span>
+				<?php esc_html_e( 'Key Features', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; font-size: 13px; line-height: 1.8;">
+				<li><strong><?php esc_html_e( 'Visual Canvas:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Zoom, pan, and navigate large workflows', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Drag & Drop:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Intuitive step creation and reordering', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Command Palette:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Searchable library of 250+ commands', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Form-Based Config:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'No more JSON editing! Visual forms', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Real-Time Validation:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Instant feedback as you build', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Undo/Redo:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Full history support', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Accessibility:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'WCAG 2.1 compliant, keyboard shortcuts', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Touch Support:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Works on mobile and tablets', 'mcp-ai-wpoos' ); ?></li>
+			</ul>
+		</div>
+
+		<!-- Technology Stack -->
+		<div style="border: 1px solid #00a32a; padding: 15px; background: #f0f9f4; border-radius: 4px;">
+			<h3 style="margin: 0 0 15px 0; color: #00a32a;">
+				<span class="dashicons dashicons-admin-tools"></span>
+				<?php esc_html_e( 'Technology Stack', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<table style="width: 100%; font-size: 13px;">
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Framework:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>React 18.2</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Workflow Canvas:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>React Flow 11.10</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Drag & Drop:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>dnd-kit 6.1</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'UI Components:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/components</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'State Management:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/data</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Build Tools:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/scripts</code></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'npm Packages (Production)', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+			<thead>
+				<tr>
+					<th style="width: 35%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 50%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>react</code></td>
+					<td><code>^18.2.0</code></td>
+					<td><?php esc_html_e( 'Core UI framework for building interactive interfaces', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>react-dom</code></td>
+					<td><code>^18.2.0</code></td>
+					<td><?php esc_html_e( 'DOM rendering engine for React applications', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>reactflow</code></td>
+					<td><code>^11.10.4</code></td>
+					<td><?php esc_html_e( 'Visual workflow canvas - industry standard (MIT license)', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/core</code></td>
+					<td><code>^6.1.0</code></td>
+					<td><?php esc_html_e( 'Modern drag-and-drop toolkit with accessibility', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/sortable</code></td>
+					<td><code>^8.0.0</code></td>
+					<td><?php esc_html_e( 'Sortable list support for command palette', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/utilities</code></td>
+					<td><code>^3.2.2</code></td>
+					<td><?php esc_html_e( 'Helper utilities for drag-and-drop operations', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'npm Packages (Development)', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+			<thead>
+				<tr>
+					<th style="width: 35%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 50%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>@wordpress/scripts</code></td>
+					<td><code>^27.0.0</code></td>
+					<td><?php esc_html_e( 'Official WordPress build tooling (webpack, babel, eslint)', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/components</code></td>
+					<td><code>^27.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress UI component library for consistent design', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/data</code></td>
+					<td><code>^9.0.0</code></td>
+					<td><?php esc_html_e( 'Redux-based state management for WordPress', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/i18n</code></td>
+					<td><code>^4.0.0</code></td>
+					<td><?php esc_html_e( 'Internationalization support for translations', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/element</code></td>
+					<td><code>^5.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress abstraction over React', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/hooks</code></td>
+					<td><code>^3.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress hooks system for extensibility', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
+		<p class="description" style="margin-top: 10px;">
+			<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Development packages are NOT included in the plugin distribution. They are only used during the build process.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #f0b849;">
+		<h3 style="margin: 0 0 10px 0;">
+			<span class="dashicons dashicons-info"></span>
+			<?php esc_html_e( 'Build Information', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<table style="width: 100%; font-size: 13px;">
+			<tr>
+				<td style="padding: 5px 0; width: 30%;"><strong><?php esc_html_e( 'Build Command:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;"><code>npm run build:pro</code></td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Output Location:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;"><code>build/workflow-builder/</code></td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Bundle Size:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">~200-300KB (minified & optimized)</td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Compilation:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">Webpack + Babel (via @wordpress/scripts)</td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Pre-Built:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">✅ <?php esc_html_e( 'Yes - Committed to repository', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+		</table>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1;">
+		<h3 style="margin: 0 0 10px 0;">
+			<span class="dashicons dashicons-admin-settings"></span>
+			<?php esc_html_e( 'Usage', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<p style="margin: 0 0 10px 0;">
+			<strong><?php esc_html_e( 'Location:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'NV oOS → Workflows (Pro version only)', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<p style="margin: 0 0 10px 0;">
+			<strong><?php esc_html_e( 'Requirements:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Pro version of the plugin', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<p style="margin: 0;">
+			<strong><?php esc_html_e( 'Browser Support:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Modern browsers (Chrome, Firefox, Safari, Edge - latest 2 versions)', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'Why These Packages?', 'mcp-ai-wpoos' ); ?></h3>
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+			
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1;">
+				<h4 style="margin: 0 0 8px 0; color: #2271b1;"><?php esc_html_e( 'React Flow', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Industry standard for workflow builders. Used by Stripe, Typeform, and thousands of production apps. 18K+ GitHub stars, MIT license.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #00a32a;">
+				<h4 style="margin: 0 0 8px 0; color: #00a32a;"><?php esc_html_e( 'dnd-kit', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Modern drag-and-drop with built-in accessibility. Keyboard support, screen readers, touch-friendly. Zero dependencies, performant.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #f0b849;">
+				<h4 style="margin: 0 0 8px 0; color: #f0b849;"><?php esc_html_e( '@wordpress/scripts', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Official WordPress tooling ensures compatibility and follows WordPress standards. Zero-config webpack, babel, and eslint.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+		</div>
 	</div>
 </div>
 			<?php

@@ -3,7 +3,7 @@ Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.1.0
 License: GPLv3 or later
@@ -20,7 +20,11 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
 * [Google Gemini Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
+* [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
+* [Cloudflare Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
+* [Hugging Face Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 * Ollama (self-hosted, no external data transmission)
+* LM Studio (self-hosted, no external data transmission)
 
 
 = Why oOS? =
@@ -45,6 +49,9 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 **Multi-Provider AI Routing**
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
 * **Google Gemini** - Gemini Pro, Gemini 1.5 ([Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy))
+* **Anthropic** - Claude 3.5 Sonnet, Claude 3 Opus ([Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy))
+* **Cloudflare Workers AI** - Image generation models ([Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/))
+* **Hugging Face** - Dataset access and exploration ([Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy))
 * **Ollama** - Privacy-focused local AI (self-hosted, no external data)
 * **LM Studio** - Local AI with function calling (self-hosted, no external data)
 * Automatic provider fallback for maximum uptime
@@ -311,7 +318,7 @@ Initial release. Welcome to Open Operator System!
 
 **IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. 
 
-**📖 Complete Documentation:** For comprehensive details about all 16 external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
+**📖 Complete Documentation:** For comprehensive details about all 17 external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
 
 Below is a summary of the most commonly used services:
 
@@ -334,25 +341,50 @@ Below is a summary of the most commonly used services:
 * **Terms of Service:** https://ai.google.dev/terms
 * **Privacy Policy:** https://ai.google.dev/privacy
 
-**3. Ollama (Self-Hosted)**
+**3. Anthropic API (Claude)**
+* **Purpose:** Core AI functionality (chat, vision, document analysis)
+* **Data Sent:** Chat messages, system prompts, file attachments, tool results
+* **When:** Every time an AI assistant is used with Anthropic as the provider
+* **Service URL:** https://api.anthropic.com/v1/messages
+* **Terms of Service:** https://www.anthropic.com/legal/consumer-terms
+* **Privacy Policy:** https://www.anthropic.com/legal/privacy
+* **Data Usage:** Anthropic does not train models on API data
+
+**4. Ollama (Self-Hosted)**
 * **Purpose:** Privacy-focused local AI processing
 * **Data Sent:** None (runs entirely on your server)
 * **When:** When configured as AI provider
 * **Service URL:** Your local server only
 * **Privacy:** No external data transmission
 
-**4. LM Studio (Self-Hosted)**
+**5. LM Studio (Self-Hosted)**
 * **Purpose:** Local AI with function calling support
 * **Data Sent:** None (runs entirely on your computer)
 * **When:** When configured as AI provider
 * **Service URL:** Your local computer only
 * **Privacy:** No external data transmission
 
+**6. Cloudflare Workers AI**
+* **Purpose:** AI image generation and inference
+* **Data Sent:** Image generation prompts, model inference requests
+* **When:** When using Cloudflare AI tools
+* **Service URL:** https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}
+* **Terms of Service:** https://www.cloudflare.com/terms/
+* **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
+
 = Optional Third-Party Service Integrations =
 
 These services are only contacted when specific tools/features are used:
 
-**5. Brave Search API**
+**7. Hugging Face Datasets API**
+* **Purpose:** Access to public machine learning datasets
+* **Data Sent:** Dataset queries and filters
+* **When:** When dataset exploration tools are used
+* **Service URL:** https://huggingface.co/api/datasets
+* **Terms of Service:** https://huggingface.co/terms-of-service
+* **Privacy Policy:** https://huggingface.co/privacy
+
+**8. Brave Search API**
 * **Purpose:** Web search functionality for AI assistants
 * **Data Sent:** Search queries provided by users or AI
 * **When:** When the web search tool is called by an assistant
@@ -360,7 +392,7 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://brave.com/terms-of-use/
 * **Privacy Policy:** https://brave.com/privacy/browser/
 
-**6. Open-Meteo Weather API**
+**9. Open-Meteo Weather API**
 * **Purpose:** Weather forecasts and historical weather data
 * **Data Sent:** Location coordinates or city names
 * **When:** When weather tools are used
@@ -368,7 +400,7 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://open-meteo.com/en/terms
 * **Privacy Policy:** https://open-meteo.com/en/terms (includes privacy information)
 
-**7. ReliefWeb API**
+**10. ReliefWeb API**
 * **Purpose:** Humanitarian disaster and emergency reports
 * **Data Sent:** Search queries for disaster reports
 * **When:** When ReliefWeb tools are used
@@ -376,7 +408,7 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://reliefweb.int/terms-conditions
 * **Privacy Policy:** https://reliefweb.int/privacy-policy
 
-**8. WordPress.org API**
+**11. WordPress.org API**
 * **Purpose:** PHP version compatibility check for site health
 * **Data Sent:** Current PHP version number
 * **When:** When site health tools are called
@@ -384,7 +416,7 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://wordpress.org/about/privacy/
 * **Privacy Policy:** https://wordpress.org/about/privacy/
 
-**9. Chart.js CDN**
+**12. Chart.js CDN**
 * **Purpose:** Chart visualization library for displaying data
 * **Data Sent:** None (library loaded client-side)
 * **When:** When chart generation tools create visualizations
@@ -396,7 +428,7 @@ These services are only contacted when specific tools/features are used:
 
 These services are only used if you explicitly configure OAuth integrations:
 
-**10. GitHub API**
+**13. GitHub API**
 * **Purpose:** Repository management, code search, issue tracking
 * **Data Sent:** OAuth tokens, repository queries, commit data
 * **When:** When GitHub tools are used after OAuth setup
@@ -404,7 +436,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
-**11. Cloudways API**
+**14. Cloudways API**
 * **Purpose:** Server management for Cloudways hosting customers
 * **Data Sent:** OAuth tokens, server management commands
 * **When:** When Cloudways tools are used after OAuth setup
@@ -412,7 +444,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://www.cloudways.com/en/terms-of-service.php
 * **Privacy Policy:** https://www.cloudways.com/en/privacy-policy.php
 
-**12. QuickBooks API (Intuit)**
+**15. QuickBooks API (Intuit)**
 * **Purpose:** Accounting and financial data integration
 * **Data Sent:** OAuth tokens, financial queries
 * **When:** When QuickBooks tools are used after OAuth setup
@@ -420,7 +452,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
 * **Privacy Policy:** https://www.intuit.com/privacy/statement/
 
-**13. Mailjet API**
+**16. Mailjet API**
 * **Purpose:** Email marketing and transactional email
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
@@ -505,6 +537,27 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Data Usage: Google uses API data as described in their privacy policy
 * Review Google's data retention policies before use
 
+**Anthropic (when configured):**
+* Data sent to: https://api.anthropic.com/v1/messages
+* Processed according to: [Anthropic Privacy Policy](https://www.anthropic.com/legal/privacy)
+* Terms of Service: [Anthropic Terms](https://www.anthropic.com/legal/consumer-terms)
+* Data Usage: Anthropic does not train models on API data (Claude API)
+* Review Anthropic's data retention policies before use
+
+**Cloudflare Workers AI (when configured):**
+* Data sent to: https://api.cloudflare.com
+* Processed according to: [Cloudflare Privacy Policy](https://www.cloudflare.com/privacypolicy/)
+* Terms of Service: [Cloudflare Terms](https://www.cloudflare.com/terms/)
+* Used for: Image generation and AI inference
+* Review Cloudflare's data handling policies before use
+
+**Hugging Face (when configured):**
+* Data sent to: https://huggingface.co/api/datasets
+* Processed according to: [Hugging Face Privacy](https://huggingface.co/privacy)
+* Terms of Service: [Hugging Face Terms](https://huggingface.co/terms-of-service)
+* Used for: Dataset access and exploration
+* Review Hugging Face's data policies before use
+
 **Ollama (when configured):**
 * Data sent to: Your local server only (self-hosted)
 * No external data transmission
@@ -551,13 +604,16 @@ This plugin may connect to the following external services based on your configu
 **Required (one must be configured):**
 * OpenAI API - [Privacy](https://openai.com/privacy) | [Terms](https://openai.com/policies/terms-of-use)
 * Google Gemini API - [Privacy](https://ai.google.dev/privacy) | [Terms](https://ai.google.dev/terms)
+* Anthropic API - [Privacy](https://www.anthropic.com/legal/privacy) | [Terms](https://www.anthropic.com/legal/consumer-terms)
 * Ollama (self-hosted) - No external service
 * LM Studio (self-hosted) - No external service
 
 **Optional (for specific features):**
-* Weather data - OpenWeatherMap API
+* Cloudflare Workers AI - [Privacy](https://www.cloudflare.com/privacypolicy/) | [Terms](https://www.cloudflare.com/terms/)
+* Hugging Face - [Privacy](https://huggingface.co/privacy) | [Terms](https://huggingface.co/terms-of-service)
+* Weather data - Open-Meteo API
 * Web search - Brave Search API
-* Image generation - Requires OpenAI or Gemini API key
+* Image generation - OpenAI, Gemini, or Cloudflare
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 

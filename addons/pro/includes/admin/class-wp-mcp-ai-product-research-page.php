@@ -259,10 +259,50 @@ class WP_MCP_AI_Product_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive product tools.
-							// Includes research, creation, competitor analysis, and catalog management.
+							// Render chat interface with comprehensive WooCommerce product tools.
+							$product_tools = array(
+								// Product research and creation.
+								'research_product',
+								'create_woo_product',
+								'create_product_advanced',
+								'scrape_product',
+								// Product management.
+								'get_woo_products',
+								'bulk_update_products',
+								'import_products_csv',
+								'export_products_report',
+								// Inventory management.
+								'sync_product_inventory',
+								'track_inventory_movement',
+								'inventory_forecast',
+								'low_stock_alert_automation',
+								// Order management.
+								'get_woo_recent_orders',
+								'get_order_analytics',
+								'process_order_workflow',
+								'bulk_order_status_update',
+								'generate_invoice_pdf',
+								'refund_order_advanced',
+								// Customer analytics.
+								'segment_customers',
+								'customer_lifetime_value',
+								'export_customer_data',
+								'abandoned_cart_recovery',
+								// Sales optimization.
+								'upsell_recommendations',
+								'create_discount_campaign',
+								'sales_performance_dashboard',
+								// Image generation.
+								'generate_openai_image',
+								'generate_image_alt_text',
+								'generate_image_caption',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_product,create_woo_product,scrape_product,get_woo_products,get_woo_recent_orders,web_search,search_content,generate_openai_image,generate_image_alt_text"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $product_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -601,9 +641,9 @@ class WP_MCP_AI_Product_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get product statistics.
-		$total_products = wp_count_posts( 'product' );
+		$total_products  = wp_count_posts( 'product' );
 		$published_count = isset( $total_products->publish ) ? $total_products->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$products = get_posts(
 			array(
@@ -614,8 +654,8 @@ class WP_MCP_AI_Product_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_sku = 0;
-		$with_price = 0;
+		$with_sku       = 0;
+		$with_price     = 0;
 
 		foreach ( $products as $product ) {
 			// Check if WooCommerce is active before using WC functions.
@@ -628,20 +668,20 @@ class WP_MCP_AI_Product_Research_Page {
 				$has_price = false;
 			}
 			$has_desc = ! empty( $product->post_content );
-			
+
 			if ( $has_sku ) {
-				$with_sku++;
+				++$with_sku;
 			}
 			if ( $has_price ) {
-				$with_price++;
+				++$with_price;
 			}
 			if ( $has_sku && $has_price && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Product Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

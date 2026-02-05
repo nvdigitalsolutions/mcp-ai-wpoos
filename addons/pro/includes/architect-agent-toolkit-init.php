@@ -58,12 +58,12 @@ function wp_mcp_ai_load_architect_agent_tools() {
 
 	if ( $registry ) {
 		// File management.
-		$registry->register( new WP_MCP_AI_Tool_Manage_Files() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Manage_Files() );
 
 		// Development workflow.
-		$registry->register( new WP_MCP_AI_Tool_Execute_Shell_Command() );
-		$registry->register( new WP_MCP_AI_Tool_Git_Operations() );
-		$registry->register( new WP_MCP_AI_Tool_Search_Codebase() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Execute_Shell_Command() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Git_Operations() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Search_Codebase() );
 	}
 }
 

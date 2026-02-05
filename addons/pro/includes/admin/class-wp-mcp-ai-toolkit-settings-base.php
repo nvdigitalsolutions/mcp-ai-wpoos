@@ -77,7 +77,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Constructor - sets up hooks.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 25 );
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 100 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
@@ -237,8 +237,8 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 						$this->render_overview_tab();
 				}
 				?>
-			</div>
-		</div>
+			</div><!-- .toolkit-settings-content -->
+		</div><!-- .wrap -->
 
 		<style>
 			.toolkit-settings-nav {
@@ -333,7 +333,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) );
 				?>
 			</form>
-		</div>
+		</div><!-- .toolkit-card -->
 		<?php
 		$this->render_configuration_tab();
 	}

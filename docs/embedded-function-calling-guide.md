@@ -408,7 +408,7 @@ if (result.tool_calls) {
 
 ### Available WordPress Tools
 
-The plugin provides 65+ tools including:
+The plugin provides 519 tools (165 base + 348 pro + 6 core/memory) including:
 
 - **Content Management**: `create_post`, `update_post`, `delete_post`
 - **User Management**: `create_user`, `update_user`
@@ -749,7 +749,7 @@ function executeToolCall(toolCall, context) {
 Function calling with the embedded chat client enables powerful AI interactions:
 
 ✅ **Real-time data access** - Weather, stock prices, etc.  
-✅ **WordPress integration** - Use 65+ built-in tools  
+✅ **WordPress integration** - Use 519 built-in tools  
 ✅ **Custom tools** - Define your own functions  
 ✅ **Streaming support** - Responsive UX with streaming  
 ✅ **OpenAI compatible** - Standard API format  

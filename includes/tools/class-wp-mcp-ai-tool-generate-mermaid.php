@@ -50,16 +50,16 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'type'   => array(
+				'type'  => array(
 					'type'        => 'string',
 					'description' => 'Diagram type',
 					'enum'        => array( 'flowchart', 'sequence', 'gantt', 'class' ),
 				),
-				'code'   => array(
+				'code'  => array(
 					'type'        => 'string',
 					'description' => 'Mermaid diagram code',
 				),
-				'theme'  => array(
+				'theme' => array(
 					'type'        => 'string',
 					'description' => 'Diagram theme (optional)',
 					'enum'        => array( 'default', 'forest', 'dark', 'neutral' ),
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		$diagram_id = 'wp-mcp-ai-mermaid-' . wp_generate_uuid4();
 
 		// Get theme (default to 'default').
-		$theme = isset( $arguments['theme'] ) ? $arguments['theme'] : 'default';
+		$theme        = isset( $arguments['theme'] ) ? $arguments['theme'] : 'default';
 		$valid_themes = array( 'default', 'forest', 'dark', 'neutral' );
 		if ( ! in_array( $theme, $valid_themes, true ) ) {
 			$theme = 'default';
@@ -136,31 +136,30 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 		);
 
 		return array(
-			'success'     => true,
-			'diagram_id'  => $diagram_id,
-			'type'        => $arguments['type'],
-			'theme'       => $theme,
-			'html'        => $html,
-			'message'     => sprintf( 'Generated %s diagram with ID: %s', $arguments['type'], $diagram_id ),
+			'success'    => true,
+			'diagram_id' => $diagram_id,
+			'type'       => $arguments['type'],
+			'theme'      => $theme,
+			'html'       => $html,
+			'message'    => sprintf( 'Generated %s diagram with ID: %s', $arguments['type'], $diagram_id ),
 		);
 	}
 
-/**
- * Get extended tool definition including toolkit metadata.
- *
- * @since 1.1.0
- *
- * @return array Tool definition with metadata.
- */
-public function get_definition() {
-	return array(
-		'name'                  => $this->get_name(),
-		'description'           => $this->get_description(),
-		'toolkit'               => 'data_analytics',
-		'pattern_compatibility' => array( 'sequential' ),
-		'profession_tags'       => array( 'software_developer', 'technical_writer' ),
-		'risk_level'            => 'info',
-	);
-}
-
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'data_analytics',
+			'pattern_compatibility' => array( 'sequential' ),
+			'profession_tags'       => array( 'software_developer', 'technical_writer' ),
+			'risk_level'            => 'info',
+		);
+	}
 }

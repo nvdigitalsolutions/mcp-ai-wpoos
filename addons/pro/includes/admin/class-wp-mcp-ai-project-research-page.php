@@ -229,10 +229,30 @@ class WP_MCP_AI_Project_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive project tools.
-							// Includes research, creation, task management, and calendar tools.
+							// Render chat interface with comprehensive project management tools.
+							$project_tools = array(
+								// Project management.
+								'research_project',
+								'create_project',
+								'list_projects',
+								'update_project',
+								'delete_project',
+								// Task management.
+								'create_task',
+								'list_tasks',
+								'update_task',
+								'delete_task',
+								// Event management.
+								'create_event',
+								'list_events',
+								'get_calendar_view',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_project,create_project,list_projects,create_task,list_tasks,create_event,list_events,get_calendar_view,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $project_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -615,9 +635,9 @@ class WP_MCP_AI_Project_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get project statistics.
-		$total_projects = wp_count_posts( 'mcp_ai_project' );
+		$total_projects  = wp_count_posts( 'mcp_ai_project' );
 		$published_count = isset( $total_projects->publish ) ? $total_projects->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$projects = get_posts(
 			array(
@@ -627,28 +647,28 @@ class WP_MCP_AI_Project_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$complete_count  = 0;
 		$with_start_date = 0;
-		$with_status = 0;
+		$with_status     = 0;
 
 		foreach ( $projects as $project ) {
 			$start_date = get_post_meta( $project->ID, 'start_date', true );
 			$status     = get_post_meta( $project->ID, 'status', true );
 			$has_desc   = ! empty( $project->post_content );
-			
+
 			if ( ! empty( $start_date ) ) {
-				$with_start_date++;
+				++$with_start_date;
 			}
 			if ( ! empty( $status ) ) {
-				$with_status++;
+				++$with_status;
 			}
 			if ( ! empty( $start_date ) && ! empty( $status ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Project Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

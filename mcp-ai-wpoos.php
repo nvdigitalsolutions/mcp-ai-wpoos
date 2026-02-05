@@ -6,7 +6,7 @@
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Tested up to: 6.7
+ * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -212,7 +212,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
 	/**
-	 * Check if Open Operator System (WP oOS) Core is loaded.
+	 * Check if Open Operator System (NV oOS) Core is loaded.
 	 *
 	 * This function serves as a marker for add-ons (like Open Operator System Pro) to verify that
 	 * the core plugin is active and ready before registering their features.
@@ -510,6 +510,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-default-assistants.php';
 // Quiz CPT is now loaded by the Pro addon.
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
@@ -581,6 +582,9 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 // Provides 9 core orchestration tools for autonomous AI workflows.
 require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 
+// Load slash commands system (Phase 1 PRO_PLUGIN_ENHANCEMENT).
+require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
@@ -623,7 +627,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-r
 // Load third-party plugin integrations.
 // Integrations are loaded when:
 // - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
-// - Pro addon is active (even with base version)
+// - Pro addon is active (even with base version).
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
@@ -690,6 +694,13 @@ if ( is_admin() ) {
 
 	// Load DeepSeek V4 Orchestration Dashboard.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+
+	// Load Multi-Agent Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
+
+	// Load Slash Commands Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
+	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
 
 	// Load ISO 27001 Asset Inventory System (Control A.5.9).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
@@ -798,7 +809,7 @@ if ( is_admin() ) {
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
 
-	// Load HuggingFace Datasets admin page (submenu of WP oOS Dashboard).
+	// Load HuggingFace Datasets admin page (submenu of NV oOS Dashboard).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
 	WP_MCP_AI_Add_Assistant_Page::init();
 
@@ -1840,6 +1851,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
 
+		// Install default multi-agent orchestration system on first activation.
+		// This is deferred to init hook to ensure assistant CPT is registered.
+		// Uses transient to trigger installation on next page load.
+		if ( ! get_option( 'wp_mcp_ai_default_assistants_installed' ) ) {
+			set_transient( 'wp_mcp_ai_install_default_assistants', true, HOUR_IN_SECONDS );
+		}
+
 		// Trigger optional components download (vectorizer & knowledge base).
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
@@ -1856,6 +1874,13 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
 		flush_rewrite_rules();
+
+		// Create slash command audit table.
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+			$audit = new WP_MCP_AI_Slash_Command_Audit();
+			$audit->create_table();
+		}
 	}
 }
 
@@ -1909,6 +1934,31 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 }
 
 register_deactivation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_deactivate' );
+
+/**
+ * Install default assistants on init if activation transient is set.
+ *
+ * This runs on the first page load after plugin activation to ensure
+ * the assistant CPT is fully registered before creating assistants.
+ */
+add_action(
+	'init',
+	function () {
+		if ( get_transient( 'wp_mcp_ai_install_default_assistants' ) ) {
+			delete_transient( 'wp_mcp_ai_install_default_assistants' );
+
+			// Install default multi-agent orchestration system.
+			$result = WP_MCP_AI_Default_Assistants::install();
+
+			// Log any errors for debugging using WordPress logging mechanism.
+			if ( is_wp_error( $result ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
+				error_log( 'WP_MCP_AI: Failed to install default assistants: ' . $result->get_error_message() );
+			}
+		}
+	},
+	100 // Run late to ensure CPT is registered.
+);
 
 if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {
 	/**

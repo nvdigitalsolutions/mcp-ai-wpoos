@@ -169,7 +169,11 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 					continue;
 				}
 
-				/** @var WC_Product $product */
+				/**
+				 * WooCommerce product object.
+				 *
+				 * @var WC_Product $product
+				 */
 				// Check if this is a variable product.
 				$is_variable = method_exists( $product, 'is_type' ) && $product->is_type( 'variable' );
 
@@ -242,8 +246,8 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'message'  => $summary, // Chat client display
-			'summary'  => $summary, // Backward compatibility
+			'message'  => $summary, // Chat client display.
+			'summary'  => $summary, // Backward compatibility.
 			'products' => $results,
 			'count'    => count( $results ),
 		);
@@ -278,17 +282,11 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -306,7 +304,6 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

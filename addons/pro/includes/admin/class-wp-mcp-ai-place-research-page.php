@@ -229,10 +229,27 @@ class WP_MCP_AI_Place_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive place tools.
-							// Includes creation, geospatial search, research, and management tools.
+							// Render chat interface with comprehensive place and geospatial tools.
+							$place_tools = array(
+								// Place management.
+								'research_place',
+								'create_place',
+								'list_places',
+								'get_place',
+								'search_places',
+								// Geospatial tools.
+								'geocode_address',
+								'gemini_geospatial_query',
+								// Image tools.
+								'generate_image_caption',
+								'generate_image_alt_text',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_place,create_place,list_places,get_place,search_places,geocode_address,gemini_geospatial_query,web_search,search_content,generate_image_caption"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $place_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -604,9 +621,9 @@ class WP_MCP_AI_Place_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get place statistics.
-		$total_places = wp_count_posts( 'mcp_ai_place' );
+		$total_places    = wp_count_posts( 'mcp_ai_place' );
 		$published_count = isset( $total_places->publish ) ? $total_places->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$places = get_posts(
 			array(
@@ -616,28 +633,28 @@ class WP_MCP_AI_Place_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$complete_count   = 0;
 		$with_coordinates = 0;
-		$with_address = 0;
+		$with_address     = 0;
 
 		foreach ( $places as $place ) {
 			$latitude  = get_post_meta( $place->ID, 'latitude', true );
 			$longitude = get_post_meta( $place->ID, 'longitude', true );
 			$address   = get_post_meta( $place->ID, 'address', true );
-			
+
 			if ( ! empty( $latitude ) && ! empty( $longitude ) ) {
-				$with_coordinates++;
+				++$with_coordinates;
 			}
 			if ( ! empty( $address ) ) {
-				$with_address++;
+				++$with_address;
 			}
 			if ( ! empty( $latitude ) && ! empty( $longitude ) && ! empty( $address ) ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Place Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

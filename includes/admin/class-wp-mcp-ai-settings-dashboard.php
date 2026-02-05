@@ -53,6 +53,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_plaid_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -204,6 +205,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
 				)
 			);
+
+			// Register settings sections with WordPress Settings API.
+			// Each section is added to allow WordPress to properly track and manage them.
+			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+			foreach ( $tabs as $tab_id => $tab_config ) {
+				$sections = WP_MCP_AI_Settings_Registry::get_sections( $tab_id );
+				foreach ( $sections as $section ) {
+					add_settings_section(
+						$section->get_id(),
+						$section->get_title(),
+						'__return_false', // Rendering is handled by section's render_wrapper() method.
+						self::PAGE_SLUG
+					);
+				}
+			}
 		}
 
 		/**
@@ -262,7 +278,30 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
 			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
 
-			// Find subtab from section-specific subtab fields (subtab_sectionid format).
+			// DEBUG: Log checkbox values in posted data.
+			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
+			if ( $enable_logging ) {
+				$checkbox_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$posted_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $posted_settings[ $key ] ) ) {
+						$posted_checkboxes[ $key ] = $posted_settings[ $key ];
+					} else {
+						$posted_checkboxes[ $key ] = 'NOT_IN_POST';
+					}
+				}
+				error_log(
+					sprintf(
+						'[NV oOS Posted Data] Tab: %s, Checkbox values in $_POST[wp_mcp_ai_settings]: %s',
+						$active_tab,
+						wp_json_encode( $posted_checkboxes )
+					)
+				);
+			}
+
+			// Find subtab from explicit 'subtab' field first (for parent-level subtabs),
+			// then from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			// IMPORTANT: Many sections use subtabs with critical data tables:
 			// - Providers tab: Each provider (OpenAI, Gemini, Ollama, etc.) has its own subtab
@@ -271,17 +310,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// - Tools tab: Tool categories and individual tool configurations
 			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
-			foreach ( $_POST as $key => $value ) {
-				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-					$active_subtab = sanitize_key( $value );
-					break; // Use the first subtab found.
+
+			// PRIORITY 1: Check for explicit 'subtab' field first (used for parent-level subtabs).
+			// This ensures that when nested sections are present (e.g., Tools > Connections > Google Drive),
+			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified at line 258 via check_admin_referer().
+			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
+				$active_subtab = sanitize_key( $_POST['subtab'] );
+			}
+
+			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
+			if ( empty( $active_subtab ) ) {
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
+						$active_subtab = sanitize_key( $value );
+						break; // Use the first subtab found.
+					}
 				}
 			}
 
-			// Fallback to legacy 'subtab' field for backward compatibility.
-			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
-				$active_subtab = sanitize_key( $_POST['subtab'] );
-			}
+			// Check for 'connection' parameter (used in Integrations section).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
+			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( $_POST['connection'] ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -305,7 +355,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// All settings pages in this plugin use tabs/subtabs that only show partial fields.
 			// The Simple Settings Saver's checkbox handling (setting all unposted checkboxes to false)
 			// causes data loss when saving from tabs/subtabs. Use section-based sanitization instead.
-			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX
+			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX.
 			$use_simple_settings_saver = false; // Force disabled.
 
 			if ( $use_simple_settings_saver && $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
@@ -345,10 +395,29 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// - Section-based sanitization knows which fields belong to each subtab
 				// - The merge strategy below (line 326+) preserves data from OTHER subtabs
 				// - Sensitive key protection (line 329+) prevents empty values from overwriting existing keys
-				// - This ensures subtabbed views with important tables save correctly without data loss
+				// - This ensures subtabbed views with important tables save correctly without data loss.
 				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
 				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved   = false;
+
+				// DEBUG: Specifically log checkbox values in sanitized_new to diagnose save issue.
+				if ( $enable_logging ) {
+					$checkbox_keys              = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$sanitized_checkboxes_after = array();
+					foreach ( $checkbox_keys as $key ) {
+						$sanitized_checkboxes_after[ $key ] = isset( $sanitized_new[ $key ] ) ?
+							( $sanitized_new[ $key ] ? 'true' : 'false' ) :
+							'NOT_IN_SANITIZED';
+					}
+					error_log(
+						sprintf(
+							'[NV oOS After Sanitize] Tab: %s, Subtab: %s, Checkbox values in sanitized_new: %s',
+							$active_tab,
+							$active_subtab,
+							wp_json_encode( $sanitized_checkboxes_after )
+						)
+					);
+				}
 
 				// Log sanitization results.
 				if ( $enable_logging ) {
@@ -437,6 +506,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'cloudflare_api_token',
 					'brave_search_api_key',
 					'mubert_api_key',
+					'removebg_api_key',
 					// Add more sensitive keys from integrations.
 					'gmail_client_secret',
 					'gmail_refresh_token',
@@ -447,6 +517,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'meta_access_token',
 					'tiktok_access_token',
 					'tiktok_client_secret',
+					'yahoo_client_id',
+					'yahoo_client_secret',
 				);
 
 				foreach ( $sensitive_keys as $key ) {
@@ -470,7 +542,90 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				// STEP 5: Merge Settings with Validation
 				// ========================================================================
+				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
+				if ( $enable_logging ) {
+					$checkbox_keys        = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$existing_checkboxes  = array();
+					$sanitized_checkboxes = array();
+					foreach ( $checkbox_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) ) {
+							$existing_checkboxes[ $key ] = $existing_settings[ $key ] ? 'true' : 'false';
+						}
+						if ( isset( $sanitized_new[ $key ] ) ) {
+							$sanitized_checkboxes[ $key ] = $sanitized_new[ $key ] ? 'true' : 'false';
+						}
+					}
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Merge] Existing: %s, Sanitized: %s',
+							wp_json_encode( $existing_checkboxes ),
+							wp_json_encode( $sanitized_checkboxes )
+						)
+					);
+				}
+
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
+
+				// CRITICAL: Always log federation checkbox merge for debugging.
+				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$has_fed      = false;
+				$before_merge = array();
+				$after_merge  = array();
+				foreach ( $fed_keys as $key ) {
+					if ( isset( $existing_settings[ $key ] ) || isset( $sanitized_new[ $key ] ) || isset( $merged_settings[ $key ] ) ) {
+						$has_fed                = true;
+						$before_merge[ $key ]   = isset( $existing_settings[ $key ] ) ? var_export( $existing_settings[ $key ], true ) : 'NOT_SET';
+						$from_sanitized[ $key ] = isset( $sanitized_new[ $key ] ) ? var_export( $sanitized_new[ $key ], true ) : 'NOT_SET';
+						$after_merge[ $key ]    = isset( $merged_settings[ $key ] ) ? var_export( $merged_settings[ $key ], true ) : 'NOT_SET';
+					}
+				}
+				if ( $has_fed ) {
+					error_log(
+						sprintf(
+							'[NV oOS FEDERATION DEBUG] MERGE: Before=%s, From Sanitized=%s, After=%s',
+							wp_json_encode( $before_merge ),
+							wp_json_encode( $from_sanitized ),
+							wp_json_encode( $after_merge )
+						)
+					);
+				}
+
+				// ========================================================================
+				// STEP 5a: Auto-generate mesh API key if needed
+				// ========================================================================
+				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
+				// This must happen BEFORE validation and save to avoid race conditions.
+				$mesh_features_enabled = ! empty( $merged_settings['enable_mesh'] ) || ! empty( $merged_settings['enable_federation_directory'] );
+				if ( $mesh_features_enabled && empty( $merged_settings['mesh_inbound_api_key'] ) ) {
+					try {
+						// Generate mesh inbound API key for peer authentication.
+						$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
+
+						if ( $enable_logging ) {
+							error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
+						}
+					} catch ( Exception $e ) {
+						// Handle random_bytes() exception gracefully.
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] Failed to generate mesh API key: %s',
+									$e->getMessage()
+								)
+							);
+						}
+						add_settings_error(
+							'wp_mcp_ai_settings',
+							'mesh_key_generation_failed',
+							sprintf(
+								/* translators: %s: Error message from exception */
+								__( 'Failed to generate mesh API key due to insufficient system entropy: %s. This is typically a server configuration issue. Please ensure your server has proper random number generation available (check /dev/urandom on Linux systems) or contact your hosting provider.', 'mcp-ai-wpoos' ),
+								esc_html( $e->getMessage() )
+							),
+							'error'
+						);
+					}
+				}
 
 				// Validate merged settings before saving.
 				$validation_errors = $this->validate_merged_settings( $merged_settings, $existing_settings );
@@ -495,6 +650,40 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// ========================================================================
 					// Save to database with autoload=yes for performance.
 					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
+
+					// CRITICAL: Always log federation checkbox save result for debugging.
+					$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$has_fed      = false;
+					$saved_values = array();
+					foreach ( $fed_keys as $key ) {
+						if ( isset( $merged_settings[ $key ] ) ) {
+							$has_fed              = true;
+							$saved_values[ $key ] = var_export( $merged_settings[ $key ], true );
+						}
+					}
+					if ( $has_fed ) {
+						error_log(
+							sprintf(
+								'[NV oOS FEDERATION DEBUG] SAVE: Result=%s, Values=%s',
+								$update_result ? 'SUCCESS' : 'UNCHANGED',
+								wp_json_encode( $saved_values )
+							)
+						);
+						// Immediately read back from database to verify.
+						$verified        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+						$verified_values = array();
+						foreach ( $fed_keys as $key ) {
+							if ( isset( $verified[ $key ] ) ) {
+								$verified_values[ $key ] = var_export( $verified[ $key ], true );
+							}
+						}
+						error_log(
+							sprintf(
+								'[NV oOS FEDERATION DEBUG] VERIFY: Read back from DB=%s',
+								wp_json_encode( $verified_values )
+							)
+						);
+					}
 
 					if ( $enable_logging ) {
 						error_log(
@@ -530,6 +719,34 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 						if ( $enable_logging ) {
 							error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+						}
+					}
+				}
+
+				// Check if Architect Agent Toolkit was just enabled and create assistant.
+				$was_architect_disabled = empty( $existing_settings['enable_architect_agent_toolkit'] );
+				$is_architect_enabled   = ! empty( $merged_settings['enable_architect_agent_toolkit'] );
+				if ( $was_architect_disabled && $is_architect_enabled ) {
+					// Architect Agent Toolkit was just enabled, create the assistant.
+					if ( class_exists( 'WP_MCP_AI_Default_Assistants' ) ) {
+						$result = WP_MCP_AI_Default_Assistants::install_architect_agent_assistant();
+
+						if ( $enable_logging ) {
+							if ( is_wp_error( $result ) ) {
+								error_log(
+									sprintf(
+										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant creation failed: %s',
+										$result->get_error_message()
+									)
+								);
+							} else {
+								error_log(
+									sprintf(
+										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant created (ID: %d)',
+										$result
+									)
+								);
+							}
 						}
 					}
 				}
@@ -569,6 +786,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
 			if ( ! empty( $active_subtab ) ) {
 				$redirect_args['subtab'] = $active_subtab;
+			}
+
+			// Preserve connection parameter for Integrations section connections.
+			if ( ! empty( $active_connection ) ) {
+				$redirect_args['connection'] = $active_connection;
 			}
 
 			// Preserve view parameter for sections with view-based navigation (e.g., Orchestration, Token Manager).
@@ -793,7 +1015,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * @return string Active tab ID.
 		 */
 		private function get_active_tab() {
-			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
+			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for tab display.
 			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
@@ -1069,6 +1292,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: 0' );
 
+			// Output JSON for file download. JSON is already safely encoded via wp_json_encode() on line 1055.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output for file download, already encoded with wp_json_encode().
 			echo $json;
 			exit;
 		}
@@ -1086,10 +1311,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Check if file was uploaded.
-			if ( ! isset( $_FILES['settings_file'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checking existence only, not using the value.
+			if ( ! isset( $_FILES['settings_file'] ) || ! isset( $_FILES['settings_file']['error'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
 				wp_send_json_error( array( 'message' => __( 'No file uploaded or upload error occurred.', 'mcp-ai-wpoos' ) ) );
 			}
 
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- File data validated below.
 			$file = $_FILES['settings_file'];
 
 			// Validate file size (max 5MB for settings file).
@@ -1282,6 +1509,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( ! is_array( $settings ) ) {
 				$issues[] = __( 'Settings data is not an array. Data corruption detected.', 'mcp-ai-wpoos' );
 			} else {
+				/* translators: %d: number of settings fields */
 				$info[] = sprintf( __( 'Total settings fields: %d', 'mcp-ai-wpoos' ), count( $settings ) );
 			}
 
@@ -1289,6 +1517,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$critical_fields = array( 'default_provider', 'default_model' );
 			foreach ( $critical_fields as $field ) {
 				if ( ! isset( $settings[ $field ] ) || empty( $settings[ $field ] ) ) {
+					/* translators: %s: field name */
 					$warnings[] = sprintf( __( 'Critical field "%s" is missing or empty.', 'mcp-ai-wpoos' ), $field );
 				}
 			}
@@ -1304,12 +1533,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( 0 === $configured_providers ) {
 				$warnings[] = __( 'No AI providers configured. At least one provider is required.', 'mcp-ai-wpoos' );
 			} else {
+				/* translators: %d: number of configured providers */
 				$info[] = sprintf( __( 'Configured providers: %d', 'mcp-ai-wpoos' ), $configured_providers );
 			}
 
 			// Check 5: Cache status.
 			$cache_exists = false !== wp_cache_get( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-			$info[]       = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
+			/* translators: %s: cache status (Active or Not cached) */
+			$info[] = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
 
 			// Check 6: Backup count.
 			global $wpdb;
@@ -1319,7 +1550,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'wp_mcp_ai_settings_backup_%'
 				)
 			);
-			$info[]       = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
+			/* translators: %d: number of settings backups */
+			$info[] = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
 
 			// Prepare response.
 			$health_status = 'good';
@@ -1336,6 +1568,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'warnings' => $warnings,
 					'info'     => $info,
 					'message'  => sprintf(
+						/* translators: %s: health status (GOOD, WARNING, or CRITICAL) */
 						__( 'Health check complete. Status: %s', 'mcp-ai-wpoos' ),
 						strtoupper( $health_status )
 					),

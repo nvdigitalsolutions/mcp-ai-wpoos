@@ -1,9 +1,10 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * JetEngine Integration Settings Section
  *
  * @package WP_MCP_AI
  */
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -169,7 +170,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 
 			foreach ( $fields as $key => $field ) {
 				if ( 'html' === $field['type'] ) {
-					echo $field['content'];
+					echo wp_kses_post( $field['content'] );
 				} else {
 					$this->render_field( $key, $field );
 				}

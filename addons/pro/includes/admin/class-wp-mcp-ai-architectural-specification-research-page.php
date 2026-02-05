@@ -260,9 +260,22 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with specification-focused tools.
+							// Render chat interface with comprehensive architectural specification tools.
+							$spec_tools = array(
+								// Material and cost analysis.
+								'generate_material_schedule',
+								'estimate_construction_cost',
+								// Code compliance and structural analysis.
+								'check_building_code_compliance',
+								'analyze_structural_feasibility',
+								'calculate_sustainability_metrics',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_material_schedule,estimate_construction_cost,check_building_code_compliance,analyze_structural_feasibility,calculate_sustainability_metrics,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $spec_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -353,8 +366,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Architectural specification created successfully!', 'mcp-ai-wpoos-pro' ),
-				'spec_id' => $spec_id,
+				'message'  => __( 'Architectural specification created successfully!', 'mcp-ai-wpoos-pro' ),
+				'spec_id'  => $spec_id,
 				'edit_url' => $edit_url,
 			)
 		);
@@ -436,7 +449,7 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 			$specification_type = get_post_meta( $spec->ID, 'specification_type', true );
 			$part_structure     = get_post_meta( $spec->ID, 'part_structure', true );
 			$references         = get_post_meta( $spec->ID, 'references', true );
-			
+
 			if ( ! empty( $division ) && ! empty( $specification_type ) && ! empty( $part_structure ) && ! empty( $references ) ) {
 				++$complete;
 			}
@@ -638,9 +651,9 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get specification statistics.
-		$total_specs = wp_count_posts( 'mcp_ai_arch_spec' );
+		$total_specs     = wp_count_posts( 'mcp_ai_arch_spec' );
 		$published_count = isset( $total_specs->publish ) ? $total_specs->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$specifications = get_posts(
 			array(
@@ -650,9 +663,9 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
-		$with_division = 0;
-		$with_structure = 0;
+		$complete_count  = 0;
+		$with_division   = 0;
+		$with_structure  = 0;
 		$with_references = 0;
 
 		foreach ( $specifications as $spec ) {
@@ -660,23 +673,23 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 			$specification_type = get_post_meta( $spec->ID, 'specification_type', true );
 			$part_structure     = get_post_meta( $spec->ID, 'part_structure', true );
 			$references         = get_post_meta( $spec->ID, 'references', true );
-			
+
 			if ( ! empty( $division ) ) {
-				$with_division++;
+				++$with_division;
 			}
 			if ( ! empty( $part_structure ) ) {
-				$with_structure++;
+				++$with_structure;
 			}
 			if ( ! empty( $references ) ) {
-				$with_references++;
+				++$with_references;
 			}
 			if ( ! empty( $division ) && ! empty( $specification_type ) && ! empty( $part_structure ) && ! empty( $references ) ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Specification Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

@@ -1,6 +1,13 @@
 <?php
 /**
- * Regulatory Registration Toolkit Settings Page
+ * Regulatory Registration Toolkit Settings Page (DEPRECATED)
+ *
+ * @deprecated 1.2.0 Replaced by class-wp-mcp-ai-regulatory-product-cpt-settings-page.php
+ * @see WP_MCP_AI_Regulatory_Product_Settings_Page
+ *
+ * This file is deprecated and should no longer be loaded. It has been replaced with a
+ * CPT-based settings page that follows the Quiz Toolkit pattern. The new settings page
+ * appears under the Regulatory Registration CPT menu.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -25,7 +32,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 		$this->option_name      = 'wp_mcp_ai_regulatory_registration_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-regulatory-registration-toolkit-settings';
 		$this->parent_slug      = 'edit.php?post_type=mcp_ai_reg_product';
-		$this->has_research     = true;
+		$this->has_research     = false;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-shield-alt';
 
@@ -95,6 +102,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 
 			<h3><?php esc_html_e( 'Additional Resources', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
+				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=wp-mcp-ai-registration-research' ) ); ?>"><?php esc_html_e( 'Research & Add Registrations', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'Use AI to research and add registrations', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-registration-dashboard' ) ); ?>"><?php esc_html_e( 'Registration Dashboard', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View all registrations and their status', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_reg_product' ) ); ?>"><?php esc_html_e( 'Manage Products', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View and manage registered products', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_reg_document' ) ); ?>"><?php esc_html_e( 'Manage Documents', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View and manage regulatory documents', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -207,8 +215,23 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					</td>
 				</tr>
 			</table>
-		</div>
+		</div><!-- .toolkit-configuration -->
 		<?php
+	}
+
+	/**
+	 * Add settings submenu page.
+	 * Override parent to customize menu title.
+	 */
+	public function add_settings_page() {
+		add_submenu_page(
+			$this->parent_slug,
+			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
+			__( 'Settings', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			$this->page_slug,
+			array( $this, 'render_settings_page' )
+		);
 	}
 
 	/**
@@ -219,54 +242,54 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 	protected function get_tools_list() {
 		return array(
 			// Product Management Tools.
-			'create_reg_product'           => __( 'Create Regulatory Product', 'mcp-ai-wpoos-pro' ),
-			'list_reg_products'            => __( 'List Regulatory Products', 'mcp-ai-wpoos-pro' ),
-			'get_reg_product'              => __( 'Get Regulatory Product', 'mcp-ai-wpoos-pro' ),
-			'update_reg_product'           => __( 'Update Regulatory Product', 'mcp-ai-wpoos-pro' ),
-			'delete_reg_product'           => __( 'Delete Regulatory Product', 'mcp-ai-wpoos-pro' ),
-			'search_reg_products'          => __( 'Search Regulatory Products', 'mcp-ai-wpoos-pro' ),
-			'duplicate_reg_product'        => __( 'Duplicate Regulatory Product', 'mcp-ai-wpoos-pro' ),
-			'validate_reg_product'         => __( 'Validate Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'create_reg_product'              => __( 'Create Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'list_reg_products'               => __( 'List Regulatory Products', 'mcp-ai-wpoos-pro' ),
+			'get_reg_product'                 => __( 'Get Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'update_reg_product'              => __( 'Update Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'delete_reg_product'              => __( 'Delete Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'search_reg_products'             => __( 'Search Regulatory Products', 'mcp-ai-wpoos-pro' ),
+			'duplicate_reg_product'           => __( 'Duplicate Regulatory Product', 'mcp-ai-wpoos-pro' ),
+			'validate_reg_product'            => __( 'Validate Regulatory Product', 'mcp-ai-wpoos-pro' ),
 
 			// Registration Management Tools.
-			'create_registration'          => __( 'Create Registration', 'mcp-ai-wpoos-pro' ),
-			'list_registrations'           => __( 'List Registrations', 'mcp-ai-wpoos-pro' ),
-			'get_registration'             => __( 'Get Registration', 'mcp-ai-wpoos-pro' ),
-			'update_registration_status'   => __( 'Update Registration Status', 'mcp-ai-wpoos-pro' ),
-			'list_expiring_registrations'  => __( 'List Expiring Registrations', 'mcp-ai-wpoos-pro' ),
-			'submit_registration'          => __( 'Submit Registration', 'mcp-ai-wpoos-pro' ),
-			'approve_registration'         => __( 'Approve Registration', 'mcp-ai-wpoos-pro' ),
-			'renew_registration'           => __( 'Renew Registration', 'mcp-ai-wpoos-pro' ),
-			'get_registration_timeline'    => __( 'Get Registration Timeline', 'mcp-ai-wpoos-pro' ),
-			'list_registrations_by_country' => __( 'List Registrations by Country', 'mcp-ai-wpoos-pro' ),
+			'create_registration'             => __( 'Create Registration', 'mcp-ai-wpoos-pro' ),
+			'list_registrations'              => __( 'List Registrations', 'mcp-ai-wpoos-pro' ),
+			'get_registration'                => __( 'Get Registration', 'mcp-ai-wpoos-pro' ),
+			'update_registration_status'      => __( 'Update Registration Status', 'mcp-ai-wpoos-pro' ),
+			'list_expiring_registrations'     => __( 'List Expiring Registrations', 'mcp-ai-wpoos-pro' ),
+			'submit_registration'             => __( 'Submit Registration', 'mcp-ai-wpoos-pro' ),
+			'approve_registration'            => __( 'Approve Registration', 'mcp-ai-wpoos-pro' ),
+			'renew_registration'              => __( 'Renew Registration', 'mcp-ai-wpoos-pro' ),
+			'get_registration_timeline'       => __( 'Get Registration Timeline', 'mcp-ai-wpoos-pro' ),
+			'list_registrations_by_country'   => __( 'List Registrations by Country', 'mcp-ai-wpoos-pro' ),
 
 			// Document Management Tools.
-			'list_reg_documents'           => __( 'List Regulatory Documents', 'mcp-ai-wpoos-pro' ),
-			'check_document_expiry'        => __( 'Check Document Expiry', 'mcp-ai-wpoos-pro' ),
-			'upload_reg_document'          => __( 'Upload Regulatory Document', 'mcp-ai-wpoos-pro' ),
-			'update_reg_document'          => __( 'Update Regulatory Document', 'mcp-ai-wpoos-pro' ),
-			'get_reg_document'             => __( 'Get Regulatory Document', 'mcp-ai-wpoos-pro' ),
-			'validate_document_checklist'  => __( 'Validate Document Checklist', 'mcp-ai-wpoos-pro' ),
-			'generate_submission_pack'     => __( 'Generate Submission Pack', 'mcp-ai-wpoos-pro' ),
-			'track_document_version'       => __( 'Track Document Version', 'mcp-ai-wpoos-pro' ),
+			'list_reg_documents'              => __( 'List Regulatory Documents', 'mcp-ai-wpoos-pro' ),
+			'check_document_expiry'           => __( 'Check Document Expiry', 'mcp-ai-wpoos-pro' ),
+			'upload_reg_document'             => __( 'Upload Regulatory Document', 'mcp-ai-wpoos-pro' ),
+			'update_reg_document'             => __( 'Update Regulatory Document', 'mcp-ai-wpoos-pro' ),
+			'get_reg_document'                => __( 'Get Regulatory Document', 'mcp-ai-wpoos-pro' ),
+			'validate_document_checklist'     => __( 'Validate Document Checklist', 'mcp-ai-wpoos-pro' ),
+			'generate_submission_pack'        => __( 'Generate Submission Pack', 'mcp-ai-wpoos-pro' ),
+			'track_document_version'          => __( 'Track Document Version', 'mcp-ai-wpoos-pro' ),
 
 			// Compliance Tools.
-			'add_regulatory_requirement'   => __( 'Add Regulatory Requirement', 'mcp-ai-wpoos-pro' ),
-			'get_regulatory_requirements'  => __( 'Get Regulatory Requirements', 'mcp-ai-wpoos-pro' ),
-			'check_product_compliance'     => __( 'Check Product Compliance', 'mcp-ai-wpoos-pro' ),
-			'validate_inci_ingredients'    => __( 'Validate INCI Ingredients', 'mcp-ai-wpoos-pro' ),
-			'check_hs_code'                => __( 'Check HS Code', 'mcp-ai-wpoos-pro' ),
-			'get_regulatory_updates'       => __( 'Get Regulatory Updates', 'mcp-ai-wpoos-pro' ),
+			'add_regulatory_requirement'      => __( 'Add Regulatory Requirement', 'mcp-ai-wpoos-pro' ),
+			'get_regulatory_requirements'     => __( 'Get Regulatory Requirements', 'mcp-ai-wpoos-pro' ),
+			'check_product_compliance'        => __( 'Check Product Compliance', 'mcp-ai-wpoos-pro' ),
+			'validate_inci_ingredients'       => __( 'Validate INCI Ingredients', 'mcp-ai-wpoos-pro' ),
+			'check_hs_code'                   => __( 'Check HS Code', 'mcp-ai-wpoos-pro' ),
+			'get_regulatory_updates'          => __( 'Get Regulatory Updates', 'mcp-ai-wpoos-pro' ),
 
 			// PDF Generation Tools.
-			'generate_pdf_dossier'         => __( 'Generate PDF Dossier', 'mcp-ai-wpoos-pro' ),
-			'generate_cover_letter'        => __( 'Generate Cover Letter', 'mcp-ai-wpoos-pro' ),
+			'generate_pdf_dossier'            => __( 'Generate PDF Dossier', 'mcp-ai-wpoos-pro' ),
+			'generate_cover_letter'           => __( 'Generate Cover Letter', 'mcp-ai-wpoos-pro' ),
 			'generate_compliance_certificate' => __( 'Generate Compliance Certificate', 'mcp-ai-wpoos-pro' ),
 
 			// API Integration Tools.
-			'sync_with_nmra'               => __( 'Sync with NMRA (Sri Lanka)', 'mcp-ai-wpoos-pro' ),
-			'sync_with_mohap'              => __( 'Sync with MOHAP (UAE)', 'mcp-ai-wpoos-pro' ),
-			'sync_with_sfda'               => __( 'Sync with SFDA (Saudi Arabia)', 'mcp-ai-wpoos-pro' ),
+			'sync_with_nmra'                  => __( 'Sync with NMRA (Sri Lanka)', 'mcp-ai-wpoos-pro' ),
+			'sync_with_mohap'                 => __( 'Sync with MOHAP (UAE)', 'mcp-ai-wpoos-pro' ),
+			'sync_with_sfda'                  => __( 'Sync with SFDA (Saudi Arabia)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

@@ -251,7 +251,7 @@ All WooCommerce tools implement:
 ## Availability
 
 These tools are **Pro features** and require:
-- WP oOS Pro addon to be active
+- NV oOS Pro addon to be active
 - WooCommerce plugin to be installed and activated
 - Appropriate user capabilities
 

@@ -35,6 +35,55 @@ class WP_MCP_AI_Place_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 *
+	 * @since 1.2.0
+	 */
+	protected function render_overview_tab() {
+		?>
+		<h2><?php esc_html_e( 'Place Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+		
+		<p><?php esc_html_e( 'Location and place management system with AI-powered research, geocoding, and structured data for businesses, landmarks, and points of interest.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<ul>
+			<li><?php esc_html_e( 'Place Management: Create and manage locations with full address details', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'AI Research: Discover and research places automatically', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Geocoding: Convert addresses to coordinates and reverse geocoding', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Search & Save: Search for places and save them to your database', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Structured Data: Store addresses, phone numbers, opening hours, ratings', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Categories: Organize places by type (restaurants, hotels, landmarks, etc.)', 'mcp-ai-wpoos-pro' ); ?></li>
+		</ul>
+
+		<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<ul>
+			<li><?php esc_html_e( 'Business directories and local search websites', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Travel guides and tourism platforms', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Real estate and property listings', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Event venues and location databases', 'mcp-ai-wpoos-pro' ); ?></li>
+		</ul>
+		<?php
+	}
+
+	/**
+	 * Get tools list.
+	 *
+	 * @since 1.2.0
+	 * @return array Tools list with slugs and names.
+	 */
+	protected function get_tools_list() {
+		return array(
+			'create_place'           => __( 'Create Place', 'mcp-ai-wpoos-pro' ),
+			'list_places'            => __( 'List Places', 'mcp-ai-wpoos-pro' ),
+			'get_place'              => __( 'Get Place', 'mcp-ai-wpoos-pro' ),
+			'update_place'           => __( 'Update Place', 'mcp-ai-wpoos-pro' ),
+			'delete_place'           => __( 'Delete Place', 'mcp-ai-wpoos-pro' ),
+			'research_place'         => __( 'Research Place', 'mcp-ai-wpoos-pro' ),
+			'search_and_save_places' => __( 'Search and Save Places', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Register settings.
 	 */
 	public function register_settings() {

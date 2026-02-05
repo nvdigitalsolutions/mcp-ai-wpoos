@@ -31,7 +31,7 @@ This quick reference provides fast access to the most common tasks and commands 
   - **Can be enabled on Cloudways**: Settings & Packages → Application Settings → PHP FPM → Remove from `disable_functions`
 - **JetEngine**: For CCT storage and content tools
 - **WooCommerce**: For e-commerce tools
-- **Elementor**: For page builder widgets
+- **[Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor)**: For page builder widgets
 
 **Note**: Plugin works without optional requirements, but some features will be unavailable. See [deployment troubleshooting](getting-started/installation-setup/deployment-troubleshooting.md) for details.
 
@@ -565,7 +565,7 @@ Settings → NV oOS → Chat Theme
 ### Full Documentation
 - [Complete README](../README.md) - 1,027 lines of comprehensive docs
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
-- [Tool Reference](reference/tools/tool-reference.md) - All 65+ tools detailed
+- [Tool Reference](reference/tools/tool-reference.md) - All 519 tools detailed (165 base + 348 pro + 6 core/memory)
 - [REST API Guide](reference/api/rest-api.md) - Complete API documentation
 - [Orchestration Budget Enforcement](architecture/orchestration/orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
@@ -573,6 +573,7 @@ Settings → NV oOS → Chat Theme
 - [OpenAI Platform](https://platform.openai.com/)
 - [WordPress Codex](https://codex.wordpress.org/)
 - [JetEngine Docs](https://crocoblock.com/knowledge-base/jetengine/)
+- [Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor)
 - [Elementor Developers](https://developers.elementor.com/)
 
 ---

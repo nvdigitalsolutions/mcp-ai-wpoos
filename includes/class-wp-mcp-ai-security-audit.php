@@ -277,12 +277,12 @@ class WP_MCP_AI_Security_Audit {
 		</div>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe.
-			let findingIndex = <?php echo count( $findings ); ?>;
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe to output in JavaScript.
+			let findingIndex = <?php echo absint( count( $findings ) ); ?>;
 
 			$('#wp-mcp-ai-add-finding').on('click', function() {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template HTML is properly escaped in get_finding_template().
-				const template = `<?php echo $this->get_finding_template(); ?>`.replace(/INDEX/g, findingIndex);
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template is escaped for JavaScript context.
+				const template = `<?php echo esc_js( $this->get_finding_template() ); ?>`.replace(/INDEX/g, findingIndex);
 				$('#wp-mcp-ai-findings-list').append(template);
 				findingIndex++;
 			});
@@ -334,7 +334,7 @@ class WP_MCP_AI_Security_Audit {
 		<div class="wp-mcp-ai-finding-row">
 			<h4>
 				<?php /* translators: %d: Finding number */ ?>
-				<?php printf( esc_html__( 'Finding #%d', 'mcp-ai-wpoos' ), $index + 1 ); ?>
+				<?php printf( esc_html__( 'Finding #%d', 'mcp-ai-wpoos' ), absint( $index ) + 1 ); ?>
 				<button type="button" class="button button-small wp-mcp-ai-remove-finding" style="float: right;">
 					<?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?>
 				</button>
@@ -468,7 +468,7 @@ class WP_MCP_AI_Security_Audit {
 	 * @param WP_Post $post    Post object.
 	 * @return void
 	 */
-	public function save_audit_meta( $post_id, $post ) {
+	public function save_audit_meta( $post_id, $post ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 		// Verify nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_audit_meta_nonce'] ) ||
 			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_audit_meta_nonce'] ) ), 'wp_mcp_ai_audit_meta' ) ) {
@@ -517,15 +517,16 @@ class WP_MCP_AI_Security_Audit {
 
 		// Save findings.
 		if ( isset( $_POST['wp_mcp_ai_findings'] ) && is_array( $_POST['wp_mcp_ai_findings'] ) ) {
-			$findings = array();
-			foreach ( $_POST['wp_mcp_ai_findings'] as $finding ) {
+			$findings       = array();
+			$findings_input = wp_unslash( $_POST['wp_mcp_ai_findings'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in loop below.
+			foreach ( $findings_input as $finding ) {
 				$findings[] = array(
-					'control'        => isset( $finding['control'] ) ? sanitize_text_field( wp_unslash( $finding['control'] ) ) : '',
-					'severity'       => isset( $finding['severity'] ) ? sanitize_text_field( wp_unslash( $finding['severity'] ) ) : '',
-					'status'         => isset( $finding['status'] ) ? sanitize_text_field( wp_unslash( $finding['status'] ) ) : '',
-					'description'    => isset( $finding['description'] ) ? sanitize_textarea_field( wp_unslash( $finding['description'] ) ) : '',
-					'recommendation' => isset( $finding['recommendation'] ) ? sanitize_textarea_field( wp_unslash( $finding['recommendation'] ) ) : '',
-					'due_date'       => isset( $finding['due_date'] ) ? sanitize_text_field( wp_unslash( $finding['due_date'] ) ) : '',
+					'control'        => isset( $finding['control'] ) ? sanitize_text_field( $finding['control'] ) : '',
+					'severity'       => isset( $finding['severity'] ) ? sanitize_text_field( $finding['severity'] ) : '',
+					'status'         => isset( $finding['status'] ) ? sanitize_text_field( $finding['status'] ) : '',
+					'description'    => isset( $finding['description'] ) ? sanitize_textarea_field( $finding['description'] ) : '',
+					'recommendation' => isset( $finding['recommendation'] ) ? sanitize_textarea_field( $finding['recommendation'] ) : '',
+					'due_date'       => isset( $finding['due_date'] ) ? sanitize_text_field( $finding['due_date'] ) : '',
 				);
 			}
 			update_post_meta( $post_id, '_wp_mcp_ai_audit_findings', $findings );

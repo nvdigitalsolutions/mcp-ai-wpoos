@@ -15,7 +15,7 @@ if ( ! current_user_can( 'upload_files' ) ) {
 	return;
 }
 
-$title         = isset( $attributes['title'] ) && '' !== $attributes['title']
+$block_title   = isset( $attributes['title'] ) && '' !== $attributes['title']
 	? $attributes['title']
 	: __( 'Knowledge Base', 'mcp-ai-wpoos' );
 $description   = isset( $attributes['description'] ) && '' !== $attributes['description']
@@ -66,8 +66,8 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 
-	<?php if ( $title ) : ?>
-		<h3 class="wp-block-mcp-ai-wpoos-knowledge-base__title"><?php echo esc_html( $title ); ?></h3>
+	<?php if ( $block_title ) : ?>
+		<h3 class="wp-block-mcp-ai-wpoos-knowledge-base__title"><?php echo esc_html( $block_title ); ?></h3>
 	<?php endif; ?>
 
 	<?php if ( $description ) : ?>

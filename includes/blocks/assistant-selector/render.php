@@ -21,7 +21,7 @@ $start_button_text = isset( $attributes['startButtonText'] ) && '' !== $attribut
 // Get assistants.
 $assistants = array();
 if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
-	$posts = get_posts(
+	$assistant_posts = get_posts(
 		array(
 			'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
 			'post_status'    => 'publish',
@@ -31,20 +31,20 @@ if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		)
 	);
 
-	foreach ( $posts as $post ) {
-		$tools = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
+	foreach ( $assistant_posts as $assistant_post ) {
+		$tools = get_post_meta( $assistant_post->ID, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
 		if ( ! is_array( $tools ) ) {
 			$tools = array();
 		}
 
 		$shortcuts = array();
 		if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
-			$shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $post->ID );
+			$shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_post->ID );
 		}
 
 		$assistants[] = array(
-			'id'        => $post->ID,
-			'title'     => $post->post_title,
+			'id'        => $assistant_post->ID,
+			'title'     => $assistant_post->post_title,
 			'tools'     => $tools,
 			'shortcuts' => $shortcuts,
 		);

@@ -60,22 +60,22 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'theme_name' => array(
+				'theme_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Theme name', 'mcp-ai-wpoos-pro' ),
 				),
-				'theme_type' => array(
+				'theme_type'       => array(
 					'type'        => 'string',
 					'description' => __( 'Theme type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'classic', 'block', 'hybrid' ),
 					'default'     => 'block',
 				),
-				'features'   => array(
+				'features'         => array(
 					'type'        => 'array',
 					'description' => __( 'Features to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'industry'   => array(
+				'industry'         => array(
 					'type'        => 'string',
 					'description' => __( 'Industry type for color palette (technology, healthcare, finance, ecommerce)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'technology', 'healthcare', 'finance', 'ecommerce' ),
@@ -85,7 +85,7 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Custom page templates to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'object' ),
 				),
-				'patterns'   => array(
+				'patterns'         => array(
 					'type'        => 'array',
 					'description' => __( 'Block pattern slugs to register', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 		if ( 'block' === $theme_type || 'hybrid' === $theme_type ) {
 			// Load theme.json generator if not already loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Theme_JSON_Generator' ) ) {
-				require_once dirname( dirname( dirname( __FILE__ ) ) ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
+				require_once dirname( dirname( __DIR__ ) ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
 			}
 
 			$theme_json_args = array(

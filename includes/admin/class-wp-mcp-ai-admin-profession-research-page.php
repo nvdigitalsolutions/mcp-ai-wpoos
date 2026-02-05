@@ -333,11 +333,11 @@ class WP_MCP_AI_Admin_Profession_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		$post_type = class_exists( 'WP_MCP_AI_Profession_CPT' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';
-		
+
 		// Get profession statistics.
 		$total_professions = wp_count_posts( $post_type );
 		$published_count   = isset( $total_professions->publish ) ? $total_professions->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$professions = get_posts(
 			array(
@@ -356,23 +356,23 @@ class WP_MCP_AI_Admin_Profession_Research_Page {
 			$expertise = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_expertise', true );
 			$role      = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_agent_role', true );
 			$tools     = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_tools', true );
-			
+
 			if ( ! empty( $expertise ) ) {
-				$with_expertise++;
+				++$with_expertise;
 			}
 			if ( ! empty( $role ) ) {
-				$with_role++;
+				++$with_role;
 			}
 			if ( ! empty( $tools ) ) {
-				$with_tools++;
+				++$with_tools;
 			}
 			if ( ! empty( $expertise ) && ! empty( $role ) && ! empty( $tools ) ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Profession Data Quality', 'mcp-ai-wpoos' ); ?></h2>

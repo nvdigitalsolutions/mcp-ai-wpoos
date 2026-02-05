@@ -149,8 +149,8 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Register enhanced WebLLM scripts for tool calling and knowledge support.
-			$tool_adapter_path    = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
-			$tool_adapter_version = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
+			$tool_adapter_path        = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
+			$tool_adapter_version     = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
 			$function_calling_path    = WP_MCP_AI_URL . 'assets/js/webllm-function-calling-client.min.js';
 			$function_calling_version = $this->get_asset_version( 'assets/js/webllm-function-calling-client.min.js' );
 
@@ -804,6 +804,11 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
+			// Check if assistant has tools, system prompt, or knowledge (used in multiple places).
+			$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
+
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
 				// Enqueue embedded provider scripts.
 				// WordPress ensures these are only loaded once even if called multiple times.
@@ -812,9 +817,6 @@ class WP_MCP_AI_Shortcode {
 
 				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
 				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
-				$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
-				$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
-				$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
 					// Enqueue tool adapter and function calling client for enhanced capabilities.
@@ -827,6 +829,11 @@ class WP_MCP_AI_Shortcode {
 			// This prevents conflicts when multiple widgets with different providers are on the same page.
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
+
+			// Enqueue slash commands integration if available.
+			if ( wp_script_is( 'mcp-ai-slash-commands', 'registered' ) ) {
+				wp_enqueue_script( 'mcp-ai-slash-commands' );
+			}
 
 			$instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
 			$textarea_id = $instance_id . '-input';
@@ -936,17 +943,17 @@ class WP_MCP_AI_Shortcode {
 			// This enables client-side LLM to know which tools are available and call them.
 			// Tools will be executed server-side via the existing orchestration layer.
 			$tool_slugs_to_include = array();
-			
+
 			// Start with assistant's configured tools.
 			if ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) {
 				$tool_slugs_to_include = $assistant_config_for_provider['tools'];
 			}
-			
+
 			// Automatically add semantic_content_search if assistant has knowledge files (RAG pattern).
 			// This enables embedded client to retrieve knowledge content server-side when needed.
 			if ( $has_knowledge && ! in_array( 'semantic_content_search', $tool_slugs_to_include, true ) ) {
 				$tool_slugs_to_include[] = 'semantic_content_search';
-				
+
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log(
 						sprintf(
@@ -956,7 +963,7 @@ class WP_MCP_AI_Shortcode {
 					);
 				}
 			}
-			
+
 			// Build tool definitions for embedded client.
 			if ( ! empty( $tool_slugs_to_include ) ) {
 				$tool_definitions = array();
@@ -986,11 +993,11 @@ class WP_MCP_AI_Shortcode {
 							'embedded_tools_config',
 							'Embedded provider: Tool definitions passed to client',
 							array(
-								'assistant_id'       => $assistant_id,
-								'tool_count'         => count( $tool_definitions ),
-								'has_knowledge'      => $has_knowledge,
-								'auto_added_search'  => $has_knowledge && in_array( 'semantic_content_search', $tool_slugs_to_include, true ),
-								'tool_names'         => array_map(
+								'assistant_id'      => $assistant_id,
+								'tool_count'        => count( $tool_definitions ),
+								'has_knowledge'     => $has_knowledge,
+								'auto_added_search' => $has_knowledge && in_array( 'semantic_content_search', $tool_slugs_to_include, true ),
+								'tool_names'        => array_map(
 									function ( $def ) {
 										return isset( $def['function']['name'] ) ? $def['function']['name'] : 'unknown';
 									},
@@ -1009,7 +1016,9 @@ class WP_MCP_AI_Shortcode {
 
 			// Get tool shortcuts - for profession tests, get them from the profession's associated assistant if available.
 			$shortcuts_assistant_id = $is_profession_test && isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
-			$tool_shortcuts         = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id );
+			// Pass additional_tools so shortcuts can be generated for them too.
+			$additional_tools_for_shortcuts = ! empty( $additional_tools ) ? $additional_tools : array();
+			$tool_shortcuts                 = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id, $additional_tools_for_shortcuts );
 			if ( ! empty( $tool_shortcuts ) ) {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
@@ -1504,10 +1513,11 @@ class WP_MCP_AI_Shortcode {
 	/**
 	 * Retrieve tool shortcut metadata for the supplied assistant.
 	 *
-	 * @param int $assistant_id Assistant post ID.
+	 * @param int   $assistant_id    Assistant post ID.
+	 * @param array $additional_tools Optional array of additional tool slugs to include shortcuts for.
 	 * @return array[]
 	 */
-	public static function get_assistant_tool_shortcuts( $assistant_id ) {
+	public static function get_assistant_tool_shortcuts( $assistant_id, $additional_tools = array() ) {
 		$assistant_id = absint( $assistant_id );
 
 		if ( ! $assistant_id ) {
@@ -1532,6 +1542,24 @@ class WP_MCP_AI_Shortcode {
 				}
 
 				$selected_tools[] = $tool_slug;
+			}
+
+			$selected_tools = array_values( array_unique( $selected_tools ) );
+		}
+
+		// Merge in additional tools from shortcode parameter.
+		if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
+			foreach ( $additional_tools as $tool_slug ) {
+				$tool_slug = sanitize_key( $tool_slug );
+
+				if ( '' === $tool_slug ) {
+					continue;
+				}
+
+				// Only add if not already in the list.
+				if ( ! in_array( $tool_slug, $selected_tools, true ) ) {
+					$selected_tools[] = $tool_slug;
+				}
 			}
 
 			$selected_tools = array_values( array_unique( $selected_tools ) );

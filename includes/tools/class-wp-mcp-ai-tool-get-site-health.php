@@ -239,12 +239,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
 
-		// Provide polyfills for WordPress admin functions that may not be available.
+		// Provide polyfills for WordPress admin functions that may not be available
 		// in certain contexts, especially when Site Health is accessed via REST API.
+		// These MUST be defined before loading class-wp-site-health.php because
+		// Site Health tests may call these functions during initialization.
 
 		// Polyfill for wp_check_php_version() - introduced in WordPress 5.1.0.
 		if ( ! function_exists( 'wp_check_php_version' ) ) {
@@ -418,6 +417,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				return $update_themes;
 			}
 		}
+
+		// Now load the Site Health classes after polyfills are in place.
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
 
 		return class_exists( 'WP_Site_Health', false );
 	}
@@ -713,17 +717,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -741,7 +739,6 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

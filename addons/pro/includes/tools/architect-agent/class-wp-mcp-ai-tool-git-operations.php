@@ -49,7 +49,7 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Perform git version control operations on the plugin repository. Supports status, diff, log, branch, commit, and more. Read operations are unrestricted; write operations require approval. Similar to GitHub Copilot CLI git integration.', 'mcp-ai-wpoos' );
+		return __( 'Perform git version control operations on the plugin repository. Supports status, diff, log, branch, commit, stash (with list, push, pop, apply, drop, clear, show, branch subcommands), and more. Read operations are unrestricted; write operations require approval. Similar to GitHub Copilot CLI git integration.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'operation'   => array(
 					'type'        => 'string',
 					'enum'        => array( 'status', 'diff', 'log', 'branch', 'show', 'blame', 'commit', 'add', 'checkout', 'stash' ),
-					'description' => __( 'Git operation to perform: "status" (working tree status), "diff" (show changes), "log" (commit history), "branch" (list/create branches), "show" (show commit), "blame" (file line history), "commit" (create commit), "add" (stage changes), "checkout" (switch branch/restore), "stash" (stash changes).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Git operation to perform: "status" (working tree status), "diff" (show changes), "log" (commit history), "branch" (list/create branches), "show" (show commit), "blame" (file line history), "commit" (create commit), "add" (stage changes), "checkout" (switch branch/restore), "stash" (stash changes - use stash_subcommand for specific operations).', 'mcp-ai-wpoos' ),
 				),
 				'file_path'   => array(
 					'type'        => 'string',
@@ -76,18 +76,38 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'type'        => 'string',
 					'description' => __( 'Branch name for branch operations (create, checkout, etc.).', 'mcp-ai-wpoos' ),
 				),
-				'message'     => array(
+				'message'           => array(
 					'type'        => 'string',
-					'description' => __( 'Commit message for commit operation.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Commit message for commit operation, or stash message for stash push.', 'mcp-ai-wpoos' ),
 				),
-				'limit'       => array(
+				'limit'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Limit number of results for log operation. Default: 10.', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'options'     => array(
+				'stash_subcommand'  => array(
+					'type'        => 'string',
+					'enum'        => array( 'list', 'push', 'pop', 'apply', 'drop', 'clear', 'show', 'branch' ),
+					'description' => __( 'Stash subcommand: "list" (list stashes), "push" (save changes), "pop" (apply and remove), "apply" (apply without removing), "drop" (delete stash), "clear" (remove all), "show" (display diff), "branch" (create branch from stash). Default: "push".', 'mcp-ai-wpoos' ),
+					'default'     => 'push',
+				),
+				'stash_ref'         => array(
+					'type'        => 'string',
+					'description' => __( 'Stash reference for operations like pop, apply, drop, show (e.g., "stash@{0}", "stash@{1}"). Default: latest stash.', 'mcp-ai-wpoos' ),
+				),
+				'include_untracked' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Include untracked files in stash push operation.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
+				'keep_index'        => array(
+					'type'        => 'boolean',
+					'description' => __( 'Keep staged changes in index during stash push operation.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
+				'options'           => array(
 					'type'        => 'array',
 					'description' => __( 'Additional git command options as array of strings. Example: ["--staged", "--cached"].', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
@@ -103,11 +123,15 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                   // Pro tier feature.
-			'requires-capability',   // Requires edit_plugins capability.
-			'state-changing',        // Some operations modify git state.
-			'local-only',            // Works locally, no external APIs.
-			'reversible',            // Git operations are reversible.
+			'pro',                     // Pro tier feature.
+			'requires-capability',     // Requires edit_plugins capability.
+			'state-changing',          // Some operations modify git state.
+			'local-only',              // Works locally, no external APIs.
+			'reversible',              // Git operations are reversible.
+			'architect-agent',         // Core Architect Agent capability.
+			'version-control',         // Can perform git operations.
+			'requires-workspace-trust', // Requires workspace trust (security).
+			'development-workflow',    // Part of development lifecycle.
 		);
 	}
 
@@ -123,13 +147,17 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
-		$operation   = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
-		$file_path   = isset( $arguments['file_path'] ) ? sanitize_text_field( $arguments['file_path'] ) : '';
-		$commit_hash = isset( $arguments['commit_hash'] ) ? sanitize_text_field( $arguments['commit_hash'] ) : '';
-		$branch_name = isset( $arguments['branch_name'] ) ? sanitize_text_field( $arguments['branch_name'] ) : '';
-		$message     = isset( $arguments['message'] ) ? sanitize_textarea_field( $arguments['message'] ) : '';
-		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$options     = isset( $arguments['options'] ) && is_array( $arguments['options'] ) ? $arguments['options'] : array();
+		$operation         = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
+		$file_path         = isset( $arguments['file_path'] ) ? sanitize_text_field( $arguments['file_path'] ) : '';
+		$commit_hash       = isset( $arguments['commit_hash'] ) ? sanitize_text_field( $arguments['commit_hash'] ) : '';
+		$branch_name       = isset( $arguments['branch_name'] ) ? sanitize_text_field( $arguments['branch_name'] ) : '';
+		$message           = isset( $arguments['message'] ) ? sanitize_textarea_field( $arguments['message'] ) : '';
+		$limit             = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$stash_subcommand  = isset( $arguments['stash_subcommand'] ) ? sanitize_text_field( $arguments['stash_subcommand'] ) : 'push';
+		$stash_ref         = isset( $arguments['stash_ref'] ) ? sanitize_text_field( $arguments['stash_ref'] ) : '';
+		$include_untracked = isset( $arguments['include_untracked'] ) ? (bool) $arguments['include_untracked'] : false;
+		$keep_index        = isset( $arguments['keep_index'] ) ? (bool) $arguments['keep_index'] : false;
+		$options           = isset( $arguments['options'] ) && is_array( $arguments['options'] ) ? $arguments['options'] : array();
 
 		// Validate operation.
 		if ( empty( $operation ) ) {
@@ -176,7 +204,7 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				return $this->git_checkout( $branch_name, $file_path, $options, $context );
 
 			case 'stash':
-				return $this->git_stash( $options, $context );
+				return $this->git_stash( $stash_subcommand, $stash_ref, $message, $branch_name, $include_untracked, $keep_index, $options, $context );
 
 			default:
 				return $this->error_response(
@@ -487,21 +515,317 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 	 * Git stash operation (write operation - requires logging).
 	 *
+	 * Supports all stash subcommands:
+	 * - list: Show all stashed changes
+	 * - push: Save current changes to stash
+	 * - pop: Apply and remove stash
+	 * - apply: Apply stash without removing
+	 * - drop: Delete specific stash
+	 * - clear: Remove all stashes
+	 * - show: Display stash diff
+	 * - branch: Create branch from stash
+	 *
+	 * @param string $subcommand       Stash subcommand.
+	 * @param string $stash_ref        Stash reference (e.g., stash@{0}).
+	 * @param string $message          Message for stash push.
+	 * @param string $branch_name      Branch name for stash branch.
+	 * @param bool   $include_untracked Include untracked files.
+	 * @param bool   $keep_index        Keep staged changes.
+	 * @param array  $options          Additional command options.
+	 * @param array  $context          Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash( $subcommand, $stash_ref, $message, $branch_name, $include_untracked, $keep_index, $options, $context ) {
+		// Validate and sanitize stash reference.
+		if ( ! empty( $stash_ref ) && ! preg_match( '/^stash@\{[0-9]+\}$/', $stash_ref ) ) {
+			return $this->error_response( __( 'Invalid stash reference format. Use stash@{N} where N is a number.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Route to specific subcommand handler.
+		switch ( $subcommand ) {
+			case 'list':
+				return $this->git_stash_list( $options );
+
+			case 'push':
+				return $this->git_stash_push( $message, $include_untracked, $keep_index, $options, $context );
+
+			case 'pop':
+				return $this->git_stash_pop( $stash_ref, $options, $context );
+
+			case 'apply':
+				return $this->git_stash_apply( $stash_ref, $options, $context );
+
+			case 'drop':
+				return $this->git_stash_drop( $stash_ref, $options, $context );
+
+			case 'clear':
+				return $this->git_stash_clear( $options, $context );
+
+			case 'show':
+				return $this->git_stash_show( $stash_ref, $options );
+
+			case 'branch':
+				return $this->git_stash_branch( $branch_name, $stash_ref, $options, $context );
+
+			default:
+				return $this->error_response(
+					sprintf(
+						/* translators: %s: subcommand name */
+						__( 'Unsupported stash subcommand: %s', 'mcp-ai-wpoos' ),
+						esc_html( $subcommand )
+					)
+				);
+		}
+	}
+
+	/**
+	 * Git stash list - show all stashed changes.
+	 *
+	 * @param array $options Command options.
+	 * @return array Operation result.
+	 */
+	private function git_stash_list( $options ) {
+		$opts   = $this->sanitize_options( $options );
+		$result = $this->exec_git( 'git stash list ' . $opts );
+
+		// Parse stash list for structured data.
+		$stash_entries = array();
+		if ( $result['success'] && ! empty( $result['output'] ) ) {
+			$lines = explode( "\n", trim( $result['output'] ) );
+			foreach ( $lines as $line ) {
+				// Parse format: stash@{0}: WIP on branch: commit message.
+				if ( preg_match( '/^(stash@\{(\d+)\}):\s+(.+)$/', $line, $matches ) ) {
+					$stash_entries[] = array(
+						'ref'     => $matches[1],
+						'index'   => (int) $matches[2],
+						'message' => $matches[3],
+					);
+				}
+			}
+		}
+
+		return array(
+			'operation'     => 'stash_list',
+			'subcommand'    => 'list',
+			'stash_count'   => count( $stash_entries ),
+			'stash_entries' => $stash_entries,
+			'output'        => $result['output'],
+			'success'       => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash push - save current changes.
+	 *
+	 * @param string $message          Stash message.
+	 * @param bool   $include_untracked Include untracked files.
+	 * @param bool   $keep_index        Keep staged changes.
+	 * @param array  $options          Command options.
+	 * @param array  $context          Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash_push( $message, $include_untracked, $keep_index, $options, $context ) {
+		$opts = $this->sanitize_options( $options );
+		$cmd  = 'git stash push ' . $opts;
+
+		if ( $include_untracked ) {
+			$cmd .= ' --include-untracked';
+		}
+
+		if ( $keep_index ) {
+			$cmd .= ' --keep-index';
+		}
+
+		if ( ! empty( $message ) ) {
+			$cmd .= ' -m ' . escapeshellarg( $message );
+		}
+
+		$result = $this->exec_git( $cmd );
+
+		// Log the operation.
+		$this->log_write_operation( 'stash_push', $message, $result, $context );
+
+		return array(
+			'operation'         => 'stash_push',
+			'subcommand'        => 'push',
+			'message'           => $message,
+			'include_untracked' => $include_untracked,
+			'keep_index'        => $keep_index,
+			'output'            => $result['output'],
+			'success'           => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash pop - apply and remove stash.
+	 *
+	 * @param string $stash_ref Stash reference.
+	 * @param array  $options   Command options.
+	 * @param array  $context   Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash_pop( $stash_ref, $options, $context ) {
+		$opts = $this->sanitize_options( $options );
+		$cmd  = 'git stash pop ' . $opts;
+
+		if ( ! empty( $stash_ref ) ) {
+			$cmd .= ' ' . escapeshellarg( $stash_ref );
+		}
+
+		$result = $this->exec_git( $cmd );
+
+		// Log the operation.
+		$this->log_write_operation( 'stash_pop', $stash_ref, $result, $context );
+
+		return array(
+			'operation'  => 'stash_pop',
+			'subcommand' => 'pop',
+			'stash_ref'  => $stash_ref,
+			'output'     => $result['output'],
+			'success'    => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash apply - apply stash without removing.
+	 *
+	 * @param string $stash_ref Stash reference.
+	 * @param array  $options   Command options.
+	 * @param array  $context   Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash_apply( $stash_ref, $options, $context ) {
+		$opts = $this->sanitize_options( $options );
+		$cmd  = 'git stash apply ' . $opts;
+
+		if ( ! empty( $stash_ref ) ) {
+			$cmd .= ' ' . escapeshellarg( $stash_ref );
+		}
+
+		$result = $this->exec_git( $cmd );
+
+		// Log the operation.
+		$this->log_write_operation( 'stash_apply', $stash_ref, $result, $context );
+
+		return array(
+			'operation'  => 'stash_apply',
+			'subcommand' => 'apply',
+			'stash_ref'  => $stash_ref,
+			'output'     => $result['output'],
+			'success'    => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash drop - delete specific stash.
+	 *
+	 * @param string $stash_ref Stash reference.
+	 * @param array  $options   Command options.
+	 * @param array  $context   Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash_drop( $stash_ref, $options, $context ) {
+		if ( empty( $stash_ref ) ) {
+			return $this->error_response( __( 'Stash reference is required for drop operation.', 'mcp-ai-wpoos' ) );
+		}
+
+		$opts   = $this->sanitize_options( $options );
+		$result = $this->exec_git( 'git stash drop ' . $opts . ' ' . escapeshellarg( $stash_ref ) );
+
+		// Log the operation.
+		$this->log_write_operation( 'stash_drop', $stash_ref, $result, $context );
+
+		return array(
+			'operation'  => 'stash_drop',
+			'subcommand' => 'drop',
+			'stash_ref'  => $stash_ref,
+			'output'     => $result['output'],
+			'success'    => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash clear - remove all stashes.
+	 *
 	 * @param array $options Command options.
 	 * @param array $context Execution context.
 	 * @return array Operation result.
 	 */
-	private function git_stash( $options, $context ) {
+	private function git_stash_clear( $options, $context ) {
 		$opts   = $this->sanitize_options( $options );
-		$result = $this->exec_git( 'git stash ' . $opts );
+		$result = $this->exec_git( 'git stash clear ' . $opts );
 
 		// Log the operation.
-		$this->log_write_operation( 'stash', '', $result, $context );
+		$this->log_write_operation( 'stash_clear', 'all stashes', $result, $context );
 
 		return array(
-			'operation' => 'stash',
-			'output'    => $result['output'],
-			'success'   => $result['success'],
+			'operation'  => 'stash_clear',
+			'subcommand' => 'clear',
+			'output'     => $result['output'],
+			'success'    => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash show - display stash diff.
+	 *
+	 * @param string $stash_ref Stash reference.
+	 * @param array  $options   Command options.
+	 * @return array Operation result.
+	 */
+	private function git_stash_show( $stash_ref, $options ) {
+		$opts = $this->sanitize_options( $options );
+		$cmd  = 'git --no-pager stash show ' . $opts;
+
+		if ( ! empty( $stash_ref ) ) {
+			$cmd .= ' ' . escapeshellarg( $stash_ref );
+		}
+
+		$result = $this->exec_git( $cmd );
+
+		return array(
+			'operation'  => 'stash_show',
+			'subcommand' => 'show',
+			'stash_ref'  => $stash_ref,
+			'output'     => $result['output'],
+			'success'    => $result['success'],
+		);
+	}
+
+	/**
+	 * Git stash branch - create branch from stash.
+	 *
+	 * @param string $branch_name Branch name.
+	 * @param string $stash_ref   Stash reference.
+	 * @param array  $options     Command options.
+	 * @param array  $context     Execution context.
+	 * @return array Operation result.
+	 */
+	private function git_stash_branch( $branch_name, $stash_ref, $options, $context ) {
+		if ( empty( $branch_name ) ) {
+			return $this->error_response( __( 'Branch name is required for stash branch operation.', 'mcp-ai-wpoos' ) );
+		}
+
+		$opts = $this->sanitize_options( $options );
+		$cmd  = 'git stash branch ' . $opts . ' ' . escapeshellarg( $branch_name );
+
+		if ( ! empty( $stash_ref ) ) {
+			$cmd .= ' ' . escapeshellarg( $stash_ref );
+		}
+
+		$result = $this->exec_git( $cmd );
+
+		// Log the operation.
+		$target = $branch_name . ( $stash_ref ? " from {$stash_ref}" : '' );
+		$this->log_write_operation( 'stash_branch', $target, $result, $context );
+
+		return array(
+			'operation'   => 'stash_branch',
+			'subcommand'  => 'branch',
+			'branch_name' => $branch_name,
+			'stash_ref'   => $stash_ref,
+			'output'      => $result['output'],
+			'success'     => $result['success'],
 		);
 	}
 

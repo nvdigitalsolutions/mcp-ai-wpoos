@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Image Template CPT class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-image-template-cpt.php';
+
 // Check if Image Production toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_image_production_toolkit'] );
@@ -24,7 +27,8 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load Image Production admin pages.
 	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-settings-page.php';
+		// Load new CPT-based settings page (under Media menu).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php';
 	}
 
 	// Load Research & Add for CCT/CPT integration.
@@ -34,6 +38,15 @@ if ( $is_enabled && ! $is_base ) {
 	// Tools are loaded via the standard tool loading mechanism.
 	// Location: addons/pro/includes/tools/image-production/.
 }
+
+// Initialize Image Template CPT.
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Image_Template_CPT::init();
+	},
+	5
+);
 
 /**
  * Enqueue image production toolkit admin styles.

@@ -205,6 +205,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
 
+			// Register Slash Command REST endpoints.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
+			add_action(
+				'rest_api_init',
+				function() {
+					$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
+					$controller->register_routes();
+				}
+			);
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
@@ -264,7 +274,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Server   $server  Server instance.
 		 * @return bool
 		 */
-		public function ensure_clean_json_output( $served, $result, $request, $server ) {
+		public function ensure_clean_json_output( $served, $result, $request, $server ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			// Only process our endpoints.
 			$route = $request->get_route();
 			if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
@@ -5274,7 +5284,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request   Original request.
 		 * @return array|WP_Error Member response or error.
 		 */
-		protected function invoke_team_member( $member_id, $messages, $request ) {
+		protected function invoke_team_member( $member_id, $messages, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 			// Load profession configuration.
 			$profession_config = $this->load_profession_configuration( $member_id, array() );
 
@@ -5387,10 +5397,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				case 'weighted':
 					// First response gets priority (leader/planner).
-					$primary = $responses[0]['content'];
-					if ( count( $responses ) > 1 ) {
+					$primary        = $responses[0]['content'];
+					$response_count = count( $responses );
+					if ( $response_count > 1 ) {
 						$primary .= "\n\n---\n\n## Additional Perspectives\n\n";
-						for ( $i = 1; $i < count( $responses ); $i++ ) {
+						for ( $i = 1; $i < $response_count; $i++ ) {
 							$primary .= $responses[ $i ]['content'] . "\n\n";
 						}
 					}
@@ -9466,7 +9477,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request REST request instance.
 		 * @return WP_REST_Response
 		 */
-		public function handle_mcp_options( WP_REST_Request $request ) {
+		public function handle_mcp_options( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 			/**
 			 * Filter the Access-Control-Allow-Origin header value for OPTIONS requests.
 			 *

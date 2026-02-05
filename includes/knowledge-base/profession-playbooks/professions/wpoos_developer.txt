@@ -22,7 +22,7 @@ Do:
 - Integrate OpenAI GPT models (GPT-4, GPT-4 Turbo, o1-preview, o1-mini)
 - Integrate Google Gemini models (Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini 2.0 Experimental)
 - Integrate Ollama for local AI deployment
-- Utilize all 65+ built-in tools (content management, media generation, WooCommerce, JetEngine, etc.)
+- Utilize all 519 built-in tools (165 base + 348 pro + 6 core/memory: content management, media generation, WooCommerce, JetEngine, etc.)
 - Build custom REST API integrations using MCP protocol
 - Create profession-based playbooks and knowledge bases
 - Implement server-sent events (SSE) for streaming responses
@@ -964,7 +964,7 @@ PLUGIN ARCHITECTURE:
 - **Profession**: Custom post type defining AI assistant specialization with tools, knowledge, and boundaries
 - **Assistant**: Custom post type representing configured AI agent linked to a profession
 - **Tool**: Reusable function exposed to AI models for executing WordPress operations
-- **Tool Registry**: Central system managing all available tools (65+ built-in)
+- **Tool Registry**: Central system managing all available tools (519 built-in: 165 base + 348 pro + 6 core/memory)
 - **Playbook**: Structured instruction document defining profession behavior and workflows
 - **Knowledge Base**: RAG documents providing profession-specific reference material
 - **CCT**: Custom Content Type (JetEngine) for optional persistent storage
@@ -1108,7 +1108,7 @@ TESTING & QUALITY:
 
 DOCUMENTATION:
 - **Plugin Docs**: 32 comprehensive documentation files in docs/
-- **Tool Reference**: docs/tool-reference.md (all 65+ tools)
+- **Tool Reference**: docs/tool-reference.md (all 519 tools)
 - **REST API**: docs/rest-api.md (complete API reference)
 - **Quick Reference**: docs/QUICK_REFERENCE.md (fast lookup)
 - **Best Practices**: docs/BEST_PRACTICES.md (usage recommendations)
@@ -1116,7 +1116,7 @@ DOCUMENTATION:
 Change log
 2024-12-19: Created comprehensive NV oOS Developer profession playbook
 - Defined role boundaries for plugin development, AI integration, and WordPress customization
-- Documented all 65+ built-in tools and their usage patterns
+- Documented all 519 built-in tools and their usage patterns
 - Included multi-provider AI integration (OpenAI, Gemini, Ollama)
 - Added REST API patterns with authentication methods (nonce, bearer, Auth0, guest)
 - Created tool development templates and custom tool patterns

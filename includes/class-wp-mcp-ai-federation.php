@@ -80,12 +80,12 @@ class WP_MCP_AI_Federation {
 		$is_federation_enabled = WP_MCP_AI_Federation_Settings::is_federation_enabled();
 		$is_directory_enabled  = WP_MCP_AI_Federation_Settings::is_directory_enabled();
 
-		// Load well-known endpoints if federation is enabled.
-		if ( $is_federation_enabled ) {
+		// Load well-known endpoints if either federation or directory is enabled.
+		if ( $is_federation_enabled || $is_directory_enabled ) {
 			$this->wellknown_handler = new WP_MCP_AI_Federation_WellKnown( $this->registry );
 		}
 
-		// Load directory features if directory service is enabled.
+		// Load directory features (AI Peers CPT, REST API) only if directory is enabled.
 		if ( $is_directory_enabled ) {
 			$this->peer_cpt_handler       = new WP_MCP_AI_AI_Peer_CPT();
 			$this->directory_rest_handler = new WP_MCP_AI_Federation_Directory_REST();
@@ -107,13 +107,16 @@ class WP_MCP_AI_Federation {
 	 * Handle plugin activation.
 	 */
 	public function on_activation() {
-		// Flush rewrite rules for well-known endpoints.
-		if ( WP_MCP_AI_Federation_Settings::is_federation_enabled() ) {
+		$is_federation_enabled = WP_MCP_AI_Federation_Settings::is_federation_enabled();
+		$is_directory_enabled  = WP_MCP_AI_Federation_Settings::is_directory_enabled();
+
+		// Flush rewrite rules if either federation or directory is enabled.
+		if ( $is_federation_enabled || $is_directory_enabled ) {
 			WP_MCP_AI_Federation_WellKnown::activate();
 		}
 
-		// Schedule peer verification cron.
-		if ( WP_MCP_AI_Federation_Settings::is_directory_enabled() ) {
+		// Schedule cron if directory service is enabled.
+		if ( $is_directory_enabled ) {
 			if ( ! wp_next_scheduled( 'wp_mcp_ai_verify_peers' ) ) {
 				wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_verify_peers' );
 			}

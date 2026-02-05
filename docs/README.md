@@ -30,6 +30,7 @@ Complete technical reference
 ### 🏗️ **[Architecture](architecture/)**
 System design and patterns
 - **[Agentic Workflow](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md)** ⭐ Comprehensive
+- **[Multi-Agent System](features/multi-agent/README-MULTI-AGENT-SYSTEM.md)** - Multi-agent orchestration implementation
 - **[Orchestration](architecture/orchestration/)** - Orchestration layer
 - **[Integrations](architecture/integrations/)** - Elementor, JetEngine
 
@@ -45,6 +46,12 @@ Problem-solving guides
 - **[Deployment](troubleshooting/deployment/)** - Installation issues
 - **[Chat](troubleshooting/chat/)** - Chat functionality problems
 - **[Common Issues](troubleshooting/common/)** - General problems
+- **[Federation Setup](guides/admin/FEDERATION_SETUP_GUIDE.md)** - Federation and mesh computing setup
+
+### 🔧 **[Deployment](deployment/)**
+Deployment and production guides
+- **[Production Composer Setup](deployment/PRODUCTION_COMPOSER.md)** - Composer dependencies for production
+- **[Production Ready Guide](deployment/PRODUCTION_READY.md)** - Production deployment checklist
 
 ### 📅 **[Implementation History](implementation-history/)**
 Historical documentation (2025)
@@ -63,7 +70,9 @@ Usage examples and demos
 - [Product Price Lookup Usage](examples/product-price-lookup-usage.md)
 
 ### 📦 **[Archive](archive/)**
-Historical reference (244 documents from 2024-2025)
+Historical reference (260+ documents from 2024-2025)
+- **[2025 Archive](archive/2025/README.md)** - Recently archived: DeepSeek V4, WordPress.org, Pro Dashboard, Pro Toolkit consolidation
+- **[Root Archive](../archive/README.md)** - 50+ files from root directory reorganization (Phase 6, fixes, status reports)
 
 ---
 
@@ -83,7 +92,7 @@ Historical reference (244 documents from 2024-2025)
 - **Categories:** 9 main categories + archive
 - **Tools Documented:** 398 (141 base + 257 Pro)
 - **Quality Score:** 9.5/10
-- **Last Reorganized:** December 24, 2025
+- **Last Reorganized:** February 5, 2026 (Root + Docs consolidation)
 
 ---
 

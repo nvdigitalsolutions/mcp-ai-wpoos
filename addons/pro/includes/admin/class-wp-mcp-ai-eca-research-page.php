@@ -230,9 +230,23 @@ class WP_MCP_AI_ECA_Research_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface with comprehensive ECA tools.
-							// Includes research, creation, enrollment, calendar, and management tools.
+							$eca_tools = array(
+								// ECA management.
+								'research_eca',
+								'create_eca',
+								'list_ecas',
+								'get_eca',
+								// Student enrollment.
+								'enroll_student_eca',
+								// Calendar and scheduling.
+								'get_calendar_view',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_eca,create_eca,list_ecas,get_eca,enroll_student_eca,get_calendar_view,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $eca_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -585,9 +599,9 @@ class WP_MCP_AI_ECA_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get ECA statistics.
-		$total_ecas = wp_count_posts( 'mcp_ai_eca' );
+		$total_ecas      = wp_count_posts( 'mcp_ai_eca' );
 		$published_count = isset( $total_ecas->publish ) ? $total_ecas->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$ecas = get_posts(
 			array(
@@ -598,27 +612,27 @@ class WP_MCP_AI_ECA_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_category = 0;
-		$with_schedule = 0;
+		$with_category  = 0;
+		$with_schedule  = 0;
 
 		foreach ( $ecas as $eca ) {
 			$category = get_post_meta( $eca->ID, 'category', true );
 			$schedule = get_post_meta( $eca->ID, 'schedule', true );
 			$has_desc = ! empty( $eca->post_content );
-			
+
 			if ( ! empty( $category ) ) {
-				$with_category++;
+				++$with_category;
 			}
 			if ( ! empty( $schedule ) ) {
-				$with_schedule++;
+				++$with_schedule;
 			}
 			if ( ! empty( $category ) && ! empty( $schedule ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'ECA Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

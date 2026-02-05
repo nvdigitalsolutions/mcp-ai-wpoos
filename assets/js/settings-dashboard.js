@@ -20,6 +20,7 @@
 			this.initSliders();
 			this.initPresets();
 			this.initMeshPeers();
+			this.initFederationMeshDiagnostics();
 		},
 
 		/**
@@ -455,6 +456,106 @@
 			const $form = $(e.target);
 			const $submit = $form.find('input[type="submit"]');
 			
+			// CRITICAL FIX: Ensure subtab hidden fields are set correctly before submission.
+			// This fixes the issue where subtab settings (like enable_federation_directory) don't persist.
+			// The hidden field value must match the current URL subtab parameter to ensure
+			// correct field sanitization in subtab-aware sections.
+			const urlParams = new URLSearchParams(window.location.search);
+			const currentSubtab = urlParams.get('subtab');
+			const currentConnection = urlParams.get('connection');
+			
+			// Find all subtab hidden fields in the form.
+			const $subtabFields = $form.find('input[type="hidden"][name^="subtab_"]');
+			
+			if ($subtabFields.length > 0) {
+				// Process each subtab hidden field.
+				$subtabFields.each(function() {
+					const $hiddenField = $(this);
+					const fieldName = $hiddenField.attr('name');
+					const oldValue = $hiddenField.val();
+					
+					// Determine the correct subtab value to use:
+					// 1. If URL has connection parameter, use it (for Integrations section)
+					// 2. If URL has subtab parameter, use it (for other sections)
+					// 3. Otherwise, keep the existing field value (from PHP rendering)
+					// 4. As last resort, try to detect from active subtab link
+					let newValue = currentConnection || currentSubtab;
+					
+					if (!newValue) {
+						// No URL parameter - check if field already has a valid value.
+						if (oldValue && oldValue !== '') {
+							newValue = oldValue;
+							console.log('[NV oOS Settings] Subtab field', fieldName, 'kept existing value:', oldValue, '(no URL param)');
+						} else {
+							// Try to detect from active subtab link in the section.
+							const $activeSubtab = $form.find('.wp-mcp-ai-subtab-active[data-subtab]');
+							if ($activeSubtab.length > 0) {
+								newValue = $activeSubtab.data('subtab');
+								console.log('[NV oOS Settings] Subtab field', fieldName, 'detected from active link:', newValue);
+							}
+						}
+					}
+					
+					// Update the field value if we have a valid value.
+					if (newValue && newValue !== oldValue) {
+						$hiddenField.val(newValue);
+						console.log('[NV oOS Settings] Updated subtab hidden field:', fieldName, 'from', oldValue, 'to', newValue);
+					} else if (newValue === oldValue) {
+						console.log('[NV oOS Settings] Subtab field', fieldName, 'already has correct value:', newValue);
+					} else {
+						console.warn('[NV oOS Settings] WARNING: Could not determine subtab value for field:', fieldName);
+					}
+				});
+			} else {
+				console.log('[NV oOS Settings] No subtab hidden fields found in form (this is OK for tabs without subtabs)');
+			}
+			
+			// CRITICAL FIX: Add hidden fields for unchecked checkboxes to ensure they're submitted.
+			// Standard HTML behavior: unchecked checkboxes don't appear in FormData.
+			// This ensures unchecked checkboxes are submitted as value="0" so backend can process them.
+			
+			// First, remove any existing placeholder hidden fields from previous submission attempts.
+			$form.find('input[type="hidden"][data-checkbox-placeholder="true"]').remove();
+			
+			// Then, scan all checkboxes and add hidden fields for unchecked ones.
+			const checkboxes = {};
+			const uncheckedCheckboxes = [];
+			$form.find('input[type="checkbox"][name^="wp_mcp_ai_settings"]').each(function() {
+				const $checkbox = $(this);
+				const checkboxName = $checkbox.attr('name');
+				const name = checkboxName.replace('wp_mcp_ai_settings[', '').replace(']', '');
+				const isChecked = $checkbox.is(':checked');
+				checkboxes[name] = isChecked;
+				
+				// If checkbox is unchecked, add a hidden field with value="0" to ensure it's submitted.
+				if (!isChecked) {
+					uncheckedCheckboxes.push(name);
+					$form.append(
+						$('<input>')
+							.attr('type', 'hidden')
+							.attr('name', checkboxName)
+							.attr('data-checkbox-placeholder', 'true')
+							.val('0')
+					);
+				}
+			});
+			console.log('[NV oOS Settings] Checkbox states:', checkboxes);
+			if (uncheckedCheckboxes.length > 0) {
+				console.log('[NV oOS Settings] Added hidden fields for unchecked checkboxes:', uncheckedCheckboxes);
+			}
+			
+			// ENHANCED LOGGING: Specifically log federation/mesh checkbox states for debugging.
+			const federationCheckboxes = ['enable_mesh', 'enable_federation', 'enable_federation_directory'];
+			const federationStates = {};
+			federationCheckboxes.forEach(function(name) {
+				if (typeof checkboxes[name] !== 'undefined') {
+					federationStates[name] = checkboxes[name];
+				}
+			});
+			if (Object.keys(federationStates).length > 0) {
+				console.log('[NV oOS Settings] Federation/Mesh checkbox states at submission:', federationStates);
+			}
+			
 			// Get form data for logging.
 			const formData = new FormData($form[0]);
 			const activeTab = formData.get('active_tab');
@@ -822,6 +923,119 @@
 					$button.prop('disabled', false).text('Apply Preset');
 				}
 			});
+		},
+
+		/**
+		 * Initialize diagnostics for Federation & Mesh checkboxes.
+		 * Adds console logging and click handlers to help debug checkbox issues.
+		 */
+		initFederationMeshDiagnostics: function() {
+			// Only run on advanced tab, federation_mesh subtab
+			const urlParams = new URLSearchParams(window.location.search);
+			const tab = urlParams.get('tab');
+			const subtab = urlParams.get('subtab');
+			
+			if (tab !== 'advanced' || subtab !== 'federation_mesh') {
+				return;
+			}
+
+			console.log('[NV oOS Federation Mesh] Diagnostics initialized');
+
+			// Add timestamp helper
+			const logWithTimestamp = function(message, ...args) {
+				const timestamp = new Date().toISOString().split('T')[1].slice(0, -1); // HH:MM:SS.mmm
+				console.log('[' + timestamp + '] ' + message, ...args);
+			};
+
+			logWithTimestamp('[NV oOS Federation Mesh] Diagnostics initialized');
+
+			// Add a visual indicator that diagnostics are running
+			$('.wrap.wp-mcp-ai-settings-dashboard').prepend(
+				'<div class="notice notice-info" style="margin: 15px 0; padding: 10px 15px;">' +
+				'<p><strong>🔍 Diagnostics Mode:</strong> Federation Mesh checkbox diagnostics are active. Check browser console (F12) for detailed logs.</p>' +
+				'<p><strong>Note:</strong> The checkbox <code>value</code> attribute is always "1" regardless of checked state. This is normal HTML behavior. ' +
+				'The <code>checked</code> property indicates whether the checkbox is actually selected.</p>' +
+				'</div>'
+			);
+
+			// Target the three federation/mesh checkboxes
+			const checkboxIds = ['enable_mesh', 'enable_federation', 'enable_federation_directory'];
+			
+			checkboxIds.forEach(function(id) {
+				const $checkbox = $('#' + id);
+				
+				if ($checkbox.length === 0) {
+					console.warn('[NV oOS Federation Mesh] Checkbox not found:', id);
+					return;
+				}
+
+				// Get the actual checked state from the DOM
+				const isChecked = $checkbox.is(':checked');
+				const $slider = $checkbox.siblings('.wp-mcp-ai-settings-toggle-slider');
+				const sliderBackgroundColor = $slider.length > 0 ? $slider.css('background-color') : 'N/A';
+				
+				// Determine the visual state description
+				const visualState = isChecked ? '✅ ON (checked)' : '❌ OFF (unchecked)';
+				
+				// Log current state with visual verification
+				logWithTimestamp('[NV oOS Federation Mesh] Checkbox found: ' + id, {
+					visualState: visualState,
+					checked: isChecked,
+					disabled: $checkbox.is(':disabled'),
+					visible: $checkbox.is(':visible'),
+					name: $checkbox.attr('name'),
+					value: $checkbox.val() + ' (always "1" for checkboxes, use "checked" property for state)',
+					sliderBgColor: sliderBackgroundColor
+				});
+
+				// Add change handler for debugging
+				$checkbox.on('change', function() {
+					const newIsChecked = $(this).is(':checked');
+					const newVisualState = newIsChecked ? '✅ ON' : '❌ OFF';
+					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' → ' + newVisualState + ' (checked=' + newIsChecked + ')');
+				});
+
+				// Check if the checkbox is actually clickable
+				const $label = $('label[for="' + id + '"]');
+				if ($label.length > 0) {
+					logWithTimestamp('[NV oOS Federation Mesh] Label found for: ' + id);
+				} else {
+					console.warn('[NV oOS Federation Mesh] No label found for:', id);
+				}
+
+				// Check for overlapping elements that might block clicks
+				// Note: The checkbox itself is hidden (opacity: 0, width/height: 0), so we check the visible slider
+				if ($slider.length > 0) {
+					const rect = $slider[0].getBoundingClientRect();
+					// Only check if the slider has valid dimensions
+					if (rect.width > 0 && rect.height > 0) {
+						const centerX = rect.left + rect.width / 2;
+						const centerY = rect.top + rect.height / 2;
+						const elementAtPoint = document.elementFromPoint(centerX, centerY);
+						
+						// Check if element at center is the slider itself or within its container
+						const isSliderItself = (elementAtPoint === $slider[0]);
+						const isWithinContainer = $checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length > 0;
+						
+						if (elementAtPoint && !isSliderItself && !isWithinContainer) {
+							console.warn('[NV oOS Federation Mesh] Element covering slider for checkbox:', id, elementAtPoint);
+						} else if (elementAtPoint) {
+							logWithTimestamp('[NV oOS Federation Mesh] Slider clickable for: ' + id);
+						}
+					}
+				}
+			});
+
+			// Log when save button is clicked
+			$('input[type="submit"][name="submit"]').on('click', function() {
+				logWithTimestamp('[NV oOS Federation Mesh] Save button clicked');
+				checkboxIds.forEach(function(id) {
+					const $checkbox = $('#' + id);
+					if ($checkbox.length > 0) {
+						logWithTimestamp('[NV oOS Federation Mesh] Checkbox state at save: ' + id + ' = ' + $checkbox.is(':checked'));
+					}
+				});
+			});
 		}
 	};
 
@@ -850,6 +1064,104 @@
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_test_brave_search_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Yahoo Sports connection test handlers.
+	 */
+	function initYahooHandlers() {
+		// Test Yahoo connection
+		$('#wp-mcp-ai-test-yahoo-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-yahoo-test-result');
+			const clientId = $('input[name="wp_mcp_ai_settings[yahoo_client_id]"]').val();
+			const clientSecret = $('input[name="wp_mcp_ai_settings[yahoo_client_secret]"]').val();
+
+			if (!clientId || !clientSecret) {
+				$result.html('<span style="color: #d63638;">Please enter both Client ID and Client Secret first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Validating Yahoo credentials...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_yahoo_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					client_id: clientId,
+					client_secret: clientSecret
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						let message = '✓ ' + response.data.message;
+						if (response.data.note) {
+							message += '<br><small>' + response.data.note + '</small>';
+						}
+						$result.html('<span style="color: #00a32a;">' + message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection test failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Remove.bg connection test handlers.
+	 */
+	function initRemovebgHandlers() {
+		// Test remove.bg connection
+		$('#wp-mcp-ai-test-removebg-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-removebg-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[removebg_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to remove.bg...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_removebg_connection',
 					nonce: wpMcpAiAdmin.nonce,
 					api_key: apiKey
 				}
@@ -1156,6 +1468,104 @@
 		});
 	}
 
+	/**
+	 * Initialize Mubert connection test handlers.
+	 */
+	function initMubertHandlers() {
+		// Test Mubert connection
+		$('#wp-mcp-ai-test-mubert-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-mubert-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[mubert_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Mubert...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_mubert_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Flowhub connection test handlers.
+	 */
+	function initFlowhubHandlers() {
+		// Test Flowhub connection
+		$('#wp-mcp-ai-test-flowhub-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-flowhub-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[flowhub_api_key]"]').val();
+			const clientId = $('input[name="wp_mcp_ai_settings[flowhub_client_id]"]').val();
+			const clientSecret = $('input[name="wp_mcp_ai_settings[flowhub_client_secret]"]').val();
+			const locationId = $('input[name="wp_mcp_ai_settings[flowhub_location_id]"]').val();
+
+			if (!apiKey || !clientId || !clientSecret || !locationId) {
+				$result.html('<span style="color: #d63638;">Please enter all Flowhub credentials first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Flowhub...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_flowhub_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey,
+					client_id: clientId,
+					client_secret: clientSecret,
+					location_id: locationId
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
@@ -1164,6 +1574,10 @@
 		// Initialize connection test handlers if wpMcpAiAdmin is available
 		if (typeof wpMcpAiAdmin !== 'undefined') {
 			initBraveSearchHandlers();
+			initYahooHandlers();
+			initRemovebgHandlers();
+			initMubertHandlers();
+			initFlowhubHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
 			initISAMSHandlers();

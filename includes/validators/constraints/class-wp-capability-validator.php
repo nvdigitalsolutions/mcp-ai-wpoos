@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * WordPress Capability Validator
  *
@@ -6,6 +6,7 @@
  *
  * @package WP_MCP_AI
  */
+
 
 namespace WP_MCP_AI\Validators\Constraints;
 
@@ -26,9 +27,11 @@ class WPCapabilityValidator extends ConstraintValidator {
 	 * @param mixed      $value      The value to validate.
 	 * @param Constraint $constraint The constraint.
 	 * @return void
+	 * @throws UnexpectedTypeException If constraint is not a WPCapability instance.
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPCapability ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Class name constant, not user input.
 			throw new UnexpectedTypeException( $constraint, WPCapability::class );
 		}
 

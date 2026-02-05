@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 						),
 						'conditions' => array( 'type' => 'object' ),
 					),
-					'required' => array( 'event' ),
+					'required'    => array( 'event' ),
 				),
 				'actions'     => array(
 					'type'        => 'array',
@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 							'params' => array( 'type' => 'object' ),
 						),
 					),
-					'minItems' => 1,
+					'minItems'    => 1,
 				),
 				'enabled'     => array(
 					'type'        => 'boolean',
@@ -174,7 +174,7 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		update_option( 'wp_mcp_ai_workflow_rules', $workflow_rules );
 
 		// Log creation.
-		$workflow_log = get_option( 'wp_mcp_ai_workflow_log', array() );
+		$workflow_log   = get_option( 'wp_mcp_ai_workflow_log', array() );
 		$workflow_log[] = array(
 			'timestamp' => current_time( 'mysql' ),
 			'user_id'   => $current_user_id,
@@ -185,14 +185,14 @@ class WP_MCP_AI_Tool_Create_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		update_option( 'wp_mcp_ai_workflow_log', array_slice( $workflow_log, -200 ) );
 
 		return array(
-			'success'      => true,
-			'rule_id'      => $rule_id,
-			'name'         => $name,
-			'enabled'      => $enabled,
+			'success'       => true,
+			'rule_id'       => $rule_id,
+			'name'          => $name,
+			'enabled'       => $enabled,
 			'trigger_event' => $trigger['event'],
-			'action_count' => count( $actions ),
-			'created_at'   => current_time( 'mysql' ),
-			'message'      => sprintf(
+			'action_count'  => count( $actions ),
+			'created_at'    => current_time( 'mysql' ),
+			'message'       => sprintf(
 				/* translators: %s: rule name */
 				__( 'Workflow rule "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
 				$name

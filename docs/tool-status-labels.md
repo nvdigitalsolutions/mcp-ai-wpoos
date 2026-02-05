@@ -31,10 +31,10 @@ Tools marked with the `bug` status are **automatically disabled** when the plugi
 
 ### File Location
 
-Status labels are managed in the `tool-status.txt` file in the repository root:
+Status labels are managed in the `tool-status.txt` file in the documentation directory:
 
 ```
-/mcp-ai-wpoos/tool-status.txt
+/mcp-ai-wpoos/docs/tool-status.txt
 ```
 
 ### File Format
@@ -64,7 +64,7 @@ Status labels are displayed in the Tools Manager (`Settings → NV oOS → Tools
 **Location:** `includes/admin/sections/class-wp-mcp-ai-section-tools.php`
 
 **Methods:**
-- `load_tool_status_labels()` - Parses tool-status.txt file
+- `load_tool_status_labels()` - Parses docs/tool-status.txt file
 - `get_tool_status_label($slug)` - Gets status for a specific tool
 - `get_status_label_config($status)` - Returns display config (color, text, CSS class)
 
@@ -76,7 +76,7 @@ The Tool Registry automatically disables tools with "bug" status during initiali
 
 **Methods:**
 - `auto_disable_bug_tools()` - Called during `init()` to disable buggy tools
-- `load_tool_status_labels()` - Parses tool-status.txt file (duplicate of frontend method)
+- `load_tool_status_labels()` - Parses docs/tool-status.txt file (duplicate of frontend method)
 
 ### Caching
 
@@ -93,7 +93,7 @@ if ( null !== $status_labels ) {
 
 ### Adding a Status Label
 
-1. Open `tool-status.txt`
+1. Open `docs/tool-status.txt`
 2. Add a line with the tool slug and desired status:
    ```
    my_custom_tool = beta
@@ -105,7 +105,7 @@ if ( null !== $status_labels ) {
 
 When a critical bug is discovered:
 
-1. Edit `tool-status.txt`:
+1. Edit `docs/tool-status.txt`:
    ```
    problematic_tool = bug
    ```
@@ -145,7 +145,7 @@ The tool will no longer display a status badge.
 
 To add new status types:
 
-1. Update `tool-status.txt` documentation header
+1. Update `docs/tool-status.txt` documentation header
 2. Add new status config in `get_status_label_config()`:
    ```php
    'new_status' => array(
@@ -159,7 +159,7 @@ To add new status types:
 
 ### Testing Status Labels
 
-1. Add test entries to `tool-status.txt`
+1. Add test entries to `docs/tool-status.txt`
 2. Navigate to Tools Manager
 3. Verify badges display correctly
 4. Test "bug" status disables tool
@@ -212,7 +212,7 @@ Potential improvements for consideration:
 
 ## Related Files
 
-- `tool-status.txt` - Status label configuration
+- `docs/tool-status.txt` - Status label configuration
 - `includes/admin/sections/class-wp-mcp-ai-section-tools.php` - Frontend display
 - `includes/class-wp-mcp-ai-tool-registry.php` - Backend auto-disable logic
 - `README.md` - User documentation

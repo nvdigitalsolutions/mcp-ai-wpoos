@@ -1,9 +1,10 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Validation arguments for Get System Logs tool.
  *
  * @package WP_MCP_AI
  */
+
 
 namespace WP_MCP_AI\Tools\Arguments;
 
