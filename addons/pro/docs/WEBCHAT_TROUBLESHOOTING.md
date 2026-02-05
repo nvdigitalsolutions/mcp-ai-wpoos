@@ -29,13 +29,13 @@ Ensure you're using a modern browser with WebRTC support:
 
 | Browser | Minimum Version | Recommended Version |
 |---------|----------------|---------------------|
-| Chrome  | 23+            | Latest              |
-| Edge    | 23+            | Latest              |
-| Firefox | 22+            | Latest              |
-| Safari  | 11+            | Latest              |
-| Opera   | 18+            | Latest              |
+| Chrome  | 79+            | Latest              |
+| Edge    | 79+ (Chromium) | Latest              |
+| Firefox | 78+            | Latest              |
+| Safari  | 14+            | Latest              |
+| Opera   | 66+            | Latest              |
 
-**Note:** Internet Explorer does not support WebRTC.
+**Note:** Older browsers may have partial WebRTC support, but these versions provide full, stable WebRTC functionality. Internet Explorer does not support WebRTC.
 
 #### Option 2: Disable the WebChat Extension on Non-WebChat Pages
 If you're not using WebChat rooms on certain pages:

@@ -182,16 +182,22 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Modern Browser:', 'mcp-ai-wpoos-pro' ); ?></strong>
-						<?php esc_html_e( ' Chrome/Edge 23+, Firefox 22+, Safari 11+, or Opera 18+ with WebRTC support.', 'mcp-ai-wpoos-pro' ); ?>
+						<?php esc_html_e( ' Chrome/Edge 79+, Firefox 78+, Safari 14+, or Opera 66+ with WebRTC support.', 'mcp-ai-wpoos-pro' ); ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Signaling Server:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						<?php esc_html_e( ' Self-hosted (WordPress) or external WebSocket server. Self-hosted is recommended and requires no additional setup.', 'mcp-ai-wpoos-pro' ); ?>
 					</li>
 				</ul>
-				<p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ffc107;">
+				<p class="webchat-webrtc-note">
 					<strong><?php esc_html_e( 'Note about WebRTC Errors:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<?php esc_html_e( ' If you see "WebRTC is not supported" errors in your browser console, these are from the browser extension attempting to initialize WebRTC. These errors are harmless if you\'re not actively using the WebChat feature and do not affect the functionality of your WordPress site. To resolve these errors, ensure you are using a modern browser with WebRTC support or disable the WebChat browser extension on pages where it is not needed.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( ' If you see "WebRTC is not supported" errors in your browser console, these are from the browser extension attempting to initialize WebRTC.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<p class="webchat-webrtc-note">
+					<?php esc_html_e( 'These errors are harmless if you\'re not actively using the WebChat feature and do not affect the functionality of your WordPress site.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<p class="webchat-webrtc-note">
+					<?php esc_html_e( 'To resolve these errors, ensure you are using a modern browser with WebRTC support or disable the WebChat browser extension on pages where it is not needed.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 

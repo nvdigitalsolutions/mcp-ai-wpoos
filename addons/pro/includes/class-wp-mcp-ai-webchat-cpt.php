@@ -243,7 +243,14 @@ class WP_MCP_AI_WebChat_CPT {
 			<p>
 				<?php
 				echo wp_kses_post(
-					__( '<strong>Browser Requirements:</strong> WebRTC support is required. Supported browsers include Chrome/Edge (version 23+), Firefox (version 22+), Safari (version 11+), and Opera (version 18+). Note: If you see WebRTC errors in the browser console, this is typically from the browser extension attempting to initialize WebRTC. These errors are harmless if you\'re not actively using the WebChat feature.', 'mcp-ai-wpoos-pro' )
+					__( '<strong>Browser Requirements:</strong> WebRTC support is required. Supported browsers include Chrome/Edge (version 79+), Firefox (version 78+), Safari (version 14+), and Opera (version 66+).', 'mcp-ai-wpoos-pro' )
+				);
+				?>
+			</p>
+			<p>
+				<?php
+				echo wp_kses_post(
+					__( '<strong>Note about Console Errors:</strong> If you see WebRTC errors in the browser console, this is typically from the browser extension attempting to initialize WebRTC. These errors are harmless if you\'re not actively using the WebChat feature.', 'mcp-ai-wpoos-pro' )
 				);
 				?>
 			</p>
