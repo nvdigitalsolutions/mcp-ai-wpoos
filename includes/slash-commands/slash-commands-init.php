@@ -517,15 +517,17 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	);
 
 	// Localize script with REST API data.
-	// Use the same pattern as class-wp-mcp-ai-rest.php: call rest_url() with the full path
-	// for each endpoint. This ensures proper URL generation across all WordPress configurations.
+	// Build endpoint URLs using a single rest_url() call + string concatenation.
+	// This prevents WordPress filters or configurations from duplicating the namespace.
+	$base_url = trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) );
+	
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
-			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command' ) ) ),
-			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/slash-command/list' ) ) ),
+			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command' ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command/list' ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);
