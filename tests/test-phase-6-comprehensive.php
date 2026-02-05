@@ -97,7 +97,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 
 		foreach ( $user_docs as $doc_file ) {
 			// Check both root docs and nested locations.
-			$found = false;
+			$found          = false;
 			$possible_paths = array(
 				$docs_dir . '/' . $doc_file,
 				dirname( __DIR__ ) . '/' . $doc_file,
@@ -129,7 +129,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 		$docs_dir = dirname( __DIR__ ) . '/docs';
 
 		foreach ( $dev_docs as $doc_file ) {
-			$found = false;
+			$found          = false;
 			$possible_paths = array(
 				$docs_dir . '/' . $doc_file,
 				dirname( __DIR__ ) . '/' . $doc_file,
@@ -153,7 +153,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 */
 	public function test_video_tutorial_documentation_exists() {
 		// Check if video tutorial documentation exists.
-		$docs_dir = dirname( __DIR__ ) . '/docs';
+		$docs_dir          = dirname( __DIR__ ) . '/docs';
 		$visual_guides_dir = $docs_dir . '/visual-guides';
 
 		// We should have visual guides directory.
@@ -166,10 +166,10 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group migration-guide
 	 */
 	public function test_migration_guide_exists() {
-		$migration_doc = 'workflow-migration-guide.md';
-		$docs_dir = dirname( __DIR__ ) . '/docs';
+		$migration_doc  = 'workflow-migration-guide.md';
+		$docs_dir       = dirname( __DIR__ ) . '/docs';
 
-		$found = false;
+		$found          = false;
 		$possible_paths = array(
 			$docs_dir . '/' . $migration_doc,
 			dirname( __DIR__ ) . '/' . $migration_doc,
@@ -213,7 +213,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 		$result = apply_filters( 'wp_mcp_ai_slash_command_test', true );
 
 		$end_time       = microtime( true );
-		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// Command execution should be < 2 seconds (2000ms) for simple commands.
 		$this->assertLessThan( 2000, $execution_time, 'Simple command execution should be under 2 seconds' );

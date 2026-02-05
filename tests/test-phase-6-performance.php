@@ -29,7 +29,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$result = apply_filters( 'wp_mcp_ai_test_simple_command', array( 'status' => 'success' ) );
 
 		$end_time       = microtime( true );
-		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// Simple commands should execute in under 2 seconds (2000ms).
 		$this->assertLessThan( 2000, $execution_time, 'Simple command should execute in under 2 seconds' );
@@ -51,8 +51,8 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		// Execute a simple query.
 		$result = $wpdb->get_results( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'post' LIMIT 10" );
 
-		$end_time  = microtime( true );
-		$query_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$end_time   = microtime( true );
+		$query_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// Database queries should be under 100ms.
 		$this->assertLessThan( 100, $query_time, 'Database query should be under 100ms' );
@@ -78,7 +78,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 			);
 		}
 
-		$memory_end = memory_get_usage( true );
+		$memory_end  = memory_get_usage( true );
 		$memory_used = ( $memory_end - $memory_start ) / 1024 / 1024; // Convert to MB.
 
 		// Memory usage should be reasonable (under 10MB for this operation).
@@ -113,8 +113,8 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$request  = new WP_REST_Request( 'GET', '/mcp-ai-test/v1/test' );
 		$response = rest_get_server()->dispatch( $request );
 
-		$end_time     = microtime( true );
-		$response_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$end_time      = microtime( true );
+		$response_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// API response should be fast (under 500ms).
 		$this->assertLessThan( 500, $response_time, 'REST API response should be under 500ms' );
@@ -168,7 +168,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		// Test cache get.
 		$start_time = microtime( true );
 		$cached     = wp_cache_get( $cache_key, $cache_group );
-		$get_time   = ( microtime( true ) - $start_time ) * 1000;
+		$get_time   = ( microtime( true ) - $start_time ) * 1000; // Convert to milliseconds.
 
 		$this->assertLessThan( 5, $get_time, 'Cache get should be under 5ms' );
 		$this->assertEquals( $test_data, $cached, 'Cached data should match' );
@@ -201,13 +201,13 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		// Process the dataset.
 		$processed = array_filter( $dataset, function( $item ) {
-			return $item['id'] % 2 === 0; // Filter even IDs
+			return $item['id'] % 2 === 0; // Filter even IDs.
 		} );
 
-		$end_time    = microtime( true );
-		$memory_end  = memory_get_usage( true );
+		$end_time   = microtime( true );
+		$memory_end = memory_get_usage( true );
 
-		$process_time = ( $end_time - $start_time ) * 1000; // milliseconds
+		$process_time = ( $end_time - $start_time ) * 1000; // Milliseconds.
 		$memory_used  = ( $memory_end - $memory_start ) / 1024 / 1024; // MB.
 
 		// Processing should be efficient.
@@ -236,12 +236,12 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$total_duration = 0;
 		foreach ( $workflow_steps as $step ) {
 			// Simulate step processing.
-			usleep( $step['duration'] * 1000 ); // Convert to microseconds
+			usleep( $step['duration'] * 1000 ); // Convert to microseconds.
 			$total_duration += $step['duration'];
 		}
 
 		$end_time       = microtime( true );
-		$execution_time = ( $end_time - $start_time ) * 1000; // milliseconds
+		$execution_time = ( $end_time - $start_time ) * 1000; // Milliseconds.
 
 		// Complex workflows should complete in under 5 minutes (300,000ms).
 		$this->assertLessThan( 300000, $execution_time, 'Complex workflow should complete in under 5 minutes' );
@@ -302,8 +302,8 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		// Apply filters.
 		$result = apply_filters( 'wp_mcp_ai_test_filter', 'initial_value' );
 
-		$end_time   = microtime( true );
-		$filter_time = ( $end_time - $start_time ) * 1000;
+		$end_time    = microtime( true );
+		$filter_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// Filters should execute quickly even with multiple callbacks.
 		$this->assertLessThan( 10, $filter_time, 'Filters should execute in under 10ms' );
@@ -339,8 +339,8 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		$results = $wpdb->get_results( $query );
 
-		$end_time  = microtime( true );
-		$query_time = ( $end_time - $start_time ) * 1000;
+		$end_time   = microtime( true );
+		$query_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds.
 
 		// Complex queries should still be reasonably fast.
 		$this->assertLessThan( 500, $query_time, 'Complex query should be under 500ms' );
@@ -368,7 +368,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 			// Clear some data periodically to simulate cleanup.
 			if ( $i % 1000 === 0 ) {
-				$data = array_slice( $data, -500 ); // Keep only last 500 items
+				$data = array_slice( $data, -500 ); // Keep only last 500 items.
 			}
 		}
 
