@@ -117,9 +117,13 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 			$base_url   = $upload_dir['baseurl'];
 			$base_path  = $upload_dir['basedir'];
 
+			// Normalize URLs to handle http/https differences.
+			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
+			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
+
 			// If it's a WordPress upload URL, convert to local path.
-			if ( strpos( $path_or_url, $base_url ) === 0 ) {
-				$relative_path = str_replace( $base_url, '', $path_or_url );
+			if ( strpos( $normalized_url, $normalized_base_url ) === 0 ) {
+				$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
 				return $base_path . $relative_path;
 			}
 		}
