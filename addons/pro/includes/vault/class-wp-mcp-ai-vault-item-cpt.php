@@ -21,6 +21,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Vault_Item_CPT {
 
 	/**
+	 * Encryption service instance.
+	 *
+	 * @since 1.3.0
+	 * @var WP_MCP_AI_Vault_Encryption_Service
+	 */
+	private $encryption_service;
+
+	/**
 	 * Get singleton instance.
 	 *
 	 * @return WP_MCP_AI_Vault_Item_CPT
@@ -44,6 +52,20 @@ class WP_MCP_AI_Vault_Item_CPT {
 		add_action( 'init', array( $this, 'register_meta' ), 20 );
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
 		add_action( 'save_post_mcp_vault_item', array( $this, 'save_vault_item_meta' ), 10, 2 );
+	}
+
+	/**
+	 * Get or initialize encryption service.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return WP_MCP_AI_Vault_Encryption_Service
+	 */
+	private function get_encryption_service() {
+		if ( null === $this->encryption_service ) {
+			$this->encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+		}
+		return $this->encryption_service;
 	}
 
 	/**
@@ -548,14 +570,14 @@ class WP_MCP_AI_Vault_Item_CPT {
 		wp_nonce_field( 'mcp_vault_item_meta', 'mcp_vault_item_meta_nonce' );
 
 		// Get encryption service.
-		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+		$encryption_service = $this->get_encryption_service();
 
 		// Get encrypted username.
 		$username_encrypted = get_post_meta( $post->ID, '_vault_username_encrypted', true );
 		$username           = '';
 		if ( ! empty( $username_encrypted ) ) {
 			$username_data = json_decode( $username_encrypted, true );
-			if ( $username_data ) {
+			if ( JSON_ERROR_NONE === json_last_error() && $username_data ) {
 				$decrypted_username = $encryption_service->decrypt( $username_data, get_current_user_id() );
 				if ( ! is_wp_error( $decrypted_username ) ) {
 					$username = $decrypted_username;
@@ -628,11 +650,11 @@ class WP_MCP_AI_Vault_Item_CPT {
 			$item_type = 'login';
 		}
 
-		// Get available folders.
+		// Get available folders (limit to 100 for performance).
 		$folders = get_posts(
 			array(
 				'post_type'      => 'mcp_vault_folder',
-				'posts_per_page' => -1,
+				'posts_per_page' => 100,
 				'orderby'        => 'title',
 				'order'          => 'ASC',
 			)
@@ -683,14 +705,14 @@ class WP_MCP_AI_Vault_Item_CPT {
 	 */
 	public function render_notes_metabox( $post ) {
 		// Get encryption service.
-		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+		$encryption_service = $this->get_encryption_service();
 
 		// Get encrypted notes.
 		$notes_encrypted = get_post_meta( $post->ID, '_vault_notes_encrypted', true );
 		$notes           = '';
 		if ( ! empty( $notes_encrypted ) ) {
 			$notes_data = json_decode( $notes_encrypted, true );
-			if ( $notes_data ) {
+			if ( JSON_ERROR_NONE === json_last_error() && $notes_data ) {
 				$decrypted_notes = $encryption_service->decrypt( $notes_data, get_current_user_id() );
 				if ( ! is_wp_error( $decrypted_notes ) ) {
 					$notes = $decrypted_notes;
@@ -744,7 +766,7 @@ class WP_MCP_AI_Vault_Item_CPT {
 		}
 
 		// Get encryption service.
-		$encryption_service = new WP_MCP_AI_Vault_Encryption_Service();
+		$encryption_service = $this->get_encryption_service();
 		$user_id            = get_current_user_id();
 
 		// Save item type.
