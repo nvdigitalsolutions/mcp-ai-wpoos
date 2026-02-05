@@ -18,20 +18,6 @@
 class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment
-	 */
-	public function setUp(): void {
-		parent::setUp();
-	}
-
-	/**
-	 * Tear down test environment
-	 */
-	public function tearDown(): void {
-		parent::tearDown();
-	}
-
-	/**
 	 * Test: Command Execution Time - Simple Commands
 	 *
 	 * @group execution-time
@@ -39,16 +25,16 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_simple_command_execution_time() {
 		$start_time = microtime( true );
 
-		// Simulate simple command execution
+		// Simulate simple command execution.
 		$result = apply_filters( 'wp_mcp_ai_test_simple_command', array( 'status' => 'success' ) );
 
 		$end_time       = microtime( true );
 		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
 
-		// Simple commands should execute in under 2 seconds (2000ms)
+		// Simple commands should execute in under 2 seconds (2000ms).
 		$this->assertLessThan( 2000, $execution_time, 'Simple command should execute in under 2 seconds' );
 
-		// Log execution time
+		// Log execution time.
 		error_log( sprintf( 'Simple command execution time: %.2fms', $execution_time ) );
 	}
 
@@ -62,16 +48,16 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		$start_time = microtime( true );
 
-		// Execute a simple query
+		// Execute a simple query.
 		$result = $wpdb->get_results( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'post' LIMIT 10" );
 
 		$end_time  = microtime( true );
 		$query_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
 
-		// Database queries should be under 100ms
+		// Database queries should be under 100ms.
 		$this->assertLessThan( 100, $query_time, 'Database query should be under 100ms' );
 
-		// Log query time
+		// Log query time.
 		error_log( sprintf( 'Database query time: %.2fms', $query_time ) );
 	}
 
@@ -83,7 +69,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_memory_usage_simple_operations() {
 		$memory_start = memory_get_usage( true );
 
-		// Perform some operations
+		// Perform some operations.
 		$data = array();
 		for ( $i = 0; $i < 1000; $i++ ) {
 			$data[] = array(
@@ -93,12 +79,12 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		}
 
 		$memory_end = memory_get_usage( true );
-		$memory_used = ( $memory_end - $memory_start ) / 1024 / 1024; // Convert to MB
+		$memory_used = ( $memory_end - $memory_start ) / 1024 / 1024; // Convert to MB.
 
-		// Memory usage should be reasonable (under 10MB for this operation)
+		// Memory usage should be reasonable (under 10MB for this operation).
 		$this->assertLessThan( 10, $memory_used, 'Memory usage should be under 10MB for simple operations' );
 
-		// Log memory usage
+		// Log memory usage.
 		error_log( sprintf( 'Memory used: %.2f MB', $memory_used ) );
 	}
 
@@ -108,7 +94,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 * @group api-performance
 	 */
 	public function test_rest_api_response_time() {
-		// Register a test endpoint
+		// Register a test endpoint.
 		add_action( 'rest_api_init', function() {
 			register_rest_route( 'mcp-ai-test/v1', '/test', array(
 				'methods'  => 'GET',
@@ -123,17 +109,17 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		$start_time = microtime( true );
 
-		// Simulate API request
+		// Simulate API request.
 		$request  = new WP_REST_Request( 'GET', '/mcp-ai-test/v1/test' );
 		$response = rest_get_server()->dispatch( $request );
 
 		$end_time     = microtime( true );
 		$response_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
 
-		// API response should be fast (under 500ms)
+		// API response should be fast (under 500ms).
 		$this->assertLessThan( 500, $response_time, 'REST API response should be under 500ms' );
 
-		// Log response time
+		// Log response time.
 		error_log( sprintf( 'REST API response time: %.2fms', $response_time ) );
 	}
 
@@ -145,7 +131,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_concurrent_operations_performance() {
 		$start_time = microtime( true );
 
-		// Simulate concurrent operations
+		// Simulate concurrent operations.
 		$results = array();
 		for ( $i = 0; $i < 10; $i++ ) {
 			$results[] = apply_filters( 'wp_mcp_ai_test_operation', array( 'id' => $i ) );
@@ -155,10 +141,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$total_time   = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
 		$avg_per_op   = $total_time / 10;
 
-		// Average time per operation should be reasonable
+		// Average time per operation should be reasonable.
 		$this->assertLessThan( 200, $avg_per_op, 'Average time per operation should be under 200ms' );
 
-		// Log performance
+		// Log performance.
 		error_log( sprintf( 'Total time for 10 operations: %.2fms (avg: %.2fms per op)', $total_time, $avg_per_op ) );
 	}
 
@@ -172,14 +158,14 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$cache_group = 'wp_mcp_ai_test';
 		$test_data   = array( 'value' => 'cached_data' );
 
-		// Test cache set
+		// Test cache set.
 		$start_time = microtime( true );
 		wp_cache_set( $cache_key, $test_data, $cache_group );
 		$set_time = ( microtime( true ) - $start_time ) * 1000;
 
 		$this->assertLessThan( 10, $set_time, 'Cache set should be under 10ms' );
 
-		// Test cache get
+		// Test cache get.
 		$start_time = microtime( true );
 		$cached     = wp_cache_get( $cache_key, $cache_group );
 		$get_time   = ( microtime( true ) - $start_time ) * 1000;
@@ -187,10 +173,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$this->assertLessThan( 5, $get_time, 'Cache get should be under 5ms' );
 		$this->assertEquals( $test_data, $cached, 'Cached data should match' );
 
-		// Log cache performance
+		// Log cache performance.
 		error_log( sprintf( 'Cache set: %.2fms, Cache get: %.2fms', $set_time, $get_time ) );
 
-		// Clean up
+		// Clean up.
 		wp_cache_delete( $cache_key, $cache_group );
 	}
 
@@ -203,7 +189,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$start_time = microtime( true );
 		$memory_start = memory_get_usage( true );
 
-		// Process a large dataset
+		// Process a large dataset.
 		$dataset = array();
 		for ( $i = 0; $i < 10000; $i++ ) {
 			$dataset[] = array(
@@ -213,7 +199,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 			);
 		}
 
-		// Process the dataset
+		// Process the dataset.
 		$processed = array_filter( $dataset, function( $item ) {
 			return $item['id'] % 2 === 0; // Filter even IDs
 		} );
@@ -222,13 +208,13 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$memory_end  = memory_get_usage( true );
 
 		$process_time = ( $end_time - $start_time ) * 1000; // milliseconds
-		$memory_used  = ( $memory_end - $memory_start ) / 1024 / 1024; // MB
+		$memory_used  = ( $memory_end - $memory_start ) / 1024 / 1024; // MB.
 
-		// Processing should be efficient
+		// Processing should be efficient.
 		$this->assertLessThan( 1000, $process_time, 'Large dataset processing should be under 1 second' );
 		$this->assertLessThan( 50, $memory_used, 'Memory usage should be under 50MB for 10k items' );
 
-		// Log performance
+		// Log performance.
 		error_log( sprintf( 'Processed 10,000 items in %.2fms using %.2fMB', $process_time, $memory_used ) );
 	}
 
@@ -240,7 +226,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_workflow_execution_performance() {
 		$start_time = microtime( true );
 
-		// Simulate workflow execution with multiple steps
+		// Simulate workflow execution with multiple steps.
 		$workflow_steps = array(
 			array( 'action' => 'step1', 'duration' => 100 ),
 			array( 'action' => 'step2', 'duration' => 150 ),
@@ -249,7 +235,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		$total_duration = 0;
 		foreach ( $workflow_steps as $step ) {
-			// Simulate step processing
+			// Simulate step processing.
 			usleep( $step['duration'] * 1000 ); // Convert to microseconds
 			$total_duration += $step['duration'];
 		}
@@ -257,10 +243,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$end_time       = microtime( true );
 		$execution_time = ( $end_time - $start_time ) * 1000; // milliseconds
 
-		// Complex workflows should complete in under 5 minutes (300,000ms)
+		// Complex workflows should complete in under 5 minutes (300,000ms).
 		$this->assertLessThan( 300000, $execution_time, 'Complex workflow should complete in under 5 minutes' );
 
-		// Log workflow performance
+		// Log workflow performance.
 		error_log( sprintf( 'Workflow with %d steps completed in %.2fms', count( $workflow_steps ), $execution_time ) );
 	}
 
@@ -277,24 +263,24 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 			),
 		);
 
-		// Test JSON encoding
+		// Test JSON encoding.
 		$start_time   = microtime( true );
 		$json_encoded = wp_json_encode( $test_data );
 		$encode_time  = ( microtime( true ) - $start_time ) * 1000;
 
 		$this->assertLessThan( 50, $encode_time, 'JSON encoding should be under 50ms' );
 
-		// Test JSON decoding
+		// Test JSON decoding.
 		$start_time   = microtime( true );
 		$json_decoded = json_decode( $json_encoded, true );
 		$decode_time  = ( microtime( true ) - $start_time ) * 1000;
 
 		$this->assertLessThan( 50, $decode_time, 'JSON decoding should be under 50ms' );
 
-		// Verify data integrity
+		// Verify data integrity.
 		$this->assertEquals( $test_data, $json_decoded, 'Decoded data should match original' );
 
-		// Log performance
+		// Log performance.
 		error_log( sprintf( 'JSON encode: %.2fms, decode: %.2fms', $encode_time, $decode_time ) );
 	}
 
@@ -304,7 +290,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 * @group hook-performance
 	 */
 	public function test_hook_performance() {
-		// Add multiple filters
+		// Add multiple filters.
 		for ( $i = 0; $i < 10; $i++ ) {
 			add_filter( 'wp_mcp_ai_test_filter', function( $value ) use ( $i ) {
 				return $value . '_' . $i;
@@ -313,16 +299,16 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		$start_time = microtime( true );
 
-		// Apply filters
+		// Apply filters.
 		$result = apply_filters( 'wp_mcp_ai_test_filter', 'initial_value' );
 
 		$end_time   = microtime( true );
 		$filter_time = ( $end_time - $start_time ) * 1000;
 
-		// Filters should execute quickly even with multiple callbacks
+		// Filters should execute quickly even with multiple callbacks.
 		$this->assertLessThan( 10, $filter_time, 'Filters should execute in under 10ms' );
 
-		// Log performance
+		// Log performance.
 		error_log( sprintf( '10 filter callbacks executed in %.2fms', $filter_time ) );
 	}
 
@@ -334,12 +320,12 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_query_complexity() {
 		global $wpdb;
 
-		// Enable query logging
+		// Enable query logging.
 		$wpdb->show_errors();
 
 		$start_time = microtime( true );
 
-		// Execute a more complex query with JOIN
+		// Execute a more complex query with JOIN.
 		$query = $wpdb->prepare(
 			"SELECT p.ID, p.post_title, pm.meta_value
 			FROM {$wpdb->posts} p
@@ -356,10 +342,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$end_time  = microtime( true );
 		$query_time = ( $end_time - $start_time ) * 1000;
 
-		// Complex queries should still be reasonably fast
+		// Complex queries should still be reasonably fast.
 		$this->assertLessThan( 500, $query_time, 'Complex query should be under 500ms' );
 
-		// Log query performance
+		// Log query performance.
 		error_log( sprintf( 'Complex JOIN query executed in %.2fms', $query_time ) );
 	}
 
@@ -372,7 +358,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$memory_start = memory_get_usage( true );
 		$peak_start   = memory_get_peak_usage( true );
 
-		// Simulate workflow with memory-intensive operations
+		// Simulate workflow with memory-intensive operations.
 		$data = array();
 		for ( $i = 0; $i < 5000; $i++ ) {
 			$data[] = array(
@@ -380,7 +366,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 				'content' => str_repeat( 'data_', 100 ),
 			);
 
-			// Clear some data periodically to simulate cleanup
+			// Clear some data periodically to simulate cleanup.
 			if ( $i % 1000 === 0 ) {
 				$data = array_slice( $data, -500 ); // Keep only last 500 items
 			}
@@ -389,13 +375,13 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$memory_end = memory_get_usage( true );
 		$peak_end   = memory_get_peak_usage( true );
 
-		$memory_used = ( $memory_end - $memory_start ) / 1024 / 1024; // MB
-		$peak_used   = ( $peak_end - $peak_start ) / 1024 / 1024; // MB
+		$memory_used = ( $memory_end - $memory_start ) / 1024 / 1024; // MB.
+		$peak_used   = ( $peak_end - $peak_start ) / 1024 / 1024; // MB.
 
-		// Memory usage should be under 256MB per workflow (requirement)
+		// Memory usage should be under 256MB per workflow (requirement).
 		$this->assertLessThan( 256, $peak_used, 'Peak memory usage should be under 256MB' );
 
-		// Log memory usage
+		// Log memory usage.
 		error_log( sprintf( 'Current memory: %.2fMB, Peak memory: %.2fMB', $memory_used, $peak_used ) );
 	}
 
@@ -408,14 +394,14 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$transient_key = 'wp_mcp_ai_test_transient';
 		$test_data     = array( 'key' => 'value', 'timestamp' => time() );
 
-		// Test set transient
+		// Test set transient.
 		$start_time = microtime( true );
 		set_transient( $transient_key, $test_data, 3600 );
 		$set_time = ( microtime( true ) - $start_time ) * 1000;
 
 		$this->assertLessThan( 50, $set_time, 'Set transient should be under 50ms' );
 
-		// Test get transient
+		// Test get transient.
 		$start_time = microtime( true );
 		$retrieved  = get_transient( $transient_key );
 		$get_time   = ( microtime( true ) - $start_time ) * 1000;
@@ -423,10 +409,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$this->assertLessThan( 20, $get_time, 'Get transient should be under 20ms' );
 		$this->assertEquals( $test_data, $retrieved, 'Retrieved data should match' );
 
-		// Log performance
+		// Log performance.
 		error_log( sprintf( 'Transient set: %.2fms, get: %.2fms', $set_time, $get_time ) );
 
-		// Clean up
+		// Clean up.
 		delete_transient( $transient_key );
 	}
 }

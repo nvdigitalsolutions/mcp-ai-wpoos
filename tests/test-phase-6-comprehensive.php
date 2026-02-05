@@ -18,26 +18,12 @@
 class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 
 	/**
-	 * Set up test environment
-	 */
-	public function setUp(): void {
-		parent::setUp();
-	}
-
-	/**
-	 * Tear down test environment
-	 */
-	public function tearDown(): void {
-		parent::tearDown();
-	}
-
-	/**
 	 * Test Week 15: Comprehensive Testing - Unit Tests
 	 *
 	 * @group unit-tests
 	 */
 	public function test_unit_tests_all_command_classes_exist() {
-		// Check if all command classes have test files
+		// Check if all command classes have test files.
 		$test_files = array(
 			'test-slash-commands-pro-toolkit.php',
 			'test-slash-command-workflow.php',
@@ -47,7 +33,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 		);
 
 		foreach ( $test_files as $test_file ) {
-			$file_path = dirname( __FILE__ ) . '/' . $test_file;
+			$file_path = __DIR__ . '/' . $test_file;
 			$this->assertFileExists( $file_path, "Test file {$test_file} should exist" );
 		}
 	}
@@ -67,7 +53,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 		);
 
 		foreach ( $integration_test_files as $test_file ) {
-			$file_path = dirname( __FILE__ ) . '/' . $test_file;
+			$file_path = __DIR__ . '/' . $test_file;
 			$this->assertFileExists( $file_path, "Integration test file {$test_file} should exist" );
 		}
 	}
@@ -78,8 +64,8 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group performance-tests
 	 */
 	public function test_performance_tests_exist() {
-		// Check if performance test directory and files exist
-		$performance_dir = dirname( __FILE__ ) . '/performance';
+		// Check if performance test directory and files exist.
+		$performance_dir = __DIR__ . '/performance';
 		$this->assertDirectoryExists( $performance_dir, 'Performance test directory should exist' );
 	}
 
@@ -89,7 +75,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group security-audit
 	 */
 	public function test_security_audit_files_exist() {
-		$security_dir = dirname( __FILE__ ) . '/security';
+		$security_dir = __DIR__ . '/security';
 		$this->assertDirectoryExists( $security_dir, 'Security test directory should exist' );
 	}
 
@@ -107,14 +93,14 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 			'workflow-migration-guide.md',
 		);
 
-		$docs_dir = dirname( dirname( __FILE__ ) ) . '/docs';
+		$docs_dir = dirname( __DIR__ ) . '/docs';
 
 		foreach ( $user_docs as $doc_file ) {
-			// Check both root docs and nested locations
+			// Check both root docs and nested locations.
 			$found = false;
 			$possible_paths = array(
 				$docs_dir . '/' . $doc_file,
-				dirname( dirname( __FILE__ ) ) . '/' . $doc_file,
+				dirname( __DIR__ ) . '/' . $doc_file,
 			);
 
 			foreach ( $possible_paths as $path ) {
@@ -140,13 +126,13 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 			'workflow-builder-architecture.md',
 		);
 
-		$docs_dir = dirname( dirname( __FILE__ ) ) . '/docs';
+		$docs_dir = dirname( __DIR__ ) . '/docs';
 
 		foreach ( $dev_docs as $doc_file ) {
 			$found = false;
 			$possible_paths = array(
 				$docs_dir . '/' . $doc_file,
-				dirname( dirname( __FILE__ ) ) . '/' . $doc_file,
+				dirname( __DIR__ ) . '/' . $doc_file,
 			);
 
 			foreach ( $possible_paths as $path ) {
@@ -166,11 +152,11 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group video-tutorials
 	 */
 	public function test_video_tutorial_documentation_exists() {
-		// Check if video tutorial documentation exists
-		$docs_dir = dirname( dirname( __FILE__ ) ) . '/docs';
+		// Check if video tutorial documentation exists.
+		$docs_dir = dirname( __DIR__ ) . '/docs';
 		$visual_guides_dir = $docs_dir . '/visual-guides';
 
-		// We should have visual guides directory
+		// We should have visual guides directory.
 		$this->assertDirectoryExists( $visual_guides_dir, 'Visual guides directory should exist' );
 	}
 
@@ -181,12 +167,12 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 */
 	public function test_migration_guide_exists() {
 		$migration_doc = 'workflow-migration-guide.md';
-		$docs_dir = dirname( dirname( __FILE__ ) ) . '/docs';
+		$docs_dir = dirname( __DIR__ ) . '/docs';
 
 		$found = false;
 		$possible_paths = array(
 			$docs_dir . '/' . $migration_doc,
-			dirname( dirname( __FILE__ ) ) . '/' . $migration_doc,
+			dirname( __DIR__ ) . '/' . $migration_doc,
 		);
 
 		foreach ( $possible_paths as $path ) {
@@ -206,7 +192,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group functional
 	 */
 	public function test_functional_requirements_met() {
-		// Test that REST API endpoint for slash commands exists
+		// Test that REST API endpoint for slash commands exists.
 		$rest_server = rest_get_server();
 		$routes      = $rest_server->get_routes();
 
@@ -220,16 +206,16 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group performance
 	 */
 	public function test_performance_requirements() {
-		// Simple performance check - measure command execution time
+		// Simple performance check - measure command execution time.
 		$start_time = microtime( true );
 
-		// Simulate a simple command execution
+		// Simulate a simple command execution.
 		$result = apply_filters( 'wp_mcp_ai_slash_command_test', true );
 
 		$end_time       = microtime( true );
 		$execution_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
 
-		// Command execution should be < 2 seconds (2000ms) for simple commands
+		// Command execution should be < 2 seconds (2000ms) for simple commands.
 		$this->assertLessThan( 2000, $execution_time, 'Simple command execution should be under 2 seconds' );
 	}
 
@@ -240,18 +226,18 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group quality
 	 */
 	public function test_quality_requirements_documentation_complete() {
-		// Check that key documentation files exist and are not empty
+		// Check that key documentation files exist and are not empty.
 		$key_docs = array(
 			'SLASH_COMMANDS_GUIDE.md',
 			'PRO_TOOLKIT_SLASH_COMMANDS_USER_GUIDE.md',
 		);
 
-		$docs_dir = dirname( dirname( __FILE__ ) ) . '/docs';
+		$docs_dir = dirname( __DIR__ ) . '/docs';
 
 		foreach ( $key_docs as $doc_file ) {
 			$possible_paths = array(
 				$docs_dir . '/' . $doc_file,
-				dirname( dirname( __FILE__ ) ) . '/' . $doc_file,
+				dirname( __DIR__ ) . '/' . $doc_file,
 			);
 
 			$found     = false;
@@ -279,11 +265,11 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group ux
 	 */
 	public function test_user_experience_requirements() {
-		// Test that chat integration exists
-		$chat_js = dirname( dirname( __FILE__ ) ) . '/assets/js/chat.js';
-		$slash_commands_js = dirname( dirname( __FILE__ ) ) . '/assets/js/slash-commands.js';
+		// Test that chat integration exists.
+		$chat_js = dirname( __DIR__ ) . '/assets/js/chat.js';
+		$slash_commands_js = dirname( __DIR__ ) . '/assets/js/slash-commands.js';
 
-		// At least one of these should exist
+		// At least one of these should exist.
 		$this->assertTrue(
 			file_exists( $chat_js ) || file_exists( $slash_commands_js ),
 			'Chat or slash commands JavaScript should exist'
@@ -296,12 +282,12 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group launch-checklist
 	 */
 	public function test_launch_checklist_components_exist() {
-		// Verify key components exist
+		// Verify key components exist.
 		$components = array(
-			'tests'        => dirname( __FILE__ ),
-			'docs'         => dirname( dirname( __FILE__ ) ) . '/docs',
-			'assets'       => dirname( dirname( __FILE__ ) ) . '/assets',
-			'includes'     => dirname( dirname( __FILE__ ) ) . '/includes',
+			'tests'        => __DIR__,
+			'docs'         => dirname( __DIR__ ) . '/docs',
+			'assets'       => dirname( __DIR__ ) . '/assets',
+			'includes'     => dirname( __DIR__ ) . '/includes',
 		);
 
 		foreach ( $components as $component_name => $component_path ) {
