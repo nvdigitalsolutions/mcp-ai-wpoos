@@ -246,7 +246,7 @@
 		 * Send command to REST API
 		 */
 		async sendCommand(command, correlationId) {
-			const endpoint = window.mcpAiData?.restUrl + '/mcp-ai/v1/slash-command';
+			const endpoint = window.mcpAiData?.restUrl + 'slash-command';
 			const nonce = window.mcpAiData?.nonce;
 
 			this.debug('REST API request:', {
@@ -459,7 +459,7 @@
 			}
 
 			try {
-				const endpoint = window.mcpAiData?.restUrl + '/mcp-ai/v1/slash-command/list';
+				const endpoint = window.mcpAiData?.restUrl + 'slash-command/list';
 				const nonce = window.mcpAiData?.nonce;
 
 				const response = await fetch(endpoint, {
