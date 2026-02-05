@@ -234,9 +234,16 @@ class WP_MCP_AI_WebChat_CPT {
 				echo wp_kses_post(
 					sprintf(
 						/* translators: %s: WebChat GitHub URL */
-						__( '<strong>Browser Extension:</strong> Users need the <a href="%s" target="_blank">WebChat browser extension</a> to participate in P2P chat rooms.', 'mcp-ai-wpoos-pro' ),
+						__( '<strong>Browser Extension:</strong> Users need the <a href="%s" target="_blank" rel="noopener noreferrer">WebChat browser extension</a> to participate in P2P chat rooms.', 'mcp-ai-wpoos-pro' ),
 						'https://github.com/molvqingtai/WebChat'
 					)
+				);
+				?>
+			</p>
+			<p>
+				<?php
+				echo wp_kses_post(
+					__( '<strong>Browser Requirements:</strong> WebRTC support is required. Supported browsers include Chrome/Edge (version 23+), Firefox (version 22+), Safari (version 11+), and Opera (version 18+). Note: If you see WebRTC errors in the browser console, this is typically from the browser extension attempting to initialize WebRTC. These errors are harmless if you\'re not actively using the WebChat feature.', 'mcp-ai-wpoos-pro' )
 				);
 				?>
 			</p>
