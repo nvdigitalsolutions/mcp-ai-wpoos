@@ -77,7 +77,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Constructor - sets up hooks.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 10 );
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 100 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 

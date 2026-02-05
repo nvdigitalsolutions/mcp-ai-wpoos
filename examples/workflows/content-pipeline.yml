@@ -1,0 +1,40 @@
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: Content Pipeline
+  description: Comprehensive content workflow that checks drafts, cleans content, optimizes performance, and publishes
+  steps:
+    - task: next-task
+      name: check_drafts
+      params:
+        type: drafts
+        limit: 10
+      output_var: draft_count
+    
+    - task: clean-content
+      params:
+        limit: 5
+        phase: 1
+    
+    - task: optimize-perf
+      params:
+        phases: '1,2,3'
+        dry-run: false
+    
+    - condition: '{{draft_count}} >= 5'
+      then:
+        - task: ship
+          params:
+            limit: 5
+            publish: true
+      else:
+        - task: notify_admin
+          params:
+            message: 'Only {{draft_count}} drafts ready for publishing'
+    
+    - task: sync-docs
+      params:
+        dry-run: false

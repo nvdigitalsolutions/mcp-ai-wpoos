@@ -2922,3 +2922,58 @@
     }
 }
 
+
+/* Slash Command Message Styles */
+.wp-mcp-ai-chat__message--user,
+.wp-mcp-ai-chat__message--assistant,
+.wp-mcp-ai-chat__message--error {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    max-width: 100%;
+}
+
+.wp-mcp-ai-chat__message--user {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    margin-left: auto;
+    margin-right: 0;
+    text-align: right;
+}
+
+.wp-mcp-ai-chat__message--assistant {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.wp-mcp-ai-chat__message--error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #c62828;
+}
+
+.wp-mcp-ai-chat__message-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.wp-mcp-ai-chat__message-content code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.wp-mcp-ai-chat__message-content pre {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+}
+
+.wp-mcp-ai-chat__message-content pre code {
+    background-color: transparent;
+    padding: 0;
+}

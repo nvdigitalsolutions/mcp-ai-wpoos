@@ -1,6 +1,13 @@
 <?php
 /**
- * Regulatory Registration Toolkit Settings Page
+ * Regulatory Registration Toolkit Settings Page (DEPRECATED)
+ *
+ * @deprecated 1.2.0 Replaced by class-wp-mcp-ai-regulatory-product-cpt-settings-page.php
+ * @see WP_MCP_AI_Regulatory_Product_Settings_Page
+ *
+ * This file is deprecated and should no longer be loaded. It has been replaced with a
+ * CPT-based settings page that follows the Quiz Toolkit pattern. The new settings page
+ * appears under the Regulatory Registration CPT menu.
  *
  * @package WP_MCP_AI_Pro
  */

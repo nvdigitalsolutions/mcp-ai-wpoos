@@ -135,10 +135,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_architect_agent_toolkit'         => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
 				'enable_architectural_design_toolkit'    => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 				'enable_calendar_booking_toolkit'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_chat_channels_toolkit'           => __( 'Chat Channels Toolkit', 'mcp-ai-wpoos' ),
 				'enable_dj_management_toolkit'           => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
 				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 				'enable_regulatory_registration_toolkit' => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_webchat_integration'             => __( 'WebChat Integration', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'               => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
@@ -1031,6 +1033,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/chat-bundle.min.js' );
 			}
 
+			// Check for React packages bundled into workflow-builder via @wordpress/scripts.
+			// These packages (react, react-dom, reactflow, @dnd-kit/*) are build-time dependencies
+			// that get compiled into the workflow builder bundle for production.
+			// The workflow builder is a PRO feature.
+			$workflow_bundled_packages = array(
+				'react',
+				'react-dom',
+				'reactflow',
+				'@dnd-kit/core',
+				'@dnd-kit/sortable',
+				'@dnd-kit/utilities',
+			);
+			if ( in_array( $package, $workflow_bundled_packages, true ) ) {
+				// Priority 1: Check for built workflow-builder bundle in Pro addon directory (production, correct location).
+				if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+					$workflow_build_path = WP_MCP_AI_PRO_PATH . 'build/workflow-builder/workflow-builder.js';
+					if ( file_exists( $workflow_build_path ) ) {
+						return true;
+					}
+				}
+				// Priority 2: Check base build directory (legacy/development location).
+				// NOTE: This should be moved to pro addon directory as per project standards.
+				$legacy_workflow_build_path = WP_MCP_AI_PATH . 'build/workflow-builder/workflow-builder.js';
+				if ( file_exists( $legacy_workflow_build_path ) ) {
+					return true;
+				}
+				// Priority 3: Check base node_modules (development).
+				// These packages are in base package.json but used for Pro feature.
+				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				// If none exist, return false (not installed/bundled).
+				return false;
+			}
+
 			// Check for document generation packages bundled into local scripts.
 			$script_bundled_packages = array(
 				'pdfkit'  => 'generate-pdf.bundle.js',
@@ -1386,6 +1424,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <!-- NPM Production: WebGPU/WebAssembly Section -->
 <div style="margin-top: 30px;">
 			<?php self::render_webgpu_webassembly_section(); ?>
+</div>
+
+<!-- Visual Workflow Builder Card -->
+<div style="margin-top: 30px;">
+			<?php self::render_visual_workflow_builder_card(); ?>
 </div>
 
 <!-- Pro Toolkit Features Card -->
@@ -2042,6 +2085,257 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</tr>
 			</tbody>
 		</table>
+	</div>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render Visual Workflow Builder card.
+		 *
+		 * Displays information about the React-based visual workflow builder Pro feature.
+		 *
+		 * @since 1.2.0
+		 * @return void
+		 */
+		private static function render_visual_workflow_builder_card() {
+			?>
+<div class="wp-mcp-ai-settings-card">
+	<h2>
+		<span class="dashicons dashicons-networking" style="color: #2271b1;"></span>
+		<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
+		<span class="pro-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
+	</h2>
+
+	<div class="notice notice-info inline" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Modern React-Based Workflow Editor', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Professional drag-and-drop workflow builder powered by React Flow. Create complex automation workflows visually without writing code.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+		
+		<!-- Key Features -->
+		<div style="border: 1px solid #2271b1; padding: 15px; background: #f0f6fc; border-radius: 4px;">
+			<h3 style="margin: 0 0 15px 0; color: #2271b1;">
+				<span class="dashicons dashicons-star-filled"></span>
+				<?php esc_html_e( 'Key Features', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; font-size: 13px; line-height: 1.8;">
+				<li><strong><?php esc_html_e( 'Visual Canvas:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Zoom, pan, and navigate large workflows', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Drag & Drop:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Intuitive step creation and reordering', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Command Palette:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Searchable library of 250+ commands', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Form-Based Config:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'No more JSON editing! Visual forms', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Real-Time Validation:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Instant feedback as you build', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Undo/Redo:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Full history support', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Accessibility:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'WCAG 2.1 compliant, keyboard shortcuts', 'mcp-ai-wpoos' ); ?></li>
+				<li><strong><?php esc_html_e( 'Touch Support:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Works on mobile and tablets', 'mcp-ai-wpoos' ); ?></li>
+			</ul>
+		</div>
+
+		<!-- Technology Stack -->
+		<div style="border: 1px solid #00a32a; padding: 15px; background: #f0f9f4; border-radius: 4px;">
+			<h3 style="margin: 0 0 15px 0; color: #00a32a;">
+				<span class="dashicons dashicons-admin-tools"></span>
+				<?php esc_html_e( 'Technology Stack', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<table style="width: 100%; font-size: 13px;">
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Framework:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>React 18.2</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Workflow Canvas:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>React Flow 11.10</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Drag & Drop:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>dnd-kit 6.1</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'UI Components:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/components</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'State Management:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/data</code></td>
+				</tr>
+				<tr>
+					<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Build Tools:', 'mcp-ai-wpoos' ); ?></strong></td>
+					<td style="padding: 5px 0;"><code>@wordpress/scripts</code></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'npm Packages (Production)', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+			<thead>
+				<tr>
+					<th style="width: 35%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 50%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>react</code></td>
+					<td><code>^18.2.0</code></td>
+					<td><?php esc_html_e( 'Core UI framework for building interactive interfaces', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>react-dom</code></td>
+					<td><code>^18.2.0</code></td>
+					<td><?php esc_html_e( 'DOM rendering engine for React applications', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>reactflow</code></td>
+					<td><code>^11.10.4</code></td>
+					<td><?php esc_html_e( 'Visual workflow canvas - industry standard (MIT license)', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/core</code></td>
+					<td><code>^6.1.0</code></td>
+					<td><?php esc_html_e( 'Modern drag-and-drop toolkit with accessibility', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/sortable</code></td>
+					<td><code>^8.0.0</code></td>
+					<td><?php esc_html_e( 'Sortable list support for command palette', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@dnd-kit/utilities</code></td>
+					<td><code>^3.2.2</code></td>
+					<td><?php esc_html_e( 'Helper utilities for drag-and-drop operations', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'npm Packages (Development)', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+			<thead>
+				<tr>
+					<th style="width: 35%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 50%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>@wordpress/scripts</code></td>
+					<td><code>^27.0.0</code></td>
+					<td><?php esc_html_e( 'Official WordPress build tooling (webpack, babel, eslint)', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/components</code></td>
+					<td><code>^27.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress UI component library for consistent design', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/data</code></td>
+					<td><code>^9.0.0</code></td>
+					<td><?php esc_html_e( 'Redux-based state management for WordPress', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/i18n</code></td>
+					<td><code>^4.0.0</code></td>
+					<td><?php esc_html_e( 'Internationalization support for translations', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/element</code></td>
+					<td><code>^5.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress abstraction over React', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+				<tr>
+					<td><code>@wordpress/hooks</code></td>
+					<td><code>^3.0.0</code></td>
+					<td><?php esc_html_e( 'WordPress hooks system for extensibility', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
+		<p class="description" style="margin-top: 10px;">
+			<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Development packages are NOT included in the plugin distribution. They are only used during the build process.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #f0b849;">
+		<h3 style="margin: 0 0 10px 0;">
+			<span class="dashicons dashicons-info"></span>
+			<?php esc_html_e( 'Build Information', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<table style="width: 100%; font-size: 13px;">
+			<tr>
+				<td style="padding: 5px 0; width: 30%;"><strong><?php esc_html_e( 'Build Command:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;"><code>npm run build:pro</code></td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Output Location:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;"><code>build/workflow-builder/</code></td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Bundle Size:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">~200-300KB (minified & optimized)</td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Compilation:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">Webpack + Babel (via @wordpress/scripts)</td>
+			</tr>
+			<tr>
+				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Pre-Built:', 'mcp-ai-wpoos' ); ?></strong></td>
+				<td style="padding: 5px 0;">✅ <?php esc_html_e( 'Yes - Committed to repository', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+		</table>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1;">
+		<h3 style="margin: 0 0 10px 0;">
+			<span class="dashicons dashicons-admin-settings"></span>
+			<?php esc_html_e( 'Usage', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<p style="margin: 0 0 10px 0;">
+			<strong><?php esc_html_e( 'Location:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'NV oOS → Workflows (Pro version only)', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<p style="margin: 0 0 10px 0;">
+			<strong><?php esc_html_e( 'Requirements:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Pro version of the plugin', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<p style="margin: 0;">
+			<strong><?php esc_html_e( 'Browser Support:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'Modern browsers (Chrome, Firefox, Safari, Edge - latest 2 versions)', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'Why These Packages?', 'mcp-ai-wpoos' ); ?></h3>
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+			
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1;">
+				<h4 style="margin: 0 0 8px 0; color: #2271b1;"><?php esc_html_e( 'React Flow', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Industry standard for workflow builders. Used by Stripe, Typeform, and thousands of production apps. 18K+ GitHub stars, MIT license.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #00a32a;">
+				<h4 style="margin: 0 0 8px 0; color: #00a32a;"><?php esc_html_e( 'dnd-kit', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Modern drag-and-drop with built-in accessibility. Keyboard support, screen readers, touch-friendly. Zero dependencies, performant.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<div style="padding: 15px; background: #f9f9f9; border-left: 3px solid #f0b849;">
+				<h4 style="margin: 0 0 8px 0; color: #f0b849;"><?php esc_html_e( '@wordpress/scripts', 'mcp-ai-wpoos' ); ?></h4>
+				<p style="margin: 0; font-size: 13px;">
+					<?php esc_html_e( 'Official WordPress tooling ensures compatibility and follows WordPress standards. Zero-config webpack, babel, and eslint.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+		</div>
 	</div>
 </div>
 			<?php

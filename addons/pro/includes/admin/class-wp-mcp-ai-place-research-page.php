@@ -229,10 +229,27 @@ class WP_MCP_AI_Place_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive place tools.
-							// Includes creation, geospatial search, research, and management tools.
+							// Render chat interface with comprehensive place and geospatial tools.
+							$place_tools = array(
+								// Place management.
+								'research_place',
+								'create_place',
+								'list_places',
+								'get_place',
+								'search_places',
+								// Geospatial tools.
+								'geocode_address',
+								'gemini_geospatial_query',
+								// Image tools.
+								'generate_image_caption',
+								'generate_image_alt_text',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_place,create_place,list_places,get_place,search_places,geocode_address,gemini_geospatial_query,web_search,search_content,generate_image_caption"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $place_tools ) ) . '"]'
 							);
 							?>
 						</div>

@@ -229,9 +229,50 @@ class WP_MCP_AI_Event_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive event tools.
+							// Render chat interface with comprehensive event and DJ management tools.
+							$event_tools = array(
+								// Core event management.
+								'create_event',
+								'update_event',
+								'delete_event',
+								'list_events',
+								'get_calendar_view',
+								// Event booking & details.
+								'create_event_booking',
+								'update_event_details',
+								// Event timeline & payments.
+								'generate_event_timeline',
+								'track_event_payments',
+								'send_event_confirmation',
+								// Event analytics.
+								'real_time_event_tracking',
+								// DJ Management tools.
+								'create_client_profile',
+								'generate_dj_contract',
+								'send_client_invoice',
+								'client_communication_log',
+								// Playlist & Music.
+								'create_playlist',
+								'generate_playlist_ai',
+								'manage_music_library',
+								'analyze_track_bpm',
+								'mix_transition_planner',
+								// Equipment management.
+								'add_equipment_item',
+								'reserve_equipment',
+								'track_equipment_maintenance',
+								'equipment_inventory_report',
+								// Project integration.
+								'list_projects',
+								'create_task',
+								'list_tasks',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_event,list_events,get_calendar_view,list_projects,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $event_tools ) ) . '"]'
 							);
 							?>
 						</div>

@@ -39,6 +39,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_reg_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_reg_product', array( __CLASS__, 'ajax_handle_import' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_preview_excel', array( __CLASS__, 'ajax_preview_excel' ) );
 	}
 
 	/**
@@ -183,6 +184,51 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 						</ul>
 					</div>
 
+					<div class="wp-mcp-ai-research-preview" id="wp-mcp-ai-product-preview" style="display: none;">
+						<h3><?php esc_html_e( 'Excel Data Preview', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="wp-mcp-ai-preview-content">
+							<div class="wp-mcp-ai-preview-loading">
+								<span class="spinner is-active"></span>
+								<p><?php esc_html_e( 'Loading Excel data...', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div class="wp-mcp-ai-preview-data" style="display: none;">
+								<div class="wp-mcp-ai-preview-header">
+									<h4 class="wp-mcp-ai-preview-title"></h4>
+									<p class="wp-mcp-ai-preview-meta"></p>
+								</div>
+								<div class="wp-mcp-ai-preview-table-wrapper">
+									<table class="wp-mcp-ai-preview-table widefat striped">
+										<thead></thead>
+										<tbody></tbody>
+									</table>
+								</div>
+								<div class="wp-mcp-ai-preview-pagination" style="display: none;">
+									<button type="button" class="button wp-mcp-ai-preview-prev" disabled>
+										<span class="dashicons dashicons-arrow-left-alt2"></span>
+										<?php esc_html_e( 'Previous', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<span class="wp-mcp-ai-preview-page-info">
+										<span class="wp-mcp-ai-preview-current-page">1</span>
+										<?php esc_html_e( 'of', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="wp-mcp-ai-preview-total-pages">1</span>
+									</span>
+									<button type="button" class="button wp-mcp-ai-preview-next">
+										<?php esc_html_e( 'Next', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="dashicons dashicons-arrow-right-alt2"></span>
+									</button>
+								</div>
+								<div class="wp-mcp-ai-preview-actions">
+									<button type="button" class="button button-primary wp-mcp-ai-import-excel-data">
+										<?php esc_html_e( 'Import All Products', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<button type="button" class="button wp-mcp-ai-close-preview">
+										<?php esc_html_e( 'Close Preview', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
@@ -194,6 +240,12 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_reg_product' ) ); ?>" class="button">
 								<?php esc_html_e( 'Add Product Manually', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
+						</p>
+						<p>
+							<button type="button" class="button wp-mcp-ai-select-excel-file">
+								<span class="dashicons dashicons-media-spreadsheet"></span>
+								<?php esc_html_e( 'Preview Excel File', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
 						</p>
 					</div>
 				</div>
@@ -227,8 +279,83 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface with comprehensive regulatory product tools.
+							// Include all regulatory registration toolkit tools to enable full management capabilities.
+							$reg_tools = array(
+								// Core product management.
+								'create_reg_product',
+								'update_reg_product',
+								'delete_reg_product',
+								'duplicate_reg_product',
+								'get_reg_product',
+								'list_reg_products',
+								'search_reg_products',
+								'validate_reg_product',
+								// Registration management.
+								'create_registration',
+								'get_registration',
+								'list_registrations',
+								'list_registrations_by_country',
+								'list_expiring_registrations',
+								'update_registration_status',
+								'approve_registration',
+								'submit_registration',
+								'renew_registration',
+								'get_registration_timeline',
+								'submit_to_authority',
+								// Document management.
+								'upload_reg_document',
+								'get_reg_document',
+								'update_reg_document',
+								'list_reg_documents',
+								'validate_document_checklist',
+								'track_document_version',
+								'check_document_expiry',
+								// Excel import/export.
+								'import_products_from_excel',
+								'export_products_to_excel',
+								'validate_excel_import',
+								'import_registrations_from_excel',
+								'export_registrations_to_excel',
+								// Compliance & validation.
+								'check_product_compliance',
+								'validate_inci_ingredients',
+								'check_hs_code',
+								'get_regulatory_requirements',
+								'get_regulatory_updates',
+								'add_regulatory_requirement',
+								'check_authority_status',
+								// Reports & analytics.
+								'generate_compliance_report',
+								'generate_compliance_certificate',
+								'generate_cost_analysis',
+								'generate_country_performance',
+								'generate_expiry_forecast',
+								'generate_pipeline_report',
+								'generate_pdf_dossier',
+								'generate_submission_pack',
+								'generate_cover_letter',
+								// Notifications.
+								'configure_email_notifications',
+								'send_expiry_alerts',
+								'send_status_change_notification',
+								'get_notification_history',
+								// Workflow automation.
+								'create_workflow_rule',
+								'update_workflow_rule',
+								'delete_workflow_rule',
+								'list_workflow_rules',
+								'test_workflow_rule',
+								'get_workflow_execution_log',
+								// Authority integrations.
+								'sync_with_mohap',
+								'sync_with_nmra',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_reg_product,list_reg_products,get_reg_product,search_reg_products,validate_reg_product,web_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_tools ) ) . '"]'
 							);
 							?>
 						</div>
@@ -487,6 +614,138 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			'level'  => $level,
 			'status' => $score >= 90 ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Incomplete', 'mcp-ai-wpoos-pro' ),
 			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Handle AJAX request to preview Excel file.
+	 */
+	public static function ajax_preview_excel() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_reg_product', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to preview files.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get file information.
+		$file_id  = isset( $_POST['file_id'] ) ? absint( $_POST['file_id'] ) : 0;
+		$file_url = isset( $_POST['file_url'] ) ? esc_url_raw( wp_unslash( $_POST['file_url'] ) ) : '';
+
+		if ( ! $file_id && ! $file_url ) {
+			wp_send_json_error( array( 'message' => __( 'No file specified.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get file path.
+		$file_path = '';
+		if ( $file_id > 0 ) {
+			$file_path = get_attached_file( $file_id );
+		} elseif ( $file_url ) {
+			// Convert URL to path if it's a local file.
+			$upload_dir = wp_upload_dir();
+			if ( strpos( $file_url, $upload_dir['baseurl'] ) === 0 ) {
+				$file_path = str_replace( $upload_dir['baseurl'], $upload_dir['basedir'], $file_url );
+			}
+		}
+
+		if ( ! $file_path || ! file_exists( $file_path ) ) {
+			wp_send_json_error( array( 'message' => __( 'File not found.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Parse the file based on extension.
+		$file_extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+		$preview_data = array(
+			'filename' => basename( $file_path ),
+			'columns'  => array(),
+			'rows'     => array(),
+		);
+
+		try {
+			if ( 'csv' === $file_extension ) {
+				$preview_data = self::parse_csv_file( $file_path );
+			} elseif ( in_array( $file_extension, array( 'xlsx', 'xls' ), true ) ) {
+				// For Excel files, we'll provide a simplified preview.
+				// In production, you'd use PhpSpreadsheet library.
+				$preview_data = self::parse_excel_file( $file_path );
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Unsupported file format. Please use CSV or Excel files.', 'mcp-ai-wpoos-pro' ) ) );
+			}
+
+			wp_send_json_success( $preview_data );
+		} catch ( Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * Parse CSV file for preview.
+	 *
+	 * @param string $file_path Path to CSV file.
+	 * @return array Preview data with columns and rows.
+	 */
+	protected static function parse_csv_file( $file_path ) {
+		$data = array(
+			'filename' => basename( $file_path ),
+			'columns'  => array(),
+			'rows'     => array(),
+		);
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Required for CSV parsing.
+		$handle = fopen( $file_path, 'r' );
+		if ( ! $handle ) {
+			throw new Exception( __( 'Unable to open file.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Read header row.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fgetcsv -- Required for CSV parsing.
+		$header = fgetcsv( $handle );
+		if ( $header ) {
+			$data['columns'] = array_map( 'sanitize_text_field', $header );
+		}
+
+		// Read data rows (limit to 100 rows for preview).
+		$row_count = 0;
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fgetcsv -- Required for CSV parsing.
+		while ( ( $row = fgetcsv( $handle ) ) !== false && $row_count < 100 ) {
+			$row_data = array();
+			foreach ( $data['columns'] as $index => $column ) {
+				$row_data[ $column ] = isset( $row[ $index ] ) ? sanitize_text_field( $row[ $index ] ) : '';
+			}
+			$data['rows'][] = $row_data;
+			++$row_count;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Required for CSV parsing.
+		fclose( $handle );
+
+		return $data;
+	}
+
+	/**
+	 * Parse Excel file for preview.
+	 *
+	 * Note: This is a placeholder. In production, use PhpSpreadsheet library.
+	 *
+	 * @param string $file_path Path to Excel file.
+	 * @return array Preview data with columns and rows.
+	 */
+	protected static function parse_excel_file( $file_path ) {
+		// For now, return a sample structure with a note.
+		// In production, integrate PhpSpreadsheet library for Excel parsing.
+		return array(
+			'filename' => basename( $file_path ),
+			'columns'  => array( 'Product Name', 'Brand', 'Manufacturer', 'Category', 'INCI Ingredients' ),
+			'rows'     => array(
+				array(
+					'Product Name'     => __( 'Excel preview requires PhpSpreadsheet library', 'mcp-ai-wpoos-pro' ),
+					'Brand'            => __( 'Please upload as CSV format', 'mcp-ai-wpoos-pro' ),
+					'Manufacturer'     => __( 'Or install PhpSpreadsheet', 'mcp-ai-wpoos-pro' ),
+					'Category'         => __( 'For full Excel support', 'mcp-ai-wpoos-pro' ),
+					'INCI Ingredients' => __( 'File: ' . basename( $file_path ), 'mcp-ai-wpoos-pro' ),
+				),
+			),
 		);
 	}
 }

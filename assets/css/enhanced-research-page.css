@@ -831,3 +831,152 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* Excel Preview Styles */
+.wp-mcp-ai-research-preview {
+	margin-bottom: 25px;
+	padding: 15px;
+	background: #f8f9fa;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-research-preview h3 {
+	margin: 0 0 15px 0;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-preview-content {
+	background: #fff;
+	padding: 15px;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-preview-loading {
+	text-align: center;
+	padding: 40px 20px;
+}
+
+.wp-mcp-ai-preview-loading .spinner {
+	float: none;
+	margin: 0 auto 15px;
+}
+
+.wp-mcp-ai-preview-loading p {
+	margin: 0;
+	color: #646970;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-preview-header {
+	margin-bottom: 15px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-preview-title {
+	margin: 0 0 5px 0;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-preview-meta {
+	margin: 0;
+	font-size: 13px;
+	color: #646970;
+}
+
+.wp-mcp-ai-preview-table-wrapper {
+	overflow-x: auto;
+	margin: 15px 0;
+}
+
+.wp-mcp-ai-preview-table {
+	width: 100%;
+	font-size: 13px;
+	border-collapse: collapse;
+}
+
+.wp-mcp-ai-preview-table th {
+	background: #f6f7f7;
+	font-weight: 600;
+	padding: 10px 12px;
+	text-align: left;
+	border: 1px solid #dcdcde;
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-preview-table td {
+	padding: 8px 12px;
+	border: 1px solid #dcdcde;
+	max-width: 300px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wp-mcp-ai-preview-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 15px 0;
+	padding: 10px 0;
+	border-top: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-preview-page-info {
+	font-size: 13px;
+	color: #646970;
+}
+
+.wp-mcp-ai-preview-prev,
+.wp-mcp-ai-preview-next {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.wp-mcp-ai-preview-prev .dashicons,
+.wp-mcp-ai-preview-next .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.wp-mcp-ai-preview-actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-select-excel-file {
+	width: 100%;
+	text-align: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+}
+
+.wp-mcp-ai-select-excel-file .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+/* Responsive preview */
+@media (max-width: 782px) {
+	.wp-mcp-ai-preview-table-wrapper {
+		margin: 15px -15px;
+	}
+	
+	.wp-mcp-ai-preview-actions {
+		flex-direction: column;
+	}
+	
+	.wp-mcp-ai-preview-actions .button {
+		width: 100%;
+	}
+}

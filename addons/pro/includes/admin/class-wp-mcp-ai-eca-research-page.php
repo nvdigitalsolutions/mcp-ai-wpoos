@@ -230,9 +230,23 @@ class WP_MCP_AI_ECA_Research_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface with comprehensive ECA tools.
-							// Includes research, creation, enrollment, calendar, and management tools.
+							$eca_tools = array(
+								// ECA management.
+								'research_eca',
+								'create_eca',
+								'list_ecas',
+								'get_eca',
+								// Student enrollment.
+								'enroll_student_eca',
+								// Calendar and scheduling.
+								'get_calendar_view',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_eca,create_eca,list_ecas,get_eca,enroll_student_eca,get_calendar_view,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $eca_tools ) ) . '"]'
 							);
 							?>
 						</div>

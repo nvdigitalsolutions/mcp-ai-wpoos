@@ -21,7 +21,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * Constructor
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 25 );
+		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 100 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_dashboard_data', array( $this, 'ajax_get_dashboard_data' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_control_session', array( $this, 'ajax_control_session' ) );

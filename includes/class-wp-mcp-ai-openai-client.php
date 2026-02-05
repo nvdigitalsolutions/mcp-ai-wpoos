@@ -3848,6 +3848,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				unset( $segment['caption'] );
 			}
 
+			// Remove agentic workflow metadata fields that are not part of the OpenAI Responses API spec.
+			// These fields (url, attachment_id, file_name, mime_type, bytes) are added by
+			// WP_MCP_AI_Message_Attachments for internal use but should not be sent to the API.
+			$metadata_fields = array( 'url', 'attachment_id', 'file_name', 'mime_type', 'bytes' );
+			foreach ( $metadata_fields as $field ) {
+				if ( isset( $segment[ $field ] ) ) {
+					unset( $segment[ $field ] );
+				}
+			}
+
 			return $segment;
 		}
 
@@ -3924,6 +3934,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( isset( $segment['file_id'] ) && '' !== $segment['file_id'] && isset( $segment['filename'] ) ) {
 				unset( $segment['filename'] );
+			}
+
+			// Remove agentic workflow metadata fields that are not part of the OpenAI Responses API spec.
+			// These fields (url, attachment_id, name, mime_type, bytes, display_name) are added by
+			// WP_MCP_AI_Message_Attachments for internal use but should not be sent to the API.
+			$metadata_fields = array( 'url', 'attachment_id', 'name', 'mime_type', 'bytes', 'display_name' );
+			foreach ( $metadata_fields as $field ) {
+				if ( isset( $segment[ $field ] ) ) {
+					unset( $segment[ $field ] );
+				}
 			}
 
 			return $segment;

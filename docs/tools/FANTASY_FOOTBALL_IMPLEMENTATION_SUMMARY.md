@@ -115,7 +115,7 @@ Leveraged existing Chart.js 4.4.7 infrastructure from the plugin:
 - Added to `$extended_tools` array (requires external API)
 - Tool group: `external-tools`
 - Toolkit: `fantasy_football`
-- 6 new tool class files in `includes/tools/`
+- 6 new tool class files in `addons/pro/includes/tools/`
 
 **Capability Flags:**
 All tools implement:
@@ -208,12 +208,12 @@ All tools implement:
 
 **Tool Classes (6 files):**
 ```
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php (7.4KB)
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php (12KB)
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php (12KB)
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php (12KB)
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php (17KB)
-includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php (15KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php (7.4KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php (12KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php (12KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php (12KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php (17KB)
+addons/pro/includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php (15KB)
 ```
 
 **Documentation (2 files):**
