@@ -311,6 +311,80 @@ Agent: I'll first read the current implementation, then suggest improvements...
 [Reads file, analyzes, proposes changes, then writes updates with user approval]
 ```
 
+#### 6. Git Stash Workflows
+
+The `git_operations` tool supports comprehensive stash operations for managing work-in-progress changes:
+
+**Saving Work in Progress:**
+```
+User: I need to switch branches but have uncommitted changes. Save them.
+
+Agent: I'll stash your current changes...
+[Uses git_operations with operation="stash", stash_subcommand="push", message="WIP: Feature X changes"]
+```
+
+**Viewing Stashed Changes:**
+```
+User: What changes do I have stashed?
+
+Agent: Let me list your stashes...
+[Uses git_operations with operation="stash", stash_subcommand="list"]
+Response: 
+{
+  "stash_count": 3,
+  "stash_entries": [
+    {"ref": "stash@{0}", "index": 0, "message": "WIP: Feature X changes"},
+    {"ref": "stash@{1}", "index": 1, "message": "WIP on main: 5981ee5"},
+    {"ref": "stash@{2}", "index": 2, "message": "Experimental UI changes"}
+  ]
+}
+```
+
+**Applying Stashed Changes:**
+```
+User: Apply my most recent stash
+
+Agent: Applying stash@{0}...
+[Uses git_operations with operation="stash", stash_subcommand="apply", stash_ref="stash@{0}"]
+```
+
+**Complete Workflow Example:**
+```
+1. Save current work:
+   operation="stash", stash_subcommand="push", message="Feature X in progress", include_untracked=true
+
+2. Switch to hotfix branch:
+   operation="checkout", branch_name="hotfix/urgent-fix"
+
+3. Make and commit hotfix:
+   [make changes, then commit]
+
+4. Return to original branch:
+   operation="checkout", branch_name="feature/x"
+
+5. Restore work in progress:
+   operation="stash", stash_subcommand="pop"
+```
+
+**Creating Branch from Stash:**
+```
+User: Create a new branch from my stashed experimental changes
+
+Agent: I'll create a branch from stash@{2}...
+[Uses git_operations with operation="stash", stash_subcommand="branch", 
+ branch_name="experimental-ui", stash_ref="stash@{2}"]
+```
+
+**Stash Subcommands Available:**
+- `list` - Show all stashed changes with metadata
+- `push` - Save current changes (supports `include_untracked`, `keep_index`, `message`)
+- `pop` - Apply and remove most recent stash
+- `apply` - Apply stash without removing it
+- `drop` - Delete a specific stash by reference
+- `clear` - Remove all stashes (use with caution)
+- `show` - Display diff of stashed changes
+- `branch` - Create new branch from stash
+
 ### Best Practices
 
 1. **Start Small**: Begin with read and list operations to understand the codebase

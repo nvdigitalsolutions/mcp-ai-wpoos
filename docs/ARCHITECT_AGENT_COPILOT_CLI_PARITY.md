@@ -27,15 +27,18 @@ The Architect Agent has been enhanced to achieve feature parity with GitHub Copi
 - **Purpose**: Perform git version control operations
 - **Capabilities**:
   - Read operations: status, diff, log, show, blame, branch
-  - Write operations: commit, add, checkout, stash
+  - Write operations: commit, add, checkout
+  - Stash operations (all subcommands): list, push, pop, apply, drop, clear, show, branch
   - All operations scoped to plugin directory
   - Full git command support with options
+  - Structured data return for stash list (parsed entries with ref, index, message)
 - **Security**:
   - Requires `edit_plugins` capability
   - Restricted to plugin repository
   - Logs all write operations
   - Sanitizes command options
-- **File**: `includes/tools/class-wp-mcp-ai-tool-git-operations.php`
+  - Validates stash references (regex pattern: stash@{N})
+- **File**: `addons/pro/includes/tools/architect-agent/class-wp-mcp-ai-tool-git-operations.php`
 
 #### 3. **search_codebase** Tool
 - **Purpose**: Search for code patterns, functions, classes, and files
@@ -220,6 +223,60 @@ Agent workflow:
 
 7. git_operations: operation="commit", message="Refactor git_operations to eliminate code duplication"
    → Commits refactored code
+```
+
+### Example 4: Stash Workflow for Feature Development
+
+```
+User: I need to switch to a hotfix branch, but I have uncommitted work on my feature
+
+Agent workflow:
+1. git_operations: operation="stash", stash_subcommand="push", message="Feature XYZ in progress", include_untracked=true
+   → Saves current work including untracked files
+   Response: { "operation": "stash_push", "success": true }
+
+2. git_operations: operation="checkout", branch_name="hotfix/urgent-bug"
+   → Switches to hotfix branch
+
+3. [Performs hotfix work: edits files, tests, commits]
+
+4. git_operations: operation="checkout", branch_name="feature/xyz"
+   → Returns to feature branch
+
+5. git_operations: operation="stash", stash_subcommand="list"
+   → Lists available stashes
+   Response: {
+     "stash_count": 3,
+     "stash_entries": [
+       {"ref": "stash@{0}", "index": 0, "message": "Feature XYZ in progress"},
+       {"ref": "stash@{1}", "index": 1, "message": "Previous work"},
+       {"ref": "stash@{2}", "index": 2, "message": "Experimental changes"}
+     ]
+   }
+
+6. git_operations: operation="stash", stash_subcommand="pop", stash_ref="stash@{0}"
+   → Restores and removes the stash
+   Response: { "operation": "stash_pop", "success": true }
+
+7. [Continues work on feature]
+```
+
+### Example 5: Creating Branch from Experimental Stash
+
+```
+User: I want to create a separate branch for my experimental UI changes that I stashed
+
+Agent workflow:
+1. git_operations: operation="stash", stash_subcommand="list"
+   → Identifies the experimental stash
+   Response: Shows "stash@{2}: Experimental UI changes"
+
+2. git_operations: operation="stash", stash_subcommand="branch", branch_name="experimental/new-ui", stash_ref="stash@{2}"
+   → Creates new branch and applies the stash
+   Response: { "operation": "stash_branch", "branch_name": "experimental/new-ui", "success": true }
+
+3. git_operations: operation="status"
+   → Confirms changes are applied in new branch
 ```
 
 ## Tool Registration
