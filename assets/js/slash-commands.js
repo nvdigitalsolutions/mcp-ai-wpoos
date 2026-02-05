@@ -77,7 +77,7 @@
 				hasSlashCommandListEndpoint: !!window.mcpAiData.slashCommandListEndpoint,
 				hasNonce: !!window.mcpAiData.nonce
 			});
-			// Log actual endpoint URLs for debugging
+			// Always log endpoint URLs (not just in debug mode) to help troubleshoot URL issues in production
 			console.log('[SlashCommands] Endpoint URLs:', {
 				restUrl: window.mcpAiData.restUrl,
 				slashCommandEndpoint: window.mcpAiData.slashCommandEndpoint,
