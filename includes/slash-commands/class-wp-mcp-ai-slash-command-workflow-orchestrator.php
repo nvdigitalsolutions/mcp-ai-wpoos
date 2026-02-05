@@ -38,6 +38,27 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	protected $workflows = array();
 
 	/**
+	 * Workflow execution state.
+	 *
+	 * @var array
+	 */
+	protected $execution_state = array();
+
+	/**
+	 * Maximum retry attempts for failed steps.
+	 *
+	 * @var int
+	 */
+	protected $max_retries = 3;
+
+	/**
+	 * Retry delay in seconds.
+	 *
+	 * @var int
+	 */
+	protected $retry_delay = 2;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WP_MCP_AI_Slash_Command_Handler $handler Command handler instance.
@@ -378,6 +399,105 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
+			// Phase 5: Advanced workflows with conditional logic and error handling.
+			'smart_inventory_replenishment' => array(
+				'name'        => __( 'Smart Inventory Replenishment (Advanced)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Intelligent inventory management with conditional stock ordering', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'inventory-forecast',
+						'params'  => array( 'period' => 30 ),
+					),
+					array(
+						'command'   => 'supplier-sync',
+						'params'    => array( 'action' => 'check-prices' ),
+						'condition' => array( 'if_success' => true ),
+					),
+					array(
+						'command'   => 'wholesale-pricing',
+						'params'    => array( 'action' => 'calculate', 'quantity' => '{previous.recommended_quantity}' ),
+						'condition' => array(
+							'field'        => 'stock_level',
+							'less_than'    => 50,
+						),
+						'on_error'  => array(
+							'fallback' => 'ecom-analytics',
+						),
+					),
+					array(
+						'command'   => 'customer-segment',
+						'params'    => array( 'criteria' => 'high-value' ),
+						'condition' => array( 'if_success' => true ),
+					),
+				),
+			),
+			'adaptive_content_publishing' => array(
+				'name'        => __( 'Adaptive Content Publishing (Advanced)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Intelligent content publishing with quality checks and fallbacks', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'post-optimize',
+						'params'  => array( 'content' => '{content}', 'goal' => 'engagement' ),
+					),
+					array(
+						'command'   => 'hashtag-suggest',
+						'params'    => array( 'content' => '{previous.optimized_content}', 'count' => 15 ),
+						'condition' => array( 'if_success' => true ),
+					),
+					array(
+						'command'   => 'social-post',
+						'params'    => array( 'content' => '{previous.optimized_content}', 'platforms' => 'all' ),
+						'condition' => array(
+							'field'        => 'engagement_score',
+							'greater_than' => 70,
+						),
+						'on_error'  => array(
+							'fallback' => 'social-schedule',
+						),
+					),
+					array(
+						'command'   => 'social-analytics',
+						'params'    => array( 'period' => 'realtime' ),
+						'condition' => array( 'if_success' => true ),
+					),
+				),
+			),
+			'intelligent_video_distribution' => array(
+				'name'        => __( 'Intelligent Video Distribution (Advanced)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Smart video processing with quality validation and multi-platform distribution', 'mcp-ai-wpoos' ),
+				'steps'       => array(
+					array(
+						'command' => 'video-edit',
+						'params'  => array( 'video-id' => '{video_id}', 'operation' => 'advanced' ),
+					),
+					array(
+						'command'   => 'video-compress',
+						'params'    => array( 'video-id' => '{video_id}', 'quality' => 'high' ),
+						'condition' => array( 'if_success' => true ),
+						'on_error'  => array(
+							'fallback' => 'video-render',
+						),
+					),
+					array(
+						'command'   => 'video-thumbnail',
+						'params'    => array( 'video-id' => '{video_id}', 'count' => 5 ),
+						'condition' => array( 'if_success' => true ),
+					),
+					array(
+						'command'   => 'video-publish',
+						'params'    => array( 'video-id' => '{video_id}', 'platforms' => 'youtube,vimeo' ),
+						'condition' => array(
+							'field'        => 'video_size_mb',
+							'less_than'    => 500,
+						),
+					),
+					array(
+						'command'   => 'video-analytics',
+						'params'    => array( 'video-id' => '{video_id}' ),
+						'condition' => array( 'if_success' => true ),
+					),
+				),
+			),
 		);
 
 		/**
@@ -396,13 +516,15 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	 * Execute a workflow.
 	 *
 	 * @since 1.3.0
+	 * @since 1.4.0 Added conditional logic, retry mechanism, and error handling.
 	 *
 	 * @param string $workflow_name Workflow name.
 	 * @param array  $params Workflow parameters.
 	 * @param array  $context Execution context.
+	 * @param array  $options Execution options (retry, continue_on_error, save_state).
 	 * @return array Workflow result.
 	 */
-	public function execute_workflow( $workflow_name, $params = array(), $context = array() ) {
+	public function execute_workflow( $workflow_name, $params = array(), $context = array(), $options = array() ) {
 		if ( ! isset( $this->workflows[ $workflow_name ] ) ) {
 			return array(
 				'success' => false,
@@ -418,63 +540,113 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		$workflow = $this->workflows[ $workflow_name ];
 		$results  = array();
 		$previous_result = null;
+		$execution_id = uniqid( 'workflow_' );
+
+		// Parse options.
+		$continue_on_error = isset( $options['continue_on_error'] ) ? $options['continue_on_error'] : false;
+		$save_state = isset( $options['save_state'] ) ? $options['save_state'] : false;
+		$max_retries = isset( $options['max_retries'] ) ? absint( $options['max_retries'] ) : $this->max_retries;
+
+		// Initialize execution state.
+		if ( $save_state ) {
+			$this->init_execution_state( $execution_id, $workflow_name, $params );
+		}
 
 		foreach ( $workflow['steps'] as $index => $step ) {
-			// Resolve parameters using previous results.
-			$resolved_params = $this->resolve_parameters( $step['params'], $params, $previous_result );
-
-			// Build command string.
-			$command_string = '/' . $step['command'];
-			foreach ( $resolved_params as $key => $value ) {
-				if ( is_numeric( $key ) ) {
-					// Positional parameter.
-					$command_string .= " {$value}";
-				} else {
-					// Named parameter.
-					$command_string .= " --{$key}=\"{$value}\"";
-				}
+			// Check if step should be skipped based on condition.
+			if ( $this->should_skip_step( $step, $previous_result, $results ) ) {
+				$results[] = array(
+					'step'    => $index + 1,
+					'command' => $step['command'],
+					'skipped' => true,
+					'reason'  => isset( $step['condition'] ) ? 'condition_not_met' : 'unknown',
+				);
+				continue;
 			}
 
-			// Execute command.
-			$result = $this->handler->execute( $command_string, $context );
+			// Execute step with retry logic.
+			$step_result = $this->execute_step_with_retry(
+				$step,
+				$params,
+				$previous_result,
+				$context,
+				$max_retries
+			);
 
 			// Store result.
 			$results[] = array(
 				'step'    => $index + 1,
 				'command' => $step['command'],
-				'params'  => $resolved_params,
-				'result'  => $result,
+				'params'  => $step_result['params'],
+				'result'  => $step_result['result'],
+				'retries' => isset( $step_result['retries'] ) ? $step_result['retries'] : 0,
 			);
 
-			// Check for errors.
-			if ( is_array( $result ) && ! $result['success'] ) {
-				return array(
-					'success'  => false,
-					'error'    => 'workflow_step_failed',
-					'message'  => sprintf(
-						/* translators: 1: step number, 2: command name */
-						__( 'Workflow failed at step %1$d (%2$s).', 'mcp-ai-wpoos' ),
-						$index + 1,
-						$step['command']
-					),
-					'workflow' => $workflow_name,
-					'steps'    => $results,
-				);
+			// Update execution state.
+			if ( $save_state ) {
+				$this->update_execution_state( $execution_id, $index + 1, $step_result );
 			}
 
-			$previous_result = $result;
+			// Check for errors.
+			if ( is_array( $step_result['result'] ) && ! $step_result['result']['success'] ) {
+				// Check for fallback step.
+				if ( isset( $step['on_error'] ) && isset( $step['on_error']['fallback'] ) ) {
+					$fallback_result = $this->execute_fallback_step(
+						$step['on_error']['fallback'],
+						$params,
+						$previous_result,
+						$context
+					);
+					$results[] = array(
+						'step'     => $index + 1,
+						'command'  => $step['on_error']['fallback'],
+						'fallback' => true,
+						'result'   => $fallback_result,
+					);
+					$previous_result = $fallback_result;
+					continue;
+				}
+
+				// If not continuing on error, return failure.
+				if ( ! $continue_on_error ) {
+					return array(
+						'success'      => false,
+						'error'        => 'workflow_step_failed',
+						'message'      => sprintf(
+							/* translators: 1: step number, 2: command name */
+							__( 'Workflow failed at step %1$d (%2$s).', 'mcp-ai-wpoos' ),
+							$index + 1,
+							$step['command']
+						),
+						'workflow'     => $workflow_name,
+						'execution_id' => $execution_id,
+						'steps'        => $results,
+					);
+				}
+
+				// Continue on error - mark step as failed but continue.
+				$results[ count( $results ) - 1 ]['continued_on_error'] = true;
+			}
+
+			$previous_result = $step_result['result'];
+		}
+
+		// Clear execution state if saved.
+		if ( $save_state ) {
+			$this->clear_execution_state( $execution_id );
 		}
 
 		return array(
-			'success'  => true,
-			'message'  => sprintf(
+			'success'      => true,
+			'message'      => sprintf(
 				/* translators: 1: workflow name, 2: number of steps */
 				__( 'Workflow "%1$s" completed successfully (%2$d steps).', 'mcp-ai-wpoos' ),
 				$workflow['name'],
 				count( $results )
 			),
-			'workflow' => $workflow_name,
-			'steps'    => $results,
+			'workflow'     => $workflow_name,
+			'execution_id' => $execution_id,
+			'steps'        => $results,
 		);
 	}
 
@@ -527,6 +699,246 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		}
 
 		return $resolved;
+	}
+
+	/**
+	 * Execute a workflow step with retry logic.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $step Step definition.
+	 * @param array $workflow_params Workflow parameters.
+	 * @param array $previous_result Previous step result.
+	 * @param array $context Execution context.
+	 * @param int   $max_retries Maximum retry attempts.
+	 * @return array Step result with retry count.
+	 */
+	protected function execute_step_with_retry( $step, $workflow_params, $previous_result, $context, $max_retries ) {
+		$retries = 0;
+		$resolved_params = $this->resolve_parameters( $step['params'], $workflow_params, $previous_result );
+
+		while ( $retries <= $max_retries ) {
+			// Build command string.
+			$command_string = '/' . $step['command'];
+			foreach ( $resolved_params as $key => $value ) {
+				if ( is_numeric( $key ) ) {
+					$command_string .= " {$value}";
+				} else {
+					$command_string .= " --{$key}=\"{$value}\"";
+				}
+			}
+
+			// Execute command.
+			$result = $this->handler->execute( $command_string, $context );
+
+			// Check if successful.
+			if ( is_array( $result ) && $result['success'] ) {
+				return array(
+					'result'  => $result,
+					'params'  => $resolved_params,
+					'retries' => $retries,
+				);
+			}
+
+			// Retry if not max attempts yet.
+			if ( $retries < $max_retries ) {
+				$retries++;
+				sleep( $this->retry_delay );
+				continue;
+			}
+
+			// Max retries reached.
+			break;
+		}
+
+		return array(
+			'result'  => $result,
+			'params'  => $resolved_params,
+			'retries' => $retries,
+		);
+	}
+
+	/**
+	 * Check if a workflow step should be skipped based on conditions.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param array $step Step definition.
+	 * @param array $previous_result Previous step result.
+	 * @param array $all_results All previous results.
+	 * @return bool True if step should be skipped.
+	 */
+	protected function should_skip_step( $step, $previous_result, $all_results ) {
+		if ( ! isset( $step['condition'] ) ) {
+			return false;
+		}
+
+		$condition = $step['condition'];
+
+		// If condition: check if previous step was successful.
+		if ( isset( $condition['if_success'] ) && $condition['if_success'] ) {
+			if ( ! $previous_result || ! isset( $previous_result['success'] ) || ! $previous_result['success'] ) {
+				return true;
+			}
+		}
+
+		// If not condition: check if previous step failed.
+		if ( isset( $condition['if_failure'] ) && $condition['if_failure'] ) {
+			if ( $previous_result && isset( $previous_result['success'] ) && $previous_result['success'] ) {
+				return true;
+			}
+		}
+
+		// Field equals condition.
+		if ( isset( $condition['field'] ) && isset( $condition['equals'] ) ) {
+			$field = $condition['field'];
+			if ( $previous_result && isset( $previous_result['data'][ $field ] ) ) {
+				if ( $previous_result['data'][ $field ] !== $condition['equals'] ) {
+					return true;
+				}
+			}
+		}
+
+		// Field not equals condition.
+		if ( isset( $condition['field'] ) && isset( $condition['not_equals'] ) ) {
+			$field = $condition['field'];
+			if ( $previous_result && isset( $previous_result['data'][ $field ] ) ) {
+				if ( $previous_result['data'][ $field ] === $condition['not_equals'] ) {
+					return true;
+				}
+			}
+		}
+
+		// Greater than condition.
+		if ( isset( $condition['field'] ) && isset( $condition['greater_than'] ) ) {
+			$field = $condition['field'];
+			if ( $previous_result && isset( $previous_result['data'][ $field ] ) ) {
+				if ( $previous_result['data'][ $field ] <= $condition['greater_than'] ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Execute a fallback step on error.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $command Fallback command.
+	 * @param array  $workflow_params Workflow parameters.
+	 * @param array  $previous_result Previous step result.
+	 * @param array  $context Execution context.
+	 * @return array Fallback result.
+	 */
+	protected function execute_fallback_step( $command, $workflow_params, $previous_result, $context ) {
+		$command_string = '/' . $command;
+		return $this->handler->execute( $command_string, $context );
+	}
+
+	/**
+	 * Initialize execution state for a workflow.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $execution_id Execution ID.
+	 * @param string $workflow_name Workflow name.
+	 * @param array  $params Workflow parameters.
+	 * @return void
+	 */
+	protected function init_execution_state( $execution_id, $workflow_name, $params ) {
+		$this->execution_state[ $execution_id ] = array(
+			'workflow'   => $workflow_name,
+			'params'     => $params,
+			'started_at' => current_time( 'mysql' ),
+			'steps'      => array(),
+		);
+
+		// Save to database for persistence across requests.
+		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+		$saved_states[ $execution_id ] = $this->execution_state[ $execution_id ];
+		update_option( 'wp_mcp_ai_workflow_states', $saved_states );
+	}
+
+	/**
+	 * Update execution state for a workflow step.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $execution_id Execution ID.
+	 * @param int    $step_number Step number.
+	 * @param array  $step_result Step result.
+	 * @return void
+	 */
+	protected function update_execution_state( $execution_id, $step_number, $step_result ) {
+		if ( ! isset( $this->execution_state[ $execution_id ] ) ) {
+			return;
+		}
+
+		$this->execution_state[ $execution_id ]['steps'][ $step_number ] = array(
+			'completed_at' => current_time( 'mysql' ),
+			'success'      => isset( $step_result['result']['success'] ) ? $step_result['result']['success'] : false,
+			'retries'      => isset( $step_result['retries'] ) ? $step_result['retries'] : 0,
+		);
+
+		// Update database.
+		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+		$saved_states[ $execution_id ] = $this->execution_state[ $execution_id ];
+		update_option( 'wp_mcp_ai_workflow_states', $saved_states );
+	}
+
+	/**
+	 * Clear execution state for a completed workflow.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $execution_id Execution ID.
+	 * @return void
+	 */
+	protected function clear_execution_state( $execution_id ) {
+		unset( $this->execution_state[ $execution_id ] );
+
+		// Remove from database.
+		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+		unset( $saved_states[ $execution_id ] );
+		update_option( 'wp_mcp_ai_workflow_states', $saved_states );
+	}
+
+	/**
+	 * Resume a workflow from saved state.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string $execution_id Execution ID.
+	 * @param array  $context Execution context.
+	 * @return array Workflow result.
+	 */
+	public function resume_workflow( $execution_id, $context = array() ) {
+		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+
+		if ( ! isset( $saved_states[ $execution_id ] ) ) {
+			return array(
+				'success' => false,
+				'error'   => 'execution_not_found',
+				'message' => __( 'Workflow execution not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$state = $saved_states[ $execution_id ];
+		$last_completed_step = count( $state['steps'] );
+
+		// Resume from next step.
+		return $this->execute_workflow(
+			$state['workflow'],
+			$state['params'],
+			$context,
+			array(
+				'resume_from_step' => $last_completed_step + 1,
+				'execution_id'     => $execution_id,
+			)
+		);
 	}
 
 	/**
