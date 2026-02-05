@@ -63,6 +63,12 @@
 					hasSlashCommandListEndpoint: !!window.mcpAiData.slashCommandListEndpoint,
 					hasNonce: !!window.mcpAiData.nonce
 				});
+				// Log actual endpoint URLs for debugging
+				console.log('[SlashCommands] Endpoint URLs:', {
+					restUrl: window.mcpAiData.restUrl,
+					slashCommandEndpoint: window.mcpAiData.slashCommandEndpoint,
+					slashCommandListEndpoint: window.mcpAiData.slashCommandListEndpoint
+				});
 			}
 
 			// Find chat input elements - support multiple class name conventions
