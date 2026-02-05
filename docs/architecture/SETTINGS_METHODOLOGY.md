@@ -113,21 +113,30 @@ $save_all_tabs = false; // Default behavior
 #### Save Behavior
 
 ```php
-// Simple Settings saves ALL visible fields
+// Simple Settings saves ONLY active tab (after fix)
 $active_tab = 'general';  // Currently viewing General tab
-$save_all_tabs = true;     // Special flag for simple page
+$save_all_tabs = false;    // Changed from true to prevent data loss
 
-// Result: ALL settings from ALL tabs are sanitized
-// Useful for bulk updates and diagnostics
+// Result: Only 'general' tab settings are sanitized and saved
+// Settings from other tabs (tools, orchestration, etc.) are preserved
 ```
+
+**Important:** Prior to this fix, the Simple Settings Page had `save_all_tabs=1` which caused data loss because:
+- Form only displayed General OR Providers fields
+- But handler sanitized ALL tabs (General, Providers, Tools, Orchestration, etc.)
+- Checkboxes from invisible tabs would be treated as unchecked
+- Result: Settings from other tabs could be wiped out
+
+**Fix Applied:** Removed `save_all_tabs=1` flag. Now Simple Settings behaves like Main Dashboard - only saves the active tab.
 
 #### Use Cases
 
 ✅ Troubleshooting settings issues  
-✅ Verifying all saved values  
-✅ Bulk editing multiple settings  
-✅ Checking for missing/incorrect values  
-✅ Advanced users who want flat view  
+✅ Verifying saved values for General or Providers  
+✅ Editing General/Providers settings in table format  
+✅ Checking for missing/incorrect values in visible tabs  
+✅ Advanced users who prefer flat view  
+⚠️ **Not for bulk editing across all tabs** (only shows 2 of 8 tabs)  
 
 ### Comparison Table
 
@@ -138,10 +147,10 @@ $save_all_tabs = true;     // Special flag for simple page
 | **Tabs** | 8 main tabs with subtabs | 2 flat tabs |
 | **UI** | Complex, dynamic, tabbed | Simple, flat, table-based |
 | **Fields Shown** | ~50-80 per tab | All ~350+ fields |
-| **Save Scope** | Active tab only | All visible fields |
+| **Save Scope** | Active tab only | Active tab only (after fix) |
 | **Form Action** | `admin-post.php` | `admin-post.php` |
 | **Handler** | `wp_mcp_ai_save_settings` | `wp_mcp_ai_save_settings` (same) |
-| **Special Flag** | `save_all_tabs=0` | `save_all_tabs=1` |
+| **Special Flag** | `save_all_tabs=0` | `save_all_tabs=0` (after fix) |
 | **Redirect** | Back to same tab | Back to simple settings |
 | **Purpose** | Primary configuration | Diagnostics and verification |
 | **Target Users** | All administrators | Advanced users, developers |
@@ -156,16 +165,15 @@ $save_all_tabs = true;     // Special flag for simple page
 - ✅ You want to see only relevant fields
 
 **Use Simple Settings When:**
-- ✅ Troubleshooting "settings not saving" issues
-- ✅ Verifying what's actually stored in the database
-- ✅ Need to see all settings in one place
-- ✅ Making bulk changes across multiple areas
-- ✅ Comparing settings against documentation
-- ✅ Checking for missing or default values
+- ✅ Troubleshooting General or Providers settings
+- ✅ Verifying what's stored for General/Providers tabs
+- ✅ Need to see General or Providers settings in table format
+- ✅ Prefer simple UI over complex tabs
+- ⚠️ Only works for General and Providers tabs (not all tabs)
 
 ### Technical Implementation
 
-Both pages share the same backend handler but behave differently:
+Both pages share the same backend handler and now behave the same way:
 
 ```php
 // Shared handler: includes/admin/class-wp-mcp-ai-settings-dashboard.php
@@ -173,12 +181,17 @@ public function handle_save_settings() {
     // ...security checks...
     
     $save_all_tabs = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
+    $active_tab = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
     
+    // Both pages now use tab-specific saves (save_all_tabs = false)
     if ( $save_all_tabs ) {
-        // Simple Settings behavior: sanitize ALL tabs
+        // DISABLED: This would sanitize ALL tabs
+        // Dangerous if form doesn't display all fields
         $sections = WP_MCP_AI_Settings_Registry::get_all_sections();
     } else {
-        // Main Dashboard behavior: sanitize ONLY active tab
+        // Standard behavior: sanitize ONLY active tab
+        // Main Dashboard: saves active tab (e.g., 'tools')
+        // Simple Settings: saves active tab ('general' or 'providers')
         $sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
     }
     
@@ -190,6 +203,8 @@ public function handle_save_settings() {
         : self::PAGE_SLUG;
 }
 ```
+
+**Note:** The `save_all_tabs` flag was removed from Simple Settings Page to prevent data loss. It was causing settings from invisible tabs (Tools, Orchestration, etc.) to be cleared because those checkboxes weren't in the form.
 
 ### Data Consistency
 
