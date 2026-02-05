@@ -33,21 +33,21 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @var WP_MCP_AI_Pattern_Workflow_Templates|null
 	 */
-	private static $templates_instance = null;
+	private $templates_instance = null;
 
 	/**
-	 * Initialize the page.
+	 * Constructor.
 	 *
 	 * @since 2.0.0
 	 */
-	public static function init() {
+	public function __construct() {
 		// Register admin menu with priority 26 to ensure parent menu (nvoos-pro-dashboard at priority 25) exists.
-		add_action( 'admin_menu', array( __CLASS__, 'register_page' ), 26 );
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_save_pro_workflow', array( __CLASS__, 'ajax_save_workflow' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_load_pro_workflow', array( __CLASS__, 'ajax_load_workflow' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_delete_pro_workflow', array( __CLASS__, 'ajax_delete_workflow' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_get_workflow_templates', array( __CLASS__, 'ajax_get_templates' ) );
+		add_action( 'admin_menu', array( $this, 'register_page' ), 26 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_save_pro_workflow', array( $this, 'ajax_save_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_load_pro_workflow', array( $this, 'ajax_load_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_delete_pro_workflow', array( $this, 'ajax_delete_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_workflow_templates', array( $this, 'ajax_get_templates' ) );
 	}
 
 	/**
@@ -55,14 +55,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function register_page() {
+	public function register_page() {
 		add_submenu_page(
 			'nvoos-pro-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),
 			__( 'Pro Workflows', 'mcp-ai-wpoos' ),
 			'manage_options',
 			self::PAGE_SLUG,
-			array( __CLASS__, 'render_page' )
+			array( $this, 'render_page' )
 		);
 	}
 
@@ -73,7 +73,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
-	public static function enqueue_assets( $hook ) {
+	public function enqueue_assets( $hook ) {
 		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
 		if ( 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
@@ -117,8 +117,8 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			array(
 				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
 				'nonce'     => wp_create_nonce( 'mcp_ai_pro_workflow_builder' ),
-				'workflows' => self::get_all_workflows(),
-				'templates' => self::get_workflow_templates(),
+				'workflows' => $this->get_all_workflows(),
+				'templates' => $this->get_workflow_templates(),
 			)
 		);
 	}
@@ -128,7 +128,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function render_page() {
+	public function render_page() {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Pro Workflow Builder', 'mcp-ai-wpoos' ); ?></h1>
@@ -144,7 +144,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @return array Workflows.
 	 */
-	protected static function get_all_workflows() {
+	protected function get_all_workflows() {
 		$workflows = get_option( 'wp_mcp_ai_pro_workflows', array() );
 		return is_array( $workflows ) ? $workflows : array();
 	}
@@ -156,17 +156,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @return array Templates.
 	 */
-	protected static function get_workflow_templates() {
+	protected function get_workflow_templates() {
 		// Cache the templates class instance to avoid repeated instantiation.
-		if ( null === self::$templates_instance && class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) ) {
-			self::$templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
+		if ( null === $this->templates_instance && class_exists( 'WP_MCP_AI_Pattern_Workflow_Templates' ) ) {
+			$this->templates_instance = new WP_MCP_AI_Pattern_Workflow_Templates();
 		}
 
-		if ( ! self::$templates_instance ) {
+		if ( ! $this->templates_instance ) {
 			return array();
 		}
 
-		return self::$templates_instance->get_all_templates();
+		return $this->templates_instance->get_all_templates();
 	}
 
 	/**
@@ -174,7 +174,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function ajax_save_workflow() {
+	public function ajax_save_workflow() {
 		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -206,7 +206,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 		$workflow_id = sanitize_key( $workflow['name'] );
 
 		// Get existing workflows.
-		$workflows = self::get_all_workflows();
+		$workflows = $this->get_all_workflows();
 
 		// Add/update workflow.
 		$workflows[ $workflow_id ] = array(
@@ -237,7 +237,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function ajax_load_workflow() {
+	public function ajax_load_workflow() {
 		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -250,7 +250,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Workflow ID required.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflows = self::get_all_workflows();
+		$workflows = $this->get_all_workflows();
 
 		if ( ! isset( $workflows[ $workflow_id ] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
@@ -266,7 +266,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function ajax_delete_workflow() {
+	public function ajax_delete_workflow() {
 		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -279,7 +279,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 			wp_send_json_error( array( 'message' => __( 'Workflow ID required.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$workflows = self::get_all_workflows();
+		$workflows = $this->get_all_workflows();
 
 		if ( ! isset( $workflows[ $workflow_id ] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
@@ -301,14 +301,14 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 *
 	 * @since 2.0.0
 	 */
-	public static function ajax_get_templates() {
+	public function ajax_get_templates() {
 		check_ajax_referer( 'mcp_ai_pro_workflow_builder', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$templates = self::get_workflow_templates();
+		$templates = $this->get_workflow_templates();
 
 		wp_send_json_success( array(
 			'templates' => $templates,
@@ -317,6 +317,6 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 }
 
 // Initialize the pro workflow builder page if pro version is enabled.
-if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-	WP_MCP_AI_Pro_Workflow_Builder_Page::init();
+if ( is_admin() && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
+	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
