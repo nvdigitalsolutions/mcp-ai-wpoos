@@ -566,6 +566,16 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			return array();
 		}
 
+		// Ensure toolkit commands are registered if toolkit manager exists.
+		if ( class_exists( 'WP_MCP_AI_Slash_Command_Toolkit_Manager' ) ) {
+			$toolkit_manager = WP_MCP_AI_Slash_Command_Toolkit_Manager::get_instance();
+			// Force registration if not already done (in case of timing issues).
+			if ( method_exists( $toolkit_manager, 'register_toolkit_commands' ) ) {
+				// The register method is safe to call multiple times as it checks enabled status.
+				$toolkit_manager->register_toolkit_commands();
+			}
+		}
+
 		$commands = $handler->get_commands();
 
 		$formatted = array();
@@ -593,15 +603,38 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		// Get workflows from the orchestrator.
 		$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
 		if ( $orchestrator ) {
+			$handler = wp_mcp_ai_get_slash_command_handler();
 			$orchestrator_workflows = $orchestrator->get_workflows();
+			
 			foreach ( $orchestrator_workflows as $slug => $workflow ) {
-				$workflows[] = array(
-					'name'        => $workflow['name'],
-					'description' => $workflow['description'],
-					'step_count'  => $workflow['steps'],
-					'type'        => 'built-in',
-					'slug'        => $slug,
-				);
+				// Check if workflow can be executed by verifying its commands are available.
+				// If a workflow uses commands from disabled toolkits, we should filter it out.
+				$workflow_available = true;
+				
+				if ( $handler ) {
+					$full_workflow = $orchestrator->get_workflow( $slug );
+					if ( $full_workflow && isset( $full_workflow['steps'] ) ) {
+						foreach ( $full_workflow['steps'] as $step ) {
+							$command_name = isset( $step['command'] ) ? $step['command'] : '';
+							if ( $command_name && ! $handler->command_exists( $command_name ) ) {
+								// Command doesn't exist, likely from disabled toolkit.
+								$workflow_available = false;
+								break;
+							}
+						}
+					}
+				}
+				
+				// Only add workflow if all its commands are available.
+				if ( $workflow_available ) {
+					$workflows[] = array(
+						'name'        => $workflow['name'],
+						'description' => $workflow['description'],
+						'step_count'  => $workflow['steps'],
+						'type'        => 'built-in',
+						'slug'        => $slug,
+					);
+				}
 			}
 		}
 

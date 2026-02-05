@@ -101,6 +101,23 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_available_commands returns all expected commands
+	 */
+	public function test_get_available_commands_returns_all_commands() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method = $reflection->getMethod( 'get_available_commands' );
+		$method->setAccessible( true );
+
+		$commands = $method->invoke( $this->dashboard );
+
+		// Should have all 126 commands (7 base + 119 toolkit).
+		// In test environment, might be fewer if some toolkits are disabled.
+		// But should have at least the 7 base commands + core toolkit commands (38+).
+		$this->assertGreaterThanOrEqual( 38, count( $commands ), 'Should have at least base + core toolkit commands (38)' );
+	}
+
+	/**
 	 * Test dashboard handles missing handler gracefully
 	 */
 	public function test_dashboard_handles_missing_handler() {
