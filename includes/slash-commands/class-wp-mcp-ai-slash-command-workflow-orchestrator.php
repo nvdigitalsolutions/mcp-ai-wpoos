@@ -540,12 +540,17 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		$workflow = $this->workflows[ $workflow_name ];
 		$results  = array();
 		$previous_result = null;
-		$execution_id = uniqid( 'workflow_' );
+		
+		// Use existing execution_id or generate new one with better uniqueness.
+		$execution_id = isset( $options['execution_id'] ) && $options['execution_id'] 
+			? $options['execution_id'] 
+			: wp_generate_uuid4();
 
 		// Parse options.
 		$continue_on_error = isset( $options['continue_on_error'] ) ? $options['continue_on_error'] : false;
 		$save_state = isset( $options['save_state'] ) ? $options['save_state'] : false;
 		$max_retries = isset( $options['max_retries'] ) ? absint( $options['max_retries'] ) : $this->max_retries;
+		$resume_from_step = isset( $options['resume_from_step'] ) ? absint( $options['resume_from_step'] ) : 1;
 
 		// Initialize execution state.
 		if ( $save_state ) {
@@ -553,10 +558,17 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		}
 
 		foreach ( $workflow['steps'] as $index => $step ) {
+			$step_number = $index + 1;
+			
+			// Skip steps if resuming from a later step.
+			if ( $step_number < $resume_from_step ) {
+				continue;
+			}
+
 			// Check if step should be skipped based on condition.
 			if ( $this->should_skip_step( $step, $previous_result, $results ) ) {
 				$results[] = array(
-					'step'    => $index + 1,
+					'step'    => $step_number,
 					'command' => $step['command'],
 					'skipped' => true,
 					'reason'  => isset( $step['condition'] ) ? 'condition_not_met' : 'unknown',
@@ -574,17 +586,18 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			);
 
 			// Store result.
+			$step_index = count( $results );
 			$results[] = array(
-				'step'    => $index + 1,
+				'step'    => $step_number,
 				'command' => $step['command'],
 				'params'  => $step_result['params'],
 				'result'  => $step_result['result'],
 				'retries' => isset( $step_result['retries'] ) ? $step_result['retries'] : 0,
 			);
 
-			// Update execution state.
-			if ( $save_state ) {
-				$this->update_execution_state( $execution_id, $index + 1, $step_result );
+			// Update execution state (batched - only on errors or every 5 steps).
+			if ( $save_state && ( $step_number % 5 === 0 || ! $step_result['result']['success'] ) ) {
+				$this->update_execution_state( $execution_id, $step_number, $step_result );
 			}
 
 			// Check for errors.
@@ -595,10 +608,11 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						$step['on_error']['fallback'],
 						$params,
 						$previous_result,
+						$step_result['result'],
 						$context
 					);
 					$results[] = array(
-						'step'     => $index + 1,
+						'step'     => $step_number,
 						'command'  => $step['on_error']['fallback'],
 						'fallback' => true,
 						'result'   => $fallback_result,
@@ -615,7 +629,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						'message'      => sprintf(
 							/* translators: 1: step number, 2: command name */
 							__( 'Workflow failed at step %1$d (%2$s).', 'mcp-ai-wpoos' ),
-							$index + 1,
+							$step_number,
 							$step['command']
 						),
 						'workflow'     => $workflow_name,
@@ -625,7 +639,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				}
 
 				// Continue on error - mark step as failed but continue.
-				$results[ count( $results ) - 1 ]['continued_on_error'] = true;
+				$results[ $step_index ]['continued_on_error'] = true;
 			}
 
 			$previous_result = $step_result['result'];
@@ -716,6 +730,8 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	protected function execute_step_with_retry( $step, $workflow_params, $previous_result, $context, $max_retries ) {
 		$retries = 0;
 		$resolved_params = $this->resolve_parameters( $step['params'], $workflow_params, $previous_result );
+		$result = null;
+		$retry_delay = apply_filters( 'wp_mcp_ai_workflow_retry_delay', $this->retry_delay, $step );
 
 		while ( $retries <= $max_retries ) {
 			// Build command string.
@@ -732,7 +748,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			$result = $this->handler->execute( $command_string, $context );
 
 			// Check if successful.
-			if ( is_array( $result ) && $result['success'] ) {
+			if ( is_array( $result ) && isset( $result['success'] ) && $result['success'] ) {
 				return array(
 					'result'  => $result,
 					'params'  => $resolved_params,
@@ -743,7 +759,11 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			// Retry if not max attempts yet.
 			if ( $retries < $max_retries ) {
 				$retries++;
-				sleep( $this->retry_delay );
+				// Use exponential backoff if enabled.
+				$delay = apply_filters( 'wp_mcp_ai_workflow_use_exponential_backoff', false ) 
+					? $retry_delay * pow( 2, $retries - 1 ) 
+					: $retry_delay;
+				sleep( $delay );
 				continue;
 			}
 
@@ -751,10 +771,20 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			break;
 		}
 
+		// Return failed result with retry information.
+		if ( ! $result ) {
+			$result = array(
+				'success' => false,
+				'error'   => 'command_execution_failed',
+				'message' => __( 'Command execution failed after retries.', 'mcp-ai-wpoos' ),
+			);
+		}
+
 		return array(
-			'result'  => $result,
-			'params'  => $resolved_params,
-			'retries' => $retries,
+			'result'         => $result,
+			'params'         => $resolved_params,
+			'retries'        => $retries,
+			'retries_maxed'  => true,
 		);
 	}
 
@@ -819,6 +849,16 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			}
 		}
 
+		// Less than condition.
+		if ( isset( $condition['field'] ) && isset( $condition['less_than'] ) ) {
+			$field = $condition['field'];
+			if ( $previous_result && isset( $previous_result['data'][ $field ] ) ) {
+				if ( $previous_result['data'][ $field ] >= $condition['less_than'] ) {
+					return true;
+				}
+			}
+		}
+
 		return false;
 	}
 
@@ -830,11 +870,19 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	 * @param string $command Fallback command.
 	 * @param array  $workflow_params Workflow parameters.
 	 * @param array  $previous_result Previous step result.
+	 * @param array  $error_info Error information from failed step.
 	 * @param array  $context Execution context.
 	 * @return array Fallback result.
 	 */
-	protected function execute_fallback_step( $command, $workflow_params, $previous_result, $context ) {
+	protected function execute_fallback_step( $command, $workflow_params, $previous_result, $error_info, $context ) {
+		// Build command with error context.
 		$command_string = '/' . $command;
+		
+		// Pass error information to fallback command if it can use it.
+		if ( isset( $error_info['error'] ) ) {
+			$command_string .= " --error=\"{$error_info['error']}\"";
+		}
+		
 		return $this->handler->execute( $command_string, $context );
 	}
 
