@@ -43,7 +43,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_returns_array() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -57,7 +57,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_returns_formatted_data() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -81,7 +81,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_includes_registered_commands() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -89,7 +89,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 		// Find help command.
 		$help_found = false;
 		foreach ( $commands as $command ) {
-			if ( $command['name'] === 'help' ) {
+			if ( 'help' === $command['name'] ) {
 				$help_found = true;
 				$this->assertIsArray( $command['aliases'] );
 				$this->assertNotEmpty( $command['description'] );
@@ -98,6 +98,23 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 		}
 
 		$this->assertTrue( $help_found, 'Help command should be registered' );
+	}
+
+	/**
+	 * Test get_available_commands returns all expected commands
+	 */
+	public function test_get_available_commands_returns_all_commands() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method     = $reflection->getMethod( 'get_available_commands' );
+		$method->setAccessible( true );
+
+		$commands = $method->invoke( $this->dashboard );
+
+		// Should have all 126 commands (7 base + 119 toolkit).
+		// In test environment, might be fewer if some toolkits are disabled.
+		// But should have at least the 7 base commands + core toolkit commands (38+).
+		$this->assertGreaterThanOrEqual( 38, count( $commands ), 'Should have at least base + core toolkit commands (38)' );
 	}
 
 	/**
@@ -113,7 +130,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -124,5 +141,87 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 
 		// Restore the handler.
 		$wp_mcp_ai_slash_command_handler = $saved_handler;
+	}
+
+	/**
+	 * Test get_available_workflows returns array
+	 */
+	public function test_get_available_workflows_returns_array() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
+		$method->setAccessible( true );
+
+		$workflows = $method->invoke( $this->dashboard );
+
+		$this->assertIsArray( $workflows );
+	}
+
+	/**
+	 * Test get_available_workflows returns more than 3 workflows
+	 */
+	public function test_get_available_workflows_returns_all_workflows() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
+		$method->setAccessible( true );
+
+		$workflows = $method->invoke( $this->dashboard );
+
+		// Should have more than the 3 hardcoded workflows.
+		// The orchestrator has 27 workflows defined.
+		$this->assertGreaterThan( 3, count( $workflows ), 'Should have more than 3 workflows from orchestrator' );
+	}
+
+	/**
+	 * Test get_available_workflows returns formatted workflow data
+	 */
+	public function test_get_available_workflows_returns_formatted_data() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
+		$method->setAccessible( true );
+
+		$workflows = $method->invoke( $this->dashboard );
+
+		// Should have workflows from orchestrator.
+		$this->assertNotEmpty( $workflows );
+
+		// Check structure of first workflow.
+		if ( ! empty( $workflows ) ) {
+			$workflow = $workflows[0];
+			$this->assertArrayHasKey( 'name', $workflow );
+			$this->assertArrayHasKey( 'description', $workflow );
+			$this->assertArrayHasKey( 'step_count', $workflow );
+			$this->assertArrayHasKey( 'type', $workflow );
+			$this->assertArrayHasKey( 'slug', $workflow );
+		}
+	}
+
+	/**
+	 * Test get_available_workflows includes orchestrator workflows
+	 */
+	public function test_get_available_workflows_includes_orchestrator_workflows() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->dashboard );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
+		$method->setAccessible( true );
+
+		$workflows = $method->invoke( $this->dashboard );
+
+		// Find a known workflow from the orchestrator.
+		$content_pipeline_found = false;
+		foreach ( $workflows as $workflow ) {
+			if ( 'content_pipeline' === $workflow['slug'] ) {
+				$content_pipeline_found = true;
+				$this->assertEquals( 'built-in', $workflow['type'] );
+				$this->assertNotEmpty( $workflow['name'] );
+				$this->assertNotEmpty( $workflow['description'] );
+				$this->assertGreaterThan( 0, $workflow['step_count'] );
+				break;
+			}
+		}
+
+		$this->assertTrue( $content_pipeline_found, 'Content pipeline workflow from orchestrator should be included' );
 	}
 }
