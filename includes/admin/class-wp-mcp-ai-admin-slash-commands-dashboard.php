@@ -590,32 +590,20 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	private function get_available_workflows() {
 		$workflows = array();
 
-		// Built-in workflows.
-		$built_in = array(
-			'daily-review' => array(
-				'name'        => 'Daily Content Review',
-				'description' => 'Review draft posts and perform basic checks',
-				'step_count'  => 2,
-				'type'        => 'built-in',
-				'slug'        => 'daily-review',
-			),
-			'publish-ready' => array(
-				'name'        => 'Check and Publish Ready Posts',
-				'description' => 'Find draft posts ready to publish and ship them',
-				'step_count'  => 2,
-				'type'        => 'built-in',
-				'slug'        => 'publish-ready',
-			),
-			'site-health' => array(
-				'name'        => 'Site Health Check',
-				'description' => 'Comprehensive site health and performance check',
-				'step_count'  => 3,
-				'type'        => 'built-in',
-				'slug'        => 'site-health',
-			),
-		);
-
-		$workflows = array_merge( $workflows, array_values( $built_in ) );
+		// Get workflows from the orchestrator.
+		$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
+		if ( $orchestrator ) {
+			$orchestrator_workflows = $orchestrator->get_workflows();
+			foreach ( $orchestrator_workflows as $slug => $workflow ) {
+				$workflows[] = array(
+					'name'        => $workflow['name'],
+					'description' => $workflow['description'],
+					'step_count'  => $workflow['steps'],
+					'type'        => 'built-in',
+					'slug'        => $slug,
+				);
+			}
+		}
 
 		// Custom workflows from uploads directory.
 		$uploads_dir = wp_upload_dir();
@@ -623,15 +611,17 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 		if ( is_dir( $workflows_dir ) ) {
 			$files = glob( $workflows_dir . '/*.yml' );
-			foreach ( $files as $file ) {
-				$slug = basename( $file, '.yml' );
-				$workflows[] = array(
-					'name'        => ucwords( str_replace( array( '-', '_' ), ' ', $slug ) ),
-					'description' => 'Custom workflow',
-					'step_count'  => '?',
-					'type'        => 'custom',
-					'slug'        => $slug,
-				);
+			if ( is_array( $files ) ) {
+				foreach ( $files as $file ) {
+					$slug = basename( $file, '.yml' );
+					$workflows[] = array(
+						'name'        => ucwords( str_replace( array( '-', '_' ), ' ', $slug ) ),
+						'description' => 'Custom workflow',
+						'step_count'  => '?',
+						'type'        => 'custom',
+						'slug'        => $slug,
+					);
+				}
 			}
 		}
 
