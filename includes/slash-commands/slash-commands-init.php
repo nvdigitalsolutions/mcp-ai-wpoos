@@ -518,8 +518,13 @@ function wp_mcp_ai_register_slash_command_scripts() {
 
 	// Localize script with REST API data.
 	// Build endpoint URLs using a single rest_url() call + string concatenation.
-	// This prevents WordPress filters or configurations from duplicating the namespace.
+	// Some WordPress configurations or filters can cause the namespace to be duplicated.
+	// We programmatically remove any duplication to ensure clean URLs.
 	$base_url = trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) );
+	
+	// Remove any namespace duplication that may have occurred.
+	// This handles edge cases where rest_url() with namespace returns duplicated paths.
+	$base_url = preg_replace( '#(/mcp-ai/v1){2,}/#', '/mcp-ai/v1/', $base_url );
 	
 	wp_localize_script(
 		'mcp-ai-slash-commands',
