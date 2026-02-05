@@ -43,7 +43,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_returns_array() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -57,7 +57,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_returns_formatted_data() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -81,7 +81,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_includes_registered_commands() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -89,7 +89,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 		// Find help command.
 		$help_found = false;
 		foreach ( $commands as $command ) {
-			if ( $command['name'] === 'help' ) {
+			if ( 'help' === $command['name'] ) {
 				$help_found = true;
 				$this->assertIsArray( $command['aliases'] );
 				$this->assertNotEmpty( $command['description'] );
@@ -106,7 +106,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_commands_returns_all_commands() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -130,7 +130,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_commands' );
+		$method     = $reflection->getMethod( 'get_available_commands' );
 		$method->setAccessible( true );
 
 		$commands = $method->invoke( $this->dashboard );
@@ -149,7 +149,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_workflows_returns_array() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_workflows' );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
 		$method->setAccessible( true );
 
 		$workflows = $method->invoke( $this->dashboard );
@@ -163,7 +163,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_workflows_returns_all_workflows() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_workflows' );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
 		$method->setAccessible( true );
 
 		$workflows = $method->invoke( $this->dashboard );
@@ -179,7 +179,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_workflows_returns_formatted_data() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_workflows' );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
 		$method->setAccessible( true );
 
 		$workflows = $method->invoke( $this->dashboard );
@@ -204,7 +204,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 	public function test_get_available_workflows_includes_orchestrator_workflows() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'get_available_workflows' );
+		$method     = $reflection->getMethod( 'get_available_workflows' );
 		$method->setAccessible( true );
 
 		$workflows = $method->invoke( $this->dashboard );
@@ -212,7 +212,7 @@ class Test_Admin_Slash_Commands_Dashboard extends WP_UnitTestCase {
 		// Find a known workflow from the orchestrator.
 		$content_pipeline_found = false;
 		foreach ( $workflows as $workflow ) {
-			if ( $workflow['slug'] === 'content_pipeline' ) {
+			if ( 'content_pipeline' === $workflow['slug'] ) {
 				$content_pipeline_found = true;
 				$this->assertEquals( 'built-in', $workflow['type'] );
 				$this->assertNotEmpty( $workflow['name'] );

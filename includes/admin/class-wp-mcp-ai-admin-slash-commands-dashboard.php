@@ -130,6 +130,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 		// Sanitize and validate active tab.
 		$allowed_tabs = array( 'commands', 'workflows', 'history', 'test' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab selection, no state change.
 		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'commands';
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'commands';
@@ -192,8 +193,8 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 */
 	private function render_commands_tab( $commands ) {
 		// Group commands by toolkit.
-		$toolkit_commands = $this->group_commands_by_toolkit( $commands );
-		$global_commands = $this->get_global_commands( $commands );
+		$toolkit_commands  = $this->group_commands_by_toolkit( $commands );
+		$global_commands   = $this->get_global_commands( $commands );
 		?>
 		<div class="commands-tab">
 			<h2><?php esc_html_e( 'Available Commands', 'mcp-ai-wpoos' ); ?></h2>
@@ -601,16 +602,16 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		$workflows = array();
 
 		// Get workflows from the orchestrator.
-		$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
+		$orchestrator           = wp_mcp_ai_get_workflow_orchestrator();
 		if ( $orchestrator ) {
-			$handler = wp_mcp_ai_get_slash_command_handler();
+			$handler                = wp_mcp_ai_get_slash_command_handler();
 			$orchestrator_workflows = $orchestrator->get_workflows();
-			
+
 			foreach ( $orchestrator_workflows as $slug => $workflow ) {
 				// Check if workflow can be executed by verifying its commands are available.
 				// If a workflow uses commands from disabled toolkits, we should filter it out.
 				$workflow_available = true;
-				
+
 				if ( $handler ) {
 					$full_workflow = $orchestrator->get_workflow( $slug );
 					if ( $full_workflow && isset( $full_workflow['steps'] ) ) {
@@ -624,7 +625,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 						}
 					}
 				}
-				
+
 				// Only add workflow if all its commands are available.
 				if ( $workflow_available ) {
 					$workflows[] = array(
@@ -639,14 +640,14 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		}
 
 		// Custom workflows from uploads directory.
-		$uploads_dir = wp_upload_dir();
+		$uploads_dir   = wp_upload_dir();
 		$workflows_dir = trailingslashit( $uploads_dir['basedir'] ) . 'mcp-ai/workflows';
 
 		if ( is_dir( $workflows_dir ) ) {
 			$files = glob( $workflows_dir . '/*.yml' );
 			if ( is_array( $files ) ) {
 				foreach ( $files as $file ) {
-					$slug = basename( $file, '.yml' );
+					$slug        = basename( $file, '.yml' );
 					$workflows[] = array(
 						'name'        => ucwords( str_replace( array( '-', '_' ), ' ', $slug ) ),
 						'description' => 'Custom workflow',
@@ -671,9 +672,12 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		$history = get_option( 'wp_mcp_ai_slash_command_history', array() );
 
 		// Sort by timestamp descending.
-		usort( $history, function( $a, $b ) {
-			return $b['timestamp_raw'] <=> $a['timestamp_raw'];
-		});
+		usort(
+			$history,
+			function ( $a, $b ) {
+				return $b['timestamp_raw'] <=> $a['timestamp_raw'];
+			}
+		);
 
 		return array_slice( $history, 0, $limit );
 	}
@@ -741,17 +745,19 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 					'command_execution_error',
 					sprintf( 'Command execution failed: %s', $result->get_error_message() ),
 					array(
-						'command'     => $command,
-						'error_code'  => $result->get_error_code(),
-						'error_data'  => $result->get_error_data(),
-						'user_id'     => get_current_user_id(),
+						'command'    => $command,
+						'error_code' => $result->get_error_code(),
+						'error_data' => $result->get_error_data(),
+						'user_id'    => get_current_user_id(),
 					)
 				);
 			}
-			wp_send_json_error( array(
-				'message' => $result->get_error_message(),
-				'output'  => '',
-			) );
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+					'output'  => '',
+				)
+			);
 		}
 
 		// Log success.
@@ -790,7 +796,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 					)
 				);
 			}
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+			wp_send_json_error(
+				array(
+					'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),
+				)
+			);
 		}
 
 		$workflow = isset( $_POST['workflow'] ) ? sanitize_text_field( wp_unslash( $_POST['workflow'] ) ) : '';
@@ -835,17 +845,19 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 					'workflow_execution_error',
 					sprintf( 'Workflow execution failed: %s', $result->get_error_message() ),
 					array(
-						'workflow'    => $workflow,
-						'error_code'  => $result->get_error_code(),
-						'error_data'  => $result->get_error_data(),
-						'user_id'     => get_current_user_id(),
+						'workflow'   => $workflow,
+						'error_code' => $result->get_error_code(),
+						'error_data' => $result->get_error_data(),
+						'user_id'    => get_current_user_id(),
 					)
 				);
 			}
-			wp_send_json_error( array(
-				'message' => $result->get_error_message(),
-				'output'  => '',
-			) );
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+					'output'  => '',
+				)
+			);
 		}
 
 		// Log success.
@@ -877,12 +889,14 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$limit = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+		$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
 		$history = $this->get_execution_history( $limit );
 
-		wp_send_json_success( array(
-			'history' => $history,
-		) );
+		wp_send_json_success(
+			array(
+				'history' => $history,
+			)
+		);
 	}
 
 	/**
@@ -915,12 +929,18 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		}
 
 		if ( ! $entry ) {
-			wp_send_json_error( array( 'message' => __( 'History entry not found.', 'mcp-ai-wpoos' ) ) );
+			wp_send_json_error(
+				array(
+					'message' => __( 'History entry not found.', 'mcp-ai-wpoos' ),
+				)
+			);
 		}
 
-		wp_send_json_success( array(
-			'entry' => $entry,
-		) );
+		wp_send_json_success(
+			array(
+				'entry' => $entry,
+			)
+		);
 	}
 
 	/**
@@ -937,9 +957,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 		delete_option( 'wp_mcp_ai_slash_command_history' );
 
-		wp_send_json_success( array(
-			'message' => __( 'History cleared successfully.', 'mcp-ai-wpoos' ),
-		) );
+		wp_send_json_success(
+			array(
+				'message' => __( 'History cleared successfully.', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 
 	/**
@@ -953,7 +975,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	private function log_execution( $type, $command, $result ) {
 		$history = get_option( 'wp_mcp_ai_slash_command_history', array() );
 
-		$user = wp_get_current_user();
+		$user  = wp_get_current_user();
 		$entry = array(
 			'id'            => uniqid( 'exec_', true ),
 			'timestamp'     => current_time( 'Y-m-d H:i:s' ),
