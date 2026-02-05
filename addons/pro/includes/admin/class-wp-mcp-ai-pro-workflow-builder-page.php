@@ -337,19 +337,9 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	}
 }
 
-/**
- * Initialize the pro workflow builder page after all dependencies are loaded.
- *
- * This function is hooked to 'admin_init' (priority 10) to ensure all required
- * classes (WP_MCP_AI_Pattern_Workflow_Templates, WP_MCP_AI_Pattern_Constants)
- * are loaded before instantiation.
- *
- * @since 2.0.0
- */
-function wp_mcp_ai_pro_init_workflow_builder_page() {
-	if ( ! is_admin() || ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
-		return;
-	}
+// Initialize the admin interface.
+// Instantiate directly (not on admin_init) so the admin_menu hook can fire properly.
+// The admin_menu hook fires before admin_init, so instantiation must happen earlier.
+if ( is_admin() && ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
 	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
-add_action( 'admin_init', 'wp_mcp_ai_pro_init_workflow_builder_page', 10 );
