@@ -451,7 +451,7 @@ class WP_MCP_AI_Vault_Item_CPT {
 		}
 
 		return array_map(
-			function( $field ) {
+			function ( $field ) {
 				if ( ! is_array( $field ) ) {
 					return null;
 				}
@@ -619,9 +619,9 @@ class WP_MCP_AI_Vault_Item_CPT {
 	 * @param WP_Post $post Current post object.
 	 */
 	public function render_item_settings_metabox( $post ) {
-		$item_type    = get_post_meta( $post->ID, '_vault_item_type', true );
-		$folder_id    = get_post_meta( $post->ID, '_vault_folder_id', true );
-		$is_favorite  = get_post_meta( $post->ID, '_vault_favorite', true );
+		$item_type   = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id   = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$is_favorite = get_post_meta( $post->ID, '_vault_favorite', true );
 
 		// Default to 'login' type.
 		if ( empty( $item_type ) ) {
@@ -780,7 +780,7 @@ class WP_MCP_AI_Vault_Item_CPT {
 		// Save password (encrypted) - only if provided.
 		if ( isset( $_POST['vault_password'] ) && ! empty( $_POST['vault_password'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password should not be sanitized as it may contain special characters.
-			$password = wp_unslash( $_POST['vault_password'] );
+			$password           = wp_unslash( $_POST['vault_password'] );
 			$encrypted_password = $encryption_service->encrypt( $password, $user_id );
 			if ( ! is_wp_error( $encrypted_password ) ) {
 				update_post_meta( $post_id, '_vault_password_encrypted', wp_json_encode( $encrypted_password ) );
