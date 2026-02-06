@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
-        'version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
-        'reference' => 'd40f78e1aa94bd98a938fcecc7e79e6a21094534',
+        'pretty_version' => 'dev-copilot/perform-code-review-and-update-docs',
+        'version' => 'dev-copilot/perform-code-review-and-update-docs',
+        'reference' => 'd8790be7d38d695782c186f9d5593ce3c5d0c3d3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
-            'version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
-            'reference' => 'd40f78e1aa94bd98a938fcecc7e79e6a21094534',
+            'pretty_version' => 'dev-copilot/perform-code-review-and-update-docs',
+            'version' => 'dev-copilot/perform-code-review-and-update-docs',
+            'reference' => 'd8790be7d38d695782c186f9d5593ce3c5d0c3d3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
