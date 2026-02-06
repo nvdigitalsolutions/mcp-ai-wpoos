@@ -773,6 +773,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-policy.php',
 				// Chart.js data visualization tool (enhanced with NPM package).
 				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-health-chart.php',
+				// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
+				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-health-reminder.php',
+				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-track-vaccinations.php',
+				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php',
+				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-fhir-data.php',
+				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 		}
