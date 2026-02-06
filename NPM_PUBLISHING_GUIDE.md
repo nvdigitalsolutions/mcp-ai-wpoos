@@ -1,6 +1,15 @@
-# GitHub Packages Publishing Guide
+# Package Publishing Guide
 
-This guide explains how to publish the NPM packages from this repository to GitHub Packages.
+This guide explains how to publish the NPM packages from this repository to **both NPM and GitHub Packages**.
+
+## Dual Publishing Strategy
+
+These public packages are published to **two registries** for maximum reach:
+
+1. **NPM Registry** - Public, no authentication needed for consumers
+2. **GitHub Packages** - Integrated with repository, backup distribution
+
+Both workflows are triggered automatically by the same git tags.
 
 ## Available Packages
 
@@ -20,39 +29,30 @@ The repository contains 3 NPM packages in the `packages/` directory:
 
 ## Prerequisites
 
-Before publishing, ensure:
+### For NPM Publishing
+
+1. **NPM Token Required**
+   - Go to repository Settings → Secrets and variables → Actions
+   - Add a secret named `NPM_TOKEN`
+   - Value should be your NPM access token from https://www.npmjs.com/settings/tokens
+   - Token needs "Automation" or "Publish" permissions
+
+2. **NPM Organization**
+   - The `@nvdigitalsolutions` organization must exist on NPM
+   - Or update package names in `package.json` files
+
+### For GitHub Packages Publishing
 
 1. **GitHub Packages Permissions**
    - The workflow uses `GITHUB_TOKEN` which is automatically provided by GitHub Actions
    - No additional secrets need to be configured
    - The repository must have packages write permissions (already configured in workflow)
 
-2. **Package Registry Configuration**
-   - All packages are configured to publish to GitHub Packages registry
-   - Registry URL: `https://npm.pkg.github.com`
-   - Packages are scoped to `@nvdigitalsolutions`
-
 ## Publishing Methods
 
-### Method 1: GitHub UI (Recommended)
+### Method 1: Git Tag (Recommended - Triggers Both)
 
-This is the easiest method and allows dry-run testing.
-
-1. Go to the repository on GitHub
-2. Click on the **Actions** tab
-3. Select **"Publish Alpha to GitHub Packages"** workflow from the left sidebar
-4. Click **"Run workflow"** button (top right)
-5. Fill in the form:
-   - **Use workflow from**: Select your branch (e.g., `main` or your feature branch)
-   - **Alpha version to publish**: Enter version like `0.1.0-alpha.2`
-   - **Dry run**: Check this box to test without publishing
-6. Click **"Run workflow"** to start
-
-**Dry Run**: Always test with dry run first to verify the build works!
-
-### Method 2: Git Tag
-
-You can trigger the workflow by pushing a git tag:
+This is the simplest method and triggers **both** NPM and GitHub Packages workflows simultaneously:
 
 ```bash
 # Create and push an alpha tag
@@ -60,23 +60,47 @@ git tag v0.1.0-alpha.2
 git push origin v0.1.0-alpha.2
 ```
 
-The workflow will automatically:
-- Detect the version from the tag
-- Update all package.json files
-- Build all three packages
-- Publish to NPM with `@alpha` tag
+**Both workflows trigger automatically:**
+- ✅ NPM workflow publishes to NPM registry
+- ✅ GitHub Packages workflow publishes to GitHub Packages
+
+### Method 2: GitHub UI (Manual Trigger)
+
+You can manually trigger either workflow for testing:
+
+**For NPM Publishing:**
+1. Go to the repository on GitHub
+2. Click on the **Actions** tab
+3. Select **"Publish Alpha to NPM"** workflow
+4. Click **"Run workflow"** button (top right)
+5. Fill in the form:
+   - **Alpha version to publish**: Enter version like `0.1.0-alpha.2`
+   - **Dry run**: Check this box to test without publishing
+6. Click **"Run workflow"** to start
+
+**For GitHub Packages Publishing:**
+1. Follow same steps above
+2. Select **"Publish Alpha to GitHub Packages"** workflow instead
+
+**Dry Run**: Always test with dry run first to verify the build works!
 
 ### Method 3: GitHub CLI
 
 If you have GitHub CLI installed:
 
 ```bash
-# Trigger workflow with specific version
+# Trigger NPM workflow with specific version
+gh workflow run npm-publish.yml \
+  -f version=0.1.0-alpha.2 \
+  -f dry_run=false
+
+# Trigger GitHub Packages workflow
 gh workflow run npm-publish-alpha.yml \
   -f version=0.1.0-alpha.2 \
   -f dry_run=false
 
 # Check workflow status
+gh run list --workflow=npm-publish.yml
 gh run list --workflow=npm-publish-alpha.yml
 ```
 
@@ -87,15 +111,31 @@ gh run list --workflow=npm-publish-alpha.yml
    - Creates `dist/` directory with compiled code
    - Generates TypeScript definitions
 3. **Verify**: Packages are verified with `npm pack --dry-run`
-4. **Publish**: Each package is published to GitHub Packages with `@alpha` tag
-   - Published to GitHub Packages registry
-   - Accessible via `npm install @nvdigitalsolutions/nvoos-storage@alpha`
+4. **Publish**: Each package is published with `@alpha` tag
+   - **NPM workflow** → `https://registry.npmjs.org` (public)
+   - **GitHub Packages workflow** → `https://npm.pkg.github.com`
 
 ## After Publishing
 
-Once published, users can install the packages from GitHub Packages:
+### Installing from NPM (Easiest)
 
-### Setup .npmrc
+No authentication needed - just install:
+
+```bash
+# Install latest alpha version
+npm install @nvdigitalsolutions/nvoos-storage@alpha
+npm install @nvdigitalsolutions/nvoos-markdown@alpha
+npm install @nvdigitalsolutions/nvoos-events@alpha
+
+# Install specific alpha version
+npm install @nvdigitalsolutions/nvoos-storage@0.1.0-alpha.2
+```
+
+### Installing from GitHub Packages
+
+Requires authentication setup:
+
+#### Setup .npmrc
 
 Create or update `.npmrc` file in your project:
 
@@ -103,7 +143,7 @@ Create or update `.npmrc` file in your project:
 @nvdigitalsolutions:registry=https://npm.pkg.github.com
 ```
 
-### Authenticate
+#### Authenticate
 
 You'll need a GitHub Personal Access Token with `read:packages` scope:
 
@@ -116,7 +156,7 @@ npm login --registry=https://npm.pkg.github.com
 # Email: Your email
 ```
 
-### Install Packages
+#### Install Packages
 
 ```bash
 # Install latest alpha version
@@ -144,13 +184,23 @@ When ready for production:
 
 ## Troubleshooting
 
-### Workflow Not Showing Up
+### Workflows Not Showing Up
 
-If the workflow doesn't appear in GitHub Actions:
-1. Ensure the workflow file exists: `.github/workflows/npm-publish-alpha.yml`
-2. Ensure the file has valid YAML syntax
-3. The workflow needs at least one successful run to appear in the UI
+If workflows don't appear in GitHub Actions:
+1. Ensure workflow files exist: 
+   - `.github/workflows/npm-publish.yml` (NPM)
+   - `.github/workflows/npm-publish-alpha.yml` (GitHub Packages)
+2. Ensure files have valid YAML syntax
+3. Workflows need at least one successful run to appear in the UI
 4. Try pushing to the main branch first
+
+### NPM Publishing Fails
+
+Common issues:
+- **Authentication Error**: Verify `NPM_TOKEN` secret is set correctly in repository settings
+- **Package Name Conflict**: Package name might already exist on NPM
+- **Permissions Error**: NPM token needs "Automation" or "Publish" permissions
+- **Organization Not Found**: `@nvdigitalsolutions` org must exist on NPM
 
 ### GitHub Packages Publishing Fails
 
@@ -201,20 +251,36 @@ cd ../..
 
 ## Workflow Configuration
 
-The workflow is configured in `.github/workflows/npm-publish-alpha.yml`
+Two separate workflows handle publishing:
+
+### NPM Workflow (`.github/workflows/npm-publish.yml`)
 
 Key features:
+- ✅ Publishes to public NPM registry
+- ✅ Requires `NPM_TOKEN` secret
 - ✅ Automated version updates
 - ✅ Build verification
 - ✅ Dry run support
 - ✅ Package content verification
-- ✅ GitHub Packages publishing
+- ✅ Public access by default
 - ✅ Alpha tag for pre-release versions
-- ✅ Automatic authentication via GITHUB_TOKEN
+
+### GitHub Packages Workflow (`.github/workflows/npm-publish-alpha.yml`)
+
+Key features:
+- ✅ Publishes to GitHub Packages registry
+- ✅ Uses automatic `GITHUB_TOKEN` (no setup needed)
+- ✅ Automated version updates
+- ✅ Build verification
+- ✅ Dry run support
+- ✅ Package content verification
+- ✅ Alpha tag for pre-release versions
+- ✅ Integrated repository permissions
 
 ## Support
 
 For issues or questions:
 - Repository: https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
+- NPM Packages: https://www.npmjs.com/org/nvdigitalsolutions
 - GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages
