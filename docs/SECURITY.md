@@ -167,6 +167,203 @@ The plugin supports multiple authentication methods:
 
 Choose the authentication method appropriate for your security requirements.
 
+## Threat Model
+
+### Security Boundaries
+
+The plugin defines the following trust boundaries:
+
+1. **WordPress Admin Area**
+   - **Trust Level:** Trusted
+   - **Access Control:** WordPress capabilities (manage_options, edit_posts)
+   - **Data Flow:** Admin → Plugin → AI Providers → Admin
+
+2. **Public REST API Endpoints**
+   - **Trust Level:** Untrusted
+   - **Access Control:** Authentication required (except CORS preflight and Federation Directory)
+   - **Data Flow:** External → Plugin → (Authentication) → Internal Systems
+
+3. **Federation Directory**
+   - **Trust Level:** Public
+   - **Access Control:** Rate-limited public access (60 requests/minute)
+   - **Data Flow:** External → Plugin → Peer Metadata (non-sensitive)
+
+4. **AI Provider APIs**
+   - **Trust Level:** Semi-trusted
+   - **Access Control:** API keys (encrypted storage)
+   - **Data Flow:** Plugin → AI Provider → Plugin
+
+### Attack Vectors
+
+#### 1. API Enumeration
+
+**Threat:** Attacker enumerates federation peers via `/ai-dir/v1/peers` endpoint.
+
+**Likelihood:** Medium  
+**Impact:** Low (intentional disclosure of peer metadata)  
+**Mitigation:**
+- Rate limiting (60 req/min) - **Implemented v1.1.1**
+- Only non-sensitive peer metadata exposed
+- Health monitoring alerts on unusual access patterns
+- Admin bypass for legitimate operations
+
+#### 2. Rate Limit Bypass
+
+**Threat:** Attacker bypasses rate limiting via IP rotation or proxies.
+
+**Likelihood:** Medium  
+**Impact:** Medium (excessive resource usage)  
+**Mitigation:**
+- IP-based rate limiting with transients
+- Cloudflare or WAF for additional protection (recommended)
+- Monitoring and alerting for unusual patterns
+- Rate limit headers (X-RateLimit-*) for transparency
+
+#### 3. Credential Theft
+
+**Threat:** Attacker gains access to encrypted API keys in database.
+
+**Likelihood:** Low  
+**Impact:** High (compromise of AI provider accounts)  
+**Mitigation:**
+- AES-256-CBC encryption with random IVs
+- Master key rotation capability
+- WordPress database security best practices
+- Monitor for unauthorized API usage
+- Regular key rotation recommended
+
+#### 4. SSE Connection Exhaustion
+
+**Threat:** Attacker opens many SSE connections to exhaust server resources.
+
+**Likelihood:** Medium  
+**Impact:** High (denial of service)  
+**Mitigation:**
+- Rate limiting on SSE endpoint
+- 5-minute maximum connection duration
+- Authentication required for SSE connections
+- Per-user connection limits (planned v1.2.0)
+- Server resource monitoring
+
+#### 5. Tool Execution Abuse
+
+**Threat:** Authorized user executes tools maliciously (e.g., mass deletion).
+
+**Likelihood:** Low  
+**Impact:** High (data loss)  
+**Mitigation:**
+- Tool-level capability checks
+- Action confirmation for destructive operations
+- Audit logging of all tool executions
+- Tool result validation
+- Principle of least privilege
+
+#### 6. Cross-Site Scripting (XSS)
+
+**Threat:** Attacker injects malicious scripts via user input.
+
+**Likelihood:** Low  
+**Impact:** High (session hijacking, data theft)  
+**Mitigation:**
+- Input sanitization (sanitize_text_field, wp_kses_post)
+- Output escaping (esc_html, esc_url, esc_attr)
+- Content Security Policy headers recommended
+- Nonce validation on all forms
+- Double-escaping for user-generated content
+
+#### 7. SQL Injection
+
+**Threat:** Attacker injects SQL via unsanitized input.
+
+**Likelihood:** Very Low  
+**Impact:** Critical (database compromise)  
+**Mitigation:**
+- Parameterized queries ($wpdb->prepare)
+- Input validation and type checking
+- WordPress database abstraction layer
+- No direct SQL execution
+- Regular security audits
+
+### Data Classification
+
+| Data Type | Classification | Storage | Encryption | Access Control |
+|-----------|---------------|---------|------------|----------------|
+| API Keys | **Critical** | Database | ✅ AES-256-CBC | Admin only |
+| User Messages | **Sensitive** | Database/localStorage | ❌ (encrypted in transit) | User + Admin |
+| Chat Transcripts | **Sensitive** | Database | ❌ (encrypted in transit) | User + Admin |
+| Peer Metadata | **Public** | Database | ❌ | Public (rate-limited) |
+| Tool Configurations | **Internal** | Database | ❌ | Admin only |
+| User Credentials | **Critical** | WordPress | ✅ bcrypt | WordPress core |
+
+### Security Assumptions
+
+The plugin assumes:
+
+1. **WordPress Core is secure** - Up-to-date installation with latest security patches
+2. **Server is hardened** - HTTPS enabled, proper file permissions (644/755)
+3. **Database is secured** - Strong passwords, restricted network access
+4. **AI Providers are trustworthy** - OpenAI, Google Gemini, Anthropic, etc.
+5. **Admins are trusted** - manage_options capability holders are vetted
+6. **Network is secure** - SSL/TLS for all external communications
+
+### Out of Scope
+
+The following are **not** protected by the plugin:
+
+1. **WordPress Core vulnerabilities** - User must keep WordPress updated
+2. **Server-level attacks** - DDoS, infrastructure compromise, OS vulnerabilities
+3. **Client-side attacks** - Compromised browser, malware, keyloggers
+4. **Social engineering** - Phishing, credential theft via deception
+5. **Physical access** - Server room access, disk theft, memory dumps
+6. **Third-party plugin vulnerabilities** - JetEngine, WooCommerce, Elementor security
+
+## Incident Response
+
+### Security Incident Classification
+
+| Severity | Examples | Response Time |
+|----------|----------|---------------|
+| **Critical** | API key theft, database breach, SQL injection | < 1 hour |
+| **High** | XSS/CSRF vulnerabilities, authentication bypass | < 4 hours |
+| **Medium** | Rate limit bypass, information disclosure | < 24 hours |
+| **Low** | Minor configuration issues, documentation gaps | < 7 days |
+
+### Incident Response Steps
+
+1. **Detect** - Monitor logs, user reports, automated scanning, rate limit violations
+2. **Contain** - Disable affected features, rotate credentials, block malicious IPs
+3. **Investigate** - Determine scope, identify root cause, assess data exposure
+4. **Remediate** - Deploy fix, verify resolution, update affected users
+5. **Document** - Create incident report, update procedures, share lessons learned
+6. **Communicate** - Notify affected users if necessary (GDPR/privacy laws)
+
+### Security Monitoring
+
+**Recommended monitoring:**
+
+- **API Usage Patterns** - Unusual spikes or geographic distribution changes
+- **Failed Authentication Attempts** - Potential brute force attacks (>10/min)
+- **Rate Limit Violations** - Repeated 429 responses from same IPs (>5/min)
+- **Error Rates** - Increased 4xx/5xx responses (>1% of requests)
+- **Tool Execution Patterns** - Unusual tool usage or repeated failures
+- **Database Performance** - Slow queries (>1s), excessive connections
+- **SSE Connections** - Unusual connection counts or long-lived connections
+
+### Security Contact
+
+Report security vulnerabilities to: **security@nvdigitalsolutions.com**
+
+Include:
+- Vulnerability description and severity assessment
+- Steps to reproduce with proof-of-concept
+- Affected versions and configurations
+- Suggested mitigation if available
+
+Expected response times:
+- Initial acknowledgment: 48 hours
+- Severity assessment: 72 hours
+- Fix timeline: Critical (7 days), High (14 days), Medium (30 days)
+
 ## Security Checklist for Production Deployment
 
 - [ ] SSL/TLS certificate installed and configured
