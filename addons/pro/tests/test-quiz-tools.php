@@ -850,6 +850,124 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test delete_quiz tool basic functionality.
+	 */
+	public function test_delete_quiz() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Quiz to Delete',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test question',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Verify quiz exists.
+		$this->assertNotNull( get_post( $quiz_id ) );
+
+		// Delete the quiz using the tool.
+		$tool   = new WP_MCP_AI_Tool_Delete_Quiz();
+		$result = $tool->execute(
+			array( 'quiz_id' => $quiz_id ),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertEquals( $quiz_id, $result['quiz_id'] );
+
+		// Verify quiz is deleted.
+		$this->assertNull( get_post( $quiz_id ) );
+	}
+
+	/**
+	 * Test delete_quiz requires permission.
+	 */
+	public function test_delete_quiz_requires_permission() {
+		$admin_user      = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$subscriber_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Quiz to Delete',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		// Try to delete as subscriber.
+		$tool   = new WP_MCP_AI_Tool_Delete_Quiz();
+		$result = $tool->execute(
+			array( 'quiz_id' => $quiz_id ),
+			array( 'user_id' => $subscriber_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+
+		// Verify quiz still exists.
+		$this->assertNotNull( get_post( $quiz_id ) );
+	}
+
+	/**
+	 * Test delete_quiz validates quiz ID.
+	 */
+	public function test_delete_quiz_validates_quiz_id() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Test with missing quiz_id.
+		$tool   = new WP_MCP_AI_Tool_Delete_Quiz();
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_id', $result->get_error_code() );
+
+		// Test with invalid quiz_id.
+		$result = $tool->execute(
+			array( 'quiz_id' => 999999 ),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_quiz', $result->get_error_code() );
+
+		// Test with wrong post type.
+		$regular_post = $this->factory->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+			)
+		);
+
+		$result = $tool->execute(
+			array( 'quiz_id' => $regular_post ),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_quiz', $result->get_error_code() );
+	}
+
+	/**
 	 * Test permission boundaries - subscriber trying to grade.
 	 */
 	public function test_subscriber_cannot_grade_quiz() {

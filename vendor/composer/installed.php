@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/remove-delete-quiz-tool',
+        'version' => 'dev-copilot/remove-delete-quiz-tool',
+        'reference' => 'b5c0d63fb94a656819e01466315748206a6d784a',
         'pretty_version' => 'dev-copilot/complete-health-wellness-toolkit',
         'version' => 'dev-copilot/complete-health-wellness-toolkit',
         'reference' => 'e391e8468ed354af75bf07269fa6048cd6f791a2',
@@ -83,6 +86,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/remove-delete-quiz-tool',
+            'version' => 'dev-copilot/remove-delete-quiz-tool',
+            'reference' => 'b5c0d63fb94a656819e01466315748206a6d784a',
             'pretty_version' => 'dev-copilot/complete-health-wellness-toolkit',
             'version' => 'dev-copilot/complete-health-wellness-toolkit',
             'reference' => 'e391e8468ed354af75bf07269fa6048cd6f791a2',
