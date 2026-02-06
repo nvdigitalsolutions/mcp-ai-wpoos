@@ -1,0 +1,44 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-events",
+  "version": "0.1.0-alpha.1",
+  "description": "Real-time event coordination with SSE client and job event bus - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-events.js",
+  "types": "dist/nvoos-events.d.ts",
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-events",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-events"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "sse",
+    "server-sent-events",
+    "event-bus",
+    "real-time",
+    "websocket-alternative",
+    "job-tracking",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@microsoft/fetch-event-source": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
