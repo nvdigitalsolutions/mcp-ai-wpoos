@@ -1,4 +1,4 @@
-# @nvdigital/nvoos-events
+# @nvdigitalsolutions/nvoos-events
 
 Real-time event coordination with enhanced SSE client and job event bus for tracking async operations.
 
@@ -23,7 +23,7 @@ This package handles all that communication with automatic reconnection, event c
 ## Installation
 
 ```bash
-npm install @nvdigital/nvoos-events @microsoft/fetch-event-source
+npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
 ```
 
 ## Quick Start
@@ -31,7 +31,7 @@ npm install @nvdigital/nvoos-events @microsoft/fetch-event-source
 ### SSE Streaming
 
 ```javascript
-import { SSEService } from '@nvdigital/nvoos-events';
+import { SSEService } from '@nvdigitalsolutions/nvoos-events';
 
 const connection = SSEService.connect('https://api.example.com/stream', {
   method: 'POST',
@@ -54,7 +54,7 @@ connection.close();
 ### Job Event Bus
 
 ```javascript
-import { JobEventBus } from '@nvdigital/nvoos-events';
+import { JobEventBus } from '@nvdigitalsolutions/nvoos-events';
 
 // Listen for job completion
 JobEventBus.on('job:completed', (event) => {

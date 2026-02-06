@@ -1,4 +1,4 @@
-# @nvdigital/nvoos-storage
+# @nvdigitalsolutions/nvoos-storage
 
 Async storage utilities with Web Worker optimization for handling large JSON operations without blocking the main thread.
 
@@ -20,13 +20,13 @@ In NV oOS, AI assistants generate lengthy conversation transcripts that need to 
 ## Installation
 
 ```bash
-npm install @nvdigital/nvoos-storage
+npm install @nvdigitalsolutions/nvoos-storage
 ```
 
 ## Quick Start
 
 ```javascript
-import { StorageUtil } from '@nvdigital/nvoos-storage';
+import { StorageUtil } from '@nvdigitalsolutions/nvoos-storage';
 
 // Configure once at app initialization
 StorageUtil.configure({

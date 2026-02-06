@@ -8,7 +8,7 @@ Successfully extracted and prepared **three production-ready NPM packages** from
 
 ## 📦 Packages Delivered
 
-### 1. @nvdigital/nvoos-storage (v0.1.0-alpha.1)
+### 1. @nvdigitalsolutions/nvoos-storage (v0.1.0-alpha.1)
 **Async storage utilities with Web Worker optimization**
 
 - **Lines of Code**: 198 (minified from 184 source)
@@ -19,7 +19,7 @@ Successfully extracted and prepared **three production-ready NPM packages** from
 
 **Source**: `assets/js/storage-util.js`
 
-### 2. @nvdigital/nvoos-markdown (v0.1.0-alpha.1)
+### 2. @nvdigitalsolutions/nvoos-markdown (v0.1.0-alpha.1)
 **Security-hardened markdown renderer**
 
 - **Lines of Code**: 267 (adapted from 219 source)
@@ -30,7 +30,7 @@ Successfully extracted and prepared **three production-ready NPM packages** from
 
 **Source**: `assets/js/chat-markdown-service.js`
 
-### 3. @nvdigital/nvoos-events (v0.1.0-alpha.1)
+### 3. @nvdigitalsolutions/nvoos-events (v0.1.0-alpha.1)
 **Real-time event coordination (SSE + Job Bus)**
 
 - **Lines of Code**: 610 (combined from 614 source lines)
@@ -164,7 +164,7 @@ Each package includes a unique `adapt-for-npm.js` script that:
 - [x] package.json metadata complete
 
 ### Ready for Next Steps
-- [ ] Create @nvdigital organization on NPM
+- [ ] Create @nvdigitalsolutions organization on NPM
 - [ ] Set up 2FA authentication
 - [ ] Test packages in external projects
 - [ ] Write automated tests

@@ -1,5 +1,5 @@
 {
-  "name": "@nvdigital/nvoos-storage",
+  "name": "@nvdigitalsolutions/nvoos-storage",
   "version": "0.1.0-alpha.1",
   "description": "Async storage utilities with Web Worker optimization - Extracted from NV Open Operator System",
   "main": "dist/nvoos-storage.js",

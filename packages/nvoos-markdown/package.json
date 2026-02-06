@@ -1,5 +1,5 @@
 {
-  "name": "@nvdigital/nvoos-markdown",
+  "name": "@nvdigitalsolutions/nvoos-markdown",
   "version": "0.1.0-alpha.1",
   "description": "Security-hardened markdown renderer with XSS protection - Extracted from NV Open Operator System",
   "main": "dist/nvoos-markdown.js",

@@ -6,13 +6,13 @@ Install all three packages:
 
 ```bash
 # Storage utilities (zero dependencies)
-npm install @nvdigital/nvoos-storage
+npm install @nvdigitalsolutions/nvoos-storage
 
 # Markdown renderer (requires marked and dompurify)
-npm install @nvdigital/nvoos-markdown marked dompurify
+npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
 
 # Event system (requires fetch-event-source)
-npm install @nvdigital/nvoos-events @microsoft/fetch-event-source
+npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
 ```
 
 ## Usage Examples
@@ -20,7 +20,7 @@ npm install @nvdigital/nvoos-events @microsoft/fetch-event-source
 ### 1. Storage with Web Worker
 
 ```javascript
-import { StorageUtil } from '@nvdigital/nvoos-storage';
+import { StorageUtil } from '@nvdigitalsolutions/nvoos-storage';
 
 // Configure once
 StorageUtil.configure({
@@ -56,7 +56,7 @@ self.addEventListener('message', function(e) {
 ### 2. Secure Markdown Rendering
 
 ```javascript
-import MarkdownRenderer from '@nvdigital/nvoos-markdown';
+import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -79,7 +79,7 @@ document.getElementById('output').innerHTML = html;
 ### 3. Real-Time Streaming
 
 ```javascript
-import { SSEService, JobEventBus } from '@nvdigital/nvoos-events';
+import { SSEService, JobEventBus } from '@nvdigitalsolutions/nvoos-events';
 
 // Stream AI responses
 const stream = SSEService.connect('https://api.example.com/chat', {
@@ -104,7 +104,7 @@ stream.close();
 ### 4. Job Tracking
 
 ```javascript
-import { JobEventBus } from '@nvdigital/nvoos-events';
+import { JobEventBus } from '@nvdigitalsolutions/nvoos-events';
 
 // Listen for job events
 JobEventBus.on('job:completed', (event) => {
@@ -141,9 +141,9 @@ function handleJobUpdate(data) {
 ## Complete Example: AI Chat Application
 
 ```javascript
-import { StorageUtil } from '@nvdigital/nvoos-storage';
-import MarkdownRenderer from '@nvdigital/nvoos-markdown';
-import { SSEService } from '@nvdigital/nvoos-events';
+import { StorageUtil } from '@nvdigitalsolutions/nvoos-storage';
+import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
+import { SSEService } from '@nvdigitalsolutions/nvoos-events';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -210,9 +210,9 @@ sendMessage('Explain quantum computing');
 All packages include TypeScript definitions:
 
 ```typescript
-import type { StorageUtilInterface } from '@nvdigital/nvoos-storage';
-import type { MarkdownConfig } from '@nvdigital/nvoos-markdown';
-import type { SSEOptions, JobEventBusType } from '@nvdigital/nvoos-events';
+import type { StorageUtilInterface } from '@nvdigitalsolutions/nvoos-storage';
+import type { MarkdownConfig } from '@nvdigitalsolutions/nvoos-markdown';
+import type { SSEOptions, JobEventBusType } from '@nvdigitalsolutions/nvoos-events';
 
 const config: MarkdownConfig = {
   codeBlockClass: 'my-code',

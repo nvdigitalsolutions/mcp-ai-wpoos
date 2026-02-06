@@ -6,7 +6,7 @@ Three standalone NPM packages extracted from the NV Open Operator System (oOS) W
 
 ## 📦 Published Packages
 
-### 1. @nvdigital/nvoos-storage
+### 1. @nvdigitalsolutions/nvoos-storage
 **Storage utilities with Web Worker optimization**
 
 - **Version**: 0.1.0-alpha.1
@@ -22,14 +22,14 @@ Three standalone NPM packages extracted from the NV Open Operator System (oOS) W
 
 **Installation:**
 ```bash
-npm install @nvdigital/nvoos-storage
+npm install @nvdigitalsolutions/nvoos-storage
 ```
 
 **Location**: `/packages/nvoos-storage/`
 
 ---
 
-### 2. @nvdigital/nvoos-markdown
+### 2. @nvdigitalsolutions/nvoos-markdown
 **Security-hardened markdown renderer**
 
 - **Version**: 0.1.0-alpha.1
@@ -45,14 +45,14 @@ npm install @nvdigital/nvoos-storage
 
 **Installation:**
 ```bash
-npm install @nvdigital/nvoos-markdown marked dompurify
+npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
 ```
 
 **Location**: `/packages/nvoos-markdown/`
 
 ---
 
-### 3. @nvdigital/nvoos-events
+### 3. @nvdigitalsolutions/nvoos-events
 **Real-time event coordination (SSE + Job Bus)**
 
 - **Version**: 0.1.0-alpha.1
@@ -68,7 +68,7 @@ npm install @nvdigital/nvoos-markdown marked dompurify
 
 **Installation:**
 ```bash
-npm install @nvdigital/nvoos-events @microsoft/fetch-event-source
+npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
 ```
 
 **Location**: `/packages/nvoos-events/`
@@ -174,7 +174,7 @@ cd ../nvoos-events && npm run build
 
 ### Publication Steps (Pending)
 
-- [ ] Create NPM organization (@nvdigital)
+- [ ] Create NPM organization (@nvdigitalsolutions)
 - [ ] Set up 2FA for NPM account
 - [ ] Test packages in external projects
 - [ ] Write integration tests

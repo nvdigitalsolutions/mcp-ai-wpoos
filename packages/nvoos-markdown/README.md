@@ -1,4 +1,4 @@
-# @nvdigital/nvoos-markdown
+# @nvdigitalsolutions/nvoos-markdown
 
 Security-hardened markdown renderer with built-in XSS protection, powered by marked and DOMPurify.
 
@@ -26,13 +26,13 @@ This package ensures all output is safe while preserving formatting and function
 ## Installation
 
 ```bash
-npm install @nvdigital/nvoos-markdown marked dompurify
+npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
 ```
 
 ## Quick Start
 
 ```javascript
-import MarkdownRenderer from '@nvdigital/nvoos-markdown';
+import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
