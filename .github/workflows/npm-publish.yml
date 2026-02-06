@@ -11,7 +11,10 @@
 # Example: v0.1.0-alpha.1, v0.2.0-alpha.2, etc.
 #
 # Setup Required:
-# 1. Create NPM access token at https://www.npmjs.com/settings/<username>/tokens
+# 1. Create NPM AUTOMATION token at https://www.npmjs.com/settings/<username>/tokens
+#    ⚠️ IMPORTANT: Must be "Automation" token type (not "Publish" or "Granular Access Token")
+#    - "Publish" tokens require 2FA/OTP which doesn't work in CI/CD
+#    - "Automation" tokens bypass 2FA for CI/CD pipelines
 # 2. Add NPM_TOKEN secret to repository at Settings > Secrets and variables > Actions
 # 3. Ensure @nvdigitalsolutions organization exists on NPM (or update package names)
 #
@@ -85,12 +88,18 @@ jobs:
             echo "⚠️ NPM_TOKEN secret not configured. Skipping NPM publishing."
             echo ""
             echo "To enable NPM publishing:"
-            echo "1. Create an NPM access token at https://www.npmjs.com/settings/<username>/tokens"
+            echo "1. Create an NPM AUTOMATION token at https://www.npmjs.com/settings/<username>/tokens"
+            echo "   ⚠️ Select 'Automation' token type (NOT 'Publish' or 'Granular Access Token')"
+            echo "   Why: Automation tokens bypass 2FA/OTP requirements for CI/CD"
             echo "2. Add NPM_TOKEN to repository secrets at Settings > Secrets and variables > Actions"
-            echo "3. Ensure the token has 'Automation' or 'Publish' permissions"
+            echo "3. Paste the Automation token as the secret value"
           else
             echo "has_token=true" >> $GITHUB_OUTPUT
             echo "✅ NPM authentication token found"
+            echo ""
+            echo "⚠️ IMPORTANT: Ensure your NPM_TOKEN is an 'Automation' token type"
+            echo "   If you see 'EOTP' errors, you need to regenerate with 'Automation' type"
+            echo "   Generate at: https://www.npmjs.com/settings/tokens"
           fi
 
       - name: Update package versions
@@ -178,7 +187,31 @@ jobs:
         run: |
           echo "📤 Publishing @nvdigitalsolutions/nvoos-storage to NPM..."
           cd packages/nvoos-storage
-          npm publish --tag alpha --access public
+          
+          # Attempt to publish and capture output
+          if ! npm publish --tag alpha --access public 2>&1 | tee publish.log; then
+            # Check if it's an OTP error
+            if grep -q "EOTP" publish.log || grep -q "one-time password" publish.log; then
+              echo ""
+              echo "❌ ERROR: NPM requires a one-time password (OTP)"
+              echo ""
+              echo "This error occurs when using a 'Publish' or 'Granular Access Token' with 2FA enabled."
+              echo ""
+              echo "🔧 SOLUTION:"
+              echo "1. Go to https://www.npmjs.com/settings/tokens"
+              echo "2. Generate a new token with 'Automation' type (not 'Publish')"
+              echo "3. Update the NPM_TOKEN secret in repository Settings → Secrets"
+              echo "4. Re-run this workflow"
+              echo ""
+              echo "📖 Why: Automation tokens bypass 2FA for CI/CD pipelines"
+              echo "   See: https://docs.npmjs.com/creating-and-viewing-access-tokens"
+              exit 1
+            fi
+            # Re-throw other errors
+            cat publish.log
+            exit 1
+          fi
+          
           echo "✅ Published @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
 
       - name: Publish @nvdigitalsolutions/nvoos-markdown
@@ -188,7 +221,31 @@ jobs:
         run: |
           echo "📤 Publishing @nvdigitalsolutions/nvoos-markdown to NPM..."
           cd packages/nvoos-markdown
-          npm publish --tag alpha --access public
+          
+          # Attempt to publish and capture output
+          if ! npm publish --tag alpha --access public 2>&1 | tee publish.log; then
+            # Check if it's an OTP error
+            if grep -q "EOTP" publish.log || grep -q "one-time password" publish.log; then
+              echo ""
+              echo "❌ ERROR: NPM requires a one-time password (OTP)"
+              echo ""
+              echo "This error occurs when using a 'Publish' or 'Granular Access Token' with 2FA enabled."
+              echo ""
+              echo "🔧 SOLUTION:"
+              echo "1. Go to https://www.npmjs.com/settings/tokens"
+              echo "2. Generate a new token with 'Automation' type (not 'Publish')"
+              echo "3. Update the NPM_TOKEN secret in repository Settings → Secrets"
+              echo "4. Re-run this workflow"
+              echo ""
+              echo "📖 Why: Automation tokens bypass 2FA for CI/CD pipelines"
+              echo "   See: https://docs.npmjs.com/creating-and-viewing-access-tokens"
+              exit 1
+            fi
+            # Re-throw other errors
+            cat publish.log
+            exit 1
+          fi
+          
           echo "✅ Published @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
 
       - name: Publish @nvdigitalsolutions/nvoos-events
@@ -198,7 +255,31 @@ jobs:
         run: |
           echo "📤 Publishing @nvdigitalsolutions/nvoos-events to NPM..."
           cd packages/nvoos-events
-          npm publish --tag alpha --access public
+          
+          # Attempt to publish and capture output
+          if ! npm publish --tag alpha --access public 2>&1 | tee publish.log; then
+            # Check if it's an OTP error
+            if grep -q "EOTP" publish.log || grep -q "one-time password" publish.log; then
+              echo ""
+              echo "❌ ERROR: NPM requires a one-time password (OTP)"
+              echo ""
+              echo "This error occurs when using a 'Publish' or 'Granular Access Token' with 2FA enabled."
+              echo ""
+              echo "🔧 SOLUTION:"
+              echo "1. Go to https://www.npmjs.com/settings/tokens"
+              echo "2. Generate a new token with 'Automation' type (not 'Publish')"
+              echo "3. Update the NPM_TOKEN secret in repository Settings → Secrets"
+              echo "4. Re-run this workflow"
+              echo ""
+              echo "📖 Why: Automation tokens bypass 2FA for CI/CD pipelines"
+              echo "   See: https://docs.npmjs.com/creating-and-viewing-access-tokens"
+              exit 1
+            fi
+            # Re-throw other errors
+            cat publish.log
+            exit 1
+          fi
+          
           echo "✅ Published @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
 
       - name: Dry run summary

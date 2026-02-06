@@ -31,11 +31,14 @@ The repository contains 3 NPM packages in the `packages/` directory:
 
 ### For NPM Publishing
 
-1. **NPM Token Required**
+1. **NPM Automation Token Required** (⚠️ IMPORTANT)
+   - Go to https://www.npmjs.com/settings/tokens
+   - Click "Generate New Token" → Select **"Automation"** token type
+   - **DO NOT use "Publish" or "Granular Access Token"** - these require 2FA/OTP which won't work in CI/CD
+   - Copy the token (shown only once)
    - Go to repository Settings → Secrets and variables → Actions
    - Add a secret named `NPM_TOKEN`
-   - Value should be your NPM access token from https://www.npmjs.com/settings/tokens
-   - Token needs "Automation" or "Publish" permissions
+   - Paste the Automation token as the value
 
 2. **NPM Organization**
    - The `@nvdigitalsolutions` organization must exist on NPM
@@ -197,10 +200,17 @@ If workflows don't appear in GitHub Actions:
 ### NPM Publishing Fails
 
 Common issues:
+- **OTP/2FA Error (`EOTP`)**: You're using the wrong token type
+  - **Solution**: Use an **"Automation"** token, not "Publish" or "Granular Access Token"
+  - Automation tokens bypass 2FA/OTP requirements for CI/CD
+  - Generate at: https://www.npmjs.com/settings/tokens → "Automation" token type
+  - Update the `NPM_TOKEN` secret in repository settings
 - **Authentication Error**: Verify `NPM_TOKEN` secret is set correctly in repository settings
 - **Package Name Conflict**: Package name might already exist on NPM
-- **Permissions Error**: NPM token needs "Automation" or "Publish" permissions
+- **Permissions Error**: Ensure you used an "Automation" token with full publish permissions
 - **Organization Not Found**: `@nvdigitalsolutions` org must exist on NPM
+
+**📖 Full Troubleshooting Guide:** See [docs/npm-publishing-troubleshooting.md](docs/npm-publishing-troubleshooting.md) for detailed solutions
 
 ### GitHub Packages Publishing Fails
 

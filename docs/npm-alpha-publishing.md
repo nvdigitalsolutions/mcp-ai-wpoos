@@ -21,10 +21,18 @@ All packages are published under the `@nvdigitalsolutions` NPM organization.
    - Join or create the `@nvdigitalsolutions` organization
    - Ensure you have publish permissions
 
-2. **NPM Access Token**
+2. **NPM Access Token** (⚠️ IMPORTANT: Must be "Automation" type)
    - Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
-   - Click "Generate New Token" → "Automation" or "Publish"
+   - Click "Generate New Token" → Select **"Automation"** token type
+   - **DO NOT use "Publish" or "Granular Access Token"** types
+     - These require 2FA/OTP for each publish operation
+     - CI/CD systems cannot provide OTP codes
+     - You'll get error: `EOTP: This operation requires a one-time password`
    - Copy the token (it will only be shown once)
+   - **Why Automation tokens?**
+     - Designed specifically for CI/CD pipelines
+     - Bypass 2FA/OTP requirements (secure for automation)
+     - Have full publish permissions without interaction
 
 3. **GitHub Repository Secret**
    - Go to repository Settings → Secrets and variables → Actions
@@ -162,6 +170,32 @@ Typical alpha version progression:
 
 ## 🚨 Troubleshooting
 
+### "EOTP: This operation requires a one-time password"
+
+**Most Common Issue!** This error means you're using the wrong NPM token type:
+
+```
+npm error code EOTP
+npm error This operation requires a one-time password from your authenticator.
+```
+
+**Solution:**
+1. Go to https://www.npmjs.com/settings/[username]/tokens
+2. Revoke the old token (if it says "Publish" or "Granular Access Token")
+3. Click "Generate New Token" → Select **"Automation"** token type
+4. Copy the new token
+5. Update the `NPM_TOKEN` secret in GitHub:
+   - Go to repository Settings → Secrets and variables → Actions
+   - Edit the `NPM_TOKEN` secret
+   - Paste the new Automation token
+6. Re-run the failed workflow
+
+**Why this happens:**
+- Your NPM account has 2FA enabled (good!)
+- "Publish" and "Granular Access Token" types require OTP codes
+- GitHub Actions can't provide interactive OTP codes
+- "Automation" tokens bypass this for CI/CD specifically
+
 ### "NPM_TOKEN secret not configured"
 
 The workflow will skip publishing if the NPM_TOKEN secret is not set. Add it in:
@@ -183,10 +217,11 @@ If a tag already exists, you need to either:
 
 ### "403 Forbidden" when publishing
 
-This means you don't have publish permissions for the @nvdigitalsolutions organization:
-1. Verify you're a member of the organization on NPM
+This means you don't have publish permissions:
+1. Verify you're a member of the @nvdigitalsolutions organization on NPM
 2. Verify the organization exists
-3. Check your NPM access token has "Automation" or "Publish" scope
+3. Check your NPM access token is an "Automation" token (not "Publish")
+4. Ensure the token was created by an org member with publish permissions
 
 ### Packages not showing as "latest"
 
@@ -202,7 +237,8 @@ This is expected! Alpha versions are published with the `alpha` tag, not `latest
 ## 🆘 Support
 
 For issues with alpha publishing:
-1. Check the GitHub Actions logs for error messages
-2. Review the troubleshooting section above
-3. Open an issue at https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
-4. Contact NV Digital Solutions at hello@nvdigitalsolutions.com
+1. **Check Troubleshooting Guide**: [docs/npm-publishing-troubleshooting.md](npm-publishing-troubleshooting.md)
+2. Check the GitHub Actions logs for error messages
+3. Review the troubleshooting section above
+4. Open an issue at https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
+5. Contact NV Digital Solutions at hello@nvdigitalsolutions.com

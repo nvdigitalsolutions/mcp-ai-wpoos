@@ -1,5 +1,8 @@
 # Quick Reference: Publishing Alpha Versions to NPM
 
+> **⚠️ Common Issue:** Getting "EOTP" error? You need an "Automation" token, not "Publish".  
+> See [Troubleshooting Guide](docs/npm-publishing-troubleshooting.md#otp2fa-error-eotp---most-common)
+
 ## TL;DR
 
 ```bash
@@ -17,6 +20,9 @@ Three NPM packages under `@nvdigitalsolutions` organization:
 ## Prerequisites
 
 1. Add `NPM_TOKEN` secret to GitHub repository settings
+   - **IMPORTANT**: Must be an **"Automation"** token type from NPM
+   - NOT "Publish" or "Granular Access Token" (these require OTP)
+   - Generate at: https://www.npmjs.com/settings/tokens → "Automation"
 2. Have publish permissions for @nvdigitalsolutions NPM organization
 
 ## Version Format
