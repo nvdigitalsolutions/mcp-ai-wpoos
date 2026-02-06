@@ -531,8 +531,8 @@ function wp_mcp_ai_register_slash_command_scripts() {
 		'mcpAiData',
 		array(
 			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url ) ),
-			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( 'slash-command' ) ),
-			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( 'slash-command/list' ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command' ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command/list' ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);
