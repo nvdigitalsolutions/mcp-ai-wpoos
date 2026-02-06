@@ -23,6 +23,10 @@
 			this.visible = false;
 			this.clickOutsideHandler = this.handleClickOutside.bind(this);
 			this.inputBlurHandler = this.handleInputBlur.bind(this);
+			
+			// Timing constants for event handling
+			this.BLUR_DELAY_MS = 200; // Delay to allow mousedown events to fire before blur closes dropdown
+			this.CLICK_LISTENER_DELAY_MS = 100; // Delay to prevent the click that opened dropdown from immediately closing it
 		}
 
 		/**
@@ -47,12 +51,13 @@
 		 * Handle input blur event
 		 */
 		handleInputBlur() {
-			// Use setTimeout to allow click events on dropdown items to fire first
+			// Use setTimeout to allow mousedown events on dropdown items to fire first
+			// Without this delay, blur would hide dropdown before click/mousedown registers
 			setTimeout(() => {
 				if (this.visible && !this.dropdown.contains(document.activeElement)) {
 					this.hide();
 				}
-			}, 200);
+			}, this.BLUR_DELAY_MS);
 		}
 
 		/**
@@ -138,10 +143,11 @@
 			this.visible = true;
 			this.selectedIndex = 0;
 
-			// Add click outside listener when dropdown is shown
+			// Add click outside listener with delay to prevent the click that opened
+			// the dropdown (e.g., typing "/") from immediately triggering the close handler
 			setTimeout(() => {
 				document.addEventListener('click', this.clickOutsideHandler);
-			}, 100);
+			}, this.CLICK_LISTENER_DELAY_MS);
 		}
 
 		/**
