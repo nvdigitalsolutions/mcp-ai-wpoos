@@ -30,16 +30,48 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	 * @var array
 	 */
 	const CHAT_TOOLS = array(
-		'get_member_health_summary',
-		'create_medical_record',
-		'create_checkup',
-		'create_prescription',
-		'create_allergy',
+		// Member management.
+		'create_member',
+		'get_member',
 		'list_members',
+		'update_member',
+		'delete_member',
+		'get_member_health_summary',
+		// Medical records.
+		'create_medical_record',
+		'get_medical_record',
+		'list_medical_records',
 		'update_medical_record',
+		'delete_medical_record',
+		'search_medical_records',
+		// Checkups.
+		'create_checkup',
+		'get_checkup',
+		'list_checkups',
 		'update_checkup',
+		'delete_checkup',
+		'get_upcoming_checkups',
+		// Prescriptions.
+		'create_prescription',
+		'get_prescription',
+		'list_prescriptions',
 		'update_prescription',
+		'delete_prescription',
+		'search_prescriptions',
+		// Allergies.
+		'create_allergy',
+		'get_allergy',
+		'list_allergies',
 		'update_allergy',
+		'delete_allergy',
+		// Health tools.
+		'generate_health_chart',
+		'guide_health_record_creation',
+		'parse_health_information',
+		// Research tools.
+		'web_search',
+		'search_content',
+		'semantic_content_search',
 	);
 
 	/**

@@ -33,6 +33,13 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 	const META_ROSTER_DATA    = '_ff_roster_data';
 	const META_LAST_SYNC      = '_ff_last_sync';
 
+	// Provider-specific meta keys.
+	const META_PROVIDER         = '_ff_provider'; // 'yahoo' or 'espn'.
+	const META_ESPN_LEAGUE_ID   = '_ff_espn_league_id';
+	const META_ESPN_TEAM_ID     = '_ff_espn_team_id';
+	const META_YAHOO_LEAGUE_ID  = '_ff_yahoo_league_id';
+	const META_YAHOO_TEAM_ID    = '_ff_yahoo_team_id';
+
 	/**
 	 * Initialize the class.
 	 */
@@ -168,6 +175,7 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 			self::META_LOGO_URL,
 			self::META_TEAM_COLOR,
 			self::META_LAST_SYNC,
+			self::META_PROVIDER,
 		);
 
 		foreach ( $meta_keys as $key ) {
@@ -188,6 +196,10 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 			self::META_LOSSES,
 			self::META_TIES,
 			self::META_RANK,
+			self::META_ESPN_LEAGUE_ID,
+			self::META_ESPN_TEAM_ID,
+			self::META_YAHOO_LEAGUE_ID,
+			self::META_YAHOO_TEAM_ID,
 		);
 
 		foreach ( $numeric_keys as $key ) {
@@ -241,23 +253,100 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 	public static function render_team_info_meta_box( $post ) {
 		wp_nonce_field( 'ff_team_meta_box', 'ff_team_meta_box_nonce' );
 
-		$league_key = get_post_meta( $post->ID, self::META_LEAGUE_KEY, true );
-		$team_key   = get_post_meta( $post->ID, self::META_TEAM_KEY, true );
+		$provider       = get_post_meta( $post->ID, self::META_PROVIDER, true );
+		$league_name    = get_post_meta( $post->ID, self::META_LEAGUE_NAME, true );
+		$team_name      = get_post_meta( $post->ID, self::META_TEAM_NAME, true );
+		$season         = get_post_meta( $post->ID, self::META_SEASON, true );
+		$wins           = get_post_meta( $post->ID, self::META_WINS, true );
+		$losses         = get_post_meta( $post->ID, self::META_LOSSES, true );
+		$ties           = get_post_meta( $post->ID, self::META_TIES, true );
+		$points_for     = get_post_meta( $post->ID, self::META_POINTS_FOR, true );
+		$points_against = get_post_meta( $post->ID, self::META_POINTS_AGAINST, true );
+		$rank           = get_post_meta( $post->ID, self::META_RANK, true );
+		$last_sync      = get_post_meta( $post->ID, self::META_LAST_SYNC, true );
+
+		// Provider-specific IDs.
+		$espn_league_id = get_post_meta( $post->ID, self::META_ESPN_LEAGUE_ID, true );
+		$espn_team_id   = get_post_meta( $post->ID, self::META_ESPN_TEAM_ID, true );
+		$yahoo_league_id = get_post_meta( $post->ID, self::META_YAHOO_LEAGUE_ID, true );
+		$yahoo_team_id   = get_post_meta( $post->ID, self::META_YAHOO_TEAM_ID, true );
+
+		$provider_label = 'espn' === $provider ? 'ESPN' : ( 'yahoo' === $provider ? 'Yahoo' : __( 'Unknown', 'mcp-ai-wpoos-pro' ) );
 		?>
+<div style="background: #f9f9f9; padding: 15px; margin-bottom: 20px; border-left: 4px solid #0073aa;">
+	<h3 style="margin-top: 0;"><?php esc_html_e( 'Team Overview', 'mcp-ai-wpoos-pro' ); ?></h3>
+	<p><strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $provider_label ); ?></p>
+	<?php if ( $league_name ) : ?>
+	<p><strong><?php esc_html_e( 'League:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $league_name ); ?></p>
+	<?php endif; ?>
+	<?php if ( $season ) : ?>
+	<p><strong><?php esc_html_e( 'Season:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $season ); ?></p>
+	<?php endif; ?>
+	<?php if ( $last_sync ) : ?>
+	<p><strong><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $last_sync ); ?></p>
+	<?php endif; ?>
+</div>
+
 <table class="form-table">
-<tr>
-<th><label for="ff_league_key"><?php esc_html_e( 'League Key', 'mcp-ai-wpoos-pro' ); ?></label></th>
-<td>
-<input type="text" id="ff_league_key" name="ff_league_key" value="<?php echo esc_attr( $league_key ); ?>" class="regular-text" />
-</td>
-</tr>
-<tr>
-<th><label for="ff_team_key"><?php esc_html_e( 'Team Key', 'mcp-ai-wpoos-pro' ); ?></label></th>
-<td>
-<input type="text" id="ff_team_key" name="ff_team_key" value="<?php echo esc_attr( $team_key ); ?>" class="regular-text" />
-</td>
-</tr>
+	<?php if ( 'espn' === $provider ) : ?>
+	<tr>
+		<th><label><?php esc_html_e( 'ESPN League ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><code><?php echo esc_html( $espn_league_id ); ?></code></td>
+	</tr>
+	<tr>
+		<th><label><?php esc_html_e( 'ESPN Team ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><code><?php echo esc_html( $espn_team_id ); ?></code></td>
+	</tr>
+	<?php elseif ( 'yahoo' === $provider ) : ?>
+	<tr>
+		<th><label><?php esc_html_e( 'Yahoo League ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><code><?php echo esc_html( $yahoo_league_id ); ?></code></td>
+	</tr>
+	<tr>
+		<th><label><?php esc_html_e( 'Yahoo Team ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><code><?php echo esc_html( $yahoo_team_id ); ?></code></td>
+	</tr>
+	<?php endif; ?>
+	<tr>
+		<th><label><?php esc_html_e( 'Record', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td>
+			<?php
+			printf(
+				/* translators: 1: wins, 2: losses, 3: ties */
+				esc_html__( '%1$d-%2$d-%3$d', 'mcp-ai-wpoos-pro' ),
+				absint( $wins ),
+				absint( $losses ),
+				absint( $ties )
+			);
+			?>
+		</td>
+	</tr>
+	<tr>
+		<th><label><?php esc_html_e( 'Points For', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><?php echo esc_html( number_format_i18n( floatval( $points_for ), 2 ) ); ?></td>
+	</tr>
+	<tr>
+		<th><label><?php esc_html_e( 'Points Against', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><?php echo esc_html( number_format_i18n( floatval( $points_against ), 2 ) ); ?></td>
+	</tr>
+	<?php if ( $rank ) : ?>
+	<tr>
+		<th><label><?php esc_html_e( 'Rank', 'mcp-ai-wpoos-pro' ); ?></label></th>
+		<td><?php echo esc_html( $rank ); ?></td>
+	</tr>
+	<?php endif; ?>
 </table>
+
+<div style="margin-top: 20px;">
+	<h4><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h4>
+	<?php if ( 'espn' === $provider && $espn_league_id && $espn_team_id && $season ) : ?>
+		<p>
+			<a href="https://fantasy.espn.com/football/team?leagueId=<?php echo esc_attr( $espn_league_id ); ?>&teamId=<?php echo esc_attr( $espn_team_id ); ?>&seasonId=<?php echo esc_attr( $season ); ?>" target="_blank" class="button">
+				<?php esc_html_e( 'View on ESPN', 'mcp-ai-wpoos-pro' ); ?>
+			</a>
+		</p>
+	<?php endif; ?>
+</div>
 		<?php
 	}
 
@@ -300,8 +389,12 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 		$new_columns = array(
 			'cb'          => $columns['cb'],
 			'title'       => $columns['title'],
+			'provider'    => __( 'Provider', 'mcp-ai-wpoos-pro' ),
 			'league_name' => __( 'League', 'mcp-ai-wpoos-pro' ),
+			'record'      => __( 'Record', 'mcp-ai-wpoos-pro' ),
+			'points'      => __( 'Points', 'mcp-ai-wpoos-pro' ),
 			'season'      => __( 'Season', 'mcp-ai-wpoos-pro' ),
+			'last_sync'   => __( 'Last Sync', 'mcp-ai-wpoos-pro' ),
 			'date'        => $columns['date'],
 		);
 
@@ -316,15 +409,138 @@ class WP_MCP_AI_Fantasy_Team_CPT {
 	 */
 	public static function render_column_content( $column, $post_id ) {
 		switch ( $column ) {
+			case 'provider':
+				$provider = get_post_meta( $post_id, self::META_PROVIDER, true );
+				if ( 'espn' === $provider ) {
+					echo '<span class="dashicons dashicons-chart-line" title="ESPN" style="color: #e41e1e;"></span> ESPN';
+				} elseif ( 'yahoo' === $provider ) {
+					echo '<span class="dashicons dashicons-star-filled" title="Yahoo" style="color: #720e9e;"></span> Yahoo';
+				} else {
+					echo '—';
+				}
+				break;
+
 			case 'league_name':
 				$league_name = get_post_meta( $post_id, self::META_LEAGUE_NAME, true );
 				echo esc_html( $league_name ? $league_name : '—' );
+				break;
+
+			case 'record':
+				$wins   = get_post_meta( $post_id, self::META_WINS, true );
+				$losses = get_post_meta( $post_id, self::META_LOSSES, true );
+				$ties   = get_post_meta( $post_id, self::META_TIES, true );
+
+				if ( $wins || $losses || $ties ) {
+					printf(
+						'<strong>%d-%d-%d</strong>',
+						absint( $wins ),
+						absint( $losses ),
+						absint( $ties )
+					);
+				} else {
+					echo '—';
+				}
+				break;
+
+			case 'points':
+				$points_for = get_post_meta( $post_id, self::META_POINTS_FOR, true );
+				$points_against = get_post_meta( $post_id, self::META_POINTS_AGAINST, true );
+
+				if ( $points_for || $points_against ) {
+					printf(
+						'<span title="Points For">%.2f</span> / <span title="Points Against">%.2f</span>',
+						floatval( $points_for ),
+						floatval( $points_against )
+					);
+				} else {
+					echo '—';
+				}
 				break;
 
 			case 'season':
 				$season = get_post_meta( $post_id, self::META_SEASON, true );
 				echo esc_html( $season ? $season : '—' );
 				break;
+
+			case 'last_sync':
+				$last_sync = get_post_meta( $post_id, self::META_LAST_SYNC, true );
+				if ( $last_sync ) {
+					$timestamp = strtotime( $last_sync );
+					if ( $timestamp ) {
+						printf(
+							'<span title="%s">%s</span>',
+							esc_attr( $last_sync ),
+							esc_html( human_time_diff( $timestamp, current_time( 'timestamp' ) ) . ' ago' )
+						);
+					} else {
+						echo esc_html( $last_sync );
+					}
+				} else {
+					echo '—';
+				}
+				break;
 		}
+	}
+
+	/**
+	 * Get team provider (ESPN or Yahoo).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string Provider name ('espn', 'yahoo', or empty string).
+	 */
+	public static function get_team_provider( $post_id ) {
+		return get_post_meta( $post_id, self::META_PROVIDER, true );
+	}
+
+	/**
+	 * Get ESPN league and team IDs.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array|false Array with 'league_id' and 'team_id' or false.
+	 */
+	public static function get_espn_ids( $post_id ) {
+		$provider = get_post_meta( $post_id, self::META_PROVIDER, true );
+
+		if ( 'espn' !== $provider ) {
+			return false;
+		}
+
+		$league_id = get_post_meta( $post_id, self::META_ESPN_LEAGUE_ID, true );
+		$team_id   = get_post_meta( $post_id, self::META_ESPN_TEAM_ID, true );
+
+		if ( ! $league_id || ! $team_id ) {
+			return false;
+		}
+
+		return array(
+			'league_id' => absint( $league_id ),
+			'team_id'   => absint( $team_id ),
+		);
+	}
+
+	/**
+	 * Get Yahoo league and team IDs.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array|false Array with 'league_id' and 'team_id' or false.
+	 */
+	public static function get_yahoo_ids( $post_id ) {
+		$provider = get_post_meta( $post_id, self::META_PROVIDER, true );
+
+		if ( 'yahoo' !== $provider ) {
+			return false;
+		}
+
+		$league_id = get_post_meta( $post_id, self::META_YAHOO_LEAGUE_ID, true );
+		$team_id   = get_post_meta( $post_id, self::META_YAHOO_TEAM_ID, true );
+
+		if ( ! $league_id || ! $team_id ) {
+			return false;
+		}
+
+		return array(
+			'league_id' => absint( $league_id ),
+			'team_id'   => absint( $team_id ),
+		);
 	}
 }

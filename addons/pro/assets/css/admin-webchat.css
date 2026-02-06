@@ -1,0 +1,37 @@
+/**
+ * WebChat Admin Styles
+ * 
+ * Styles for WebChat room management in WordPress admin.
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+/* WebChat admin notices */
+.webchat-info-notice p {
+	margin: 0.5em 0;
+}
+
+.webchat-info-notice code {
+	padding: 2px 5px;
+	background: #f0f0f0;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+/* WebRTC error note sections */
+.webchat-webrtc-note {
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #ffc107;
+}
+
+.webchat-webrtc-note:first-of-type {
+	margin-top: 15px;
+	padding-top: 15px;
+}
+
+.webchat-webrtc-note:not(:first-of-type) {
+	margin-top: 10px;
+	padding-top: 0;
+	border-top: none;
+}

@@ -1,0 +1,38 @@
+metadata:
+  exported_at: '2026-02-04 12:00:00'
+  plugin_version: '1.2.2'
+  export_format: '1.0'
+
+workflow:
+  name: Complex DAG Workflow
+  description: Demonstrates directed acyclic graph execution with step dependencies
+  steps:
+    - name: analyze
+      task: next-task
+      params:
+        type: drafts
+        limit: 10
+      output_var: analysis_result
+    
+    - name: process_content
+      task: clean-content
+      depends_on: [analyze]
+      params:
+        limit: 5
+        phase: 1
+      output_var: content_result
+    
+    - name: check_performance
+      task: optimize-perf
+      depends_on: [analyze]
+      params:
+        phases: '1,2'
+        dry-run: false
+      output_var: perf_result
+    
+    - name: finalize
+      task: notify_admin
+      depends_on: [process_content, check_performance]
+      params:
+        subject: 'Workflow Complete'
+        message: 'Analysis: {{analysis_result}}, Content: {{content_result}}, Performance: {{perf_result}}'

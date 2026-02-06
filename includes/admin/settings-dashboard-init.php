@@ -90,6 +90,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 	}
 	$initialized = true;
 
+	// Log initialization attempt for debugging 403 errors.
+	error_log( '[NV oOS] Initializing settings dashboard system...' );
+
 	// Wrap initialization in try-catch to prevent silent failures.
 	try {
 		// Get container for dependency management.
@@ -129,6 +132,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// This creates the top-level "NV oOS" menu item.
 		// Store the instance globally for potential access by other code.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
+		error_log( '[NV oOS] Settings dashboard controller initialized successfully.' );
 
 		// Initialize simple settings page (Settings menu).
 		// This provides a flat diagnostic view of all saved settings.
@@ -144,6 +148,11 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.
 		$GLOBALS['wp_mcp_ai_custom_filters_applicator'] = $container->get( 'admin.custom_filters_applicator' );
+
+		// Initialize workflow editor page (Phase 1 feature).
+		if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-workflow-editor-page.php' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-workflow-editor-page.php';
+		}
 	} catch ( Throwable $e ) {
 		// Log the error if logging is enabled.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

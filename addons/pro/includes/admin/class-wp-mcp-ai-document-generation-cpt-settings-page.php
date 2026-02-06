@@ -289,5 +289,4 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	}
 }
 
-// Initialize.
-new WP_MCP_AI_Document_Generation_Settings_Page();
+// Note: WP_MCP_AI_Document_Generation_Settings_Page instantiates itself at the bottom of its own file.

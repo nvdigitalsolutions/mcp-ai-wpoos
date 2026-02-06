@@ -253,10 +253,27 @@ class WP_MCP_AI_Page_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive page tools.
-							// Includes creation, management, Elementor, research, and SEO tools.
+							// Render chat interface with comprehensive page builder tools.
+							$page_tools = array(
+								// Page management.
+								'create_post',
+								'save_post',
+								// Elementor integration.
+								'get_elementor_templates',
+								'import_elementor_template_kit',
+								// SEO optimization.
+								'get_rankmath_seo',
+								// Image tools.
+								'generate_image_caption',
+								'generate_image_alt_text',
+								// Research tools.
+								'web_search',
+								'deep_research',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_post,save_post,web_search,deep_research,search_content,semantic_content_search,get_elementor_templates,import_elementor_template_kit,get_rankmath_seo,generate_image_caption"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $page_tools ) ) . '"]'
 							);
 							?>
 						</div>

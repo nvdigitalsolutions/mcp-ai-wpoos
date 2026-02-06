@@ -1,5 +1,5 @@
 {
-    "_hash": "5aa77cb0a679ec060ca07d019d702cf0a0653169cbd79b276a57b231e0c5a2b8",
+    "_hash": "41771d9351c54ab2fa0bf6855f267d9a9140cb64075d0ca62f24a2995bdc7cc7",
     "patches": {
         "wp-phpunit/wp-phpunit": [
             {
@@ -7,6 +7,18 @@
                 "description": "Add guard check for WP_LANG_DIR constant",
                 "url": "patches/wp-phpunit-wp-lang-dir-guard.patch",
                 "sha256": "193063ae066c514012432aed894106c2bc3c7798588d7ef9e17c4b3983f39f6d",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ],
+        "league/oauth2-client": [
+            {
+                "package": "league/oauth2-client",
+                "description": "Remove deprecated approval_prompt parameter to fix Google OAuth conflict",
+                "url": "patches/league-oauth2-client-remove-approval-prompt.patch",
+                "sha256": "3c9b8da9e4d6820f6bc8e66529958ffc0e60bffaadb4a7f7f4485c694208d9f2",
                 "depth": 1,
                 "extra": {
                     "provenance": "root"

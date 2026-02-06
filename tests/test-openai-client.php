@@ -2636,4 +2636,134 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( 'assistant', $prepared_input[1]['role'] );
 		$this->assertSame( 'tool', $prepared_input[2]['role'] );
 	}
+
+	/**
+	 * Test that agentic workflow metadata fields are removed from input_image segments for Responses API.
+	 */
+	public function test_responses_api_removes_agentic_workflow_metadata_from_image_segments() {
+		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Force_Responses_Client();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'          => 'input_image',
+						'file_id'       => 'file-img-123',
+						'url'           => 'https://example.com/image.jpg',
+						'attachment_id' => 456,
+						'file_name'     => 'test-image.jpg',
+						'mime_type'     => 'image/jpeg',
+						'bytes'         => 12345,
+						'detail'        => 'high',
+					),
+				),
+			),
+		);
+
+		$attachments = array(
+			array(
+				'id'      => 'file-img-123',
+				'file_id' => 'file-img-123',
+			),
+		);
+
+		// Prepare the input using the public wrapper method.
+		$prepared_input = $client->public_prepare_responses_input( $messages, $messages, $attachments );
+
+		// Verify the input was prepared.
+		$this->assertIsArray( $prepared_input );
+		$this->assertCount( 1, $prepared_input );
+
+		// Get the content segment.
+		$content = $prepared_input[0]['content'];
+		$this->assertIsArray( $content );
+		$this->assertCount( 1, $content );
+
+		$segment = $content[0];
+
+		// Verify type is preserved.
+		$this->assertSame( 'input_image', $segment['type'] );
+
+		// Verify file_id is preserved.
+		$this->assertSame( 'file-img-123', $segment['file_id'] );
+
+		// Verify detail is preserved.
+		$this->assertSame( 'high', $segment['detail'] );
+
+		// Verify agentic workflow metadata fields are removed.
+		$this->assertArrayNotHasKey( 'url', $segment, 'url should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'attachment_id', $segment, 'attachment_id should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'file_name', $segment, 'file_name should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'mime_type', $segment, 'mime_type should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'bytes', $segment, 'bytes should be removed from Responses API payload' );
+	}
+
+	/**
+	 * Test that agentic workflow metadata fields are removed from input_file segments for Responses API.
+	 */
+	public function test_responses_api_removes_agentic_workflow_metadata_from_file_segments() {
+		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Force_Responses_Client();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'          => 'input_file',
+						'file_id'       => 'file-doc-789',
+						'url'           => 'https://example.com/document.pdf',
+						'attachment_id' => 789,
+						'name'          => 'test-document.pdf',
+						'mime_type'     => 'application/pdf',
+						'bytes'         => 54321,
+						'display_name'  => 'Test Document',
+					),
+				),
+			),
+		);
+
+		$attachments = array(
+			array(
+				'id'      => 'file-doc-789',
+				'file_id' => 'file-doc-789',
+			),
+		);
+
+		// Prepare the input using the public wrapper method.
+		$prepared_input = $client->public_prepare_responses_input( $messages, $messages, $attachments );
+
+		// Verify the input was prepared.
+		$this->assertIsArray( $prepared_input );
+		$this->assertCount( 1, $prepared_input );
+
+		// Get the content segment.
+		$content = $prepared_input[0]['content'];
+		$this->assertIsArray( $content );
+		$this->assertCount( 1, $content );
+
+		$segment = $content[0];
+
+		// Verify type is preserved.
+		$this->assertSame( 'input_file', $segment['type'] );
+
+		// Verify file_id is preserved.
+		$this->assertSame( 'file-doc-789', $segment['file_id'] );
+
+		// Verify agentic workflow metadata fields are removed.
+		$this->assertArrayNotHasKey( 'url', $segment, 'url should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'attachment_id', $segment, 'attachment_id should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'name', $segment, 'name should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'mime_type', $segment, 'mime_type should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'bytes', $segment, 'bytes should be removed from Responses API payload' );
+		$this->assertArrayNotHasKey( 'display_name', $segment, 'display_name should be removed from Responses API payload' );
+	}
 }
