@@ -27,7 +27,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->namespace = '';
+		$this->namespace = 'mcp-ai/v1';
 		$this->rest_base = 'slash-command';
 	}
 
