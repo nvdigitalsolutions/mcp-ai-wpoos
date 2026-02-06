@@ -21,6 +21,8 @@
 			this.filteredCommands = [];
 			this.selectedIndex = -1;
 			this.visible = false;
+			this.clickOutsideHandler = this.handleClickOutside.bind(this);
+			this.inputBlurHandler = this.handleInputBlur.bind(this);
 		}
 
 		/**
@@ -29,7 +31,37 @@
 		init() {
 			this.createDropdown();
 			this.loadCommands();
+			this.attachEventListeners();
 			console.log('[Autocomplete] Initialized');
+		}
+
+		/**
+		 * Attach event listeners for closing dropdown
+		 */
+		attachEventListeners() {
+			// Add blur handler to input
+			this.input.addEventListener('blur', this.inputBlurHandler);
+		}
+
+		/**
+		 * Handle input blur event
+		 */
+		handleInputBlur() {
+			// Use setTimeout to allow click events on dropdown items to fire first
+			setTimeout(() => {
+				if (this.visible && !this.dropdown.contains(document.activeElement)) {
+					this.hide();
+				}
+			}, 200);
+		}
+
+		/**
+		 * Handle clicks outside the dropdown
+		 */
+		handleClickOutside(e) {
+			if (this.visible && !this.dropdown.contains(e.target) && e.target !== this.input) {
+				this.hide();
+			}
 		}
 
 		/**
@@ -105,6 +137,11 @@
 			this.dropdown.style.display = 'block';
 			this.visible = true;
 			this.selectedIndex = 0;
+
+			// Add click outside listener when dropdown is shown
+			setTimeout(() => {
+				document.addEventListener('click', this.clickOutsideHandler);
+			}, 100);
 		}
 
 		/**
@@ -114,6 +151,9 @@
 			this.dropdown.style.display = 'none';
 			this.visible = false;
 			this.selectedIndex = -1;
+
+			// Remove click outside listener when dropdown is hidden
+			document.removeEventListener('click', this.clickOutsideHandler);
 		}
 
 		/**
@@ -201,8 +241,10 @@
 					item.appendChild(desc);
 				}
 
-				// Click handler
-				item.addEventListener('click', () => {
+				// Click handler - use mousedown to fire before blur
+				item.addEventListener('mousedown', (e) => {
+					// Prevent default to avoid triggering input blur
+					e.preventDefault();
 					this.selectCommand(cmd);
 				});
 
@@ -272,6 +314,9 @@
 		 * Select a command
 		 */
 		selectCommand(cmd) {
+			// Hide dropdown first
+			this.hide();
+
 			// Insert command into input
 			this.input.value = '/' + cmd.name + ' ';
 			this.input.focus();
@@ -279,8 +324,18 @@
 			// Position cursor at end
 			const length = this.input.value.length;
 			this.input.setSelectionRange(length, length);
+		}
 
+		/**
+		 * Cleanup event listeners
+		 */
+		destroy() {
 			this.hide();
+			this.input.removeEventListener('blur', this.inputBlurHandler);
+			document.removeEventListener('click', this.clickOutsideHandler);
+			if (this.dropdown && this.dropdown.parentNode) {
+				this.dropdown.parentNode.removeChild(this.dropdown);
+			}
 		}
 	}
 
