@@ -172,13 +172,23 @@ cd ../nvoos-events && npm run build
 - [x] Build scripts tested
 - [x] package.json metadata complete
 
-### Publication Steps (Pending)
+### Publication Steps
 
+**Alpha Publishing (Ready ✅)**
+- [x] Create GitHub Actions workflow for alpha publishing
+- [x] Add helper script (`bin/publish-alpha.sh`)
+- [x] Create comprehensive publishing documentation
+- [ ] Configure NPM_TOKEN secret in repository
 - [ ] Create NPM organization (@nvdigitalsolutions)
 - [ ] Set up 2FA for NPM account
+- [ ] Publish first alpha versions to NPM
+
+**See [Alpha Publishing Guide](../docs/npm-alpha-publishing.md) for detailed instructions.**
+
+**Future Steps**
 - [ ] Test packages in external projects
 - [ ] Write integration tests
-- [ ] Publish alpha versions to NPM
+- [ ] Publish stable versions to NPM
 - [ ] Update main plugin to use packages (optional)
 - [ ] Create announcement blog post
 - [ ] Share on social media

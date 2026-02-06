@@ -1,0 +1,248 @@
+# NPM Alpha Publishing Workflow
+#
+# This workflow publishes alpha versions of the NPM packages to the NPM registry.
+#
+# Packages published:
+# - @nvdigitalsolutions/nvoos-storage
+# - @nvdigitalsolutions/nvoos-markdown
+# - @nvdigitalsolutions/nvoos-events
+#
+# Trigger: Push tags matching v*.*.*-alpha.*
+# Example: v0.1.0-alpha.1, v0.2.0-alpha.2, etc.
+#
+# Setup Required:
+# 1. Create NPM access token at https://www.npmjs.com/settings/<username>/tokens
+# 2. Add NPM_TOKEN secret to repository at Settings > Secrets and variables > Actions
+# 3. Ensure @nvdigitalsolutions organization exists on NPM (or update package names)
+#
+# Author: NV Digital Solutions (https://nvdigitalsolutions.com/)
+
+name: Publish Alpha to NPM
+
+on:
+  push:
+    tags:
+      - 'v*.*.*-alpha.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Alpha version to publish (e.g., 0.1.0-alpha.1)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (skip actual publishing)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish Alpha Packages to NPM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag or input
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Extract version from tag (remove 'v' prefix)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Publishing version: ${VERSION}"
+
+      - name: Validate alpha version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]; then
+            echo "❌ Invalid alpha version format: $VERSION"
+            echo "Expected format: X.Y.Z-alpha.N (e.g., 0.1.0-alpha.1)"
+            exit 1
+          fi
+          echo "✅ Alpha version format valid: $VERSION"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check NPM authentication
+        id: check_auth
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "⚠️ NPM_TOKEN secret not configured. Skipping NPM publishing."
+            echo ""
+            echo "To enable NPM publishing:"
+            echo "1. Create an NPM access token at https://www.npmjs.com/settings/<username>/tokens"
+            echo "2. Add NPM_TOKEN to repository secrets at Settings > Secrets and variables > Actions"
+            echo "3. Ensure the token has 'Automation' or 'Publish' permissions"
+          else
+            echo "has_token=true" >> $GITHUB_OUTPUT
+            echo "✅ NPM authentication token found"
+          fi
+
+      - name: Update package versions
+        if: steps.check_auth.outputs.has_token == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          echo "📝 Updating package.json files to version ${VERSION}..."
+
+          # Update nvoos-storage
+          cd packages/nvoos-storage
+          npm version ${VERSION} --no-git-tag-version
+          echo "✅ Updated @nvdigitalsolutions/nvoos-storage to ${VERSION}"
+          cd ../..
+
+          # Update nvoos-markdown
+          cd packages/nvoos-markdown
+          npm version ${VERSION} --no-git-tag-version
+          echo "✅ Updated @nvdigitalsolutions/nvoos-markdown to ${VERSION}"
+          cd ../..
+
+          # Update nvoos-events
+          cd packages/nvoos-events
+          npm version ${VERSION} --no-git-tag-version
+          echo "✅ Updated @nvdigitalsolutions/nvoos-events to ${VERSION}"
+          cd ../..
+
+      - name: Build nvoos-storage
+        if: steps.check_auth.outputs.has_token == 'true'
+        run: |
+          echo "🔨 Building @nvdigitalsolutions/nvoos-storage..."
+          cd packages/nvoos-storage
+          npm run build
+          echo "✅ Build complete"
+          ls -lh dist/
+
+      - name: Build nvoos-markdown
+        if: steps.check_auth.outputs.has_token == 'true'
+        run: |
+          echo "🔨 Building @nvdigitalsolutions/nvoos-markdown..."
+          cd packages/nvoos-markdown
+          npm run build
+          echo "✅ Build complete"
+          ls -lh dist/
+
+      - name: Build nvoos-events
+        if: steps.check_auth.outputs.has_token == 'true'
+        run: |
+          echo "🔨 Building @nvdigitalsolutions/nvoos-events..."
+          cd packages/nvoos-events
+          npm run build
+          echo "✅ Build complete"
+          ls -lh dist/
+
+      - name: Verify package contents
+        if: steps.check_auth.outputs.has_token == 'true'
+        run: |
+          echo "📦 Verifying package contents before publishing..."
+
+          # Check nvoos-storage
+          echo ""
+          echo "=== @nvdigitalsolutions/nvoos-storage ==="
+          cd packages/nvoos-storage
+          npm pack --dry-run
+          cd ../..
+
+          # Check nvoos-markdown
+          echo ""
+          echo "=== @nvdigitalsolutions/nvoos-markdown ==="
+          cd packages/nvoos-markdown
+          npm pack --dry-run
+          cd ../..
+
+          # Check nvoos-events
+          echo ""
+          echo "=== @nvdigitalsolutions/nvoos-events ==="
+          cd packages/nvoos-events
+          npm pack --dry-run
+          cd ../..
+
+      - name: Publish @nvdigitalsolutions/nvoos-storage
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "📤 Publishing @nvdigitalsolutions/nvoos-storage..."
+          cd packages/nvoos-storage
+          npm publish --tag alpha --access public
+          echo "✅ Published @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-markdown
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "📤 Publishing @nvdigitalsolutions/nvoos-markdown..."
+          cd packages/nvoos-markdown
+          npm publish --tag alpha --access public
+          echo "✅ Published @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
+
+      - name: Publish @nvdigitalsolutions/nvoos-events
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "📤 Publishing @nvdigitalsolutions/nvoos-events..."
+          cd packages/nvoos-events
+          npm publish --tag alpha --access public
+          echo "✅ Published @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
+
+      - name: Dry run summary
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run == 'true'
+        run: |
+          echo "🏃 Dry run complete - no packages were published"
+          echo ""
+          echo "The following packages would have been published:"
+          echo "  - @nvdigitalsolutions/nvoos-storage@${{ steps.version.outputs.version }}"
+          echo "  - @nvdigitalsolutions/nvoos-markdown@${{ steps.version.outputs.version }}"
+          echo "  - @nvdigitalsolutions/nvoos-events@${{ steps.version.outputs.version }}"
+
+      - name: Publication summary
+        if: steps.check_auth.outputs.has_token == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "## 🎉 Alpha packages published successfully!"
+          echo ""
+          echo "### Published Packages"
+          echo ""
+          echo "✅ **@nvdigitalsolutions/nvoos-storage@${VERSION}**"
+          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-storage@alpha\`"
+          echo "   NPM: https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-storage"
+          echo ""
+          echo "✅ **@nvdigitalsolutions/nvoos-markdown@${VERSION}**"
+          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-markdown@alpha\`"
+          echo "   NPM: https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-markdown"
+          echo ""
+          echo "✅ **@nvdigitalsolutions/nvoos-events@${VERSION}**"
+          echo "   Install: \`npm install @nvdigitalsolutions/nvoos-events@alpha\`"
+          echo "   NPM: https://www.npmjs.com/package/@nvdigitalsolutions/nvoos-events"
+          echo ""
+          echo "### Testing Alpha Versions"
+          echo ""
+          echo "\`\`\`bash"
+          echo "# Install specific alpha version"
+          echo "npm install @nvdigitalsolutions/nvoos-storage@${VERSION}"
+          echo ""
+          echo "# Or install latest alpha"
+          echo "npm install @nvdigitalsolutions/nvoos-storage@alpha"
+          echo "\`\`\`"
+          echo ""
+          echo "### Documentation"
+          echo ""
+          echo "- [Storage Utility](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-storage)"
+          echo "- [Markdown Renderer](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-markdown)"
+          echo "- [Event System](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-events)"
