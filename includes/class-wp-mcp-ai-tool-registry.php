@@ -829,8 +829,24 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Check required settings.
 			if ( ! empty( $dependencies['required_settings'] ) ) {
-				foreach ( $dependencies['required_settings'] as $setting => $option_name ) {
-					if ( empty( get_option( $option_name ) ) ) {
+				$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+				foreach ( $dependencies['required_settings'] as $setting => $setting_key ) {
+					// Support both old option names (for backward compatibility) and new settings array keys.
+					$value = '';
+					if ( strpos( $setting_key, 'wp_mcp_ai_' ) === 0 ) {
+						// Old format: wp_mcp_ai_openai_api_key -> check get_option first, then settings array.
+						$value = get_option( $setting_key );
+						if ( empty( $value ) ) {
+							// Try to map old option name to new settings key.
+							$mapped_key = str_replace( 'wp_mcp_ai_', '', $setting_key );
+							$value      = isset( $settings[ $mapped_key ] ) ? $settings[ $mapped_key ] : '';
+						}
+					} else {
+						// New format: just the key name (e.g., 'openai_api_key').
+						$value = isset( $settings[ $setting_key ] ) ? $settings[ $setting_key ] : '';
+					}
+
+					if ( empty( $value ) ) {
 						return new WP_Error( 'missing_setting', "Required setting '{$setting}' is not configured" );
 					}
 				}
