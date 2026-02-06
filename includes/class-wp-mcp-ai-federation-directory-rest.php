@@ -19,9 +19,17 @@ class WP_MCP_AI_Federation_Directory_REST {
 	const REST_NAMESPACE = 'ai-dir/v1';
 
 	/**
+	 * Rate limiter instance.
+	 *
+	 * @var WP_MCP_AI_Federation_Rate_Limiter
+	 */
+	private $rate_limiter;
+
+	/**
 	 * Register REST API routes.
 	 */
 	public function __construct() {
+		$this->rate_limiter = new WP_MCP_AI_Federation_Rate_Limiter();
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
@@ -56,7 +64,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'list_peers' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_rate_limited_public_access' ),
 				'args'                => array(
 					'per_page' => array(
 						'default'           => 20,
@@ -88,7 +96,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_peer' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_rate_limited_public_access' ),
 				'args'                => array(
 					'id' => array(
 						'required'          => true,
@@ -107,7 +115,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'search_peers' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_rate_limited_public_access' ),
 				'args'                => array(
 					'capability'     => array(
 						'type'              => 'string',
@@ -243,6 +251,28 @@ class WP_MCP_AI_Federation_Directory_REST {
 				__( 'You must be logged in to perform this action.', 'mcp-ai-wpoos' ),
 				array( 'status' => 401 )
 			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check rate-limited public access for Federation Directory endpoints.
+	 *
+	 * Federation endpoints are public but rate-limited to prevent enumeration attacks.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool|WP_Error True if allowed, WP_Error if rate limited.
+	 */
+	public function check_rate_limited_public_access( $request ) {
+		// Federation endpoints are public but rate-limited.
+		$endpoint = $request->get_route();
+
+		// Apply rate limit: 60 requests per minute.
+		$rate_check = $this->rate_limiter->check_rate_limit( $endpoint, 60, 60 );
+
+		if ( is_wp_error( $rate_check ) ) {
+			return $rate_check;
 		}
 
 		return true;
@@ -467,7 +497,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			$peers[] = $this->format_peer_response( $post->ID );
 		}
 
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			array(
 				'peers'       => $peers,
 				'total'       => $query->found_posts,
@@ -477,6 +507,16 @@ class WP_MCP_AI_Federation_Directory_REST {
 			),
 			200
 		);
+
+		// Add rate limit headers.
+		$response = $this->rate_limiter->add_rate_limit_headers(
+			$response,
+			$request->get_route(),
+			60,
+			60
+		);
+
+		return $response;
 	}
 
 	/**
@@ -497,10 +537,20 @@ class WP_MCP_AI_Federation_Directory_REST {
 			);
 		}
 
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			$this->format_peer_response( $peer_id ),
 			200
 		);
+
+		// Add rate limit headers.
+		$response = $this->rate_limiter->add_rate_limit_headers(
+			$response,
+			$request->get_route(),
+			60,
+			60
+		);
+
+		return $response;
 	}
 
 	/**
@@ -600,7 +650,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			);
 		}
 
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			array(
 				'results' => $results,
 				'query'   => array(
@@ -613,6 +663,16 @@ class WP_MCP_AI_Federation_Directory_REST {
 			),
 			200
 		);
+
+		// Add rate limit headers.
+		$response = $this->rate_limiter->add_rate_limit_headers(
+			$response,
+			$request->get_route(),
+			60,
+			60
+		);
+
+		return $response;
 	}
 
 	/**
