@@ -69,12 +69,12 @@ The repository contains three NPM packages ready for publishing:
 
 ---
 
-## How to Publish NPM Packages
+## How to Publish Packages to GitHub Packages
 
 ### Option 1: GitHub UI (Recommended)
 
 1. Navigate to repository Actions tab
-2. Select "Publish Alpha to NPM" workflow
+2. Select "Publish Alpha to GitHub Packages" workflow
 3. Click "Run workflow"
 4. Fill in:
    - Version: e.g., `0.1.0-alpha.2`
@@ -90,7 +90,7 @@ The repository contains three NPM packages ready for publishing:
 # Build only (no version update or publishing)
 ./bin/publish-npm-packages.sh --build-only
 
-# Publish to NPM (requires npm login)
+# Publish to GitHub Packages (requires authentication)
 ./bin/publish-npm-packages.sh 0.1.0-alpha.2
 
 # Trigger GitHub Action (requires gh CLI)
@@ -107,14 +107,14 @@ git push origin v0.1.0-alpha.2
 
 ---
 
-## Prerequisites for NPM Publishing
+## Prerequisites for GitHub Packages Publishing
 
-Before publishing NPM packages, ensure:
+Before publishing packages, ensure:
 
-- [ ] **NPM_TOKEN** secret configured in GitHub Settings → Secrets → Actions
-- [ ] Token has "Automation" or "Publish" permissions
-- [ ] **@nvdigitalsolutions** organization exists on NPM
-- [ ] You have access to the organization
+- [x] **GITHUB_TOKEN** automatically provided by GitHub Actions
+- [x] Workflow has `packages: write` permission (configured)
+- [x] Packages are scoped to **@nvdigitalsolutions**
+- [x] Registry configured to `https://npm.pkg.github.com`
 
 See `NPM_PUBLISHING_GUIDE.md` for complete setup instructions.
 

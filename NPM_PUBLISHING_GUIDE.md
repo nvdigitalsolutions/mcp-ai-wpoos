@@ -1,6 +1,6 @@
-# NPM Package Publishing Guide
+# GitHub Packages Publishing Guide
 
-This guide explains how to publish the NPM packages from this repository.
+This guide explains how to publish the NPM packages from this repository to GitHub Packages.
 
 ## Available Packages
 
@@ -22,15 +22,15 @@ The repository contains 3 NPM packages in the `packages/` directory:
 
 Before publishing, ensure:
 
-1. **NPM Token Configured**
-   - Go to repository Settings → Secrets and variables → Actions
-   - Add a secret named `NPM_TOKEN`
-   - Value should be your NPM access token from https://www.npmjs.com/settings/tokens
-   - Token needs "Automation" or "Publish" permissions
+1. **GitHub Packages Permissions**
+   - The workflow uses `GITHUB_TOKEN` which is automatically provided by GitHub Actions
+   - No additional secrets need to be configured
+   - The repository must have packages write permissions (already configured in workflow)
 
-2. **NPM Organization**
-   - The `@nvdigitalsolutions` organization must exist on NPM
-   - Or update package names in `package.json` files
+2. **Package Registry Configuration**
+   - All packages are configured to publish to GitHub Packages registry
+   - Registry URL: `https://npm.pkg.github.com`
+   - Packages are scoped to `@nvdigitalsolutions`
 
 ## Publishing Methods
 
@@ -40,7 +40,7 @@ This is the easiest method and allows dry-run testing.
 
 1. Go to the repository on GitHub
 2. Click on the **Actions** tab
-3. Select **"Publish Alpha to NPM"** workflow from the left sidebar
+3. Select **"Publish Alpha to GitHub Packages"** workflow from the left sidebar
 4. Click **"Run workflow"** button (top right)
 5. Fill in the form:
    - **Use workflow from**: Select your branch (e.g., `main` or your feature branch)
@@ -87,13 +87,36 @@ gh run list --workflow=npm-publish-alpha.yml
    - Creates `dist/` directory with compiled code
    - Generates TypeScript definitions
 3. **Verify**: Packages are verified with `npm pack --dry-run`
-4. **Publish**: Each package is published to NPM with `@alpha` tag
-   - Published as public packages
+4. **Publish**: Each package is published to GitHub Packages with `@alpha` tag
+   - Published to GitHub Packages registry
    - Accessible via `npm install @nvdigitalsolutions/nvoos-storage@alpha`
 
 ## After Publishing
 
-Once published, users can install the packages:
+Once published, users can install the packages from GitHub Packages:
+
+### Setup .npmrc
+
+Create or update `.npmrc` file in your project:
+
+```bash
+@nvdigitalsolutions:registry=https://npm.pkg.github.com
+```
+
+### Authenticate
+
+You'll need a GitHub Personal Access Token with `read:packages` scope:
+
+```bash
+# Login to GitHub Packages
+npm login --registry=https://npm.pkg.github.com
+
+# Username: Your GitHub username
+# Password: Your GitHub Personal Access Token
+# Email: Your email
+```
+
+### Install Packages
 
 ```bash
 # Install latest alpha version
@@ -129,13 +152,13 @@ If the workflow doesn't appear in GitHub Actions:
 3. The workflow needs at least one successful run to appear in the UI
 4. Try pushing to the main branch first
 
-### NPM Publishing Fails
+### GitHub Packages Publishing Fails
 
 Common issues:
-- **Authentication Error**: Verify NPM_TOKEN secret is set correctly
-- **Package Name Conflict**: Package name might already exist on NPM
-- **Permissions Error**: NPM token needs publish permissions
-- **Organization Not Found**: `@nvdigitalsolutions` org must exist on NPM
+- **Permission Error**: Ensure workflow has `packages: write` permission (already configured)
+- **Package Name Conflict**: Package name might already exist in GitHub Packages
+- **Authentication Error**: GITHUB_TOKEN is automatically provided, no manual setup needed
+- **Organization Scope**: Packages must be scoped to `@nvdigitalsolutions`
 
 ### Build Fails
 
@@ -143,6 +166,14 @@ If the build step fails:
 1. Check that all dependencies are listed in package.json
 2. Verify the build script in each package.json works locally
 3. Test locally: `cd packages/nvoos-storage && npm run build`
+
+### Installing from GitHub Packages Fails
+
+If installation fails:
+- Ensure `.npmrc` is configured with GitHub Packages registry for the scope
+- Verify you're authenticated with a GitHub Personal Access Token
+- Token must have `read:packages` scope
+- Check package exists: Visit https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages
 
 ## Local Testing
 
@@ -177,12 +208,13 @@ Key features:
 - ✅ Build verification
 - ✅ Dry run support
 - ✅ Package content verification
-- ✅ Public access by default
+- ✅ GitHub Packages publishing
 - ✅ Alpha tag for pre-release versions
+- ✅ Automatic authentication via GITHUB_TOKEN
 
 ## Support
 
 For issues or questions:
 - Repository: https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
-- NPM Packages: https://www.npmjs.com/org/nvdigitalsolutions
+- GitHub Packages: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/packages
