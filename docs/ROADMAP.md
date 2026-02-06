@@ -99,7 +99,20 @@
 ## Next Patch (v1.1.1) - February 2026 🔧
 
 **Release Date:** February 15, 2026  
-**Focus:** Stability, bug fixes, and community feedback
+**Focus:** Security fixes, stability, bug fixes, and community feedback
+
+### Completed Security Improvements ✅
+
+**Critical Security Fixes (Completed February 6, 2026):**
+- ✅ **SSRF Protection** - Webhook registration now blocks private IPs and internal networks
+- ✅ **CSRF Protection** - Cron job deletion properly secured with nonce after AJAX refresh
+- ✅ **XSS Prevention** - Error messages now double-escaped (input + output) for defense in depth
+- ✅ **Authorization System** - Comprehensive multi-entity job access control implemented
+
+**Security Score Improvement:** 100/100 → 95/100 (comprehensive assessment methodology)
+**Status:** All critical and high-severity vulnerabilities resolved
+
+**Details:** See `docs/implementation-history/2026/CODE_REVIEW_2026-02-06.md`
 
 ### Planned Improvements
 
@@ -110,7 +123,7 @@
 - [ ] Chat UI loading issues (if reported)
 
 **Security:**
-- [ ] Security patches (if discovered)
+- [ ] Automated security testing suite (4-6 hours)
 - [ ] Dependency updates from Dependabot
 
 **Documentation:**
@@ -134,12 +147,46 @@
 ## Next Minor (v1.2.0) - Q2 2026 ⚡
 
 **Release Date:** May 31, 2026  
-**Focus:** Enhanced project management, testing, and GitHub infrastructure
+**Focus:** Enhanced project management, security enhancements, testing, and GitHub infrastructure
 **Note:** Originally planned as v1.1.0 for February 2026, moved to accommodate v1.1.0 early delivery with multi-agent features
 
 ### Major Features
 
-#### 1. Task Dependencies and Subtasks
+#### 1. Security Enhancements (NEW)
+
+**SSE Rate Limiting:**
+- [ ] Implement per-user connection limits (3-5 concurrent)
+- [ ] Add global SSE connection limit (50-100 total)
+- [ ] Use WordPress transients for connection tracking
+- [ ] Return HTTP 429 when limits exceeded
+- [ ] Admin override for manage_options capability
+
+**Estimated Effort:** 4-6 hours  
+**Priority:** Medium  
+**Rationale:** Prevents resource exhaustion from excessive SSE connections
+
+**CORS Origin Allowlist:**
+- [ ] Add settings page option for allowed origins
+- [ ] Support wildcard subdomains (*.example.com)
+- [ ] Default to current site URL if unconfigured
+- [ ] Allow localhost in WP_DEBUG mode
+- [ ] Graceful fallback for backwards compatibility
+
+**Estimated Effort:** 4-6 hours  
+**Priority:** Low  
+**Rationale:** Enhanced security while maintaining authentication requirements
+
+**Security Testing:**
+- [ ] Automated SSRF testing
+- [ ] Automated authorization testing
+- [ ] Automated XSS testing
+- [ ] Automated CSRF testing
+- [ ] Integration with CI/CD pipeline
+
+**Estimated Effort:** 6-8 hours  
+**Priority:** Medium
+
+#### 2. Task Dependencies and Subtasks
 - [ ] Add parent-child task relationships
 - [ ] Implement dependency tracking (blocks/blocked by)
 - [ ] Add dependency validation (prevent circular)
