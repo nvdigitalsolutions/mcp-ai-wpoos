@@ -1,0 +1,41 @@
+{
+  "name": "@nvdigital/nvoos-storage",
+  "version": "0.1.0-alpha.1",
+  "description": "Async storage utilities with Web Worker optimization - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-storage.js",
+  "types": "dist/nvoos-storage.d.ts",
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-storage",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-storage"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "storage",
+    "localStorage",
+    "web-worker",
+    "async",
+    "json-parser",
+    "performance",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
