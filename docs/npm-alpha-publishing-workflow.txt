@@ -1,0 +1,155 @@
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    NPM Alpha Publishing Workflow                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Method 1: Helper Script (Recommended)
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│  Developer                                                                │
+│      │                                                                    │
+│      ├──> Run: ./bin/publish-alpha.sh 0.1.0-alpha.2                     │
+│      │                                                                    │
+│      ├──> Script validates version format                                │
+│      ├──> Script checks for uncommitted changes                          │
+│      ├──> Script updates package.json in all 3 packages                  │
+│      ├──> Script builds all 3 packages (dist/ folders)                   │
+│      ├──> Script creates commit: "Bump alpha version to X.Y.Z-alpha.N"   │
+│      ├──> Script creates tag: vX.Y.Z-alpha.N                            │
+│      │                                                                    │
+│      ├──> Prompt: Push tag? (y/N)                                       │
+│      │                                                                    │
+│      └──> Push tag to GitHub                                             │
+│                │                                                          │
+│                v                                                          │
+│                                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Method 2: Manual Git Tag
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│  Developer                                                                │
+│      │                                                                    │
+│      ├──> Update package.json files manually                             │
+│      ├──> Build packages manually                                        │
+│      ├──> git commit -m "Bump alpha version"                            │
+│      ├──> git tag -a vX.Y.Z-alpha.N -m "Alpha release"                  │
+│      └──> git push origin vX.Y.Z-alpha.N                                │
+│                │                                                          │
+│                v                                                          │
+│                                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+
+Method 3: Manual Workflow Dispatch
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                           │
+│  Developer                                                                │
+│      │                                                                    │
+│      ├──> Go to GitHub Actions UI                                        │
+│      ├──> Click "Publish Alpha to NPM" workflow                          │
+│      ├──> Click "Run workflow"                                           │
+│      ├──> Enter version (e.g., 0.1.0-alpha.2)                           │
+│      ├──> Optionally enable "Dry run"                                    │
+│      └──> Click "Run workflow"                                           │
+│                │                                                          │
+│                v                                                          │
+│                                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+
+                                ↓
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    GitHub Actions Workflow Trigger                       │
+│                  (.github/workflows/npm-publish-alpha.yml)              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 1: Checkout & Setup                                                │
+│    • Checkout repository code                                            │
+│    • Extract version from tag or input                                   │
+│    • Validate alpha version format (X.Y.Z-alpha.N)                      │
+│    • Setup Node.js 20                                                    │
+│    • Check for NPM_TOKEN secret                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 2: Update Versions                                                 │
+│    • npm version X.Y.Z-alpha.N in packages/nvoos-storage                │
+│    • npm version X.Y.Z-alpha.N in packages/nvoos-markdown               │
+│    • npm version X.Y.Z-alpha.N in packages/nvoos-events                 │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 3: Build Packages                                                  │
+│    • cd packages/nvoos-storage && npm run build                          │
+│      → Generates dist/nvoos-storage.js + .d.ts                          │
+│    • cd packages/nvoos-markdown && npm run build                         │
+│      → Generates dist/nvoos-markdown.js + .d.ts                         │
+│    • cd packages/nvoos-events && npm run build                           │
+│      → Generates dist/nvoos-events.js + .d.ts                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 4: Verify Package Contents                                         │
+│    • npm pack --dry-run for each package                                │
+│    • Verify files: README, LICENSE, dist/, package.json                 │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 5: Publish to NPM (if not dry-run)                                │
+│    • npm publish --tag alpha --access public (nvoos-storage)            │
+│    • npm publish --tag alpha --access public (nvoos-markdown)           │
+│    • npm publish --tag alpha --access public (nvoos-events)             │
+│      Using NODE_AUTH_TOKEN (NPM_TOKEN secret)                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌──────────────────────────────────────────────────────────────────────────┐
+│  Step 6: Summary                                                          │
+│    • Display published package URLs                                      │
+│    • Show installation commands                                          │
+│    • Link to documentation                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+                                │
+                                v
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Packages Published on NPM!                            │
+│                                                                           │
+│  📦 @nvdigitalsolutions/nvoos-storage@X.Y.Z-alpha.N                     │
+│  📦 @nvdigitalsolutions/nvoos-markdown@X.Y.Z-alpha.N                    │
+│  📦 @nvdigitalsolutions/nvoos-events@X.Y.Z-alpha.N                      │
+│                                                                           │
+│  Install with:                                                           │
+│  npm install @nvdigitalsolutions/nvoos-storage@alpha                    │
+│                                                                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Key Features:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Automated version bumping
+✅ Validation of version format
+✅ Three publishing methods (script, manual, UI)
+✅ Dry-run capability
+✅ Graceful handling when NPM_TOKEN missing
+✅ Publishes with 'alpha' dist-tag (not 'latest')
+✅ Access control via NPM organization membership
+✅ Secure token handling (GitHub secrets)
+✅ Comprehensive logging and error messages
+✅ No manual steps required after configuration
+
+Security:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔒 NPM_TOKEN stored as GitHub secret (encrypted)
+🔒 Token never exposed in logs or code
+🔒 Workflow only runs on specific tag patterns
+🔒 Packages built in CI/CD (not local builds)
+🔒 Organization-scoped packages (@nvdigitalsolutions)
+🔒 Optional 2FA protection on NPM account
+```
