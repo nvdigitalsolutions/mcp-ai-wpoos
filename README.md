@@ -264,7 +264,52 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (January 2026)
+## 🆕 Latest Updates (January-February 2026)
+
+### Slash Commands & Workflow System - Phase 1 & 2 Complete (February 3-4, 2026) ⭐ **NEW**
+
+**Major Feature: Comprehensive slash command system for content management and pro toolkits**
+
+**Phase 1 - Core Commands (February 3, 2026):**
+- **8 Base Commands**: `/help`, `/next-task`, `/ship`, `/clean-content`, `/optimize-perf`, `/sync-docs`, `/workflow`
+- **Workflow Orchestrator**: Multi-step workflow execution with state management and human-in-the-loop checkpoints
+- **Command Features**: Chaining, conditional logic, parameter validation, result passing, error handling
+- **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
+- **Security**: Capability-based authorization, rate limiting (10 commands/minute), comprehensive logging
+- [Slash Commands Guide →](docs/SLASH_COMMANDS_GUIDE.md)
+
+**Phase 2 - Pro Toolkit Commands (February 4, 2026):**
+- **21 Specialized Commands** across 3 pro toolkits:
+  - **E-commerce (6)**: `/upsell-suggest`, `/abandoned-recover`, `/ecom-analytics`, `/discount-optimize`, `/inventory-forecast`, `/customer-segment`
+  - **Social Media (6)**: `/hashtag-suggest`, `/social-analytics`, `/social-schedule`, `/content-calendar`, `/competitor-track`
+  - **Video Production (6)**: `/video-subtitle`, `/video-template`, `/video-analytics`, `/video-merge`, `/video-thumbnail`, `/video-compress`
+- **7 Automated Workflows**: Abandoned cart recovery, multi-platform campaigns, video marketing, inventory management, social planning, video post-production
+- **Test Coverage**: 50+ test methods across 4 test files (100% passing)
+- [Pro Toolkit Slash Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+
+### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
+
+**Production-Ready: 6 chat platforms + collaborative rooms with AI assistants**
+
+**Chat Channels Toolkit (21 Tools):**
+- **Telegram (3)**: Send messages, get updates, manage webhooks
+- **WhatsApp (3)**: Send messages/templates, get message history
+- **Slack (4)**: Send messages, get channels/messages, create channels
+- **Discord (4)**: Send messages, get channels/messages, create channels
+- **Microsoft Teams (3)**: Send messages, get channels/messages
+- **Facebook Messenger (3)**: Send messages, get conversations, create broadcasts
+- **Unified Hub (1)**: `unified_channel_broadcast` - Simultaneous multi-platform messaging
+- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit
+- [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
+
+**WebChat Rooms:**
+- **Custom Post Type**: `mcp_ai_webchat` for room management
+- **AI Assistant Assignment**: Dedicated metabox for assigning assistants to rooms
+- **Message Persistence**: JetEngine CCT integration for permanent storage
+- **WebRTC Support**: Self-hosted signaling via WordPress REST API
+- **4 Core Tools**: Create rooms, get messages, save messages, send messages
+- **Security**: Capability-based access, nonce verification, proper sanitization
+- [WebChat Assistant Assignment →](addons/pro/docs/WEBCHAT_ASSISTANT_ASSIGNMENT.md)
 
 ### Repository Organization & Documentation Cleanup (January 31, 2026) ⭐ **NEW**
 
@@ -637,6 +682,24 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ### Commerce & finance workflows
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+
+### Slash Commands & Workflow Automation ⭐ **NEW**
+- ⚡ **8 Core Commands**: `/help`, `/next-task`, `/ship`, `/clean-content`, `/optimize-perf`, `/sync-docs`, `/workflow` - Command-line style interface for content management
+- 🔄 **Workflow Orchestrator**: Multi-step workflow execution with state management, conditional logic, and human-in-the-loop checkpoints
+- 🛠️ **21 Pro Toolkit Commands**: Specialized commands for E-commerce (6), Social Media (6), and Video Production (6) toolkits
+- 🎯 **7 Automated Workflows**: Pre-built workflow templates for abandoned cart recovery, social media campaigns, video marketing, inventory management, and more
+- 🔐 **Security**: Capability-based authorization, rate limiting, comprehensive audit logging
+- 💡 **Integration**: JavaScript autocomplete, REST API endpoint, WP-CLI support
+- [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
+
+### Chat Channels & Messaging Integration ⭐ **NEW**
+- 💬 **Chat Channels Toolkit (21 Tools)**: Integrate with 6 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger
+- 🌐 **Unified Broadcasting**: Send messages across multiple platforms simultaneously with `unified_channel_broadcast` tool
+- 🏠 **WebChat Rooms**: Custom post type for real-time collaborative chat rooms with AI assistant assignment
+- 📝 **Message Persistence**: JetEngine CCT integration for permanent message history
+- 🔊 **WebRTC Support**: Self-hosted WebRTC signaling via WordPress REST API for voice/video
+- 🤖 **AI-Powered Rooms**: Assign dedicated assistants to chat rooms for automated support
+- [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md) | [WebChat Setup →](addons/pro/docs/WEBCHAT_ASSISTANT_ASSIGNMENT.md)
 
 ### Communications & outreach
 - ✉️ Mailjet-powered outbound email automation with granular capability enforcement and sender defaults configurable in the MCP settings.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】

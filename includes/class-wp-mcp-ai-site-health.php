@@ -107,10 +107,21 @@ class WP_MCP_AI_Site_Health {
 			'test'        => 'wp_mcp_ai_api_connectivity',
 		);
 
-		// Get configured API providers.
-		$openai_key = get_option( 'wp_mcp_ai_openai_api_key' );
-		$gemini_key = get_option( 'wp_mcp_ai_gemini_api_key' );
-		$ollama_url = get_option( 'wp_mcp_ai_ollama_url' );
+		// Get configured API providers from settings array.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$result['status']      = 'critical';
+			$result['label']       = __( 'Settings class not available', 'mcp-ai-wpoos' );
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'The settings system is not yet initialized. This is normal during plugin activation.', 'mcp-ai-wpoos' )
+			);
+			return $result;
+		}
+
+		$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+		$openai_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+		$gemini_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+		$ollama_url = isset( $settings['ollama_endpoint_url'] ) ? $settings['ollama_endpoint_url'] : '';
 
 		$providers_configured = 0;
 		$providers_working    = 0;
@@ -223,20 +234,33 @@ class WP_MCP_AI_Site_Health {
 		// Count available models.
 		$available_models = array();
 
+		// Get settings from settings array.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$result['status']      = 'critical';
+			$result['label']       = __( 'Settings class not available', 'mcp-ai-wpoos' );
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'The settings system is not yet initialized. This is normal during plugin activation.', 'mcp-ai-wpoos' )
+			);
+			return $result;
+		}
+
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
 		// Check OpenAI models.
-		$openai_key = get_option( 'wp_mcp_ai_openai_api_key' );
+		$openai_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 		if ( ! empty( $openai_key ) ) {
 			$available_models[] = 'OpenAI GPT';
 		}
 
 		// Check Gemini models.
-		$gemini_key = get_option( 'wp_mcp_ai_gemini_api_key' );
+		$gemini_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
 		if ( ! empty( $gemini_key ) ) {
 			$available_models[] = 'Google Gemini';
 		}
 
 		// Check Ollama models.
-		$ollama_url = get_option( 'wp_mcp_ai_ollama_url' );
+		$ollama_url = isset( $settings['ollama_endpoint_url'] ) ? $settings['ollama_endpoint_url'] : '';
 		if ( ! empty( $ollama_url ) ) {
 			$available_models[] = 'Ollama (Local)';
 		}
@@ -480,14 +504,17 @@ class WP_MCP_AI_Site_Health {
 
 		// Configured providers.
 		$providers = array();
-		if ( get_option( 'wp_mcp_ai_openai_api_key' ) ) {
-			$providers[] = 'OpenAI';
-		}
-		if ( get_option( 'wp_mcp_ai_gemini_api_key' ) ) {
-			$providers[] = 'Google Gemini';
-		}
-		if ( get_option( 'wp_mcp_ai_ollama_url' ) ) {
-			$providers[] = 'Ollama';
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['openai_api_key'] ) ) {
+				$providers[] = 'OpenAI';
+			}
+			if ( ! empty( $settings['gemini_api_key'] ) ) {
+				$providers[] = 'Google Gemini';
+			}
+			if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
+				$providers[] = 'Ollama';
+			}
 		}
 
 		$fields['providers'] = array(

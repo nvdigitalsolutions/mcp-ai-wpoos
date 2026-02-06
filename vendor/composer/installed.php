@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-a96047fe-f075-48ed-b144-77f0ef26d696',
+        'version' => 'dev-copilot/rebuild-all-zips-a96047fe-f075-48ed-b144-77f0ef26d696',
+        'reference' => 'c1241342da90690dd1d3934b0c287ee2e14c9863',
         'pretty_version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
         'version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
         'reference' => 'd40f78e1aa94bd98a938fcecc7e79e6a21094534',
@@ -86,6 +89,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-a96047fe-f075-48ed-b144-77f0ef26d696',
+            'version' => 'dev-copilot/rebuild-all-zips-a96047fe-f075-48ed-b144-77f0ef26d696',
+            'reference' => 'c1241342da90690dd1d3934b0c287ee2e14c9863',
             'pretty_version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
             'version' => 'dev-copilot/fix-slash-command-url-duplication-another-one',
             'reference' => 'd40f78e1aa94bd98a938fcecc7e79e6a21094534',
