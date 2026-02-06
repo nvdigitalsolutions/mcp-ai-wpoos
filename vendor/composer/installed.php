@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-slash-command-url-yet-again',
-        'version' => 'dev-copilot/fix-slash-command-url-yet-again',
-        'reference' => '0d92a8b25a1adba64a589f25a0aa1f12a6a1bab1',
+        'pretty_version' => 'dev-copilot/update-slash-command-clickability',
+        'version' => 'dev-copilot/update-slash-command-clickability',
+        'reference' => 'fbcd1440322664867d9c596837525a7f741eb48c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-slash-command-url-yet-again',
-            'version' => 'dev-copilot/fix-slash-command-url-yet-again',
-            'reference' => '0d92a8b25a1adba64a589f25a0aa1f12a6a1bab1',
+            'pretty_version' => 'dev-copilot/update-slash-command-clickability',
+            'version' => 'dev-copilot/update-slash-command-clickability',
+            'reference' => 'fbcd1440322664867d9c596837525a7f741eb48c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
