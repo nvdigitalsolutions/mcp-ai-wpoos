@@ -35,12 +35,16 @@ class WP_MCP_AI_Federation_Settings {
 	 * @param array $new_value New settings value.
 	 */
 	public function maybe_flush_rewrite_rules( $old_value, $new_value ) {
-		// Check if federation setting changed.
+		// Check if either federation setting changed.
 		$old_federation_enabled = ! empty( $old_value['enable_federation'] );
 		$new_federation_enabled = ! empty( $new_value['enable_federation'] );
 
-		// If setting changed, flush rewrite rules.
-		if ( $old_federation_enabled !== $new_federation_enabled ) {
+		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
+		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
+
+		// If either setting changed, flush rewrite rules.
+		if ( $old_federation_enabled !== $new_federation_enabled ||
+			$old_directory_enabled !== $new_directory_enabled ) {
 			flush_rewrite_rules();
 		}
 	}
@@ -310,6 +314,6 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public static function is_directory_enabled() {
 		$settings = self::get_settings();
-		return ! empty( $settings['enable_federation'] );
+		return ! empty( $settings['enable_federation_directory'] );
 	}
 }
