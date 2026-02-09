@@ -169,12 +169,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'class'       => 'regular-text code',
 				),
 				'mesh_peer_sites'               => array(
-					'type'        => 'textarea',
-					'label'       => __( 'Mesh Peer Sites Configuration', 'mcp-ai-wpoos' ),
-					'description' => __( 'JSON array of mesh network peer configurations. Each peer should have: url (peer site URL), api_key (their inbound key), name (friendly name), and enabled (boolean). Example: [{"url":"https://peer1.com","api_key":"mesh_xxx","name":"Peer 1","enabled":true}]', 'mcp-ai-wpoos' ),
-					'default'     => '',
-					'placeholder' => '[{"url":"https://peer.example.com","api_key":"mesh_xxx","name":"Peer Site","enabled":true}]',
-					'rows'        => 8,
+					'type'        => 'custom',
+					'label'       => __( 'Mesh Peer Sites', 'mcp-ai-wpoos' ),
+					'description' => __( 'Configure peer sites for mesh computing. These are remote NV oOS instances that this site can query for distributed workload processing.', 'mcp-ai-wpoos' ),
+					'callback'    => array( $this, 'render_mesh_peer_sites_custom_field' ),
 				),
 			);
 		}
@@ -1862,23 +1860,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					<?php endif; ?>
 				<?php endif; ?>
 
-				<!-- Mesh Peer Sites Configuration -->
-				<?php if ( $mesh_enabled ) : ?>
-					<div class="wp-mcp-ai-mesh-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-						<h4><?php esc_html_e( 'Mesh Peer Sites', 'mcp-ai-wpoos' ); ?></h4>
-						<p class="description">
-							<?php esc_html_e( 'Configure peer sites for mesh computing. These are remote NV oOS instances that this site can query for distributed workload processing.', 'mcp-ai-wpoos' ); ?>
-						</p>
-						<?php
-						// Call the existing custom field renderer for mesh_peer_sites.
-						if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'render_mesh_peer_sites_field' ) ) {
-							$admin_settings = new WP_MCP_AI_Admin_Settings();
-							$admin_settings->render_mesh_peer_sites_field();
-						}
-						?>
-					</div>
-				<?php endif; ?>
-
 				<!-- AI Peers Management -->
 				<?php if ( $directory_enabled ) : ?>
 					<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
@@ -2096,6 +2077,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				}
 			</style>
 			<?php
+		}
+
+		/**
+		 * Render custom mesh peer sites field.
+		 *
+		 * This method is called as a callback when rendering the mesh_peer_sites field.
+		 * It delegates to the WP_MCP_AI_Admin_Settings class for the actual rendering.
+		 *
+		 * @param array $field Field configuration array.
+		 */
+		public function render_mesh_peer_sites_custom_field( $field ) {
+			// Call the existing custom field renderer for mesh_peer_sites.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'render_mesh_peer_sites_field' ) ) {
+				$admin_settings = new WP_MCP_AI_Admin_Settings();
+				$admin_settings->render_mesh_peer_sites_field();
+			}
 		}
 
 		/**
