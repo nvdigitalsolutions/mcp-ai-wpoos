@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-slash-command-clickability',
-        'version' => 'dev-copilot/update-slash-command-clickability',
-        'reference' => 'fbcd1440322664867d9c596837525a7f741eb48c',
+        'pretty_version' => 'dev-copilot/fix-mesh-peer-save-issue',
+        'version' => 'dev-copilot/fix-mesh-peer-save-issue',
+        'reference' => '8a7356f4c9b428f29d06f1e7d2e6df8ed01a7a64',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-slash-command-clickability',
-            'version' => 'dev-copilot/update-slash-command-clickability',
-            'reference' => 'fbcd1440322664867d9c596837525a7f741eb48c',
+            'pretty_version' => 'dev-copilot/fix-mesh-peer-save-issue',
+            'version' => 'dev-copilot/fix-mesh-peer-save-issue',
+            'reference' => '8a7356f4c9b428f29d06f1e7d2e6df8ed01a7a64',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
