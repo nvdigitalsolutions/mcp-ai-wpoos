@@ -25,6 +25,16 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 	// Load E-commerce admin pages.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php';
+
+		// Load Product Research & Add page for WooCommerce integration.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-research-page.php';
+
+		// Load Product Consolidate & Add page for data import/validation.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-consolidate-page.php';
+		WP_MCP_AI_Product_Consolidate_Page::init();
+
+		// Load Product Settings page (tab-based interface).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-settings-page.php';
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
