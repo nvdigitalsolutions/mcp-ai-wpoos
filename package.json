@@ -77,6 +77,11 @@
 		"jest-environment-jsdom": "^30.2.0",
 		"uglify-js": "^3.17.4"
 	},
+	"overrides": {
+		"tmp": ">=0.2.4",
+		"webpack-dev-server": ">=5.2.1",
+		"langsmith": ">=0.4.6"
+	},
 	"engines": {
 		"node": ">=18.0.0",
 		"npm": ">=10.0.0"
