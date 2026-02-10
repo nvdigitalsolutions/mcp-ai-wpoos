@@ -70,7 +70,9 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our consolidation page.
-		if ( 'product_page_' . self::PAGE_SLUG !== $hook ) {
+		// Since this is a submenu of 'wp-mcp-ai-ecommerce-toolkit',
+		// the hook will be 'wp-mcp-ai-ecommerce-toolkit_page_product-consolidate'.
+		if ( 'wp-mcp-ai-ecommerce-toolkit_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
