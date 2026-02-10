@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
-        'version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
-        'reference' => '9a88dbd43e5c8eaf82f87f3c9ad41ae249145b4d',
+        'pretty_version' => 'dev-copilot/update-dependencies-to-latest',
+        'version' => 'dev-copilot/update-dependencies-to-latest',
+        'reference' => 'e097facaa2b53a4152fe23229ebc5e7e5d487d45',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
-            'version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
-            'reference' => '9a88dbd43e5c8eaf82f87f3c9ad41ae249145b4d',
+            'pretty_version' => 'dev-copilot/update-dependencies-to-latest',
+            'version' => 'dev-copilot/update-dependencies-to-latest',
+            'reference' => 'e097facaa2b53a4152fe23229ebc5e7e5d487d45',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
