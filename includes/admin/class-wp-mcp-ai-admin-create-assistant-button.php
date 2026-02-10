@@ -41,6 +41,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 				vertical-align: middle;
 			}
 		</style>
+		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for adding Build AI Assistant button after page title on this admin page only
 		?>
 		<script type="text/javascript">
