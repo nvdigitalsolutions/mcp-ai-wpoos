@@ -11,7 +11,7 @@
 /**
  * Test E-commerce Toolkit opt-in behavior.
  */
-class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Ecommerce_Toolkit_Opt_In_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that helper function exists.
