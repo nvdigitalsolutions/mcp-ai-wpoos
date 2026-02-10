@@ -13,15 +13,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Check if E-commerce toolkit is enabled and WooCommerce is active.
-$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-$has_wc  = class_exists( 'WooCommerce' );
+/**
+ * Check if e-commerce toolkit is enabled.
+ *
+ * The toolkit is enabled by default when WooCommerce is active and not in base version,
+ * unless explicitly disabled in settings.
+ *
+ * @since 2.1.0
+ *
+ * @return bool True if enabled, false otherwise.
+ */
+function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
+	$settings               = get_option( 'wp_mcp_ai_settings', array() );
+	$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
+	
+	// Enabled by default unless explicitly disabled.
+	return ! $is_explicitly_disabled;
+}
 
-// Enable by default when WooCommerce is active and not in base version,
-// unless explicitly disabled in settings.
-$settings               = get_option( 'wp_mcp_ai_settings', array() );
-$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-$is_enabled             = ! $is_explicitly_disabled;
+// Check if E-commerce toolkit is enabled and WooCommerce is active.
+$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$has_wc     = class_exists( 'WooCommerce' );
+$is_enabled = wp_mcp_ai_is_ecommerce_toolkit_enabled();
 
 // Only load if enabled, not in base version, and WooCommerce is active.
 if ( $is_enabled && ! $is_base && $has_wc ) {
@@ -55,33 +68,13 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 }
 
 /**
- * Check if e-commerce toolkit is enabled.
- *
- * The toolkit is enabled by default when WooCommerce is active and not in base version,
- * unless explicitly disabled in settings.
- *
- * @since 2.1.0
- *
- * @return bool True if enabled, false otherwise.
- */
-function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
-	$settings               = get_option( 'wp_mcp_ai_settings', array() );
-	$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-	
-	// Enabled by default unless explicitly disabled.
-	return ! $is_explicitly_disabled;
-}
-
-/**
  * Enqueue e-commerce toolkit admin styles.
  *
  * @param string $hook Current admin page hook.
  */
 function wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled (enabled by default unless explicitly disabled).
-	$settings               = get_option( 'wp_mcp_ai_settings', array() );
-	$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-	if ( $is_explicitly_disabled ) {
+	if ( ! wp_mcp_ai_is_ecommerce_toolkit_enabled() ) {
 		return;
 	}
 
