@@ -196,6 +196,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+	/**
+	 * Check if WooCommerce tools are enabled.
+	 *
+	 * Returns true by default (when setting doesn't exist) to ensure
+	 * WooCommerce integration is available on fresh installs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $settings Optional. Settings array. If not provided, will fetch from options.
+	 * @return bool True if WooCommerce tools are enabled, false otherwise.
+	 */
+	function wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings = null ) {
+		if ( null === $settings ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+		}
+
+		return isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -316,9 +337,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
 
 		// Load Product Research & Add page if WooCommerce tools enabled.
-		// Default to true if setting doesn't exist (fresh install).
-		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
-		if ( $woocommerce_tools_enabled && is_admin() ) {
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) && is_admin() ) {
 			// Check if not in base version and WooCommerce is active.
 			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 			if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
@@ -786,9 +805,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		}
 
 		// Add WooCommerce tools if enabled.
-		// Default to true if setting doesn't exist (fresh install).
-		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
-		if ( $woocommerce_tools_enabled ) {
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {
 			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',

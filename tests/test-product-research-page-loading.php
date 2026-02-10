@@ -68,10 +68,13 @@ class WP_MCP_AI_Product_Research_Page_Loading_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Since the classes are loaded at plugin init time and we're in the middle of a test,
-		// we can't test the actual non-loading. Instead, we verify the logic would work.
-		$settings                  = get_option( 'wp_mcp_ai_settings', array() );
-		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		// Use the helper function if available, otherwise fall back to manual logic.
+		if ( function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+			$woocommerce_tools_enabled = wp_mcp_ai_pro_is_woocommerce_tools_enabled();
+		} else {
+			$settings                  = get_option( 'wp_mcp_ai_settings', array() );
+			$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		}
 
 		$this->assertFalse(
 			$woocommerce_tools_enabled,
@@ -89,11 +92,13 @@ class WP_MCP_AI_Product_Research_Page_Loading_Test extends WP_UnitTestCase {
 		// Clear settings to simulate fresh install.
 		delete_option( 'wp_mcp_ai_settings' );
 
-		// Get settings (empty array).
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
-		// Apply the same logic as the fix.
-		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		// Use the helper function if available, otherwise fall back to manual logic.
+		if ( function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+			$woocommerce_tools_enabled = wp_mcp_ai_pro_is_woocommerce_tools_enabled();
+		} else {
+			$settings                  = get_option( 'wp_mcp_ai_settings', array() );
+			$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		}
 
 		$this->assertTrue(
 			$woocommerce_tools_enabled,
@@ -113,8 +118,13 @@ class WP_MCP_AI_Product_Research_Page_Loading_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$settings                  = get_option( 'wp_mcp_ai_settings', array() );
-		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		// Use the helper function if available, otherwise fall back to manual logic.
+		if ( function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+			$woocommerce_tools_enabled = wp_mcp_ai_pro_is_woocommerce_tools_enabled();
+		} else {
+			$settings                  = get_option( 'wp_mcp_ai_settings', array() );
+			$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		}
 
 		$this->assertTrue(
 			$woocommerce_tools_enabled,
@@ -123,6 +133,38 @@ class WP_MCP_AI_Product_Research_Page_Loading_Test extends WP_UnitTestCase {
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test the helper function if available.
+	 */
+	public function test_helper_function_exists() {
+		if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+			$this->markTestSkipped( 'Helper function wp_mcp_ai_pro_is_woocommerce_tools_enabled not available' );
+		}
+
+		$this->assertTrue(
+			function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ),
+			'Helper function wp_mcp_ai_pro_is_woocommerce_tools_enabled should exist'
+		);
+
+		// Test with null (should fetch from options).
+		delete_option( 'wp_mcp_ai_settings' );
+		$this->assertTrue(
+			wp_mcp_ai_pro_is_woocommerce_tools_enabled(),
+			'Helper function should return true for fresh install (no settings)'
+		);
+
+		// Test with explicit array.
+		$this->assertFalse(
+			wp_mcp_ai_pro_is_woocommerce_tools_enabled( array( 'enable_woocommerce_tools' => false ) ),
+			'Helper function should return false when explicitly disabled'
+		);
+
+		$this->assertTrue(
+			wp_mcp_ai_pro_is_woocommerce_tools_enabled( array( 'enable_woocommerce_tools' => true ) ),
+			'Helper function should return true when explicitly enabled'
+		);
 	}
 
 	/**
