@@ -154,6 +154,7 @@ echo ""
 
 # Step 2: Install production Composer dependencies
 echo "Step 2: Installing production PHP dependencies..."
+# Note: --classmap-authoritative is redundant (configured in composer.json) but kept for clarity
 composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
 echo "✅ Production dependencies installed (with optimized classmap autoloader)"
 echo ""
