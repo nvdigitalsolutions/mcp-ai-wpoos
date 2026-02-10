@@ -25,7 +25,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		$this->option_name      = 'wp_mcp_ai_ecommerce_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-ecommerce-toolkit-settings';
 		$this->parent_slug      = 'wp-mcp-ai-ecommerce-toolkit'; // Separate E-Commerce Toolkit menu.
-		$this->has_research     = true;
+		$this->has_research     = false; // Research & Add has dedicated submenu page.
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-cart';
 
