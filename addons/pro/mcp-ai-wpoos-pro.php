@@ -379,10 +379,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
 		// ========================================================================
 
-		// Load E-commerce Toolkit (enabled by default unless explicitly disabled).
-		// The toolkit is opt-out, not opt-in. It handles its own enable/disable logic internally.
-		$is_ecommerce_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-		if ( ! $is_ecommerce_explicitly_disabled ) {
+		// Load E-commerce Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ecommerce-toolkit-init.php';
 		}
 
