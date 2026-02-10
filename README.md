@@ -1043,8 +1043,8 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ### For Developers (GitHub Clone)
 
-> **✅ Production-Ready Repository**  
-> This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
+> **✅ Production-Ready Repository with Automatic Optimization**  
+> This repository includes production-optimized vendor dependencies with automatic classmap-authoritative configuration in `composer.json`. The autoloader is automatically optimized for all environments - production and development. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
 
 If you're cloning from GitHub:
 
@@ -1097,7 +1097,15 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```bash
 # Only if you need to rebuild assets or modify dependencies:
 npm install && npm run build
-composer install --no-dev --classmap-authoritative
+
+# Composer automatically uses optimized classmap (no flags needed!)
+composer install
+
+# For production deployment (remove dev dependencies):
+composer production
+```
+
+> **⚡ Performance Note:** The repository includes automatic classmap-authoritative optimization in `composer.json`. All composer operations now automatically use optimized autoloading for maximum performance. No manual flags required!
 ```
 
 #### Final Steps

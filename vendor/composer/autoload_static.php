@@ -16,6 +16,10 @@ class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
     );
 
     public static $prefixLengthsPsr4 = array (
+        'c' =>
+        array (
+            'cweagans\\Composer\\' => 18,
+        ),
         'S' =>
         array (
             'Symfony\\Polyfill\\Php83\\' => 23,
@@ -71,6 +75,10 @@ class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
     );
 
     public static $prefixDirsPsr4 = array (
+        'cweagans\\Composer\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/cweagans/composer-configurable-plugin/src',
+        ),
         'Symfony\\Polyfill\\Php83\\' =>
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php83',

@@ -1,9 +1,50 @@
 # Production Composer Installation
 
-This repository has been optimized for production deployment by running:
+This repository is now configured for automatic production optimization through `composer.json` configuration.
+
+## Automatic Optimization
+
+The `composer.json` file includes the following production optimization settings:
+
+```json
+"config": {
+    "classmap-authoritative": true,
+    "optimize-autoloader": true
+}
+```
+
+These settings ensure that:
+- **All composer operations automatically use authoritative classmap** mode
+- **Autoloader is always optimized** for maximum performance
+- **No manual flags required** - optimization is built-in
+
+## Installation Commands
+
+### For Production Deployment
 
 ```bash
-composer install --no-dev --classmap-authoritative
+# Simple production install - automatically optimized
+composer install --no-dev
+
+# Or use the convenience script
+composer production
+```
+
+### For Development
+
+```bash
+# Install with dev dependencies - still optimized
+composer install
+```
+
+### Regenerate Autoloader
+
+```bash
+# Automatically uses authoritative classmap
+composer dump-autoload
+
+# Or use the convenience script
+composer production:optimize
 ```
 
 ## What This Means
@@ -17,6 +58,20 @@ composer install --no-dev --classmap-authoritative
 - **Generates an optimized autoloader** with a pre-built class map
 - **Improves performance** by eliminating filesystem checks during class loading
 - **Recommended for production** environments
+- **Now automatic** via composer.json configuration
+
+### `optimize-autoloader`
+- **Converts PSR-4/PSR-0 rules into classmap entries** when possible
+- **Improves autoload performance** by reducing lookups
+- **Now automatic** via composer.json configuration
+
+## Benefits of Automatic Configuration
+
+1. **No Manual Flags Required**: Simply run `composer install --no-dev` or `composer production`
+2. **Consistent Optimization**: Every developer and CI/CD system gets the same optimized setup
+3. **Faster Class Loading**: Authoritative classmap eliminates filesystem scanning
+4. **Reduced Human Error**: Configuration is in version control, not CLI flags
+5. **Better Performance**: Both development and production benefit from optimization
 
 ## Installed Production Packages
 
