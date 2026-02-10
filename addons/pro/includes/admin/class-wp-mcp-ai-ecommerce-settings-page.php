@@ -30,7 +30,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		$this->icon             = 'dashicons-cart';
 
 		// Add top-level menu at priority 25 to register before submenu pages.
-		// This ensures the parent menu exists when submenu pages are added at priorities 20-30.
+		// This ensures the parent menu exists when submenu pages are added at priorities 26+.
 		add_action( 'admin_menu', array( $this, 'add_top_level_menu' ), 25 );
 
 		parent::__construct();

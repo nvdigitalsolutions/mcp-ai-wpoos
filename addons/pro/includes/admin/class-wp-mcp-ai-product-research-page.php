@@ -38,7 +38,7 @@ class WP_MCP_AI_Product_Research_Page {
 	 * Initialize the page.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 30 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_product', array( __CLASS__, 'ajax_handle_import' ) );

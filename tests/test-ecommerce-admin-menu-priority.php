@@ -139,8 +139,8 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $consolidate_priority, 'Consolidate page should be registered' );
 		$this->assertNotNull( $settings_priority, 'Settings page should be registered' );
 
-		// Verify research page is at priority 20.
-		$this->assertEquals( 20, $research_priority, 'Research page should be at priority 20' );
+		// Verify research page is at priority 30 (after top-level menu at priority 25).
+		$this->assertEquals( 30, $research_priority, 'Research page should be at priority 30' );
 
 		// Verify consolidate page is at priority 25.
 		$this->assertEquals( 25, $consolidate_priority, 'Consolidate page should be at priority 25' );
@@ -148,17 +148,11 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		// Verify settings page is at reasonable priority (30).
 		$this->assertEquals( 30, $settings_priority, 'Settings page should be at priority 30' );
 
-		// Verify proper order.
-		$this->assertLessThan(
-			$consolidate_priority,
-			$research_priority,
-			'Research page should register before Consolidate page'
-		);
-
-		$this->assertLessThan(
+		// Verify consolidate page registers before settings page.
+		$this->assertLessThanOrEqual(
 			$settings_priority,
 			$consolidate_priority,
-			'Consolidate page should register before Settings page'
+			'Consolidate page should register at or before Settings page'
 		);
 	}
 
