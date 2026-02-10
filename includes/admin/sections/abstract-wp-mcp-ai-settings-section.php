@@ -325,6 +325,41 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
+				// Special handling for mesh_peer_sites BEFORE skipping custom fields.
+				// This field is defined as 'custom' type for rendering but needs sanitization
+				// because it contains user-submitted data (array of peer sites).
+				if ( 'mesh_peer_sites' === $key && isset( $filtered_input[ $key ] ) ) {
+					// Mesh peer sites is submitted as an array of peers.
+					// Sanitize each peer entry following the same logic as sanitize_mesh_peer_sites().
+					$peer_sites = $filtered_input[ $key ];
+					if ( is_array( $peer_sites ) ) {
+						$sanitized_peers = array();
+						foreach ( $peer_sites as $peer ) {
+							if ( ! is_array( $peer ) ) {
+								continue;
+							}
+							$name    = isset( $peer['name'] ) ? trim( sanitize_text_field( $peer['name'] ) ) : '';
+							$url     = isset( $peer['url'] ) ? trim( esc_url_raw( $peer['url'] ) ) : '';
+							$api_key = isset( $peer['api_key'] ) ? trim( sanitize_text_field( $peer['api_key'] ) ) : '';
+
+							// Skip empty entries.
+							if ( '' === $name && '' === $url && '' === $api_key ) {
+								continue;
+							}
+
+							$sanitized_peers[] = array(
+								'name'    => $name,
+								'url'     => $url,
+								'api_key' => $api_key,
+							);
+						}
+						$sanitized[ $key ] = $sanitized_peers;
+					} else {
+						$sanitized[ $key ] = array();
+					}
+					continue;
+				}
+
 				// Skip display-only field types (html, custom, hidden) as they don't have user input.
 				// Hidden fields are used to preserve OAuth tokens and other programmatically-set values.
 				if ( in_array( $type, array( 'html', 'custom', 'hidden' ), true ) ) {

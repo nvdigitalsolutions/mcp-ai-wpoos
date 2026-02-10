@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-adding-new-peers',
-        'version' => 'dev-copilot/fix-adding-new-peers',
-        'reference' => '82d6bf585ef4de7a764714ba738e7183d7ea584c',
+        'pretty_version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
+        'version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
+        'reference' => '9a88dbd43e5c8eaf82f87f3c9ad41ae249145b4d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-adding-new-peers',
-            'version' => 'dev-copilot/fix-adding-new-peers',
-            'reference' => '82d6bf585ef4de7a764714ba738e7183d7ea584c',
+            'pretty_version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
+            'version' => 'dev-copilot/fix-mesh-peer-sites-persistence',
+            'reference' => '9a88dbd43e5c8eaf82f87f3c9ad41ae249145b4d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
