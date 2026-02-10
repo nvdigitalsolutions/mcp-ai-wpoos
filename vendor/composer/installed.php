@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-pro-feature-settings',
-        'version' => 'dev-copilot/fix-pro-feature-settings',
-        'reference' => 'dbaa41cb434a9f97cbaa5f20d6a3d66d95d74e61',
+        'pretty_version' => 'dev-copilot/fix-ecommerce-toolkit-display-issue',
+        'version' => 'dev-copilot/fix-ecommerce-toolkit-display-issue',
+        'reference' => 'e802e0c10b25701de451070033316f02dbbf1151',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -74,9 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-pro-feature-settings',
-            'version' => 'dev-copilot/fix-pro-feature-settings',
-            'reference' => 'dbaa41cb434a9f97cbaa5f20d6a3d66d95d74e61',
+            'pretty_version' => 'dev-copilot/fix-ecommerce-toolkit-display-issue',
+            'version' => 'dev-copilot/fix-ecommerce-toolkit-display-issue',
+            'reference' => 'e802e0c10b25701de451070033316f02dbbf1151',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
