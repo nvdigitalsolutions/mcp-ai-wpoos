@@ -45,7 +45,7 @@ class WP_MCP_AI_Product_Research_Page {
 	}
 
 	/**
-	 * Add submenu page under Products menu.
+	 * Add submenu page under E-Commerce Toolkit menu.
 	 */
 	public static function add_menu_page() {
 		// Check if WooCommerce is active.
@@ -54,7 +54,7 @@ class WP_MCP_AI_Product_Research_Page {
 		}
 
 		add_submenu_page(
-			'edit.php?post_type=product',
+			'wp-mcp-ai-ecommerce-toolkit',
 			__( 'Research & Add Product', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_products',

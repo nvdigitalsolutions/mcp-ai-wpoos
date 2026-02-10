@@ -37,7 +37,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 	}
 
 	/**
-	 * Add submenu page under Products menu.
+	 * Add submenu page under E-Commerce Toolkit menu.
 	 */
 	public static function add_menu_page() {
 		// Check if WooCommerce is active.
@@ -46,7 +46,7 @@ class WP_MCP_AI_Product_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base 
 		}
 
 		add_submenu_page(
-			'edit.php?post_type=product',
+			'wp-mcp-ai-ecommerce-toolkit',
 			__( 'Consolidate & Add Products', 'mcp-ai-wpoos-pro' ),
 			__( 'Consolidate & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_products',
