@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-again',
-        'version' => 'dev-copilot/rebuild-all-zips-with-script-again',
-        'reference' => '53d7696319fa362e23f9dfc922937d0214f0366d',
+        'pretty_version' => 'dev-copilot/fix-admin-assistant-buttons',
+        'version' => 'dev-copilot/fix-admin-assistant-buttons',
+        'reference' => 'fd9203c8b00a487bd45018fe70dc81f3a717b28d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-again',
-            'version' => 'dev-copilot/rebuild-all-zips-with-script-again',
-            'reference' => '53d7696319fa362e23f9dfc922937d0214f0366d',
+            'pretty_version' => 'dev-copilot/fix-admin-assistant-buttons',
+            'version' => 'dev-copilot/fix-admin-assistant-buttons',
+            'reference' => 'fd9203c8b00a487bd45018fe70dc81f3a717b28d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
