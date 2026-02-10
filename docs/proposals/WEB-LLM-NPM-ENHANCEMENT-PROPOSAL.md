@@ -325,9 +325,9 @@ class ClientVectorStore {
 ```json
 {
   "dependencies": {
-    "langchain": "^0.3.6",
-    "@langchain/core": "^0.3.20",
-    "@langchain/community": "^0.3.14"
+    "langchain": "^1.2.19",
+    "@langchain/core": "^1.1.20",
+    "@langchain/community": "^1.1.13"
   }
 }
 ```
@@ -1332,9 +1332,9 @@ class OfflineChatManager {
   "dependencies": {
     "@huggingface/transformers": "^3.4.0",
     "@xenova/transformers": "^2.17.2",
-    "langchain": "^0.3.6",
-    "@langchain/core": "^0.3.20",
-    "@langchain/community": "^0.3.14",
+    "langchain": "^1.2.19",
+    "@langchain/core": "^1.1.20",
+    "@langchain/community": "^1.1.13",
     "idb": "^8.0.0",
     "workbox-core": "^7.3.0",
     "workbox-precaching": "^7.3.0",

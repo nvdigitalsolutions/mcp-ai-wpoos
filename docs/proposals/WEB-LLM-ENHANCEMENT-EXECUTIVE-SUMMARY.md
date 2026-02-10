@@ -130,8 +130,8 @@ Transform NV oOS from a "cloud AI with client-side option" to a **"browser-first
 ```json
 {
   "@huggingface/transformers": "^3.4.0",   // 100+ models
-  "langchain": "^0.3.6",                   // Orchestration
-  "@langchain/community": "^0.3.14",       // Integrations
+  "langchain": "^1.2.19",                   // Orchestration
+  "@langchain/community": "^1.1.13",       // Integrations
   "idb": "^8.0.0",                         // Offline storage
   "workbox-core": "^7.3.0",                // Service workers
   "mermaid": "^11.4.1"                     // Diagrams

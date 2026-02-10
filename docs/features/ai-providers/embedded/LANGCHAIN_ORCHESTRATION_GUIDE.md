@@ -396,9 +396,9 @@ wpMcpAiLangChain = {
     maxIterations: 10,  // Max agent iterations
     verbose: false,     // Console logging
     cdnUrls: {
-        core: 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
-        langchain: 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
-        community: 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm'
+        core: 'https://cdn.jsdelivr.net/npm/@langchain/core@1.1.20/+esm',
+        langchain: 'https://cdn.jsdelivr.net/npm/langchain@1.2.19/+esm',
+        community: 'https://cdn.jsdelivr.net/npm/@langchain/community@1.1.13/+esm'
     }
 };
 ```

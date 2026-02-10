@@ -16,15 +16,15 @@ Located in root `package.json`:
 ```json
 {
   "dependencies": {
-    "@langchain/community": "^0.3.14",           // LangChain community integrations
-    "@langchain/core": "^0.3.20",                // LangChain core functionality
+    "@langchain/community": "^1.1.13",           // LangChain community integrations
+    "@langchain/core": "^1.1.20",                // LangChain core functionality
     "@microsoft/fetch-event-source": "^2.0.1",   // SSE for streaming
     "@mlc-ai/web-llm": "^0.2.80",                // Browser-native LLM support
     "@neplex/vectorizer": "^0.0.5",              // Vector embeddings
     "chart.js": "^4.4.7",                        // Charts in admin
     "dompurify": "^3.3.0",                       // HTML sanitization
     "ky": "^1.14.0",                             // HTTP client
-    "langchain": "^0.3.6",                       // LangChain framework
+    "langchain": "^1.2.19",                      // LangChain framework
     "marked": "^9.1.6"                           // Markdown parsing
   }
 }

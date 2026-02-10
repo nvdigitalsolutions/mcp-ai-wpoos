@@ -330,9 +330,9 @@ if (window.WP_MCP_AI_LangChain_Orchestrator) {
 
 ```json
 {
-  "@langchain/community": "^0.3.14",
-  "@langchain/core": "^0.3.20",
-  "langchain": "^0.3.6"
+  "@langchain/community": "^1.1.13",
+  "@langchain/core": "^1.1.20",
+  "langchain": "^1.2.19"
 }
 ```
 
@@ -463,7 +463,7 @@ if (window.WP_MCP_AI_LangChain_Orchestrator) {
 **Version Information:**
 - Plugin Version: 1.1.0
 - Phase 3 Version: 1.0.0
-- LangChain Version: 0.3.6
+- LangChain Version: 1.2.19
 - Implementation Date: January 26, 2026
 
 ---

@@ -64,9 +64,9 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// LangChain libraries from CDN (loaded on-demand).
 		// Note: These are loaded via import() in the orchestration client for lazy loading.
 		// We register them here for dependency management only.
-		$langchain_version           = '0.3.6';
-		$langchain_core_version      = '0.3.20';
-		$langchain_community_version = '0.3.14';
+		$langchain_version           = '1.2.19';
+		$langchain_core_version      = '1.1.20';
+		$langchain_community_version = '1.1.13';
 
 		// Register CDN scripts (for reference, not directly enqueued).
 		wp_register_script(
@@ -130,9 +130,9 @@ class WP_MCP_AI_LangChain_Enqueue {
 				'maxIterations' => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
 				'verbose'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'cdnUrls'       => array(
-					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
-					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
-					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm',
+					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core@1.1.20/+esm',
+					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain@1.2.19/+esm',
+					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community@1.1.13/+esm',
 				),
 			)
 		);
