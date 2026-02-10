@@ -163,10 +163,10 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that all pages can successfully add submenus under WooCommerce Products menu.
+	 * Test that all pages can successfully add submenus under E-Commerce Toolkit menu.
 	 */
-	public function test_all_pages_can_add_submenus_to_woocommerce_products() {
-		global $submenu;
+	public function test_all_pages_can_add_submenus_to_ecommerce_toolkit() {
+		global $menu, $submenu;
 
 		// Skip if WooCommerce is not available or we're in base version mode.
 		if ( ! class_exists( 'WooCommerce' ) ) {
@@ -183,12 +183,24 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		// Trigger admin_menu to populate $submenu global.
 		do_action( 'admin_menu' );
 
-		// Check if WooCommerce products menu has submenus.
-		$products_menu_slug = 'edit.php?post_type=product';
+		// Check if E-Commerce Toolkit menu exists.
+		$toolkit_menu_slug = 'wp-mcp-ai-ecommerce-toolkit';
+		
+		// Verify top-level menu exists.
+		$found_top_level_menu = false;
+		foreach ( $menu as $menu_item ) {
+			if ( isset( $menu_item[2] ) && $toolkit_menu_slug === $menu_item[2] ) {
+				$found_top_level_menu = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found_top_level_menu, 'E-Commerce Toolkit top-level menu should exist' );
+
+		// Check if E-Commerce Toolkit menu has submenus.
 		$this->assertArrayHasKey(
-			$products_menu_slug,
+			$toolkit_menu_slug,
 			$submenu,
-			'WooCommerce Products menu should exist in $submenu global'
+			'E-Commerce Toolkit menu should have submenus in $submenu global'
 		);
 
 		// Find our custom pages in the submenu.
@@ -196,7 +208,7 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		$found_consolidate = false;
 		$found_settings    = false;
 
-		foreach ( $submenu[ $products_menu_slug ] as $item ) {
+		foreach ( $submenu[ $toolkit_menu_slug ] as $item ) {
 			$page_slug = $item[2] ?? '';
 
 			if ( 'research-product' === $page_slug ) {
@@ -213,8 +225,8 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		}
 
 		// Verify all pages were added to the submenu.
-		$this->assertTrue( $found_research, 'Research & Add page should be in WooCommerce Products submenu' );
-		$this->assertTrue( $found_consolidate, 'Consolidate & Add page should be in WooCommerce Products submenu' );
-		$this->assertTrue( $found_settings, 'Toolkit Settings page should be in WooCommerce Products submenu' );
+		$this->assertTrue( $found_research, 'Research & Add page should be in E-Commerce Toolkit submenu' );
+		$this->assertTrue( $found_consolidate, 'Consolidate & Add page should be in E-Commerce Toolkit submenu' );
+		$this->assertTrue( $found_settings, 'Toolkit Settings page should be in E-Commerce Toolkit submenu' );
 	}
 }

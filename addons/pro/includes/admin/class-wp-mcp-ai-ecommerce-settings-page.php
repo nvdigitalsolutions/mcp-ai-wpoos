@@ -24,12 +24,36 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		$this->toolkit_name     = __( 'E-commerce Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_ecommerce_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-ecommerce-toolkit-settings';
-		$this->parent_slug      = 'edit.php?post_type=product'; // Place under WooCommerce Products menu.
+		$this->parent_slug      = 'wp-mcp-ai-ecommerce-toolkit'; // Separate E-Commerce Toolkit menu.
 		$this->has_research     = true;
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-cart';
 
+		// Add top-level menu at priority 25 to register before submenu pages.
+		// This ensures the parent menu exists when submenu pages are added at priorities 20-30.
+		add_action( 'admin_menu', array( $this, 'add_top_level_menu' ), 25 );
+
 		parent::__construct();
+	}
+
+	/**
+	 * Add top-level E-Commerce Toolkit menu.
+	 */
+	public function add_top_level_menu() {
+		// Check if WooCommerce is active.
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+
+		add_menu_page(
+			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+			'edit_products',
+			$this->parent_slug,
+			'__return_false', // No callback - first submenu will be the default page when menu is clicked.
+			$this->icon,
+			56 // Position after WooCommerce (55).
+		);
 	}
 
 	/**
