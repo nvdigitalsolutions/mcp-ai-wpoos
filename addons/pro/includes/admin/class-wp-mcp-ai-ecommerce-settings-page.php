@@ -29,7 +29,8 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-cart';
 
-		// Add top-level menu.
+		// Add top-level menu at priority 25 to register before submenu pages.
+		// This ensures the parent menu exists when submenu pages are added at priorities 20-30.
 		add_action( 'admin_menu', array( $this, 'add_top_level_menu' ), 25 );
 
 		parent::__construct();
@@ -49,7 +50,7 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
 			'edit_products',
 			$this->parent_slug,
-			'__return_false', // No callback for top-level, first submenu will be default.
+			'__return_false', // No callback - first submenu will be the default page when menu is clicked.
 			$this->icon,
 			56 // Position after WooCommerce (55).
 		);
