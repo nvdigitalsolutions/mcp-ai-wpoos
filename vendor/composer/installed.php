@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/update-langchain-packages',
         'version' => 'dev-copilot/update-langchain-packages',
-        'reference' => 'dcbf6db7329b1bd40a316f53a4d8acc860e8b380',
+        'reference' => '6122a9619b1d434b3c8a1fb8e8def3f27e83dca6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/update-langchain-packages',
             'version' => 'dev-copilot/update-langchain-packages',
-            'reference' => 'dcbf6db7329b1bd40a316f53a4d8acc860e8b380',
+            'reference' => '6122a9619b1d434b3c8a1fb8e8def3f27e83dca6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
