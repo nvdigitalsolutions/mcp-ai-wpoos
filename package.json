@@ -31,7 +31,10 @@
 		"postinstall": "(cd addons/pro && npm install --legacy-peer-deps --omit=optional --no-optional) || echo 'Pro addon install failed, continuing...' && npm run install:chartjs && npm run install:vectorizer && npm run install:vectorizer:fix && npm run build:js:pro || true",
 		"install:chartjs": "cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js",
 		"install:vectorizer": "rm -rf assets/js/vendor/neplex-vectorizer && mkdir -p assets/js/vendor/neplex-vectorizer && cp -r node_modules/@neplex/vectorizer* assets/js/vendor/neplex-vectorizer/",
-		"install:vectorizer:fix": "find assets/js/vendor/neplex-vectorizer -maxdepth 2 -name '*.node' -type f -exec sh -c 'cp \"$1\" assets/js/vendor/neplex-vectorizer/vectorizer/' _ {} \\;"
+		"install:vectorizer:fix": "find assets/js/vendor/neplex-vectorizer -maxdepth 2 -name '*.node' -type f -exec sh -c 'cp \"$1\" assets/js/vendor/neplex-vectorizer/vectorizer/' _ {} \\;",
+		"production": "npm ci --omit=dev --prefer-offline",
+		"production:build": "npm run build",
+		"production:full": "npm run production && npm run production:build"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.1.0",
