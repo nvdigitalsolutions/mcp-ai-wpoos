@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-admin-assistant-buttons',
-        'version' => 'dev-copilot/fix-admin-assistant-buttons',
-        'reference' => 'fd9203c8b00a487bd45018fe70dc81f3a717b28d',
+        'pretty_version' => 'dev-copilot/fix-research-page-setting-visibility',
+        'version' => 'dev-copilot/fix-research-page-setting-visibility',
+        'reference' => 'b8cfb4cf6c167157824d152f76054ee5e741f8fa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-admin-assistant-buttons',
-            'version' => 'dev-copilot/fix-admin-assistant-buttons',
-            'reference' => 'fd9203c8b00a487bd45018fe70dc81f3a717b28d',
+            'pretty_version' => 'dev-copilot/fix-research-page-setting-visibility',
+            'version' => 'dev-copilot/fix-research-page-setting-visibility',
+            'reference' => 'b8cfb4cf6c167157824d152f76054ee5e741f8fa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
