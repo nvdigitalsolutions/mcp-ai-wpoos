@@ -148,11 +148,18 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 		// Verify settings page is at reasonable priority (30).
 		$this->assertEquals( 30, $settings_priority, 'Settings page should be at priority 30' );
 
-		// Verify consolidate page registers before settings page.
+		// Verify consolidate page registers before or at same time as settings page.
 		$this->assertLessThanOrEqual(
 			$settings_priority,
 			$consolidate_priority,
 			'Consolidate page should register at or before Settings page'
+		);
+
+		// Verify consolidate page registers before research page.
+		$this->assertLessThan(
+			$research_priority,
+			$consolidate_priority,
+			'Consolidate page should register before Research page'
 		);
 	}
 
