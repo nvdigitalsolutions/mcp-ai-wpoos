@@ -1,16 +1,17 @@
 <?php
 /**
- * Tests for E-commerce Toolkit enabled by default.
+ * Tests for E-commerce Toolkit opt-in behavior.
  *
- * Validates that the e-commerce toolkit is enabled by default when WooCommerce is active.
+ * Validates that the e-commerce toolkit must be explicitly enabled in settings,
+ * following the same pattern as Quiz and Regulatory Registration toolkits.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test E-commerce Toolkit default enabled behavior.
+ * Test E-commerce Toolkit opt-in behavior.
  */
-class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Ecommerce_Toolkit_Opt_In_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that helper function exists.
@@ -23,16 +24,16 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that toolkit is enabled by default.
+	 * Test that toolkit is disabled by default.
 	 */
-	public function test_ecommerce_toolkit_enabled_by_default() {
+	public function test_ecommerce_toolkit_disabled_by_default() {
 		// Clear settings to simulate fresh install.
 		delete_option( 'wp_mcp_ai_settings' );
 
-		// Toolkit should be enabled by default.
-		$this->assertTrue(
+		// Toolkit should be disabled by default (opt-in like other toolkits).
+		$this->assertFalse(
 			wp_mcp_ai_is_ecommerce_toolkit_enabled(),
-			'E-commerce toolkit should be enabled by default when setting does not exist'
+			'E-commerce toolkit should be disabled by default when setting does not exist (opt-in model)'
 		);
 	}
 
@@ -94,7 +95,7 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 
 		$this->assertTrue(
 			wp_mcp_ai_is_ecommerce_toolkit_enabled(),
-			'Should handle string "1" as enabled (not false)'
+			'Should handle string "1" as enabled'
 		);
 
 		// Test with integer 1.
@@ -107,7 +108,7 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 
 		$this->assertTrue(
 			wp_mcp_ai_is_ecommerce_toolkit_enabled(),
-			'Should handle integer 1 as enabled (not false)'
+			'Should handle integer 1 as enabled'
 		);
 
 		// Test with string "0".
@@ -118,9 +119,9 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertTrue(
+		$this->assertFalse(
 			wp_mcp_ai_is_ecommerce_toolkit_enabled(),
-			'Should handle string "0" as enabled (not strictly false)'
+			'Should handle string "0" as disabled (empty check)'
 		);
 
 		// Test with integer 0.
@@ -131,9 +132,9 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertTrue(
+		$this->assertFalse(
 			wp_mcp_ai_is_ecommerce_toolkit_enabled(),
-			'Should handle integer 0 as enabled (not strictly false)'
+			'Should handle integer 0 as disabled (empty check)'
 		);
 
 		// Test with boolean false.
@@ -166,31 +167,39 @@ class WP_MCP_AI_Ecommerce_Toolkit_Default_Enabled_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Running in base version mode' );
 		}
 
-		// Simulate fresh install - clear the settings.
-		delete_option( 'wp_mcp_ai_settings' );
+		// Enable the toolkit explicitly.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ecommerce_toolkit' => true,
+			)
+		);
 
 		// E-commerce settings page class should exist.
 		$this->assertTrue(
 			class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ),
-			'E-commerce Settings Page class should be loaded with default settings'
+			'E-commerce Settings Page class should be loaded when toolkit is enabled'
 		);
 
 		// Product Research page class should exist.
 		$this->assertTrue(
 			class_exists( 'WP_MCP_AI_Product_Research_Page' ),
-			'Product Research Page class should be loaded with default settings'
+			'Product Research Page class should be loaded when toolkit is enabled'
 		);
 
 		// Product Consolidate page class should exist.
 		$this->assertTrue(
 			class_exists( 'WP_MCP_AI_Product_Consolidate_Page' ),
-			'Product Consolidate Page class should be loaded with default settings'
+			'Product Consolidate Page class should be loaded when toolkit is enabled'
 		);
 
 		// Product Settings page class should exist.
 		$this->assertTrue(
 			class_exists( 'WP_MCP_AI_Product_Settings_Page' ),
-			'Product Settings Page class should be loaded with default settings'
+			'Product Settings Page class should be loaded when toolkit is enabled'
 		);
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
 	}
 }

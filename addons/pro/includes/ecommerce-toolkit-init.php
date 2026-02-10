@@ -16,31 +16,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check if e-commerce toolkit is enabled.
  *
- * The toolkit is enabled by default when WooCommerce is active and not in base version,
- * unless explicitly disabled in settings.
+ * The toolkit must be explicitly enabled in settings (Pro features).
  *
  * @since 2.1.0
  *
  * @return bool True if enabled, false otherwise.
  */
 function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
-	$settings               = get_option( 'wp_mcp_ai_settings', array() );
-	$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-
-	// Enabled by default unless explicitly disabled.
-	return ! $is_explicitly_disabled;
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	return ! empty( $settings['enable_ecommerce_toolkit'] );
 }
 
-// Check if E-commerce toolkit is enabled and WooCommerce is active.
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-$has_wc     = class_exists( 'WooCommerce' );
-$is_enabled = wp_mcp_ai_is_ecommerce_toolkit_enabled();
+// Load E-commerce admin pages when in admin area.
+if ( is_admin() ) {
+	// Check if e-commerce toolkit is enabled and not in base version (unless Pro addon is active).
+	$is_enabled    = wp_mcp_ai_is_ecommerce_toolkit_enabled();
+	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+	$has_wc        = class_exists( 'WooCommerce' );
 
-// Only load if enabled, not in base version, and WooCommerce is active.
-if ( $is_enabled && ! $is_base && $has_wc ) {
-
-	// Load E-commerce admin pages.
-	if ( is_admin() ) {
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) && $has_wc ) {
 		// Load E-commerce Toolkit Settings page.
 		if ( ! class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php';
@@ -64,10 +59,10 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-settings-page.php';
 			new WP_MCP_AI_Product_Settings_Page();
 		}
-	}
 
-	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/ecommerce/.
+		// Register tools will be loaded automatically via the tools directory structure.
+		// Tools are located in: addons/pro/includes/tools/ecommerce/.
+	}
 }
 
 /**
@@ -76,7 +71,7 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
  * @param string $hook Current admin page hook.
  */
 function wp_mcp_ai_enqueue_ecommerce_toolkit_admin_styles( $hook ) {
-	// Only load if toolkit is enabled (enabled by default unless explicitly disabled).
+	// Only load if toolkit is enabled.
 	if ( ! wp_mcp_ai_is_ecommerce_toolkit_enabled() ) {
 		return;
 	}
