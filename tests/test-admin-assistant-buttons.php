@@ -94,7 +94,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 	 */
 	public function test_create_assistant_button_returns_views() {
 		$input_views = array( 'all' => 'All' );
-		
+
 		ob_start();
 		$output_views = WP_MCP_AI_Admin_Create_Assistant_Button::add_create_button( $input_views );
 		ob_get_clean();
@@ -112,7 +112,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 	 */
 	public function test_create_team_button_returns_views() {
 		$input_views = array( 'all' => 'All' );
-		
+
 		ob_start();
 		$output_views = WP_MCP_AI_Admin_Create_Team_Button::add_create_button( $input_views );
 		ob_get_clean();
