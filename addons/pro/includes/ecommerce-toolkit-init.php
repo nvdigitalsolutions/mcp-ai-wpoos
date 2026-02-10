@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
 	$settings               = get_option( 'wp_mcp_ai_settings', array() );
 	$is_explicitly_disabled = isset( $settings['enable_ecommerce_toolkit'] ) && false === $settings['enable_ecommerce_toolkit'];
-	
+
 	// Enabled by default unless explicitly disabled.
 	return ! $is_explicitly_disabled;
 }
@@ -44,11 +44,13 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 		// Load E-commerce Toolkit Settings page.
 		if ( ! class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-ecommerce-settings-page.php';
+			new WP_MCP_AI_Ecommerce_Settings_Page();
 		}
 
 		// Load Product Research & Add page for WooCommerce integration.
 		if ( ! class_exists( 'WP_MCP_AI_Product_Research_Page' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-research-page.php';
+			WP_MCP_AI_Product_Research_Page::init();
 		}
 
 		// Load Product Consolidate & Add page for data import/validation.
@@ -60,6 +62,7 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 		// Load Product Settings page (tab-based interface).
 		if ( ! class_exists( 'WP_MCP_AI_Product_Settings_Page' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-settings-page.php';
+			new WP_MCP_AI_Product_Settings_Page();
 		}
 	}
 
