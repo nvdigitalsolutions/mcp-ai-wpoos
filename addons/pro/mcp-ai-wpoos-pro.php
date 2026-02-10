@@ -316,7 +316,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
 
 		// Load Product Research & Add page if WooCommerce tools enabled.
-		if ( ! empty( $settings['enable_woocommerce_tools'] ) && is_admin() ) {
+		// Default to true if setting doesn't exist (fresh install).
+		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		if ( $woocommerce_tools_enabled && is_admin() ) {
 			// Check if not in base version and WooCommerce is active.
 			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 			if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
@@ -784,7 +786,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		}
 
 		// Add WooCommerce tools if enabled.
-		if ( ! empty( $settings['enable_woocommerce_tools'] ) ) {
+		// Default to true if setting doesn't exist (fresh install).
+		$woocommerce_tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+		if ( $woocommerce_tools_enabled ) {
 			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
