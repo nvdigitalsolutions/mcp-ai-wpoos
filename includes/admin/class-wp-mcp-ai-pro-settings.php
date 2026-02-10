@@ -108,6 +108,59 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Get Pro PHP dependencies from composer.json.
+		 *
+		 * Parses addons/pro/composer.json to extract PHP dependencies.
+		 * These are separate from base plugin PHP dependencies and are
+		 * pre-installed in addons/pro/vendor/ for production use.
+		 *
+		 * @since 1.1.0
+		 * @return array Array containing PHP dependencies and metadata.
+		 */
+		public static function get_pro_php_dependencies() {
+			$dependencies = array(
+				'packages' => array(),
+				'error'    => null,
+			);
+
+			// Check if Pro addon is active.
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$dependencies['error'] = 'Pro addon not active';
+				return $dependencies;
+			}
+
+			$composer_json_path = WP_MCP_AI_PRO_PATH . 'composer.json';
+			
+			if ( ! file_exists( $composer_json_path ) ) {
+				$dependencies['error'] = 'Pro composer.json not found';
+				return $dependencies;
+			}
+
+			$json_content = file_get_contents( $composer_json_path );
+			if ( false === $json_content ) {
+				$dependencies['error'] = 'Unable to read Pro composer.json';
+				return $dependencies;
+			}
+
+			$composer_data = json_decode( $json_content, true );
+			if ( null === $composer_data ) {
+				$dependencies['error'] = 'Invalid JSON in Pro composer.json';
+				return $dependencies;
+			}
+
+			// Extract require section.
+			if ( isset( $composer_data['require'] ) && is_array( $composer_data['require'] ) ) {
+				$dependencies['packages'] = $composer_data['require'];
+			}
+
+			// Check if vendor directory exists.
+			$vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+			$dependencies['vendor_exists'] = file_exists( $vendor_path );
+
+			return $dependencies;
+		}
+
+		/**
 		 * Get individual pro toolkit status information.
 		 *
 		 * Returns enable/disable status of each individual pro toolkit.
@@ -1396,6 +1449,58 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 										<?php esc_html_e( 'Your plugin functionality is not affected. Package information is only for development reference.', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
+							<?php endif; ?>
+						</div>
+
+						<!-- Pro PHP Dependencies -->
+						<div class="wp-mcp-ai-settings-card" style="margin-top: 20px;">
+							<h2><?php esc_html_e( 'Pro PHP Dependencies', 'mcp-ai-wpoos' ); ?></h2>
+							<?php
+							$pro_php_deps = self::get_pro_php_dependencies();
+							if ( isset( $pro_php_deps['error'] ) ) :
+								?>
+								<div style="padding: 20px; background: #f0f0f1; border-left: 4px solid #dba617; text-align: center;">
+									<p style="margin: 0;">
+										<span class="dashicons dashicons-warning" style="color: #dba617;"></span>
+										<?php echo esc_html( $pro_php_deps['error'] ); ?>
+									</p>
+								</div>
+							<?php else : ?>
+								<?php if ( ! empty( $pro_php_deps['packages'] ) ) : ?>
+									<table class="wp-list-table widefat fixed striped">
+										<thead>
+											<tr>
+												<th style="width: 60%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+												<th style="width: 25%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+												<th style="width: 15%; text-align: center;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+											</tr>
+										</thead>
+										<tbody>
+											<?php foreach ( $pro_php_deps['packages'] as $package => $version ) : ?>
+												<tr>
+													<td><code><?php echo esc_html( $package ); ?></code></td>
+													<td><code><?php echo esc_html( $version ); ?></code></td>
+													<td style="text-align: center;">
+														<?php if ( $pro_php_deps['vendor_exists'] ) : ?>
+															<span class="dashicons dashicons-yes-alt" style="color: #46b450;" title="<?php esc_attr_e( 'Installed', 'mcp-ai-wpoos' ); ?>"></span>
+														<?php else : ?>
+															<span class="dashicons dashicons-warning" style="color: #dba617;" title="<?php esc_attr_e( 'Not Installed', 'mcp-ai-wpoos' ); ?>"></span>
+														<?php endif; ?>
+													</td>
+												</tr>
+											<?php endforeach; ?>
+										</tbody>
+									</table>
+
+									<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
+										<p style="margin: 0;">
+											<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+											<?php esc_html_e( 'Pro PHP dependencies are pre-installed in addons/pro/vendor/ and separate from base plugin dependencies. These packages are required for Excel import/export and document generation features.', 'mcp-ai-wpoos' ); ?>
+										</p>
+									</div>
+								<?php else : ?>
+									<p><?php esc_html_e( 'No Pro PHP dependencies configured.', 'mcp-ai-wpoos' ); ?></p>
+								<?php endif; ?>
 							<?php endif; ?>
 						</div>
 					</div>

@@ -224,6 +224,8 @@ All 46 Pro addon packages are automatically copied from `node_modules` to `asset
 
 ## PHP Dependencies (Composer)
 
+### Base Plugin Dependencies
+
 Located in root `composer.json`:
 
 ```json
@@ -241,13 +243,31 @@ Located in root `composer.json`:
 }
 ```
 
+### Pro Addon PHP Dependencies
+
+Located in `addons/pro/composer.json`:
+
+```json
+{
+  "require": {
+    "phpoffice/phpspreadsheet": "^5.4"
+  }
+}
+```
+
+**Why Separate?**
+- `phpoffice/phpspreadsheet` is only used by Pro tools (Excel import in Regulatory Registration toolkit)
+- `exceljs` (NPM package) handles Excel **generation** (Document Generation toolkit)
+- `phpspreadsheet` (PHP package) handles Excel **reading/importing** (different use case)
+- Base plugin remains leaner without Pro-specific dependencies
+
 ### Installation and Distribution
 
 PHP dependencies are:
-- **Installed via**: `composer install --no-dev --prefer-dist --classmap-authoritative`
-- **Located in**: `vendor/` directory at plugin root
-- **Included in distribution**: YES - The `vendor/` directory is automatically included when building plugin ZIPs
-- **Used for**: Validation (Symfony Validator), HTTP clients, caching, file operations, etc.
+- **Base plugin**: `composer install --no-dev --prefer-dist --classmap-authoritative` (installs to `/vendor/`)
+- **Pro addon**: `cd addons/pro && composer install --no-dev --prefer-dist --classmap-authoritative` (installs to `/addons/pro/vendor/`)
+- **Included in distribution**: YES - Both `vendor/` and `addons/pro/vendor/` directories are included when building plugin ZIPs
+- **Autoloading**: Pro autoloader is loaded in `wp_mcp_ai_pro_init()` function
 
 ### Critical: Symfony Validator Dependency
 

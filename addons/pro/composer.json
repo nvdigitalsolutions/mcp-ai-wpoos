@@ -1,0 +1,18 @@
+{
+    "name": "mcp-ai-wpoos/pro-addon",
+    "description": "Pro Add-on PHP dependencies for Open Operator System (NV oOS)",
+    "type": "wordpress-plugin-addon",
+    "license": "proprietary",
+    "require": {
+        "phpoffice/phpspreadsheet": "^5.4"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.1.0"
+        },
+        "vendor-dir": "vendor"
+    }
+}

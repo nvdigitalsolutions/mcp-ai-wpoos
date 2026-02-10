@@ -138,6 +138,12 @@ composer.phar
 # Include vendor directory (generated from node_modules, included in distribution)
 !/addons/pro/assets/vendor/
 
+# Pro addon PHP dependencies (Composer)
+# Include pro vendor directory for phpspreadsheet and other pro PHP packages
+!/addons/pro/vendor/
+!/addons/pro/composer.json
+!/addons/pro/composer.lock
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js

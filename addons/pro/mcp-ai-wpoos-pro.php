@@ -233,6 +233,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			return;
 		}
 
+		// Load Pro Composer autoloader for pro-specific PHP dependencies (phpoffice/phpspreadsheet, etc.).
+		// This allows pro addon to have its own vendor directory separate from base plugin.
+		$pro_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+		if ( file_exists( $pro_autoload ) ) {
+			require_once $pro_autoload;
+		}
+
 		// Register text domain loading on init hook.
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
