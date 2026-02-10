@@ -30,8 +30,7 @@ function wp_mcp_ai_is_ecommerce_toolkit_enabled() {
 // Load E-commerce admin pages when in admin area.
 if ( is_admin() ) {
 	// Check if e-commerce toolkit is enabled and not in base version (unless Pro addon is active).
-	$settings      = get_option( 'wp_mcp_ai_settings', array() );
-	$is_enabled    = ! empty( $settings['enable_ecommerce_toolkit'] );
+	$is_enabled    = wp_mcp_ai_is_ecommerce_toolkit_enabled();
 	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 	$has_wc        = class_exists( 'WooCommerce' );
