@@ -35,6 +35,21 @@ class WP_MCP_AI_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Override parent method to add submenu under E-Commerce Toolkit instead of Products menu.
+	 */
+	public function add_settings_page() {
+		// Add submenu page under E-Commerce Toolkit menu.
+		add_submenu_page(
+			'wp-mcp-ai-ecommerce-toolkit',
+			$this->page_title,
+			$this->menu_title,
+			'manage_options',
+			$this->page_slug,
+			array( $this, 'render_settings_page' )
+		);
+	}
+
+	/**
 	 * Render settings page with Configuration tab support.
 	 */
 	public function render_settings_page() {
