@@ -48,7 +48,7 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 				// Check if this is the Ecommerce Settings Page callback.
 				if ( isset( $callback['function'] ) && is_array( $callback['function'] ) ) {
 					$obj = $callback['function'][0] ?? null;
-					if ( is_object( $obj ) && $obj instanceof WP_MCP_AI_Ecommerce_Settings_Page ) {
+					if ( is_object( $obj ) && class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ) && $obj instanceof WP_MCP_AI_Ecommerce_Settings_Page ) {
 						$settings_page_priority = $priority;
 						break 2;
 					}
@@ -116,18 +116,18 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 					$class_or_obj = $callback['function'][0] ?? null;
 					$method       = $callback['function'][1] ?? null;
 
-					// Check for Product Research Page.
-					if ( 'WP_MCP_AI_Product_Research_Page' === $class_or_obj && 'add_menu_page' === $method ) {
+					// Check for Product Research Page (static callback).
+					if ( is_string( $class_or_obj ) && 'WP_MCP_AI_Product_Research_Page' === $class_or_obj && 'add_menu_page' === $method ) {
 						$research_priority = $priority;
 					}
 
-					// Check for Product Consolidate Page.
-					if ( 'WP_MCP_AI_Product_Consolidate_Page' === $class_or_obj && 'add_menu_page' === $method ) {
+					// Check for Product Consolidate Page (static callback).
+					if ( is_string( $class_or_obj ) && 'WP_MCP_AI_Product_Consolidate_Page' === $class_or_obj && 'add_menu_page' === $method ) {
 						$consolidate_priority = $priority;
 					}
 
-					// Check for Ecommerce Settings Page.
-					if ( is_object( $class_or_obj ) && $class_or_obj instanceof WP_MCP_AI_Ecommerce_Settings_Page ) {
+					// Check for Ecommerce Settings Page (object callback).
+					if ( is_object( $class_or_obj ) && class_exists( 'WP_MCP_AI_Ecommerce_Settings_Page' ) && $class_or_obj instanceof WP_MCP_AI_Ecommerce_Settings_Page ) {
 						$settings_priority = $priority;
 					}
 				}

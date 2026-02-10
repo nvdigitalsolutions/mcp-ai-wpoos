@@ -50,7 +50,7 @@ Changed the admin menu registration priority from **100 to 30** in `WP_MCP_AI_To
 ### Why Priority 30?
 
 1. **Consistent with other admin pages** - Priority 30 aligns with other Pro admin pages (`WP_MCP_AI_Password_Vault_Admin`, `WP_MCP_AI_Pro_Remote_Sites_Admin`)
-2. **Proper ordering maintained** - Research (20) → Consolidate (25) → Settings (30) → Workflow Builder (26)
+2. **Proper ordering maintained** - Research (20) → Consolidate (25) → Workflow Builder (26) → Settings (30)
 3. **Early enough for WooCommerce compatibility** - Priority 30 runs well before WordPress finalizes menu structures
 4. **Not too early** - Still allows parent menus to be registered first
 
