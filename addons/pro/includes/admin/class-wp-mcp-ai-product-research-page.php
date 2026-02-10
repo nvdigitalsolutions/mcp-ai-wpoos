@@ -70,7 +70,9 @@ class WP_MCP_AI_Product_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'product_page_' . self::PAGE_SLUG !== $hook ) {
+		// Since this is a submenu of 'wp-mcp-ai-ecommerce-toolkit', 
+		// the hook will be 'wp-mcp-ai-ecommerce-toolkit_page_research-product'.
+		if ( 'wp-mcp-ai-ecommerce-toolkit_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
@@ -748,6 +750,3 @@ class WP_MCP_AI_Product_Research_Page {
 		<?php
 	}
 }
-
-// Initialize.
-WP_MCP_AI_Product_Research_Page::init();

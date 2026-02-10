@@ -50,10 +50,21 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
 			'edit_products',
 			$this->parent_slug,
-			'__return_false', // No callback - first submenu will be the default page when menu is clicked.
+			array( $this, 'redirect_to_first_submenu' ),
 			$this->icon,
 			56 // Position after WooCommerce (55).
 		);
+	}
+
+	/**
+	 * Redirect to first submenu page.
+	 *
+	 * This prevents the parent menu from showing an empty page.
+	 */
+	public function redirect_to_first_submenu() {
+		// Redirect to settings page (first submenu).
+		wp_safe_redirect( admin_url( 'admin.php?page=' . $this->page_slug ) );
+		exit;
 	}
 
 	/**
@@ -170,9 +181,4 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			'upsell_recommendations'      => __( 'Upsell Recommendations', 'mcp-ai-wpoos-pro' ),
 		);
 	}
-}
-
-// Initialize settings page.
-if ( is_admin() ) {
-	new WP_MCP_AI_Ecommerce_Settings_Page();
 }

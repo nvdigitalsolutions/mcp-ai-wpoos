@@ -392,6 +392,3 @@ class WP_MCP_AI_Product_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		return $sanitized;
 	}
 }
-
-// Initialize.
-new WP_MCP_AI_Product_Settings_Page();
