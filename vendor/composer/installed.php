@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-inline-scripts-issue',
+        'version' => 'dev-copilot/fix-inline-scripts-issue',
+        'reference' => '49f2129272578f5615cc42f5db634f49b3d2c90a',
         'pretty_version' => 'dev-copilot/fix-product-research-page-rendering',
         'version' => 'dev-copilot/fix-product-research-page-rendering',
         'reference' => '737c9b00c320b6dcf38f4db072c81b348a9fc132',
@@ -83,6 +86,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-inline-scripts-issue',
+            'version' => 'dev-copilot/fix-inline-scripts-issue',
+            'reference' => '49f2129272578f5615cc42f5db634f49b3d2c90a',
             'pretty_version' => 'dev-copilot/fix-product-research-page-rendering',
             'version' => 'dev-copilot/fix-product-research-page-rendering',
             'reference' => '737c9b00c320b6dcf38f4db072c81b348a9fc132',
