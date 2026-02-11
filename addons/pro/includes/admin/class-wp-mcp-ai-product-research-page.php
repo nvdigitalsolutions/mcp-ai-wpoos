@@ -69,6 +69,11 @@ class WP_MCP_AI_Product_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
+		// Debug logging.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Product Research - Hook: ' . $hook . ' | Expected: wp-mcp-ai-ecommerce-toolkit_page_' . self::PAGE_SLUG );
+		}
+
 		// Only load on our research page.
 		// Since this is a submenu of 'wp-mcp-ai-ecommerce-toolkit',
 		// the hook will be 'wp-mcp-ai-ecommerce-toolkit_page_research-product'.
