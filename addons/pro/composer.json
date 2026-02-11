@@ -2,7 +2,7 @@
     "name": "mcp-ai-wpoos/pro-addon",
     "description": "Pro addon dependencies for NV Digital Open Operator System (oOS)",
     "type": "wordpress-plugin-addon",
-    "license": "Proprietary",
+    "license": "proprietary",
     "require": {
         "php": "^8.1",
         "phpoffice/phpspreadsheet": "^5.4"
