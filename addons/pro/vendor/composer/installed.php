@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/pro-addon',
         'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
         'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-        'reference' => 'c90367798c2170be7e486dd04d282910c1913bb7',
+        'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/pro-addon' => array(
             'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
             'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-            'reference' => 'c90367798c2170be7e486dd04d282910c1913bb7',
+            'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
