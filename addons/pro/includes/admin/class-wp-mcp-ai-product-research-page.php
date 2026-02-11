@@ -77,7 +77,8 @@ class WP_MCP_AI_Product_Research_Page {
 		// Only load on our research page.
 		// Since this is a submenu of 'wp-mcp-ai-ecommerce-toolkit',
 		// the hook will be 'wp-mcp-ai-ecommerce-toolkit_page_research-product'.
-		if ( 'wp-mcp-ai-ecommerce-toolkit_page_' . self::PAGE_SLUG !== $hook ) {
+		// Use stripos to be more flexible with hook matching.
+		if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
 			return;
 		}
 
@@ -332,12 +333,12 @@ class WP_MCP_AI_Product_Research_Page {
 					</div>
 
 					<!-- Import Data Workflow -->
-					<div id="workflow-import" class="workflow-content">
+					<div id="workflow-import" class="workflow-content" style="display: none;">
 						<?php self::render_import_workflow(); ?>
 					</div>
 
 					<!-- Review & Quality Workflow -->
-					<div id="workflow-review" class="workflow-content">
+					<div id="workflow-review" class="workflow-content" style="display: none;">
 						<?php self::render_review_workflow(); ?>
 					</div>
 				</div>
