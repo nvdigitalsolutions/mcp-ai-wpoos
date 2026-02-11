@@ -30,8 +30,9 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
 		new WP_MCP_AI_Document_Generation_Settings_Page();
 
-		// Load Research & Add page for document templates.
+		// Load and initialize Research & Add page for document templates.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
+		WP_MCP_AI_Document_Template_Research_Page::init();
 	}
 
 	// Load Research & Add for CCT/CPT integration.
