@@ -295,24 +295,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
-		// Load quiz system support files if enabled.
-		if ( ! empty( $settings['enable_quiz_system'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
-			// Load JetEngine quiz CCT if JetEngine is active.
-			if ( function_exists( 'jet_engine' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
-			}
-			// Load Quiz Research & Add page.
-			if ( is_admin() ) {
-				// Check if not in base version.
-				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-				if ( ! $is_base ) {
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
-				}
-			}
-		}
-
 		// Load WebChat integration system if enabled.
 		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
@@ -381,6 +363,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
+
+		// Load Quiz Management CPT registration (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
