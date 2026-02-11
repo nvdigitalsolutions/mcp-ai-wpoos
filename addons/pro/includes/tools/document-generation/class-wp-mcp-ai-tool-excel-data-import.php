@@ -166,21 +166,76 @@ class WP_MCP_AI_Tool_Excel_Data_Import implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error( 'invalid_file', __( 'File is not a valid Excel spreadsheet.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// This is a placeholder implementation.
-		// In production, use PhpSpreadsheet, SimpleXLSX, or similar library.
-		
-		// For now, return mock data structure.
-		$data = array(
-			'headers'      => $has_headers ? array( 'Column1', 'Column2', 'Column3' ) : array(),
-			'rows'         => array(
-				array( 'Value1', 'Value2', 'Value3' ),
-				array( 'Value4', 'Value5', 'Value6' ),
-			),
-			'row_count'    => 2,
-			'column_count' => 3,
-			'sheet_name'   => 'Sheet1',
-		);
+		// Try PhpSpreadsheet.
+		if ( class_exists( '\PhpOffice\PhpSpreadsheet\IOFactory' ) ) {
+			return $this->import_with_phpspreadsheet( $file_path, $sheet_index, $has_headers, $max_rows );
+		}
 
-		return $data;
+		// No suitable import method available.
+		return new WP_Error(
+			'no_importer',
+			__( 'Excel data import requires PhpSpreadsheet library (already in composer.json - run: cd addons/pro && composer install).', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Import data using PhpSpreadsheet.
+	 *
+	 * @param string $file_path   File path.
+	 * @param int    $sheet_index Sheet index.
+	 * @param bool   $has_headers Has headers flag.
+	 * @param int    $max_rows    Maximum rows.
+	 * @return array|WP_Error Import result or error.
+	 */
+	protected function import_with_phpspreadsheet( $file_path, $sheet_index, $has_headers, $max_rows ) {
+		try {
+			$spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load( $file_path );
+			$sheet       = $spreadsheet->getSheet( $sheet_index );
+			$sheet_name  = $sheet->getTitle();
+
+			// Get all data.
+			$data         = $sheet->toArray();
+			$headers      = array();
+			$rows         = array();
+			$row_count    = 0;
+			$column_count = 0;
+
+			if ( ! empty( $data ) ) {
+				// Extract headers if specified.
+				if ( $has_headers && count( $data ) > 0 ) {
+					$headers = array_shift( $data );
+					$column_count = count( $headers );
+				} else {
+					// Determine column count from first row.
+					$column_count = count( $data[0] ?? array() );
+				}
+
+				// Apply max_rows limit.
+				if ( $max_rows > 0 ) {
+					$data = array_slice( $data, 0, $max_rows );
+				}
+
+				$rows      = $data;
+				$row_count = count( $rows );
+			}
+
+			return array(
+				'headers'      => $headers,
+				'rows'         => $rows,
+				'row_count'    => $row_count,
+				'column_count' => $column_count,
+				'sheet_name'   => $sheet_name,
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'phpspreadsheet_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'PhpSpreadsheet import failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
 	}
 }
