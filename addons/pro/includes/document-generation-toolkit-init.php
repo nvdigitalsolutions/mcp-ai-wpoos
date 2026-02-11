@@ -16,25 +16,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Document Template CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-document-template-cpt.php';
 
-// Check if Document Generation toolkit is enabled.
+// Load Document Generation admin pages (always load so menu items appear).
+if ( is_admin() ) {
+	// Load CPT-based settings page.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
+	new WP_MCP_AI_Document_Generation_Settings_Page();
+
+	// Load and initialize Research & Add page for document templates.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
+	WP_MCP_AI_Document_Template_Research_Page::init();
+}
+
+// Check if Document Generation toolkit is enabled for advanced features.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_document_generation_toolkit'] );
 $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 
-// Only load if enabled and not in base version.
+// Only load advanced features if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
-
-	// Load Document Generation admin pages.
-	if ( is_admin() ) {
-		// Load CPT-based settings page.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
-		new WP_MCP_AI_Document_Generation_Settings_Page();
-
-		// Load and initialize Research & Add page for document templates.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
-		WP_MCP_AI_Document_Template_Research_Page::init();
-	}
-
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-document-generation-research-add.php';
 	new WP_MCP_AI_Document_Generation_Research_Add();
