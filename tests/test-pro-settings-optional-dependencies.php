@@ -65,21 +65,6 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 				$result,
 				"check_package_installed('{$package}') should return boolean"
 			);
-
-			// Document what we're checking.
-			if ( $result ) {
-				$this->assertTrue(
-					$result,
-					"Package {$package} detected as installed (via bundle or node_modules)"
-				);
-			} else {
-				// Not installed is acceptable if langchain files haven't been built.
-				// We're just testing that the method handles the package correctly.
-				$this->assertFalse(
-					$result,
-					"Package {$package} correctly returns false when not bundled or in node_modules"
-				);
-			}
 		}
 	}
 

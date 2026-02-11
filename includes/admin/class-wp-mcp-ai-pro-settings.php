@@ -1065,34 +1065,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
-			// For specific known packages, check their actual paths.
-			$package_paths = array(
-				'rahul900day/tiktoken-php'              => 'vendor/rahul900day/tiktoken-php',
-				'symfony/http-client'                   => 'vendor/symfony/http-client',
-				'nyholm/psr7'                           => 'vendor/nyholm/psr7',
-				'symfony/validator'                     => 'vendor/symfony/validator',
-				'symfony/cache'                         => 'vendor/symfony/cache',
-				'symfony/filesystem'                    => 'vendor/symfony/filesystem',
-				'symfony/process'                       => 'vendor/symfony/process',
-				'league/oauth2-client'                  => 'vendor/league/oauth2-client',
-				'cweagans/composer-patches'             => 'vendor/cweagans/composer-patches',
-				'dealerdirect/phpcodesniffer-composer-installer' => 'vendor/dealerdirect/phpcodesniffer-composer-installer',
-				'phpcompatibility/phpcompatibility-wp'  => 'vendor/phpcompatibility/phpcompatibility-wp',
-				'php-stubs/wordpress-stubs'             => 'vendor/php-stubs/wordpress-stubs',
-				'squizlabs/php_codesniffer'             => 'vendor/squizlabs/php_codesniffer',
-				'wp-coding-standards/wpcs'              => 'vendor/wp-coding-standards/wpcs',
-				'phpunit/phpunit'                       => 'vendor/phpunit/phpunit',
-				'wp-phpunit/wp-phpunit'                 => 'vendor/wp-phpunit/wp-phpunit',
-				'yoast/phpunit-polyfills'               => 'vendor/yoast/phpunit-polyfills',
-			);
-
-			if ( isset( $package_paths[ $package ] ) ) {
-				$path = WP_MCP_AI_PATH . $package_paths[ $package ];
-				return file_exists( $path );
-			}
-
-			// For other packages, assume installed if vendor/autoload.php exists.
-			return true;
+			// Derive vendor path from package name (e.g., 'symfony/http-client' -> 'vendor/symfony/http-client').
+			$path = WP_MCP_AI_PATH . 'vendor/' . $package;
+			return file_exists( $path );
 		}
 
 		/**
