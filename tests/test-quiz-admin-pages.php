@@ -23,25 +23,61 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
 
-		// Enable quiz system for tests.
+		// Store original settings.
+		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// Enable quiz system for tests by default (tests can override if needed).
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_quiz_system'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
-		// Clear any existing menu globals.
+		// Store original menu globals and clear them.
 		global $menu, $submenu;
-		$menu    = array();
-		$submenu = array();
+		$this->original_menu    = $menu;
+		$this->original_submenu = $submenu;
+		$menu                   = array();
+		$submenu                = array();
 	}
 
 	/**
 	 * Tear down after each test.
 	 */
 	public function tearDown(): void {
-		// Clean up settings.
-		delete_option( 'wp_mcp_ai_settings' );
+		// Restore original settings.
+		if ( ! empty( $this->original_settings ) ) {
+			update_option( 'wp_mcp_ai_settings', $this->original_settings );
+		} else {
+			delete_option( 'wp_mcp_ai_settings' );
+		}
+
+		// Restore original menu globals.
+		global $menu, $submenu;
+		$menu    = $this->original_menu;
+		$submenu = $this->original_submenu;
+
 		parent::tearDown();
 	}
+
+	/**
+	 * Original settings.
+	 *
+	 * @var array
+	 */
+	protected $original_settings = array();
+
+	/**
+	 * Original menu state.
+	 *
+	 * @var array
+	 */
+	protected $original_menu;
+
+	/**
+	 * Original submenu state.
+	 *
+	 * @var array
+	 */
+	protected $original_submenu;
 
 	/**
 	 * Test that Quiz CPT is registered when enabled.
