@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
-        'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-        'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-        'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
+        'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+        'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+        'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
-            'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-            'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-            'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
+            'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+            'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+            'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
