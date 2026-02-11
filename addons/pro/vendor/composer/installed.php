@@ -3,11 +3,11 @@
         'name' => 'mcp-ai-wpoos/pro-addon',
         'pretty_version' => 'dev-copilot/review-document-template-toolkit',
         'version' => 'dev-copilot/review-document-template-toolkit',
-        'reference' => 'fa8536038c8ffe17d0aa3e6b936e17b472fabaab',
+        'reference' => '08f911dae52c75e8c394b555816d0477f66353cf',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'composer/pcre' => array(
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/pro-addon' => array(
             'pretty_version' => 'dev-copilot/review-document-template-toolkit',
             'version' => 'dev-copilot/review-document-template-toolkit',
-            'reference' => 'fa8536038c8ffe17d0aa3e6b936e17b472fabaab',
+            'reference' => '08f911dae52c75e8c394b555816d0477f66353cf',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
