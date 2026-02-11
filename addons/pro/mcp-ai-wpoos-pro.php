@@ -233,6 +233,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			return;
 		}
 
+		// Load Pro addon vendor autoload (for phpspreadsheet and other PHP 8.1+ dependencies).
+		// This is conditional and only loads when PHP 8.1+ is available.
+		// PHP 7.4 users will see graceful degradation in tools that require these dependencies.
+		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
+			$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+			if ( file_exists( $pro_vendor_autoload ) ) {
+				require_once $pro_vendor_autoload;
+			}
+		}
+
 		// Register text domain loading on init hook.
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
