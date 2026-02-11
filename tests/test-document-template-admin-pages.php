@@ -23,6 +23,9 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
 
+		// Store original settings.
+		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
+
 		// Store original menu globals and clear them.
 		global $menu, $submenu;
 		$this->original_menu    = $menu;
@@ -35,6 +38,13 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 	 * Tear down after each test.
 	 */
 	public function tearDown(): void {
+		// Restore original settings.
+		if ( ! empty( $this->original_settings ) ) {
+			update_option( 'wp_mcp_ai_settings', $this->original_settings );
+		} else {
+			delete_option( 'wp_mcp_ai_settings' );
+		}
+
 		// Restore original menu globals.
 		global $menu, $submenu;
 		$menu    = $this->original_menu;
@@ -42,6 +52,13 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 
 		parent::tearDown();
 	}
+
+	/**
+	 * Original settings.
+	 *
+	 * @var array
+	 */
+	protected $original_settings = array();
 
 	/**
 	 * Original menu state.
@@ -184,8 +201,5 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		}
 
 		$this->assertTrue( $found_research_page, 'Research & Add page should be registered even when feature is disabled' );
-
-		// Clean up.
-		delete_option( 'wp_mcp_ai_settings' );
 	}
 }
