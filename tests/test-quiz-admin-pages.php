@@ -262,9 +262,11 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 			$this->assertTrue( $found_research, 'Research & Add page should be registered even when feature is disabled' );
 			$this->assertTrue( $found_settings, 'Settings page should be registered even when feature is disabled' );
 		} else {
-			// CPT is not registered when disabled, so admin pages won't appear.
-			// This is expected behavior for Quiz CPT (unlike Document Template).
-			$this->assertTrue( true, 'Quiz CPT is not registered when disabled, which is expected behavior' );
+			// CPT is not registered when disabled. Quiz CPT behavior differs from Document Template CPT.
+			// Document Template CPT is always registered, but Quiz CPT registration is conditional.
+			// Since the CPT doesn't exist, there's no parent menu for submenu pages to attach to.
+			// This test documents that admin pages are loaded but can't appear without the CPT.
+			$this->markTestSkipped( 'Quiz CPT is not registered when disabled, so admin pages cannot be verified' );
 		}
 	}
 }
