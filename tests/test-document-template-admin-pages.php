@@ -54,6 +54,10 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
 		}
 
+		// Initialize CPT to ensure it's registered.
+		WP_MCP_AI_Document_Template_CPT::init();
+		do_action( 'init' );
+
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
 
@@ -86,6 +90,10 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
 		}
+
+		// Initialize CPT to ensure it's registered.
+		WP_MCP_AI_Document_Template_CPT::init();
+		do_action( 'init' );
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
@@ -124,6 +132,10 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
 		}
+
+		// Initialize CPT to ensure it's registered.
+		WP_MCP_AI_Document_Template_CPT::init();
+		do_action( 'init' );
 
 		// Trigger admin_menu action.
 		do_action( 'admin_menu' );
