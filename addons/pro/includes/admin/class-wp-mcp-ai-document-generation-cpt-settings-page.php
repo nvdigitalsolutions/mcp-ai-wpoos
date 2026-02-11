@@ -199,7 +199,7 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	public function render_enable_research_field() {
 		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
+		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : false;
 
 		?>
 		<label>
@@ -273,9 +273,28 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function get_tools_list() {
 		return array(
-			'pro_pdf_document'   => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
-			'pro_word_document'  => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
-			'pro_excel_document' => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
+			// Core Document Generation Tools.
+			'pro_pdf_document'     => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
+			'pro_word_document'    => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
+			'pro_excel_document'   => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
+
+			// Simplified Generation Tools.
+			'generate_pdf'         => __( 'Generate PDF', 'mcp-ai-wpoos-pro' ),
+			'generate_word'        => __( 'Generate Word', 'mcp-ai-wpoos-pro' ),
+			'generate_excel'       => __( 'Generate Excel', 'mcp-ai-wpoos-pro' ),
+
+			// Utility Tools.
+			'html_to_pdf'          => __( 'HTML to PDF', 'mcp-ai-wpoos-pro' ),
+			'merge_pdfs'           => __( 'Merge PDFs', 'mcp-ai-wpoos-pro' ),
+			'add_watermark_to_pdf' => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
+			'extract_pdf_text'     => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
+
+			// Data Import/Export Tools.
+			'excel_data_import'    => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
+			'excel_data_export'    => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
+
+			// Template-Based Tools.
+			'generate_invoice_pdf' => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
