@@ -23,11 +23,39 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 		set_current_screen( 'dashboard' );
 
-		// Clear any existing menu globals.
+		// Store original menu globals and clear them.
 		global $menu, $submenu;
-		$menu    = array();
-		$submenu = array();
+		$this->original_menu    = $menu;
+		$this->original_submenu = $submenu;
+		$menu                   = array();
+		$submenu                = array();
 	}
+
+	/**
+	 * Tear down after each test.
+	 */
+	public function tearDown(): void {
+		// Restore original menu globals.
+		global $menu, $submenu;
+		$menu    = $this->original_menu;
+		$submenu = $this->original_submenu;
+
+		parent::tearDown();
+	}
+
+	/**
+	 * Original menu state.
+	 *
+	 * @var array
+	 */
+	protected $original_menu;
+
+	/**
+	 * Original submenu state.
+	 *
+	 * @var array
+	 */
+	protected $original_submenu;
 
 	/**
 	 * Test that Document Template CPT is registered.

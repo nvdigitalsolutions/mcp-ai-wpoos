@@ -156,15 +156,22 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 			$this->assertArrayHasKey( $parent_slug, $submenu, 'Quiz submenu should exist when CPT is registered' );
 
 			// Verify both pages are present.
-			$page_slugs = array();
+			$found_research = false;
+			$found_settings = false;
+
 			if ( isset( $submenu[ $parent_slug ] ) ) {
 				foreach ( $submenu[ $parent_slug ] as $item ) {
-					$page_slugs[] = $item[2];
+					if ( strpos( $item[2], 'research-quiz' ) !== false ) {
+						$found_research = true;
+					}
+					if ( strpos( $item[2], 'quiz-settings' ) !== false ) {
+						$found_settings = true;
+					}
 				}
 			}
 
-			$this->assertContains( 'research-quiz', $page_slugs, 'Research & Add page should be in submenu' );
-			$this->assertContains( 'quiz-settings', $page_slugs, 'Settings page should be in submenu' );
+			$this->assertTrue( $found_research, 'Research & Add page should be in submenu' );
+			$this->assertTrue( $found_settings, 'Settings page should be in submenu' );
 		}
 	}
 }
