@@ -140,8 +140,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * Render Node.js status field.
 	 */
 	public function render_nodejs_status_field() {
-		$nodejs_available = $this->check_nodejs_available();
-		$npm_packages     = $this->check_npm_packages_installed();
+		$nodejs_available     = $this->check_nodejs_available();
+		$npm_packages         = $this->check_npm_packages_installed();
+		$optional_npm_packages = $this->check_optional_npm_packages_installed();
 
 		?>
 		<p>
@@ -153,17 +154,25 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			<?php endif; ?>
 		</p>
 		<p>
-			<strong><?php esc_html_e( 'NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs, pdf-lib)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
 				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos-pro' ); ?></span>
 				<br>
 				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
 			<?php endif; ?>
 		</p>
+		<p>
+			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<?php if ( $optional_npm_packages ) : ?>
+				<span style="color: green;">✓ <?php esc_html_e( 'Installed (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php else : ?>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Installed (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php endif; ?>
+		</p>
 		<p class="description">
-			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks are available for basic functionality.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -189,9 +198,26 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function check_npm_packages_installed() {
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $node_modules . '/pdfkit/package.json' ) &&
-				file_exists( $node_modules . '/docx/package.json' ) &&
-				file_exists( $node_modules . '/exceljs/package.json' );
+		
+		// Check core document generation packages.
+		$core_packages = file_exists( $node_modules . '/pdfkit/package.json' ) &&
+						file_exists( $node_modules . '/docx/package.json' ) &&
+						file_exists( $node_modules . '/exceljs/package.json' );
+		
+		// Check utility packages (optional).
+		$utility_packages = file_exists( $node_modules . '/pdf-lib/package.json' );
+		
+		return $core_packages && $utility_packages;
+	}
+
+	/**
+	 * Check if optional NPM packages are installed.
+	 *
+	 * @return bool
+	 */
+	protected function check_optional_npm_packages_installed() {
+		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
+		return file_exists( $node_modules . '/puppeteer-core/package.json' );
 	}
 
 	/**
@@ -249,8 +275,16 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			<h3><?php esc_html_e( 'NPM Packages Integrated', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
 				<li><strong>pdfkit</strong> (500K/week): Advanced PDF generation with vector graphics</li>
+				<li><strong>pdf-lib</strong> (700K/week): PDF manipulation - merge, watermark, modify existing PDFs</li>
 				<li><strong>docx</strong> (2M/week): Microsoft Word document generation</li>
 				<li><strong>exceljs</strong> (2M/week): Excel spreadsheet creation and manipulation</li>
+				<li><strong>puppeteer-core</strong> (2M/week, optional): Advanced HTML to PDF rendering with full browser support</li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Alternative Technologies', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'Command-line tools: pdftk (PDF manipulation), pdftotext (text extraction), wkhtmltopdf (HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'PHP fallbacks: DomPDF, mPDF, TCPDF for PDF generation when Node.js unavailable', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 
 			<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
