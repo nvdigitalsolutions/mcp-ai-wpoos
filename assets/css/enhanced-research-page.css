@@ -160,11 +160,11 @@
 
 /* Workflow Content Sections */
 .workflow-content {
-	display: none;
+	display: none !important;
 }
 
 .workflow-content.active {
-	display: block;
+	display: block !important;
 }
 
 /* AI Research Tab (Chat Interface) */

@@ -332,12 +332,12 @@ class WP_MCP_AI_Product_Research_Page {
 					</div>
 
 					<!-- Import Data Workflow -->
-					<div id="workflow-import" class="workflow-content">
+					<div id="workflow-import" class="workflow-content" style="display: none;">
 						<?php self::render_import_workflow(); ?>
 					</div>
 
 					<!-- Review & Quality Workflow -->
-					<div id="workflow-review" class="workflow-content">
+					<div id="workflow-review" class="workflow-content" style="display: none;">
 						<?php self::render_review_workflow(); ?>
 					</div>
 				</div>
