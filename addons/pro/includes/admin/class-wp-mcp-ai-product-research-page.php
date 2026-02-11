@@ -751,3 +751,6 @@ class WP_MCP_AI_Product_Research_Page {
 		<?php
 	}
 }
+
+// Initialize.
+WP_MCP_AI_Product_Research_Page::init();

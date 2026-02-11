@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-page-rendering-issue',
-        'version' => 'dev-copilot/fix-page-rendering-issue',
-        'reference' => 'a96334e2cfe0e1a469ef38f9b37c2ead0f51061f',
+        'pretty_version' => 'dev-copilot/fix-product-research-page-rendering',
+        'version' => 'dev-copilot/fix-product-research-page-rendering',
+        'reference' => '737c9b00c320b6dcf38f4db072c81b348a9fc132',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-page-rendering-issue',
-            'version' => 'dev-copilot/fix-page-rendering-issue',
-            'reference' => 'a96334e2cfe0e1a469ef38f9b37c2ead0f51061f',
+            'pretty_version' => 'dev-copilot/fix-product-research-page-rendering',
+            'version' => 'dev-copilot/fix-product-research-page-rendering',
+            'reference' => '737c9b00c320b6dcf38f4db072c81b348a9fc132',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
