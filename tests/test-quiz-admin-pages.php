@@ -163,8 +163,8 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 				}
 			}
 
-			$this->assertContains( 'research-quiz', implode( ',', $page_slugs ), 'Research & Add page should be in submenu' );
-			$this->assertContains( 'quiz-settings', implode( ',', $page_slugs ), 'Settings page should be in submenu' );
+			$this->assertContains( 'research-quiz', $page_slugs, 'Research & Add page should be in submenu' );
+			$this->assertContains( 'quiz-settings', $page_slugs, 'Settings page should be in submenu' );
 		}
 	}
 }

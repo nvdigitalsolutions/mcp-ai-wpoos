@@ -34,6 +34,7 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 	 */
 	public function test_document_template_cpt_registered() {
 		// Initialize the CPT.
+		WP_MCP_AI_Document_Template_CPT::init();
 		do_action( 'init' );
 
 		// Check if the post type is registered.
