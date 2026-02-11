@@ -163,46 +163,114 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'invalid_file', __( 'File is not a valid PDF.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// This is a placeholder implementation.
-		// In production, use libraries like FPDI, TCPDF, or pdftk with stamp.
-		
-		$temp_file = tempnam( sys_get_temp_dir(), 'watermarked_pdf_' );
-
-		// For now, just copy the original (placeholder).
-		// In production, use proper watermarking library.
-		copy( $file_path, $temp_file );
-
-		// Upload to WordPress media library.
-		$original_filename = basename( $file_path, '.pdf' );
-		$file_array        = array(
-			'name'     => $original_filename . '-watermarked.pdf',
-			'tmp_name' => $temp_file,
-		);
-
-		$new_attachment_id = media_handle_sideload( $file_array, 0 );
-
-		@unlink( $temp_file );
-
-		if ( is_wp_error( $new_attachment_id ) ) {
-			return $new_attachment_id;
+		// Try TCPDF library.
+		if ( class_exists( '\TCPDF' ) ) {
+			return $this->add_watermark_with_tcpdf( $file_path, $text, $opacity, $position );
 		}
 
-		// Get attachment details.
-		$attachment_url = wp_get_attachment_url( $new_attachment_id );
-		$new_file_path  = get_attached_file( $new_attachment_id );
-		$file_size      = filesize( $new_file_path );
-
-		return array(
-			'attachment_id' => $new_attachment_id,
-			'url'           => $attachment_url,
-			'filename'      => basename( $new_file_path ),
-			'mime_type'     => 'application/pdf',
-			'size'          => $file_size,
-			'text'          => sprintf(
-				/* translators: %s: watermark text */
-				__( 'Successfully added watermark "%s" to PDF.', 'mcp-ai-wpoos-pro' ),
-				$text
-			),
+		// No suitable watermarking method available.
+		return new WP_Error(
+			'no_watermarker',
+			__( 'PDF watermarking requires TCPDF library (Composer: composer require tecnickcom/tcpdf) or pdf-lib Node.js package. Alternatively, use pdftk with a stamp overlay.', 'mcp-ai-wpoos-pro' )
 		);
+	}
+
+	/**
+	 * Add watermark using TCPDF.
+	 *
+	 * @param string $file_path PDF file path.
+	 * @param string $text      Watermark text.
+	 * @param float  $opacity   Opacity.
+	 * @param string $position  Position.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function add_watermark_with_tcpdf( $file_path, $text, $opacity, $position ) {
+		try {
+			$pdf = new \TCPDF();
+			$pdf->setPrintHeader( false );
+			$pdf->setPrintFooter( false );
+
+			// Import pages from original PDF.
+			$page_count = $pdf->setSourceFile( $file_path );
+
+			for ( $i = 1; $i <= $page_count; $i++ ) {
+				$pdf->AddPage();
+				$tpl_id = $pdf->importPage( $i );
+				$pdf->useTemplate( $tpl_id );
+
+				// Add watermark text.
+				$pdf->SetAlpha( $opacity );
+				$pdf->SetFont( 'helvetica', 'B', 50 );
+				$pdf->SetTextColor( 200, 200, 200 );
+
+				// Position watermark.
+				switch ( $position ) {
+					case 'diagonal':
+						$pdf->StartTransform();
+						$pdf->Rotate( 45, 105, 148 );
+						$pdf->Text( 60, 148, $text );
+						$pdf->StopTransform();
+						break;
+					case 'center':
+						$pdf->Text( 105 - ( strlen( $text ) * 2 ), 148, $text, false, false, true, 0, 0, 'C' );
+						break;
+					case 'top':
+						$pdf->Text( 105 - ( strlen( $text ) * 2 ), 20, $text );
+						break;
+					case 'bottom':
+						$pdf->Text( 105 - ( strlen( $text ) * 2 ), 280, $text );
+						break;
+				}
+
+				$pdf->SetAlpha( 1 ); // Reset alpha.
+			}
+
+			// Save to temp file.
+			$temp_file = tempnam( sys_get_temp_dir(), 'watermarked_pdf_' );
+			$pdf->Output( $temp_file, 'F' );
+
+			// Upload to WordPress media library.
+			$original_filename = basename( $file_path, '.pdf' );
+			$file_array        = array(
+				'name'     => $original_filename . '-watermarked.pdf',
+				'tmp_name' => $temp_file,
+			);
+
+			$new_attachment_id = media_handle_sideload( $file_array, 0 );
+
+			@unlink( $temp_file );
+
+			if ( is_wp_error( $new_attachment_id ) ) {
+				return $new_attachment_id;
+			}
+
+			// Get attachment details.
+			$attachment_url = wp_get_attachment_url( $new_attachment_id );
+			$new_file_path  = get_attached_file( $new_attachment_id );
+			$file_size      = filesize( $new_file_path );
+
+			return array(
+				'attachment_id' => $new_attachment_id,
+				'url'           => $attachment_url,
+				'filename'      => basename( $new_file_path ),
+				'mime_type'     => 'application/pdf',
+				'size'          => $file_size,
+				'text'          => sprintf(
+					/* translators: %s: watermark text */
+					__( 'Successfully added watermark "%s" to PDF.', 'mcp-ai-wpoos-pro' ),
+					$text
+				),
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'tcpdf_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'TCPDF watermarking failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
 	}
 }

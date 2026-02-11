@@ -192,46 +192,112 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 			'currency'       => $currency,
 		) );
 
-		// This is a placeholder implementation.
-		// In production, use proper PDF generation library or delegate to Pro PDF tool.
-		
-		// Create a simple PDF (placeholder).
-		$temp_file = tempnam( sys_get_temp_dir(), 'invoice_' );
-		$pdf_content = $this->html_to_simple_pdf( $html, 'Invoice ' . $invoice_number );
-		file_put_contents( $temp_file, $pdf_content );
-
-		// Upload to WordPress media library.
-		$file_array = array(
-			'name'     => 'invoice-' . $invoice_number . '.pdf',
-			'tmp_name' => $temp_file,
-		);
-
-		$attachment_id = media_handle_sideload( $file_array, 0 );
-
-		@unlink( $temp_file );
-
-		if ( is_wp_error( $attachment_id ) ) {
-			return $attachment_id;
+		// Try DomPDF first.
+		if ( class_exists( '\Dompdf\Dompdf' ) ) {
+			return $this->generate_with_dompdf( $html, $invoice_number, $total, $currency );
 		}
 
-		// Get attachment details.
-		$attachment_url = wp_get_attachment_url( $attachment_id );
-		$file_path      = get_attached_file( $attachment_id );
-		$file_size      = filesize( $file_path );
+		// Fallback: Delegate to pro_pdf_document tool.
+		if ( class_exists( 'WP_MCP_AI_Tool_Pro_PDF' ) ) {
+			return $this->generate_with_pro_pdf( $html, $invoice_number );
+		}
 
-		return array(
-			'attachment_id' => $attachment_id,
-			'url'           => $attachment_url,
-			'filename'      => basename( $file_path ),
-			'mime_type'     => 'application/pdf',
-			'size'          => $file_size,
-			'text'          => sprintf(
-				/* translators: 1: invoice number, 2: total amount, 3: currency */
-				__( 'Successfully generated invoice #%1$s for %3$s%2$s.', 'mcp-ai-wpoos-pro' ),
-				$invoice_number,
-				number_format( $total, 2 ),
-				$currency
+		// No suitable PDF generation method available.
+		return new WP_Error(
+			'no_pdf_generator',
+			__( 'Invoice PDF generation requires DomPDF library (Composer: composer require dompdf/dompdf) or Pro PDF tool.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Generate invoice using DomPDF.
+	 *
+	 * @param string $html           Invoice HTML.
+	 * @param string $invoice_number Invoice number.
+	 * @param float  $total          Total amount.
+	 * @param string $currency       Currency code.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function generate_with_dompdf( $html, $invoice_number, $total, $currency ) {
+		try {
+			$dompdf = new \Dompdf\Dompdf();
+			$dompdf->loadHtml( $html );
+			$dompdf->setPaper( 'a4', 'portrait' );
+			$dompdf->render();
+
+			// Get PDF content.
+			$pdf_content = $dompdf->output();
+
+			// Create temp file.
+			$temp_file = tempnam( sys_get_temp_dir(), 'invoice_' );
+			file_put_contents( $temp_file, $pdf_content );
+
+			// Upload to WordPress media library.
+			$file_array = array(
+				'name'     => 'invoice-' . $invoice_number . '.pdf',
+				'tmp_name' => $temp_file,
+			);
+
+			$attachment_id = media_handle_sideload( $file_array, 0 );
+
+			@unlink( $temp_file );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			// Get attachment details.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$file_path      = get_attached_file( $attachment_id );
+			$file_size      = filesize( $file_path );
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'url'           => $attachment_url,
+				'filename'      => basename( $file_path ),
+				'mime_type'     => 'application/pdf',
+				'size'          => $file_size,
+				'text'          => sprintf(
+					/* translators: 1: invoice number, 2: total amount, 3: currency */
+					__( 'Successfully generated invoice #%1$s for %3$s%2$s.', 'mcp-ai-wpoos-pro' ),
+					$invoice_number,
+					number_format( $total, 2 ),
+					$currency
+				),
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'dompdf_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'DomPDF invoice generation failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Generate invoice using Pro PDF tool.
+	 *
+	 * @param string $html           Invoice HTML.
+	 * @param string $invoice_number Invoice number.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function generate_with_pro_pdf( $html, $invoice_number ) {
+		$pro_pdf_tool = new WP_MCP_AI_Tool_Pro_PDF();
+
+		// Convert HTML to plain content for Pro PDF.
+		$content = wp_strip_all_tags( $html );
+
+		return $pro_pdf_tool->execute(
+			array(
+				'operation' => 'generate',
+				'content'   => $content,
+				'title'     => 'Invoice ' . $invoice_number,
 			),
+			array()
 		);
 	}
 
@@ -269,25 +335,5 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		
 		$html .= '</body></html>';
 		return $html;
-	}
-
-	/**
-	 * Convert HTML to simple PDF (placeholder).
-	 *
-	 * @param string $html  HTML content.
-	 * @param string $title Document title.
-	 * @return string PDF binary content.
-	 */
-	protected function html_to_simple_pdf( $html, $title ) {
-		// Placeholder - use basic PDF structure.
-		$text = wp_strip_all_tags( $html );
-		$pdf  = "%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
-		$pdf .= "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
-		$pdf .= "3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 595 842] /Contents 5 0 R >>\nendobj\n";
-		$pdf .= "4 0 obj\n<< /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >>\nendobj\n";
-		$pdf .= "5 0 obj\n<< /Length " . strlen( $text ) . " >>\nstream\nBT /F1 10 Tf 50 800 Td (" . substr( $text, 0, 1000 ) . ") Tj ET\nendstream\nendobj\n";
-		$pdf .= "xref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000115 00000 n\n0000000214 00000 n\n0000000304 00000 n\n";
-		$pdf .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" . ( strlen( $pdf ) + 20 ) . "\n%%EOF";
-		return $pdf;
 	}
 }

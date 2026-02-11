@@ -147,11 +147,121 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array|WP_Error Result array or error.
 	 */
 	protected function export_to_excel( $data, $headers, $title, $filename ) {
-		// This is a placeholder implementation.
-		// In production, use PhpSpreadsheet or similar library.
-		
-		// Create a simple CSV file for now (placeholder).
-		$temp_file = tempnam( sys_get_temp_dir(), 'excel_export_' );
+		// Try PhpSpreadsheet first (Composer dependency).
+		if ( class_exists( '\PhpOffice\PhpSpreadsheet\Spreadsheet' ) ) {
+			return $this->export_with_phpspreadsheet( $data, $headers, $title, $filename );
+		}
+
+		// Fallback to CSV format.
+		return $this->export_to_csv( $data, $headers, $filename );
+	}
+
+	/**
+	 * Export data using PhpSpreadsheet.
+	 *
+	 * @param array  $data     Data rows.
+	 * @param array  $headers  Column headers.
+	 * @param string $title    Spreadsheet title.
+	 * @param string $filename Output filename.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function export_with_phpspreadsheet( $data, $headers, $title, $filename ) {
+		try {
+			$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+			$sheet       = $spreadsheet->getActiveSheet();
+			$sheet->setTitle( substr( $title, 0, 31 ) ); // Excel sheet name limit.
+
+			$row = 1;
+
+			// Write headers if provided.
+			if ( ! empty( $headers ) ) {
+				$col = 'A';
+				foreach ( $headers as $header ) {
+					$sheet->setCellValue( $col . $row, $header );
+					// Bold headers.
+					$sheet->getStyle( $col . $row )->getFont()->setBold( true );
+					$col++;
+				}
+				$row++;
+			}
+
+			// Write data rows.
+			foreach ( $data as $data_row ) {
+				if ( is_array( $data_row ) ) {
+					$col = 'A';
+					foreach ( $data_row as $cell_value ) {
+						$sheet->setCellValue( $col . $row, $cell_value );
+						$col++;
+					}
+					$row++;
+				}
+			}
+
+			// Auto-size columns.
+			foreach ( range( 'A', $sheet->getHighestColumn() ) as $col ) {
+				$sheet->getColumnDimension( $col )->setAutoSize( true );
+			}
+
+			// Create temp file.
+			$temp_file = tempnam( sys_get_temp_dir(), 'excel_' );
+			$writer    = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
+			$writer->save( $temp_file );
+
+			// Upload to WordPress media library.
+			$file_array = array(
+				'name'     => $filename . '.xlsx',
+				'tmp_name' => $temp_file,
+			);
+
+			$attachment_id = media_handle_sideload( $file_array, 0 );
+
+			@unlink( $temp_file );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			// Get attachment details.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$file_path      = get_attached_file( $attachment_id );
+			$file_size      = filesize( $file_path );
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'url'           => $attachment_url,
+				'filename'      => basename( $file_path ),
+				'mime_type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				'size'          => $file_size,
+				'text'          => sprintf(
+					/* translators: 1: row count, 2: file size */
+					__( 'Successfully exported %1$d rows to Excel file (%2$s).', 'mcp-ai-wpoos-pro' ),
+					count( $data ),
+					size_format( $file_size )
+				),
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'phpspreadsheet_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'PhpSpreadsheet export failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Export data to CSV (fallback when PhpSpreadsheet not available).
+	 *
+	 * @param array  $data     Data rows.
+	 * @param array  $headers  Column headers.
+	 * @param string $filename Output filename.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function export_to_csv( $data, $headers, $filename ) {
+		$temp_file = tempnam( sys_get_temp_dir(), 'csv_' );
 		$handle    = fopen( $temp_file, 'w' );
 
 		if ( ! $handle ) {
@@ -172,11 +282,9 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 
 		fclose( $handle );
 
-		// Upload to WordPress media library.
-		// Note: Using .xlsx extension even though it's CSV (placeholder).
-		// In production, generate real Excel file.
+		// Upload to WordPress media library with CSV extension.
 		$file_array = array(
-			'name'     => $filename . '.xlsx',
+			'name'     => $filename . '.csv',
 			'tmp_name' => $temp_file,
 		);
 
@@ -197,11 +305,11 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 			'attachment_id' => $attachment_id,
 			'url'           => $attachment_url,
 			'filename'      => basename( $file_path ),
-			'mime_type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'mime_type'     => 'text/csv',
 			'size'          => $file_size,
 			'text'          => sprintf(
 				/* translators: 1: row count, 2: file size */
-				__( 'Successfully exported %1$d rows to Excel file (%2$s).', 'mcp-ai-wpoos-pro' ),
+				__( 'Successfully exported %1$d rows to CSV file (%2$s). Note: PhpSpreadsheet not available, exported as CSV instead of Excel.', 'mcp-ai-wpoos-pro' ),
 				count( $data ),
 				size_format( $file_size )
 			),

@@ -147,12 +147,7 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return array|WP_Error Result array or error.
 	 */
 	protected function merge_pdf_files( $attachment_ids, $title, $filename ) {
-		// This is a placeholder implementation.
-		// In production, use libraries like FPDI, PyPDF2, or pdftk.
-		
-		// For now, create a simple merged PDF by concatenating.
-		$merged_content = '';
-		$file_paths     = array();
+		$file_paths = array();
 
 		foreach ( $attachment_ids as $attachment_id ) {
 			$file_path = get_attached_file( $attachment_id );
@@ -178,29 +173,46 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$file_paths[] = $file_path;
 		}
 
-		// Simple concatenation (not a proper PDF merge - placeholder).
-		// In production, use proper PDF merging library.
-		$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
-
-		// Use pdftk if available.
+		// Try pdftk command-line tool.
 		$pdftk = shell_exec( 'which pdftk 2>/dev/null' );
 
 		if ( ! empty( $pdftk ) ) {
-			$cmd = sprintf(
-				'pdftk %s cat output %s 2>&1',
-				implode( ' ', array_map( 'escapeshellarg', $file_paths ) ),
-				escapeshellarg( $temp_file )
-			);
+			return $this->merge_with_pdftk( $file_paths, $filename );
+		}
 
-			exec( $cmd, $output, $return_code );
+		// Try TCPDF library.
+		if ( class_exists( '\TCPDF' ) ) {
+			return $this->merge_with_tcpdf( $file_paths, $filename );
+		}
 
-			if ( 0 !== $return_code ) {
-				@unlink( $temp_file );
-				return new WP_Error( 'merge_failed', __( 'Failed to merge PDFs using pdftk.', 'mcp-ai-wpoos-pro' ) );
-			}
-		} else {
-			// Fallback: Copy first file as base (not a real merge).
-			copy( $file_paths[0], $temp_file );
+		// No suitable merging method available.
+		return new WP_Error(
+			'no_merger',
+			__( 'PDF merging requires pdftk command-line tool (install: apt-get install pdftk or brew install pdftk) or TCPDF library (Composer: composer require tecnickcom/tcpdf). Alternatively, use the pdf-lib Node.js package.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Merge PDFs using pdftk.
+	 *
+	 * @param array  $file_paths Array of PDF file paths.
+	 * @param string $filename   Output filename.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function merge_with_pdftk( $file_paths, $filename ) {
+		$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+
+		$cmd = sprintf(
+			'pdftk %s cat output %s 2>&1',
+			implode( ' ', array_map( 'escapeshellarg', $file_paths ) ),
+			escapeshellarg( $temp_file )
+		);
+
+		exec( $cmd, $output, $return_code );
+
+		if ( 0 !== $return_code ) {
+			@unlink( $temp_file );
+			return new WP_Error( 'merge_failed', __( 'Failed to merge PDFs using pdftk.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Upload to WordPress media library.
@@ -231,9 +243,85 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'text'          => sprintf(
 				/* translators: 1: number of files merged, 2: output size */
 				__( 'Successfully merged %1$d PDF files into one document (%2$s).', 'mcp-ai-wpoos-pro' ),
-				count( $attachment_ids ),
+				count( $file_paths ),
 				size_format( $file_size )
 			),
 		);
+	}
+
+	/**
+	 * Merge PDFs using TCPDF (basic concatenation).
+	 *
+	 * Note: TCPDF concatenation is basic and may not preserve all features.
+	 *
+	 * @param array  $file_paths Array of PDF file paths.
+	 * @param string $filename   Output filename.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function merge_with_tcpdf( $file_paths, $filename ) {
+		try {
+			// TCPDF doesn't have built-in PDF merging, but we can import pages.
+			// This is a basic implementation - use pdftk for production.
+			$pdf = new \TCPDF();
+			$pdf->setPrintHeader( false );
+			$pdf->setPrintFooter( false );
+
+			foreach ( $file_paths as $file_path ) {
+				// Import pages from each PDF.
+				$page_count = $pdf->setSourceFile( $file_path );
+				for ( $i = 1; $i <= $page_count; $i++ ) {
+					$pdf->AddPage();
+					$tpl_id = $pdf->importPage( $i );
+					$pdf->useTemplate( $tpl_id );
+				}
+			}
+
+			// Save to temp file.
+			$temp_file = tempnam( sys_get_temp_dir(), 'merged_pdf_' );
+			$pdf->Output( $temp_file, 'F' );
+
+			// Upload to WordPress media library.
+			$file_array = array(
+				'name'     => $filename . '.pdf',
+				'tmp_name' => $temp_file,
+			);
+
+			$attachment_id = media_handle_sideload( $file_array, 0 );
+
+			@unlink( $temp_file );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			// Get attachment details.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$file_path      = get_attached_file( $attachment_id );
+			$file_size      = filesize( $file_path );
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'url'           => $attachment_url,
+				'filename'      => basename( $file_path ),
+				'mime_type'     => 'application/pdf',
+				'size'          => $file_size,
+				'text'          => sprintf(
+					/* translators: 1: number of files merged, 2: output size */
+					__( 'Successfully merged %1$d PDF files into one document (%2$s).', 'mcp-ai-wpoos-pro' ),
+					count( $file_paths ),
+					size_format( $file_size )
+				),
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'tcpdf_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'TCPDF merge failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
 	}
 }

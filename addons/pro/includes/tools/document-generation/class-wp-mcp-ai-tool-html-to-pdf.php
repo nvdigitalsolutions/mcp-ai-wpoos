@@ -157,31 +157,145 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return array|WP_Error Result array with attachment info or WP_Error on failure.
 	 */
 	protected function convert_html_to_pdf( $html, $title, $filename, $page_size, $orientation ) {
-		// For now, create a simple text-based PDF using FPDF-like approach.
-		// In production, this would use DomPDF, wkhtmltopdf, or similar library.
-		
-		// Create a temporary file to store PDF content.
-		$upload_dir = wp_upload_dir();
-		$temp_file  = tempnam( sys_get_temp_dir(), 'pdf_' );
+		// Try DomPDF first (Composer dependency).
+		if ( class_exists( '\Dompdf\Dompdf' ) ) {
+			return $this->convert_with_dompdf( $html, $title, $filename, $page_size, $orientation );
+		}
 
-		// Simple PDF generation (placeholder - would use proper library in production).
-		$pdf_content = $this->generate_simple_pdf_from_html( $html, $title, $page_size, $orientation );
+		// Fallback to command-line wkhtmltopdf.
+		$wkhtmltopdf = shell_exec( 'which wkhtmltopdf 2>/dev/null' );
+		if ( ! empty( $wkhtmltopdf ) ) {
+			return $this->convert_with_wkhtmltopdf( $html, $title, $filename, $page_size, $orientation );
+		}
 
-		if ( false === file_put_contents( $temp_file, $pdf_content ) ) {
-			return new WP_Error( 'pdf_write_failed', __( 'Failed to write PDF file.', 'mcp-ai-wpoos-pro' ) );
+		// No suitable conversion method available.
+		return new WP_Error(
+			'no_converter',
+			__( 'HTML to PDF conversion requires DomPDF (install via Composer: composer require dompdf/dompdf) or wkhtmltopdf command-line tool.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Convert HTML to PDF using DomPDF.
+	 *
+	 * @param string $html        HTML content.
+	 * @param string $title       Document title.
+	 * @param string $filename    Output filename.
+	 * @param string $page_size   Page size.
+	 * @param string $orientation Page orientation.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function convert_with_dompdf( $html, $title, $filename, $page_size, $orientation ) {
+		try {
+			$dompdf = new \Dompdf\Dompdf();
+			$dompdf->loadHtml( $html );
+			$dompdf->setPaper( $page_size, $orientation );
+			$dompdf->render();
+
+			// Get PDF content.
+			$pdf_content = $dompdf->output();
+
+			// Create temporary file.
+			$temp_file = tempnam( sys_get_temp_dir(), 'pdf_' );
+			if ( false === file_put_contents( $temp_file, $pdf_content ) ) {
+				return new WP_Error( 'pdf_write_failed', __( 'Failed to write PDF file.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Upload to WordPress media library.
+			$file_array = array(
+				'name'     => $filename . '.pdf',
+				'tmp_name' => $temp_file,
+			);
+
+			$attachment_id = media_handle_sideload( $file_array, 0 );
+
+			// Clean up temp file.
+			@unlink( $temp_file );
+
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			// Get attachment details.
+			$attachment_url = wp_get_attachment_url( $attachment_id );
+			$file_path      = get_attached_file( $attachment_id );
+			$file_size      = filesize( $file_path );
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'url'           => $attachment_url,
+				'filename'      => basename( $file_path ),
+				'mime_type'     => 'application/pdf',
+				'size'          => $file_size,
+				'text'          => sprintf(
+					/* translators: 1: filename, 2: file size */
+					__( 'Successfully converted HTML to PDF: %1$s (%2$s)', 'mcp-ai-wpoos-pro' ),
+					$filename . '.pdf',
+					size_format( $file_size )
+				),
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'dompdf_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'DomPDF conversion failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Convert HTML to PDF using wkhtmltopdf command-line tool.
+	 *
+	 * @param string $html        HTML content.
+	 * @param string $title       Document title.
+	 * @param string $filename    Output filename.
+	 * @param string $page_size   Page size.
+	 * @param string $orientation Page orientation.
+	 * @return array|WP_Error Result array or error.
+	 */
+	protected function convert_with_wkhtmltopdf( $html, $title, $filename, $page_size, $orientation ) {
+		// Create temp HTML file.
+		$temp_html = tempnam( sys_get_temp_dir(), 'html_' );
+		file_put_contents( $temp_html, $html );
+
+		// Create temp PDF file.
+		$temp_pdf = tempnam( sys_get_temp_dir(), 'pdf_' );
+
+		// Build command.
+		$cmd = sprintf(
+			'wkhtmltopdf --page-size %s --orientation %s %s %s 2>&1',
+			escapeshellarg( strtoupper( $page_size ) ),
+			escapeshellarg( ucfirst( $orientation ) ),
+			escapeshellarg( $temp_html ),
+			escapeshellarg( $temp_pdf )
+		);
+
+		exec( $cmd, $output, $return_code );
+
+		// Clean up temp HTML.
+		@unlink( $temp_html );
+
+		if ( 0 !== $return_code || ! file_exists( $temp_pdf ) ) {
+			@unlink( $temp_pdf );
+			return new WP_Error(
+				'wkhtmltopdf_failed',
+				__( 'wkhtmltopdf conversion failed.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
 		// Upload to WordPress media library.
 		$file_array = array(
 			'name'     => $filename . '.pdf',
-			'tmp_name' => $temp_file,
+			'tmp_name' => $temp_pdf,
 		);
 
-		// Upload file to media library.
 		$attachment_id = media_handle_sideload( $file_array, 0 );
 
-		// Clean up temp file.
-		@unlink( $temp_file );
+		@unlink( $temp_pdf );
 
 		if ( is_wp_error( $attachment_id ) ) {
 			return $attachment_id;
@@ -205,47 +319,5 @@ class WP_MCP_AI_Tool_HTML_To_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				size_format( $file_size )
 			),
 		);
-	}
-
-	/**
-	 * Generate a simple PDF from HTML (placeholder implementation).
-	 *
-	 * This is a basic implementation. In production, this would use
-	 * libraries like DomPDF, mPDF, or wkhtmltopdf for proper HTML/CSS rendering.
-	 *
-	 * @param string $html        HTML content.
-	 * @param string $title       Document title.
-	 * @param string $page_size   Page size.
-	 * @param string $orientation Page orientation.
-	 * @return string PDF binary content.
-	 */
-	protected function generate_simple_pdf_from_html( $html, $title, $page_size, $orientation ) {
-		// Strip HTML tags for simple text content.
-		$text_content = wp_strip_all_tags( $html, true );
-
-		// Basic PDF structure (minimal valid PDF).
-		// In production, use proper PDF library.
-		$pdf = "%PDF-1.4\n";
-		$pdf .= "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
-		$pdf .= "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
-		$pdf .= "3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 595 842] /Contents 5 0 R >>\nendobj\n";
-		$pdf .= "4 0 obj\n<< /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >>\nendobj\n";
-		$pdf .= "5 0 obj\n<< /Length " . strlen( $text_content ) . " >>\nstream\n";
-		$pdf .= "BT /F1 12 Tf 50 800 Td (" . $this->escape_pdf_string( substr( $text_content, 0, 500 ) ) . ") Tj ET\n";
-		$pdf .= "endstream\nendobj\n";
-		$pdf .= "xref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000056 00000 n\n0000000115 00000 n\n0000000214 00000 n\n0000000304 00000 n\n";
-		$pdf .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" . ( strlen( $pdf ) + 20 ) . "\n%%EOF";
-
-		return $pdf;
-	}
-
-	/**
-	 * Escape string for PDF.
-	 *
-	 * @param string $str String to escape.
-	 * @return string Escaped string.
-	 */
-	protected function escape_pdf_string( $str ) {
-		return str_replace( array( '(', ')', '\\' ), array( '\\(', '\\)', '\\\\' ), $str );
 	}
 }

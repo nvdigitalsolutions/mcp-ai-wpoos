@@ -190,15 +190,12 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Extract text from PDF file.
 	 *
-	 * This is a placeholder implementation. In production, this would use
-	 * libraries like pdf.js, pdftotext, or similar for proper text extraction.
-	 *
 	 * @param string $file_path Path to PDF file.
 	 * @param int    $max_pages Maximum pages to extract (0 = all).
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_text_from_pdf( $file_path, $max_pages = 0 ) {
-		// Simple text extraction using pdftotext if available.
+		// Try pdftotext command-line tool.
 		$pdftotext = shell_exec( 'which pdftotext 2>/dev/null' );
 
 		if ( ! empty( $pdftotext ) ) {
@@ -219,29 +216,10 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
-		// Fallback: Try to extract text directly from PDF (very basic).
-		$content = file_get_contents( $file_path );
-
-		// Basic text extraction (not reliable for complex PDFs).
-		if ( preg_match_all( '/\((.*?)\)/s', $content, $matches ) ) {
-			$text = implode( ' ', $matches[1] );
-			return $this->clean_extracted_text( $text );
-		}
-
-		return new WP_Error( 'extraction_failed', __( 'Could not extract text from PDF. pdftotext utility not available.', 'mcp-ai-wpoos-pro' ) );
-	}
-
-	/**
-	 * Clean extracted text.
-	 *
-	 * @param string $text Extracted text.
-	 * @return string Cleaned text.
-	 */
-	protected function clean_extracted_text( $text ) {
-		// Remove PDF escape sequences.
-		$text = preg_replace( '/\\\\[0-9]{3}/', '', $text );
-		// Normalize whitespace.
-		$text = preg_replace( '/\s+/', ' ', $text );
-		return trim( $text );
+		// Return clear error message instead of unreliable fallback.
+		return new WP_Error(
+			'extraction_failed',
+			__( 'PDF text extraction requires pdftotext utility (install poppler-utils package: apt-get install poppler-utils or brew install poppler). Alternative: Use a dedicated PDF parsing library via Composer.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 }
