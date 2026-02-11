@@ -201,5 +201,18 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		}
 
 		$this->assertTrue( $found_research_page, 'Research & Add page should be registered even when feature is disabled' );
+
+		// Also verify Settings page is present.
+		$found_settings_page = false;
+		if ( isset( $submenu[ $parent_slug ] ) ) {
+			foreach ( $submenu[ $parent_slug ] as $item ) {
+				if ( strpos( $item[2], 'document-generation-settings' ) !== false ) {
+					$found_settings_page = true;
+					break;
+				}
+			}
+		}
+
+		$this->assertTrue( $found_settings_page, 'Settings page should be registered even when feature is disabled' );
 	}
 }
