@@ -73,6 +73,14 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$this->option_name,
 			$this->option_name . '_section'
 		);
+
+		add_settings_field(
+			'enable_research',
+			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_enable_research_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
 	}
 
 	/**
@@ -187,6 +195,30 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	}
 
 	/**
+	 * Render enable research field.
+	 */
+	public function render_enable_research_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
+
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
+				id="enable_research"
+				value="1"
+				<?php checked( $value, true ); ?>
+			/>
+			<?php esc_html_e( 'Enable the Research & Add page for document template research', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create document templates using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
 	 * Render section description.
 	 */
 	public function render_section_description() {
@@ -285,8 +317,15 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$sanitized['enable_branding'] = false;
 		}
 
+		if ( isset( $input['enable_research'] ) ) {
+			$sanitized['enable_research'] = (bool) $input['enable_research'];
+		} else {
+			// Checkbox not checked.
+			$sanitized['enable_research'] = false;
+		}
+
 		return $sanitized;
 	}
 }
 
-// Note: WP_MCP_AI_Document_Generation_Settings_Page instantiates itself at the bottom of its own file.
+// Initialize - instantiated in document-generation-toolkit-init.php when toolkit is enabled.
