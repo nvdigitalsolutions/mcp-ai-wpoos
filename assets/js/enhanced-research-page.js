@@ -100,7 +100,7 @@
 		});
 
 		// Handle file upload for import
-		$('#import-file').on('change', function() {
+		$('#wp-mcp-ai-import-file-input').on('change', function() {
 			const files = this.files;
 			if (files.length > 0) {
 				$('.selected-file-name').text(files[0].name).show();
@@ -115,11 +115,11 @@
 			
 			const $btn = $(this);
 			const $results = $('#wp-mcp-ai-import-results');
-			const $spinner = $('.wp-mcp-ai-import-actions .spinner');
+			const $spinner = $btn.siblings('.spinner');
 			
 			// Get import data from textarea or file
-			let importData = $('#import-data-paste').val();
-			const fileInput = document.getElementById('import-file');
+			let importData = $('#wp-mcp-ai-import-text').val();
+			const fileInput = document.getElementById('wp-mcp-ai-import-file-input');
 			
 			// Determine format
 			let format = DEFAULT_FORMAT;
@@ -186,8 +186,8 @@
 						);
 						
 						// Clear form
-						$('#import-data-paste').val('');
-						$('#import-file').val('');
+						$('#wp-mcp-ai-import-text').val('');
+						$('#wp-mcp-ai-import-file-input').val('');
 						$('.selected-file-name').text('').hide();
 					} else {
 						$results.html(

@@ -45,6 +45,8 @@ composer.phar
 !/vendor/google/
 !/vendor/guzzlehttp/
 !/vendor/league/
+!/vendor/maennchen/
+!/vendor/markbaker/
 !/vendor/monolog/
 !/vendor/nyholm/
 !/vendor/paragonie/

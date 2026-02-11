@@ -600,7 +600,7 @@ class WP_MCP_AI_Product_Research_Page {
 							<span class="dashicons dashicons-upload"></span>
 							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
-						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<span class="selected-file-name" style="margin-left: 10px; display: none;"></span>
 						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, XML, TXT', 'mcp-ai-wpoos-pro' ); ?></p>
 					</div>
 
@@ -626,12 +626,13 @@ class WP_MCP_AI_Product_Research_Page {
 					</div>
 
 					<p>
-						<button type="submit" class="button button-primary button-large">
+						<button type="button" id="wp-mcp-ai-import-btn" class="button button-primary button-large">
 							<span class="dashicons dashicons-update"></span>
 							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
+						<span class="spinner" style="float: none; margin-left: 10px;"></span>
 					</p>
-					<div class="import-result" style="display: none;"></div>
+					<div id="wp-mcp-ai-import-results" class="import-result" style="display: none;"></div>
 				</form>
 			</div>
 		</div>
