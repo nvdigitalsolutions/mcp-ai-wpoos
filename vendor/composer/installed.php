@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-        'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-        'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
+        'pretty_version' => 'dev-copilot/update-langchain-dependencies',
+        'version' => 'dev-copilot/update-langchain-dependencies',
+        'reference' => 'ce71623e65bbaa7e62f7a0e5f829462837ef270e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-            'version' => 'dev-copilot/update-package-lock-and-phpspreadsheet',
-            'reference' => '092ec0268c74c1f3057aadad82f9d31da087ee0a',
+            'pretty_version' => 'dev-copilot/update-langchain-dependencies',
+            'version' => 'dev-copilot/update-langchain-dependencies',
+            'reference' => 'ce71623e65bbaa7e62f7a0e5f829462837ef270e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
