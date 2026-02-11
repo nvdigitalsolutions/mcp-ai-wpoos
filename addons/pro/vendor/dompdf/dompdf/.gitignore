@@ -1,0 +1,13 @@
+.DS_Store
+composer.phar
+composer.lock
+vendor
+build
+tmp
+.idea
+.vscode
+.project
+.phpunit.result.cache
+lib/fonts/*.afm.json
+lib/fonts/*.ufm.json
+lib/fonts/log.htm

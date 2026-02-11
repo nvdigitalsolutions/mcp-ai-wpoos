@@ -1,0 +1,13 @@
+/.devcontainer export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/CONTRIBUTING.md export-ignore
+/docker-compose.yml export-ignore
+/generator export-ignore
+/performance export-ignore
+/phpcs.xml.dist export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
+/tests export-ignore
+/generated/**/*.php -merge linguist-generated=true
