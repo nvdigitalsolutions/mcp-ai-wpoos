@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-langchain-dependencies',
-        'version' => 'dev-copilot/update-langchain-dependencies',
-        'reference' => 'ce71623e65bbaa7e62f7a0e5f829462837ef270e',
+        'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+        'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+        'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-langchain-dependencies',
-            'version' => 'dev-copilot/update-langchain-dependencies',
-            'reference' => 'ce71623e65bbaa7e62f7a0e5f829462837ef270e',
+            'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+            'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
+            'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
