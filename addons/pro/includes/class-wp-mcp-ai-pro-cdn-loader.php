@@ -323,7 +323,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 				'message'   => $using_cdn 
 					? sprintf( 
 						/* translators: %s: package name */
-						__( '%s (CDN-loaded via jsDelivr)', 'mcp-ai-wpoos-pro' ), 
+						__( '%s (CDN-loaded)', 'mcp-ai-wpoos-pro' ), 
 						$package_name 
 					)
 					: sprintf(
