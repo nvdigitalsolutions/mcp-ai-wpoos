@@ -1,3 +1,0 @@
-# Exclude large ZIP files from git - they should be built locally
-*.zip
-echo ___BEGIN___COMMAND_OUTPUT_MARKER___ ; PS1= ; PS2= ; unset HISTFILE ; EC=0 ; echo ___BEGIN___COMMAND_DONE_MARKER___0 ; }.md
