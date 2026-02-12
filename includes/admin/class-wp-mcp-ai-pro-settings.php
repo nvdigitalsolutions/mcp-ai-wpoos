@@ -789,9 +789,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				$toolkit['npm_status']    = array();
 
 				foreach ( $toolkit['npm_packages'] as $package ) {
-					$installed                         = self::check_package_installed( $package );
-					$toolkit['npm_status'][ $package ] = $installed;
-					if ( ! $installed ) {
+					$status                            = self::get_package_status( $package );
+					$toolkit['npm_status'][ $package ] = $status;
+					if ( ! $status['available'] ) {
 						$toolkit['npm_available'] = false;
 					}
 				}
@@ -887,13 +887,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 									</tr>
 								</thead>
 								<tbody>
-									<?php foreach ( $toolkit['npm_status'] as $package => $installed ) : ?>
+									<?php foreach ( $toolkit['npm_status'] as $package => $status ) : ?>
 										<tr>
 											<td><code><?php echo esc_html( $package ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo esc_attr( $installed ? 'available' : 'unavailable' ); ?>">
-													<?php echo $installed ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
-												</span>
+												<?php if ( $status['available'] ) : ?>
+													<span class="status-indicator available" title="<?php echo esc_attr( $status['message'] ); ?>">
+														<?php echo '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbol. ?>
+														<?php if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) : ?>
+															<span class="status-source"><?php esc_html_e( '(CDN)', 'mcp-ai-wpoos' ); ?></span>
+														<?php endif; ?>
+													</span>
+												<?php else : ?>
+													<span class="status-indicator unavailable">
+														<?php echo '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static cross symbol. ?>
+													</span>
+												<?php endif; ?>
 											</td>
 										</tr>
 									<?php endforeach; ?>
@@ -1966,6 +1975,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				.toolkit-details-table .status-indicator.unavailable {
 					color: #d63638;
+				}
+
+				.toolkit-details-table .status-source {
+					font-size: 11px;
+					font-weight: 500;
+					color: #2271b1;
+					margin-left: 4px;
+					text-transform: uppercase;
 				}
 
 				/* Toolkit Tools List */
