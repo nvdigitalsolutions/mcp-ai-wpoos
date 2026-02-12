@@ -4,9 +4,9 @@ This guide explains the organization of documentation in the NV oOS repository.
 
 ## Root Directory Documentation
 
-The root directory contains **3 essential documentation files** that every developer/user should see first:
+The root directory contains **3 essential markdown documentation files** that every developer/user should see first:
 
-### 📘 Essential Markdown Files (Only)
+### 📘 Core Markdown Documentation
 
 1. **README.md** (~210KB) - Comprehensive project overview
    - System architecture
