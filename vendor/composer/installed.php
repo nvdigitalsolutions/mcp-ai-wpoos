@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/review-packages-for-cdn-cache',
         'version' => 'dev-copilot/review-packages-for-cdn-cache',
-        'reference' => '5cc69f1053abdb1c5841a6602daffc9a590f79ee',
+        'reference' => 'f088fc451865e656bdc3bdd81b9a208b58b542ea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/review-packages-for-cdn-cache',
             'version' => 'dev-copilot/review-packages-for-cdn-cache',
-            'reference' => '5cc69f1053abdb1c5841a6602daffc9a590f79ee',
+            'reference' => 'f088fc451865e656bdc3bdd81b9a208b58b542ea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
