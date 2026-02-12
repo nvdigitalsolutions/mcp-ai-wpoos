@@ -78,7 +78,7 @@ The WooCommerce `create_woo_product` tool now properly supports variable product
 
 ## Documentation
 
-📖 Full details: [`docs/woocommerce-variable-product-fix-2026-02-12.md`](./woocommerce-variable-product-fix-2026-02-12.md)
+📖 Full details: [`docs/woocommerce-variable-product-fix-2026-02-12.md`](../../../docs/woocommerce-variable-product-fix-2026-02-12.md)
 
 ## Verification
 

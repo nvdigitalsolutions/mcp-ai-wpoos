@@ -23,12 +23,12 @@
 ### Fixed - February 2026
 - **Product Research Page Rendering (February 10, 2026)**: Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
   - Changed from CPT pattern `product_page_*` to custom menu pattern `wp-mcp-ai-ecommerce-toolkit_page_*`
-  - See [PRODUCT_RESEARCH_FIX_SUMMARY.md](PRODUCT_RESEARCH_FIX_SUMMARY.md)
+  - See [docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md](docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md)
 - **Product Research Tab System (February 11, 2026)**: Fixed all workflow tabs displaying simultaneously
   - Changed hook matching to flexible strpos() check for reliability
   - Added inline display:none styles for defensive fallback
   - Enhanced CSS specificity with !important rules to prevent override
-  - See [PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md](PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+  - See [docs/fixes/product-research-tab-system-fix-2026-02-11.md](docs/fixes/product-research-tab-system-fix-2026-02-11.md)
 - **Product Research CSS/JS Loading (February 11, 2026)**: Improved asset enqueuing priority and hook detection
 - **Duplicate Menu Item (February 10, 2026)**: Removed duplicate "Research & Add" tab from E-commerce Toolkit settings page
 - **Pro Workflow Builder Stability (February 4-5, 2026)**: Multiple fixes for React-based workflow builder
@@ -49,7 +49,7 @@
 - Added comprehensive February 2026 updates summary (`docs/FEBRUARY_2026_UPDATES.md`)
 - Added detailed fix documentation for all product research page issues in `docs/fixes/`
 - Added Pro Workflow Builder fix quick reference guide with visual flow diagrams
-- Created root summaries: PRODUCT_RESEARCH_FIX_SUMMARY.md, PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md
+- Archived completed fix summaries to `archive/2025/fixes/` (product research, tab system, variable products)
 
 ### Slash Commands & Workflow System
 - **Slash Commands Implementation - Phase 1 Complete (February 3, 2026)**: Comprehensive slash command system for content management, optimization, and workflow automation

@@ -28,8 +28,12 @@ Documentation from root directory reorganization (50+ files):
 #### `/2025/phase-6/` (13 files)
 Phase 6 implementation status reports and summaries
 
-#### `/2025/fixes/` (19 files)
-Bug fix documentation and implementation summaries
+#### `/2025/fixes/` (22 files - Updated February 12, 2026)
+Bug fix documentation and implementation summaries including:
+- Product Research & E-commerce Toolkit fixes (Feb 2026)
+- Settings & Configuration fixes (2025)
+- Build & Dependencies fixes (2025)
+- See `/2025/fixes/README.md` for complete index
 
 #### `/2025/status-reports/` (6 files)
 Project completion status reports
@@ -66,4 +70,5 @@ These files represent completed milestones and are kept for historical purposes.
 ---
 
 **Archive Created:** February 2, 2026  
+**Last Updated:** February 12, 2026  
 **Plugin Version:** 1.1.0
