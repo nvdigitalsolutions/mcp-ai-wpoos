@@ -265,6 +265,105 @@ class WP_MCP_AI_Pro_CDN_Loader {
 			self::$libraries
 		);
 	}
+
+	/**
+	 * Check if a package is available via CDN or local vendor
+	 *
+	 * This is a helper method for settings pages to determine if NPM packages
+	 * are available, considering both CDN-loaded and locally bundled packages.
+	 *
+	 * @param string $package_name Package name (e.g., 'katex', 'chart.js').
+	 * @return bool True if package is available.
+	 */
+	public static function is_package_available( $package_name ) {
+		// Check if it's a CDN-managed library.
+		if ( isset( self::$libraries[ $package_name ] ) ) {
+			return self::is_available( $package_name );
+		}
+
+		// Check vendor directory (for non-CDN packages).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package_name;
+		if ( is_dir( $vendor_path ) ) {
+			return true;
+		}
+
+		// Check node_modules (development).
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
+		if ( is_dir( $node_modules_path ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get package status for settings display
+	 *
+	 * Returns a detailed status array for displaying in settings pages.
+	 *
+	 * @param string $package_name Package name.
+	 * @return array Status array with 'available', 'source', and 'message' keys.
+	 */
+	public static function get_package_status( $package_name ) {
+		// CDN-loaded packages.
+		if ( isset( self::$libraries[ $package_name ] ) ) {
+			$using_cdn = self::should_use_cdn();
+			return array(
+				'available' => true,
+				'source'    => $using_cdn ? 'cdn' : 'local-fallback',
+				'message'   => $using_cdn 
+					? sprintf( 
+						/* translators: %s: package name */
+						__( '%s (CDN-loaded via jsDelivr)', 'mcp-ai-wpoos-pro' ), 
+						$package_name 
+					)
+					: sprintf(
+						/* translators: %s: package name */
+						__( '%s (Local fallback)', 'mcp-ai-wpoos-pro' ),
+						$package_name
+					),
+			);
+		}
+
+		// Vendor directory (bundled packages).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package_name;
+		if ( is_dir( $vendor_path ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'vendor',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Bundled)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
+
+		// Node modules (development).
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
+		if ( is_dir( $node_modules_path ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'node_modules',
+				'message'   => sprintf(
+					/* translators: %s: package name */
+					__( '%s (Development)', 'mcp-ai-wpoos-pro' ),
+					$package_name
+				),
+			);
+		}
+
+		// Not available.
+		return array(
+			'available' => false,
+			'source'    => 'none',
+			'message'   => sprintf(
+				/* translators: %s: package name */
+				__( '%s (Not installed)', 'mcp-ai-wpoos-pro' ),
+				$package_name
+			),
+		);
+	}
 }
 
 // Initialize the CDN loader.
