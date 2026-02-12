@@ -115,6 +115,18 @@ const skipCdnPackages = process.env.WP_MCP_AI_BUILD_OFFLINE === 'true' ||
 
 if (skipCdnPackages) {
 	console.log(`${colors.yellow}⚠️  Including CDN packages for offline build${colors.reset}\n`);
+} else {
+	// Clean up CDN packages from vendor directory (they'll be loaded from CDN)
+	console.log(`${colors.blue}🧹 Cleaning CDN packages from vendor directory...${colors.reset}`);
+	cdnPackages.forEach(pkgName => {
+		const pkgVendorPath = path.join(vendorPath, pkgName);
+		if (fs.existsSync(pkgVendorPath)) {
+			const pkgSize = getSize(pkgVendorPath);
+			fs.rmSync(pkgVendorPath, { recursive: true, force: true });
+			console.log(`${colors.blue}🗑️  Removed ${pkgName}${colors.reset} → ${formatSize(pkgSize)} (will load from CDN)`);
+		}
+	});
+	console.log('');
 }
 
 // Dependencies to copy with their configurations
