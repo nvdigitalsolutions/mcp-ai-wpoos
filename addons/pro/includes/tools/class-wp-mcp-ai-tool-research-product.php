@@ -462,11 +462,11 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Determine total number of queries based on depth.
 		// Note: num_queries is the TOTAL including the main query above.
 		if ( 'basic' === $depth ) {
-			$num_queries = self::QUERIES_BASIC; // Just the main query.
+			$num_queries = self::QUERIES_BASIC; // Total: 1 query (main only).
 		} elseif ( 'comprehensive' === $depth ) {
-			$num_queries = self::QUERIES_COMPREHENSIVE; // Main query + 2 additional.
+			$num_queries = self::QUERIES_COMPREHENSIVE; // Total: 3 queries.
 		} else {
-			$num_queries = self::QUERIES_STANDARD; // Main query + 1 additional (standard).
+			$num_queries = self::QUERIES_STANDARD; // Total: 2 queries (standard).
 		}
 
 		// Add focus area queries.
