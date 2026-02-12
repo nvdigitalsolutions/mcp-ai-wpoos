@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
-        'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
-        'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-00e545ea-0db9-4540-9a94-813f71adb472',
+        'version' => 'dev-copilot/rebuild-all-zips-00e545ea-0db9-4540-9a94-813f71adb472',
+        'reference' => '50e0c2912dad28cb3400c70f27761da633f01370',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
-            'version' => 'dev-copilot/fix-quiz-toolkit-dashboard',
-            'reference' => '3128f23803057dde515d75b350bcb46ba8e215f9',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-00e545ea-0db9-4540-9a94-813f71adb472',
+            'version' => 'dev-copilot/rebuild-all-zips-00e545ea-0db9-4540-9a94-813f71adb472',
+            'reference' => '50e0c2912dad28cb3400c70f27761da633f01370',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
