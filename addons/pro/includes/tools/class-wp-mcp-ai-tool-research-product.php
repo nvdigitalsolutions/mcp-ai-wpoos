@@ -73,7 +73,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Research and gather structured information about a product before creating it in WooCommerce. Returns product data that can be used with the Create WooCommerce Product Draft tool.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research and gather structured information about a product before creating it in WooCommerce. Performs comprehensive multi-step research using web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas. Returns product data that can be used with the Create WooCommerce Product Draft tool.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -88,6 +88,19 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				'query'               => array(
 					'type'        => 'string',
 					'description' => __( 'The product to research (e.g., "Nike Air Max 270", "Apple MacBook Pro 16-inch M3").', 'mcp-ai-wpoos-pro' ),
+				),
+				'depth'               => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+					'default'     => 'standard',
+				),
+				'focus_areas'         => array(
+					'type'        => 'array',
+					'description' => __( 'Optional specific aspects to focus on (e.g., "specifications", "reviews", "alternatives", "pricing").', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'include_pricing'     => array(
 					'type'        => 'boolean',
@@ -159,9 +172,18 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$query = sanitize_text_field( $arguments['query'] );
 
 		// Build research context.
+		$depth           = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas     = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
+			: array();
 		$include_pricing = isset( $arguments['include_pricing'] ) ? (bool) $arguments['include_pricing'] : true;
 		$include_images  = isset( $arguments['include_images'] ) ? (bool) $arguments['include_images'] : true;
 		$include_specs   = isset( $arguments['include_specs'] ) ? (bool) $arguments['include_specs'] : true;
+
+		// Validate depth parameter.
+		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$depth = 'standard';
+		}
 
 		// Generate suggested reference if not provided.
 		$reference = isset( $arguments['suggested_reference'] ) && ! empty( $arguments['suggested_reference'] )
@@ -169,7 +191,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			: $this->generate_reference( $query );
 
 		// Check cache first.
-		$cache_key = 'product_research_' . md5( $query . '_' . $include_pricing . '_' . $include_images . '_' . $include_specs );
+		$cache_key = 'product_research_' . md5( $query . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $include_pricing . '_' . $include_images . '_' . $include_specs );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_product_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -191,16 +213,38 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			'Starting product research',
 			array(
 				'query'           => $query,
+				'depth'           => $depth,
+				'focus_areas'     => $focus_areas,
 				'include_pricing' => $include_pricing,
 				'include_images'  => $include_images,
 				'include_specs'   => $include_specs,
 			)
 		);
 
-		// Build research prompt.
-		$prompt = $this->build_research_prompt( $query, $include_pricing, $include_images, $include_specs );
+		// Step 1: Gather information through web searches.
+		$search_results = $this->gather_product_information( $query, $depth, $focus_areas, $context );
 
-		// Use AI to research the product.
+		if ( is_wp_error( $search_results ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Product research web search failed: ' . $search_results->get_error_message(),
+				array(
+					'query' => $query,
+					'depth' => $depth,
+					'error' => $search_results->get_error_code(),
+				)
+			);
+			// Fall back to AI-only research if web search fails.
+			$search_results = array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_research_prompt( $query, $depth, $focus_areas, $search_results, $include_pricing, $include_images, $include_specs );
+
+		// Step 3: Use AI to research the product.
 		$research_result = $this->perform_ai_research( $prompt, $context );
 
 		if ( is_wp_error( $research_result ) ) {
@@ -235,8 +279,11 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			'product_research_completed',
 			'Product research completed successfully',
 			array(
-				'query'    => $query,
-				'has_data' => ! empty( $product_data['product_data'] ),
+				'query'         => $query,
+				'depth'         => $depth,
+				'focus_areas'   => $focus_areas,
+				'sources_count' => count( $search_results['sources'] ?? array() ),
+				'has_data'      => ! empty( $product_data['product_data'] ),
 			)
 		);
 
@@ -264,21 +311,219 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Gather product information through web searches.
+	 *
+	 * @param string $query       Product query.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @param array  $context     Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function gather_product_information( $query, $depth, $focus_areas, $context ) {
+		// Check if web search tool is available.
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			// Return empty results if web search is not available.
+			WP_MCP_AI_Logger::log_event(
+				'product_research_no_web_search',
+				'Web search tool not available, using AI-only mode',
+				array( 'query' => $query )
+			);
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		// Generate search queries based on depth and focus areas.
+		$search_queries = $this->generate_product_search_queries( $query, $depth, $focus_areas );
+
+		$all_results = array();
+		$all_sources = array();
+
+		// Maximum results per query (5 for product research).
+		$max_results_per_query = 5;
+
+		foreach ( $search_queries as $search_query ) {
+			// Execute web search.
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => $max_results_per_query,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) ) {
+				// Log the error but continue with other searches.
+				WP_MCP_AI_Logger::log_error(
+					'Product research web search failed: ' . $search_result->get_error_message(),
+					array(
+						'query'        => $search_query,
+						'product'      => $query,
+						'error_code'   => $search_result->get_error_code(),
+					)
+				);
+				continue;
+			}
+
+			// Collect results.
+			if ( ! empty( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$all_results[] = $result;
+					if ( ! empty( $result['url'] ) ) {
+						$all_sources[] = array(
+							'url'     => $result['url'],
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+					}
+				}
+			}
+		}
+
+		// Deduplicate sources by URL.
+		$all_sources = $this->deduplicate_sources( $all_sources );
+
+		WP_MCP_AI_Logger::log_event(
+			'product_research_web_search_complete',
+			'Web search completed for product research',
+			array(
+				'query'         => $query,
+				'queries_count' => count( $search_queries ),
+				'results_count' => count( $all_results ),
+				'sources_count' => count( $all_sources ),
+			)
+		);
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for product research.
+	 *
+	 * @param string $query       Product query.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @return array Search queries.
+	 */
+	protected function generate_product_search_queries( $query, $depth, $focus_areas ) {
+		$queries = array();
+
+		// Main query.
+		$queries[] = $query;
+
+		// Determine number of additional queries based on depth.
+		$num_queries = 'basic' === $depth ? 1 : ( 'comprehensive' === $depth ? 3 : 2 );
+
+		// Add focus area queries.
+		if ( ! empty( $focus_areas ) ) {
+			foreach ( $focus_areas as $area ) {
+				if ( count( $queries ) >= $num_queries ) {
+					break;
+				}
+				$queries[] = $query . ' ' . $area;
+			}
+		}
+
+		// Add depth-specific queries.
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $query . ' specifications reviews';
+				if ( count( $queries ) < $num_queries ) {
+					$queries[] = $query . ' price comparison features';
+				}
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $query . ' features price';
+			}
+		}
+
+		// Limit to maximum of 3 queries.
+		return array_slice( $queries, 0, min( 3, $num_queries ) );
+	}
+
+	/**
+	 * Deduplicate sources by URL.
+	 *
+	 * @param array $sources Sources array.
+	 * @return array Deduplicated sources.
+	 */
+	protected function deduplicate_sources( $sources ) {
+		$unique_sources = array();
+		$seen_urls      = array();
+
+		foreach ( $sources as $source ) {
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			$url = $source['url'];
+
+			if ( ! in_array( $url, $seen_urls, true ) ) {
+				$unique_sources[] = $source;
+				$seen_urls[]      = $url;
+			}
+		}
+
+		return $unique_sources;
+	}
+
+	/**
 	 * Build the research prompt for AI.
 	 *
 	 * @param string $query          Product query.
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @param array  $search_results Search results from web search.
 	 * @param bool   $include_pricing Include pricing information.
 	 * @param bool   $include_images  Include image URLs.
 	 * @param bool   $include_specs   Include specifications.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $query, $include_pricing, $include_images, $include_specs ) {
+	protected function build_research_prompt( $query, $depth, $focus_areas, $search_results, $include_pricing, $include_images, $include_specs ) {
 		$prompt = sprintf(
 			"Research the following product and gather comprehensive, accurate information:\n\n**Product:** %s\n\n",
 			$query
 		);
 
-		$prompt .= "Use web search to find current, factually correct information. Gather:\n\n";
+		// Add context from web search if available.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "**Available Research Sources:**\n";
+			$source_count = min( 5, count( $search_results['sources'] ) );
+			for ( $i = 0; $i < $source_count; $i++ ) {
+				$source = $search_results['sources'][ $i ];
+				$prompt .= sprintf(
+					"[%d] %s - %s\n",
+					$i + 1,
+					$source['title'],
+					$source['snippet']
+				);
+			}
+			$prompt .= "\n";
+		}
+
+		// Add depth-specific instructions.
+		if ( 'comprehensive' === $depth ) {
+			$prompt .= "**Research Depth: COMPREHENSIVE** - Gather extensive details, multiple sources, and thorough analysis.\n\n";
+		} elseif ( 'basic' === $depth ) {
+			$prompt .= "**Research Depth: BASIC** - Gather essential information only.\n\n";
+		} else {
+			$prompt .= "**Research Depth: STANDARD** - Gather key information with good detail.\n\n";
+		}
+
+		// Add focus areas if specified.
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		$prompt .= "Use the provided sources and web search to find current, factually correct information. Gather:\n\n";
 		$prompt .= "**CORE PRODUCT DATA:**\n";
 		$prompt .= "1. **Product Name**: Full official product name\n";
 		$prompt .= "2. **Brand**: Brand/manufacturer name\n";
