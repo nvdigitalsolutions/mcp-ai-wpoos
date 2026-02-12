@@ -239,13 +239,38 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	/**
 	 * Check if NPM packages are installed
 	 *
+	 * Checks vendor directory first (pre-packaged), then bundle files, then falls back to node_modules.
+	 *
 	 * @return bool
 	 */
 	private function check_npm_packages_installed() {
+		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return is_dir( $node_modules . '/pdfkit' ) &&
-				is_dir( $node_modules . '/docx' ) &&
-				is_dir( $node_modules . '/exceljs' );
+		$bin_dir      = WP_MCP_AI_PRO_PATH . 'bin';
+		
+		// Check if packages are available in vendor, bundle files, or node_modules.
+		// pdfkit: bundled in generate-pdf.bundle.js
+		$has_pdfkit = (
+			is_dir( $vendor_dir . '/pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' ) ||
+			is_dir( $node_modules . '/pdfkit' )
+		);
+		
+		// docx: bundled in generate-word.bundle.js
+		$has_docx = (
+			is_dir( $vendor_dir . '/docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' ) ||
+			is_dir( $node_modules . '/docx' )
+		);
+		
+		// exceljs: bundled in generate-excel.bundle.js
+		$has_exceljs = (
+			is_dir( $vendor_dir . '/exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' ) ||
+			is_dir( $node_modules . '/exceljs' )
+		);
+		
+		return $has_pdfkit && $has_docx && $has_exceljs;
 	}
 }
 

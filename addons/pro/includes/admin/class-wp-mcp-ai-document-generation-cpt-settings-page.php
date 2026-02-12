@@ -156,23 +156,23 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		<p>
 			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs, pdf-lib)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (pdfkit, docx, exceljs, pdf-lib via bundles or vendor)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
 				<br>
-				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
+				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install && npm run build</code>
 			<?php endif; ?>
 		</p>
 		<p>
 			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $optional_npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: gray;">○ <?php esc_html_e( 'Not Installed (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Available (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php endif; ?>
 		</p>
 		<p class="description">
-			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Core packages are pre-bundled in bin/*.bundle.js files or available in the vendor directory. Optional packages enhance functionality when available. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -194,20 +194,38 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if NPM packages are installed.
 	 *
-	 * Checks vendor directory first (pre-packaged), then falls back to node_modules.
+	 * Checks vendor directory first (pre-packaged), then bundle files, then falls back to node_modules.
 	 *
 	 * @return bool
 	 */
 	protected function check_npm_packages_installed() {
 		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
+		$bin_dir      = WP_MCP_AI_PRO_PATH . 'bin';
 		
-		// Check core document generation packages in vendor first, then node_modules.
-		$core_packages = (
-			( file_exists( $vendor_dir . '/pdfkit/package.json' ) || file_exists( $node_modules . '/pdfkit/package.json' ) ) &&
-			( file_exists( $vendor_dir . '/docx/package.json' ) || file_exists( $node_modules . '/docx/package.json' ) ) &&
-			( file_exists( $vendor_dir . '/exceljs/package.json' ) || file_exists( $node_modules . '/exceljs/package.json' ) )
+		// Check core document generation packages in vendor, bundle files, or node_modules.
+		// pdfkit: bundled in generate-pdf.bundle.js
+		$has_pdfkit = (
+			file_exists( $vendor_dir . '/pdfkit/package.json' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' ) ||
+			file_exists( $node_modules . '/pdfkit/package.json' )
 		);
+		
+		// docx: bundled in generate-word.bundle.js
+		$has_docx = (
+			file_exists( $vendor_dir . '/docx/package.json' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' ) ||
+			file_exists( $node_modules . '/docx/package.json' )
+		);
+		
+		// exceljs: bundled in generate-excel.bundle.js
+		$has_exceljs = (
+			file_exists( $vendor_dir . '/exceljs/package.json' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' ) ||
+			file_exists( $node_modules . '/exceljs/package.json' )
+		);
+		
+		$core_packages = $has_pdfkit && $has_docx && $has_exceljs;
 		
 		// Check utility packages (optional) in vendor first, then node_modules.
 		$utility_packages = file_exists( $vendor_dir . '/pdf-lib/package.json' ) || file_exists( $node_modules . '/pdf-lib/package.json' );
