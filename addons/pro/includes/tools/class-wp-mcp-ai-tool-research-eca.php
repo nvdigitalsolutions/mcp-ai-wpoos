@@ -890,7 +890,7 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Sources.
 		if ( ! empty( $data['sources'] ) && is_array( $data['sources'] ) ) {
-			$report .= "**Research Sources:** " . count( $data['sources'] ) . " reference source(s)\n";
+			$report .= "**Research Sources:** " . absint( count( $data['sources'] ) ) . " reference source(s)\n";
 		}
 
 		$report .= "\n---\n\n";
