@@ -4,48 +4,48 @@ This guide explains the organization of documentation in the NV oOS repository.
 
 ## Root Directory Documentation
 
-The root directory contains **6 essential documentation files** plus supporting files that every developer/user should see first:
+The root directory contains **3 essential documentation files** that every developer/user should see first:
 
-### 📘 Essential Files
+### 📘 Essential Markdown Files (Only)
 
-1. **README.md** (189KB) - Comprehensive project overview
+1. **README.md** (~210KB) - Comprehensive project overview
    - System architecture
    - Installation and configuration
    - Features and capabilities
    - Development setup
    - API documentation
 
-2. **CHANGELOG.md** (59KB) - Version history and release notes
+2. **CHANGELOG.md** (~60KB) - Version history and release notes
    - Chronological list of changes
    - Bug fixes and enhancements
    - Breaking changes
    - Deprecations
 
-3. **CONTRIBUTING.md** (6KB) - Developer contribution guide
+3. **CONTRIBUTING.md** (~6KB) - Developer contribution guide
    - Getting started
    - Development workflow
    - Testing requirements
    - Pull request process
 
-4. **SECURITY.md** (7KB) - Security policy and reporting
-   - Supported versions
-   - Vulnerability reporting
-   - Security best practices
-   - Security checklist
+### 📝 Supporting Files (Non-Markdown)
 
-5. **BUILD.md** (19KB) - Build and deployment process
-   - Build commands
-   - Asset compilation
-   - PHP dependencies (Composer)
-   - Release process
+- **SECURITY.md** (7KB) - Security policy and reporting
+  - Supported versions
+  - Vulnerability reporting
+  - Security best practices
+  - Security checklist
 
-6. **DEPENDENCIES_BUNDLING.md** (10KB) - Dependency management
-   - NPM dependencies
-   - Pro addon dependencies
-   - Vendor directory pattern
-   - Git strategy
+- **BUILD.md** (19KB) - Build and deployment process
+  - Build commands
+  - Asset compilation
+  - PHP dependencies (Composer)
+  - Release process
 
-### 📝 Supporting Files
+- **DEPENDENCIES_BUNDLING.md** (10KB) - Dependency management
+  - NPM dependencies
+  - Pro addon dependencies
+  - Vendor directory pattern
+  - Git strategy
 
 - **readme.txt** (23KB) - WordPress.org plugin description
   - WordPress plugin repository format
@@ -89,6 +89,23 @@ Total: 650+ files
 ```
 
 ## Recent Reorganizations
+
+### February 12, 2026 - Fix Summaries Archive
+
+**Archived**: 3 completed fix summary files moved from root to archive
+
+**Moved from root to archive/2025/fixes/**:
+- PRODUCT_RESEARCH_FIX_SUMMARY.md - Product consolidate page rendering fix (Feb 10)
+- PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md - Tab system displaying simultaneously fix (Feb 11)
+- VARIABLE_PRODUCT_FIX_SUMMARY.md - WooCommerce variable product support (Feb 12)
+
+**Updates made**:
+- Created comprehensive `/archive/2025/fixes/README.md` with index of all 18 archived fix summaries
+- Updated `/archive/README.md` to reference new archived files
+- Updated `README.md` and `CHANGELOG.md` to point to detailed documentation in `/docs/fixes/`
+- Updated `/docs/DOCUMENTATION_INDEX.md` with February 12 update note
+
+**Result**: Root directory now contains **only 3 essential markdown files** (README.md, CHANGELOG.md, CONTRIBUTING.md)
 
 ### January 29, 2026 - Root Directory Documentation Consolidation
 
