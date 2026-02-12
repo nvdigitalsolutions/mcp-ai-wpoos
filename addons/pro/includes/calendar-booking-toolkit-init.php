@@ -14,8 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load Appointment Custom Post Type (always load for CPT registration).
+// Load Calendar Booking Custom Post Types (always load for CPT registration).
 require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-appointment-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-service-cpt.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-staff-cpt.php';
 
 // Load Calendar Booking admin pages (always load so menu items appear when CPT is registered).
 if ( is_admin() ) {
