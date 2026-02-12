@@ -1,6 +1,12 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-plugins-transient-api',
+        'version' => 'dev-copilot/enhance-plugins-transient-api',
+        'reference' => '79438466fdab3fc25613c29e584f7e14c059619e',
+        'pretty_version' => 'dev-copilot/fix-google-drive-connection',
+        'version' => 'dev-copilot/fix-google-drive-connection',
+        'reference' => '1fd2dc7e1a9efa36ee929454a0052378d387c4bd',
         'pretty_version' => 'dev-copilot/update-drive-search-feature',
         'version' => 'dev-copilot/update-drive-search-feature',
         'reference' => '45b792feae068f2ad4c35fbe432de46ed5ef5e0b',
@@ -47,6 +53,12 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-plugins-transient-api',
+            'version' => 'dev-copilot/enhance-plugins-transient-api',
+            'reference' => '79438466fdab3fc25613c29e584f7e14c059619e',
+            'pretty_version' => 'dev-copilot/fix-google-drive-connection',
+            'version' => 'dev-copilot/fix-google-drive-connection',
+            'reference' => '1fd2dc7e1a9efa36ee929454a0052378d387c4bd',
             'pretty_version' => 'dev-copilot/update-drive-search-feature',
             'version' => 'dev-copilot/update-drive-search-feature',
             'reference' => '45b792feae068f2ad4c35fbe432de46ed5ef5e0b',
