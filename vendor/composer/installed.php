@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-missing-packages-cnd',
-        'version' => 'dev-copilot/fix-missing-packages-cnd',
-        'reference' => '8795c78f94a8af8622fd628810a25ea891aac0ef',
+        'pretty_version' => 'dev-copilot/update-toolkit-information-references',
+        'version' => 'dev-copilot/update-toolkit-information-references',
+        'reference' => 'a982898e07317baa404081f8a903ba32d2eb2205',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-missing-packages-cnd',
-            'version' => 'dev-copilot/fix-missing-packages-cnd',
-            'reference' => '8795c78f94a8af8622fd628810a25ea891aac0ef',
+            'pretty_version' => 'dev-copilot/update-toolkit-information-references',
+            'version' => 'dev-copilot/update-toolkit-information-references',
+            'reference' => 'a982898e07317baa404081f8a903ba32d2eb2205',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
