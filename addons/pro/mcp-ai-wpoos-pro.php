@@ -370,6 +370,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
 
+		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
+
 		// ========================================================================
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
 		// ========================================================================
@@ -402,11 +405,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Financial Planner Toolkit if enabled (Pro feature - Phase 2.5).
 		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/financial-planner-toolkit-init.php';
-		}
-
-		// Load Calendar Booking Toolkit if enabled (Pro feature - Phase 2.6).
-		if ( ! empty( $settings['enable_calendar_booking_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
 		}
 
 		// Load DJ Management Toolkit if enabled (Pro feature - Phase 2.7).
