@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -1140,11 +1141,15 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			$data_quality['completeness_score'] = $this->calculate_completeness_score( $data );
 		}
 
+		// Build user-friendly research report message.
+		$report_message = $this->build_product_report_message( $data, $brand_name, $regular_price, $currency, $images, $sources, $data_quality );
+
 		// Build Schema.org compliant product data structure.
 		$product_data = array(
 			'success'        => true,
 			'query'          => $query,
 			'reference'      => ! empty( $identifiers['sku'] ) ? $identifiers['sku'] : $reference,
+			'report'         => $report_message, // User-facing research report for chat display.
 			'product_data'   => array(
 				// Core WooCommerce fields.
 				'title'                 => sanitize_text_field( $data['title'] ),
@@ -1170,7 +1175,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				// Stock & Availability.
 				'stock_status'          => isset( $data['stock_status'] ) ? sanitize_key( $data['stock_status'] ) : 'instock',
 				'virtual'               => isset( $data['virtual'] ) ? (bool) $data['virtual'] : false,
-				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] : false,
+				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] ) : false,
 				'external_url'          => isset( $data['external_url'] ) ? esc_url_raw( $data['external_url'] ) : '',
 				
 				// Dimensions and weight.
@@ -1201,6 +1206,98 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		return $product_data;
+	}
+
+	/**
+	 * Build a user-friendly product research report message.
+	 *
+	 * This creates a comprehensive summary of the research findings
+	 * that can be displayed in the chat client.
+	 *
+	 * @param array  $data          Raw product data.
+	 * @param string $brand_name    Product brand name.
+	 * @param string $regular_price Regular price.
+	 * @param string $currency      Currency code.
+	 * @param array  $images        Product images.
+	 * @param array  $sources       Research sources.
+	 * @param array  $data_quality  Data quality metrics.
+	 * @return string Formatted research report message.
+	 */
+	protected function build_product_report_message( $data, $brand_name, $regular_price, $currency, $images, $sources, $data_quality ) {
+		$report = "## Product Research Complete\n\n";
+
+		// Product title and brand.
+		if ( ! empty( $data['title'] ) ) {
+			$report .= "**Product:** " . esc_html( $data['title'] ) . "\n";
+		}
+		if ( ! empty( $brand_name ) ) {
+			$report .= "**Brand:** " . esc_html( $brand_name ) . "\n";
+		}
+
+		// Pricing information.
+		if ( ! empty( $regular_price ) ) {
+			$report .= "**Price:** " . esc_html( $currency . ' ' . $regular_price ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Description.
+		if ( ! empty( $data['description'] ) ) {
+			$report .= "### Description\n";
+			$report .= wp_strip_all_tags( $data['description'] ) . "\n\n";
+		}
+
+		// Key features/specifications.
+		if ( ! empty( $data['specifications'] ) && is_array( $data['specifications'] ) ) {
+			$report .= "### Key Specifications\n";
+			$spec_count = 0;
+			foreach ( $data['specifications'] as $key => $value ) {
+				if ( $spec_count >= 5 ) {
+					break; // Limit to top 5 specs.
+				}
+				$report .= "- **" . esc_html( ucwords( str_replace( '_', ' ', $key ) ) ) . ":** " . esc_html( $value ) . "\n";
+				$spec_count++;
+			}
+			$report .= "\n";
+		}
+
+		// Attributes (for variable products).
+		if ( ! empty( $data['attributes'] ) && is_array( $data['attributes'] ) ) {
+			$report .= "### Product Attributes\n";
+			$attr_count = 0;
+			foreach ( $data['attributes'] as $attribute ) {
+				if ( $attr_count >= 3 ) {
+					break; // Limit to 3 attributes.
+				}
+				if ( isset( $attribute['name'] ) && isset( $attribute['options'] ) ) {
+					$report .= "- **" . esc_html( $attribute['name'] ) . ":** " . esc_html( implode( ', ', $attribute['options'] ) ) . "\n";
+					$attr_count++;
+				}
+			}
+			$report .= "\n";
+		}
+
+		// Images.
+		if ( ! empty( $images ) && is_array( $images ) ) {
+			$image_count = count( $images );
+			$report     .= "**Images Found:** " . absint( $image_count ) . " product image(s)\n\n";
+		}
+
+		// Data quality.
+		if ( ! empty( $data_quality['completeness_score'] ) ) {
+			$score = absint( $data_quality['completeness_score'] );
+			$report .= "**Data Completeness:** " . $score . "%\n";
+		}
+
+		// Sources.
+		if ( ! empty( $sources ) && is_array( $sources ) ) {
+			$report .= "**Sources:** " . count( $sources ) . " reference source(s)\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. Use the `create_woo_product` tool to create this product in WooCommerce.*";
+
+		return $report;
 	}
 
 	/**
