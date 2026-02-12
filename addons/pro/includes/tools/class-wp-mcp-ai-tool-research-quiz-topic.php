@@ -867,7 +867,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		$report .= "## **" . esc_html( $quiz_data['title'] ) . "**\n\n";
 
 		if ( ! empty( $quiz_data['description'] ) ) {
-			$report .= $quiz_data['description'] . "\n\n";
+			$report .= esc_html( $quiz_data['description'] ) . "\n\n";
 		}
 
 		// Metadata section.
@@ -895,7 +895,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			$report .= "**Passing Score:** " . absint( $quiz_data['pass_score'] ) . "%\n\n";
 		}
 
-		// Sample questions section.
+		// Sample questions section - show up to 5 questions.
 		if ( ! empty( $quiz_data['questions'] ) ) {
 			$report       .= "---\n\n";
 			$report       .= "### 📚 Sample Questions\n\n";
