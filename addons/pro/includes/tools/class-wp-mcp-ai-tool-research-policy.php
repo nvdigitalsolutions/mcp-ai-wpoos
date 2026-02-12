@@ -815,13 +815,13 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Description.
 		if ( ! empty( $policy_data['description'] ) ) {
 			$report .= "### Description\n";
-			$report .= $policy_data['description'] . "\n\n";
+			$report .= wp_strip_all_tags( $policy_data['description'] ) . "\n\n";
 		}
 
 		// Coverage details.
 		if ( ! empty( $policy_data['coverage_details'] ) ) {
 			$report .= "### Coverage Details\n";
-			$report .= $policy_data['coverage_details'] . "\n\n";
+			$report .= wp_strip_all_tags( $policy_data['coverage_details'] ) . "\n\n";
 		}
 
 		// Coverage limits.
@@ -878,13 +878,13 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Claim process.
 		if ( ! empty( $policy_data['claim_process'] ) ) {
 			$report .= "### Claim Process\n";
-			$report .= $policy_data['claim_process'] . "\n\n";
+			$report .= wp_strip_all_tags( $policy_data['claim_process'] ) . "\n\n";
 		}
 
 		// Comparison.
 		if ( ! empty( $policy_data['comparison'] ) ) {
 			$report .= "### Comparison with Similar Policies\n";
-			$report .= $policy_data['comparison'] . "\n\n";
+			$report .= wp_strip_all_tags( $policy_data['comparison'] ) . "\n\n";
 		}
 
 		// Sources.
