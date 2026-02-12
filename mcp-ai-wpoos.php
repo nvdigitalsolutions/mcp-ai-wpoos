@@ -2096,6 +2096,153 @@ if ( ! has_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' ) ) {
 	add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );
 }
 
+if ( ! function_exists( 'wp_mcp_ai_increase_upload_size_limit' ) ) {
+	/**
+	 * Increase upload size limit for plugin uploads.
+	 *
+	 * The pro plugin ZIP files are approximately 50MB in size, which exceeds
+	 * the default WordPress upload limit (often 2-10MB). This filter increases
+	 * the limit to accommodate large plugin uploads while respecting PHP's
+	 * upload_max_filesize and post_max_size settings.
+	 *
+	 * Note: This filter cannot exceed PHP's upload_max_filesize and post_max_size.
+	 * If you see "The link you followed has expired" when uploading large plugins,
+	 * you need to increase these PHP settings on your server.
+	 *
+	 * @since 1.1.2
+	 *
+	 * @param int $size Upload size limit in bytes.
+	 * @return int Modified upload size limit in bytes.
+	 */
+	function wp_mcp_ai_increase_upload_size_limit( $size ) {
+		// Get PHP limits.
+		$upload_max_filesize = wp_convert_hr_to_bytes( ini_get( 'upload_max_filesize' ) );
+		$post_max_size       = wp_convert_hr_to_bytes( ini_get( 'post_max_size' ) );
+
+		// Use the smaller of the two PHP limits.
+		$php_limit = min( $upload_max_filesize, $post_max_size );
+
+		// Set to 100MB or PHP limit, whichever is smaller.
+		$new_limit = min( 100 * MB_IN_BYTES, $php_limit );
+
+		// Only increase the limit, never decrease it.
+		return max( $size, $new_limit );
+	}
+}
+
+if ( ! has_filter( 'upload_size_limit', 'wp_mcp_ai_increase_upload_size_limit' ) ) {
+	add_filter( 'upload_size_limit', 'wp_mcp_ai_increase_upload_size_limit' );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_check_upload_limits_notice' ) ) {
+	/**
+	 * Display admin notice if PHP upload limits are too low for pro plugin upload.
+	 *
+	 * The pro plugin ZIP files are approximately 50-53MB. If PHP's upload_max_filesize
+	 * or post_max_size are below 64MB, users will encounter "The link you followed has
+	 * expired" error when trying to upload the plugin.
+	 *
+	 * @since 1.1.2
+	 */
+	function wp_mcp_ai_check_upload_limits_notice() {
+		// Only show on plugins page or plugin install page.
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $screen->id, array( 'plugins', 'plugin-install' ), true ) ) {
+			return;
+		}
+
+		// Only show to administrators.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Get PHP limits.
+		$upload_max_filesize = wp_convert_hr_to_bytes( ini_get( 'upload_max_filesize' ) );
+		$post_max_size       = wp_convert_hr_to_bytes( ini_get( 'post_max_size' ) );
+		$php_limit           = min( $upload_max_filesize, $post_max_size );
+
+		// Pro plugin size is approximately 50-53MB, recommend at least 64MB.
+		$recommended_size = 64 * MB_IN_BYTES;
+
+		if ( $php_limit < $recommended_size ) {
+			$current_limit      = size_format( $php_limit );
+			$recommended_format = size_format( $recommended_size );
+
+			?>
+			<div class="notice notice-warning">
+				<p>
+					<strong><?php esc_html_e( 'NV oOS Pro Plugin Upload Limit Warning', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<p>
+					<?php
+					printf(
+						/* translators: 1: current limit, 2: recommended limit */
+						esc_html__( 'Your server\'s PHP upload limit is currently %1$s. To upload the NV oOS Pro plugin (approximately 50MB), you need at least %2$s.', 'mcp-ai-wpoos' ),
+						'<strong>' . esc_html( $current_limit ) . '</strong>',
+						'<strong>' . esc_html( $recommended_format ) . '</strong>'
+					);
+					?>
+				</p>
+				<p>
+					<?php esc_html_e( 'If you see "The link you followed has expired" when uploading the pro plugin, increase these PHP settings:', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li><code>upload_max_filesize = 64M</code></li>
+					<li><code>post_max_size = 64M</code></li>
+					<li><code>memory_limit = 256M</code> <?php esc_html_e( '(recommended)', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+				<p>
+					<strong><?php esc_html_e( 'How to increase these limits:', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<details style="margin-left: 20px;">
+					<summary style="cursor: pointer; font-weight: bold;">
+						<?php esc_html_e( 'Option 1: Edit php.ini (requires server access)', 'mcp-ai-wpoos' ); ?>
+					</summary>
+					<pre style="background: #f5f5f5; padding: 10px; margin: 10px 0;">upload_max_filesize = 64M
+post_max_size = 64M
+memory_limit = 256M</pre>
+				</details>
+				<details style="margin-left: 20px;">
+					<summary style="cursor: pointer; font-weight: bold;">
+						<?php esc_html_e( 'Option 2: Create .user.ini in WordPress root (cPanel/shared hosting)', 'mcp-ai-wpoos' ); ?>
+					</summary>
+					<pre style="background: #f5f5f5; padding: 10px; margin: 10px 0;">upload_max_filesize = 64M
+post_max_size = 64M
+memory_limit = 256M</pre>
+					<p style="margin: 10px 0;">
+						<?php esc_html_e( 'Note: Changes may take 5 minutes to take effect.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</details>
+				<details style="margin-left: 20px;">
+					<summary style="cursor: pointer; font-weight: bold;">
+						<?php esc_html_e( 'Option 3: Add to .htaccess (Apache servers)', 'mcp-ai-wpoos' ); ?>
+					</summary>
+					<pre style="background: #f5f5f5; padding: 10px; margin: 10px 0;">php_value upload_max_filesize 64M
+php_value post_max_size 64M
+php_value memory_limit 256M</pre>
+				</details>
+				<details style="margin-left: 20px;">
+					<summary style="cursor: pointer; font-weight: bold;">
+						<?php esc_html_e( 'Option 4: Contact your hosting provider', 'mcp-ai-wpoos' ); ?>
+					</summary>
+					<p style="margin: 10px 0;">
+						<?php esc_html_e( 'Ask them to increase upload_max_filesize and post_max_size to at least 64M.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</details>
+				<p>
+					<em>
+						<?php esc_html_e( 'After making changes, refresh this page to verify the new limits are active.', 'mcp-ai-wpoos' ); ?>
+					</em>
+				</p>
+			</div>
+			<?php
+		}
+	}
+}
+
+// Register the upload limits warning notice.
+add_action( 'admin_notices', 'wp_mcp_ai_check_upload_limits_notice' );
+
 /**
  * Setup cache invalidation hooks for assistant changes.
  *
