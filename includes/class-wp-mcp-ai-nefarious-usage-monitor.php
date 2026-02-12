@@ -166,6 +166,9 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				'system\s*\(',
 				'exec\s*\(',
 				'shell_exec',
+				'passthru\s*\(',
+				'proc_open\s*\(',
+				'popen\s*\(',
 
 				// Spam patterns.
 				'buy.*now.*limited.*time',
@@ -176,6 +179,22 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				'union.*select.*from',
 				'drop.*table',
 				'delete.*from.*where',
+
+				// Prompt injection patterns (inspired by Claude Desktop vulnerability).
+				'ignore\s+(all\s+)?previous\s+instructions',
+				'disregard\s+(all\s+)?prior\s+(instructions|commands)',
+				'forget\s+(all\s+)?previous\s+(context|instructions)',
+				'override\s+system\s+prompt',
+				'new\s+instructions\s*:',
+				'system\s+message\s*:',
+				'admin\s+override\s*:',
+				'developer\s+mode\s+(enabled|activated)',
+				'sudo\s+mode',
+				'enable\s+god\s+mode',
+				'curl\s+.*\|\s*bash',
+				'wget\s+.*\|\s*sh',
+				'download\s+and\s+execute',
+				'run\s+this\s+script',
 			);
 		}
 
