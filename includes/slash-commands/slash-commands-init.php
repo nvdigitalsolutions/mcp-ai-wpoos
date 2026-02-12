@@ -517,17 +517,27 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	);
 
 	// Localize script with REST API data.
-	// Build endpoint URLs using a single rest_url() call + string concatenation.
-	// This prevents WordPress filters or configurations from duplicating the namespace.
-	$base_url = trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) );
+	// Build endpoint URLs by providing complete, pre-built URLs to JavaScript.
+	// This prevents any client-side URL construction issues and ensures consistency.
+	
+	// Strategy: Build each endpoint as a complete absolute URL.
+	// We DON'T pass the namespace to rest_url() to avoid filter-based duplication.
+	// Instead, we get the REST root and manually append the namespace + endpoint path.
+	$rest_root = rest_url(); // e.g., https://example.com/wp-json/
+	$namespace = WP_MCP_AI_REST::REST_NAMESPACE; // mcp-ai/v1
+	
+	// Build complete URLs for each endpoint.
+	$rest_url_base                = trailingslashit( $rest_root ) . trailingslashit( $namespace );
+	$slash_command_endpoint       = $rest_url_base . 'slash-command';
+	$slash_command_list_endpoint  = $rest_url_base . 'slash-command/list';
 	
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',
 		array(
-			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url ) ),
-			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command' ) ),
-			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $base_url . 'slash-command/list' ) ),
+			'restUrl'                  => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $rest_url_base ) ),
+			'slashCommandEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $slash_command_endpoint ) ),
+			'slashCommandListEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( $slash_command_list_endpoint ) ),
 			'nonce'                    => wp_create_nonce( 'wp_rest' ),
 		)
 	);

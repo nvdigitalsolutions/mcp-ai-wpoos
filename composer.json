@@ -11,8 +11,7 @@
         "symfony/cache": "^6.4|^7.0",
         "symfony/filesystem": "^6.4|^7.0",
         "symfony/process": "^6.4|^7.0",
-        "league/oauth2-client": "^2.7",
-        "phpoffice/phpspreadsheet": "^5.4"
+        "league/oauth2-client": "^2.7"
     },
     "require-dev": {
         "cweagans/composer-patches": "^2.0",
@@ -22,7 +21,7 @@
         "squizlabs/php_codesniffer": "^3.13",
         "wp-coding-standards/wpcs": "^3.0",
         "phpunit/phpunit": "^9.6",
-        "wp-phpunit/wp-phpunit": "^6.5",
+        "wp-phpunit/wp-phpunit": "^6.9",
         "yoast/phpunit-polyfills": "^4.0"
     },
     "scripts": {

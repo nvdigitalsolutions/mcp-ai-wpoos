@@ -38,14 +38,14 @@ class WP_MCP_AI_Product_Research_Page {
 	 * Initialize the page.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 26 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_import_product', array( __CLASS__, 'ajax_handle_import' ) );
 	}
 
 	/**
-	 * Add submenu page under Products menu.
+	 * Add submenu page under E-Commerce Toolkit menu.
 	 */
 	public static function add_menu_page() {
 		// Check if WooCommerce is active.
@@ -54,7 +54,7 @@ class WP_MCP_AI_Product_Research_Page {
 		}
 
 		add_submenu_page(
-			'edit.php?post_type=product',
+			'wp-mcp-ai-ecommerce-toolkit',
 			__( 'Research & Add Product', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_products',
@@ -69,8 +69,16 @@ class WP_MCP_AI_Product_Research_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function enqueue_assets( $hook ) {
+		// Debug logging.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Product Research - Hook: ' . $hook . ' | Expected: wp-mcp-ai-ecommerce-toolkit_page_' . self::PAGE_SLUG );
+		}
+
 		// Only load on our research page.
-		if ( 'product_page_' . self::PAGE_SLUG !== $hook ) {
+		// Since this is a submenu of 'wp-mcp-ai-ecommerce-toolkit',
+		// the hook will be 'wp-mcp-ai-ecommerce-toolkit_page_research-product'.
+		// Use stripos to be more flexible with hook matching.
+		if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
 			return;
 		}
 
@@ -325,12 +333,12 @@ class WP_MCP_AI_Product_Research_Page {
 					</div>
 
 					<!-- Import Data Workflow -->
-					<div id="workflow-import" class="workflow-content">
+					<div id="workflow-import" class="workflow-content" style="display: none;">
 						<?php self::render_import_workflow(); ?>
 					</div>
 
 					<!-- Review & Quality Workflow -->
-					<div id="workflow-review" class="workflow-content">
+					<div id="workflow-review" class="workflow-content" style="display: none;">
 						<?php self::render_review_workflow(); ?>
 					</div>
 				</div>
@@ -598,7 +606,7 @@ class WP_MCP_AI_Product_Research_Page {
 							<span class="dashicons dashicons-upload"></span>
 							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
-						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<span class="selected-file-name" style="margin-left: 10px; display: none;"></span>
 						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, XML, TXT', 'mcp-ai-wpoos-pro' ); ?></p>
 					</div>
 
@@ -624,12 +632,13 @@ class WP_MCP_AI_Product_Research_Page {
 					</div>
 
 					<p>
-						<button type="submit" class="button button-primary button-large">
+						<button type="button" id="wp-mcp-ai-import-btn" class="button button-primary button-large">
 							<span class="dashicons dashicons-update"></span>
 							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
+						<span class="spinner" style="float: none; margin-left: 10px;"></span>
 					</p>
-					<div class="import-result" style="display: none;"></div>
+					<div id="wp-mcp-ai-import-results" class="import-result" style="display: none;"></div>
 				</form>
 			</div>
 		</div>

@@ -371,7 +371,8 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 
 		// Check if OpenAI is configured.
-		$api_key = get_option( 'wp_mcp_ai_openai_api_key' );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$api_key  = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 		if ( empty( $api_key ) ) {
 			return new WP_Error( 'no_api_key', __( 'OpenAI API key is not configured.', 'mcp-ai-wpoos' ) );
 		}
