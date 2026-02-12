@@ -6,6 +6,8 @@
 2. [URL Price Comparison](#url-price-comparison)
 3. [Batch URL Processing](#batch-url-processing)
 4. [Enhanced scrape_product](#enhanced-scrape_product)
+   - [Example 3: E-commerce Site with Schema.org](#example-3-e-commerce-site-with-schemaorg)
+   - [Example 4: Customizing HTTP Request Headers](#example-4-customizing-http-request-headers)
 5. [Real-World Scenarios](#real-world-scenarios)
 
 ## Image-Based Price Lookup
@@ -60,5 +62,26 @@ $result = $assistant->call_tool( 'scrape_product', [
 ```
 
 **Response includes structured pricing data from Schema.org JSON-LD**
+
+### Example 4: Customizing HTTP Request Headers
+
+The `scrape_product` tool uses browser-like headers to avoid bot detection. You can customize the HTTP request using the filter hook:
+
+```php
+add_filter( 'wp_mcp_ai_scrape_product_request_args', function( $request_args, $url ) {
+    // Add custom headers
+    $request_args['headers']['Cookie'] = 'session_id=abc123';
+    
+    // Increase timeout for slow sites
+    $request_args['timeout'] = 60;
+    
+    // Use a custom User-Agent
+    $request_args['headers']['User-Agent'] = 'MyCustomBot/1.0';
+    
+    return $request_args;
+}, 10, 2 );
+```
+
+**Note**: The tool automatically includes Accept-Language and browser-like User-Agent headers to reduce HTTP 403 errors from bot detection systems.
 
 See full documentation in `/docs/PRODUCT-PRICE-LOOKUP-GUIDE.md`

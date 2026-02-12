@@ -119,7 +119,8 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Check if OpenAI is configured.
-		$api_key = get_option( 'wp_mcp_ai_openai_api_key' );
+		$settings = class_exists( 'WP_MCP_AI_Admin_Settings' ) ? WP_MCP_AI_Admin_Settings::get_settings() : array();
+		$api_key  = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
 		if ( empty( $api_key ) ) {
 			return array(
 				'success'  => false,

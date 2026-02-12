@@ -197,17 +197,39 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string|WP_Error HTML content or error.
 	 */
 	protected function fetch_url_content( $url ) {
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout'     => 30,
-				'redirection' => 5,
-				'user-agent'  => 'WP-MCP-AI-Product-Scraper/1.0 (+' . home_url( '/' ) . ')',
-				'headers'     => array(
-					'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-				),
-			)
+		// Build browser-like headers to avoid bot detection.
+		$site_name = get_bloginfo( 'name' );
+		$site_url  = home_url( '/' );
+		$language  = get_bloginfo( 'language' );
+
+		// Create a more browser-like User-Agent string.
+		$user_agent = sprintf( 'WP-MCP-AI-Product-Scraper/1.0 (+%s)', $site_url );
+		if ( $site_name ) {
+			$user_agent = sprintf( 'WP-MCP-AI-Product-Scraper/1.0 (%s; +%s)', sanitize_text_field( $site_name ), $site_url );
+		}
+
+		$headers = array(
+			'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+			'Accept-Language' => $language ? str_replace( '_', '-', $language ) : 'en-US,en;q=0.9',
+			'User-Agent'      => $user_agent,
 		);
+
+		$request_args = array(
+			'timeout'     => 30,
+			'redirection' => 5,
+			'headers'     => $headers,
+			'sslverify'   => true,
+		);
+
+		/**
+		 * Filters the HTTP request arguments for product scraping.
+		 *
+		 * @param array  $request_args HTTP request arguments.
+		 * @param string $url          The URL being scraped.
+		 */
+		$request_args = apply_filters( 'wp_mcp_ai_scrape_product_request_args', $request_args, $url );
+
+		$response = wp_remote_get( $url, $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -219,7 +241,8 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
-		if ( 200 !== $status_code ) {
+		// Accept any 2xx status code (200-299).
+		if ( $status_code < 200 || $status_code >= 300 ) {
 			return new WP_Error(
 				'wp_mcp_ai_http_error',
 				sprintf(

@@ -325,6 +325,41 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
+				// Special handling for mesh_peer_sites BEFORE skipping custom fields.
+				// This field is defined as 'custom' type for rendering but needs sanitization
+				// because it contains user-submitted data (array of peer sites).
+				if ( 'mesh_peer_sites' === $key && isset( $filtered_input[ $key ] ) ) {
+					// Mesh peer sites is submitted as an array of peers.
+					// Sanitize each peer entry following the same logic as sanitize_mesh_peer_sites().
+					$peer_sites = $filtered_input[ $key ];
+					if ( is_array( $peer_sites ) ) {
+						$sanitized_peers = array();
+						foreach ( $peer_sites as $peer ) {
+							if ( ! is_array( $peer ) ) {
+								continue;
+							}
+							$name    = isset( $peer['name'] ) ? trim( sanitize_text_field( $peer['name'] ) ) : '';
+							$url     = isset( $peer['url'] ) ? trim( esc_url_raw( $peer['url'] ) ) : '';
+							$api_key = isset( $peer['api_key'] ) ? trim( sanitize_text_field( $peer['api_key'] ) ) : '';
+
+							// Skip empty entries.
+							if ( '' === $name && '' === $url && '' === $api_key ) {
+								continue;
+							}
+
+							$sanitized_peers[] = array(
+								'name'    => $name,
+								'url'     => $url,
+								'api_key' => $api_key,
+							);
+						}
+						$sanitized[ $key ] = $sanitized_peers;
+					} else {
+						$sanitized[ $key ] = array();
+					}
+					continue;
+				}
+
 				// Skip display-only field types (html, custom, hidden) as they don't have user input.
 				// Hidden fields are used to preserve OAuth tokens and other programmatically-set values.
 				if ( in_array( $type, array( 'html', 'custom', 'hidden' ), true ) ) {
@@ -413,39 +448,49 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					case 'textarea':
-						// Handle array values to prevent warnings.
-						if ( is_array( $value ) ) {
-							$sanitized[ $key ] = wp_json_encode( $value );
-						} elseif ( 'mesh_peer_sites' === $key ) {
-							// Special handling for mesh_peer_sites: decode JSON string to array.
-							// This field stores peer site configurations as JSON in a textarea.
-							// Empty or invalid JSON should default to empty array (not validation error).
-							$trimmed = trim( $value );
-							if ( empty( $trimmed ) ) {
-								// Empty textarea = empty array (valid, no peers configured yet).
-								$sanitized[ $key ] = array();
-							} else {
-								// Attempt to decode JSON string to array.
-								$decoded = json_decode( $trimmed, true );
-								if ( is_array( $decoded ) ) {
-									// Valid JSON array - will be further sanitized by sanitize_mesh_peer_sites().
-									$sanitized[ $key ] = $decoded;
-								} else {
-									// Invalid JSON - log error and default to empty array.
-									$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-									$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
-									if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-										error_log(
-											sprintf(
-												'[NV oOS Settings] Invalid JSON in mesh_peer_sites field. Value: %s, JSON Error: %s',
-												substr( $trimmed, 0, 100 ),
-												json_last_error_msg()
-											)
-										);
-									}
+						// Special handling for mesh_peer_sites BEFORE general array handling.
+						// This field can be submitted as either a JSON string (from textarea) or
+						// as an array (from tests or programmatic submissions).
+						if ( 'mesh_peer_sites' === $key ) {
+							if ( is_array( $value ) ) {
+								// Already an array (e.g., from tests or repeater field submission).
+								// Keep it as an array for further processing.
+								$sanitized[ $key ] = $value;
+							} elseif ( is_string( $value ) ) {
+								// JSON string from textarea - decode it.
+								$trimmed = trim( $value );
+								if ( empty( $trimmed ) ) {
+									// Empty textarea = empty array (valid, no peers configured yet).
 									$sanitized[ $key ] = array();
+								} else {
+									// Attempt to decode JSON string to array.
+									$decoded = json_decode( $trimmed, true );
+									if ( is_array( $decoded ) ) {
+										// Valid JSON array - will be further sanitized by sanitize_mesh_peer_sites().
+										$sanitized[ $key ] = $decoded;
+									} else {
+										// Invalid JSON - log error and default to empty array.
+										$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+										$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+										if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+											error_log(
+												sprintf(
+													'[NV oOS Settings] Invalid JSON in mesh_peer_sites field. Value: %s, JSON Error: %s',
+													substr( $trimmed, 0, 100 ),
+													json_last_error_msg()
+												)
+											);
+										}
+										$sanitized[ $key ] = array();
+									}
 								}
+							} else {
+								// Unexpected type - default to empty array.
+								$sanitized[ $key ] = array();
 							}
+						} elseif ( is_array( $value ) ) {
+							// Handle other array values to prevent warnings (general case).
+							$sanitized[ $key ] = wp_json_encode( $value );
 						} else {
 							$sanitized[ $key ] = sanitize_textarea_field( $value );
 						}

@@ -1,0 +1,148 @@
+# https://help.github.com/en/categories/automating-your-workflow-with-github-actions
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+    schedule:
+        - cron: '3 3 * * 1'
+
+name: CI
+
+jobs:
+    php-lint:
+        name: PHP Lint
+        runs-on: ubuntu-22.04
+        strategy:
+            matrix:
+                php-version: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5' ]
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Install PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+                  ini-file: development
+                  tools: composer:v2
+                  coverage: none
+
+            - name: Show the Composer configuration
+              run: composer config --global --list
+
+            - name: Cache dependencies installed with composer
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/composer
+                  key: php${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.json') }}
+                  restore-keys: |
+                      php${{ matrix.php-version }}-composer-
+
+            - name: Install Composer dependencies
+              run: |
+                  composer update --with-dependencies --no-progress;
+                  composer show;
+
+            - name: PHP Lint
+              run: composer ci:php:lint
+
+    unit-tests:
+        name: Unit tests
+
+        runs-on: ubuntu-22.04
+
+        needs: [ php-lint ]
+
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: [ '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5' ]
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Install PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+                  ini-file: development
+                  tools: composer:v2
+                  coverage: none
+
+            - name: Show the Composer configuration
+              run: composer config --global --list
+
+            - name: Cache dependencies installed with composer
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/composer
+                  key: php${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.json') }}
+                  restore-keys: |
+                      php${{ matrix.php-version }}-composer-
+
+            - name: Install Composer dependencies
+              run: |
+                  composer update --with-dependencies --no-progress;
+                  composer show;
+
+            - name: Run Tests
+              run: ./vendor/bin/phpunit
+
+    static-analysis:
+        name: Static Analysis
+
+        runs-on: ubuntu-22.04
+
+        needs: [ php-lint ]
+
+        strategy:
+            fail-fast: false
+            matrix:
+                command:
+                    - composer:normalize
+                    - php:fixer
+                    - php:stan
+                    - php:rector
+                php-version:
+                    - '8.3'
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Install PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+                  ini-file: development
+                  tools: "composer:v2, phive"
+                  coverage: none
+
+            - name: Show the Composer configuration
+              run: composer config --global --list
+
+            - name: Cache dependencies installed with composer
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/composer
+                  key: php${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.json') }}
+                  restore-keys: |
+                      php${{ matrix.php-version }}-composer-
+
+            - name: Install Composer dependencies
+              run: |
+                  composer update --with-dependencies --no-progress;
+                  composer show;
+
+            - name: Install development tools
+              env:
+                  GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  phive --no-progress install --trust-gpg-keys 0FDE18AE1D09E19F60F6B1CBC00543248C87FB13,BBAB5DF0A0D6672989CF1869E82B2FB314E9906E
+
+            - name: Run Command
+              run: composer ci:${{ matrix.command }}

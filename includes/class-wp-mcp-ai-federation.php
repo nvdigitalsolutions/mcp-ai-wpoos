@@ -101,6 +101,13 @@ class WP_MCP_AI_Federation {
 				wp_unschedule_event( $timestamp, 'wp_mcp_ai_verify_peers' );
 			}
 		}
+
+		// Check if we need to flush rewrite rules after CPT registration.
+		// This ensures the AI Peers menu appears immediately after enabling directory service.
+		if ( get_transient( 'wp_mcp_ai_flush_rewrite_rules' ) ) {
+			delete_transient( 'wp_mcp_ai_flush_rewrite_rules' );
+			flush_rewrite_rules();
+		}
 	}
 
 	/**

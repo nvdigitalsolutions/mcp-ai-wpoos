@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Bulk imports regulatory products from Excel file (XLSX format) with comprehensive field mapping, validation, and support for multiple worksheet formats including L\'OCCITANE, Puig, and other regulatory tracking sheets.', 'mcp-ai-wpoos-pro' );
+		return __( 'Bulk imports regulatory products from Excel file (XLSX format) with comprehensive field mapping, validation, and support for multiple worksheet formats including L\'OCCITANE, Puig, and other regulatory tracking sheets. Requires PHP 8.1 or higher.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -250,6 +250,27 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check PHP version requirement for phpspreadsheet.
+		if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_php_version_required',
+				sprintf(
+					/* translators: 1: Current PHP version, 2: Required PHP version */
+					__( 'This tool requires PHP %2$s or higher to use the phpspreadsheet library. You are currently running PHP %1$s. Please contact your hosting provider to upgrade PHP.', 'mcp-ai-wpoos-pro' ),
+					PHP_VERSION,
+					'8.1.0'
+				)
+			);
+		}
+
+		// Check if phpspreadsheet classes are available.
+		if ( ! class_exists( 'PhpOffice\PhpSpreadsheet\IOFactory' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_dependency',
+				__( 'The phpspreadsheet library is not loaded. Please ensure the Pro addon vendor directory is properly installed.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {

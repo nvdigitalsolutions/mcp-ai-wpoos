@@ -24,11 +24,47 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 		$this->toolkit_name     = __( 'E-commerce Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_ecommerce_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-ecommerce-toolkit-settings';
-		$this->has_research     = true;
+		$this->parent_slug      = 'wp-mcp-ai-ecommerce-toolkit'; // Separate E-Commerce Toolkit menu.
+		$this->has_research     = false; // Research & Add has dedicated submenu page.
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-cart';
 
+		// Add top-level menu at priority 25 to register before submenu pages.
+		// This ensures the parent menu exists when submenu pages are added at priorities 26+.
+		add_action( 'admin_menu', array( $this, 'add_top_level_menu' ), 25 );
+
 		parent::__construct();
+	}
+
+	/**
+	 * Add top-level E-Commerce Toolkit menu.
+	 */
+	public function add_top_level_menu() {
+		// Check if WooCommerce is active.
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return;
+		}
+
+		add_menu_page(
+			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+			__( 'E-Commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+			'edit_products',
+			$this->parent_slug,
+			array( $this, 'redirect_to_first_submenu' ),
+			$this->icon,
+			56 // Position after WooCommerce (55).
+		);
+	}
+
+	/**
+	 * Redirect to first submenu page.
+	 *
+	 * This prevents the parent menu from showing an empty page.
+	 */
+	public function redirect_to_first_submenu() {
+		// Redirect to settings page (first submenu).
+		wp_safe_redirect( admin_url( 'admin.php?page=' . $this->page_slug ) );
+		exit;
 	}
 
 	/**
@@ -145,9 +181,4 @@ class WP_MCP_AI_Ecommerce_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 			'upsell_recommendations'      => __( 'Upsell Recommendations', 'mcp-ai-wpoos-pro' ),
 		);
 	}
-}
-
-// Initialize settings page.
-if ( is_admin() ) {
-	new WP_MCP_AI_Ecommerce_Settings_Page();
 }
