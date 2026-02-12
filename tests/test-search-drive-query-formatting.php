@@ -187,12 +187,43 @@ class Test_Search_Drive_Query_Formatting extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$query  = "fullText contains 'test' and trashed = false";
-		$result = $method->invoke( $this->tool, $query, 10, '' );
+		$result = $method->invoke( $this->tool, $query, 10, '', false, 'modified' );
 
 		$this->assertStringContainsString( 'https://www.googleapis.com/drive/v3/files', $result );
 		$this->assertStringContainsString( 'pageSize=10', $result );
+		$this->assertStringContainsString( 'orderBy=modifiedTime+desc', $result );
 		// Check that query is URL encoded.
 		$this->assertStringContainsString( 'q=', $result );
+	}
+
+	/**
+	 * Test URL building with include_shared parameter.
+	 */
+	public function test_url_building_with_shared() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'build_files_list_url' );
+		$method->setAccessible( true );
+
+		$query  = "fullText contains 'test' and trashed = false";
+		$result = $method->invoke( $this->tool, $query, 10, '', true, 'modified' );
+
+		$this->assertStringContainsString( 'corpora=allDrives', $result );
+		$this->assertStringContainsString( 'includeItemsFromAllDrives=true', $result );
+		$this->assertStringContainsString( 'supportsAllDrives=true', $result );
+	}
+
+	/**
+	 * Test URL building with sort by created time.
+	 */
+	public function test_url_building_sort_by_created() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'build_files_list_url' );
+		$method->setAccessible( true );
+
+		$query  = "fullText contains 'test' and trashed = false";
+		$result = $method->invoke( $this->tool, $query, 10, '', false, 'created' );
+
+		$this->assertStringContainsString( 'orderBy=createdTime+desc', $result );
 	}
 
 	/**

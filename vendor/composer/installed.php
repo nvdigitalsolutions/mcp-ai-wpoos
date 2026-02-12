@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-drive-search-tool-error',
-        'version' => 'dev-copilot/fix-drive-search-tool-error',
-        'reference' => '1108a7bc20cf33864cf774d3cf9c4536ce8ace78',
+        'pretty_version' => 'dev-copilot/update-drive-search-feature',
+        'version' => 'dev-copilot/update-drive-search-feature',
+        'reference' => '45b792feae068f2ad4c35fbe432de46ed5ef5e0b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-drive-search-tool-error',
-            'version' => 'dev-copilot/fix-drive-search-tool-error',
-            'reference' => '1108a7bc20cf33864cf774d3cf9c4536ce8ace78',
+            'pretty_version' => 'dev-copilot/update-drive-search-feature',
+            'version' => 'dev-copilot/update-drive-search-feature',
+            'reference' => '45b792feae068f2ad4c35fbe432de46ed5ef5e0b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
