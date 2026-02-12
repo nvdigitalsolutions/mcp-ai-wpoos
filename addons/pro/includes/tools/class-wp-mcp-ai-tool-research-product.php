@@ -120,10 +120,15 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',              // Pro tier tool.
-			'read-only',        // Research only, doesn't modify data.
-			'requires-plugin',  // Requires WooCommerce.
-			'local-only',       // No external API calls.
+			'pro',                   // Pro tier tool.
+			'read-only',             // Research only, doesn't modify data.
+			'requires-plugin',       // Requires WooCommerce.
+			'requires-credentials',  // Needs AI API keys.
+			'consumes-tokens',       // Uses AI API tokens.
+			'external-api',          // Makes external API calls.
+			'network-dependent',     // Requires internet connection.
+			'may-timeout',           // May take longer to complete.
+			'cacheable',             // Results can be cached.
 		);
 	}
 
@@ -163,29 +168,79 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			? sanitize_text_field( $arguments['suggested_reference'] )
 			: $this->generate_reference( $query );
 
-		// Build research guidance.
-		$guidance = $this->build_research_guidance( $query, $include_pricing, $include_images, $include_specs );
+		// Check cache first.
+		$cache_key = 'product_research_' . md5( $query . '_' . $include_pricing . '_' . $include_images . '_' . $include_specs );
+		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_product_research' );
 
-		// Return research structure and guidance.
-		return array(
-			'status'         => 'complete',
-			'query'          => $query,
-			'reference'      => $reference,
-			'guidance'       => $guidance,
-			'structure'      => $this->get_product_structure(),
-			'next_steps'     => array(
-				__( 'Use available tools like web_search to gather the product information listed in the guidance.', 'mcp-ai-wpoos-pro' ),
-				__( 'Structure the gathered information according to the provided schema.', 'mcp-ai-wpoos-pro' ),
-				__( 'Once you have complete product data, use the "Create WooCommerce Product Draft" tool.', 'mcp-ai-wpoos-pro' ),
-			),
-			'create_tool'    => 'create_woo_product',
-			'tool_arguments' => array(
-				'reference' => $reference,
-				'title'     => sprintf( __( 'Replace with actual product name for: %s', 'mcp-ai-wpoos-pro' ), $query ),
-				'brand'     => __( 'Replace with actual brand name', 'mcp-ai-wpoos-pro' ),
-				// Additional fields to be filled based on research.
-			),
+		if ( false !== $cached && is_array( $cached ) ) {
+			$cached['_from_cache'] = true;
+			WP_MCP_AI_Logger::log_event(
+				'product_research_cache_hit',
+				'Product research served from cache',
+				array(
+					'query'     => $query,
+					'cache_key' => $cache_key,
+				)
+			);
+			return $cached;
+		}
+
+		// Log research start.
+		WP_MCP_AI_Logger::log_event(
+			'product_research_started',
+			'Starting product research',
+			array(
+				'query'           => $query,
+				'include_pricing' => $include_pricing,
+				'include_images'  => $include_images,
+				'include_specs'   => $include_specs,
+			)
 		);
+
+		// Build research prompt.
+		$prompt = $this->build_research_prompt( $query, $include_pricing, $include_images, $include_specs );
+
+		// Use AI to research the product.
+		$research_result = $this->perform_ai_research( $prompt, $context );
+
+		if ( is_wp_error( $research_result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Product research failed: ' . $research_result->get_error_message(),
+				array(
+					'query' => $query,
+					'error' => $research_result->get_error_code(),
+				)
+			);
+			return $research_result;
+		}
+
+		// Parse and validate the research results.
+		$product_data = $this->parse_research_results( $research_result, $query, $reference );
+
+		if ( is_wp_error( $product_data ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to parse product research results: ' . $product_data->get_error_message(),
+				array(
+					'query' => $query,
+				)
+			);
+			return $product_data;
+		}
+
+		// Cache the results for 24 hours.
+		wp_cache_set( $cache_key, $product_data, 'wp_mcp_ai_product_research', DAY_IN_SECONDS );
+
+		// Log success.
+		WP_MCP_AI_Logger::log_event(
+			'product_research_completed',
+			'Product research completed successfully',
+			array(
+				'query'    => $query,
+				'has_data' => ! empty( $product_data['product_data'] ),
+			)
+		);
+
+		return $product_data;
 	}
 
 	/**
@@ -209,45 +264,389 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * Build research guidance for the AI.
+	 * Build the research prompt for AI.
 	 *
 	 * @param string $query          Product query.
-	 * @param bool   $include_pricing Include pricing guidance.
-	 * @param bool   $include_images  Include image guidance.
-	 * @param bool   $include_specs   Include specifications guidance.
-	 * @return string Research guidance.
+	 * @param bool   $include_pricing Include pricing information.
+	 * @param bool   $include_images  Include image URLs.
+	 * @param bool   $include_specs   Include specifications.
+	 * @return string Research prompt.
 	 */
-	protected function build_research_guidance( $query, $include_pricing, $include_images, $include_specs ) {
-		$guidance = sprintf(
-			__( 'RESEARCH REQUIREMENTS: You need to gather information about: %s', 'mcp-ai-wpoos-pro' ),
+	protected function build_research_prompt( $query, $include_pricing, $include_images, $include_specs ) {
+		$prompt = sprintf(
+			"Research the following product and gather comprehensive information:\n\n**Product:** %s\n\n",
 			$query
-		) . "\n\n";
+		);
 
-		$guidance .= __( 'ACTION: Use the web_search tool to find the following information:', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '1. Product name and brand', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '2. Full product description (features, benefits, use cases)', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '3. Short description for product summary', 'mcp-ai-wpoos-pro' ) . "\n";
+		$prompt .= "Use web search to find accurate, current information about this product. Gather:\n\n";
+		$prompt .= "1. **Product Name**: Full official product name\n";
+		$prompt .= "2. **Brand**: Brand/manufacturer name\n";
+		$prompt .= "3. **Description**: Comprehensive product description (200-500 words) covering:\n";
+		$prompt .= "   - Key features and benefits\n";
+		$prompt .= "   - Use cases and target audience\n";
+		$prompt .= "   - What makes it unique\n";
+		$prompt .= "4. **Short Description**: Brief summary (50-100 words) for product card/preview\n";
 
 		if ( $include_pricing ) {
-			$guidance .= __( '4. Regular price in local currency', 'mcp-ai-wpoos-pro' ) . "\n";
-			$guidance .= __( '5. Sale price if available', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "5. **Regular Price**: Current market price in USD\n";
+			$prompt .= "6. **Sale Price**: Current sale/promotional price if available\n";
 		}
 
 		if ( $include_images ) {
-			$guidance .= __( '6. Product image URLs (at least 2-3 high-quality images)', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "7. **Image URLs**: 2-4 high-quality product image URLs\n";
 		}
 
 		if ( $include_specs ) {
-			$guidance .= __( '7. Product specifications and attributes (size, color, material, etc.)', 'mcp-ai-wpoos-pro' ) . "\n";
-			$guidance .= __( '8. Technical specifications if applicable', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "8. **Specifications**: Technical specs and attributes (size, weight, dimensions, materials, etc.)\n";
+			$prompt .= "9. **Attributes**: Product variations (colors, sizes, models available)\n";
 		}
 
-		$guidance .= __( '9. Suggested product categories and tags', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '10. Product type (simple, variable, grouped, external)', 'mcp-ai-wpoos-pro' ) . "\n\n";
-		
-		$guidance .= __( 'IMPORTANT: Start researching NOW by calling the web_search tool with relevant queries to gather this information.', 'mcp-ai-wpoos-pro' );
+		$prompt .= "10. **Categories**: Suggested WooCommerce product categories\n";
+		$prompt .= "11. **Tags**: Relevant product tags for search/filtering\n";
+		$prompt .= "12. **Product Type**: simple, variable, grouped, or external\n\n";
 
-		return $guidance;
+		$prompt .= "**IMPORTANT**: Return the information in the following JSON format:\n\n";
+		$prompt .= "```json\n";
+		$prompt .= "{\n";
+		$prompt .= '  "title": "Product Name",';
+		$prompt .= "\n";
+		$prompt .= '  "brand": "Brand Name",';
+		$prompt .= "\n";
+		$prompt .= '  "description": "<p>HTML formatted description...</p>",';
+		$prompt .= "\n";
+		$prompt .= '  "description_secondary": "Short description text",';
+		$prompt .= "\n";
+
+		if ( $include_pricing ) {
+			$prompt .= '  "local_price": "149.99",';
+			$prompt .= "\n";
+			$prompt .= '  "sale_price": "129.99",';
+			$prompt .= "\n";
+		}
+
+		if ( $include_images ) {
+			$prompt .= '  "image_urls": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],';
+			$prompt .= "\n";
+		}
+
+		if ( $include_specs ) {
+			$prompt .= '  "specifications": {';
+			$prompt .= "\n";
+			$prompt .= '    "weight": "2.5 lbs",';
+			$prompt .= "\n";
+			$prompt .= '    "dimensions": "10 x 5 x 3 inches",';
+			$prompt .= "\n";
+			$prompt .= '    "material": "Leather"';
+			$prompt .= "\n";
+			$prompt .= '  },';
+			$prompt .= "\n";
+			$prompt .= '  "attributes": [';
+			$prompt .= "\n";
+			$prompt .= '    {"name": "Color", "options": ["Black", "Brown", "Red"]},';
+			$prompt .= "\n";
+			$prompt .= '    {"name": "Size", "options": ["S", "M", "L", "XL"]}';
+			$prompt .= "\n";
+			$prompt .= '  ],';
+			$prompt .= "\n";
+		}
+
+		$prompt .= '  "categories": ["Category1", "Category2"],';
+		$prompt .= "\n";
+		$prompt .= '  "tags": ["tag1", "tag2", "tag3"],';
+		$prompt .= "\n";
+		$prompt .= '  "product_type": "simple",';
+		$prompt .= "\n";
+		$prompt .= '  "stock_status": "instock",';
+		$prompt .= "\n";
+		$prompt .= '  "sources": ["https://source1.com", "https://source2.com"]';
+		$prompt .= "\n";
+		$prompt .= "}\n";
+		$prompt .= "```\n\n";
+
+		$prompt .= "Use web search to find the most accurate and up-to-date information. ";
+		$prompt .= "Include source URLs in the 'sources' array. ";
+		$prompt .= "Ensure product information is factually correct and matches current market offerings.\n";
+
+		return $prompt;
+	}
+
+	/**
+	 * Perform AI research using the plugin's AI capabilities.
+	 *
+	 * @param string $prompt  Research prompt.
+	 * @param array  $context Execution context.
+	 * @return array|WP_Error Research results or error.
+	 */
+	protected function perform_ai_research( $prompt, $context ) {
+		// Get a suitable AI model for research.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$provider = $this->get_research_provider( $settings );
+		$model    = $this->get_research_model( $provider, $settings );
+
+		if ( is_wp_error( $provider ) ) {
+			return $provider;
+		}
+
+		if ( is_wp_error( $model ) ) {
+			return $model;
+		}
+
+		// Build messages array.
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are a helpful AI assistant and e-commerce product researcher. You research products and gather comprehensive, accurate product information. Always respond with valid JSON matching the requested format. Use web search when available to ensure accuracy and get current pricing.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		);
+
+		// Call the appropriate AI client.
+		$client = $this->get_ai_client( $provider, $settings );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		// Make the API call.
+		$result = $client->create_chat_completion(
+			$messages,
+			array(
+				'model'       => $model,
+				'temperature' => 0.2, // Low temperature for factual, accurate content.
+				'max_tokens'  => 3000, // Allow for detailed product information.
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Extract the content from the response.
+		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array(
+			'content'  => $result['choices'][0]['message']['content'],
+			'provider' => $provider,
+			'model'    => $model,
+		);
+	}
+
+	/**
+	 * Get the best available provider for research.
+	 *
+	 * @param array $settings Plugin settings.
+	 * @return string|WP_Error Provider name or error.
+	 */
+	protected function get_research_provider( $settings ) {
+		// Prefer OpenAI or Gemini for research tasks.
+		if ( ! empty( $settings['openai_api_key'] ) ) {
+			return 'openai';
+		}
+
+		if ( ! empty( $settings['gemini_api_key'] ) ) {
+			return 'gemini';
+		}
+
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			return 'anthropic';
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_no_provider',
+			__( 'No AI provider configured. Please configure OpenAI, Gemini, or Anthropic API keys in plugin settings.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Get the best model for research from a provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @param array  $settings Plugin settings.
+	 * @return string|WP_Error Model identifier or error.
+	 */
+	protected function get_research_model( $provider, $settings ) {
+		switch ( $provider ) {
+			case 'openai':
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
+
+			case 'gemini':
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.0-flash-exp';
+
+			case 'anthropic':
+				return 'claude-sonnet-4-5-20250929';
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_unsupported_provider',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'Provider not supported for research: %s', 'mcp-ai-wpoos-pro' ),
+						$provider
+					)
+				);
+		}
+	}
+
+	/**
+	 * Get the appropriate AI client for a provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @param array  $settings Plugin settings.
+	 * @return object|WP_Error AI client instance or error.
+	 */
+	protected function get_ai_client( $provider, $settings ) {
+		switch ( $provider ) {
+			case 'openai':
+				if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'OpenAI client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_OpenAI_Client();
+
+			case 'gemini':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Gemini client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Gemini_Client();
+
+			case 'anthropic':
+				if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Anthropic client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Anthropic_Client();
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_unsupported_provider',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'AI client not available for provider: %s', 'mcp-ai-wpoos-pro' ),
+						$provider
+					)
+				);
+		}
+	}
+
+	/**
+	 * Parse the AI research results into product data format.
+	 *
+	 * @param array  $research_result AI research results.
+	 * @param string $query           Original product query.
+	 * @param string $reference       Generated reference/SKU.
+	 * @return array|WP_Error Parsed product data or error.
+	 */
+	protected function parse_research_results( $research_result, $query, $reference ) {
+		$content = $research_result['content'];
+
+		// Extract JSON from markdown code blocks if present.
+		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {
+			$json = $matches[1];
+		} elseif ( preg_match( '/```\s*(.*?)\s*```/s', $content, $matches ) ) {
+			$json = $matches[1];
+		} else {
+			$json = $content;
+		}
+
+		// Parse JSON.
+		$data = json_decode( $json, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error(
+				'wp_mcp_ai_parse_error',
+				sprintf(
+					/* translators: %s: JSON error message */
+					__( 'Failed to parse AI response as JSON: %s', 'mcp-ai-wpoos-pro' ),
+					json_last_error_msg()
+				)
+			);
+		}
+
+		// Ensure minimum required fields.
+		if ( empty( $data['title'] ) ) {
+			$data['title'] = $query;
+		}
+
+		// Build product data structure for WooCommerce.
+		$product_data = array(
+			'success'        => true,
+			'query'          => $query,
+			'reference'      => $reference,
+			'product_data'   => array(
+				'title'                 => sanitize_text_field( $data['title'] ),
+				'brand'                 => isset( $data['brand'] ) ? sanitize_text_field( $data['brand'] ) : '',
+				'product_type'          => isset( $data['product_type'] ) ? sanitize_key( $data['product_type'] ) : 'simple',
+				'description'           => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+				'description_secondary' => isset( $data['description_secondary'] ) ? sanitize_textarea_field( $data['description_secondary'] ) : '',
+				'local_price'           => isset( $data['local_price'] ) ? sanitize_text_field( $data['local_price'] ) : '',
+				'sale_price'            => isset( $data['sale_price'] ) ? sanitize_text_field( $data['sale_price'] ) : '',
+				'image_urls'            => isset( $data['image_urls'] ) && is_array( $data['image_urls'] ) ? array_map( 'esc_url_raw', $data['image_urls'] ) : array(),
+				'categories'            => isset( $data['categories'] ) && is_array( $data['categories'] ) ? array_map( 'sanitize_text_field', $data['categories'] ) : array(),
+				'tags'                  => isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array(),
+				'stock_status'          => isset( $data['stock_status'] ) ? sanitize_key( $data['stock_status'] ) : 'instock',
+				'specifications'        => isset( $data['specifications'] ) && is_array( $data['specifications'] ) ? $this->sanitize_specifications( $data['specifications'] ) : array(),
+				'attributes'            => isset( $data['attributes'] ) && is_array( $data['attributes'] ) ? $this->sanitize_attributes( $data['attributes'] ) : array(),
+			),
+			'research_metadata' => array(
+				'sources'       => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+				'researched_at' => current_time( 'mysql' ),
+				'provider'      => $research_result['provider'],
+				'model'         => $research_result['model'],
+			),
+			'create_tool'    => 'create_woo_product',
+		);
+
+		return $product_data;
+	}
+
+	/**
+	 * Sanitize product specifications.
+	 *
+	 * @param array $specifications Raw specifications data.
+	 * @return array Sanitized specifications.
+	 */
+	protected function sanitize_specifications( $specifications ) {
+		$sanitized = array();
+		foreach ( $specifications as $key => $value ) {
+			$sanitized[ sanitize_key( $key ) ] = sanitize_text_field( $value );
+		}
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitize product attributes.
+	 *
+	 * @param array $attributes Raw attributes data.
+	 * @return array Sanitized attributes.
+	 */
+	protected function sanitize_attributes( $attributes ) {
+		$sanitized = array();
+		foreach ( $attributes as $attribute ) {
+			if ( ! isset( $attribute['name'] ) || ! isset( $attribute['options'] ) ) {
+				continue;
+			}
+
+			$sanitized[] = array(
+				'name'    => sanitize_text_field( $attribute['name'] ),
+				'options' => is_array( $attribute['options'] ) ? array_map( 'sanitize_text_field', $attribute['options'] ) : array(),
+			);
+		}
+		return $sanitized;
 	}
 
 	/**
