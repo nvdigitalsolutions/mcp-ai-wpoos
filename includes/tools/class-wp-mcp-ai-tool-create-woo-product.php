@@ -1178,7 +1178,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			$normalized_attributes = array();
 			foreach ( $variation_data['attributes'] as $attr_name => $attr_value ) {
 				$attr_name_sanitized = wc_sanitize_taxonomy_name( stripslashes( $attr_name ) );
-				
+
 				// Check if this attribute exists in product.
 				$found = false;
 				foreach ( $product_attributes as $product_attr ) {
