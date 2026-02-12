@@ -174,4 +174,49 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		$old_total = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
 		$this->assertGreaterThan( $old_total, $total_packages );
 	}
+
+	/**
+	 * Test that pdf-lib and puppeteer-core packages are detected correctly.
+	 *
+	 * These packages should be detected in the vendor directory if it exists.
+	 */
+	public function test_pdf_lib_and_puppeteer_core_detection() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Settings' );
+		$method     = $reflection->getMethod( 'check_package_installed' );
+		$method->setAccessible( true );
+
+		// Test pdf-lib.
+		$pdf_lib_result = $method->invoke( null, 'pdf-lib' );
+		$this->assertIsBool(
+			$pdf_lib_result,
+			"check_package_installed('pdf-lib') should return boolean"
+		);
+
+		// Test puppeteer-core.
+		$puppeteer_result = $method->invoke( null, 'puppeteer-core' );
+		$this->assertIsBool(
+			$puppeteer_result,
+			"check_package_installed('puppeteer-core') should return boolean"
+		);
+
+		// If Pro addon is defined and vendor files exist, packages should be detected.
+		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$pdf_lib_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-lib/cjs/index.js';
+			if ( file_exists( $pdf_lib_path ) ) {
+				$this->assertTrue(
+					$pdf_lib_result,
+					'pdf-lib should be detected when vendor file exists'
+				);
+			}
+
+			$puppeteer_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js';
+			if ( file_exists( $puppeteer_path ) ) {
+				$this->assertTrue(
+					$puppeteer_result,
+					'puppeteer-core should be detected when vendor file exists'
+				);
+			}
+		}
+	}
 }
