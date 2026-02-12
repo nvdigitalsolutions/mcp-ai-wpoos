@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-pro-plugin-upload-error',
-        'version' => 'dev-copilot/fix-pro-plugin-upload-error',
-        'reference' => 'f171b0b40abfb9dc5d56f22b21782eede8fb35d7',
+        'pretty_version' => 'dev-copilot/enhance-product-research-tool',
+        'version' => 'dev-copilot/enhance-product-research-tool',
+        'reference' => '276aaa26952ff0448ba246308c6b7db243eeb2a6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-pro-plugin-upload-error',
-            'version' => 'dev-copilot/fix-pro-plugin-upload-error',
-            'reference' => 'f171b0b40abfb9dc5d56f22b21782eede8fb35d7',
+            'pretty_version' => 'dev-copilot/enhance-product-research-tool',
+            'version' => 'dev-copilot/enhance-product-research-tool',
+            'reference' => '276aaa26952ff0448ba246308c6b7db243eeb2a6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
