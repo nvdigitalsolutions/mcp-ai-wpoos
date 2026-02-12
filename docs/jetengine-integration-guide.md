@@ -38,8 +38,10 @@ This feature extends the WordPress AI plugin to provide comprehensive AI assista
 4. Enable the following options:
    - ✅ Enable JetEngine CCT Storage (optional, for performance)
    - ✅ Enable JetEngine AI Tools
-   - ✅ Enable AI Assistant for JetEngine CPTs (Pro)
-   - ✅ Enable Research & Add Pages for JetEngine CPTs (Pro)
+   - ✅ **Enable AI Assistant for JetEngine CPTs** (Pro) - Required for AI metaboxes
+   - ✅ **Enable Research & Add Pages for JetEngine CPTs** (Pro) - Required for Research & Add pages
+
+**Note:** The "Enable AI CPT Management" setting (found under Tools → Pro Features) is for standard WordPress post types (posts, pages, products) and is NOT required for JetEngine CPT integration.
 
 ## Usage
 

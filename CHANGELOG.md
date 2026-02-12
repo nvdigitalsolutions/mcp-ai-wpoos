@@ -3,6 +3,15 @@
 ## [Unreleased]
 
 ### Added - February 2026
+- **JetEngine CPT/Taxonomy AI Integration (February 12, 2026)**: Comprehensive AI assistance for all JetEngine custom post types and taxonomies
+  - **AI Assistant Metaboxes**: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+  - **Research & Add Pages**: Creates dedicated Research & Add submenu pages for each JetEngine CPT with AI-powered content creation
+  - **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.) to form inputs
+  - **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer for different API versions
+  - **Settings**: Two independent toggles - "Enable AI Assistant for JetEngine CPTs" and "Enable Research & Add Pages for JetEngine CPTs"
+  - **Documentation**: Complete integration guide at [docs/jetengine-integration-guide.md](docs/jetengine-integration-guide.md)
+  - **Testing**: Comprehensive test suite with 100% passing tests
+  - Merge PR #3678
 - **Package Pre-Bundling System (February 12, 2026)**: Enhanced vendor directory pre-bundling for critical npm packages
   - Added pdf-lib ^1.17.1 to vendor copy script for PDF manipulation capabilities
   - Added puppeteer-core ^21.0.0 to vendor copy script (optional) for advanced HTML rendering

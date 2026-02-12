@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Set WP_MCP_AI_BASE_VERSION to false in wp-config.php for Full Version (519 tools including Pro add-ons with WooCommerce, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Set WP_MCP_AI_BASE_VERSION to false in wp-config.php for Full Version (519 tools including Pro add-ons with WooCommerce, JetEngine CPT/Taxonomy AI integration, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
  * Version: 1.1.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
