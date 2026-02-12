@@ -396,4 +396,81 @@ class Test_API_Caching extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'fetch_embeddings_from_api' );
 		$this->assertTrue( $method->isPrivate(), 'fetch_embeddings_from_api should be private' );
 		}
+
+/**
+ * Test Gemini embedding cache setting.
+ */
+public function test_gemini_embedding_cache_setting() {
+$settings                                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+$settings['enable_gemini_api_caching']      = true;
+$settings['gemini_embedding_cache_ttl']     = 86400;
+update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$this->assertTrue( ! empty( $settings['enable_gemini_api_caching'] ), 'Gemini caching should be enabled' );
+$this->assertEquals( 86400, $settings['gemini_embedding_cache_ttl'], 'Gemini embedding TTL should be 24 hours' );
+}
+
+/**
+ * Test Gemini count_tokens cache setting.
+ */
+public function test_gemini_token_count_cache_setting() {
+$settings                                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+$settings['enable_gemini_api_caching']      = true;
+$settings['gemini_token_count_cache_ttl']   = 3600;
+update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$this->assertTrue( ! empty( $settings['enable_gemini_api_caching'] ), 'Gemini caching should be enabled' );
+$this->assertEquals( 3600, $settings['gemini_token_count_cache_ttl'], 'Gemini token count TTL should be 1 hour' );
+}
+
+/**
+ * Test Ollama cache setting.
+ */
+public function test_ollama_cache_setting() {
+$settings                                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+$settings['enable_ollama_api_caching']      = true;
+$settings['ollama_model_list_cache_ttl']    = 300;
+update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$this->assertTrue( ! empty( $settings['enable_ollama_api_caching'] ), 'Ollama caching should be enabled' );
+$this->assertEquals( 300, $settings['ollama_model_list_cache_ttl'], 'Ollama model list TTL should be 5 minutes' );
+}
+
+/**
+ * Test Ollama cache key includes endpoint URL.
+ */
+public function test_ollama_cache_key_includes_endpoint() {
+$endpoint1  = 'http://localhost:11434';
+$endpoint2  = 'http://192.168.1.100:11434';
+
+$cache_key1 = 'ollama_models_list_' . md5( $endpoint1 );
+$cache_key2 = 'ollama_models_list_' . md5( $endpoint2 );
+
+$this->assertNotEquals( $cache_key1, $cache_key2, 'Different Ollama endpoints should produce different cache keys' );
+$this->assertStringContainsString( 'ollama_models_list_', $cache_key1, 'Cache key should have correct prefix' );
+}
+
+/**
+ * Test that Gemini private fetch methods exist.
+ */
+public function test_gemini_private_fetch_methods_exist() {
+$reflection = new ReflectionClass( 'WP_MCP_AI_Gemini_Client' );
+
+$this->assertTrue( $reflection->hasMethod( 'fetch_models_from_api' ), 'Gemini fetch_models_from_api should exist' );
+$this->assertTrue( $reflection->hasMethod( 'fetch_embedding_from_api' ), 'Gemini fetch_embedding_from_api should exist' );
+$this->assertTrue( $reflection->hasMethod( 'fetch_token_count_from_api' ), 'Gemini fetch_token_count_from_api should exist' );
+$this->assertTrue( $reflection->hasMethod( 'fetch_batch_embeddings_from_api' ), 'Gemini fetch_batch_embeddings_from_api should exist' );
+}
+
+/**
+ * Test that Ollama private fetch method exists.
+ */
+public function test_ollama_private_fetch_method_exists() {
+$reflection = new ReflectionClass( 'WP_MCP_AI_Ollama_Client' );
+
+$this->assertTrue( $reflection->hasMethod( 'fetch_models_from_api' ), 'Ollama fetch_models_from_api should exist' );
+}
 }
