@@ -347,6 +347,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Activate Google Site Kit integration to access Analytics, Search Console, PageSpeed, and AdSense data through AI assistants. Requires <a href="https://wordpress.org/plugins/google-site-kit/" target="_blank">Google Site Kit plugin</a> to be installed and configured.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'enable_jetengine_cpt_ai'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI Assistant for JetEngine CPTs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI assistant metabox for JetEngine custom post types', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Adds an AI assistant metabox to all JetEngine custom post type edit screens. Users can get AI help with content creation, editing, and optimization. (Pro Feature)', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_jetengine_cpt_research_add'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Research & Add Pages for JetEngine CPTs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Research & Add admin pages for JetEngine custom post types', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Creates dedicated "Research & Add" pages for each JetEngine CPT. These pages provide AI-powered research and data entry interfaces, similar to toolkit Research & Add pages. The pages appear as submenu items under each CPT. (Pro Feature)', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 
 				// Features fields.
 				'enable_quiz_system'                     => array(
@@ -808,6 +822,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'fields' => array(
 						'enable_jetengine_cct',
 						'enable_jetengine_tools',
+						'enable_jetengine_cpt_ai',
+						'enable_jetengine_cpt_research_add',
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
 						'enable_sitekit_integration',

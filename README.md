@@ -1229,6 +1229,8 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 ### Without JetEngine (Crocoblock - Paid Plugin)
 
 **Lost Features:**
+- ❌ **AI metaboxes for JetEngine CPTs/Taxonomies** - No AI assistant integration on JetEngine edit screens
+- ❌ **Research & Add pages** - No AI-powered content creation with automatic field mapping
 - ❌ **Server-side chat transcript storage** - Chat history only stored in browser localStorage (24 hours)
 - ❌ **Cross-device chat synchronization** - No database-backed conversation history
 - ❌ **Admin chat history access** - Cannot view/audit conversations from admin panel
