@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-missing-packages-cnd',
-        'version' => 'dev-copilot/fix-missing-packages-cnd',
-        'reference' => '8795c78f94a8af8622fd628810a25ea891aac0ef',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+        'version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+        'reference' => 'a3ddc5f6a03080d92fb5cb2475b86ecdc6f465a6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-missing-packages-cnd',
-            'version' => 'dev-copilot/fix-missing-packages-cnd',
-            'reference' => '8795c78f94a8af8622fd628810a25ea891aac0ef',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+            'version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+            'reference' => 'a3ddc5f6a03080d92fb5cb2475b86ecdc6f465a6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
