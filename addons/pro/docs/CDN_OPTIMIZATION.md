@@ -1,8 +1,19 @@
 # CDN Optimization for Pro Plugin
 
+## ⚠️ Important: Pro Plugin Only
+
+**This CDN optimization applies ONLY to the Pro addon.** The base plugin remains completely local with all dependencies bundled. This ensures:
+
+- Base plugin users have fully self-contained installation
+- No CDN dependencies required for core functionality  
+- Pro plugin benefits from size reduction while maintaining compatibility
+
 ## Overview
 
 The Pro addon now uses a CDN-first approach for popular JavaScript libraries to significantly reduce plugin size. Libraries are loaded from jsDelivr CDN with automatic fallback to local copies for offline/intranet installations.
+
+**Base Plugin:** All dependencies remain bundled locally (no changes)  
+**Pro Addon:** Selected libraries loaded from CDN with local fallback
 
 ## Size Savings
 
