@@ -1158,177 +1158,243 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 	}
 
 
-		/**
-		 * Create embeddings for multiple text inputs in batch.
-		 *
-		 * This method is more efficient than calling create_embedding() multiple times
-		 * as it processes all texts in a single API request.
-		 *
-		 * @param array $texts   Array of text strings to embed.
-		 * @param array $options Optional parameters:
-		 *                       - model (string): Embedding model (default: 'text-embedding-004').
-		 *                       - task_type (string): Task optimization type.
-		 *                       - timeout (int): Request timeout in seconds.
-		 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
-		 */
-		public function batch_embed_content( array $texts, array $options = array() ) {
-			$api_key = $this->get_api_key();
+	/**
+	 * Create embeddings for multiple text inputs in batch.
+	 *
+	 * This method is more efficient than calling create_embedding() multiple times
+	 * as it processes all texts in a single API request.
+	 *
+	 * @param array $texts   Array of text strings to embed.
+	 * @param array $options Optional parameters:
+	 *                       - model (string): Embedding model (default: 'text-embedding-004').
+	 *                       - task_type (string): Task optimization type.
+	 *                       - timeout (int): Request timeout in seconds.
+	 *                       - bypass_cache (bool): Skip cache for this request.
+	 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
+	 */
+	public function batch_embed_content( array $texts, array $options = array() ) {
+		$api_key = $this->get_api_key();
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_gemini_api_key',
-					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			if ( empty( $texts ) || ! is_array( $texts ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_texts',
-					__( 'No text content was provided for batch embedding.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
-				);
-			}
-
-			// Default to text-embedding-004 model for embeddings.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
-
-			// Build requests array.
-			$requests = array();
-			foreach ( $texts as $text ) {
-				$sanitized_text = sanitize_textarea_field( $text );
-				if ( '' === $sanitized_text ) {
-					continue;
-				}
-
-				$request = array(
-					'content' => array(
-						'parts' => array(
-							array( 'text' => $sanitized_text ),
-						),
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_api_key',
+				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
-				);
+				)
+			);
+		}
 
-				// Optional task type for optimized embeddings.
-				if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
-					$task_type = sanitize_text_field( $options['task_type'] );
-					// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
-					$allowed_task_types = array(
-						'RETRIEVAL_QUERY',
-						'RETRIEVAL_DOCUMENT',
-						'SEMANTIC_SIMILARITY',
-						'CLASSIFICATION',
-						'CLUSTERING',
-					);
+		if ( empty( $texts ) || ! is_array( $texts ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_texts',
+				__( 'No text content was provided for batch embedding.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
 
-					if ( in_array( $task_type, $allowed_task_types, true ) ) {
-						$request['taskType'] = $task_type;
-					}
-				}
+		// Check if caching is enabled.
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache    = ! empty( $settings['enable_gemini_api_caching'] );
+		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
 
-				$requests[] = $request;
-			}
+		// Allow disabling via constant.
+		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+			$use_cache = false;
+		}
 
-			if ( empty( $requests ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_empty_batch',
-					__( 'No valid text content was provided for batch embedding after sanitization.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
-				);
-			}
+		/**
+		 * Filter whether to cache Gemini batch embedding requests.
+		 *
+		 * @param bool  $use_cache Whether to use caching.
+		 * @param array $texts     Texts to embed.
+		 * @param array $options   Request options.
+		 */
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_gemini_batch_embeddings', $use_cache, $texts, $options );
 
-			$payload = array( 'requests' => $requests );
+		if ( $use_cache && ! $bypass_cache ) {
+			// Build cache key from texts and relevant options.
+			$model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+			$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+
+			$cache_key_data = array(
+				'texts'     => $texts,
+				'model'     => $model,
+				'task_type' => $task_type,
+			);
+
+			$cache_key = 'gemini_batch_embedding_' . md5( wp_json_encode( $cache_key_data ) );
+
+			// Get cache TTL from settings or use default (24 hours - same as single embeddings).
+			$cache_ttl = isset( $settings['gemini_embedding_cache_ttl'] ) ? absint( $settings['gemini_embedding_cache_ttl'] ) : 24 * HOUR_IN_SECONDS;
 
 			/**
-			 * Allow third parties to filter the Gemini batch embedding payload prior to dispatch.
+			 * Filter the cache TTL for Gemini batch embeddings.
 			 *
-			 * @param array $payload Prepared request payload.
-			 * @param array $options Original method options.
-			 * @param array $texts   Text content supplied by the caller.
+			 * @param int   $cache_ttl Cache TTL in seconds.
+			 * @param array $options   Request options.
 			 */
-			$payload = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_payload', $payload, $options, $texts );
+			$cache_ttl = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_ttl', $cache_ttl, $options );
 
-			$endpoint = sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) );
-			$url      = $endpoint;
-
-			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => $this->resolve_timeout( $options ),
+			return WP_MCP_AI_Cache_Helper::remember(
+				$cache_key,
+				function () use ( $api_key, $texts, $options ) {
+					return $this->fetch_batch_embeddings_from_api( $api_key, $texts, $options );
+				},
+				$cache_ttl
 			);
-
-			WP_MCP_AI_Logger::log_event(
-				'gemini_batch_embed',
-				'Sending batch embedding request to Gemini.',
-				array(
-					'model' => $model,
-					'count' => count( $requests ),
-				)
-			);
-
-			$response = wp_remote_post( $url, $request_args );
-
-			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'Gemini batch embedding request failed.', array( 'error' => $response->get_error_message() ) );
-
-				return WP_MCP_AI_HTTP::prepare_transport_error(
-					$response,
-					'wp_mcp_ai_http_error',
-					__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
-					__( 'Gemini', 'mcp-ai-wpoos' )
-				);
-			}
-
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
-
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini batch embedding response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
-			}
-
-			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
-
-				WP_MCP_AI_Logger::log_error(
-					'Gemini returned an error response for batch embedding.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
-			}
-
-			WP_MCP_AI_Logger::log_event(
-				'gemini_batch_embedding_response',
-				'Gemini batch embedding completed.',
-				array(
-					'model' => $model,
-					'count' => count( $requests ),
-				)
-			);
-
-			return $decoded;
 		}
+
+		return $this->fetch_batch_embeddings_from_api( $api_key, $texts, $options );
+	}
+
+	/**
+	 * Fetch batch embeddings from Gemini API (internal method).
+	 *
+	 * @param string $api_key Gemini API key.
+	 * @param array  $texts   Texts to embed.
+	 * @param array  $options Optional parameters.
+	 * @return array|WP_Error Batch embedding data or WP_Error on failure.
+	 */
+	private function fetch_batch_embeddings_from_api( $api_key, $texts, $options ) {
+		// Default to text-embedding-004 model for embeddings.
+		$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+
+		// Build requests array.
+		$requests = array();
+		foreach ( $texts as $text ) {
+			$sanitized_text = sanitize_textarea_field( $text );
+			if ( '' === $sanitized_text ) {
+				continue;
+			}
+
+			$request = array(
+				'content' => array(
+					'parts' => array(
+						array( 'text' => $sanitized_text ),
+					),
+				),
+			);
+
+			// Optional task type for optimized embeddings.
+			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
+				$task_type = sanitize_text_field( $options['task_type'] );
+				// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
+				$allowed_task_types = array(
+					'RETRIEVAL_QUERY',
+					'RETRIEVAL_DOCUMENT',
+					'SEMANTIC_SIMILARITY',
+					'CLASSIFICATION',
+					'CLUSTERING',
+				);
+
+				if ( in_array( $task_type, $allowed_task_types, true ) ) {
+					$request['taskType'] = $task_type;
+				}
+			}
+
+			$requests[] = $request;
+		}
+
+		if ( empty( $requests ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_batch',
+				__( 'No valid text content was provided for batch embedding after sanitization.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$payload = array( 'requests' => $requests );
+
+		/**
+		 * Allow third parties to filter the Gemini batch embedding payload prior to dispatch.
+		 *
+		 * @param array $payload Prepared request payload.
+		 * @param array $options Original method options.
+		 * @param array $texts   Text content supplied by the caller.
+		 */
+		$payload = apply_filters( 'wp_mcp_ai_gemini_batch_embedding_payload', $payload, $options, $texts );
+
+		$endpoint = sprintf( self::API_BATCH_EMBED_CONTENT, rawurlencode( $model ) );
+		$url      = $endpoint;
+
+		$request_args = array(
+			'headers' => array(
+				'Content-Type'   => 'application/json',
+				'x-goog-api-key' => $api_key,
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => $this->resolve_timeout( $options ),
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_batch_embed',
+			'Sending batch embedding request to Gemini.',
+			array(
+				'model' => $model,
+				'count' => count( $requests ),
+			)
+		);
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini batch embedding request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
+				__( 'Gemini', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini batch embedding response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned an error response for batch embedding.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_batch_embedding_response',
+			'Gemini batch embedding completed.',
+			array(
+				'model' => $model,
+				'count' => count( $requests ),
+			)
+		);
+
+		return $decoded;
+	}
+
 
 		/**
 		 * Perform a streaming chat completion request against Gemini.
