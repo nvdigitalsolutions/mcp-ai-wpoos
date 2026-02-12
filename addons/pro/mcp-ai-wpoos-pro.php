@@ -196,6 +196,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_is_woocommerce_tools_enabled' ) ) {
+	/**
+	 * Check if WooCommerce tools are enabled.
+	 *
+	 * Returns true by default (when setting doesn't exist) to ensure
+	 * WooCommerce integration is available on fresh installs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $settings Optional. Settings array. If not provided, will fetch from options.
+	 * @return bool True if WooCommerce tools are enabled, false otherwise.
+	 */
+	function wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings = null ) {
+		if ( null === $settings ) {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+		}
+
+		return isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -210,6 +231,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Show admin notice and bail.
 			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
 			return;
+		}
+
+		// Load Pro addon vendor autoload (for phpspreadsheet and other PHP 8.1+ dependencies).
+		// This is conditional and only loads when PHP 8.1+ is available.
+		// PHP 7.4 users will see graceful degradation in tools that require these dependencies.
+		if ( version_compare( PHP_VERSION, '8.1.0', '>=' ) ) {
+			$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+			if ( file_exists( $pro_vendor_autoload ) ) {
+				require_once $pro_vendor_autoload;
+			}
 		}
 
 		// Register text domain loading on init hook.
@@ -264,24 +295,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
-		// Load quiz system support files if enabled.
-		if ( ! empty( $settings['enable_quiz_system'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
-			// Load JetEngine quiz CCT if JetEngine is active.
-			if ( function_exists( 'jet_engine' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
-			}
-			// Load Quiz Research & Add page.
-			if ( is_admin() ) {
-				// Check if not in base version.
-				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-				if ( ! $is_base ) {
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
-					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
-				}
-			}
-		}
-
 		// Load WebChat integration system if enabled.
 		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
@@ -316,7 +329,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
 
 		// Load Product Research & Add page if WooCommerce tools enabled.
-		if ( ! empty( $settings['enable_woocommerce_tools'] ) && is_admin() ) {
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) && is_admin() ) {
 			// Check if not in base version and WooCommerce is active.
 			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 			if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
@@ -350,6 +363,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load ECA Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
+
+		// Load Quiz Management CPT registration (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/quiz-management-init.php';
 
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
@@ -773,12 +789,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-policy.php',
 				// Chart.js data visualization tool (enhanced with NPM package).
 				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-health-chart.php',
+				// Industry Standards-Based Health Management Tools (FHIR, HIPAA, PHR).
+				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-health-reminder.php',
+				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-track-vaccinations.php',
+				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php',
+				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-fhir-data.php',
+				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 		}
 
 		// Add WooCommerce tools if enabled.
-		if ( ! empty( $settings['enable_woocommerce_tools'] ) ) {
+		if ( wp_mcp_ai_pro_is_woocommerce_tools_enabled( $settings ) ) {
 			$woo_tools = array(
 				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',

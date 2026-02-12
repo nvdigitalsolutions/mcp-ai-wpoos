@@ -261,6 +261,14 @@ class WP_MCP_AI_Document_Template_Research_Page {
 								'generate_word',
 								'generate_excel',
 								'html_to_pdf',
+								// PDF manipulation and utilities.
+								'merge_pdfs',
+								'add_watermark_to_pdf',
+								'extract_pdf_text',
+								'generate_invoice_pdf',
+								// Excel data tools.
+								'excel_data_import',
+								'excel_data_export',
 								// Email template generation.
 								'generate_email_template',
 								// Template management.

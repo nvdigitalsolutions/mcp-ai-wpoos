@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slash Command Autocomplete - Manual Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #0073aa;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #0073aa;
+        }
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 8px 0;
+        }
+        .chat-form {
+            margin: 20px 0;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .chat-input:focus {
+            outline: none;
+            border-color: #0073aa;
+        }
+        .submit-btn {
+            margin-top: 10px;
+            padding: 12px 24px;
+            background: #0073aa;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        .submit-btn:hover {
+            background: #005a87;
+        }
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .messages {
+            margin-top: 20px;
+            min-height: 150px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+        }
+        .message--user {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+        .message--assistant {
+            background: #f1f8e9;
+            border-left: 3px solid #8bc34a;
+        }
+        .message--error {
+            background: #ffebee;
+            border-left: 3px solid #f44336;
+            color: #c62828;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        .checklist {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .checklist-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        /* Autocomplete styles matching production */
+        .mcp-slash-autocomplete {
+            position: fixed;
+            display: none;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10000;
+            min-width: 300px;
+        }
+        .mcp-slash-autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .mcp-slash-autocomplete-item:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Slash Command Autocomplete - Manual Test</h1>
+        
+        <div class="status info">
+            <strong>Test Purpose:</strong> Verify that the autocomplete dropdown for slash commands now:
+            <ul>
+                <li>✅ Closes when clicking outside the dropdown</li>
+                <li>✅ Closes when the input field loses focus</li>
+                <li>✅ Properly handles item clicks without getting stuck</li>
+                <li>✅ Works smoothly with keyboard navigation</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Chat Interface</h2>
+            
+            <div class="instructions">
+                <h3>📋 Test Checklist</h3>
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test1">
+                        <label for="test1">Type <code>/</code> in the input - autocomplete dropdown should appear</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test2">
+                        <label for="test2">Click on an autocomplete item - command should be inserted and dropdown should close</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test3">
+                        <label for="test3">Type <code>/</code> again, then click outside the dropdown - dropdown should close</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test4">
+                        <label for="test4">Type <code>/</code> again, then click in another area of the page - dropdown should close</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test5">
+                        <label for="test5">Type <code>/</code> again, then tab away from the input - dropdown should close</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test6">
+                        <label for="test6">Use arrow keys to navigate items, press Enter - selected command should be inserted</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test7">
+                        <label for="test7">Type <code>/</code>, press Escape - dropdown should close</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="test8">
+                        <label for="test8">Type <code>/help</code> and submit - command should execute properly</label>
+                    </div>
+                </div>
+            </div>
+
+            <form class="chat-form" id="chat-form">
+                <textarea 
+                    id="chat-input" 
+                    class="chat-input wp-mcp-ai-chat__input" 
+                    rows="3" 
+                    placeholder="Type / to see slash commands..."
+                    required
+                ></textarea>
+                <button type="submit" class="submit-btn">Send</button>
+            </form>
+            
+            <div class="messages wp-mcp-ai-chat__messages" id="messages">
+                <div class="message message--assistant">
+                    👋 Try typing <code>/</code> to see the autocomplete dropdown with available commands!
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Available Commands</h2>
+            <div id="commands-list">Loading commands...</div>
+        </div>
+
+        <div id="init-status" class="status info">
+            <strong>Initialization Status:</strong> <span id="init-message">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Load the actual JavaScript files -->
+    <script>
+        // Mock WordPress data
+        window.mcpAiData = {
+            restUrl: window.location.origin + '/wp-json/',
+            slashCommandEndpoint: window.location.origin + '/wp-json/mcp-ai/v1/slash-commands/execute',
+            slashCommandListEndpoint: window.location.origin + '/wp-json/mcp-ai/v1/slash-commands',
+            nonce: 'test-nonce-' + Date.now()
+        };
+
+        // Mock command data for testing
+        const mockCommands = [
+            { name: 'help', description: 'Display help information about available commands', aliases: ['h', '?'] },
+            { name: 'next-task', description: 'Autonomous task discovery and execution for WordPress content', aliases: ['next'] },
+            { name: 'ship', description: 'Automated content review, optimization, and publishing workflow' },
+            { name: 'clean-content', description: 'Content quality assurance with 3-phase detection (HIGH/MEDIUM/LOW certainty)', aliases: ['clean'] },
+            { name: 'optimize-perf', description: 'Automated performance analysis and optimization for WordPress sites', aliases: ['perf'] },
+            { name: 'sync-docs', description: 'Documentation drift detection and synchronization', aliases: ['docs'] },
+            { name: 'workflow', description: 'Execute and manage custom automation workflows' },
+            { name: 'content-draft', description: 'Start new content with AI assistance' },
+            { name: 'content-enhance', description: 'Improve existing content (SEO, readability, engagement)' },
+            { name: 'seo-optimize', description: 'Apply SEO recommendations to content' }
+        ];
+
+        // Override fetch to return mock data
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (url.includes('slash-commands/execute')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        success: true,
+                        result: `✅ Mock execution of command. In production, this would execute the actual command via the REST API.`
+                    })
+                });
+            } else if (url.includes('slash-commands')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        commands: mockCommands
+                    })
+                });
+            }
+            return originalFetch(url, options);
+        };
+    </script>
+
+    <!-- Load actual command-autocomplete.js -->
+    <script src="../../assets/js/command-autocomplete.js"></script>
+    
+    <!-- Load actual slash-commands.js -->
+    <script src="../../assets/js/slash-commands.js"></script>
+
+    <script>
+        // Display commands list
+        function displayCommandsList() {
+            const commandsList = document.getElementById('commands-list');
+            let html = '<ul style="margin: 0; padding-left: 20px;">';
+            mockCommands.forEach(cmd => {
+                html += `<li style="margin: 8px 0;">`;
+                html += `<code style="font-weight: bold;">/` + cmd.name + `</code> - ` + cmd.description;
+                if (cmd.aliases && cmd.aliases.length > 0) {
+                    html += `<br><small style="color: #666;">Aliases: /` + cmd.aliases.join(', /') + `</small>`;
+                }
+                html += `</li>`;
+            });
+            html += '</ul>';
+            commandsList.innerHTML = html;
+        }
+
+        // Check initialization status
+        function checkInitStatus() {
+            const statusDiv = document.getElementById('init-status');
+            const messageSpan = document.getElementById('init-message');
+            
+            setTimeout(() => {
+                if (window.slashCommands && window.CommandAutocomplete) {
+                    statusDiv.className = 'status success';
+                    messageSpan.textContent = '✅ All systems initialized successfully! Ready for testing.';
+                } else {
+                    statusDiv.className = 'status error';
+                    messageSpan.textContent = '❌ Failed to initialize. Check browser console for errors.';
+                }
+            }, 500);
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                displayCommandsList();
+                checkInitStatus();
+            });
+        } else {
+            displayCommandsList();
+            checkInitStatus();
+        }
+
+        // Log events for debugging
+        window.addEventListener('slash-command-event', function(e) {
+            console.log('[Test] Slash command event:', e.detail);
+        });
+    </script>
+</body>
+</html>

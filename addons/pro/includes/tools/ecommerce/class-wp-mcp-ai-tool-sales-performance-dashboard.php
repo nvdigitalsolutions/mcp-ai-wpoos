@@ -46,8 +46,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		}
 
 		// Check if e-commerce toolkit is enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $settings['enable_ecommerce_toolkit'] );
+		return function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && wp_mcp_ai_is_ecommerce_toolkit_enabled();
 	}
 
 	/**
@@ -62,8 +61,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 			return __( 'Sales performance dashboard requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 		}
 
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_ecommerce_toolkit'] ) ) {
+		if ( function_exists( 'wp_mcp_ai_is_ecommerce_toolkit_enabled' ) && ! wp_mcp_ai_is_ecommerce_toolkit_enabled() ) {
 			return __( 'E-commerce toolkit is not enabled. Please enable it in plugin settings.', 'mcp-ai-wpoos-pro' );
 		}
 
