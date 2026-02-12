@@ -68,6 +68,8 @@ class WP_MCP_AI_Appointment_Metabox_Details extends WP_MCP_AI_Appointment_Metabo
 		$appointment_type = get_post_meta( $post->ID, '_appointment_type', true );
 		$status           = get_post_meta( $post->ID, '_status', true );
 		$location         = get_post_meta( $post->ID, '_location', true );
+		$service_id       = get_post_meta( $post->ID, '_appointment_service_id', true );
+		$staff_id         = get_post_meta( $post->ID, '_appointment_staff_id', true );
 
 		// Set defaults.
 		if ( empty( $appointment_type ) ) {
@@ -76,6 +78,23 @@ class WP_MCP_AI_Appointment_Metabox_Details extends WP_MCP_AI_Appointment_Metabo
 		if ( empty( $status ) ) {
 			$status = 'scheduled';
 		}
+
+		// Get all services and staff for dropdowns.
+		$services = get_posts( array(
+			'post_type'      => 'mcp_service',
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		) );
+
+		$staff_members = get_posts( array(
+			'post_type'      => 'mcp_staff',
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		) );
 
 		// Get author and creation date.
 		$created_by = get_userdata( $post->post_author );
@@ -136,6 +155,44 @@ class WP_MCP_AI_Appointment_Metabox_Details extends WP_MCP_AI_Appointment_Metabo
 					placeholder="<?php esc_attr_e( 'Physical address or video call link', 'mcp-ai-wpoos-pro' ); ?>"
 				/>
 				<span class="description"><?php esc_html_e( 'Meeting location or video conference URL', 'mcp-ai-wpoos-pro' ); ?></span>
+			</p>
+
+			<p>
+				<label for="wp_mcp_ai_appointment_service">
+					<strong><?php esc_html_e( 'Service:', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label>
+				<select
+					id="wp_mcp_ai_appointment_service"
+					name="wp_mcp_ai_appointment_service_id"
+					class="widefat"
+				>
+					<option value=""><?php esc_html_e( '— Select Service —', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $services as $service ) : ?>
+						<option value="<?php echo esc_attr( $service->ID ); ?>" <?php selected( $service_id, $service->ID ); ?>>
+							<?php echo esc_html( $service->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<span class="description"><?php esc_html_e( 'Select the service for this appointment', 'mcp-ai-wpoos-pro' ); ?></span>
+			</p>
+
+			<p>
+				<label for="wp_mcp_ai_appointment_staff">
+					<strong><?php esc_html_e( 'Staff Member:', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label>
+				<select
+					id="wp_mcp_ai_appointment_staff"
+					name="wp_mcp_ai_appointment_staff_id"
+					class="widefat"
+				>
+					<option value=""><?php esc_html_e( '— Select Staff —', 'mcp-ai-wpoos-pro' ); ?></option>
+					<?php foreach ( $staff_members as $staff ) : ?>
+						<option value="<?php echo esc_attr( $staff->ID ); ?>" <?php selected( $staff_id, $staff->ID ); ?>>
+							<?php echo esc_html( $staff->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<span class="description"><?php esc_html_e( 'Assign staff member to this appointment', 'mcp-ai-wpoos-pro' ); ?></span>
 			</p>
 
 			<hr style="margin: 15px 0; border: none; border-top: 1px solid #dcdcde;">
@@ -214,6 +271,26 @@ class WP_MCP_AI_Appointment_Metabox_Details extends WP_MCP_AI_Appointment_Metabo
 		if ( isset( $_POST['wp_mcp_ai_appointment_location'] ) ) {
 			$location = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_appointment_location'] ) );
 			update_post_meta( $post_id, '_location', $location );
+		}
+
+		// Save service ID.
+		if ( isset( $_POST['wp_mcp_ai_appointment_service_id'] ) ) {
+			$service_id = absint( $_POST['wp_mcp_ai_appointment_service_id'] );
+			if ( $service_id > 0 ) {
+				update_post_meta( $post_id, '_appointment_service_id', $service_id );
+			} else {
+				delete_post_meta( $post_id, '_appointment_service_id' );
+			}
+		}
+
+		// Save staff ID.
+		if ( isset( $_POST['wp_mcp_ai_appointment_staff_id'] ) ) {
+			$staff_id = absint( $_POST['wp_mcp_ai_appointment_staff_id'] );
+			if ( $staff_id > 0 ) {
+				update_post_meta( $post_id, '_appointment_staff_id', $staff_id );
+			} else {
+				delete_post_meta( $post_id, '_appointment_staff_id' );
+			}
 		}
 	}
 }
