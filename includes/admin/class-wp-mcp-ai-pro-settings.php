@@ -893,14 +893,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 											<td>
 												<?php if ( $status['available'] ) : ?>
 													<span class="status-indicator available" title="<?php echo esc_attr( $status['message'] ); ?>">
-														✓
+														<?php echo '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbol. ?>
 														<?php if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) : ?>
 															<span class="status-source"><?php esc_html_e( '(CDN)', 'mcp-ai-wpoos' ); ?></span>
 														<?php endif; ?>
 													</span>
 												<?php else : ?>
 													<span class="status-indicator unavailable">
-														✗
+														<?php echo '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static cross symbol. ?>
 													</span>
 												<?php endif; ?>
 											</td>
