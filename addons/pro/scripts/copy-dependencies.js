@@ -409,6 +409,81 @@ const dependencies = [
 			{ src: 'package.json', dest: 'ical-generator/package.json' },
 		],
 	},
+	// ========================================================================
+	// DOCUMENT GENERATION UTILITY PACKAGES
+	// ========================================================================
+	{
+		name: 'pdf-lib',
+		dirs: [
+			{ src: 'cjs', dest: 'pdf-lib/cjs' },
+			{ src: 'es', dest: 'pdf-lib/es' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdf-lib/package.json' },
+		],
+	},
+	{
+		name: 'pdfkit',
+		dirs: [
+			{ src: 'js', dest: 'pdfkit/js' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdfkit/package.json' },
+		],
+	},
+	{
+		name: 'docx',
+		dirs: [
+			{ src: 'build', dest: 'docx/build' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'docx/package.json' },
+		],
+	},
+	{
+		name: 'exceljs',
+		dirs: [
+			{ src: 'dist', dest: 'exceljs/dist' },
+			{ src: 'lib', dest: 'exceljs/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'exceljs/package.json' },
+		],
+	},
+	{
+		name: 'puppeteer-core',
+		dirs: [
+			{ src: 'lib', dest: 'puppeteer-core/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'puppeteer-core/package.json' },
+		],
+	},
+	{
+		name: 'qrcode',
+		files: [
+			{ src: 'build/qrcode.min.js', dest: 'qrcode/qrcode.min.js' },
+			{ src: 'package.json', dest: 'qrcode/package.json' },
+		],
+	},
+	{
+		name: 'turndown',
+		dirs: [
+			{ src: 'lib', dest: 'turndown/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'turndown/package.json' },
+		],
+	},
+	{
+		name: 'cheerio',
+		dirs: [
+			{ src: 'dist', dest: 'cheerio/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'cheerio/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

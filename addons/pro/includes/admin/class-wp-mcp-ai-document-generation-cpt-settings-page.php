@@ -194,18 +194,23 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if NPM packages are installed.
 	 *
+	 * Checks vendor directory first (pre-packaged), then falls back to node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_npm_packages_installed() {
+		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
 		
-		// Check core document generation packages.
-		$core_packages = file_exists( $node_modules . '/pdfkit/package.json' ) &&
-						file_exists( $node_modules . '/docx/package.json' ) &&
-						file_exists( $node_modules . '/exceljs/package.json' );
+		// Check core document generation packages in vendor first, then node_modules.
+		$core_packages = (
+			( file_exists( $vendor_dir . '/pdfkit/package.json' ) || file_exists( $node_modules . '/pdfkit/package.json' ) ) &&
+			( file_exists( $vendor_dir . '/docx/package.json' ) || file_exists( $node_modules . '/docx/package.json' ) ) &&
+			( file_exists( $vendor_dir . '/exceljs/package.json' ) || file_exists( $node_modules . '/exceljs/package.json' ) )
+		);
 		
-		// Check utility packages (optional).
-		$utility_packages = file_exists( $node_modules . '/pdf-lib/package.json' );
+		// Check utility packages (optional) in vendor first, then node_modules.
+		$utility_packages = file_exists( $vendor_dir . '/pdf-lib/package.json' ) || file_exists( $node_modules . '/pdf-lib/package.json' );
 		
 		return $core_packages && $utility_packages;
 	}
@@ -213,11 +218,14 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if optional NPM packages are installed.
 	 *
+	 * Checks vendor directory first (pre-packaged), then falls back to node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_optional_npm_packages_installed() {
+		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $node_modules . '/puppeteer-core/package.json' );
+		return file_exists( $vendor_dir . '/puppeteer-core/package.json' ) || file_exists( $node_modules . '/puppeteer-core/package.json' );
 	}
 
 	/**
