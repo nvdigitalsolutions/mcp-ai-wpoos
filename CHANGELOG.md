@@ -2,6 +2,46 @@
 
 ## [Unreleased]
 
+### Added - February 2026
+- **Package Pre-Bundling System (February 12, 2026)**: Enhanced vendor directory pre-bundling for critical npm packages
+  - Added pdf-lib ^1.17.1 to vendor copy script for PDF manipulation capabilities
+  - Added puppeteer-core ^21.0.0 to vendor copy script (optional) for advanced HTML rendering
+  - Added core document generation packages: pdfkit, docx, exceljs, qrcode, turndown, cheerio
+  - Updated package detection logic to check vendor directory before node_modules
+  - Eliminates need for `npm install` on production servers, faster deployment
+  - See [FEBRUARY_2026_UPDATES.md](docs/FEBRUARY_2026_UPDATES.md)
+
+### Fixed - February 2026
+- **Product Research Page Rendering (February 10, 2026)**: Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
+  - Changed from CPT pattern `product_page_*` to custom menu pattern `wp-mcp-ai-ecommerce-toolkit_page_*`
+  - See [PRODUCT_RESEARCH_FIX_SUMMARY.md](PRODUCT_RESEARCH_FIX_SUMMARY.md)
+- **Product Research Tab System (February 11, 2026)**: Fixed all workflow tabs displaying simultaneously
+  - Changed hook matching to flexible strpos() check for reliability
+  - Added inline display:none styles for defensive fallback
+  - Enhanced CSS specificity with !important rules to prevent override
+  - See [PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md](PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+- **Product Research CSS/JS Loading (February 11, 2026)**: Improved asset enqueuing priority and hook detection
+- **Duplicate Menu Item (February 10, 2026)**: Removed duplicate "Research & Add" tab from E-commerce Toolkit settings page
+- **Pro Workflow Builder Stability (February 4-5, 2026)**: Multiple fixes for React-based workflow builder
+  - Fixed React asset loading and initialization issues
+  - Fixed double instantiation causing duplicate DOM elements
+  - Fixed initialization timing race conditions
+  - Fixed menu placement inconsistencies
+  - Fixed empty page display issue
+  - See quick reference: `docs/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md`
+- **OAuth & API Connections (February 3, 2026)**:
+  - Fixed Google OAuth approval prompt not displaying to users
+  - Fixed Yahoo OAuth redirect URL construction issues
+  - Fixed Mailjet API authentication credential handling
+- **Admin Menu Priority (February 4, 2026)**: Adjusted menu priority values for consistent ordering across admin interface
+- **E-commerce Toolkit (February 10, 2026)**: Now enabled by default for new installations to reduce setup friction
+
+### Documentation - February 2026
+- Added comprehensive February 2026 updates summary (`docs/FEBRUARY_2026_UPDATES.md`)
+- Added detailed fix documentation for all product research page issues in `docs/fixes/`
+- Added Pro Workflow Builder fix quick reference guide with visual flow diagrams
+- Created root summaries: PRODUCT_RESEARCH_FIX_SUMMARY.md, PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md
+
 ### Slash Commands & Workflow System
 - **Slash Commands Implementation - Phase 1 Complete (February 3, 2026)**: Comprehensive slash command system for content management, optimization, and workflow automation
   - **Core Components**: Parser, Handler, Validator, Audit, Performance Optimizer, Workflow Orchestrator
