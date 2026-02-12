@@ -372,6 +372,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'gemini-2.5-flash',
 				),
 
+				// OpenAI Caching Settings.
+				'enable_openai_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OpenAI API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache OpenAI API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and embedding responses to reduce API calls and improve performance. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'openai_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'OpenAI Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the OpenAI model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+				'openai_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'OpenAI Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
+				),
+
 				// Anthropic Settings.
 				'enable_anthropic'                   => array(
 					'type'           => 'checkbox',
@@ -518,6 +545,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '5',
 				),
 
+				// Gemini Caching Settings.
+				'enable_gemini_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Gemini API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists, token counts, and embedding responses to reduce API calls and improve performance. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'gemini_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Gemini model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+				'gemini_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
+				),
+				'gemini_token_count_cache_ttl'       => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Token Count Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache token counting results. Token counts are deterministic for the same input and model. Default: 1 hour (3600 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '3600',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+
 				// Gemini Audio Settings (Speech-to-Text & Text-to-Speech).
 				'gemini_audio_language'              => array(
 					'type'        => 'text',
@@ -577,6 +640,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Ollama Network Interface (Optional)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your Ollama is on a different machine (e.g., 192.168.2.100), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
+				),
+
+				// Ollama Caching Settings.
+				'enable_ollama_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Ollama API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Ollama API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and embedding responses to reduce API calls and improve performance. Uses shorter TTLs since Ollama is local. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'ollama_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'Ollama Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Ollama model list. Since Ollama is local, shorter caching is sufficient. Default: 5 minutes (300 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '300',
+					'min'         => '60',
+					'max'         => '3600',
+					'step'        => '60',
+				),
+				'ollama_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Ollama Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
 				),
 
 				// LM Studio Settings.
