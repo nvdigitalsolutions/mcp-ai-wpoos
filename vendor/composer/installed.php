@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-google-drive-connection',
-        'version' => 'dev-copilot/fix-google-drive-connection',
-        'reference' => '1fd2dc7e1a9efa36ee929454a0052378d387c4bd',
+        'pretty_version' => 'dev-copilot/fix-booking-toolkit-in-admin',
+        'version' => 'dev-copilot/fix-booking-toolkit-in-admin',
+        'reference' => 'ad5eb9d16594c70f8082c5a888cf79d1269f022a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-google-drive-connection',
-            'version' => 'dev-copilot/fix-google-drive-connection',
-            'reference' => '1fd2dc7e1a9efa36ee929454a0052378d387c4bd',
+            'pretty_version' => 'dev-copilot/fix-booking-toolkit-in-admin',
+            'version' => 'dev-copilot/fix-booking-toolkit-in-admin',
+            'reference' => 'ad5eb9d16594c70f8082c5a888cf79d1269f022a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
