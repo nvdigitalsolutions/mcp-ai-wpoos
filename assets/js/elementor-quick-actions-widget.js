@@ -296,12 +296,12 @@
 		 * Handle tool error
 		 *
 		 * @param {Object} xhr XHR object
-		 * @param {string} toolName Tool name
+		 * @param {string} _toolName Tool name
 		 */
-		handleToolError(xhr, toolName) {
+		handleToolError(xhr, _toolName) {
 			this.hideProgress();
 			
-			let errorMessage = 'An error occurred while executing ' + toolName + '.';
+			let errorMessage = 'An error occurred while executing the tool.';
 			if (xhr.responseJSON && xhr.responseJSON.data) {
 				errorMessage = xhr.responseJSON.data;
 			}
@@ -313,9 +313,9 @@
 		 * Show result preview
 		 *
 		 * @param {Object} result Result data
-		 * @param {string} toolName Tool name
+		 * @param {string} _toolName Tool name (unused)
 		 */
-		showResultPreview(result, toolName) {
+		showResultPreview(result, _toolName) {
 			// Format result for display
 			let content = '';
 			
