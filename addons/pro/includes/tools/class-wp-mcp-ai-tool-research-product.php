@@ -42,6 +42,34 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	const MAX_RESULTS_PER_QUERY = 5;
 
 	/**
+	 * Maximum number of sources to display in prompt.
+	 *
+	 * @var int
+	 */
+	const MAX_DISPLAYED_SOURCES = 5;
+
+	/**
+	 * Number of queries for basic depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_BASIC = 1;
+
+	/**
+	 * Number of queries for standard depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_STANDARD = 2;
+
+	/**
+	 * Number of queries for comprehensive depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_COMPREHENSIVE = 3;
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -434,11 +462,11 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Determine total number of queries based on depth.
 		// Note: num_queries is the TOTAL including the main query above.
 		if ( 'basic' === $depth ) {
-			$num_queries = 1; // Just the main query.
+			$num_queries = self::QUERIES_BASIC; // Just the main query.
 		} elseif ( 'comprehensive' === $depth ) {
-			$num_queries = 3; // Main query + 2 additional.
+			$num_queries = self::QUERIES_COMPREHENSIVE; // Main query + 2 additional.
 		} else {
-			$num_queries = 2; // Main query + 1 additional (standard).
+			$num_queries = self::QUERIES_STANDARD; // Main query + 1 additional (standard).
 		}
 
 		// Add focus area queries.
@@ -514,7 +542,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
 			$prompt .= "**Available Research Sources:**\n";
-			$source_count = min( 5, count( $search_results['sources'] ) );
+			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
 				$source = $search_results['sources'][ $i ];
 				$prompt .= sprintf(
