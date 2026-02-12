@@ -73,6 +73,14 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$this->option_name,
 			$this->option_name . '_section'
 		);
+
+		add_settings_field(
+			'enable_research',
+			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_enable_research_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
 	}
 
 	/**
@@ -132,8 +140,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * Render Node.js status field.
 	 */
 	public function render_nodejs_status_field() {
-		$nodejs_available = $this->check_nodejs_available();
-		$npm_packages     = $this->check_npm_packages_installed();
+		$nodejs_available     = $this->check_nodejs_available();
+		$npm_packages         = $this->check_npm_packages_installed();
+		$optional_npm_packages = $this->check_optional_npm_packages_installed();
 
 		?>
 		<p>
@@ -145,17 +154,25 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			<?php endif; ?>
 		</p>
 		<p>
-			<strong><?php esc_html_e( 'NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs, pdf-lib)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
 				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos-pro' ); ?></span>
 				<br>
 				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
 			<?php endif; ?>
 		</p>
+		<p>
+			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<?php if ( $optional_npm_packages ) : ?>
+				<span style="color: green;">✓ <?php esc_html_e( 'Installed (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php else : ?>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Installed (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php endif; ?>
+		</p>
 		<p class="description">
-			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks are available for basic functionality.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -181,9 +198,50 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function check_npm_packages_installed() {
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $node_modules . '/pdfkit/package.json' ) &&
-				file_exists( $node_modules . '/docx/package.json' ) &&
-				file_exists( $node_modules . '/exceljs/package.json' );
+		
+		// Check core document generation packages.
+		$core_packages = file_exists( $node_modules . '/pdfkit/package.json' ) &&
+						file_exists( $node_modules . '/docx/package.json' ) &&
+						file_exists( $node_modules . '/exceljs/package.json' );
+		
+		// Check utility packages (optional).
+		$utility_packages = file_exists( $node_modules . '/pdf-lib/package.json' );
+		
+		return $core_packages && $utility_packages;
+	}
+
+	/**
+	 * Check if optional NPM packages are installed.
+	 *
+	 * @return bool
+	 */
+	protected function check_optional_npm_packages_installed() {
+		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
+		return file_exists( $node_modules . '/puppeteer-core/package.json' );
+	}
+
+	/**
+	 * Render enable research field.
+	 */
+	public function render_enable_research_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : false;
+
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
+				id="enable_research"
+				value="1"
+				<?php checked( $value, true ); ?>
+			/>
+			<?php esc_html_e( 'Enable the Research & Add page for document template research', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create document templates using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
 	}
 
 	/**
@@ -217,8 +275,16 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			<h3><?php esc_html_e( 'NPM Packages Integrated', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
 				<li><strong>pdfkit</strong> (500K/week): Advanced PDF generation with vector graphics</li>
+				<li><strong>pdf-lib</strong> (700K/week): PDF manipulation - merge, watermark, modify existing PDFs</li>
 				<li><strong>docx</strong> (2M/week): Microsoft Word document generation</li>
 				<li><strong>exceljs</strong> (2M/week): Excel spreadsheet creation and manipulation</li>
+				<li><strong>puppeteer-core</strong> (2M/week, optional): Advanced HTML to PDF rendering with full browser support</li>
+			</ul>
+
+			<h3><?php esc_html_e( 'Alternative Technologies', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'Command-line tools: pdftk (PDF manipulation), pdftotext (text extraction), wkhtmltopdf (HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'PHP fallbacks: DomPDF, mPDF, TCPDF for PDF generation when Node.js unavailable', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 
 			<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -241,21 +307,27 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function get_tools_list() {
 		return array(
-			// Primary Document Generation Tools.
+			// Core Document Generation Tools.
 			'pro_pdf_document'     => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
 			'pro_word_document'    => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
 			'pro_excel_document'   => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
 
-			// Document Operations & Capabilities.
-			'generate_pdf'         => __( 'Generate PDF Document', 'mcp-ai-wpoos-pro' ),
-			'generate_word'        => __( 'Generate Word Document', 'mcp-ai-wpoos-pro' ),
-			'generate_excel'       => __( 'Generate Excel Spreadsheet', 'mcp-ai-wpoos-pro' ),
-			'html_to_pdf'          => __( 'Convert HTML to PDF', 'mcp-ai-wpoos-pro' ),
-			'merge_pdfs'           => __( 'Merge Multiple PDFs', 'mcp-ai-wpoos-pro' ),
+			// Simplified Generation Tools.
+			'generate_pdf'         => __( 'Generate PDF', 'mcp-ai-wpoos-pro' ),
+			'generate_word'        => __( 'Generate Word', 'mcp-ai-wpoos-pro' ),
+			'generate_excel'       => __( 'Generate Excel', 'mcp-ai-wpoos-pro' ),
+
+			// Utility Tools.
+			'html_to_pdf'          => __( 'HTML to PDF', 'mcp-ai-wpoos-pro' ),
+			'merge_pdfs'           => __( 'Merge PDFs', 'mcp-ai-wpoos-pro' ),
 			'add_watermark_to_pdf' => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
-			'extract_pdf_text'     => __( 'Extract Text from PDF', 'mcp-ai-wpoos-pro' ),
-			'excel_data_import'    => __( 'Import Data from Excel', 'mcp-ai-wpoos-pro' ),
-			'excel_data_export'    => __( 'Export Data to Excel', 'mcp-ai-wpoos-pro' ),
+			'extract_pdf_text'     => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
+
+			// Data Import/Export Tools.
+			'excel_data_import'    => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
+			'excel_data_export'    => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
+
+			// Template-Based Tools.
 			'generate_invoice_pdf' => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
 		);
 	}
@@ -285,8 +357,15 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$sanitized['enable_branding'] = false;
 		}
 
+		if ( isset( $input['enable_research'] ) ) {
+			$sanitized['enable_research'] = (bool) $input['enable_research'];
+		} else {
+			// Checkbox not checked.
+			$sanitized['enable_research'] = false;
+		}
+
 		return $sanitized;
 	}
 }
 
-// Note: WP_MCP_AI_Document_Generation_Settings_Page instantiates itself at the bottom of its own file.
+// Initialize - instantiated in document-generation-toolkit-init.php when toolkit is enabled.

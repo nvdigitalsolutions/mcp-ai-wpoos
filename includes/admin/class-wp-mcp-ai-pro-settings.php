@@ -38,18 +38,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		/**
 		 * Get npm package information from package.json.
 		 *
-		 * Parses package.json to extract dependencies and devDependencies.
+		 * Parses package.json to extract dependencies, devDependencies, and optionalDependencies.
 		 * Now includes Pro addon packages as well.
 		 * Lightweight approach that doesn't require npm CLI.
 		 *
-		 * @return array Array containing dependencies and devDependencies.
+		 * @return array Array containing dependencies, devDependencies, and optionalDependencies.
 		 */
 		public static function get_npm_packages() {
 			$package_json_path = WP_MCP_AI_PATH . 'package.json';
 			$packages          = array(
-				'dependencies'    => array(),
-				'devDependencies' => array(),
-				'error'           => null,
+				'dependencies'         => array(),
+				'devDependencies'      => array(),
+				'optionalDependencies' => array(),
+				'error'                => null,
 			);
 
 			if ( ! file_exists( $package_json_path ) ) {
@@ -79,6 +80,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				$packages['devDependencies'] = $package_data['devDependencies'];
 			}
 
+			// Extract optionalDependencies.
+			if ( isset( $package_data['optionalDependencies'] ) && is_array( $package_data['optionalDependencies'] ) ) {
+				$packages['optionalDependencies'] = $package_data['optionalDependencies'];
+			}
+
 			// Extract project metadata.
 			$packages['name']    = isset( $package_data['name'] ) ? $package_data['name'] : 'unknown';
 			$packages['version'] = isset( $package_data['version'] ) ? $package_data['version'] : 'unknown';
@@ -99,10 +105,65 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 							if ( isset( $pro_package_data['devDependencies'] ) && is_array( $pro_package_data['devDependencies'] ) ) {
 								$packages['devDependencies'] = array_merge( $packages['devDependencies'], $pro_package_data['devDependencies'] );
 							}
+							// Pro addon doesn't have optionalDependencies, but check anyway.
+							if ( isset( $pro_package_data['optionalDependencies'] ) && is_array( $pro_package_data['optionalDependencies'] ) ) {
+								$packages['optionalDependencies'] = array_merge( $packages['optionalDependencies'], $pro_package_data['optionalDependencies'] );
+							}
 						}
 					}
 				}
 			}
+
+			return $packages;
+		}
+
+		/**
+		 * Get Composer package information from composer.json.
+		 *
+		 * Parses composer.json to extract require and require-dev dependencies.
+		 * Lightweight approach that doesn't require Composer CLI.
+		 *
+		 * @return array Array containing require and require-dev dependencies.
+		 */
+		public static function get_composer_packages() {
+			$composer_json_path = WP_MCP_AI_PATH . 'composer.json';
+			$packages           = array(
+				'require'     => array(),
+				'require-dev' => array(),
+				'error'       => null,
+			);
+
+			if ( ! file_exists( $composer_json_path ) ) {
+				$packages['error'] = 'composer.json not found';
+				return $packages;
+			}
+
+			$json_content = file_get_contents( $composer_json_path );
+			if ( false === $json_content ) {
+				$packages['error'] = 'Unable to read composer.json';
+				return $packages;
+			}
+
+			$composer_data = json_decode( $json_content, true );
+			if ( null === $composer_data ) {
+				$packages['error'] = 'Invalid JSON in composer.json';
+				return $packages;
+			}
+
+			// Extract require dependencies.
+			if ( isset( $composer_data['require'] ) && is_array( $composer_data['require'] ) ) {
+				$packages['require'] = $composer_data['require'];
+			}
+
+			// Extract require-dev dependencies.
+			if ( isset( $composer_data['require-dev'] ) && is_array( $composer_data['require-dev'] ) ) {
+				$packages['require-dev'] = $composer_data['require-dev'];
+			}
+
+			// Extract project metadata.
+			$packages['name']        = isset( $composer_data['name'] ) ? $composer_data['name'] : 'unknown';
+			$packages['description'] = isset( $composer_data['description'] ) ? $composer_data['description'] : '';
+			$packages['type']        = isset( $composer_data['type'] ) ? $composer_data['type'] : 'unknown';
 
 			return $packages;
 		}
@@ -940,6 +1001,76 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Render Composer packages table.
+		 *
+		 * Displays Composer packages in a WordPress standard table format.
+		 *
+		 * @param array  $packages Package list.
+		 * @param string $title    Table title.
+		 * @return void
+		 */
+		private static function render_composer_table( $packages, $title ) {
+			if ( empty( $packages ) ) {
+				echo '<p><em>' . esc_html__( 'No packages found.', 'mcp-ai-wpoos' ) . '</em></p>';
+				return;
+			}
+
+			?>
+			<h4><?php echo esc_html( $title ); ?> <span class="count">(<?php echo count( $packages ); ?>)</span></h4>
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th style="width: 50%;"><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 25%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					// Sort packages alphabetically.
+					ksort( $packages );
+					foreach ( $packages as $package => $version ) :
+						// Check if package is installed (vendor autoload exists).
+						$package_installed = self::check_composer_package_installed( $package );
+						$status_class      = $package_installed ? 'installed' : 'not-installed';
+						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
+						?>
+						<tr>
+							<td><code><?php echo esc_html( $package ); ?></code></td>
+							<td><code><?php echo esc_html( $version ); ?></code></td>
+							<td>
+								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status_class ); ?>">
+									<?php echo esc_html( $status_text ); ?>
+								</span>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php
+		}
+
+		/**
+		 * Check if a Composer package is installed.
+		 *
+		 * Checks if package exists in vendor directory by looking for composer autoload.
+		 *
+		 * @param string $package Package name.
+		 * @return bool True if package appears to be installed.
+		 */
+		private static function check_composer_package_installed( $package ) {
+			// Check if vendor autoload exists (basic check for Composer installation).
+			$vendor_autoload = WP_MCP_AI_PATH . 'vendor/autoload.php';
+			if ( ! file_exists( $vendor_autoload ) ) {
+				return false;
+			}
+
+			// Derive vendor path from package name (e.g., 'symfony/http-client' -> 'vendor/symfony/http-client').
+			$path = WP_MCP_AI_PATH . 'vendor/' . $package;
+			return file_exists( $path );
+		}
+
+		/**
 		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
 		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
@@ -1120,6 +1251,35 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// These packages are not in base, so return false if not found.
+				return false;
+			}
+
+			// Check for LangChain packages (optional dependencies).
+			// These packages are used in langchain-orchestration.js and langchain-tool-adapter.js.
+			$langchain_packages = array(
+				'langchain',
+				'@langchain/core',
+				'@langchain/community',
+			);
+			if ( in_array( $package, $langchain_packages, true ) ) {
+				// Priority 1: Check if langchain minified bundles exist (production).
+				$langchain_orchestration = WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.min.js';
+				$langchain_adapter       = WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.min.js';
+				if ( file_exists( $langchain_orchestration ) || file_exists( $langchain_adapter ) ) {
+					return true;
+				}
+				// Priority 2: Check if source files exist (development).
+				$langchain_orchestration_src = WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.js';
+				$langchain_adapter_src       = WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.js';
+				if ( file_exists( $langchain_orchestration_src ) || file_exists( $langchain_adapter_src ) ) {
+					return true;
+				}
+				// Priority 3: Check base node_modules (development).
+				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
+				if ( file_exists( $node_modules_path ) ) {
+					return true;
+				}
+				// If none exist, return false (not installed).
 				return false;
 			}
 
@@ -1316,10 +1476,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			$packages        = self::get_npm_packages();
+			$composer        = self::get_composer_packages();
 			$pro_status      = self::get_pro_toolkit_status();
 			$toolkit_status  = self::get_individual_toolkit_status();
 			$toolkit_details = self::get_toolkit_details();
-			$total_packages  = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
+			$total_packages  = count( $packages['dependencies'] ) + count( $packages['devDependencies'] ) + count( $packages['optionalDependencies'] );
+			$total_composer  = count( $composer['require'] ) + count( $composer['require-dev'] );
 			?>
 			<div class="wrap wp-mcp-ai-pro-settings">
 				<h1>
@@ -1360,6 +1522,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 							<div style="margin-top: 30px;"></div>
 							
 							<?php self::render_individual_toolkits_status( $toolkit_status ); ?>
+
+							<!-- Composer Packages -->
+							<?php if ( ! isset( $composer['error'] ) ) : ?>
+								<div style="margin-top: 30px;"></div>
+								
+								<h3><?php esc_html_e( 'Composer Packages', 'mcp-ai-wpoos' ); ?> <span class="count">(<?php echo absint( $total_composer ); ?>)</span></h3>
+								<p class="description" style="margin-bottom: 15px;">
+									<?php esc_html_e( 'PHP dependencies managed by Composer for server-side functionality.', 'mcp-ai-wpoos' ); ?>
+								</p>
+								
+								<?php self::render_composer_table( $composer['require'], __( 'Production Dependencies', 'mcp-ai-wpoos' ) ); ?>
+								
+								<div style="margin-top: 20px;"></div>
+								
+								<?php self::render_composer_table( $composer['require-dev'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
+							<?php endif; ?>
 						</div>
 					</div>
 
@@ -1374,6 +1552,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<div style="margin-top: 30px;"></div>
 								
 								<?php self::render_packages_table( $packages['devDependencies'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
+
+								<?php if ( ! empty( $packages['optionalDependencies'] ) ) : ?>
+									<div style="margin-top: 30px;"></div>
+									
+									<?php self::render_packages_table( $packages['optionalDependencies'], __( 'Optional Dependencies', 'mcp-ai-wpoos' ) ); ?>
+								<?php endif; ?>
 
 								<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
 									<p style="margin: 0;">
