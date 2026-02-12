@@ -1076,15 +1076,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
-		 * Check if a package is installed by looking for vendor files or bundled builds.
-		 *
-		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
-		 * This ensures production deployments with vendor files are detected before dev fallbacks.
-		 *
-		 * @param string $package Package name.
-		 * @return bool True if package appears to be installed.
-		 */
-		/**
 		 * Get detailed package status including CDN availability.
 		 *
 		 * Returns an array with 'available', 'source', and 'message' keys.
@@ -1122,6 +1113,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			);
 		}
 
+		/**
+		 * Check if a package is installed by looking for vendor files or bundled builds.
+		 *
+		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
+		 * This ensures production deployments with vendor files are detected before dev fallbacks.
+		 *
+		 * @param string $package Package name.
+		 * @return bool True if package appears to be installed.
+		 */
 		private static function check_package_installed( $package ) {
 			// Check for base vendor copies (chart.js, vectorizer).
 			if ( 'chart.js' === $package ) {

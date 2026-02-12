@@ -81,7 +81,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 	);
 
 	/**
-	 * Get list of CDN-managed package names
+	 * Get list of CDN-managed package names.
 	 *
 	 * @return array List of package names that are loaded from CDN.
 	 */
