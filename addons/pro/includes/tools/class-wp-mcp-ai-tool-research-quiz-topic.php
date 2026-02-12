@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * educational topics and generate quiz content.
  */
 class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -299,6 +300,9 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 				'question_count' => count( isset( $quiz_data['questions'] ) ? $quiz_data['questions'] : array() ),
 			)
 		);
+
+		// Generate user-friendly report message.
+		$quiz_data['report'] = $this->build_quiz_report_message( $quiz_data, $search_results );
 
 		return $quiz_data;
 	}
@@ -847,5 +851,150 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return $quiz_data;
+	}
+
+	/**
+	 * Build a user-friendly quiz report message.
+	 *
+	 * @param array $quiz_data       Quiz data from research.
+	 * @param array $search_results  Search results metadata.
+	 * @return string Markdown-formatted report.
+	 */
+	protected function build_quiz_report_message( $quiz_data, $search_results ) {
+		$report = "# 📝 Quiz Research Complete\n\n";
+
+		// Quiz title and basic info.
+		$report .= "## **" . esc_html( $quiz_data['title'] ) . "**\n\n";
+
+		if ( ! empty( $quiz_data['description'] ) ) {
+			$report .= esc_html( $quiz_data['description'] ) . "\n\n";
+		}
+
+		// Metadata section.
+		$report .= "---\n\n";
+		$report .= "### 📊 Quiz Details\n\n";
+
+		if ( ! empty( $quiz_data['subject'] ) ) {
+			$report .= "**Subject Area:** " . esc_html( $quiz_data['subject'] ) . "\n\n";
+		}
+
+		$report .= "**Difficulty Level:** " . ucfirst( esc_html( $quiz_data['difficulty'] ) ) . "\n\n";
+
+		if ( ! empty( $quiz_data['topic'] ) ) {
+			$report .= "**Topic:** " . esc_html( $quiz_data['topic'] ) . "\n\n";
+		}
+
+		$question_count = count( $quiz_data['questions'] );
+		$report        .= "**Number of Questions:** {$question_count}\n\n";
+
+		if ( ! empty( $quiz_data['time_limit'] ) ) {
+			$report .= "**Estimated Time:** " . absint( $quiz_data['time_limit'] ) . " minutes\n\n";
+		}
+
+		if ( ! empty( $quiz_data['pass_score'] ) ) {
+			$report .= "**Passing Score:** " . absint( $quiz_data['pass_score'] ) . "%\n\n";
+		}
+
+		// Sample questions section - show up to 5 questions.
+		if ( ! empty( $quiz_data['questions'] ) ) {
+			$report       .= "---\n\n";
+			$report       .= "### 📚 Sample Questions\n\n";
+			$sample_count  = min( 5, count( $quiz_data['questions'] ) );
+
+			for ( $i = 0; $i < $sample_count; $i++ ) {
+				$question = $quiz_data['questions'][ $i ];
+				$report  .= "**Question " . ( $i + 1 ) . ":** " . esc_html( $question['question'] ) . "\n\n";
+
+				if ( ! empty( $question['options'] ) && is_array( $question['options'] ) ) {
+					foreach ( $question['options'] as $key => $value ) {
+						$is_correct = ( $key === $question['correct_answer'] );
+						$marker     = $is_correct ? '✓' : ' ';
+						$report    .= "- [{$marker}] **{$key}.** " . esc_html( $value ) . "\n";
+					}
+					$report .= "\n";
+				}
+
+				if ( ! empty( $question['explanation'] ) ) {
+					$report .= "_Explanation:_ " . esc_html( $question['explanation'] ) . "\n\n";
+				}
+			}
+
+			if ( $question_count > $sample_count ) {
+				$remaining = $question_count - $sample_count;
+				$report   .= "_... and {$remaining} more question" . ( $remaining > 1 ? 's' : '' ) . "_\n\n";
+			}
+		}
+
+		// Topics covered section.
+		if ( ! empty( $quiz_data['questions'] ) ) {
+			$report .= "---\n\n";
+			$report .= "### 🎯 Learning Objectives\n\n";
+			$report .= "This quiz covers the following aspects of **" . esc_html( $quiz_data['topic'] ) . "**:\n\n";
+
+			// Extract unique topics from questions (first 10 questions for analysis).
+			$topics_limit = min( 10, count( $quiz_data['questions'] ) );
+			for ( $i = 0; $i < $topics_limit; $i++ ) {
+				$question = $quiz_data['questions'][ $i ];
+				$report  .= "- " . esc_html( $question['question'] ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Target audience.
+		$report .= "---\n\n";
+		$report .= "### 👥 Target Audience\n\n";
+		switch ( $quiz_data['difficulty'] ) {
+			case 'beginner':
+				$report .= "This quiz is designed for **beginners** who are new to " . esc_html( $quiz_data['topic'] ) . " and want to learn the fundamentals.\n\n";
+				break;
+			case 'advanced':
+				$report .= "This quiz is designed for **advanced learners** with deep knowledge of " . esc_html( $quiz_data['topic'] ) . " seeking to test expert-level understanding.\n\n";
+				break;
+			default:
+				$report .= "This quiz is designed for **intermediate learners** with basic knowledge of " . esc_html( $quiz_data['topic'] ) . " who want to deepen their understanding.\n\n";
+		}
+
+		// Sources section.
+		if ( ! empty( $quiz_data['sources'] ) ) {
+			$report        .= "---\n\n";
+			$report        .= "### 🔗 Research Sources\n\n";
+			$sources_count  = count( $quiz_data['sources'] );
+			$report        .= "This quiz was researched using **{$sources_count}** authoritative source" . ( $sources_count > 1 ? 's' : '' ) . ":\n\n";
+
+			$display_limit = min( 5, count( $quiz_data['sources'] ) );
+			for ( $i = 0; $i < $display_limit; $i++ ) {
+				$source  = $quiz_data['sources'][ $i ];
+				$report .= ( $i + 1 ) . ". [" . esc_url( $source ) . "](" . esc_url( $source ) . ")\n";
+			}
+
+			if ( $sources_count > $display_limit ) {
+				$remaining = $sources_count - $display_limit;
+				$report   .= "\n_... and {$remaining} more source" . ( $remaining > 1 ? 's' : '' ) . "_\n";
+			}
+			$report .= "\n";
+		}
+
+		// Research metadata.
+		if ( ! empty( $quiz_data['research_provider'] ) || ! empty( $quiz_data['research_model'] ) ) {
+			$report .= "---\n\n";
+			$report .= "### 🤖 Research Details\n\n";
+
+			if ( ! empty( $quiz_data['research_provider'] ) ) {
+				$report .= "**AI Provider:** " . ucfirst( esc_html( $quiz_data['research_provider'] ) ) . "\n\n";
+			}
+
+			if ( ! empty( $quiz_data['research_model'] ) ) {
+				$report .= "**Model:** " . esc_html( $quiz_data['research_model'] ) . "\n\n";
+			}
+
+			if ( ! empty( $quiz_data['researched_at'] ) ) {
+				$report .= "**Researched:** " . esc_html( $quiz_data['researched_at'] ) . "\n\n";
+			}
+		}
+
+		$report .= "---\n\n";
+		$report .= "✅ **Quiz research complete!** You can now create a quiz using this data or request modifications.\n";
+
+		return $report;
 	}
 }

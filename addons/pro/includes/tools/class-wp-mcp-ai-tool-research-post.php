@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * blog post topics and generate ready-to-publish content.
  */
 class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -295,6 +296,9 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 			return $post_data;
 		}
+
+		// Build user-friendly research report for chat display.
+		$post_data['report'] = $this->build_post_report_message( $post_data, $search_results, $word_count );
 
 		// Cache the results for 24 hours.
 		wp_cache_set( $cache_key, $post_data, 'wp_mcp_ai_post_research', DAY_IN_SECONDS );
@@ -895,5 +899,103 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return $post_data;
+	}
+
+	/**
+	 * Build a user-friendly post research report message.
+	 *
+	 * This creates a comprehensive summary of the research findings
+	 * that can be displayed in the chat client.
+	 *
+	 * @param array $post_data      Parsed post data.
+	 * @param array $search_results Search results with sources.
+	 * @param int   $word_count     Target word count.
+	 * @return string Formatted research report message.
+	 */
+	protected function build_post_report_message( $post_data, $search_results, $word_count ) {
+		$report = "## Blog Post Research Complete\n\n";
+
+		// Post title.
+		if ( ! empty( $post_data['title'] ) ) {
+			$report .= "**Title:** " . esc_html( $post_data['title'] ) . "\n\n";
+		}
+
+		// Target word count.
+		if ( ! empty( $word_count ) ) {
+			$report .= "**Target Word Count:** " . absint( $word_count ) . " words\n";
+		}
+
+		// Template format.
+		if ( ! empty( $post_data['template'] ) ) {
+			$template_name = ucwords( str_replace( '-', ' ', $post_data['template'] ) );
+			$report       .= "**Template:** " . esc_html( $template_name ) . "\n\n";
+		}
+
+		// Content outline/structure.
+		if ( ! empty( $post_data['content'] ) ) {
+			$report .= "### Content Outline\n";
+			// Extract headings from content for outline.
+			$content = $post_data['content'];
+			preg_match_all( '/<h[2-3][^>]*>(.*?)<\/h[2-3]>/i', $content, $matches );
+			if ( ! empty( $matches[1] ) ) {
+				foreach ( $matches[1] as $heading ) {
+					$report .= "- " . wp_strip_all_tags( $heading ) . "\n";
+				}
+			} else {
+				// If no headings found, provide a brief excerpt.
+				$plain_content = wp_strip_all_tags( $content );
+				$excerpt       = substr( $plain_content, 0, 200 );
+				if ( strlen( $plain_content ) > 200 ) {
+					$excerpt .= '...';
+				}
+				$report .= $excerpt . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// SEO keywords.
+		if ( ! empty( $post_data['keywords'] ) && is_array( $post_data['keywords'] ) ) {
+			$report .= "### SEO Keywords\n";
+			$report .= implode( ', ', array_map( 'esc_html', $post_data['keywords'] ) ) . "\n\n";
+		}
+
+		// Meta description.
+		if ( ! empty( $post_data['meta_description'] ) ) {
+			$report .= "**Meta Description:** " . esc_html( $post_data['meta_description'] ) . "\n\n";
+		}
+
+		// Target audience (inferred from categories/tags).
+		if ( ! empty( $post_data['categories'] ) && is_array( $post_data['categories'] ) ) {
+			$report .= "**Categories:** " . implode( ', ', array_map( 'esc_html', $post_data['categories'] ) ) . "\n";
+		}
+
+		if ( ! empty( $post_data['tags'] ) && is_array( $post_data['tags'] ) ) {
+			$report .= "**Tags:** " . implode( ', ', array_map( 'esc_html', $post_data['tags'] ) ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Word count estimate (actual content length).
+		if ( ! empty( $post_data['content'] ) ) {
+			$plain_content = wp_strip_all_tags( $post_data['content'] );
+			$actual_count  = str_word_count( $plain_content );
+			$report       .= "**Actual Word Count:** " . absint( $actual_count ) . " words\n";
+		}
+
+		// Sources count.
+		if ( ! empty( $search_results['sources'] ) && is_array( $search_results['sources'] ) ) {
+			$source_count = count( $search_results['sources'] );
+			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+		}
+
+		// Research metadata.
+		if ( ! empty( $post_data['research_provider'] ) && ! empty( $post_data['research_model'] ) ) {
+			$report .= "**AI Model:** " . esc_html( $post_data['research_provider'] . ' / ' . $post_data['research_model'] ) . "\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. Use the `create_post` tool to publish this content to your WordPress site.*";
+
+		return $report;
 	}
 }

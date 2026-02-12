@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * insurance policies and coverage options.
  */
 class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -262,6 +263,9 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 			return $policy_data;
 		}
+
+		// Build user-friendly report.
+		$policy_data['report'] = $this->build_policy_report_message( $policy_data, $search_results );
 
 		// Cache the results for 7 days (policies don't change as frequently).
 		wp_cache_set( $cache_key, $policy_data, 'wp_mcp_ai_policy_research', 7 * DAY_IN_SECONDS );
@@ -786,5 +790,129 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 
 		return $policy_data;
+	}
+
+	/**
+	 * Build a user-friendly report message for policy research.
+	 *
+	 * @param array $policy_data    Policy research data.
+	 * @param array $search_results Search results from web search.
+	 * @return string Markdown-formatted report.
+	 */
+	protected function build_policy_report_message( $policy_data, $search_results ) {
+		$report = "## Insurance Policy Research Complete\n\n";
+
+		// Policy name.
+		if ( ! empty( $policy_data['policy_name'] ) ) {
+			$report .= "**Policy Name:** " . esc_html( $policy_data['policy_name'] ) . "\n\n";
+		}
+
+		// Policy type.
+		if ( ! empty( $policy_data['policy_type'] ) ) {
+			$report .= "**Policy Type:** " . esc_html( $policy_data['policy_type'] ) . "\n\n";
+		}
+
+		// Description.
+		if ( ! empty( $policy_data['description'] ) ) {
+			$report .= "### Description\n";
+			$report .= wp_strip_all_tags( $policy_data['description'] ) . "\n\n";
+		}
+
+		// Coverage details.
+		if ( ! empty( $policy_data['coverage_details'] ) ) {
+			$report .= "### Coverage Details\n";
+			$report .= wp_strip_all_tags( $policy_data['coverage_details'] ) . "\n\n";
+		}
+
+		// Coverage limits.
+		if ( ! empty( $policy_data['coverage_limits'] ) ) {
+			$report .= "**Coverage Limits:** " . esc_html( $policy_data['coverage_limits'] ) . "\n\n";
+		}
+
+		// Terms and conditions section.
+		if ( ! empty( $policy_data['deductible'] ) || ! empty( $policy_data['premium_range'] ) || ! empty( $policy_data['waiting_period'] ) ) {
+			$report .= "### Terms & Conditions\n";
+
+			if ( ! empty( $policy_data['deductible'] ) ) {
+				$report .= "**Deductible:** " . esc_html( $policy_data['deductible'] ) . "\n";
+			}
+
+			if ( ! empty( $policy_data['premium_range'] ) ) {
+				$report .= "**Premium Range:** " . esc_html( $policy_data['premium_range'] ) . "\n";
+			}
+
+			if ( ! empty( $policy_data['waiting_period'] ) ) {
+				$report .= "**Waiting Period:** " . esc_html( $policy_data['waiting_period'] ) . "\n";
+			}
+
+			$report .= "\n";
+		}
+
+		// Requirements.
+		if ( ! empty( $policy_data['requirements'] ) && is_array( $policy_data['requirements'] ) ) {
+			$report .= "### Requirements\n";
+			foreach ( $policy_data['requirements'] as $requirement ) {
+				$report .= "- " . esc_html( $requirement ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Exclusions.
+		if ( ! empty( $policy_data['exclusions'] ) && is_array( $policy_data['exclusions'] ) ) {
+			$report .= "### Exclusions\n";
+			foreach ( $policy_data['exclusions'] as $exclusion ) {
+				$report .= "- " . esc_html( $exclusion ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Benefits.
+		if ( ! empty( $policy_data['benefits'] ) && is_array( $policy_data['benefits'] ) ) {
+			$report .= "### Key Benefits\n";
+			foreach ( $policy_data['benefits'] as $benefit ) {
+				$report .= "- " . esc_html( $benefit ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Claim process.
+		if ( ! empty( $policy_data['claim_process'] ) ) {
+			$report .= "### Claim Process\n";
+			$report .= wp_strip_all_tags( $policy_data['claim_process'] ) . "\n\n";
+		}
+
+		// Comparison.
+		if ( ! empty( $policy_data['comparison'] ) ) {
+			$report .= "### Comparison with Similar Policies\n";
+			$report .= wp_strip_all_tags( $policy_data['comparison'] ) . "\n\n";
+		}
+
+		// Sources.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$sources_count = count( $search_results['sources'] );
+			$report       .= "### Research Sources\n";
+			$report       .= "Research based on **" . absint( $sources_count ) . "** source" . ( $sources_count > 1 ? 's' : '' ) . ".\n\n";
+
+			// Show limited sources.
+			$max_display = 3;
+			for ( $i = 0; $i < min( $max_display, $sources_count ); $i++ ) {
+				$source = $search_results['sources'][ $i ];
+				if ( ! empty( $source['title'] ) && ! empty( $source['url'] ) ) {
+					$report .= "- [" . esc_html( $source['title'] ) . "](" . esc_url( $source['url'] ) . ")\n";
+				} elseif ( ! empty( $source['url'] ) ) {
+					$report .= "- " . esc_url( $source['url'] ) . "\n";
+				}
+			}
+
+			if ( $sources_count > $max_display ) {
+				$remaining = $sources_count - $max_display;
+				$report   .= "\n*... and " . absint( $remaining ) . " more source" . ( $remaining > 1 ? 's' : '' ) . "*\n";
+			}
+		}
+
+		$report .= "\n---\n";
+		$report .= "*This research is for informational purposes only. Please consult with insurance professionals for personalized advice.*\n";
+
+		return $report;
 	}
 }

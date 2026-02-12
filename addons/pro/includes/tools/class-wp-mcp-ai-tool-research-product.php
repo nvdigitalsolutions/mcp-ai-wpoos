@@ -26,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -401,9 +402,9 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				WP_MCP_AI_Logger::log_error(
 					'Product research web search failed: ' . $search_result->get_error_message(),
 					array(
-						'query'        => $search_query,
-						'product'      => $query,
-						'error_code'   => $search_result->get_error_code(),
+						'query'      => $search_query,
+						'product'    => $query,
+						'error_code' => $search_result->get_error_code(),
 					)
 				);
 				continue;
@@ -541,10 +542,10 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add context from web search if available.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "**Available Research Sources:**\n";
+			$prompt      .= "**Available Research Sources:**\n";
 			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
 			for ( $i = 0; $i < $source_count; $i++ ) {
-				$source = $search_results['sources'][ $i ];
+				$source  = $search_results['sources'][ $i ];
 				$prompt .= sprintf(
 					"[%d] %s - %s\n",
 					$i + 1,
@@ -566,7 +567,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add focus areas if specified.
 		if ( ! empty( $focus_areas ) ) {
-			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+			$prompt .= '**Focus Areas:** ' . implode( ', ', $focus_areas ) . "\n\n";
 		}
 
 		$prompt .= "Use the provided sources and web search to find current, factually correct information. Gather:\n\n";
@@ -1043,11 +1044,11 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Extract pricing information (handle both old and new formats).
-		$regular_price       = '';
-		$sale_price          = '';
-		$currency            = 'USD';
-		$price_valid_until   = '';
-		
+		$regular_price     = '';
+		$sale_price        = '';
+		$currency          = 'USD';
+		$price_valid_until = '';
+
 		if ( isset( $data['pricing'] ) && is_array( $data['pricing'] ) ) {
 			$regular_price     = isset( $data['pricing']['regular_price'] ) ? sanitize_text_field( $data['pricing']['regular_price'] ) : '';
 			$sale_price        = isset( $data['pricing']['sale_price'] ) ? sanitize_text_field( $data['pricing']['sale_price'] ) : '';
@@ -1140,12 +1141,16 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			$data_quality['completeness_score'] = $this->calculate_completeness_score( $data );
 		}
 
+		// Build user-friendly research report message.
+		$report_message = $this->build_product_report_message( $data, $brand_name, $regular_price, $currency, $images, $sources, $data_quality );
+
 		// Build Schema.org compliant product data structure.
 		$product_data = array(
-			'success'        => true,
-			'query'          => $query,
-			'reference'      => ! empty( $identifiers['sku'] ) ? $identifiers['sku'] : $reference,
-			'product_data'   => array(
+			'success'           => true,
+			'query'             => $query,
+			'reference'         => ! empty( $identifiers['sku'] ) ? $identifiers['sku'] : $reference,
+			'report'            => $report_message, // User-facing research report for chat display.
+			'product_data'      => array(
 				// Core WooCommerce fields.
 				'title'                 => sanitize_text_field( $data['title'] ),
 				'brand'                 => $brand_name,
@@ -1153,54 +1158,146 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				'product_type'          => $this->determine_product_type( $data ),
 				'description'           => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
 				'description_secondary' => isset( $data['description_secondary'] ) ? sanitize_textarea_field( $data['description_secondary'] ) : '',
-				
+
 				// Pricing.
 				'local_price'           => $regular_price,
 				'sale_price'            => $sale_price,
 				'currency'              => $currency,
 				'price_valid_until'     => $price_valid_until,
-				
+
 				// Images.
 				'images'                => $images,
-				
+
 				// Categorization.
 				'categories'            => isset( $data['categories'] ) && is_array( $data['categories'] ) ? array_map( 'sanitize_text_field', $data['categories'] ) : array(),
 				'tags'                  => isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array(),
-				
+
 				// Stock & Availability.
 				'stock_status'          => isset( $data['stock_status'] ) ? sanitize_key( $data['stock_status'] ) : 'instock',
 				'virtual'               => isset( $data['virtual'] ) ? (bool) $data['virtual'] : false,
 				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] : false,
 				'external_url'          => isset( $data['external_url'] ) ? esc_url_raw( $data['external_url'] ) : '',
-				
+
 				// Dimensions and weight.
 				'dimensions'            => $dimensions,
 				'weight'                => $weight,
-				
+
 				// Specifications and attributes.
 				'specifications'        => isset( $data['specifications'] ) && is_array( $data['specifications'] ) ? $this->sanitize_specifications( $data['specifications'] ) : array(),
 				'attributes'            => isset( $data['attributes'] ) && is_array( $data['attributes'] ) ? $this->sanitize_attributes_enhanced( $data['attributes'] ) : array(),
-				
+
 				// Schema.org fields.
 				'identifiers'           => $identifiers,
 				'condition'             => isset( $data['condition'] ) ? sanitize_key( $data['condition'] ) : 'new',
 				'target_audience'       => isset( $data['target_audience'] ) ? sanitize_text_field( $data['target_audience'] ) : '',
 				'availability_region'   => isset( $data['availability_region'] ) ? sanitize_text_field( $data['availability_region'] ) : '',
-				
+
 				// SEO fields.
 				'seo_keywords'          => isset( $data['seo_keywords'] ) && is_array( $data['seo_keywords'] ) ? array_map( 'sanitize_text_field', $data['seo_keywords'] ) : array(),
 			),
 			'research_metadata' => array(
-				'sources'            => $sources,
-				'researched_at'      => current_time( 'mysql' ),
-				'provider'           => $research_result['provider'],
-				'model'              => $research_result['model'],
-				'data_quality'       => $data_quality,
+				'sources'       => $sources,
+				'researched_at' => current_time( 'mysql' ),
+				'provider'      => $research_result['provider'],
+				'model'         => $research_result['model'],
+				'data_quality'  => $data_quality,
 			),
-			'create_tool'    => 'create_woo_product',
+			'create_tool'       => 'create_woo_product',
 		);
 
 		return $product_data;
+	}
+
+	/**
+	 * Build a user-friendly product research report message.
+	 *
+	 * This creates a comprehensive summary of the research findings
+	 * that can be displayed in the chat client.
+	 *
+	 * @param array  $data          Raw product data.
+	 * @param string $brand_name    Product brand name.
+	 * @param string $regular_price Regular price.
+	 * @param string $currency      Currency code.
+	 * @param array  $images        Product images.
+	 * @param array  $sources       Research sources.
+	 * @param array  $data_quality  Data quality metrics.
+	 * @return string Formatted research report message.
+	 */
+	protected function build_product_report_message( $data, $brand_name, $regular_price, $currency, $images, $sources, $data_quality ) {
+		$report = "## Product Research Complete\n\n";
+
+		// Product title and brand.
+		if ( ! empty( $data['title'] ) ) {
+			$report .= '**Product:** ' . esc_html( $data['title'] ) . "\n";
+		}
+		if ( ! empty( $brand_name ) ) {
+			$report .= '**Brand:** ' . esc_html( $brand_name ) . "\n";
+		}
+
+		// Pricing information.
+		if ( ! empty( $regular_price ) ) {
+			$report .= '**Price:** ' . esc_html( $currency . ' ' . $regular_price ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Description.
+		if ( ! empty( $data['description'] ) ) {
+			$report .= "### Description\n";
+			$report .= wp_strip_all_tags( $data['description'] ) . "\n\n";
+		}
+
+		// Key features/specifications.
+		if ( ! empty( $data['specifications'] ) && is_array( $data['specifications'] ) ) {
+			$report    .= "### Key Specifications\n";
+			$spec_count = 0;
+			foreach ( $data['specifications'] as $key => $value ) {
+				if ( $spec_count >= 5 ) {
+					break; // Limit to top 5 specs.
+				}
+				$report .= '- **' . esc_html( ucwords( str_replace( '_', ' ', $key ) ) ) . ':** ' . esc_html( $value ) . "\n";
+				++$spec_count;
+			}
+			$report .= "\n";
+		}
+
+		// Attributes (for variable products).
+		if ( ! empty( $data['attributes'] ) && is_array( $data['attributes'] ) ) {
+			$report    .= "### Product Attributes\n";
+			$attr_count = 0;
+			foreach ( $data['attributes'] as $attribute ) {
+				if ( $attr_count >= 3 ) {
+					break; // Limit to 3 attributes.
+				}
+				if ( isset( $attribute['name'] ) && isset( $attribute['options'] ) ) {
+					$report .= '- **' . esc_html( $attribute['name'] ) . ':** ' . esc_html( implode( ', ', $attribute['options'] ) ) . "\n";
+					++$attr_count;
+				}
+			}
+			$report .= "\n";
+		}
+
+		// Images.
+		if ( ! empty( $images ) && is_array( $images ) ) {
+			$image_count = count( $images );
+			$report     .= '**Images Found:** ' . absint( $image_count ) . " product image(s)\n\n";
+		}
+
+		// Data quality.
+		if ( ! empty( $data_quality['completeness_score'] ) ) {
+			$score   = absint( $data_quality['completeness_score'] );
+			$report .= '**Data Completeness:** ' . $score . "%\n";
+		}
+
+		// Sources.
+		if ( ! empty( $sources ) && is_array( $sources ) ) {
+			$report .= '**Sources:** ' . count( $sources ) . " reference source(s)\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= '*Research completed successfully. Use the `create_woo_product` tool to create this product in WooCommerce.*';
+
+		return $report;
 	}
 
 	/**
@@ -1238,7 +1335,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$required_present = 0;
 		foreach ( $required_fields as $field ) {
 			if ( ! empty( $data[ $field ] ) ) {
-				$required_present++;
+				++$required_present;
 			}
 		}
 		$score += ( $required_present / count( $required_fields ) ) * 40;
@@ -1247,7 +1344,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$optional_present = 0;
 		foreach ( $optional_fields as $field ) {
 			if ( ! empty( $data[ $field ] ) ) {
-				$optional_present++;
+				++$optional_present;
 			}
 		}
 		$score += ( $optional_present / count( $optional_fields ) ) * 60;

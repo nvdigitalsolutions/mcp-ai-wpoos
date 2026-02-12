@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * projects and project management approaches.
  */
 class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -262,6 +263,9 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 			return $project_data;
 		}
+
+		// Build user-friendly research report for chat display.
+		$project_data['report'] = $this->build_project_report_message( $project_data, $search_results );
 
 		// Cache the results for 24 hours.
 		wp_cache_set( $cache_key, $project_data, 'wp_mcp_ai_project_research', DAY_IN_SECONDS );
@@ -787,5 +791,127 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Build user-friendly project research report for chat display.
+	 *
+	 * @param array $project_data   Project data from research.
+	 * @param array $search_results Search results data.
+	 * @return string Markdown-formatted report.
+	 */
+	protected function build_project_report_message( $project_data, $search_results ) {
+		$report = "## Project Research Complete\n\n";
+
+		// Project name/title.
+		if ( ! empty( $project_data['title'] ) ) {
+			$report .= "**Project Name:** " . esc_html( $project_data['title'] ) . "\n\n";
+		}
+
+		// Project description/scope.
+		if ( ! empty( $project_data['description'] ) ) {
+			$report .= "### Description\n";
+			$report .= esc_html( $project_data['description'] ) . "\n\n";
+		}
+
+		// Objectives and goals.
+		if ( ! empty( $project_data['objectives'] ) && is_array( $project_data['objectives'] ) ) {
+			$report .= "### Objectives\n";
+			foreach ( $project_data['objectives'] as $objective ) {
+				$report .= "- " . esc_html( $objective ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Timeline and duration.
+		if ( ! empty( $project_data['timeline'] ) ) {
+			$report .= "**Timeline:** " . esc_html( $project_data['timeline'] ) . "\n";
+		}
+
+		// Status and priority.
+		if ( ! empty( $project_data['status'] ) ) {
+			$report .= "**Status:** " . esc_html( $project_data['status'] ) . "\n";
+		}
+
+		if ( ! empty( $project_data['priority'] ) ) {
+			$report .= "**Priority:** " . esc_html( $project_data['priority'] ) . "\n";
+		}
+
+		// Budget.
+		if ( ! empty( $project_data['budget'] ) ) {
+			$report .= "**Budget:** " . esc_html( $project_data['budget'] ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Key milestones (if available).
+		if ( ! empty( $project_data['milestones'] ) && is_array( $project_data['milestones'] ) ) {
+			$report .= "### Key Milestones\n";
+			foreach ( $project_data['milestones'] as $milestone ) {
+				$report .= "- " . esc_html( $milestone ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Phases (if available).
+		if ( ! empty( $project_data['phases'] ) && is_array( $project_data['phases'] ) ) {
+			$report .= "### Project Phases\n";
+			foreach ( $project_data['phases'] as $phase ) {
+				$report .= "- " . esc_html( $phase ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Resources needed.
+		if ( ! empty( $project_data['resources'] ) ) {
+			$report .= "### Resources Needed\n";
+			$report .= esc_html( $project_data['resources'] ) . "\n\n";
+		}
+
+		// Stakeholders.
+		if ( ! empty( $project_data['stakeholders'] ) ) {
+			$report .= "### Stakeholders\n";
+			$report .= esc_html( $project_data['stakeholders'] ) . "\n\n";
+		}
+
+		// Deliverables.
+		if ( ! empty( $project_data['deliverables'] ) && is_array( $project_data['deliverables'] ) ) {
+			$report .= "### Deliverables\n";
+			foreach ( $project_data['deliverables'] as $deliverable ) {
+				$report .= "- " . esc_html( $deliverable ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Success criteria.
+		if ( ! empty( $project_data['success_criteria'] ) ) {
+			$report .= "### Success Criteria\n";
+			$report .= esc_html( $project_data['success_criteria'] ) . "\n\n";
+		}
+
+		// Risks.
+		if ( ! empty( $project_data['risks'] ) && is_array( $project_data['risks'] ) ) {
+			$report .= "### Risks & Mitigation\n";
+			foreach ( $project_data['risks'] as $risk ) {
+				$report .= "- " . esc_html( $risk ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Sources count.
+		if ( ! empty( $search_results['sources'] ) && is_array( $search_results['sources'] ) ) {
+			$source_count = count( $search_results['sources'] );
+			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+		}
+
+		// Research metadata.
+		if ( ! empty( $project_data['research_provider'] ) && ! empty( $project_data['research_model'] ) ) {
+			$report .= "**AI Model:** " . esc_html( $project_data['research_provider'] . ' / ' . $project_data['research_model'] ) . "\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. Use the project data to create a new project entry in your project management system.*";
+
+		return $report;
 	}
 }
