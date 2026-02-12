@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-toolkit-for-jetengine-cpts',
+        'version' => 'dev-copilot/add-toolkit-for-jetengine-cpts',
+        'reference' => '0ff69332e3f7f895687a76e3f1dba20d049b683b',
         'pretty_version' => 'dev-copilot/enhance-plugins-transient-api',
         'version' => 'dev-copilot/enhance-plugins-transient-api',
         'reference' => '79438466fdab3fc25613c29e584f7e14c059619e',
@@ -53,6 +56,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-toolkit-for-jetengine-cpts',
+            'version' => 'dev-copilot/add-toolkit-for-jetengine-cpts',
+            'reference' => '0ff69332e3f7f895687a76e3f1dba20d049b683b',
             'pretty_version' => 'dev-copilot/enhance-plugins-transient-api',
             'version' => 'dev-copilot/enhance-plugins-transient-api',
             'reference' => '79438466fdab3fc25613c29e584f7e14c059619e',
