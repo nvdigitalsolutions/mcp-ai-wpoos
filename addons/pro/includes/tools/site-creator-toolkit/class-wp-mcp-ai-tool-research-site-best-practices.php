@@ -540,7 +540,7 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 					}
 				}
 
-				$report .= "**{$priority_icon}" . esc_html( $practice['title'] ) . "**\n";
+				$report .= $priority_icon . "**" . esc_html( $practice['title'] ) . "**\n";
 
 				// Description.
 				if ( ! empty( $practice['description'] ) ) {
