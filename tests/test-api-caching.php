@@ -114,14 +114,17 @@ class Test_API_Caching extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_cache_openai_models', '__return_false' );
 
 		// Test TTL filter.
-		$default_ttl = 12 * HOUR_IN_SECONDS;
+		$default_ttl  = 12 * HOUR_IN_SECONDS;
 		$filtered_ttl = apply_filters( 'wp_mcp_ai_openai_model_list_ttl', $default_ttl );
 		$this->assertEquals( $default_ttl, $filtered_ttl, 'TTL should pass through filter' );
 
 		// Test custom TTL via filter.
-		add_filter( 'wp_mcp_ai_openai_model_list_ttl', function ( $ttl ) {
-			return 24 * HOUR_IN_SECONDS;
-		} );
+		add_filter(
+			'wp_mcp_ai_openai_model_list_ttl',
+			function ( $ttl ) {
+				return 24 * HOUR_IN_SECONDS;
+			}
+		);
 		$filtered_ttl = apply_filters( 'wp_mcp_ai_openai_model_list_ttl', $default_ttl );
 		$this->assertEquals( 24 * HOUR_IN_SECONDS, $filtered_ttl, 'Filter should modify TTL' );
 		remove_all_filters( 'wp_mcp_ai_openai_model_list_ttl' );
@@ -130,9 +133,9 @@ class Test_API_Caching extends WP_UnitTestCase {
 	/**
 	 * Test that cache helper remember function works.
 	 */
-	public function test_cache_helper_remember_function () {
+	public function test_cache_helper_remember_function() {
 		$cache_key = 'test_remember_key';
-		$call_count = 0;
+		$call_count    = 0;
 
 		// First call should execute callback.
 		$result1 = WP_MCP_AI_Cache_Helper::remember(
