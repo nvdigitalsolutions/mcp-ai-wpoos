@@ -168,13 +168,13 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Return research structure and guidance.
 		return array(
-			'status'         => 'research_initiated',
+			'status'         => 'complete',
 			'query'          => $query,
 			'reference'      => $reference,
 			'guidance'       => $guidance,
 			'structure'      => $this->get_product_structure(),
 			'next_steps'     => array(
-				__( 'Use the research guidance to gather product information from available sources.', 'mcp-ai-wpoos-pro' ),
+				__( 'Use available tools like web_search to gather the product information listed in the guidance.', 'mcp-ai-wpoos-pro' ),
 				__( 'Structure the gathered information according to the provided schema.', 'mcp-ai-wpoos-pro' ),
 				__( 'Once you have complete product data, use the "Create WooCommerce Product Draft" tool.', 'mcp-ai-wpoos-pro' ),
 			),
@@ -219,11 +219,11 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function build_research_guidance( $query, $include_pricing, $include_images, $include_specs ) {
 		$guidance = sprintf(
-			__( 'Research the following product: %s', 'mcp-ai-wpoos-pro' ),
+			__( 'RESEARCH REQUIREMENTS: You need to gather information about: %s', 'mcp-ai-wpoos-pro' ),
 			$query
 		) . "\n\n";
 
-		$guidance .= __( 'Gather the following information:', 'mcp-ai-wpoos-pro' ) . "\n";
+		$guidance .= __( 'ACTION: Use the web_search tool to find the following information:', 'mcp-ai-wpoos-pro' ) . "\n";
 		$guidance .= __( '1. Product name and brand', 'mcp-ai-wpoos-pro' ) . "\n";
 		$guidance .= __( '2. Full product description (features, benefits, use cases)', 'mcp-ai-wpoos-pro' ) . "\n";
 		$guidance .= __( '3. Short description for product summary', 'mcp-ai-wpoos-pro' ) . "\n";
@@ -243,7 +243,9 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$guidance .= __( '9. Suggested product categories and tags', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '10. Product type (simple, variable, grouped, external)', 'mcp-ai-wpoos-pro' ) . "\n";
+		$guidance .= __( '10. Product type (simple, variable, grouped, external)', 'mcp-ai-wpoos-pro' ) . "\n\n";
+		
+		$guidance .= __( 'IMPORTANT: Start researching NOW by calling the web_search tool with relevant queries to gather this information.', 'mcp-ai-wpoos-pro' );
 
 		return $guidance;
 	}
