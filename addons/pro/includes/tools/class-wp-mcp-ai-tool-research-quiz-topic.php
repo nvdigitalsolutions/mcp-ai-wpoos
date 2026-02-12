@@ -964,7 +964,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			$display_limit = min( 5, count( $quiz_data['sources'] ) );
 			for ( $i = 0; $i < $display_limit; $i++ ) {
 				$source  = $quiz_data['sources'][ $i ];
-				$report .= ( $i + 1 ) . ". " . esc_url( $source ) . "\n";
+				$report .= ( $i + 1 ) . ". [" . esc_url( $source ) . "](" . esc_url( $source ) . ")\n";
 			}
 
 			if ( $sources_count > $display_limit ) {
