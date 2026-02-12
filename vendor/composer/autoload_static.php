@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
+class ComposerStaticInit899247d5897b981d2465948ec3203e32
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -546,6 +546,7 @@ class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
         'Symfony\\Component\\HttpClient\\Retry\\RetryStrategyInterface' => __DIR__ . '/..' . '/symfony/http-client/Retry/RetryStrategyInterface.php',
         'Symfony\\Component\\HttpClient\\RetryableHttpClient' => __DIR__ . '/..' . '/symfony/http-client/RetryableHttpClient.php',
         'Symfony\\Component\\HttpClient\\ScopingHttpClient' => __DIR__ . '/..' . '/symfony/http-client/ScopingHttpClient.php',
+        'Symfony\\Component\\HttpClient\\Test\\HarFileResponseFactory' => __DIR__ . '/..' . '/symfony/http-client/Test/HarFileResponseFactory.php',
         'Symfony\\Component\\HttpClient\\TraceableHttpClient' => __DIR__ . '/..' . '/symfony/http-client/TraceableHttpClient.php',
         'Symfony\\Component\\HttpClient\\UriTemplateHttpClient' => __DIR__ . '/..' . '/symfony/http-client/UriTemplateHttpClient.php',
         'Symfony\\Component\\Process\\Exception\\ExceptionInterface' => __DIR__ . '/..' . '/symfony/process/Exception/ExceptionInterface.php',
@@ -780,6 +781,7 @@ class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
         'Symfony\\Component\\Validator\\Mapping\\PropertyMetadataInterface' => __DIR__ . '/..' . '/symfony/validator/Mapping/PropertyMetadataInterface.php',
         'Symfony\\Component\\Validator\\Mapping\\TraversalStrategy' => __DIR__ . '/..' . '/symfony/validator/Mapping/TraversalStrategy.php',
         'Symfony\\Component\\Validator\\ObjectInitializerInterface' => __DIR__ . '/..' . '/symfony/validator/ObjectInitializerInterface.php',
+        'Symfony\\Component\\Validator\\Test\\ConstraintValidatorTestCase' => __DIR__ . '/..' . '/symfony/validator/Test/ConstraintValidatorTestCase.php',
         'Symfony\\Component\\Validator\\Util\\PropertyPath' => __DIR__ . '/..' . '/symfony/validator/Util/PropertyPath.php',
         'Symfony\\Component\\Validator\\Validation' => __DIR__ . '/..' . '/symfony/validator/Validation.php',
         'Symfony\\Component\\Validator\\ValidatorBuilder' => __DIR__ . '/..' . '/symfony/validator/ValidatorBuilder.php',
@@ -850,9 +852,9 @@ class ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitf5912ab48654fbd78e4d0a666304cfa9::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit899247d5897b981d2465948ec3203e32::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit899247d5897b981d2465948ec3203e32::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit899247d5897b981d2465948ec3203e32::$classMap;
 
         }, null, ClassLoader::class);
     }

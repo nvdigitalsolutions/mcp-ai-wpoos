@@ -110,7 +110,7 @@ class Test_Search_Drive_Query_Formatting extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'format_drive_query' );
 		$method->setAccessible( true );
 
-		$trashed_query = "trashed = true";
+		$trashed_query = 'trashed = true';
 		$result        = $method->invoke( $this->tool, $trashed_query );
 
 		// Should not add another trashed filter.
