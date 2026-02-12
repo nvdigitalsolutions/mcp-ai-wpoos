@@ -28,6 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.2.0
  */
 class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Check if this tool is available.
@@ -165,6 +166,19 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		// Log the research activity.
 		$this->log_research_activity( $user_id, $query, $focus_areas, count( $structured_results ) );
 
+		// Build user-friendly report.
+		$report = $this->build_best_practices_report_message(
+			array(
+				'query'          => $query,
+				'enhanced_query' => $enhanced_query,
+				'focus_areas'    => $focus_areas,
+				'site_type'      => $site_type,
+				'results_count'  => count( $structured_results ),
+				'best_practices' => $structured_results,
+				'summary'        => $this->generate_summary( $structured_results ),
+			)
+		);
+
 		return array(
 			'success'        => true,
 			'query'          => $query,
@@ -174,6 +188,7 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 			'results_count'  => count( $structured_results ),
 			'best_practices' => $structured_results,
 			'summary'        => $this->generate_summary( $structured_results ),
+			'report'         => $report,
 			'timestamp'      => current_time( 'mysql' ),
 		);
 	}
@@ -444,6 +459,163 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		);
 
 		wp_mcp_ai_log_activity( $message, 'info' );
+	}
+
+	/**
+	 * Build user-friendly report message for best practices research.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $data Research data including query, practices, and metadata.
+	 * @return string Markdown-formatted report message.
+	 */
+	protected function build_best_practices_report_message( $data ) {
+		$report = "## Website Best Practices Research Complete\n\n";
+
+		// Site type and query.
+		if ( ! empty( $data['site_type'] ) && 'general' !== $data['site_type'] ) {
+			$report .= "**Site Type:** " . esc_html( ucfirst( $data['site_type'] ) ) . "\n";
+		}
+		if ( ! empty( $data['query'] ) ) {
+			$report .= "**Research Query:** " . esc_html( $data['query'] ) . "\n\n";
+		}
+
+		// Focus areas.
+		if ( ! empty( $data['focus_areas'] ) && is_array( $data['focus_areas'] ) ) {
+			$report .= "**Focus Areas:** " . esc_html( implode( ', ', array_map( 'ucfirst', $data['focus_areas'] ) ) ) . "\n\n";
+		}
+
+		// Summary.
+		if ( ! empty( $data['summary'] ) ) {
+			$report .= $data['summary'] . "\n\n";
+		}
+
+		// Organize practices by category.
+		$practices_by_category = array();
+		if ( ! empty( $data['best_practices'] ) && is_array( $data['best_practices'] ) ) {
+			foreach ( $data['best_practices'] as $practice ) {
+				$category = ! empty( $practice['category'] ) ? $practice['category'] : 'general';
+				if ( ! isset( $practices_by_category[ $category ] ) ) {
+					$practices_by_category[ $category ] = array();
+				}
+				$practices_by_category[ $category ][] = $practice;
+			}
+		}
+
+		// Category display order and titles.
+		$category_info = array(
+			'performance'     => array( 'title' => 'Performance Optimization', 'icon' => '⚡' ),
+			'accessibility'   => array( 'title' => 'Accessibility Standards', 'icon' => '♿' ),
+			'seo'             => array( 'title' => 'SEO Best Practices', 'icon' => '🔍' ),
+			'security'        => array( 'title' => 'Security Recommendations', 'icon' => '🔒' ),
+			'design'          => array( 'title' => 'Design & Layout', 'icon' => '🎨' ),
+			'user-experience' => array( 'title' => 'User Experience (UX)', 'icon' => '👤' ),
+			'mobile'          => array( 'title' => 'Mobile Optimization', 'icon' => '📱' ),
+			'conversion'      => array( 'title' => 'Conversion Optimization', 'icon' => '📈' ),
+			'general'         => array( 'title' => 'General Recommendations', 'icon' => '📋' ),
+		);
+
+		// Output practices by category.
+		foreach ( $category_info as $category_key => $category_data ) {
+			if ( empty( $practices_by_category[ $category_key ] ) ) {
+				continue;
+			}
+
+			$report .= "### {$category_data['icon']} {$category_data['title']}\n\n";
+
+			foreach ( $practices_by_category[ $category_key ] as $practice ) {
+				// Practice title with priority indicator.
+				$priority_icon = '';
+				if ( ! empty( $practice['priority'] ) ) {
+					switch ( $practice['priority'] ) {
+						case 'high':
+							$priority_icon = '🔴 ';
+							break;
+						case 'medium':
+							$priority_icon = '🟡 ';
+							break;
+						case 'low':
+							$priority_icon = '🟢 ';
+							break;
+					}
+				}
+
+				$report .= "**{$priority_icon}" . esc_html( $practice['title'] ) . "**\n";
+
+				// Description.
+				if ( ! empty( $practice['description'] ) ) {
+					$report .= wp_strip_all_tags( $practice['description'] ) . "\n";
+				}
+
+				// Source.
+				if ( ! empty( $practice['source'] ) ) {
+					$report .= "*Source: " . esc_html( $practice['source'] ) . "*";
+					if ( ! empty( $practice['url'] ) ) {
+						$report .= " - [View Source](" . esc_url( $practice['url'] ) . ")";
+					}
+					$report .= "\n";
+				}
+
+				$report .= "\n";
+			}
+		}
+
+		// Priority legend.
+		$report .= "### Priority Legend\n";
+		$report .= "- 🔴 **High Priority:** Critical for site success and user satisfaction\n";
+		$report .= "- 🟡 **Medium Priority:** Important improvements that add value\n";
+		$report .= "- 🟢 **Low Priority:** Nice-to-have enhancements\n\n";
+
+		// Implementation recommendations.
+		$high_priority_count = 0;
+		if ( ! empty( $data['best_practices'] ) ) {
+			foreach ( $data['best_practices'] as $practice ) {
+				if ( ! empty( $practice['priority'] ) && 'high' === $practice['priority'] ) {
+					$high_priority_count++;
+				}
+			}
+		}
+
+		if ( $high_priority_count > 0 ) {
+			$report .= "### 🎯 Implementation Recommendations\n\n";
+			$report .= "**Start with High Priority Items:** Focus on the {$high_priority_count} high-priority practice";
+			$report .= ( $high_priority_count > 1 ? 's' : '' ) . " first. ";
+			$report .= "These will have the most immediate impact on your site's success.\n\n";
+
+			if ( ! empty( $data['focus_areas'] ) ) {
+				$report .= "**Focus Area Alignment:** This research emphasized ";
+				$report .= esc_html( implode( ', ', $data['focus_areas'] ) );
+				$report .= " based on your specified focus areas.\n\n";
+			}
+		}
+
+		// Technical implementation tips.
+		$has_performance = isset( $practices_by_category['performance'] );
+		$has_accessibility = isset( $practices_by_category['accessibility'] );
+		$has_seo = isset( $practices_by_category['seo'] );
+
+		if ( $has_performance || $has_accessibility || $has_seo ) {
+			$report .= "### 💡 Quick Implementation Tips\n\n";
+
+			if ( $has_performance ) {
+				$report .= "**Performance:** Use caching plugins, optimize images (WebP format), minimize CSS/JS, and enable lazy loading.\n\n";
+			}
+
+			if ( $has_accessibility ) {
+				$report .= "**Accessibility:** Ensure proper heading hierarchy (H1→H6), add alt text to images, maintain 4.5:1 color contrast, and test with keyboard navigation.\n\n";
+			}
+
+			if ( $has_seo ) {
+				$report .= "**SEO:** Use descriptive URLs, optimize meta descriptions, implement schema markup, and ensure mobile-friendliness.\n\n";
+			}
+		}
+
+		// Research metadata.
+		$report .= "---\n\n";
+		$report .= "*Research completed with " . absint( $data['results_count'] ) . " best practice";
+		$report .= ( $data['results_count'] > 1 ? 's' : '' ) . " identified.*\n";
+
+		return $report;
 	}
 
 	/**
