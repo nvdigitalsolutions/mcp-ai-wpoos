@@ -980,10 +980,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					// Sort packages alphabetically.
 					ksort( $packages );
 					foreach ( $packages as $package => $version ) :
-						// Check if package is installed (vendor file exists).
-						$package_installed = self::check_package_installed( $package );
-						$status_class      = $package_installed ? 'installed' : 'not-installed';
-						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
+						// Get detailed package status (includes CDN detection).
+						$status       = self::get_package_status( $package );
+						$status_class = $status['available'] ? 'installed' : 'not-installed';
+						$status_text  = $status['message'];
+
+						// Add special CSS class for CDN packages.
+						if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) {
+							$status_class .= ' cdn-loaded';
+						}
 						?>
 						<tr>
 							<td><code><?php echo esc_html( $package ); ?></code></td>
@@ -1079,6 +1084,44 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
 		 */
+		/**
+		 * Get detailed package status including CDN availability.
+		 *
+		 * Returns an array with 'available', 'source', and 'message' keys.
+		 *
+		 * @param string $package Package name.
+		 * @return array Status array.
+		 */
+		private static function get_package_status( $package ) {
+			// Check if Pro CDN Loader is available and package is CDN-managed.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
+				$cdn_packages = array( 'prettier', 'katex', 'chart.js', 'd3', 'axios', 'mathjs' );
+				if ( in_array( $package, $cdn_packages, true ) ) {
+					$status = WP_MCP_AI_Pro_CDN_Loader::get_package_status( $package );
+					if ( ! empty( $status ) && is_array( $status ) ) {
+						return $status;
+					}
+				}
+			}
+
+			// For non-CDN packages, check if installed.
+			$installed = self::check_package_installed( $package );
+			
+			if ( $installed ) {
+				return array(
+					'available' => true,
+					'source'    => 'installed',
+					'message'   => __( 'Installed', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			return array(
+				'available' => false,
+				'source'    => 'none',
+				'message'   => __( 'Not Found', 'mcp-ai-wpoos' ),
+			);
+		}
+
 		private static function check_package_installed( $package ) {
 			// Check for base vendor copies (chart.js, vectorizer).
 			if ( 'chart.js' === $package ) {

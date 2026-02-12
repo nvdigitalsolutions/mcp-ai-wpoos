@@ -681,6 +681,10 @@ add_action( 'init', 'wp_mcp_ai_auto_register_npm_filters', 20 );
  * @return array Array with 'available' boolean and 'missing' array of package names.
  */
 function wp_mcp_ai_check_vendor_packages() {
+	// CDN-loaded packages that don't need to be in vendor directory.
+	// These are loaded from jsDelivr with automatic fallback.
+	$cdn_packages = array( 'prettier', 'katex', 'chart.js', 'd3', 'axios', 'mathjs' );
+
 	$packages = array(
 		'prettier'      => 'assets/vendor/prettier/standalone.js',
 		'mjml'          => 'assets/vendor/mjml/lib/index.js',
@@ -693,6 +697,11 @@ function wp_mcp_ai_check_vendor_packages() {
 
 	$missing = array();
 	foreach ( $packages as $name => $path ) {
+		// Skip CDN packages - they're loaded from CDN, not vendor directory.
+		if ( in_array( $name, $cdn_packages, true ) ) {
+			continue;
+		}
+
 		$full_path = WP_MCP_AI_PRO_PATH . $path;
 		// Also check for alternate paths that might exist.
 		$alt_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $name;
