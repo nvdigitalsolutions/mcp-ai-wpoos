@@ -92,8 +92,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		}
 
 		// Check if caching is enabled.
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache    = ! empty( $settings['enable_ollama_api_caching'] );
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache = ! empty( $settings['enable_ollama_api_caching'] );
 		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
 
 		// Allow disabling via constant.

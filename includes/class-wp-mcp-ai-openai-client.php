@@ -70,7 +70,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Only DALL-E 3 supports the style parameter.
 			$model_lower = strtolower( $model );
-			$supported   = ( 'dall-e-3' === $model_lower );
+			$supported = ( 'dall-e-3' === $model_lower );
 
 			/**
 			 * Filter whether the supplied image model supports the style parameter.
@@ -125,8 +125,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$purpose   = isset( $args['purpose'] ) ? sanitize_key( $args['purpose'] ) : '';
-			$filename  = isset( $args['filename'] ) ? sanitize_file_name( $args['filename'] ) : '';
+			$purpose = isset( $args['purpose'] ) ? sanitize_key( $args['purpose'] ) : '';
+			$filename = isset( $args['filename'] ) ? sanitize_file_name( $args['filename'] ) : '';
 			$mime_type = isset( $args['mime_type'] ) ? sanitize_mime_type( $args['mime_type'] ) : '';
 
 			if ( '' === $purpose ) {
@@ -142,8 +142,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
 
@@ -208,9 +208,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code     = wp_remote_retrieve_response_code( $response );
-			$body     = wp_remote_retrieve_body( $response );
-			$decoded  = json_decode( $body, true );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
@@ -282,8 +282,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 0;
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 0;
+			$timeout = max( 5, $timeout );
 
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
 
@@ -320,8 +320,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -397,8 +397,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content';
 
@@ -436,7 +436,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
+			$body = wp_remote_retrieve_body( $response );
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				$decoded = json_decode( $body, true );
@@ -483,14 +483,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$normalised_headers = array();
 			if ( is_array( $headers ) ) {
 				foreach ( $headers as $key => $value ) {
-					$key                        = strtolower( (string) $key );
-					$value                      = is_array( $value ) ? implode( ',', $value ) : (string) $value;
+					$key = strtolower( (string) $key );
+					$value = is_array( $value ) ? implode( ',', $value ) : (string) $value;
 					$normalised_headers[ $key ] = $value;
 				}
 			}
 
 			$content_type = isset( $normalised_headers['content-type'] ) ? $normalised_headers['content-type'] : 'application/octet-stream';
-			$filename     = '';
+			$filename = '';
 
 			if ( isset( $normalised_headers['content-disposition'] ) ) {
 				$filename = $this->parse_content_disposition_filename( $normalised_headers['content-disposition'] );
@@ -529,8 +529,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			// Build query parameters.
 			$query_params = array();
@@ -583,9 +583,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code     = wp_remote_retrieve_response_code( $response );
-			$body     = wp_remote_retrieve_body( $response );
-			$decoded  = json_decode( $body, true );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
@@ -656,8 +656,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
 
@@ -694,8 +694,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -764,8 +764,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		// Check if caching is enabled.
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache = ! empty( $settings['enable_openai_api_caching'] );
 		$bypass_cache = isset( $args['bypass_cache'] ) && $args['bypass_cache'];
 
 		// Allow disabling via constant.
@@ -815,8 +815,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 	*/
 	private function fetch_models_from_api( $api_key, $args ) {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
+		$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+		$timeout = max( 5, $timeout );
 
 		$endpoint = 'https://api.openai.com/v1/models';
 
@@ -843,8 +843,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 		}
 
-		$code    = wp_remote_retrieve_response_code( $response );
-		$body    = wp_remote_retrieve_body( $response );
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
 		$decoded = json_decode( $body, true );
 
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -916,8 +916,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
+		$timeout = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+		$timeout = max( 5, $timeout );
 
 			$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
 
@@ -954,8 +954,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -1029,8 +1029,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		// Check if caching is enabled.
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache = ! empty( $settings['enable_openai_api_caching'] );
 		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
 
 		// Allow disabling via constant.
@@ -1049,9 +1049,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 		if ( $use_cache && ! $bypass_cache ) {
 			// Build cache key from input and relevant options.
-			$model            = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
-			$encoding_format  = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : '';
-			$dimensions       = isset( $options['dimensions'] ) && '' !== $options['dimensions'] ? absint( $options['dimensions'] ) : 0;
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+			$encoding_format = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : '';
+			$dimensions = isset( $options['dimensions'] ) && '' !== $options['dimensions'] ? absint( $options['dimensions'] ) : 0;
 
 			$cache_key_data = array(
 				'input'           => $input,
@@ -1095,8 +1095,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 	 */
 	private function fetch_embeddings_from_api( $api_key, $input, $options ) {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
+		$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+		$timeout = max( 5, $timeout );
 
 		// Default model.
 		$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
@@ -1154,8 +1154,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 		}
 
-		$code    = wp_remote_retrieve_response_code( $response );
-		$body    = wp_remote_retrieve_body( $response );
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
 		$decoded = json_decode( $body, true );
 
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -1256,8 +1256,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			// Default to latest omni-moderation model (supports text + images).
 			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'omni-moderation-latest';
@@ -1303,8 +1303,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -1343,8 +1343,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Extract violation summary for logging.
 			$flagged_count = 0;
-			$flagged_cats  = array();
-			$results       = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
+			$flagged_cats = array();
+			$results = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
 
 			foreach ( $results as $result ) {
 				if ( isset( $result['flagged'] ) && $result['flagged'] ) {
@@ -1382,7 +1382,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return array|WP_Error
 		 */
 		protected function dispatch_http_request( $url, array $args ) {
-			$url  = esc_url_raw( $url );
+			$url = esc_url_raw( $url );
 			$args = apply_filters( 'http_request_args', $args, $url );
 
 			$preempt = $this->maybe_preempt_http_request( $url, $args );
@@ -1408,9 +1408,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return string
 		 */
 		protected function build_multipart_body( array $fields, array $file, $boundary ) {
-			$eol      = "\r\n";
+			$eol = "\r\n";
 			$boundary = (string) $boundary;
-			$body     = '';
+			$body = '';
 
 			foreach ( $fields as $name => $value ) {
 				$name = (string) $name;
@@ -1428,10 +1428,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $file['contents'] ) && '' !== $file['contents'] ) {
-				$field_name   = isset( $file['name'] ) ? (string) $file['name'] : 'file';
-				$filename     = isset( $file['filename'] ) ? (string) $file['filename'] : 'file';
+				$field_name = isset( $file['name'] ) ? (string) $file['name'] : 'file';
+				$filename = isset( $file['filename'] ) ? (string) $file['filename'] : 'file';
 				$content_type = isset( $file['content_type'] ) && '' !== $file['content_type'] ? (string) $file['content_type'] : 'application/octet-stream';
-				$contents     = (string) $file['contents'];
+				$contents = (string) $file['contents'];
 
 				$body .= '--' . $boundary . $eol;
 				$body .= 'Content-Disposition: form-data; name="' . $field_name . '"; filename="' . $filename . '"' . $eol;
@@ -1466,7 +1466,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			foreach ( $hook->callbacks as $priority => $callbacks ) {
 				foreach ( $callbacks as $callback ) {
 					$accepted_args = isset( $callback['accepted_args'] ) ? (int) $callback['accepted_args'] : 1;
-					$params        = array();
+					$params = array();
 
 					if ( $accepted_args >= 1 ) {
 						$params[] = $pre;
@@ -1528,17 +1528,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
-			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
-			$default_quality         = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
+			$default_model = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
+			$default_size = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
+			$default_quality = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
 
 			if ( ! in_array( $default_response_format, array( 'b64_json', 'url' ), true ) ) {
 				$default_response_format = 'b64_json';
 			}
 
-			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
-			$size    = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$size = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
 			$quality = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
 
 			// Sanitize quality to only allowed values: low, medium, high, auto.
@@ -1549,7 +1549,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
-			$response_format  = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : $default_response_format;
+			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : $default_response_format;
 
 			$model_supports_response_format = self::image_model_supports_response_format( $model );
 
@@ -1631,13 +1631,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$status_code  = wp_remote_retrieve_response_code( $response );
-			$body         = wp_remote_retrieve_body( $response );
-			$headers      = wp_remote_retrieve_headers( $response );
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$headers = wp_remote_retrieve_headers( $response );
 			$content_type = $this->extract_content_type( $headers );
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
-				$decoded    = json_decode( $body, true );
+				$decoded = json_decode( $body, true );
 				$json_error = json_last_error();
 
 				if ( JSON_ERROR_NONE === $json_error && isset( $decoded['error']['message'] ) ) {
@@ -1667,17 +1667,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$is_json_response  = $this->is_json_content_type( $content_type );
-			$decoded           = array();
-			$image_data        = '';
-			$response_mime     = '';
-			$response_format   = '';
-			$response_created  = 0;
-			$response_model    = $model;
+			$is_json_response = $this->is_json_content_type( $content_type );
+			$decoded = array();
+			$image_data = '';
+			$response_mime = '';
+			$response_format = '';
+			$response_created = 0;
+			$response_model = $model;
 			$response_revision = '';
 
 			if ( $is_json_response || '' === $content_type ) {
-				$decoded    = json_decode( $body, true );
+				$decoded = json_decode( $body, true );
 				$json_error = json_last_error();
 
 				if ( JSON_ERROR_NONE !== $json_error ) {
@@ -1724,8 +1724,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						return $downloaded_image;
 					}
 
-					$image_data      = $downloaded_image['body'];
-					$content_type    = $downloaded_image['content_type'];
+					$image_data = $downloaded_image['body'];
+					$content_type = $downloaded_image['content_type'];
 					$response_format = $this->detect_format_from_mime_type( $content_type );
 
 					if ( '' === $response_format ) {
@@ -1749,8 +1749,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 				}
 
-				$response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
-				$response_model    = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
+				$response_created = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
+				$response_model = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
 				$response_revision = isset( $image_response['revised_prompt'] ) ? (string) $image_response['revised_prompt'] : '';
 			} elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
 				$image_data = $body;
@@ -1842,8 +1842,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
-			$headers     = wp_remote_retrieve_headers( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$headers = wp_remote_retrieve_headers( $response );
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				WP_MCP_AI_Logger::log_error(
@@ -2041,7 +2041,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( function_exists( 'finfo_buffer' ) && defined( 'FILEINFO_MIME_TYPE' ) && class_exists( 'finfo' ) ) {
 				$finfo = new finfo( FILEINFO_MIME_TYPE );
-				$mime  = $finfo->buffer( $image_data );
+				$mime = $finfo->buffer( $image_data );
 
 				if ( $mime ) {
 					$format = $this->detect_format_from_mime_type( $mime );
@@ -2112,13 +2112,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 30, $timeout ); // Image editing needs more time.
+			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 30, $timeout ); // Image editing needs more time.
 
-			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
-			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
-			$n               = max( 1, min( 10, $n ) );
-			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n = max( 1, min( 10, $n ) );
+			$size = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
 
 			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
@@ -2127,12 +2127,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Prepare multipart form data.
 			$boundary = wp_generate_password( 24, false );
-			$body     = '';
+			$body = '';
 
 			// Add image file.
-			$image_filename  = basename( $image_path );
+			$image_filename = basename( $image_path );
 			$image_mime_type = mime_content_type( $image_path );
-			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$image_data = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
 			$body .= "--{$boundary}\r\n";
 			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
@@ -2141,9 +2141,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Add mask file if provided.
 			if ( isset( $options['mask_path'] ) && '' !== $options['mask_path'] && file_exists( $options['mask_path'] ) ) {
-				$mask_filename  = basename( $options['mask_path'] );
+				$mask_filename = basename( $options['mask_path'] );
 				$mask_mime_type = mime_content_type( $options['mask_path'] );
-				$mask_data      = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$mask_data = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
 				$body .= "--{$boundary}\r\n";
 				$body .= "Content-Disposition: form-data; name=\"mask\"; filename=\"{$mask_filename}\"\r\n";
@@ -2200,9 +2200,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI image edit request failed.', 'mcp-ai-wpoos' );
@@ -2265,13 +2265,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 30, $timeout ); // Image generation needs more time.
+			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 30, $timeout ); // Image generation needs more time.
 
-			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
-			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
-			$n               = max( 1, min( 10, $n ) );
-			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n = max( 1, min( 10, $n ) );
+			$size = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
 
 			if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
@@ -2280,12 +2280,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Prepare multipart form data.
 			$boundary = wp_generate_password( 24, false );
-			$body     = '';
+			$body = '';
 
 			// Add image file.
-			$image_filename  = basename( $image_path );
+			$image_filename = basename( $image_path );
 			$image_mime_type = mime_content_type( $image_path );
-			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$image_data = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
 			$body .= "--{$boundary}\r\n";
 			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
@@ -2337,9 +2337,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI image variation request failed.', 'mcp-ai-wpoos' );
@@ -2404,8 +2404,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model  = ! empty( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'tts-1';
-			$default_voice  = isset( $settings['openai_speech_voice'] ) ? sanitize_key( $settings['openai_speech_voice'] ) : 'alloy';
+			$default_model = ! empty( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'tts-1';
+			$default_voice = isset( $settings['openai_speech_voice'] ) ? sanitize_key( $settings['openai_speech_voice'] ) : 'alloy';
 			$default_format = isset( $settings['openai_speech_format'] ) ? sanitize_key( $settings['openai_speech_format'] ) : 'mp3';
 
 			if ( '' === $default_voice ) {
@@ -2420,9 +2420,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$default_model = 'tts-1';
 			}
 
-			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
-			$voice   = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_key( $options['voice'] ) : $default_voice;
-			$format  = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : $default_format;
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$voice = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_key( $options['voice'] ) : $default_voice;
+			$format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : $default_format;
 			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 5, $timeout );
 
@@ -2434,8 +2434,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
-				$speed            = floatval( $options['speed'] );
-				$speed            = max( 0.25, min( 4, $speed ) );
+				$speed = floatval( $options['speed'] );
+				$speed = max( 0.25, min( 4, $speed ) );
 				$payload['speed'] = $speed;
 			} else {
 				$speed = null;
@@ -2488,11 +2488,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
+			$body = wp_remote_retrieve_body( $response );
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				$decoded = json_decode( $body, true );
-				$error   = json_last_error();
+				$error = json_last_error();
 
 				if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
 					$message = $decoded['error']['message'];
@@ -2516,7 +2516,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$headers = wp_remote_retrieve_headers( $response );
-			$type    = isset( $headers['content-type'] ) ? sanitize_text_field( $headers['content-type'] ) : '';
+			$type = isset( $headers['content-type'] ) ? sanitize_text_field( $headers['content-type'] ) : '';
 
 			return array(
 				'audio'        => $body,
@@ -2604,8 +2604,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
-				$temperature           = floatval( $options['temperature'] );
-				$temperature           = max( 0, min( 1, $temperature ) );
+				$temperature = floatval( $options['temperature'] );
+				$temperature = max( 0, min( 1, $temperature ) );
 				$fields['temperature'] = $temperature;
 			}
 
@@ -2712,11 +2712,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
+			$body = wp_remote_retrieve_body( $response );
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				$decoded = json_decode( $body, true );
-				$error   = json_last_error();
+				$error = json_last_error();
 
 				if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
 					$message = $decoded['error']['message'];
@@ -2736,7 +2736,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$decoded = json_decode( $body, true );
-			$error   = json_last_error();
+			$error = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $error || ! is_array( $decoded ) ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI audio transcription response.', array( 'body' => $body ) );
@@ -2797,14 +2797,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-			$model           = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
-			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$model = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$default_timeout = ! empty( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout         = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : $default_timeout;
-			$timeout         = max( 5, $timeout );
-			$attachments     = $this->extract_attachments_from_options( $options );
-			$payload         = array(
+			$timeout = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : $default_timeout;
+			$timeout = max( 5, $timeout );
+			$attachments = $this->extract_attachments_from_options( $options );
+			$payload = array(
 				'model' => $model,
 			);
 
@@ -2833,7 +2833,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			}
 
-			$chat_messages     = $this->normalise_messages_for_payload( $messages );
+			$chat_messages = $this->normalise_messages_for_payload( $messages );
 			$attachment_lookup = array();
 
 			if ( $should_use_responses_api ) {
@@ -2849,7 +2849,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 				// Always run conversion to handle input_image segments from conversation history.
 
-				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
+				$chat_messages = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 
@@ -2869,7 +2869,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['temperature'] ) && null !== $options['temperature'] && '' !== $options['temperature'] ) {
-				$temperature            = floatval( $options['temperature'] );
+				$temperature = floatval( $options['temperature'] );
 				$payload['temperature'] = max( 0, min( 2, $temperature ) );
 			}
 
@@ -2995,9 +2995,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code     = wp_remote_retrieve_response_code( $response );
-			$body     = wp_remote_retrieve_body( $response );
-			$decoded  = json_decode( $body, true );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
 			$json_err = json_last_error();
 
 			if ( JSON_ERROR_NONE !== $json_err ) {
@@ -3076,7 +3076,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				}
 
-				$all_text   = true;
+				$all_text = true;
 				$text_parts = array();
 
 				foreach ( $segments as $segment ) {
@@ -3096,7 +3096,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				if ( $all_text ) {
-					$text_parts         = array_filter(
+					$text_parts = array_filter(
 						$text_parts,
 						static function ( $part ) {
 							return '' !== trim( $part );
@@ -3129,8 +3129,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $messages;
 			}
 
-			$filtered                = array();
-			$pending_calls           = array();
+			$filtered = array();
+			$pending_calls = array();
 			$awaiting_tool_responses = false;
 
 			foreach ( $messages as $message ) {
@@ -3145,14 +3145,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
-					$pending_calls           = array();
+					$pending_calls = array();
 					$awaiting_tool_responses = false;
 					$filtered[]              = $message;
 					continue;
 				}
 
 				if ( 'assistant' === $role ) {
-					$pending_calls           = array();
+					$pending_calls = array();
 					$awaiting_tool_responses = false;
 
 					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
@@ -3205,7 +3205,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				}
 
-				$pending_calls           = array();
+				$pending_calls = array();
 				$awaiting_tool_responses = false;
 				$filtered[]              = $message;
 			}
@@ -3231,9 +3231,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				}
 
-				$title      = isset( $document['title'] ) && '' !== $document['title'] ? $document['title'] : __( 'Document', 'mcp-ai-wpoos' );
-				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
-				$parts      = count( $chunks );
+				$title = isset( $document['title'] ) && '' !== $document['title'] ? $document['title'] : __( 'Document', 'mcp-ai-wpoos' );
+				$chunks = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+				$parts = count( $chunks );
 				$part_index = 0;
 
 				foreach ( $chunks as $chunk ) {
@@ -3423,12 +3423,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							}
 
 							$segment_copy = $segment;
-							$type         = isset( $segment['type'] ) ? $segment['type'] : '';
+							$type = isset( $segment['type'] ) ? $segment['type'] : '';
 
 							if ( in_array( $type, array( 'text', 'input_text', 'output_text' ), true ) && isset( $segment['text'] ) ) {
-								$content              = (string) $segment['text'];
-								$length               = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
-								$slice                = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
+								$content = (string) $segment['text'];
+								$length = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
+								$slice = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
 								$segment_copy['text'] = $slice . ( $length > 200 ? '…' : '' );
 							}
 
@@ -3487,9 +3487,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 						$message['content'] = $trimmed_segments;
 					} elseif ( isset( $message['content'] ) ) {
-						$content            = (string) $message['content'];
-						$length             = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
-						$slice              = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
+						$content = (string) $message['content'];
+						$length = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
+						$slice = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
 						$message['content'] = $slice . ( $length > 200 ? '…' : '' );
 					}
 
@@ -3675,17 +3675,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return array
 		 */
 		protected function prepare_responses_input( array $original_messages, array $normalised_messages, array $attachments = array() ) {
-			$prepared          = array();
+			$prepared = array();
 			$attachment_lookup = $this->index_attachments_by_id( $attachments );
 
 			foreach ( $normalised_messages as $index => $message ) {
 				$entry = $message;
-				$role  = isset( $entry['role'] ) ? $entry['role'] : '';
+				$role = isset( $entry['role'] ) ? $entry['role'] : '';
 
 				$original_content = isset( $original_messages[ $index ]['content'] ) ? $original_messages[ $index ]['content'] : null;
 
 				if ( isset( $entry['content'] ) && ! is_array( $entry['content'] ) ) {
-					$content_string   = (string) $entry['content'];
+					$content_string = (string) $entry['content'];
 					$entry['content'] = array(
 						array(
 							'type' => 'text',
@@ -3733,8 +3733,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return array
 		 */
 		protected function normalise_responses_content_segments( array $segments, array $attachments = array(), $role = '' ) {
-			$normalised   = array();
-			$role_key     = sanitize_key( $role );
+			$normalised = array();
+			$role_key = sanitize_key( $role );
 			$output_roles = array( 'assistant', 'tool', 'function' );
 
 			foreach ( $segments as $segment ) {
@@ -3781,7 +3781,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				} elseif ( 'input_image' === $type ) {
 					$caption_text = $this->extract_responses_image_caption( $segment, $attachments );
-					$segment      = $this->populate_responses_image_segment( $segment, $attachments );
+					$segment = $this->populate_responses_image_segment( $segment, $attachments );
 
 					if ( isset( $segment['mode'] ) ) {
 						unset( $segment['mode'] );
@@ -3921,7 +3921,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				$segment['file_id'] = $openai_file_id;
-				$file_id            = $openai_file_id;
+				$file_id = $openai_file_id;
 
 				if ( isset( $segment['image'] ) ) {
 					unset( $segment['image'] );
@@ -4013,7 +4013,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
 
 			if ( '' === $file_id && isset( $segment['file']['id'] ) ) {
-				$file_id            = (string) $segment['file']['id'];
+				$file_id = (string) $segment['file']['id'];
 				$segment['file_id'] = $file_id;
 			}
 
@@ -4109,11 +4109,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					}
 
 					$content = isset( $choice['content'] ) ? $choice['content'] : array();
-					$role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
+					$role = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
 
-					$normalised_choice            = $choice;
-					$content_text                 = $this->extract_text_from_response_content( $content );
-					$content_fallback             = is_array( $content ) ? array_values( $content ) : $content;
+					$normalised_choice = $choice;
+					$content_text = $this->extract_text_from_response_content( $content );
+					$content_fallback = is_array( $content ) ? array_values( $content ) : $content;
 					$normalised_choice['message'] = array(
 						'role'    => $role,
 						'content' => '' !== $content_text ? $content_text : $content_fallback,
@@ -4155,7 +4155,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$content_payload = $item['text'];
 					}
 
-					$content_text     = $this->extract_text_from_response_content( $content_payload );
+					$content_text = $this->extract_text_from_response_content( $content_payload );
 					$content_fallback = is_array( $content_payload ) ? array_values( $content_payload ) : $content_payload;
 
 					$choices[] = array(
@@ -4453,7 +4453,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							// Verify attachment exists and get its post status.
 
 							$attachment_post = get_post( $attachment_id );
-							$can_use_url     = false;
+							$can_use_url = false;
 
 							if ( $attachment_post && 'attachment' === $attachment_post->post_type ) {
 								$public_statuses = get_post_stati( array( 'public' => true ) );
@@ -4649,8 +4649,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$payload = array(
 				'name' => $name,
@@ -4696,9 +4696,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI vector store creation failed.', 'mcp-ai-wpoos' );
@@ -4743,8 +4743,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$query_params = array();
 
@@ -4784,9 +4784,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI list vector stores request failed.', 'mcp-ai-wpoos' );
@@ -4832,8 +4832,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
 
@@ -4852,9 +4852,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI retrieve vector store request failed.', 'mcp-ai-wpoos' );
@@ -4900,8 +4900,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
 
@@ -4921,9 +4921,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI delete vector store request failed.', 'mcp-ai-wpoos' );
@@ -4978,8 +4978,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files';
 
@@ -5008,9 +5008,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI add vector store files request failed.', 'mcp-ai-wpoos' );
@@ -5057,8 +5057,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$query_params = array();
 
@@ -5098,9 +5098,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI list vector store files request failed.', 'mcp-ai-wpoos' );
@@ -5138,7 +5138,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$vector_store_id = sanitize_text_field( $vector_store_id );
-			$file_id         = sanitize_text_field( $file_id );
+			$file_id = sanitize_text_field( $file_id );
 
 			if ( empty( $vector_store_id ) || empty( $file_id ) ) {
 				return new WP_Error(
@@ -5149,8 +5149,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id;
 
@@ -5170,9 +5170,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code     = wp_remote_retrieve_response_code( $response );
+			$http_code = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded       = json_decode( $response_body, true );
+			$decoded = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI remove vector store file request failed.', 'mcp-ai-wpoos' );
@@ -5240,7 +5240,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Validate endpoint.
-			$endpoint          = sanitize_text_field( (string) $endpoint );
+			$endpoint = sanitize_text_field( (string) $endpoint );
 			$allowed_endpoints = array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' );
 			if ( ! in_array( $endpoint, $allowed_endpoints, true ) ) {
 				return new WP_Error(
@@ -5255,8 +5255,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			// Build payload.
 			$payload = array(
@@ -5269,7 +5269,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( isset( $options['metadata'] ) && is_array( $options['metadata'] ) && ! empty( $options['metadata'] ) ) {
 				$metadata = array();
 				foreach ( $options['metadata'] as $key => $value ) {
-					$sanitized_key   = sanitize_text_field( $key );
+					$sanitized_key = sanitize_text_field( $key );
 					$sanitized_value = sanitize_text_field( $value );
 					if ( '' !== $sanitized_key && '' !== $sanitized_value ) {
 						$metadata[ $sanitized_key ] = $sanitized_value;
@@ -5315,8 +5315,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -5398,8 +5398,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id );
 
@@ -5433,8 +5433,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -5507,8 +5507,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel';
 
@@ -5542,8 +5542,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -5621,8 +5621,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout = max( 5, $timeout );
 
 			// Build query parameters.
 			$query_params = array();
@@ -5632,8 +5632,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['limit'] ) && '' !== $options['limit'] ) {
-				$limit                 = absint( $options['limit'] );
-				$limit                 = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
+				$limit = absint( $options['limit'] );
+				$limit = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
 				$query_params['limit'] = $limit;
 			}
 
@@ -5672,8 +5672,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
@@ -5745,11 +5745,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
 			// Configuration options with defaults.
-			$strict_validation     = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
-			$max_recursive_runs    = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
+			$strict_validation = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
+			$max_recursive_runs = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
 			$stream_final_response = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
-			$verbose               = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
-			$auto_trim_tools       = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
+			$verbose = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
+			$auto_trim_tools = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
 
 			if ( $verbose ) {
 				WP_MCP_AI_Logger::log_event(
@@ -5788,7 +5788,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Convert tools to OpenAI format and create tool lookup.
 			$tool_definitions = array();
-			$tool_functions   = array();
+			$tool_functions = array();
 
 			foreach ( $tools as $tool ) {
 				if ( ! isset( $tool['name'] ) || ! isset( $tool['function'] ) ) {
@@ -5817,12 +5817,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Prepare options with tools.
-			$request_options          = $options;
+			$request_options = $options;
 			$request_options['tools'] = $tool_definitions;
 
 			// Execute recursive tool calling loop.
 			$conversation_messages = $messages;
-			$recursion_count       = 0;
+			$recursion_count = 0;
 
 			while ( $recursion_count < $max_recursive_runs ) {
 				++$recursion_count;
@@ -5872,7 +5872,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					}
 
 					$function_name = $tool_call['function']['name'];
-					$tool_call_id  = isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
 
 					// Check if function exists.
 					if ( ! isset( $tool_functions[ $function_name ] ) ) {
@@ -6063,7 +6063,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					}
 
 					$expected_type = $param_schema['type'];
-					$actual_type   = gettype( $param_value );
+					$actual_type = gettype( $param_value );
 
 					// Map PHP types to JSON Schema types.
 					$type_map = array(
@@ -6140,7 +6140,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				// Check name relevance.
 				if ( isset( $tool['name'] ) ) {
-					$tool_name  = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
+					$tool_name = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
 					$name_words = explode( ' ', $tool_name );
 					foreach ( $name_words as $word ) {
 						if ( ! empty( $word ) && false !== strpos( $last_user_message, $word ) ) {
@@ -6151,7 +6151,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				// Check description relevance.
 				if ( isset( $tool['description'] ) ) {
-					$tool_desc  = strtolower( $tool['description'] );
+					$tool_desc = strtolower( $tool['description'] );
 					$desc_words = explode( ' ', $tool_desc );
 					foreach ( $desc_words as $word ) {
 						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
@@ -6175,7 +6175,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			// Keep top tools (limit to maxTools option).
-			$max_tools     = isset( $options['maxTools'] ) ? absint( $options['maxTools'] ) : 10;
+			$max_tools = isset( $options['maxTools'] ) ? absint( $options['maxTools'] ) : 10;
 			$trimmed_tools = array();
 
 			foreach ( array_slice( $scored_tools, 0, $max_tools ) as $scored ) {
