@@ -92,7 +92,10 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 NV oOS works perfectly standalone. Optional integrations add enhanced functionality:
 
-* **JetEngine** (paid) - AI metaboxes for all JetEngine CPTs/taxonomies, Research & Add pages with field mapping, server-side chat transcript storage, CCT integration
+* **JetEngine** (paid) - Advanced integration with AI-powered features
+  - AI metaboxes for all JetEngine CPTs and taxonomies
+  - Research & Add pages with automatic field mapping
+  - Server-side chat transcript storage via CCT
 * **WooCommerce** (free) - E-commerce automation tools
 * **Elementor** (freemium) - Template management, pre-built widgets
 * **Rank Math SEO** (freemium) - SEO analysis and optimization
