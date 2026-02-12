@@ -167,20 +167,20 @@ class WP_MCP_AI_JetEngine_CPT_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 *
 	 * Extracts field definitions from JetEngine meta fields using the correct API.
 	 * Uses jet_engine()->meta_boxes->get_fields_for_context() per JetEngine best practices.
+	 * Compatible with JetEngine 3.7+ and 3.8+.
 	 *
 	 * @return array Field definitions.
 	 */
 	private function get_jetengine_field_schema() {
 		$schema = array();
 
-		// Get JetEngine meta fields for this CPT using the correct API.
-		// Best practice: Use get_fields_for_context() method.
-		if ( ! function_exists( 'jet_engine' ) || ! isset( jet_engine()->meta_boxes ) ) {
-			return $schema;
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
 		// Get registered meta fields for this post type.
-		$meta_fields = jet_engine()->meta_boxes->get_fields_for_context( 'post_type', $this->post_type );
+		$meta_fields = WP_MCP_AI_JetEngine_Compat::get_post_type_meta_fields( $this->post_type );
 
 		if ( empty( $meta_fields ) || ! is_array( $meta_fields ) ) {
 			return $schema;

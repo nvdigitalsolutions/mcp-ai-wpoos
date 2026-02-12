@@ -284,24 +284,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 * @return array Array of JetEngine CPT data.
 		 */
 		private function get_jetengine_cpts() {
-			// Check if JetEngine is active.
-			if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
-				return array();
+			// Use compatibility layer for version-safe access.
+			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				if ( file_exists( $compat_file ) ) {
+					require_once $compat_file;
+				} else {
+					// Fallback for base version.
+					return array();
+				}
 			}
 
-			// Get JetEngine post types module.
-			$module = jet_engine()->modules->get_module( 'post-type' );
-			if ( ! $module || ! $module->instance ) {
-				return array();
-			}
-
-			// Get registered post types.
-			$post_types = $module->instance->get_items();
-			if ( empty( $post_types ) || ! is_array( $post_types ) ) {
-				return array();
-			}
-
-			return $post_types;
+			return WP_MCP_AI_JetEngine_Compat::get_jetengine_cpts();
 		}
 
 		/**
@@ -310,24 +304,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 * @return array Array of JetEngine taxonomy data.
 		 */
 		private function get_jetengine_taxonomies() {
-			// Check if JetEngine is active.
-			if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
-				return array();
+			// Use compatibility layer for version-safe access.
+			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+				$compat_file = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-jetengine-compat.php';
+				if ( file_exists( $compat_file ) ) {
+					require_once $compat_file;
+				} else {
+					// Fallback for base version.
+					return array();
+				}
 			}
 
-			// Get JetEngine taxonomy module.
-			$module = jet_engine()->modules->get_module( 'taxonomy' );
-			if ( ! $module || ! $module->instance ) {
-				return array();
-			}
-
-			// Get registered taxonomies.
-			$taxonomies = $module->instance->get_items();
-			if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
-				return array();
-			}
-
-			return $taxonomies;
+			return WP_MCP_AI_JetEngine_Compat::get_jetengine_taxonomies();
 		}
 
 		/**

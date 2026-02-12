@@ -204,20 +204,20 @@ class WP_MCP_AI_JetEngine_Taxonomy_Research_Add extends WP_MCP_AI_Research_Add_B
 	 *
 	 * Extracts field definitions from JetEngine meta fields using the correct API.
 	 * Uses jet_engine()->meta_boxes->get_fields_for_context('taxonomy', $taxonomy) per JetEngine best practices.
+	 * Compatible with JetEngine 3.7+ and 3.8+.
 	 *
 	 * @return array Field definitions.
 	 */
 	private function get_jetengine_field_schema() {
 		$schema = array();
 
-		// Get JetEngine meta fields for this taxonomy using the correct API.
-		// Best practice: Use get_fields_for_context() method for taxonomies.
-		if ( ! function_exists( 'jet_engine' ) || ! isset( jet_engine()->meta_boxes ) ) {
-			return $schema;
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
 		// Get registered meta fields for this taxonomy.
-		$meta_fields = jet_engine()->meta_boxes->get_fields_for_context( 'taxonomy', $this->taxonomy_slug );
+		$meta_fields = WP_MCP_AI_JetEngine_Compat::get_taxonomy_meta_fields( $this->taxonomy_slug );
 
 		if ( empty( $meta_fields ) || ! is_array( $meta_fields ) ) {
 			return $schema;

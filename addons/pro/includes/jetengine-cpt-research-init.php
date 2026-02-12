@@ -176,23 +176,12 @@ class WP_MCP_AI_JetEngine_CPT_Research_Init {
 	 * @return array Array of JetEngine CPT data.
 	 */
 	private function get_jetengine_cpts() {
-		if ( ! $this->is_jetengine_active() ) {
-			return array();
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
-		// Get JetEngine post types module.
-		$module = jet_engine()->modules->get_module( 'post-type' );
-		if ( ! $module || ! $module->instance ) {
-			return array();
-		}
-
-		// Get registered post types.
-		$post_types = $module->instance->get_items();
-		if ( empty( $post_types ) || ! is_array( $post_types ) ) {
-			return array();
-		}
-
-		return $post_types;
+		return WP_MCP_AI_JetEngine_Compat::get_jetengine_cpts();
 	}
 
 	/**
@@ -201,23 +190,12 @@ class WP_MCP_AI_JetEngine_CPT_Research_Init {
 	 * @return array Array of JetEngine taxonomy data.
 	 */
 	private function get_jetengine_taxonomies() {
-		if ( ! $this->is_jetengine_active() ) {
-			return array();
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
-		// Get JetEngine taxonomy module.
-		$module = jet_engine()->modules->get_module( 'taxonomy' );
-		if ( ! $module || ! $module->instance ) {
-			return array();
-		}
-
-		// Get registered taxonomies.
-		$taxonomies = $module->instance->get_items();
-		if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
-			return array();
-		}
-
-		return $taxonomies;
+		return WP_MCP_AI_JetEngine_Compat::get_jetengine_taxonomies();
 	}
 }
 

@@ -133,27 +133,18 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array Array of JetEngine CPT slugs.
 	 */
 	private function get_jetengine_cpts() {
-		// Check if JetEngine is active.
-		if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
-			return array();
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
-		// Get JetEngine post types module.
-		$module = jet_engine()->modules->get_module( 'post-type' );
-		if ( ! $module || ! $module->instance ) {
-			return array();
-		}
+		$cpts = WP_MCP_AI_JetEngine_Compat::get_jetengine_cpts();
 
-		// Get registered post types.
-		$post_types = $module->instance->get_items();
-		if ( empty( $post_types ) || ! is_array( $post_types ) ) {
-			return array();
-		}
-
+		// Extract slugs only.
 		$cpt_slugs = array();
-		foreach ( $post_types as $post_type ) {
-			if ( isset( $post_type['slug'] ) && ! empty( $post_type['slug'] ) ) {
-				$cpt_slugs[] = $post_type['slug'];
+		foreach ( $cpts as $cpt ) {
+			if ( isset( $cpt['slug'] ) && ! empty( $cpt['slug'] ) ) {
+				$cpt_slugs[] = $cpt['slug'];
 			}
 		}
 
@@ -166,23 +157,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array Array of JetEngine taxonomy slugs.
 	 */
 	private function get_jetengine_taxonomies() {
-		// Check if JetEngine is active.
-		if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
-			return array();
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
 		}
 
-		// Get JetEngine taxonomy module.
-		$module = jet_engine()->modules->get_module( 'taxonomy' );
-		if ( ! $module || ! $module->instance ) {
-			return array();
-		}
+		$taxonomies = WP_MCP_AI_JetEngine_Compat::get_jetengine_taxonomies();
 
-		// Get registered taxonomies.
-		$taxonomies = $module->instance->get_items();
-		if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
-			return array();
-		}
-
+		// Extract slugs only.
 		$taxonomy_slugs = array();
 		foreach ( $taxonomies as $taxonomy ) {
 			if ( isset( $taxonomy['slug'] ) && ! empty( $taxonomy['slug'] ) ) {
