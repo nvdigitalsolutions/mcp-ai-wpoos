@@ -305,13 +305,13 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 **1. Admin Hook Detection Fix (Feb 10)**
 - Fixed CSS/JS not loading on Product Consolidate page
 - Corrected hook pattern from CPT to custom menu format
-- [Details →](PRODUCT_RESEARCH_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
 
 **2. Tab System Fix (Feb 11)**
 - Fixed all workflow tabs displaying simultaneously
 - Added defensive inline styles and flexible hook matching
 - Enhanced CSS specificity to prevent overrides
-- [Details →](PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+- [Detailed Documentation →](docs/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
 
 **3. Additional Fixes:**
 - Improved asset enqueuing priority
