@@ -445,11 +445,6 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @param array  $focus_areas        Focus areas.
 	 * @param array  $search_results     Search results from web search.
 	 * @param bool   $include_curriculum Whether to include curriculum.
-	 * @param string $age_group          Target age group.
-	 * @param string $depth              Research depth.
-	 * @param array  $focus_areas        Focus areas.
-	 * @param array  $search_results     Search results from web search.
-	 * @param bool   $include_curriculum Whether to include curriculum.
 	 * @return string Research prompt.
 	 */
 	protected function build_research_prompt( $query, $age_group, $depth, $focus_areas, $search_results, $include_curriculum ) {
