@@ -93,7 +93,7 @@ class WP_MCP_AI_Prettier_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_prettier_not_configured',
-				__( 'Prettier code formatting requires Node.js integration. Please implement the wp_mcp_ai_prettier_format_code filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'Prettier code formatting requires Node.js integration. Please implement the wp_mcp_ai_prettier_format_code filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'prettier',

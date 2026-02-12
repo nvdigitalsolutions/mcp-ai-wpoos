@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( false === $result ) {
 			// Default implementation note.
 			return array(
-				'error' => __( 'KaTeX rendering requires a Node.js service. Please implement the wp_mcp_ai_katex_render_equation filter or set up a Node.js microservice. See INTEGRATION_BEST_PRACTICES.md for server-side rendering guide.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'KaTeX rendering requires a Node.js service. Please implement the wp_mcp_ai_katex_render_equation filter or set up a Node.js microservice. See docs/INTEGRATION_BEST_PRACTICES.md for server-side rendering guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

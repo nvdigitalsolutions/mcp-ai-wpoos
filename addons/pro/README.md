@@ -604,12 +604,12 @@ Test and documentation files are excluded from tracked packages:
 
 ## Troubleshooting
 
-For detailed troubleshooting guidance, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+For detailed troubleshooting guidance, see [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md).
 
 ### Common Issues
 
 #### JavaScript/CSS Not Loading in Base+Pro Setup
-If the Password Generator & Authenticator page displays but buttons don't work, ensure you're running v1.3.0+ which includes the fix for asset URL detection in separate plugin installations. See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md#javascriptcss-not-loading) for details.
+If the Password Generator & Authenticator page displays but buttons don't work, ensure you're running v1.3.0+ which includes the fix for asset URL detection in separate plugin installations. See [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md#javascriptcss-not-loading) for details.
 
 #### sharp Installation Issues
 
@@ -646,7 +646,7 @@ brew install ffmpeg
 - **Pro Toolkit Documentation**: See `/addons/pro/docs/` directory
 - **Tool Reference**: Comprehensive documentation in toolkit README files
 - **Integration Guides**: Phase implementation documentation
-- **NPM Package Details**: `NPM_PACKAGE_OPPORTUNITIES.md`
+- **NPM Package Details**: `docs/NPM_PACKAGE_OPPORTUNITIES.md`
 - **Architecture**: `TOOLKIT_ARCHITECTURE.md` and `TOOLKIT_ARCHITECTURE_PATTERNS.md`
 - **Base Plugin Docs**: See `/docs/` in main repository
 
