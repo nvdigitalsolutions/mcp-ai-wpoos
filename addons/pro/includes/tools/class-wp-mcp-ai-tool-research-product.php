@@ -1175,7 +1175,7 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 				// Stock & Availability.
 				'stock_status'          => isset( $data['stock_status'] ) ? sanitize_key( $data['stock_status'] ) : 'instock',
 				'virtual'               => isset( $data['virtual'] ) ? (bool) $data['virtual'] : false,
-				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] ) : false,
+				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] : false,
 				'external_url'          => isset( $data['external_url'] ) ? esc_url_raw( $data['external_url'] ) : '',
 				
 				// Dimensions and weight.
