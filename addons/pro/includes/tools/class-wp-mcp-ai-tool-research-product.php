@@ -120,10 +120,15 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',              // Pro tier tool.
-			'read-only',        // Research only, doesn't modify data.
-			'requires-plugin',  // Requires WooCommerce.
-			'local-only',       // No external API calls.
+			'pro',                   // Pro tier tool.
+			'read-only',             // Research only, doesn't modify data.
+			'requires-plugin',       // Requires WooCommerce.
+			'requires-credentials',  // Needs AI API keys.
+			'consumes-tokens',       // Uses AI API tokens.
+			'external-api',          // Makes external API calls.
+			'network-dependent',     // Requires internet connection.
+			'may-timeout',           // May take longer to complete.
+			'cacheable',             // Results can be cached.
 		);
 	}
 
@@ -163,29 +168,79 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			? sanitize_text_field( $arguments['suggested_reference'] )
 			: $this->generate_reference( $query );
 
-		// Build research guidance.
-		$guidance = $this->build_research_guidance( $query, $include_pricing, $include_images, $include_specs );
+		// Check cache first.
+		$cache_key = 'product_research_' . md5( $query . '_' . $include_pricing . '_' . $include_images . '_' . $include_specs );
+		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_product_research' );
 
-		// Return research structure and guidance.
-		return array(
-			'status'         => 'research_initiated',
-			'query'          => $query,
-			'reference'      => $reference,
-			'guidance'       => $guidance,
-			'structure'      => $this->get_product_structure(),
-			'next_steps'     => array(
-				__( 'Use the research guidance to gather product information from available sources.', 'mcp-ai-wpoos-pro' ),
-				__( 'Structure the gathered information according to the provided schema.', 'mcp-ai-wpoos-pro' ),
-				__( 'Once you have complete product data, use the "Create WooCommerce Product Draft" tool.', 'mcp-ai-wpoos-pro' ),
-			),
-			'create_tool'    => 'create_woo_product',
-			'tool_arguments' => array(
-				'reference' => $reference,
-				'title'     => sprintf( __( 'Replace with actual product name for: %s', 'mcp-ai-wpoos-pro' ), $query ),
-				'brand'     => __( 'Replace with actual brand name', 'mcp-ai-wpoos-pro' ),
-				// Additional fields to be filled based on research.
-			),
+		if ( false !== $cached && is_array( $cached ) ) {
+			$cached['_from_cache'] = true;
+			WP_MCP_AI_Logger::log_event(
+				'product_research_cache_hit',
+				'Product research served from cache',
+				array(
+					'query'     => $query,
+					'cache_key' => $cache_key,
+				)
+			);
+			return $cached;
+		}
+
+		// Log research start.
+		WP_MCP_AI_Logger::log_event(
+			'product_research_started',
+			'Starting product research',
+			array(
+				'query'           => $query,
+				'include_pricing' => $include_pricing,
+				'include_images'  => $include_images,
+				'include_specs'   => $include_specs,
+			)
 		);
+
+		// Build research prompt.
+		$prompt = $this->build_research_prompt( $query, $include_pricing, $include_images, $include_specs );
+
+		// Use AI to research the product.
+		$research_result = $this->perform_ai_research( $prompt, $context );
+
+		if ( is_wp_error( $research_result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Product research failed: ' . $research_result->get_error_message(),
+				array(
+					'query' => $query,
+					'error' => $research_result->get_error_code(),
+				)
+			);
+			return $research_result;
+		}
+
+		// Parse and validate the research results.
+		$product_data = $this->parse_research_results( $research_result, $query, $reference );
+
+		if ( is_wp_error( $product_data ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to parse product research results: ' . $product_data->get_error_message(),
+				array(
+					'query' => $query,
+				)
+			);
+			return $product_data;
+		}
+
+		// Cache the results for 24 hours.
+		wp_cache_set( $cache_key, $product_data, 'wp_mcp_ai_product_research', DAY_IN_SECONDS );
+
+		// Log success.
+		WP_MCP_AI_Logger::log_event(
+			'product_research_completed',
+			'Product research completed successfully',
+			array(
+				'query'    => $query,
+				'has_data' => ! empty( $product_data['product_data'] ),
+			)
+		);
+
+		return $product_data;
 	}
 
 	/**
@@ -209,44 +264,777 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * Build research guidance for the AI.
+	 * Build the research prompt for AI.
 	 *
 	 * @param string $query          Product query.
-	 * @param bool   $include_pricing Include pricing guidance.
-	 * @param bool   $include_images  Include image guidance.
-	 * @param bool   $include_specs   Include specifications guidance.
-	 * @return string Research guidance.
+	 * @param bool   $include_pricing Include pricing information.
+	 * @param bool   $include_images  Include image URLs.
+	 * @param bool   $include_specs   Include specifications.
+	 * @return string Research prompt.
 	 */
-	protected function build_research_guidance( $query, $include_pricing, $include_images, $include_specs ) {
-		$guidance = sprintf(
-			__( 'Research the following product: %s', 'mcp-ai-wpoos-pro' ),
+	protected function build_research_prompt( $query, $include_pricing, $include_images, $include_specs ) {
+		$prompt = sprintf(
+			"Research the following product and gather comprehensive, accurate information:\n\n**Product:** %s\n\n",
 			$query
-		) . "\n\n";
+		);
 
-		$guidance .= __( 'Gather the following information:', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '1. Product name and brand', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '2. Full product description (features, benefits, use cases)', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '3. Short description for product summary', 'mcp-ai-wpoos-pro' ) . "\n";
+		$prompt .= "Use web search to find current, factually correct information. Gather:\n\n";
+		$prompt .= "**CORE PRODUCT DATA:**\n";
+		$prompt .= "1. **Product Name**: Full official product name\n";
+		$prompt .= "2. **Brand**: Brand/manufacturer name\n";
+		$prompt .= "3. **Product Identifiers** (if available):\n";
+		$prompt .= "   - GTIN (Global Trade Item Number / Barcode)\n";
+		$prompt .= "   - MPN (Manufacturer Part Number)\n";
+		$prompt .= "   - SKU (Stock Keeping Unit)\n";
+		$prompt .= "   - ISBN (if book product)\n";
+		$prompt .= "4. **Product Condition**: new, refurbished, used, or damaged\n";
+		$prompt .= "5. **Description**: Comprehensive product description (200-500 words) covering:\n";
+		$prompt .= "   - Key features and benefits\n";
+		$prompt .= "   - Use cases and target audience\n";
+		$prompt .= "   - What makes it unique/competitive advantage\n";
+		$prompt .= "6. **Short Description**: Brief summary (50-100 words) for product preview\n";
 
 		if ( $include_pricing ) {
-			$guidance .= __( '4. Regular price in local currency', 'mcp-ai-wpoos-pro' ) . "\n";
-			$guidance .= __( '5. Sale price if available', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "\n**PRICING:**\n";
+			$prompt .= "7. **Regular Price**: Current market price in USD (numeric value only, e.g., 149.99)\n";
+			$prompt .= "8. **Sale Price**: Current sale/promotional price if available (numeric value)\n";
+			$prompt .= "9. **Price Currency**: Currency code (USD, EUR, GBP, etc.)\n";
+			$prompt .= "10. **Price Valid Until**: Date if limited-time pricing (YYYY-MM-DD format)\n";
 		}
 
 		if ( $include_images ) {
-			$guidance .= __( '6. Product image URLs (at least 2-3 high-quality images)', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "\n**IMAGES:**\n";
+			$prompt .= "11. **Image URLs**: 2-5 high-quality product images\n";
+			$prompt .= "    - Use official product images from manufacturer/authorized retailers\n";
+			$prompt .= "    - Include different angles/views if available\n";
+			$prompt .= "    - Ensure URLs are accessible and not temporary\n";
 		}
 
 		if ( $include_specs ) {
-			$guidance .= __( '7. Product specifications and attributes (size, color, material, etc.)', 'mcp-ai-wpoos-pro' ) . "\n";
-			$guidance .= __( '8. Technical specifications if applicable', 'mcp-ai-wpoos-pro' ) . "\n";
+			$prompt .= "\n**SPECIFICATIONS & ATTRIBUTES:**\n";
+			$prompt .= "12. **Dimensions**: Product dimensions (length x width x height with units)\n";
+			$prompt .= "13. **Weight**: Product weight (with units)\n";
+			$prompt .= "14. **Materials**: Primary materials used\n";
+			$prompt .= "15. **Color Options**: Available color variations\n";
+			$prompt .= "16. **Size Options**: Available size variations (if applicable)\n";
+			$prompt .= "17. **Technical Specifications**: Key technical specs relevant to product\n";
+			$prompt .= "18. **Attributes**: Product variations/options with their available values\n";
 		}
 
-		$guidance .= __( '9. Suggested product categories and tags', 'mcp-ai-wpoos-pro' ) . "\n";
-		$guidance .= __( '10. Product type (simple, variable, grouped, external)', 'mcp-ai-wpoos-pro' ) . "\n";
+		$prompt .= "\n**CATEGORIZATION & SEO:**\n";
+		$prompt .= "19. **Product Categories**: Primary and secondary WooCommerce categories\n";
+		$prompt .= "20. **Tags**: 5-10 relevant product tags for search/filtering\n";
+		$prompt .= "21. **Target Audience**: Who is this product for?\n";
+		$prompt .= "22. **SEO Keywords**: 3-5 main keywords for SEO\n";
 
-		return $guidance;
+		$prompt .= "\n**AVAILABILITY & STOCK:**\n";
+		$prompt .= "23. **Product Type**: Determine the appropriate WooCommerce product type:\n";
+		$prompt .= "    - **simple**: Single item with no variations (default)\n";
+		$prompt .= "    - **variable**: Has multiple variations (size, color, etc.) - each variation has own price/SKU/stock\n";
+		$prompt .= "    - **grouped**: Collection of related simple products sold together or separately\n";
+		$prompt .= "    - **external**: Links to another website for purchase (affiliate/dropship)\n";
+		$prompt .= "24. **Virtual**: true if intangible (service, consultation, membership) - no shipping needed\n";
+		$prompt .= "25. **Downloadable**: true if customer downloads file after purchase (ebook, software, music)\n";
+		$prompt .= "26. **Stock Status**: instock, outofstock, or onbackorder\n";
+		$prompt .= "27. **Availability Region**: Geographic availability if limited\n";
+		$prompt .= "28. **External URL**: If product type is external, the URL where product is sold\n\n";
+
+		$prompt .= "**IMPORTANT**: Return the information in the following JSON format:\n\n";
+		$prompt .= "```json\n";
+		$prompt .= "{\n";
+		$prompt .= '  "title": "Official Product Name",';
+		$prompt .= "\n";
+		$prompt .= '  "brand": {';
+		$prompt .= "\n";
+		$prompt .= '    "name": "Brand Name",';
+		$prompt .= "\n";
+		$prompt .= '    "website": "https://brand.com" (if found)';
+		$prompt .= "\n";
+		$prompt .= '  },';
+		$prompt .= "\n";
+		$prompt .= '  "identifiers": {';
+		$prompt .= "\n";
+		$prompt .= '    "gtin": "012345678901",';
+		$prompt .= "\n";
+		$prompt .= '    "mpn": "MODEL-XYZ",';
+		$prompt .= "\n";
+		$prompt .= '    "sku": "SKU-123",';
+		$prompt .= "\n";
+		$prompt .= '    "isbn": "978-1234567890" (if book)';
+		$prompt .= "\n";
+		$prompt .= '  },';
+		$prompt .= "\n";
+		$prompt .= '  "condition": "new",';
+		$prompt .= "\n";
+		$prompt .= '  "description": "<p>HTML formatted comprehensive description...</p>",';
+		$prompt .= "\n";
+		$prompt .= '  "description_secondary": "Short description text",';
+		$prompt .= "\n";
+		$prompt .= '  "target_audience": "Who is this for?",';
+		$prompt .= "\n";
+
+		if ( $include_pricing ) {
+			$prompt .= '  "pricing": {';
+			$prompt .= "\n";
+			$prompt .= '    "regular_price": "149.99",';
+			$prompt .= "\n";
+			$prompt .= '    "sale_price": "129.99",';
+			$prompt .= "\n";
+			$prompt .= '    "currency": "USD",';
+			$prompt .= "\n";
+			$prompt .= '    "price_valid_until": "2026-12-31"';
+			$prompt .= "\n";
+			$prompt .= '  },';
+			$prompt .= "\n";
+		}
+
+		if ( $include_images ) {
+			$prompt .= '  "images": [';
+			$prompt .= "\n";
+			$prompt .= '    {';
+			$prompt .= "\n";
+			$prompt .= '      "url": "https://example.com/image1.jpg",';
+			$prompt .= "\n";
+			$prompt .= '      "alt": "Product front view"';
+			$prompt .= "\n";
+			$prompt .= '    },';
+			$prompt .= "\n";
+			$prompt .= '    {';
+			$prompt .= "\n";
+			$prompt .= '      "url": "https://example.com/image2.jpg",';
+			$prompt .= "\n";
+			$prompt .= '      "alt": "Product side view"';
+			$prompt .= "\n";
+			$prompt .= '    }';
+			$prompt .= "\n";
+			$prompt .= '  ],';
+			$prompt .= "\n";
+		}
+
+		if ( $include_specs ) {
+			$prompt .= '  "dimensions": {';
+			$prompt .= "\n";
+			$prompt .= '    "length": "10",';
+			$prompt .= "\n";
+			$prompt .= '    "width": "5",';
+			$prompt .= "\n";
+			$prompt .= '    "height": "3",';
+			$prompt .= "\n";
+			$prompt .= '    "unit": "inches"';
+			$prompt .= "\n";
+			$prompt .= '  },';
+			$prompt .= "\n";
+			$prompt .= '  "weight": {';
+			$prompt .= "\n";
+			$prompt .= '    "value": "2.5",';
+			$prompt .= "\n";
+			$prompt .= '    "unit": "lbs"';
+			$prompt .= "\n";
+			$prompt .= '  },';
+			$prompt .= "\n";
+			$prompt .= '  "specifications": {';
+			$prompt .= "\n";
+			$prompt .= '    "material": "Leather",';
+			$prompt .= "\n";
+			$prompt .= '    "color": "Black",';
+			$prompt .= "\n";
+			$prompt .= '    "warranty": "1 year"';
+			$prompt .= "\n";
+			$prompt .= '  },';
+			$prompt .= "\n";
+			$prompt .= '  "attributes": [';
+			$prompt .= "\n";
+			$prompt .= '    {"name": "Color", "options": ["Black", "Brown", "Red"], "visible": true, "variation": true},';
+			$prompt .= "\n";
+			$prompt .= '    {"name": "Size", "options": ["S", "M", "L", "XL"], "visible": true, "variation": true}';
+			$prompt .= "\n";
+			$prompt .= '  ],';
+			$prompt .= "\n";
+		}
+
+		$prompt .= '  "categories": ["Primary Category", "Secondary Category"],';
+		$prompt .= "\n";
+		$prompt .= '  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],';
+		$prompt .= "\n";
+		$prompt .= '  "seo_keywords": ["keyword1", "keyword2", "keyword3"],';
+		$prompt .= "\n";
+		$prompt .= '  "product_type": "simple",';
+		$prompt .= "\n";
+		$prompt .= '  "virtual": false,';
+		$prompt .= "\n";
+		$prompt .= '  "downloadable": false,';
+		$prompt .= "\n";
+		$prompt .= '  "stock_status": "instock",';
+		$prompt .= "\n";
+		$prompt .= '  "availability_region": "US" or "Worldwide",';
+		$prompt .= "\n";
+		$prompt .= '  "external_url": "https://external-site.com/product" (if external type),';
+		$prompt .= "\n";
+		$prompt .= '  "sources": [';
+		$prompt .= "\n";
+		$prompt .= '    {"url": "https://source1.com", "type": "manufacturer"},';
+		$prompt .= "\n";
+		$prompt .= '    {"url": "https://source2.com", "type": "retailer"}';
+		$prompt .= "\n";
+		$prompt .= '  ],';
+		$prompt .= "\n";
+		$prompt .= '  "data_quality": {';
+		$prompt .= "\n";
+		$prompt .= '    "completeness_score": 95,';
+		$prompt .= "\n";
+		$prompt .= '    "confidence_level": "high",';
+		$prompt .= "\n";
+		$prompt .= '    "last_verified": "2026-02-12"';
+		$prompt .= "\n";
+		$prompt .= '  }';
+		$prompt .= "\n";
+		$prompt .= "}\n";
+		$prompt .= "```\n\n";
+
+		$prompt .= "**CRITICAL REQUIREMENTS:**\n";
+		$prompt .= "- Use web search to find CURRENT, ACCURATE information\n";
+		$prompt .= "- Verify all data from multiple reliable sources\n";
+		$prompt .= "- Include source URLs with source type (manufacturer/retailer/review site)\n";
+		$prompt .= "- Ensure product identifiers (GTIN, MPN) are correct if found\n";
+		$prompt .= "- Choose correct product_type based on whether product has variations:\n";
+		$prompt .= "  * simple: No variations (single size/color/option)\n";
+		$prompt .= "  * variable: Multiple variations (different sizes/colors with own pricing)\n";
+		$prompt .= "  * grouped: Bundle of related products\n";
+		$prompt .= "  * external: Sold on another website\n";
+		$prompt .= "- Mark virtual=true for services/intangibles (no shipping)\n";
+		$prompt .= "- Mark downloadable=true for digital products with file downloads\n";
+		$prompt .= "- Aim for >95% data completeness\n";
+		$prompt .= "- Only include data you're confident is accurate\n";
+		$prompt .= "- Mark confidence level (high/medium/low) based on source quality\n";
+
+		return $prompt;
 	}
+
+	/**
+	 * Perform AI research using the plugin's AI capabilities.
+	 *
+	 * @param string $prompt  Research prompt.
+	 * @param array  $context Execution context.
+	 * @return array|WP_Error Research results or error.
+	 */
+	protected function perform_ai_research( $prompt, $context ) {
+		// Get a suitable AI model for research.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$provider = $this->get_research_provider( $settings );
+		$model    = $this->get_research_model( $provider, $settings );
+
+		if ( is_wp_error( $provider ) ) {
+			return $provider;
+		}
+
+		if ( is_wp_error( $model ) ) {
+			return $model;
+		}
+
+		// Build messages array.
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are a helpful AI assistant and e-commerce product researcher. You research products and gather comprehensive, accurate product information. Always respond with valid JSON matching the requested format. Use web search when available to ensure accuracy and get current pricing.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		);
+
+		// Call the appropriate AI client.
+		$client = $this->get_ai_client( $provider, $settings );
+
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		// Make the API call.
+		$result = $client->create_chat_completion(
+			$messages,
+			array(
+				'model'       => $model,
+				'temperature' => 0.2, // Low temperature for factual, accurate content.
+				'max_tokens'  => 3000, // Allow for detailed product information.
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Extract the content from the response.
+		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_response',
+				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array(
+			'content'  => $result['choices'][0]['message']['content'],
+			'provider' => $provider,
+			'model'    => $model,
+		);
+	}
+
+	/**
+	 * Get the best available provider for research.
+	 *
+	 * @param array $settings Plugin settings.
+	 * @return string|WP_Error Provider name or error.
+	 */
+	protected function get_research_provider( $settings ) {
+		// Prefer OpenAI or Gemini for research tasks.
+		if ( ! empty( $settings['openai_api_key'] ) ) {
+			return 'openai';
+		}
+
+		if ( ! empty( $settings['gemini_api_key'] ) ) {
+			return 'gemini';
+		}
+
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			return 'anthropic';
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_no_provider',
+			__( 'No AI provider configured. Please configure OpenAI, Gemini, or Anthropic API keys in plugin settings.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	/**
+	 * Get the best model for research from a provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @param array  $settings Plugin settings.
+	 * @return string|WP_Error Model identifier or error.
+	 */
+	protected function get_research_model( $provider, $settings ) {
+		switch ( $provider ) {
+			case 'openai':
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
+
+			case 'gemini':
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.0-flash-exp';
+
+			case 'anthropic':
+				return 'claude-sonnet-4-5-20250929';
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_unsupported_provider',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'Provider not supported for research: %s', 'mcp-ai-wpoos-pro' ),
+						$provider
+					)
+				);
+		}
+	}
+
+	/**
+	 * Get the appropriate AI client for a provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @param array  $settings Plugin settings.
+	 * @return object|WP_Error AI client instance or error.
+	 */
+	protected function get_ai_client( $provider, $settings ) {
+		switch ( $provider ) {
+			case 'openai':
+				if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'OpenAI client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_OpenAI_Client();
+
+			case 'gemini':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Gemini client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Gemini_Client();
+
+			case 'anthropic':
+				if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_client_unavailable',
+						__( 'Anthropic client not available.', 'mcp-ai-wpoos-pro' )
+					);
+				}
+				return new WP_MCP_AI_Anthropic_Client();
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_unsupported_provider',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'AI client not available for provider: %s', 'mcp-ai-wpoos-pro' ),
+						$provider
+					)
+				);
+		}
+	}
+
+	/**
+	 * Parse the AI research results into product data format.
+	 *
+	 * @param array  $research_result AI research results.
+	 * @param string $query           Original product query.
+	 * @param string $reference       Generated reference/SKU.
+	 * @return array|WP_Error Parsed product data or error.
+	 */
+	protected function parse_research_results( $research_result, $query, $reference ) {
+		$content = $research_result['content'];
+
+		// Extract JSON from markdown code blocks if present.
+		if ( preg_match( '/```json\s*(.*?)\s*```/s', $content, $matches ) ) {
+			$json = $matches[1];
+		} elseif ( preg_match( '/```\s*(.*?)\s*```/s', $content, $matches ) ) {
+			$json = $matches[1];
+		} else {
+			$json = $content;
+		}
+
+		// Parse JSON.
+		$data = json_decode( $json, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error(
+				'wp_mcp_ai_parse_error',
+				sprintf(
+					/* translators: %s: JSON error message */
+					__( 'Failed to parse AI response as JSON: %s', 'mcp-ai-wpoos-pro' ),
+					json_last_error_msg()
+				)
+			);
+		}
+
+		// Ensure minimum required fields.
+		if ( empty( $data['title'] ) ) {
+			$data['title'] = $query;
+		}
+
+		// Extract brand information (handle both string and object formats).
+		$brand_name    = '';
+		$brand_website = '';
+		if ( isset( $data['brand'] ) ) {
+			if ( is_array( $data['brand'] ) ) {
+				$brand_name    = isset( $data['brand']['name'] ) ? sanitize_text_field( $data['brand']['name'] ) : '';
+				$brand_website = isset( $data['brand']['website'] ) ? esc_url_raw( $data['brand']['website'] ) : '';
+			} else {
+				$brand_name = sanitize_text_field( $data['brand'] );
+			}
+		}
+
+		// Extract product identifiers for Schema.org compliance.
+		$identifiers = array();
+		if ( isset( $data['identifiers'] ) && is_array( $data['identifiers'] ) ) {
+			if ( ! empty( $data['identifiers']['gtin'] ) ) {
+				$identifiers['gtin'] = sanitize_text_field( $data['identifiers']['gtin'] );
+			}
+			if ( ! empty( $data['identifiers']['mpn'] ) ) {
+				$identifiers['mpn'] = sanitize_text_field( $data['identifiers']['mpn'] );
+			}
+			if ( ! empty( $data['identifiers']['sku'] ) ) {
+				$identifiers['sku'] = sanitize_text_field( $data['identifiers']['sku'] );
+			}
+			if ( ! empty( $data['identifiers']['isbn'] ) ) {
+				$identifiers['isbn'] = sanitize_text_field( $data['identifiers']['isbn'] );
+			}
+		}
+
+		// Extract pricing information (handle both old and new formats).
+		$regular_price       = '';
+		$sale_price          = '';
+		$currency            = 'USD';
+		$price_valid_until   = '';
+		
+		if ( isset( $data['pricing'] ) && is_array( $data['pricing'] ) ) {
+			$regular_price     = isset( $data['pricing']['regular_price'] ) ? sanitize_text_field( $data['pricing']['regular_price'] ) : '';
+			$sale_price        = isset( $data['pricing']['sale_price'] ) ? sanitize_text_field( $data['pricing']['sale_price'] ) : '';
+			$currency          = isset( $data['pricing']['currency'] ) ? sanitize_text_field( $data['pricing']['currency'] ) : 'USD';
+			$price_valid_until = isset( $data['pricing']['price_valid_until'] ) ? sanitize_text_field( $data['pricing']['price_valid_until'] ) : '';
+		} elseif ( isset( $data['local_price'] ) ) {
+			// Backwards compatibility with old format.
+			$regular_price = sanitize_text_field( $data['local_price'] );
+			$sale_price    = isset( $data['sale_price'] ) ? sanitize_text_field( $data['sale_price'] ) : '';
+		}
+
+		// Extract images (handle both old and new formats).
+		$images = array();
+		if ( isset( $data['images'] ) && is_array( $data['images'] ) ) {
+			foreach ( $data['images'] as $image ) {
+				if ( is_array( $image ) && isset( $image['url'] ) ) {
+					$images[] = array(
+						'url' => esc_url_raw( $image['url'] ),
+						'alt' => isset( $image['alt'] ) ? sanitize_text_field( $image['alt'] ) : '',
+					);
+				} elseif ( is_string( $image ) ) {
+					$images[] = array(
+						'url' => esc_url_raw( $image ),
+						'alt' => '',
+					);
+				}
+			}
+		} elseif ( isset( $data['image_urls'] ) && is_array( $data['image_urls'] ) ) {
+			// Backwards compatibility.
+			foreach ( $data['image_urls'] as $url ) {
+				$images[] = array(
+					'url' => esc_url_raw( $url ),
+					'alt' => '',
+				);
+			}
+		}
+
+		// Extract dimensions (handle structured format).
+		$dimensions = array();
+		if ( isset( $data['dimensions'] ) && is_array( $data['dimensions'] ) ) {
+			$dimensions = array(
+				'length' => isset( $data['dimensions']['length'] ) ? sanitize_text_field( $data['dimensions']['length'] ) : '',
+				'width'  => isset( $data['dimensions']['width'] ) ? sanitize_text_field( $data['dimensions']['width'] ) : '',
+				'height' => isset( $data['dimensions']['height'] ) ? sanitize_text_field( $data['dimensions']['height'] ) : '',
+				'unit'   => isset( $data['dimensions']['unit'] ) ? sanitize_text_field( $data['dimensions']['unit'] ) : 'inches',
+			);
+		}
+
+		// Extract weight (handle structured format).
+		$weight = array();
+		if ( isset( $data['weight'] ) && is_array( $data['weight'] ) ) {
+			$weight = array(
+				'value' => isset( $data['weight']['value'] ) ? sanitize_text_field( $data['weight']['value'] ) : '',
+				'unit'  => isset( $data['weight']['unit'] ) ? sanitize_text_field( $data['weight']['unit'] ) : 'lbs',
+			);
+		}
+
+		// Extract and validate sources.
+		$sources = array();
+		if ( isset( $data['sources'] ) && is_array( $data['sources'] ) ) {
+			foreach ( $data['sources'] as $source ) {
+				if ( is_array( $source ) && isset( $source['url'] ) ) {
+					$sources[] = array(
+						'url'  => esc_url_raw( $source['url'] ),
+						'type' => isset( $source['type'] ) ? sanitize_key( $source['type'] ) : 'unknown',
+					);
+				} elseif ( is_string( $source ) ) {
+					$sources[] = array(
+						'url'  => esc_url_raw( $source ),
+						'type' => 'unknown',
+					);
+				}
+			}
+		}
+
+		// Extract data quality metrics.
+		$data_quality = array(
+			'completeness_score' => 0,
+			'confidence_level'   => 'medium',
+			'last_verified'      => current_time( 'mysql' ),
+		);
+		if ( isset( $data['data_quality'] ) && is_array( $data['data_quality'] ) ) {
+			$data_quality = array(
+				'completeness_score' => isset( $data['data_quality']['completeness_score'] ) ? absint( $data['data_quality']['completeness_score'] ) : 0,
+				'confidence_level'   => isset( $data['data_quality']['confidence_level'] ) ? sanitize_key( $data['data_quality']['confidence_level'] ) : 'medium',
+				'last_verified'      => isset( $data['data_quality']['last_verified'] ) ? sanitize_text_field( $data['data_quality']['last_verified'] ) : current_time( 'mysql' ),
+			);
+		} else {
+			// Calculate completeness score if not provided.
+			$data_quality['completeness_score'] = $this->calculate_completeness_score( $data );
+		}
+
+		// Build Schema.org compliant product data structure.
+		$product_data = array(
+			'success'        => true,
+			'query'          => $query,
+			'reference'      => ! empty( $identifiers['sku'] ) ? $identifiers['sku'] : $reference,
+			'product_data'   => array(
+				// Core WooCommerce fields.
+				'title'                 => sanitize_text_field( $data['title'] ),
+				'brand'                 => $brand_name,
+				'brand_website'         => $brand_website,
+				'product_type'          => $this->determine_product_type( $data ),
+				'description'           => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+				'description_secondary' => isset( $data['description_secondary'] ) ? sanitize_textarea_field( $data['description_secondary'] ) : '',
+				
+				// Pricing.
+				'local_price'           => $regular_price,
+				'sale_price'            => $sale_price,
+				'currency'              => $currency,
+				'price_valid_until'     => $price_valid_until,
+				
+				// Images.
+				'images'                => $images,
+				
+				// Categorization.
+				'categories'            => isset( $data['categories'] ) && is_array( $data['categories'] ) ? array_map( 'sanitize_text_field', $data['categories'] ) : array(),
+				'tags'                  => isset( $data['tags'] ) && is_array( $data['tags'] ) ? array_map( 'sanitize_text_field', $data['tags'] ) : array(),
+				
+				// Stock & Availability.
+				'stock_status'          => isset( $data['stock_status'] ) ? sanitize_key( $data['stock_status'] ) : 'instock',
+				'virtual'               => isset( $data['virtual'] ) ? (bool) $data['virtual'] : false,
+				'downloadable'          => isset( $data['downloadable'] ) ? (bool) $data['downloadable'] : false,
+				'external_url'          => isset( $data['external_url'] ) ? esc_url_raw( $data['external_url'] ) : '',
+				
+				// Dimensions and weight.
+				'dimensions'            => $dimensions,
+				'weight'                => $weight,
+				
+				// Specifications and attributes.
+				'specifications'        => isset( $data['specifications'] ) && is_array( $data['specifications'] ) ? $this->sanitize_specifications( $data['specifications'] ) : array(),
+				'attributes'            => isset( $data['attributes'] ) && is_array( $data['attributes'] ) ? $this->sanitize_attributes_enhanced( $data['attributes'] ) : array(),
+				
+				// Schema.org fields.
+				'identifiers'           => $identifiers,
+				'condition'             => isset( $data['condition'] ) ? sanitize_key( $data['condition'] ) : 'new',
+				'target_audience'       => isset( $data['target_audience'] ) ? sanitize_text_field( $data['target_audience'] ) : '',
+				'availability_region'   => isset( $data['availability_region'] ) ? sanitize_text_field( $data['availability_region'] ) : '',
+				
+				// SEO fields.
+				'seo_keywords'          => isset( $data['seo_keywords'] ) && is_array( $data['seo_keywords'] ) ? array_map( 'sanitize_text_field', $data['seo_keywords'] ) : array(),
+			),
+			'research_metadata' => array(
+				'sources'            => $sources,
+				'researched_at'      => current_time( 'mysql' ),
+				'provider'           => $research_result['provider'],
+				'model'              => $research_result['model'],
+				'data_quality'       => $data_quality,
+			),
+			'create_tool'    => 'create_woo_product',
+		);
+
+		return $product_data;
+	}
+
+	/**
+	 * Calculate data completeness score.
+	 *
+	 * @param array $data Raw product data.
+	 * @return int Completeness score (0-100).
+	 */
+	protected function calculate_completeness_score( $data ) {
+		$required_fields = array(
+			'title',
+			'brand',
+			'description',
+			'description_secondary',
+		);
+
+		$optional_fields = array(
+			'identifiers',
+			'pricing',
+			'images',
+			'dimensions',
+			'weight',
+			'specifications',
+			'attributes',
+			'categories',
+			'tags',
+			'seo_keywords',
+			'target_audience',
+		);
+
+		$score        = 0;
+		$total_fields = count( $required_fields ) + count( $optional_fields );
+
+		// Required fields (40% weight).
+		$required_present = 0;
+		foreach ( $required_fields as $field ) {
+			if ( ! empty( $data[ $field ] ) ) {
+				$required_present++;
+			}
+		}
+		$score += ( $required_present / count( $required_fields ) ) * 40;
+
+		// Optional fields (60% weight).
+		$optional_present = 0;
+		foreach ( $optional_fields as $field ) {
+			if ( ! empty( $data[ $field ] ) ) {
+				$optional_present++;
+			}
+		}
+		$score += ( $optional_present / count( $optional_fields ) ) * 60;
+
+		return round( $score );
+	}
+
+	/**
+	 * Sanitize product specifications.
+	 *
+	 * @param array $specifications Raw specifications data.
+	 * @return array Sanitized specifications.
+	 */
+	protected function sanitize_specifications( $specifications ) {
+		$sanitized = array();
+		foreach ( $specifications as $key => $value ) {
+			$sanitized[ sanitize_key( $key ) ] = sanitize_text_field( $value );
+		}
+		return $sanitized;
+	}
+
+	/**
+	 * Sanitize product attributes with enhanced WooCommerce structure.
+	 *
+	 * @param array $attributes Raw attributes data.
+	 * @return array Sanitized attributes with WooCommerce-compatible structure.
+	 */
+	protected function sanitize_attributes_enhanced( $attributes ) {
+		$sanitized = array();
+		foreach ( $attributes as $attribute ) {
+			if ( ! isset( $attribute['name'] ) || ! isset( $attribute['options'] ) ) {
+				continue;
+			}
+
+			$sanitized[] = array(
+				'name'      => sanitize_text_field( $attribute['name'] ),
+				'options'   => is_array( $attribute['options'] ) ? array_map( 'sanitize_text_field', $attribute['options'] ) : array(),
+				'visible'   => isset( $attribute['visible'] ) ? (bool) $attribute['visible'] : true,
+				'variation' => isset( $attribute['variation'] ) ? (bool) $attribute['variation'] : false,
+			);
+		}
+		return $sanitized;
+	}
+
+	/**
+	 * Determine appropriate WooCommerce product type based on product characteristics.
+	 *
+	 * @param array $data Raw product data.
+	 * @return string WooCommerce product type.
+	 */
+	protected function determine_product_type( $data ) {
+		// Check if explicitly set and valid.
+		if ( ! empty( $data['product_type'] ) ) {
+			$type = sanitize_key( $data['product_type'] );
+			if ( in_array( $type, array( 'simple', 'variable', 'grouped', 'external' ), true ) ) {
+				return $type;
+			}
+		}
+
+		// Determine based on characteristics.
+		// Has variations with multiple options? → Variable.
+		if ( ! empty( $data['attributes'] ) && is_array( $data['attributes'] ) ) {
+			foreach ( $data['attributes'] as $attribute ) {
+				if ( isset( $attribute['variation'] ) && $attribute['variation'] && ! empty( $attribute['options'] ) && count( $attribute['options'] ) > 1 ) {
+					return 'variable';
+				}
+			}
+		}
+
+		// Has external URL? → External.
+		if ( ! empty( $data['external_url'] ) ) {
+			return 'external';
+		}
+
+		// Default to simple.
+		return 'simple';
+	}
+
 
 	/**
 	 * Get the expected product data structure.
