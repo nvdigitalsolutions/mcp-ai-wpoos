@@ -21,6 +21,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Maximum number of search queries to perform.
+	 *
+	 * @var int
+	 */
+	const MAX_SEARCH_QUERIES = 3;
+
+	/**
+	 * Maximum results per search query.
+	 *
+	 * @var int
+	 */
+	const MAX_RESULTS_PER_QUERY = 5;
+
+	/**
+	 * Maximum number of sources to display in prompt.
+	 *
+	 * @var int
+	 */
+	const MAX_DISPLAYED_SOURCES = 5;
+
+	/**
+	 * Number of queries for basic depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_BASIC = 1;
+
+	/**
+	 * Number of queries for standard depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_STANDARD = 2;
+
+	/**
+	 * Number of queries for comprehensive depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_COMPREHENSIVE = 3;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -38,7 +80,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about a blog post topic and generate content ready for publication. Returns title, content, excerpt, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, or Elementor).', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about a blog post topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, excerpt, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, or Elementor).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,6 +93,19 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'topic'       => array(
 					'type'        => 'string',
 					'description' => __( 'The topic to research (e.g., "AI technology trends", "Sustainable living tips", "Starting a podcast")', 'mcp-ai-wpoos-pro' ),
+				),
+				'depth'       => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+					'default'     => 'standard',
+				),
+				'focus_areas' => array(
+					'type'        => 'array',
+					'description' => __( 'Optional specific aspects to focus on (e.g., "SEO", "examples", "statistics", "case studies").', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'word_count'  => array(
 					'type'        => 'integer',
@@ -139,10 +194,19 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		$topic       = sanitize_text_field( $arguments['topic'] );
+		$depth       = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
+			: array();
 		$word_count  = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 1000;
 		$template    = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
 		$include_seo = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
 		$tone        = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
+
+		// Validate depth parameter.
+		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$depth = 'standard';
+		}
 
 		// Validate word count.
 		if ( $word_count < 100 || $word_count > 5000 ) {
@@ -160,7 +224,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check cache first.
-		$cache_key = 'post_research_' . md5( $topic . '_' . $word_count . '_' . $template . '_' . $tone );
+		$cache_key = 'post_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $word_count . '_' . $template . '_' . $tone );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_post_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -173,17 +237,39 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'post_research_started',
 			'Starting post research',
 			array(
-				'topic'      => $topic,
-				'word_count' => $word_count,
-				'template'   => $template,
-				'user_id'    => $user_id,
+				'topic'       => $topic,
+				'depth'       => $depth,
+				'focus_areas' => $focus_areas,
+				'word_count'  => $word_count,
+				'template'    => $template,
+				'user_id'     => $user_id,
 			)
 		);
 
-		// Build research prompt.
-		$prompt = $this->build_research_prompt( $topic, $word_count, $template, $include_seo, $tone );
+		// Step 1: Gather information through web searches.
+		$search_results = $this->gather_post_information( $topic, $depth, $focus_areas, $context );
 
-		// Use AI to research the topic and generate content.
+		if ( is_wp_error( $search_results ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Post research web search failed: ' . $search_results->get_error_message(),
+				array(
+					'topic' => $topic,
+					'depth' => $depth,
+					'error' => $search_results->get_error_code(),
+				)
+			);
+			// Fall back to AI-only research if web search fails.
+			$search_results = array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $topic ),
+			);
+		}
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $include_seo, $tone );
+
+		// Step 3: Use AI to research the topic and generate content.
 		$research_result = $this->perform_ai_research( $prompt, $context );
 
 		if ( is_wp_error( $research_result ) ) {
@@ -218,8 +304,11 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'post_research_completed',
 			'Post research completed successfully',
 			array(
-				'topic' => $topic,
-				'title' => isset( $post_data['title'] ) ? $post_data['title'] : '',
+				'topic'         => $topic,
+				'depth'         => $depth,
+				'focus_areas'   => $focus_areas,
+				'sources_count' => count( $search_results['sources'] ?? array() ),
+				'title'         => isset( $post_data['title'] ) ? $post_data['title'] : '',
 			)
 		);
 
@@ -227,16 +316,188 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	/**
+	 * Gather post information through web searches.
+	 *
+	 * @param string $topic       Post topic.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @param array  $context     Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function gather_post_information( $topic, $depth, $focus_areas, $context ) {
+		// Check if web search tool is available.
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			// Return empty results if web search is not available.
+			WP_MCP_AI_Logger::log_event(
+				'post_research_no_web_search',
+				'Web search tool not available, using AI-only mode',
+				array( 'topic' => $topic )
+			);
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $topic ),
+			);
+		}
+
+		// Generate search queries based on depth and focus areas.
+		$search_queries = $this->generate_post_search_queries( $topic, $depth, $focus_areas );
+
+		$all_results = array();
+		$all_sources = array();
+
+		foreach ( $search_queries as $search_query ) {
+			// Execute web search.
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) ) {
+				// Log the error but continue with other searches.
+				WP_MCP_AI_Logger::log_error(
+					'Post research web search failed: ' . $search_result->get_error_message(),
+					array(
+						'query'      => $search_query,
+						'topic'      => $topic,
+						'error_code' => $search_result->get_error_code(),
+					)
+				);
+				continue;
+			}
+
+			// Collect results.
+			if ( ! empty( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$all_results[] = $result;
+					if ( ! empty( $result['url'] ) ) {
+						$all_sources[] = array(
+							'url'     => $result['url'],
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+					}
+				}
+			}
+		}
+
+		// Deduplicate sources by URL.
+		$all_sources = $this->deduplicate_sources( $all_sources );
+
+		WP_MCP_AI_Logger::log_event(
+			'post_research_web_search_complete',
+			'Web search completed for post research',
+			array(
+				'topic'         => $topic,
+				'queries_count' => count( $search_queries ),
+				'results_count' => count( $all_results ),
+				'sources_count' => count( $all_sources ),
+			)
+		);
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for post research.
+	 *
+	 * @param string $topic       Post topic.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @return array Search queries.
+	 */
+	protected function generate_post_search_queries( $topic, $depth, $focus_areas ) {
+		$queries = array();
+
+		// Main query - always included.
+		$queries[] = $topic;
+
+		// Determine total number of queries based on depth.
+		// Note: num_queries is the TOTAL including the main query above.
+		if ( 'basic' === $depth ) {
+			$num_queries = self::QUERIES_BASIC; // Total: 1 query (main only).
+		} elseif ( 'comprehensive' === $depth ) {
+			$num_queries = self::QUERIES_COMPREHENSIVE; // Total: 3 queries.
+		} else {
+			$num_queries = self::QUERIES_STANDARD; // Total: 2 queries (standard).
+		}
+
+		// Add focus area queries.
+		if ( ! empty( $focus_areas ) ) {
+			foreach ( $focus_areas as $area ) {
+				if ( count( $queries ) >= $num_queries ) {
+					break;
+				}
+				$queries[] = $topic . ' ' . $area;
+			}
+		}
+
+		// Add depth-specific queries for blog posts.
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $topic . ' examples case studies';
+				if ( count( $queries ) < $num_queries ) {
+					$queries[] = $topic . ' statistics data trends';
+				}
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $topic . ' tips best practices';
+			}
+		}
+
+		// Limit to the calculated number of queries (already <= MAX_SEARCH_QUERIES).
+		return array_slice( $queries, 0, $num_queries );
+	}
+
+	/**
+	 * Deduplicate sources by URL.
+	 *
+	 * @param array $sources Sources array.
+	 * @return array Deduplicated sources.
+	 */
+	protected function deduplicate_sources( $sources ) {
+		$unique_sources = array();
+		$seen_urls      = array();
+
+		foreach ( $sources as $source ) {
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			$url = $source['url'];
+
+			if ( ! in_array( $url, $seen_urls, true ) ) {
+				$unique_sources[] = $source;
+				$seen_urls[]      = $url;
+			}
+		}
+
+		return $unique_sources;
+	}
+
+	/**
 	 * Build the research prompt for AI.
 	 *
-	 * @param string $topic        Topic to research.
-	 * @param int    $word_count   Target word count.
-	 * @param string $template     Template format.
-	 * @param bool   $include_seo  Whether to include SEO.
-	 * @param string $tone         Tone of voice.
+	 * @param string $topic          Topic to research.
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @param array  $search_results Search results from web search.
+	 * @param int    $word_count     Target word count.
+	 * @param string $template       Template format.
+	 * @param bool   $include_seo    Whether to include SEO.
+	 * @param string $tone           Tone of voice.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $topic, $word_count, $template, $include_seo, $tone ) {
+	protected function build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $include_seo, $tone ) {
 		$prompt = sprintf(
 			"Research and write a comprehensive blog post about the following topic:\n\n**Topic:** %s\n**Word Count:** %d words\n**Template:** %s\n**Tone:** %s\n\n",
 			$topic,
@@ -245,6 +506,37 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$tone
 		);
 
+		// Add context from web search if available.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "**Available Research Sources:**\n";
+			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
+			for ( $i = 0; $i < $source_count; $i++ ) {
+				$source = $search_results['sources'][ $i ];
+				$prompt .= sprintf(
+					"[%d] %s - %s\n",
+					$i + 1,
+					$source['title'],
+					$source['snippet']
+				);
+			}
+			$prompt .= "\n";
+		}
+
+		// Add depth-specific instructions.
+		if ( 'comprehensive' === $depth ) {
+			$prompt .= "**Research Depth: COMPREHENSIVE** - Include extensive details, multiple examples, case studies, and thorough analysis.\n\n";
+		} elseif ( 'basic' === $depth ) {
+			$prompt .= "**Research Depth: BASIC** - Focus on essential information and key points only.\n\n";
+		} else {
+			$prompt .= "**Research Depth: STANDARD** - Provide comprehensive coverage with good detail and examples.\n\n";
+		}
+
+		// Add focus areas if specified.
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
 		$prompt .= "Generate a complete blog post including:\n\n";
 		$prompt .= "1. **Title**: Engaging, SEO-friendly title (60-70 characters)\n";
 		$prompt .= "2. **Content**: Well-structured, informative content covering the topic comprehensively\n";
