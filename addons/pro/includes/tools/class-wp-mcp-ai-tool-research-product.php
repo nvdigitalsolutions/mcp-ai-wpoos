@@ -428,16 +428,17 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function generate_product_search_queries( $query, $depth, $focus_areas ) {
 		$queries = array();
 
-		// Main query.
+		// Main query - always included.
 		$queries[] = $query;
 
-		// Determine number of additional queries based on depth.
+		// Determine total number of queries based on depth.
+		// Note: num_queries is the TOTAL including the main query above.
 		if ( 'basic' === $depth ) {
-			$num_queries = 1;
+			$num_queries = 1; // Just the main query.
 		} elseif ( 'comprehensive' === $depth ) {
-			$num_queries = 3;
+			$num_queries = 3; // Main query + 2 additional.
 		} else {
-			$num_queries = 2;
+			$num_queries = 2; // Main query + 1 additional (standard).
 		}
 
 		// Add focus area queries.
@@ -462,8 +463,8 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
-		// Limit to maximum search queries.
-		return array_slice( $queries, 0, min( self::MAX_SEARCH_QUERIES, $num_queries ) );
+		// Limit to the calculated number of queries (already <= MAX_SEARCH_QUERIES).
+		return array_slice( $queries, 0, $num_queries );
 	}
 
 	/**
