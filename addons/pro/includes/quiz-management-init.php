@@ -20,18 +20,10 @@ if ( function_exists( 'jet_engine' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
 }
 
-// Load Quiz Research & Add page.
+// Load Quiz admin pages (always load so menu items appear when CPT is registered).
 if ( is_admin() ) {
-	// Check if quiz system is enabled and not in base version (unless Pro addon is active).
-	$settings      = get_option( 'wp_mcp_ai_settings', array() );
-	$is_enabled    = ! empty( $settings['enable_quiz_system'] );
-	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
-	}
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
 }
 
 /**
