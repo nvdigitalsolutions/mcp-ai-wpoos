@@ -1136,6 +1136,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'csv-parse'                         => 'csv-parse/lib/index.js',
 				'csv-stringify'                     => 'csv-stringify/lib/index.js',
 				'ical-generator'                    => 'ical-generator/dist/index.js',
+				// Document generation packages.
+				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
+				// Browser automation packages (optional).
+				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
