@@ -1095,7 +1095,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		private static function get_package_status( $package ) {
 			// Check if Pro CDN Loader is available and package is CDN-managed.
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
-				$cdn_packages = array( 'prettier', 'katex', 'chart.js', 'd3', 'axios', 'mathjs' );
+				$cdn_packages = WP_MCP_AI_Pro_CDN_Loader::get_cdn_packages();
 				if ( in_array( $package, $cdn_packages, true ) ) {
 					$status = WP_MCP_AI_Pro_CDN_Loader::get_package_status( $package );
 					if ( ! empty( $status ) && is_array( $status ) ) {
@@ -1106,7 +1106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// For non-CDN packages, check if installed.
 			$installed = self::check_package_installed( $package );
-			
+
 			if ( $installed ) {
 				return array(
 					'available' => true,
