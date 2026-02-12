@@ -170,10 +170,10 @@ If you have command-line access:
 cd /path/to/wordpress
 
 # Install the plugin from ZIP
-wp plugin install /path/to/mcp-ai-wpoos-pro-1.1.1.zip --activate
+wp plugin install /path/to/mcp-ai-wpoos-pro-x.x.x.zip --activate
 
 # Or download from URL
-wp plugin install https://example.com/downloads/mcp-ai-wpoos-pro-1.1.1.zip --activate
+wp plugin install https://example.com/downloads/mcp-ai-wpoos-pro-x.x.x.zip --activate
 ```
 
 ## Hosting-Specific Instructions
