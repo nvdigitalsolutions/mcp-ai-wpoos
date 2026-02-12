@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+        'version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+        'reference' => 'a3ddc5f6a03080d92fb5cb2475b86ecdc6f465a6',
         'pretty_version' => 'dev-copilot/update-toolkit-information-references',
         'version' => 'dev-copilot/update-toolkit-information-references',
         'reference' => 'a982898e07317baa404081f8a903ba32d2eb2205',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+            'version' => 'dev-copilot/rebuild-all-zips-script-c6d32da5-c3b6-4ebf-b48a-ce4dea5253c1',
+            'reference' => 'a3ddc5f6a03080d92fb5cb2475b86ecdc6f465a6',
             'pretty_version' => 'dev-copilot/update-toolkit-information-references',
             'version' => 'dev-copilot/update-toolkit-information-references',
             'reference' => 'a982898e07317baa404081f8a903ba32d2eb2205',
