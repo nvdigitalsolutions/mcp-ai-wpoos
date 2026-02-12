@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * extra-curricular activities and educational programs.
  */
 class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -787,6 +788,114 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'research_provider'       => $research_result['provider'],
 		);
 
+		// Build user-friendly research report message.
+		$report_message        = $this->build_eca_report_message( $eca_data );
+		$eca_data['report']    = $report_message;
+
 		return $eca_data;
+	}
+
+	/**
+	 * Build a user-friendly ECA research report message.
+	 *
+	 * @param array $data ECA data array.
+	 * @return string Markdown-formatted report message.
+	 */
+	protected function build_eca_report_message( $data ) {
+		$report = "## ECA Research Complete\n\n";
+
+		// Activity title.
+		if ( ! empty( $data['title'] ) ) {
+			$report .= "**Activity:** " . esc_html( $data['title'] ) . "\n";
+		}
+
+		// Category/Type.
+		if ( ! empty( $data['category'] ) ) {
+			$report .= "**Category:** " . esc_html( $data['category'] ) . "\n";
+		}
+
+		// Age range.
+		if ( ! empty( $data['age_range'] ) ) {
+			$report .= "**Age Range:** " . esc_html( $data['age_range'] ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Description.
+		if ( ! empty( $data['description'] ) ) {
+			$report .= "### Description\n";
+			$report .= wp_strip_all_tags( $data['description'] ) . "\n\n";
+		}
+
+		// Schedule Information.
+		if ( ! empty( $data['duration'] ) || ! empty( $data['session_length'] ) || ! empty( $data['frequency'] ) ) {
+			$report .= "### Schedule\n";
+			if ( ! empty( $data['duration'] ) ) {
+				$report .= "- **Program Duration:** " . esc_html( $data['duration'] ) . "\n";
+			}
+			if ( ! empty( $data['session_length'] ) ) {
+				$report .= "- **Session Length:** " . esc_html( $data['session_length'] ) . "\n";
+			}
+			if ( ! empty( $data['frequency'] ) ) {
+				$report .= "- **Frequency:** " . esc_html( $data['frequency'] ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Group size.
+		if ( ! empty( $data['group_size'] ) ) {
+			$report .= "**Recommended Group Size:** " . esc_html( $data['group_size'] ) . "\n\n";
+		}
+
+		// Learning objectives.
+		if ( ! empty( $data['learning_objectives'] ) && is_array( $data['learning_objectives'] ) ) {
+			$report .= "### Learning Objectives\n";
+			foreach ( $data['learning_objectives'] as $objective ) {
+				$report .= "- " . esc_html( $objective ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Materials required.
+		if ( ! empty( $data['materials'] ) && is_array( $data['materials'] ) ) {
+			$report .= "### Materials Required\n";
+			$material_count = 0;
+			foreach ( $data['materials'] as $material ) {
+				if ( $material_count >= 10 ) {
+					$remaining = count( $data['materials'] ) - $material_count;
+					$report .= "- *...and " . absint( $remaining ) . " more*\n";
+					break;
+				}
+				$report .= "- " . esc_html( $material ) . "\n";
+				$material_count++;
+			}
+			$report .= "\n";
+		}
+
+		// Space requirements.
+		if ( ! empty( $data['space_requirements'] ) ) {
+			$report .= "**Space Requirements:** " . esc_html( $data['space_requirements'] ) . "\n\n";
+		}
+
+		// Instructor requirements.
+		if ( ! empty( $data['instructor_requirements'] ) ) {
+			$report .= "**Instructor Requirements:** " . esc_html( $data['instructor_requirements'] ) . "\n\n";
+		}
+
+		// Curriculum outline (if available).
+		if ( ! empty( $data['curriculum_outline'] ) ) {
+			$report .= "### Curriculum Outline\n";
+			$report .= wp_strip_all_tags( $data['curriculum_outline'] ) . "\n\n";
+		}
+
+		// Sources.
+		if ( ! empty( $data['sources'] ) && is_array( $data['sources'] ) ) {
+			$report .= "**Research Sources:** " . count( $data['sources'] ) . " reference source(s)\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. This ECA information can be used to create an activity entry in your system.*";
+
+		return $report;
 	}
 }
