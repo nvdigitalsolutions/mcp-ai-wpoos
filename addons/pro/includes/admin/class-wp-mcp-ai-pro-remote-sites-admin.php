@@ -317,7 +317,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'api_secret'      => $api_secret,
 				'client_id'       => $client_id,
 				'client_secret'   => $client_secret,
-				'app_id'          => isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '',
+				'app_id'          => isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : ( isset( $_POST['teams_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_app_id'] ) ) : '' ),
 				'app_secret'      => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'location_id'     => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
 				'company_id'      => isset( $_POST['company_id'] ) ? sanitize_text_field( wp_unslash( $_POST['company_id'] ) ) : '',
@@ -1947,8 +1947,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				webchatFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
-				// WebChat P2P - no external URL needed
-				urlField.value = home_url + '/wp-json/mcp-ai/v1/webhooks/webchat';
+				// WebChat P2P - uses local WordPress REST endpoint
+				urlField.value = window.location.origin + '/wp-json/mcp-ai/v1/webhooks/webchat';
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
