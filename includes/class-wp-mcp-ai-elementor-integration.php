@@ -120,6 +120,7 @@ class WP_MCP_AI_Elementor_Integration {
 				'class-wp-mcp-ai-elementor-test-results-table-widget.php',
 				'class-wp-mcp-ai-elementor-performance-recommendations-widget.php',
 				'class-wp-mcp-ai-elementor-system-health-status-widget.php',
+				'class-wp-mcp-ai-elementor-quick-actions-widget.php',
 			);
 
 			foreach ( $widget_files as $file ) {
@@ -153,6 +154,7 @@ class WP_MCP_AI_Elementor_Integration {
 				'WP_MCP_AI_Elementor_Test_Results_Table_Widget',
 				'WP_MCP_AI_Elementor_Performance_Recommendations_Widget',
 				'WP_MCP_AI_Elementor_System_Health_Status_Widget',
+				'WP_MCP_AI_Elementor_Quick_Actions_Widget',
 			);
 
 			foreach ( $widget_classes as $widget_class ) {

@@ -668,6 +668,10 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 // Widgets are automatically available when Elementor plugin is installed.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 
+// Load Quick Actions handler for all versions.
+// This handles AJAX requests and asset enqueuing for the Quick Actions widget.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
+
 // Load assistant builder blocks for all versions (base and full).
 // These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,.
 // Tools Grid, Knowledge Base, and full Assistant Builder components.

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/create-ai-generation-widget',
+        'version' => 'dev-copilot/create-ai-generation-widget',
+        'reference' => '14b02f648232262188ae551a5f61ce39766b7768',
         'pretty_version' => 'dev-copilot/review-plugin-security-vulnerability',
         'version' => 'dev-copilot/review-plugin-security-vulnerability',
         'reference' => 'b1b08d9ca94a7c63454f8fd44eccac58d06d612a',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/create-ai-generation-widget',
+            'version' => 'dev-copilot/create-ai-generation-widget',
+            'reference' => '14b02f648232262188ae551a5f61ce39766b7768',
             'pretty_version' => 'dev-copilot/review-plugin-security-vulnerability',
             'version' => 'dev-copilot/review-plugin-security-vulnerability',
             'reference' => 'b1b08d9ca94a7c63454f8fd44eccac58d06d612a',
