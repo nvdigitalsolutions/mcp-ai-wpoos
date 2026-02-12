@@ -115,6 +115,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 						'default'        => true,
 					);
 
+					$fields['enable_jetengine_cpt_research_add'] = array(
+						'type'           => 'checkbox',
+						'label'          => __( 'Enable Research & Add Pages for JetEngine CPTs', 'mcp-ai-wpoos' ),
+						'checkbox_label' => __( 'Enable Research & Add admin pages for JetEngine custom post types', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Creates dedicated "Research & Add" pages for each JetEngine CPT. These pages provide AI-powered research and data entry interfaces, similar to toolkit Research & Add pages. The pages appear as submenu items under each CPT. (Pro Feature)', 'mcp-ai-wpoos' ),
+						'default'        => true,
+					);
+
 					$fields['jetengine_cpts_list'] = array(
 						'type'    => 'html',
 						'content' => $this->get_jetengine_cpts_list_content(),
@@ -184,53 +192,90 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 * @return string
 		 */
 		private function get_jetengine_cpts_list_content() {
-			$jetengine_cpts = $this->get_jetengine_cpts();
+			$jetengine_cpts       = $this->get_jetengine_cpts();
+			$jetengine_taxonomies = $this->get_jetengine_taxonomies();
 
 			$content  = '<div style="margin: 1rem 0;">';
 			$content .= '<h4>' . esc_html__( 'Detected JetEngine Custom Post Types', 'mcp-ai-wpoos' ) . '</h4>';
 
 			if ( empty( $jetengine_cpts ) ) {
-				$content .= '<p style="color: #646970;">' . esc_html__( 'No JetEngine custom post types found. Create CPTs in JetEngine to enable AI assistant for them.', 'mcp-ai-wpoos' ) . '</p>';
+				$content .= '<p style="color: #646970;">' . esc_html__( 'No JetEngine custom post types found.', 'mcp-ai-wpoos' ) . '</p>';
 			} else {
-				$content .= '<table class="widefat" style="margin-top: 0.5rem;">';
-				$content .= '<thead><tr>';
-				$content .= '<th>' . esc_html__( 'Post Type Slug', 'mcp-ai-wpoos' ) . '</th>';
-				$content .= '<th>' . esc_html__( 'Post Type Name', 'mcp-ai-wpoos' ) . '</th>';
-				$content .= '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
-				$content .= '</tr></thead><tbody>';
-
-				$settings = get_option( 'wp_mcp_ai_settings', array() );
-				$ai_enabled = isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
-
-				foreach ( $jetengine_cpts as $cpt_data ) {
-					$slug = isset( $cpt_data['slug'] ) ? $cpt_data['slug'] : '';
-					$name = isset( $cpt_data['name'] ) ? $cpt_data['name'] : $slug;
-
-					if ( empty( $slug ) ) {
-						continue;
-					}
-
-					$post_type_object = get_post_type_object( $slug );
-					if ( $post_type_object ) {
-						$name = $post_type_object->labels->name;
-					}
-
-					$status_text = $ai_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'AI Assistant Enabled', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'AI Assistant Disabled', 'mcp-ai-wpoos' ) . '</span>';
-
-					$content .= '<tr>';
-					$content .= '<td><code>' . esc_html( $slug ) . '</code></td>';
-					$content .= '<td>' . esc_html( $name ) . '</td>';
-					$content .= '<td>' . $status_text . '</td>';
-					$content .= '</tr>';
-				}
-
-				$content .= '</tbody></table>';
-				$content .= '<p class="description" style="margin-top: 0.5rem;">' . esc_html__( 'The AI assistant metabox will appear on edit screens for these post types when enabled above.', 'mcp-ai-wpoos' ) . '</p>';
+				$content .= $this->render_entities_table( $jetengine_cpts, 'cpt' );
 			}
+
+			$content .= '<h4 style="margin-top: 1.5rem;">' . esc_html__( 'Detected JetEngine Custom Taxonomies', 'mcp-ai-wpoos' ) . '</h4>';
+
+			if ( empty( $jetengine_taxonomies ) ) {
+				$content .= '<p style="color: #646970;">' . esc_html__( 'No JetEngine custom taxonomies found.', 'mcp-ai-wpoos' ) . '</p>';
+			} else {
+				$content .= $this->render_entities_table( $jetengine_taxonomies, 'taxonomy' );
+			}
+
+			$content .= '<p class="description" style="margin-top: 0.5rem;">';
+			$content .= esc_html__( 'AI Assistant: Metabox appears on edit screens. Research & Add: Dedicated submenu page under each CPT/Taxonomy.', 'mcp-ai-wpoos' );
+			$content .= '</p>';
 
 			$content .= '</div>';
 
 			return $content;
+		}
+
+		/**
+		 * Render entities table (CPTs or Taxonomies).
+		 *
+		 * @param array  $entities List of entities (CPTs or taxonomies).
+		 * @param string $type     Entity type ('cpt' or 'taxonomy').
+		 * @return string HTML table.
+		 */
+		private function render_entities_table( $entities, $type ) {
+			$settings         = get_option( 'wp_mcp_ai_settings', array() );
+			$ai_enabled       = isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
+			$research_enabled = isset( $settings['enable_jetengine_cpt_research_add'] ) ? (bool) $settings['enable_jetengine_cpt_research_add'] : true;
+
+			$table  = '<table class="widefat" style="margin-top: 0.5rem;">';
+			$table .= '<thead><tr>';
+			$table .= '<th>' . esc_html__( 'Slug', 'mcp-ai-wpoos' ) . '</th>';
+			$table .= '<th>' . esc_html__( 'Name', 'mcp-ai-wpoos' ) . '</th>';
+			$table .= '<th>' . esc_html__( 'AI Assistant', 'mcp-ai-wpoos' ) . '</th>';
+			$table .= '<th>' . esc_html__( 'Research & Add', 'mcp-ai-wpoos' ) . '</th>';
+			$table .= '</tr></thead><tbody>';
+
+			foreach ( $entities as $entity_data ) {
+				$slug = isset( $entity_data['slug'] ) ? $entity_data['slug'] : '';
+				$name = isset( $entity_data['name'] ) ? $entity_data['name'] : $slug;
+
+				if ( empty( $slug ) ) {
+					continue;
+				}
+
+				// Get proper label from WordPress.
+				if ( 'cpt' === $type ) {
+					$object = get_post_type_object( $slug );
+					if ( $object ) {
+						$name = $object->labels->name;
+					}
+				} else {
+					$object = get_taxonomy( $slug );
+					if ( $object ) {
+						$name = $object->labels->name;
+					}
+				}
+
+				$ai_status       = $ai_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Enabled', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>';
+				$research_status = $research_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'Enabled', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'Disabled', 'mcp-ai-wpoos' ) . '</span>';
+
+				$table .= '<tr>';
+				$table .= '<td><code>' . esc_html( $slug ) . '</code></td>';
+				$table .= '<td>' . esc_html( $name ) . '</td>';
+				$table .= '<td>' . $ai_status . '</td>';
+				$table .= '<td>' . $research_status . '</td>';
+				$table .= '</tr>';
+			}
+
+			$table .= '</tbody></table>';
+
+			return $table;
 		}
 
 		/**
@@ -257,6 +302,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 			}
 
 			return $post_types;
+		}
+
+		/**
+		 * Get JetEngine custom taxonomies.
+		 *
+		 * @return array Array of JetEngine taxonomy data.
+		 */
+		private function get_jetengine_taxonomies() {
+			// Check if JetEngine is active.
+			if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
+				return array();
+			}
+
+			// Get JetEngine taxonomy module.
+			$module = jet_engine()->modules->get_module( 'taxonomy' );
+			if ( ! $module || ! $module->instance ) {
+				return array();
+			}
+
+			// Get registered taxonomies.
+			$taxonomies = $module->instance->get_items();
+			if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
+				return array();
+			}
+
+			return $taxonomies;
 		}
 
 		/**

@@ -161,6 +161,39 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	}
 
 	/**
+	 * Get JetEngine custom taxonomies.
+	 *
+	 * @return array Array of JetEngine taxonomy slugs.
+	 */
+	private function get_jetengine_taxonomies() {
+		// Check if JetEngine is active.
+		if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
+			return array();
+		}
+
+		// Get JetEngine taxonomy module.
+		$module = jet_engine()->modules->get_module( 'taxonomy' );
+		if ( ! $module || ! $module->instance ) {
+			return array();
+		}
+
+		// Get registered taxonomies.
+		$taxonomies = $module->instance->get_items();
+		if ( empty( $taxonomies ) || ! is_array( $taxonomies ) ) {
+			return array();
+		}
+
+		$taxonomy_slugs = array();
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( isset( $taxonomy['slug'] ) && ! empty( $taxonomy['slug'] ) ) {
+				$taxonomy_slugs[] = $taxonomy['slug'];
+			}
+		}
+
+		return $taxonomy_slugs;
+	}
+
+	/**
 	 * Check if JetEngine CPT support is enabled in settings.
 	 *
 	 * @return bool
@@ -222,6 +255,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 
 		// NOTE: WooCommerce taxonomies (product_cat, product_tag) are also excluded by default.
 		// NOTE: Core taxonomies (category, post_tag) are also excluded by default.
+
+		// Add JetEngine taxonomies if enabled.
+		if ( $this->is_jetengine_cpt_support_enabled() ) {
+			$jetengine_taxonomies = $this->get_jetengine_taxonomies();
+			if ( ! empty( $jetengine_taxonomies ) ) {
+				$taxonomies = array_merge( $taxonomies, $jetengine_taxonomies );
+			}
+		}
 
 		/**
 		 * Filter the supported taxonomies for AI assistant integration.
