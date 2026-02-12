@@ -128,6 +128,50 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	}
 
 	/**
+	 * Get JetEngine custom post types.
+	 *
+	 * @return array Array of JetEngine CPT slugs.
+	 */
+	private function get_jetengine_cpts() {
+		// Check if JetEngine is active.
+		if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
+			return array();
+		}
+
+		// Get JetEngine post types module.
+		$module = jet_engine()->modules->get_module( 'post-type' );
+		if ( ! $module || ! $module->instance ) {
+			return array();
+		}
+
+		// Get registered post types.
+		$post_types = $module->instance->get_items();
+		if ( empty( $post_types ) || ! is_array( $post_types ) ) {
+			return array();
+		}
+
+		$cpt_slugs = array();
+		foreach ( $post_types as $post_type ) {
+			if ( isset( $post_type['slug'] ) && ! empty( $post_type['slug'] ) ) {
+				$cpt_slugs[] = $post_type['slug'];
+			}
+		}
+
+		return $cpt_slugs;
+	}
+
+	/**
+	 * Check if JetEngine CPT support is enabled in settings.
+	 *
+	 * @return bool
+	 */
+	private function is_jetengine_cpt_support_enabled() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		// Default to enabled if setting not present.
+		return isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
+	}
+
+	/**
 	 * Get supported post types.
 	 *
 	 * @return array
@@ -149,6 +193,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		// because they have their own specialized AI Assistant metabox that includes quick action buttons
 		// and context-aware features specific to project management. See:
 		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php).
+
+		// Add JetEngine CPTs if enabled.
+		if ( $this->is_jetengine_cpt_support_enabled() ) {
+			$jetengine_cpts = $this->get_jetengine_cpts();
+			if ( ! empty( $jetengine_cpts ) ) {
+				$post_types = array_merge( $post_types, $jetengine_cpts );
+			}
+		}
 
 		/**
 		 * Filter the supported post types for AI assistant integration.

@@ -105,6 +105,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 					'default'        => true,
 				);
 
+				// Add JetEngine CPT AI Integration field (Pro feature).
+				if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) || ! wp_mcp_ai_is_base_version() ) {
+					$fields['enable_jetengine_cpt_ai'] = array(
+						'type'           => 'checkbox',
+						'label'          => __( 'Enable AI Assistant for JetEngine CPTs', 'mcp-ai-wpoos' ),
+						'checkbox_label' => __( 'Enable AI assistant metabox for JetEngine custom post types', 'mcp-ai-wpoos' ),
+						'description'    => __( 'Adds an AI assistant metabox to all JetEngine custom post type edit screens. Users can get AI help with content creation, editing, and optimization. (Pro Feature)', 'mcp-ai-wpoos' ),
+						'default'        => true,
+					);
+
+					$fields['jetengine_cpts_list'] = array(
+						'type'    => 'html',
+						'content' => $this->get_jetengine_cpts_list_content(),
+					);
+				}
+
 				$fields['jetengine_tools_list'] = array(
 					'type'    => 'html',
 					'content' => $this->get_tools_list_content(),
@@ -160,6 +176,87 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 			$content .= '</div>';
 
 			return $content;
+		}
+
+		/**
+		 * Get JetEngine CPTs list content HTML.
+		 *
+		 * @return string
+		 */
+		private function get_jetengine_cpts_list_content() {
+			$jetengine_cpts = $this->get_jetengine_cpts();
+
+			$content  = '<div style="margin: 1rem 0;">';
+			$content .= '<h4>' . esc_html__( 'Detected JetEngine Custom Post Types', 'mcp-ai-wpoos' ) . '</h4>';
+
+			if ( empty( $jetengine_cpts ) ) {
+				$content .= '<p style="color: #646970;">' . esc_html__( 'No JetEngine custom post types found. Create CPTs in JetEngine to enable AI assistant for them.', 'mcp-ai-wpoos' ) . '</p>';
+			} else {
+				$content .= '<table class="widefat" style="margin-top: 0.5rem;">';
+				$content .= '<thead><tr>';
+				$content .= '<th>' . esc_html__( 'Post Type Slug', 'mcp-ai-wpoos' ) . '</th>';
+				$content .= '<th>' . esc_html__( 'Post Type Name', 'mcp-ai-wpoos' ) . '</th>';
+				$content .= '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
+				$content .= '</tr></thead><tbody>';
+
+				$settings = get_option( 'wp_mcp_ai_settings', array() );
+				$ai_enabled = isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
+
+				foreach ( $jetengine_cpts as $cpt_data ) {
+					$slug = isset( $cpt_data['slug'] ) ? $cpt_data['slug'] : '';
+					$name = isset( $cpt_data['name'] ) ? $cpt_data['name'] : $slug;
+
+					if ( empty( $slug ) ) {
+						continue;
+					}
+
+					$post_type_object = get_post_type_object( $slug );
+					if ( $post_type_object ) {
+						$name = $post_type_object->labels->name;
+					}
+
+					$status_text = $ai_enabled ? '<span style="color: #0a5f1a;">✓ ' . esc_html__( 'AI Assistant Enabled', 'mcp-ai-wpoos' ) . '</span>' : '<span style="color: #646970;">' . esc_html__( 'AI Assistant Disabled', 'mcp-ai-wpoos' ) . '</span>';
+
+					$content .= '<tr>';
+					$content .= '<td><code>' . esc_html( $slug ) . '</code></td>';
+					$content .= '<td>' . esc_html( $name ) . '</td>';
+					$content .= '<td>' . $status_text . '</td>';
+					$content .= '</tr>';
+				}
+
+				$content .= '</tbody></table>';
+				$content .= '<p class="description" style="margin-top: 0.5rem;">' . esc_html__( 'The AI assistant metabox will appear on edit screens for these post types when enabled above.', 'mcp-ai-wpoos' ) . '</p>';
+			}
+
+			$content .= '</div>';
+
+			return $content;
+		}
+
+		/**
+		 * Get JetEngine custom post types.
+		 *
+		 * @return array Array of JetEngine CPT data.
+		 */
+		private function get_jetengine_cpts() {
+			// Check if JetEngine is active.
+			if ( ! function_exists( 'jet_engine' ) || ! class_exists( 'Jet_Engine' ) ) {
+				return array();
+			}
+
+			// Get JetEngine post types module.
+			$module = jet_engine()->modules->get_module( 'post-type' );
+			if ( ! $module || ! $module->instance ) {
+				return array();
+			}
+
+			// Get registered post types.
+			$post_types = $module->instance->get_items();
+			if ( empty( $post_types ) || ! is_array( $post_types ) ) {
+				return array();
+			}
+
+			return $post_types;
 		}
 
 		/**
