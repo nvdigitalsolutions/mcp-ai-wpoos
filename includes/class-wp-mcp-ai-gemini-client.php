@@ -626,101 +626,161 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			return $result;
 		}
 
+	/**
+	 * List available models from Gemini.
+	 *
+	 * @param array $options Optional parameters (page_size, page_token, timeout, bypass_cache).
+	 * @return array|WP_Error Array containing models list or WP_Error on failure.
+	 */
+	public function list_models( array $options = array() ) {
+		$api_key = $this->get_api_key();
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_api_key',
+				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		// Check if caching is enabled.
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache    = ! empty( $settings['enable_gemini_api_caching'] );
+		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
+
+		// Allow disabling via constant.
+		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+			$use_cache = false;
+		}
+
 		/**
-		 * List available Gemini models dynamically.
+		 * Filter whether to cache Gemini model list requests.
 		 *
-		 * @param array $options Optional parameters (page_size, page_token).
-		 * @return array|WP_Error Array of models or WP_Error on failure.
+		 * @param bool  $use_cache Whether to use caching.
+		 * @param array $options   Request options.
 		 */
-		public function list_models( array $options = array() ) {
-			$api_key = $this->get_api_key();
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_gemini_models', $use_cache, $options );
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_gemini_api_key',
-					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			$url = self::API_LIST_MODELS;
-
-			$query_args = array();
-
+		if ( $use_cache && ! $bypass_cache ) {
+			// For paginated results, include pagination params in cache key.
+			$cache_key_parts = array( 'gemini_models_list' );
 			if ( isset( $options['page_size'] ) ) {
-				$query_args['pageSize'] = absint( $options['page_size'] );
+				$cache_key_parts[] = 'ps_' . absint( $options['page_size'] );
 			}
-
 			if ( isset( $options['page_token'] ) ) {
-				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
+				$cache_key_parts[] = 'pt_' . md5( sanitize_text_field( $options['page_token'] ) );
 			}
+			$cache_key = implode( '_', $cache_key_parts );
 
-			if ( ! empty( $query_args ) ) {
-				$url = add_query_arg( $query_args, $url );
-			}
+			// Get cache TTL from settings or use default (12 hours).
+			$cache_ttl = isset( $settings['gemini_model_list_cache_ttl'] ) ? absint( $settings['gemini_model_list_cache_ttl'] ) : 12 * HOUR_IN_SECONDS;
 
-			$request_args = array(
-				'headers' => array(
-					'x-goog-api-key' => $api_key,
-				),
-				'timeout' => $this->resolve_timeout( $options ),
+			/**
+			 * Filter the cache TTL for Gemini model list.
+			 *
+			 * @param int $cache_ttl Cache TTL in seconds.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_gemini_model_list_ttl', $cache_ttl );
+
+			return WP_MCP_AI_Cache_Helper::remember(
+				$cache_key,
+				function () use ( $api_key, $options ) {
+					return $this->fetch_models_from_api( $api_key, $options );
+				},
+				$cache_ttl
+			);
+		}
+
+		return $this->fetch_models_from_api( $api_key, $options );
+	}
+
+	/**
+	 * Fetch models from Gemini API (internal method).
+	 *
+	 * @param string $api_key Gemini API key.
+	 * @param array  $options Optional parameters.
+	 * @return array|WP_Error Array of models or WP_Error on failure.
+	 */
+	private function fetch_models_from_api( $api_key, $options ) {
+		$url = self::API_LIST_MODELS;
+
+		$query_args = array();
+
+		if ( isset( $options['page_size'] ) ) {
+			$query_args['pageSize'] = absint( $options['page_size'] );
+		}
+
+		if ( isset( $options['page_token'] ) ) {
+			$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
+		}
+
+		if ( ! empty( $query_args ) ) {
+			$url = add_query_arg( $query_args, $url );
+		}
+
+		$request_args = array(
+			'headers' => array(
+				'x-goog-api-key' => $api_key,
+			),
+			'timeout' => $this->resolve_timeout( $options ),
+		);
+
+		WP_MCP_AI_Logger::log_event( 'gemini_list_models', 'Requesting available Gemini models.' );
+
+		$response = wp_remote_get( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini list models request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
+				__( 'Gemini', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini list models response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned an error response for list models.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
 			);
 
-			WP_MCP_AI_Logger::log_event( 'gemini_list_models', 'Requesting available Gemini models.' );
-
-			$response = wp_remote_get( $url, $request_args );
-
-			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'Gemini list models request failed.', array( 'error' => $response->get_error_message() ) );
-
-				return WP_MCP_AI_HTTP::prepare_transport_error(
-					$response,
-					'wp_mcp_ai_http_error',
-					__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
-					__( 'Gemini', 'mcp-ai-wpoos' )
-				);
-			}
-
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
-
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini list models response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
-			}
-
-			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
-
-				WP_MCP_AI_Logger::log_error(
-					'Gemini returned an error response for list models.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
-			}
-
-			WP_MCP_AI_Logger::log_event( 'gemini_list_models_response', 'Gemini models list retrieved successfully.' );
-
-			return $decoded;
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
 		}
+
+		WP_MCP_AI_Logger::log_event( 'gemini_list_models_response', 'Gemini models list retrieved successfully.' );
+
+		return $decoded;
+	}
+
 
 		/**
 		 * Count tokens for a given content payload.
