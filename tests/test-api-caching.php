@@ -21,9 +21,9 @@ class Test_API_Caching extends WP_UnitTestCase {
 
 		// Set default settings with caching enabled.
 		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['enable_openai_api_caching']   = true;
+		$settings['enable_openai_api_caching'] = true;
 		$settings['openai_model_list_cache_ttl'] = 3600; // 1 hour for testing.
-		$settings['openai_api_key']              = 'sk-test123'; // Mock key.
+		$settings['openai_api_key'] = 'sk-test123'; // Mock key.
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 	}
 
@@ -70,7 +70,7 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 */
 	public function test_openai_bypass_cache_parameter() {
 		// Pre-populate cache with dummy data.
-		$cache_key  = 'openai_models_list';
+		$cache_key = 'openai_models_list';
 		$cache_data = array( 'data' => array( array( 'id' => 'cached-model' ) ) );
 		WP_MCP_AI_Cache_Helper::set( $cache_key, array( '__cached_value__' => $cache_data ), 3600 );
 
@@ -114,7 +114,7 @@ class Test_API_Caching extends WP_UnitTestCase {
 		remove_filter( 'wp_mcp_ai_cache_openai_models', '__return_false' );
 
 		// Test TTL filter.
-		$default_ttl  = 12 * HOUR_IN_SECONDS;
+		$default_ttl = 12 * HOUR_IN_SECONDS;
 		$filtered_ttl = apply_filters( 'wp_mcp_ai_openai_model_list_ttl', $default_ttl );
 		$this->assertEquals( $default_ttl, $filtered_ttl, 'TTL should pass through filter' );
 
@@ -134,7 +134,7 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test that cache helper remember function works.
 	 */
 	public function test_cache_helper_remember_function() {
-		$cache_key  = 'test_remember_key';
+		$cache_key = 'test_remember_key';
 		$call_count = 0;
 
 		// First call should execute callback.
@@ -259,10 +259,10 @@ class Test_API_Caching extends WP_UnitTestCase {
 
 		// Build the expected cache key data.
 		$cache_key_data = array(
-			'input'           => $input,
-			'model'           => $model,
+			'input' => $input,
+			'model' => $model,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$expected_key = 'openai_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -278,20 +278,20 @@ class Test_API_Caching extends WP_UnitTestCase {
 	public function test_openai_embeddings_cache_key_uniqueness() {
 		$input1 = 'test text 1';
 		$input2 = 'test text 2';
-		$model  = 'text-embedding-3-small';
+		$model = 'text-embedding-3-small';
 
 		$key1_data = array(
-			'input'           => $input1,
-			'model'           => $model,
+			'input' => $input1,
+			'model' => $model,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$key2_data = array(
-			'input'           => $input2,
-			'model'           => $model,
+			'input' => $input2,
+			'model' => $model,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
@@ -304,22 +304,22 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test embeddings cache key includes model parameter.
 	 */
 	public function test_openai_embeddings_cache_key_includes_model() {
-		$input  = 'test text';
+		$input = 'test text';
 		$model1 = 'text-embedding-3-small';
 		$model2 = 'text-embedding-3-large';
 
 		$key1_data = array(
-			'input'           => $input,
-			'model'           => $model1,
+			'input' => $input,
+			'model' => $model1,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$key2_data = array(
-			'input'           => $input,
-			'model'           => $model2,
+			'input' => $input,
+			'model' => $model2,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
@@ -336,17 +336,17 @@ class Test_API_Caching extends WP_UnitTestCase {
 		$model = 'text-embedding-3-small';
 
 		$key1_data = array(
-			'input'           => $input,
-			'model'           => $model,
+			'input' => $input,
+			'model' => $model,
 			'encoding_format' => '',
-			'dimensions'      => 0,
+			'dimensions' =>  0,
 		);
 
 		$key2_data = array(
-			'input'           => $input,
-			'model'           => $model,
+			'input' => $input,
+			'model' => $model,
 			'encoding_format' => '',
-			'dimensions'      => 1536,
+			'dimensions' =>  1536,
 		);
 
 		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
@@ -404,7 +404,7 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test Gemini embedding cache setting.
 	 */
 	public function test_gemini_embedding_cache_setting() {
-		$settings                              = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['enable_gemini_api_caching'] = true;
 		$settings['gemini_embedding_cache_ttl'] = 86400;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -418,8 +418,8 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test Gemini count_tokens cache setting.
 	 */
 	public function test_gemini_token_count_cache_setting() {
-		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['enable_gemini_api_caching']    = true;
+		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['enable_gemini_api_caching'] = true;
 		$settings['gemini_token_count_cache_ttl'] = 3600;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -432,8 +432,8 @@ class Test_API_Caching extends WP_UnitTestCase {
 	 * Test Ollama cache setting.
 	 */
 	public function test_ollama_cache_setting() {
-		$settings                                = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['enable_ollama_api_caching']   = true;
+		$settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['enable_ollama_api_caching'] = true;
 		$settings['ollama_model_list_cache_ttl'] = 300;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

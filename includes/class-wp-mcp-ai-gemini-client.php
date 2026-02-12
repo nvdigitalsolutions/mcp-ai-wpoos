@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -62,7 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_model',
 					__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -81,10 +81,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type'   => 'application/json',
+					'Content-Type' =>  'application/json',
 					'x-goog-api-key' => $api_key,
 				),
-				'body'    => wp_json_encode( $payload ),
+				'body' => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
 
@@ -130,7 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $decoded,
+						'body' => $decoded,
 					)
 				);
 			}
@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$payload = array(
 				'contents' => array(
 					array(
-						'role'  => 'user',
+						'role' =>  'user',
 						'parts' => array(
 							array(
 								'text' => $prompt,
@@ -253,19 +253,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type'   => 'application/json',
+					'Content-Type' =>  'application/json',
 					'x-goog-api-key' => $api_key,
 				),
 				'timeout' => $this->resolve_timeout( $options ),
-				'body'    => $encoded_payload,
+				'body' => $encoded_payload,
 			);
 
 			WP_MCP_AI_Logger::log_event(
 				'gemini_image_request',
 				'Sending image generation request to Gemini.',
 				array(
-					'model'        => $model,
-					'mime_type'    => $mime_type,
+					'model' => $model,
+					'mime_type' => $mime_type,
 					'aspect_ratio' => $aspect_ratio,
 				)
 			);
@@ -310,7 +310,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $decoded,
+						'body' => $decoded,
 					)
 				);
 			}
@@ -322,13 +322,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$result = array(
-				'image'          => $image_payload['data'],
-				'mime_type'      => $image_payload['mime_type'],
-				'format'         => $image_payload['format'],
-				'model'          => $model,
-				'prompt'         => $prompt,
-				'aspect_ratio'   => $aspect_ratio,
-				'created'        => time(),
+				'image' => $image_payload['data'],
+				'mime_type' => $image_payload['mime_type'],
+				'format' => $image_payload['format'],
+				'model' => $model,
+				'prompt' => $prompt,
+				'aspect_ratio' => $aspect_ratio,
+				'created' =>  time(),
 				'revised_prompt' => $image_payload['revised_prompt'],
 			);
 
@@ -366,10 +366,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'gemini_image_response',
 				'Gemini image generation completed.',
 				array(
-					'model'        => $model,
-					'mime_type'    => $result['mime_type'],
+					'model' => $model,
+					'mime_type' => $result['mime_type'],
 					'aspect_ratio' => $aspect_ratio,
-					'format'       => $result['format'],
+					'format' => $result['format'],
 				)
 			);
 
@@ -393,7 +393,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -444,7 +444,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$payload = array(
 				'contents' => array(
 					array(
-						'role'  => 'user',
+						'role' =>  'user',
 						'parts' => array(
 							array(
 								'text' => $prompt,
@@ -452,7 +452,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							array(
 								'inline_data' => array(
 									'mime_type' => $source_image['mime_type'],
-									'data'      => $source_image['data'],
+									'data' => $source_image['data'],
 								),
 							),
 						),
@@ -503,19 +503,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type'   => 'application/json',
+					'Content-Type' =>  'application/json',
 					'x-goog-api-key' => $api_key,
 				),
 				'timeout' => $this->resolve_timeout( $options ),
-				'body'    => $encoded_payload,
+				'body' => $encoded_payload,
 			);
 
 			WP_MCP_AI_Logger::log_event(
 				'gemini_image_edit_request',
 				'Sending image edit request to Gemini.',
 				array(
-					'model'        => $model,
-					'mime_type'    => $mime_type,
+					'model' => $model,
+					'mime_type' => $mime_type,
 					'aspect_ratio' => $aspect_ratio,
 				)
 			);
@@ -560,7 +560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $decoded,
+						'body' => $decoded,
 					)
 				);
 			}
@@ -572,13 +572,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$result = array(
-				'image'          => $image_payload['data'],
-				'mime_type'      => $image_payload['mime_type'],
-				'format'         => $image_payload['format'],
-				'model'          => $model,
-				'prompt'         => $prompt,
-				'aspect_ratio'   => $aspect_ratio,
-				'created'        => time(),
+				'image' => $image_payload['data'],
+				'mime_type' => $image_payload['mime_type'],
+				'format' => $image_payload['format'],
+				'model' => $model,
+				'prompt' => $prompt,
+				'aspect_ratio' => $aspect_ratio,
+				'created' =>  time(),
 				'revised_prompt' => $image_payload['revised_prompt'],
 			);
 
@@ -616,10 +616,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'gemini_image_edit_response',
 				'Gemini image edit completed.',
 				array(
-					'model'        => $model,
-					'mime_type'    => $result['mime_type'],
+					'model' => $model,
+					'mime_type' => $result['mime_type'],
 					'aspect_ratio' => $aspect_ratio,
-					'format'       => $result['format'],
+					'format' => $result['format'],
 				)
 			);
 
@@ -640,7 +640,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_missing_gemini_api_key',
 				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
+					'status' =>  400,
 					'actions' => array(
 						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
@@ -771,7 +771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$error_message,
 				array(
 					'status' => $code,
-					'body'   => $decoded,
+					'body' => $decoded,
 				)
 			);
 		}
@@ -797,7 +797,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_missing_gemini_api_key',
 				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
+					'status' =>  400,
 					'actions' => array(
 						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
@@ -812,7 +812,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_missing_gemini_model',
 				__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
+					'status' =>  400,
 					'actions' => array(
 						'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
@@ -843,7 +843,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Build cache key from messages and model.
 			$cache_key_data = array(
 				'messages' => $messages,
-				'model'    => $model,
+				'model' => $model,
 			);
 
 			$cache_key = 'gemini_token_count_' . md5( wp_json_encode( $cache_key_data ) );
@@ -892,10 +892,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 		$request_args = array(
 			'headers' => array(
-				'Content-Type'   => 'application/json',
+				'Content-Type' =>  'application/json',
 				'x-goog-api-key' => $api_key,
 			),
-			'body'    => wp_json_encode( $payload ),
+			'body' => wp_json_encode( $payload ),
 			'timeout' => $this->resolve_timeout( $options ),
 		);
 
@@ -940,7 +940,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$error_message,
 				array(
 					'status' => $code,
-					'body'   => $decoded,
+					'body' => $decoded,
 				)
 			);
 		}
@@ -966,7 +966,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_missing_gemini_api_key',
 				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
+					'status' =>  400,
 					'actions' => array(
 						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
@@ -1010,10 +1010,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$title = isset( $options['title'] ) && '' !== $options['title'] ? sanitize_text_field( $options['title'] ) : '';
 
 			$cache_key_data = array(
-				'text'      => $text,
-				'model'     => $model,
+				'text' => $text,
+				'model' => $model,
 				'task_type' => $task_type,
-				'title'     => $title,
+				'title' => $title,
 			);
 
 			$cache_key = 'gemini_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -1099,10 +1099,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 		$request_args = array(
 			'headers' => array(
-				'Content-Type'   => 'application/json',
+				'Content-Type' =>  'application/json',
 				'x-goog-api-key' => $api_key,
 			),
-			'body'    => wp_json_encode( $payload ),
+			'body' => wp_json_encode( $payload ),
 			'timeout' => $this->resolve_timeout( $options ),
 		);
 
@@ -1147,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$error_message,
 				array(
 					'status' => $code,
-					'body'   => $decoded,
+					'body' => $decoded,
 				)
 			);
 		}
@@ -1180,7 +1180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_missing_gemini_api_key',
 				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
+					'status' =>  400,
 					'actions' => array(
 						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
@@ -1221,8 +1221,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
 
 			$cache_key_data = array(
-				'texts'     => $texts,
-				'model'     => $model,
+				'texts' => $texts,
+				'model' => $model,
 				'task_type' => $task_type,
 			);
 
@@ -1323,10 +1323,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 		$request_args = array(
 			'headers' => array(
-				'Content-Type'   => 'application/json',
+				'Content-Type' =>  'application/json',
 				'x-goog-api-key' => $api_key,
 			),
-			'body'    => wp_json_encode( $payload ),
+			'body' => wp_json_encode( $payload ),
 			'timeout' => $this->resolve_timeout( $options ),
 		);
 
@@ -1378,7 +1378,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$error_message,
 				array(
 					'status' => $code,
-					'body'   => $decoded,
+					'body' => $decoded,
 				)
 			);
 		}
@@ -1412,7 +1412,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -1427,7 +1427,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_model',
 					__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -1445,13 +1445,13 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$url = add_query_arg( 'alt', 'sse', $endpoint );
 
 			$request_args = array(
-				'headers'  => array(
-					'Content-Type'   => 'application/json',
+				'headers' =>  array(
+					'Content-Type' =>  'application/json',
 					'x-goog-api-key' => $api_key,
 				),
-				'body'     => wp_json_encode( $payload ),
-				'timeout'  => $this->resolve_timeout( $options ),
-				'stream'   => true,
+				'body' => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+				'stream' =>  true,
 				'blocking' => true,
 			);
 
@@ -1494,16 +1494,16 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $decoded,
+						'body' => $decoded,
 					)
 				);
 			}
 
 			// Process SSE stream response.
 			$accumulated = array(
-				'content'    => '',
+				'content' =>  '',
 				'tool_calls' => array(),
-				'usage'      => array(),
+				'usage' =>  array(),
 			);
 
 			$lines = explode( "\n", $body );
@@ -1569,11 +1569,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$normalized = array(
-				'choices'  => array(
+				'choices' =>  array(
 					array(
-						'index'   => 0,
+						'index' =>  0,
 						'message' => array(
-							'role'    => 'assistant',
+							'role' =>  'assistant',
 							'content' => array(
 								array(
 									'type' => 'text',
@@ -1584,7 +1584,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					),
 				),
 				'provider' => 'gemini',
-				'model'    => $model,
+				'model' => $model,
 			);
 
 			if ( ! empty( $accumulated['tool_calls'] ) ) {
@@ -1651,7 +1651,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -1676,7 +1676,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_model',
 					__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -1688,7 +1688,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$payload = array(
 				'contents' => array(
 					array(
-						'role'  => 'user',
+						'role' =>  'user',
 						'parts' => array(
 							array(
 								'text' => $query,
@@ -1696,11 +1696,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						),
 					),
 				),
-				'tools'    => array(
+				'tools' =>  array(
 					array(
 						'google_search_retrieval' => array(
 							'dynamic_retrieval_config' => array(
-								'mode'              => 'MODE_DYNAMIC',
+								'mode' =>  'MODE_DYNAMIC',
 								'dynamic_threshold' => 0.3,
 							),
 						),
@@ -1717,7 +1717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			if ( isset( $options['location'] ) && is_array( $options['location'] ) ) {
 				if ( isset( $options['location']['latitude'] ) && isset( $options['location']['longitude'] ) ) {
 					$payload['location_context'] = array(
-						'latitude'  => floatval( $options['location']['latitude'] ),
+						'latitude' => floatval( $options['location']['latitude'] ),
 						'longitude' => floatval( $options['location']['longitude'] ),
 					);
 				}
@@ -1744,10 +1744,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type'   => 'application/json',
+					'Content-Type' =>  'application/json',
 					'x-goog-api-key' => $api_key,
 				),
-				'body'    => wp_json_encode( $payload ),
+				'body' => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
 
@@ -1800,7 +1800,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $decoded,
+						'body' => $decoded,
 					)
 				);
 			}
@@ -1840,7 +1840,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_messages',
 					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
@@ -1928,7 +1928,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$function_response = $this->convert_tool_message_to_function_response( $message );
 
 					if ( $function_response ) {
-						$parts[]       = array( 'functionResponse' => $function_response );
+						$parts[] = array( 'functionResponse' => $function_response );
 						$text_segments = array();
 						unset( $pending_tool_calls[ $tool_call_id ] );
 					} else {
@@ -1967,7 +1967,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				$contents[] = array(
-					'role'  => $gemini_role,
+					'role' => $gemini_role,
 					'parts' => $parts,
 				);
 
@@ -2081,7 +2081,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 					if ( in_array( $cat_value, $allowed_categories, true ) && in_array( $threshold_value, $allowed_thresholds, true ) ) {
 						$safety_settings[] = array(
-							'category'  => $cat_value,
+							'category' => $cat_value,
 							'threshold' => $threshold_value,
 						);
 					}
@@ -2278,7 +2278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Build fileData part for Gemini API.
 			return array(
 				'fileData' => array(
-					'fileUri'  => $file_uri,
+					'fileUri' => $file_uri,
 					'mimeType' => $mime_type,
 				),
 			);
@@ -2420,7 +2420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array(
-				'name'     => $name,
+				'name' => $name,
 				'response' => $response,
 			);
 		}
@@ -2558,9 +2558,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						'gemini_schema_fix',
 						'Converted scalar property value to schema object',
 						array(
-							'property'       => $prop_name,
+							'property' => $prop_name,
 							'original_value' => $prop_value,
-							'converted_to'   => $normalized[ $prop_name ],
+							'converted_to' => $normalized[ $prop_name ],
 						)
 					);
 				} else {
@@ -2634,9 +2634,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							"Converted {$comp_key} to first option in schema",
 							array(
 								'composition_keyword' => $comp_key,
-								'parent_key'          => $parent_key,
-								'first_option_type'   => isset( $first_option['type'] ) ? $first_option['type'] : 'unknown',
-								'options_count'       => count( $schema[ $comp_key ] ),
+								'parent_key' => $parent_key,
+								'first_option_type' => isset( $first_option['type'] ) ? $first_option['type'] : 'unknown',
+								'options_count' => count( $schema[ $comp_key ] ),
 							)
 						);
 					}
@@ -2718,9 +2718,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							'gemini_schema_enhancement',
 							'Added missing type field to property schema',
 							array(
-								'property'      => $prop_name,
+								'property' => $prop_name,
 								'inferred_type' => $inferred_type,
-								'reason'        => $reason,
+								'reason' => $reason,
 							)
 						);
 					}
@@ -2747,7 +2747,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'Added missing type field to items schema',
 					array(
 						'inferred_type' => $inferred_type,
-						'reason'        => $reason,
+						'reason' => $reason,
 					)
 				);
 			}
@@ -2835,9 +2835,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						}
 
 						return array(
-							'data'           => $decoded_data,
-							'mime_type'      => $mime_type,
-							'format'         => $this->map_mime_type_to_format( $mime_type ),
+							'data' => $decoded_data,
+							'mime_type' => $mime_type,
+							'format' => $this->map_mime_type_to_format( $mime_type ),
 							'revised_prompt' => $revised_prompt,
 						);
 					}
@@ -2867,9 +2867,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						}
 
 						return array(
-							'data'           => $download['body'],
-							'mime_type'      => $mime_type,
-							'format'         => $this->map_mime_type_to_format( $mime_type ),
+							'data' => $download['body'],
+							'mime_type' => $mime_type,
+							'format' => $this->map_mime_type_to_format( $mime_type ),
 							'revised_prompt' => $revised_prompt,
 						);
 					}
@@ -3035,7 +3035,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Failed to download image from Gemini file URI.',
 					array(
-						'url'   => $url,
+						'url' => $url,
 						'error' => $response->get_error_message(),
 					)
 				);
@@ -3054,7 +3054,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Gemini returned a non-200 status while downloading image.',
 					array(
-						'url'  => $url,
+						'url' => $url,
 						'code' => $code,
 					)
 				);
@@ -3071,7 +3071,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array(
-				'body'         => $body,
+				'body' => $body,
 				'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
 			);
 		}
@@ -3221,7 +3221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					}
 
 					$choice = array(
-						'index'   => $index,
+						'index' => $index,
 						'message' => $message,
 					);
 
@@ -3234,7 +3234,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$normalized = array(
-				'choices'  => $choices,
+				'choices' => $choices,
 				'provider' => 'gemini',
 			);
 
@@ -3281,10 +3281,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return array(
-				'id'       => sprintf( 'gemini-function-%d-%s', $index, uniqid() ),
-				'type'     => 'function',
+				'id' => sprintf( 'gemini-function-%d-%s', $index, uniqid() ),
+				'type' =>  'function',
 				'function' => array(
-					'name'      => $name,
+					'name' => $name,
 					'arguments' => $args,
 				),
 			);
@@ -3343,7 +3343,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini/Google API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -3382,11 +3382,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Build request payload for Google Speech-to-Text API.
 			$payload = array(
 				'config' => array(
-					'encoding'                   => 'LINEAR16', // Will be overridden by auto-detection.
-					'languageCode'               => $language_code,
+					'encoding' =>  'LINEAR16', // Will be overridden by auto-detection.
+					'languageCode' => $language_code,
 					'enableAutomaticPunctuation' => true,
 				),
-				'audio'  => array(
+				'audio' =>  array(
 					'content' => $audio_content,
 				),
 			);
@@ -3400,7 +3400,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'headers' => array(
 					'Content-Type' => 'application/json',
 				),
-				'body'    => wp_json_encode( $payload ),
+				'body' => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
 
@@ -3408,9 +3408,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'google_transcribe_audio',
 				'Sending audio transcription request to Google Speech-to-Text.',
 				array(
-					'language'  => $language_code,
+					'language' => $language_code,
 					'file_size' => strlen( $file_data ),
-					'timeout'   => $timeout,
+					'timeout' => $timeout,
 				)
 			);
 
@@ -3445,7 +3445,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'Google Speech-to-Text transcription error.',
 					array(
 						'status' => $code,
-						'body'   => $body,
+						'body' => $body,
 					)
 				);
 
@@ -3454,7 +3454,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $body,
+						'body' => $body,
 					)
 				);
 			}
@@ -3486,8 +3486,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'google_transcribe_audio_success',
 				'Successfully transcribed audio with Google Speech-to-Text.',
 				array(
-					'language'     => $language_code,
-					'text_length'  => strlen( $text ),
+					'language' => $language_code,
+					'text_length' => strlen( $text ),
 					'result_count' => isset( $decoded['results'] ) ? count( $decoded['results'] ) : 0,
 				)
 			);
@@ -3503,11 +3503,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Normalize to consistent format.
 			return array(
-				'text'     => $text,
-				'model'    => 'google-speech-to-text',
-				'format'   => 'json',
+				'text' => $text,
+				'model' =>  'google-speech-to-text',
+				'format' =>  'json',
 				'language' => $language_code,
-				'raw'      => $decoded,
+				'raw' => $decoded,
 			);
 		}
 
@@ -3526,7 +3526,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'wp_mcp_ai_missing_gemini_api_key',
 					__( 'No Gemini/Google API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
-						'status'  => 400,
+						'status' =>  400,
 						'actions' => array(
 							'configure_gemini_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
@@ -3550,12 +3550,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Build request payload for Google Text-to-Speech API.
 			$payload = array(
-				'input'       => array(
+				'input' =>  array(
 					'text' => $text,
 				),
-				'voice'       => array(
+				'voice' =>  array(
 					'languageCode' => $language_code,
-					'name'         => $voice_name,
+					'name' => $voice_name,
 				),
 				'audioConfig' => array(
 					'audioEncoding' => 'MP3',
@@ -3578,7 +3578,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'headers' => array(
 					'Content-Type' => 'application/json',
 				),
-				'body'    => wp_json_encode( $payload ),
+				'body' => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
 
@@ -3586,10 +3586,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'google_generate_speech',
 				'Sending text-to-speech request to Google TTS.',
 				array(
-					'language'    => $language_code,
-					'voice'       => $voice_name,
+					'language' => $language_code,
+					'voice' => $voice_name,
 					'text_length' => strlen( $text ),
-					'timeout'     => $timeout,
+					'timeout' => $timeout,
 				)
 			);
 
@@ -3624,7 +3624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'Google TTS error.',
 					array(
 						'status' => $code,
-						'body'   => $body,
+						'body' => $body,
 					)
 				);
 
@@ -3633,7 +3633,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body'   => $body,
+						'body' => $body,
 					)
 				);
 			}
@@ -3672,8 +3672,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'google_generate_speech_success',
 				'Successfully generated speech with Google TTS.',
 				array(
-					'language'   => $language_code,
-					'voice'      => $voice_name,
+					'language' => $language_code,
+					'voice' => $voice_name,
 					'audio_size' => strlen( $audio_data ),
 				)
 			);
@@ -3681,8 +3681,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Return audio data in format compatible with OpenAI response.
 			return array(
 				'audio_data' => $audio_data,
-				'format'     => 'mp3',
-				'raw'        => $decoded,
+				'format' =>  'mp3',
+				'raw' => $decoded,
 			);
 		}
 
@@ -3723,11 +3723,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'gemini_run_with_tools_start',
 					'Starting Gemini embedded function calling.',
 					array(
-						'message_count'      => count( $messages ),
-						'tool_count'         => count( $tools ),
-						'strict_validation'  => $strict_validation,
+						'message_count' => count( $messages ),
+						'tool_count' => count( $tools ),
+						'strict_validation' => $strict_validation,
 						'max_recursive_runs' => $max_recursive_runs,
-						'auto_trim_tools'    => $auto_trim_tools,
+						'auto_trim_tools' => $auto_trim_tools,
 					)
 				);
 			}
@@ -3766,7 +3766,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				// Build tool definition for API.
 				$definition = array(
-					'name'        => $tool_name,
+					'name' => $tool_name,
 					'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
 				);
 
@@ -3775,7 +3775,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				$tool_definitions[] = array(
-					'type'     => 'function',
+					'type' =>  'function',
 					'function' => $definition,
 				);
 
@@ -3850,17 +3850,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						);
 
 						$conversation_messages[] = array(
-							'role'         => 'tool',
+							'role' =>  'tool',
 							'tool_call_id' => $tool_call_id,
-							'name'         => $function_name,
-							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+							'name' => $function_name,
+							'content' => wp_json_encode( array( 'error' => $error_message ) ),
 						);
 
 						WP_MCP_AI_Logger::log_error(
 							'Gemini tool function not found.',
 							array(
 								'function_name' => $function_name,
-								'tool_call_id'  => $tool_call_id,
+								'tool_call_id' => $tool_call_id,
 							)
 						);
 						continue;
@@ -3885,17 +3885,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						$validation_error = $this->validate_tool_arguments( $function_name, $arguments, $tool_definitions );
 						if ( is_wp_error( $validation_error ) ) {
 							$conversation_messages[] = array(
-								'role'         => 'tool',
+								'role' =>  'tool',
 								'tool_call_id' => $tool_call_id,
-								'name'         => $function_name,
-								'content'      => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
+								'name' => $function_name,
+								'content' => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
 							);
 
 							WP_MCP_AI_Logger::log_error(
 								'Gemini tool argument validation failed.',
 								array(
 									'function_name' => $function_name,
-									'error'         => $validation_error->get_error_message(),
+									'error' => $validation_error->get_error_message(),
 								)
 							);
 							continue;
@@ -3916,10 +3916,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						$result_content = is_string( $result ) ? $result : wp_json_encode( $result );
 
 						$conversation_messages[] = array(
-							'role'         => 'tool',
+							'role' =>  'tool',
 							'tool_call_id' => $tool_call_id,
-							'name'         => $function_name,
-							'content'      => $result_content,
+							'name' => $function_name,
+							'content' => $result_content,
 						);
 
 						if ( $verbose ) {
@@ -3928,7 +3928,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 								sprintf( 'Executed tool: %s', $function_name ),
 								array(
 									'function_name' => $function_name,
-									'tool_call_id'  => $tool_call_id,
+									'tool_call_id' => $tool_call_id,
 									'result_length' => strlen( $result_content ),
 								)
 							);
@@ -3937,17 +3937,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						$error_message = $e->getMessage();
 
 						$conversation_messages[] = array(
-							'role'         => 'tool',
+							'role' =>  'tool',
 							'tool_call_id' => $tool_call_id,
-							'name'         => $function_name,
-							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+							'name' => $function_name,
+							'content' => wp_json_encode( array( 'error' => $error_message ) ),
 						);
 
 						WP_MCP_AI_Logger::log_error(
 							'Gemini tool execution failed.',
 							array(
 								'function_name' => $function_name,
-								'error'         => $error_message,
+								'error' => $error_message,
 							)
 						);
 					}
@@ -3967,8 +3967,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'wp_mcp_ai_max_tool_recursion',
 				__( 'Maximum recursive tool runs reached without completion.', 'mcp-ai-wpoos' ),
 				array(
-					'status'         => 500,
-					'max_runs'       => $max_recursive_runs,
+					'status' =>  500,
+					'max_runs' => $max_recursive_runs,
 					'final_messages' => $conversation_messages,
 				)
 			);
@@ -4036,11 +4036,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$type_map = array(
 						'boolean' => 'boolean',
 						'integer' => 'number',
-						'double'  => 'number',
-						'string'  => 'string',
-						'array'   => 'array',
-						'object'  => 'object',
-						'NULL'    => 'null',
+						'double' =>  'number',
+						'string' =>  'string',
+						'array' =>  'array',
+						'object' =>  'object',
+						'NULL' =>  'null',
 					);
 
 					$mapped_type = isset( $type_map[ $actual_type ] ) ? $type_map[ $actual_type ] : $actual_type;
@@ -4061,9 +4061,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 								$mapped_type
 							),
 							array(
-								'parameter'     => $param_name,
+								'parameter' => $param_name,
 								'expected_type' => $expected_type,
-								'actual_type'   => $mapped_type,
+								'actual_type' => $mapped_type,
 							)
 						);
 					}
@@ -4125,7 +4125,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				$scored_tools[] = array(
-					'tool'  => $tool,
+					'tool' => $tool,
 					'score' => $score,
 				);
 			}
