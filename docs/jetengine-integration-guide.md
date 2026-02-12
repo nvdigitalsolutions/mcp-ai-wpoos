@@ -34,14 +34,14 @@ This feature extends the WordPress AI plugin to provide comprehensive AI assista
 
 1. Install and activate JetEngine
 2. Create custom post types or taxonomies in JetEngine
-3. Go to **Settings → NV oOS → Tools → JetEngine Integration**
+3. Go to **Settings → NV oOS → Tools → Plugins**
 4. Enable the following options:
    - ✅ Enable JetEngine CCT Storage (optional, for performance)
    - ✅ Enable JetEngine AI Tools
    - ✅ **Enable AI Assistant for JetEngine CPTs** (Pro) - Required for AI metaboxes
    - ✅ **Enable Research & Add Pages for JetEngine CPTs** (Pro) - Required for Research & Add pages
 
-**Note:** The "Enable AI CPT Management" setting (found under Tools → Pro Features) is for standard WordPress post types (posts, pages, products) and is NOT required for JetEngine CPT integration.
+**Note:** All JetEngine settings are now consolidated in one location under Tools → Plugins. The "Enable AI CPT Management" setting (found under Tools → Pro Features) is for standard WordPress post types (posts, pages, products) and is NOT required for JetEngine CPT integration.
 
 ## Usage
 
