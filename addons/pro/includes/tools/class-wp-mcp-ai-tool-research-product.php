@@ -28,6 +28,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Maximum number of search queries to perform.
+	 *
+	 * @var int
+	 */
+	const MAX_SEARCH_QUERIES = 3;
+
+	/**
+	 * Maximum results per search query.
+	 *
+	 * @var int
+	 */
+	const MAX_RESULTS_PER_QUERY = 5;
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -344,15 +358,12 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$all_results = array();
 		$all_sources = array();
 
-		// Maximum results per query (5 for product research).
-		$max_results_per_query = 5;
-
 		foreach ( $search_queries as $search_query ) {
 			// Execute web search.
 			$search_result = $web_search_tool->execute(
 				array(
 					'query'       => $search_query,
-					'max_results' => $max_results_per_query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
 				),
 				$context
 			);
@@ -421,7 +432,13 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 		$queries[] = $query;
 
 		// Determine number of additional queries based on depth.
-		$num_queries = 'basic' === $depth ? 1 : ( 'comprehensive' === $depth ? 3 : 2 );
+		if ( 'basic' === $depth ) {
+			$num_queries = 1;
+		} elseif ( 'comprehensive' === $depth ) {
+			$num_queries = 3;
+		} else {
+			$num_queries = 2;
+		}
 
 		// Add focus area queries.
 		if ( ! empty( $focus_areas ) ) {
@@ -445,8 +462,8 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
-		// Limit to maximum of 3 queries.
-		return array_slice( $queries, 0, min( 3, $num_queries ) );
+		// Limit to maximum search queries.
+		return array_slice( $queries, 0, min( self::MAX_SEARCH_QUERIES, $num_queries ) );
 	}
 
 	/**
