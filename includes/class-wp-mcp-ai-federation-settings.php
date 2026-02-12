@@ -42,10 +42,11 @@ class WP_MCP_AI_Federation_Settings {
 		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
 		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
 
-		// If either setting changed, flush rewrite rules.
+		// If either setting changed, set a flag to flush rewrite rules on next request.
+		// We do this because the CPT needs to be registered first before flushing.
 		if ( $old_federation_enabled !== $new_federation_enabled ||
 			$old_directory_enabled !== $new_directory_enabled ) {
-			flush_rewrite_rules();
+			set_transient( 'wp_mcp_ai_flush_rewrite_rules', 1, 60 );
 		}
 	}
 

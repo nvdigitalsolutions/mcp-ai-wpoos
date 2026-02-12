@@ -45,16 +45,17 @@ composer.phar
 !/vendor/google/
 !/vendor/guzzlehttp/
 !/vendor/league/
-!/vendor/monolog/
 !/vendor/nyholm/
 !/vendor/paragonie/
 !/vendor/php-http/
 !/vendor/phpseclib/
-!/vendor/phpoffice/
 !/vendor/psr/
 !/vendor/rahul900day/
 !/vendor/ralouphie/
 !/vendor/symfony/
+
+# Note: phpoffice/phpspreadsheet moved to Pro addon (addons/pro/vendor/)
+# and is no longer included in base plugin
 
 # Ignore composer temporary files
 /vendor/composer/*.zip~
@@ -134,6 +135,11 @@ composer.phar
 # Pro addon dependencies
 # Exclude node_modules (development only)
 /addons/pro/node_modules/
+
+# Include pro addon vendor directory (composer dependencies for PHP 8.1+ features)
+!/addons/pro/vendor/
+!/addons/pro/composer.json
+!/addons/pro/composer.lock
 
 # Include vendor directory (generated from node_modules, included in distribution)
 !/addons/pro/assets/vendor/

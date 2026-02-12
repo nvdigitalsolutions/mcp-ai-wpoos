@@ -52,8 +52,18 @@ class WP_MCP_AI_Tool_Client_Semantic_Search implements WP_MCP_AI_Tool_Interface,
 			'type'                 => 'object',
 			'properties'           => array(
 				'text' => array(
-					'type'        => array( 'string', 'array' ),
 					'description' => __( 'The text or array of texts to embed for semantic search.', 'mcp-ai-wpoos' ),
+					'oneOf'       => array(
+						array(
+							'type' => 'string',
+						),
+						array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'string',
+							),
+						),
+					),
 				),
 			),
 			'required'             => array( 'text' ),

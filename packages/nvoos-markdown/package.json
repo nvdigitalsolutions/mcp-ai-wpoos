@@ -1,0 +1,45 @@
+{
+  "name": "@nvdigitalsolutions/nvoos-markdown",
+  "version": "0.1.0-alpha.1",
+  "description": "Security-hardened markdown renderer with XSS protection - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-markdown.js",
+  "types": "dist/nvoos-markdown.d.ts",
+  "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-markdown",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+    "directory": "packages/nvoos-markdown"
+  },
+  "bugs": {
+    "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
+  },
+  "keywords": [
+    "markdown",
+    "security",
+    "xss-protection",
+    "sanitization",
+    "marked",
+    "dompurify",
+    "nvdigital",
+    "nvoos"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node adapt-for-npm.js",
+    "test": "echo \"Error: tests not yet implemented\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "marked": "^9.0.0",
+    "dompurify": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

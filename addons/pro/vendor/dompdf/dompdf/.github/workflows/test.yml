@@ -1,0 +1,88 @@
+name: "Unit Tests"
+
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
+
+env:
+  COMPOSER_MEMORY_LIMIT: -1
+
+jobs:
+  test:
+    name: "Build"
+    runs-on: ubuntu-latest
+
+    strategy:
+      max-parallel: 12
+      matrix:
+        php: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        package-release: [dist]
+        extensions: ['gd']
+        include:
+          - php: '7.1'
+            package-release: 'dist'
+            extensions: 'gmagick'
+          - php: '7.1'
+            package-release: 'dist'
+            extensions: 'imagick'
+          - php: '7.4'
+            package-release: 'dist'
+            extensions: 'gmagick'
+          - php: '7.4'
+            package-release: 'dist'
+            extensions: 'imagick'
+          - php: '8.0'
+            package-release: 'dist'
+            extensions: 'gmagick'
+          - php: '8.0'
+            package-release: 'dist'
+            extensions: 'imagick'
+          - php: '8.4'
+            package-release: 'dist'
+            extensions: 'gmagick'
+          - php: '8.4'
+            package-release: 'dist'
+            extensions: 'imagick'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: exif,json,mbstring,dom,${{ matrix.extensions }}
+
+      - name: Install composer dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: ${{ matrix.package-release }}
+
+      - name: Install Ghostscript
+        run: |
+          sudo apt-get update
+          sudo apt --fix-broken install
+          sudo apt-get install ghostscript
+          sudo apt --fix-broken install
+
+      - name: Run unit tests
+        run: vendor/bin/phpunit
+
+      - name: Upload failed tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-output-tests
+          path: /home/runner/work/dompdf/dompdf/tmp/failed-output-tests
+          if-no-files-found: ignore
+
+      - name: Run code sniffer
+        run: vendor/bin/phpcs --standard=phpcs.xml src tests lib
+
+      # - name: Upload to Scrutinizer
+      #   continue-on-error: true
+      #   run: |
+      #     wget https://scrutinizer-ci.com/ocular.phar
+      #     php ocular.phar code-coverage:upload --format=php-clover coverage.clover

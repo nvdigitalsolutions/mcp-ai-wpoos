@@ -418,9 +418,9 @@ abstract class AbstractProvider
             $options['scope'] = $this->getDefaultScopes();
         }
 
-        // Remove deprecated 'approval_prompt' parameter to avoid conflicts with 'prompt'
         $options += [
-            'response_type' => 'code'
+            'response_type'   => 'code',
+            'approval_prompt' => 'auto'
         ];
 
         if (is_array($options['scope'])) {

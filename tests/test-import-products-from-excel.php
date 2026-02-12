@@ -276,13 +276,54 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test PHP version check.
+	 *
+	 * The tool should return an error if PHP version is below 8.1.
+	 * Note: This test can only verify error message when running on PHP < 8.1.
+	 * On PHP >= 8.1, we verify the check exists by examining the code flow.
+	 */
+	public function test_php_version_check() {
+		if ( ! $this->tool ) {
+			$this->markTestSkipped( 'Tool class not available' );
+		}
+
+		// If we're running on PHP < 8.1, the tool should return an error.
+		if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
+			$result = $this->tool->execute(
+				array(
+					'file_path'     => '/tmp/test.xlsx',
+					'field_mapping' => array( 'item_name' => 'A' ),
+				),
+				array( 'user_id' => $this->user_id )
+			);
+
+			$this->assertInstanceOf( 'WP_Error', $result );
+			$this->assertEquals( 'wp_mcp_ai_php_version_required', $result->get_error_code() );
+			$this->assertStringContainsString( '8.1', $result->get_error_message() );
+		} else {
+			// On PHP >= 8.1, verify the tool description mentions PHP requirement.
+			$description = $this->tool->get_description();
+			$this->assertStringContainsString( 'PHP 8.1', $description, 'Tool description should mention PHP 8.1 requirement' );
+		}
+	}
+
+	/**
 	 * Test PhpSpreadsheet dependency check.
+	 *
+	 * PhpSpreadsheet is now loaded from Pro addon vendor directory
+	 * and requires PHP 8.1+. This test verifies the dependency is
+	 * available when PHP version requirement is met.
 	 */
 	public function test_phpspreadsheet_dependency() {
-		// PhpSpreadsheet should be available after composer install.
+		// Check if PHP version meets the requirement.
+		if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
+			$this->markTestSkipped( 'PhpSpreadsheet requires PHP 8.1+. Current version: ' . PHP_VERSION );
+		}
+
+		// PhpSpreadsheet should be available from Pro addon vendor after composer install.
 		$this->assertTrue(
 			class_exists( 'PhpOffice\PhpSpreadsheet\IOFactory' ),
-			'PhpSpreadsheet should be installed via composer'
+			'PhpSpreadsheet should be loaded from Pro addon vendor directory when PHP >= 8.1'
 		);
 	}
 
