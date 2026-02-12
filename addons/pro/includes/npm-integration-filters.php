@@ -681,6 +681,12 @@ add_action( 'init', 'wp_mcp_ai_auto_register_npm_filters', 20 );
  * @return array Array with 'available' boolean and 'missing' array of package names.
  */
 function wp_mcp_ai_check_vendor_packages() {
+	// Get CDN-loaded packages from the CDN Loader class (single source of truth).
+	$cdn_packages = array();
+	if ( class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
+		$cdn_packages = WP_MCP_AI_Pro_CDN_Loader::get_cdn_packages();
+	}
+
 	$packages = array(
 		'prettier'      => 'assets/vendor/prettier/standalone.js',
 		'mjml'          => 'assets/vendor/mjml/lib/index.js',
@@ -693,6 +699,11 @@ function wp_mcp_ai_check_vendor_packages() {
 
 	$missing = array();
 	foreach ( $packages as $name => $path ) {
+		// Skip CDN packages - they're loaded from CDN, not vendor directory.
+		if ( in_array( $name, $cdn_packages, true ) ) {
+			continue;
+		}
+
 		$full_path = WP_MCP_AI_PRO_PATH . $path;
 		// Also check for alternate paths that might exist.
 		$alt_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $name;

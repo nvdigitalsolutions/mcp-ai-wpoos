@@ -81,6 +81,15 @@ class WP_MCP_AI_Pro_CDN_Loader {
 	);
 
 	/**
+	 * Get list of CDN-managed package names.
+	 *
+	 * @return array List of package names that are loaded from CDN.
+	 */
+	public static function get_cdn_packages() {
+		return array_keys( self::$libraries );
+	}
+
+	/**
 	 * Initialize the CDN loader
 	 */
 	public static function init() {
@@ -314,7 +323,7 @@ class WP_MCP_AI_Pro_CDN_Loader {
 				'message'   => $using_cdn 
 					? sprintf( 
 						/* translators: %s: package name */
-						__( '%s (CDN-loaded via jsDelivr)', 'mcp-ai-wpoos-pro' ), 
+						__( '%s (CDN-loaded)', 'mcp-ai-wpoos-pro' ), 
 						$package_name 
 					)
 					: sprintf(
