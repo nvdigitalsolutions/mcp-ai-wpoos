@@ -309,7 +309,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		if ( false === $result ) {
 			// Default implementation note.
 			return array(
-				'error' => __( 'Sharp processing requires a Node.js service. Please implement the wp_mcp_ai_sharp_process_image filter or set up a Node.js microservice. See INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Sharp processing requires a Node.js service. Please implement the wp_mcp_ai_sharp_process_image filter or set up a Node.js microservice. See docs/INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

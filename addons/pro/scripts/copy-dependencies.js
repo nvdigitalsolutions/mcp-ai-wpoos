@@ -88,6 +88,47 @@ if (!fs.existsSync(vendorPath)) {
 	fs.mkdirSync(vendorPath, { recursive: true });
 }
 
+// ============================================================================
+// CDN-LOADED PACKAGES (Skip copying - loaded from CDN with fallback support)
+// ============================================================================
+// These packages are loaded from CDN in production to reduce plugin size.
+// Fallback copies are kept for offline/intranet installations but marked optional.
+// See: includes/class-wp-mcp-ai-pro-cdn-loader.php
+//
+// To disable CDN loading:
+// - define( 'WP_MCP_AI_PRO_DISABLE_CDN', true ) in wp-config.php
+// - apply_filters( 'wp_mcp_ai_pro_use_cdn', false )
+// - Enable "Disable CDN Loading" in plugin settings
+// ============================================================================
+const cdnPackages = [
+	'chart.js',     // 420KB - Available on jsDelivr/cdnjs
+	'katex',        // 3.1MB - Available on jsDelivr/cdnjs (includes fonts)
+	'd3',           // 864KB - Available on jsDelivr/cdnjs
+	'axios',        // 1.6MB - Available on jsDelivr/cdnjs
+	'mathjs',       // 17MB - Available on jsDelivr/cdnjs (browser build)
+	'prettier',     // ~500KB - Available on jsDelivr/cdnjs (standalone)
+];
+
+// Check if we should skip CDN packages (for offline builds)
+const skipCdnPackages = process.env.WP_MCP_AI_BUILD_OFFLINE === 'true' || 
+                         process.argv.includes('--include-cdn-packages');
+
+if (skipCdnPackages) {
+	console.log(`${colors.yellow}⚠️  Including CDN packages for offline build${colors.reset}\n`);
+} else {
+	// Clean up CDN packages from vendor directory (they'll be loaded from CDN)
+	console.log(`${colors.blue}🧹 Cleaning CDN packages from vendor directory...${colors.reset}`);
+	cdnPackages.forEach(pkgName => {
+		const pkgVendorPath = path.join(vendorPath, pkgName);
+		if (fs.existsSync(pkgVendorPath)) {
+			const pkgSize = getSize(pkgVendorPath);
+			fs.rmSync(pkgVendorPath, { recursive: true, force: true });
+			console.log(`${colors.blue}🗑️  Removed ${pkgName}${colors.reset} → ${formatSize(pkgSize)} (will load from CDN)`);
+		}
+	});
+	console.log('');
+}
+
 // Dependencies to copy with their configurations
 const dependencies = [
 	{
@@ -101,6 +142,7 @@ const dependencies = [
 	},
 	{
 		name: 'katex',
+		cdnPackage: true, // Loaded from CDN (jsDelivr)
 		dirs: [
 			{ src: 'dist', dest: 'katex/dist' }, // Includes fonts, CSS, and JS
 		],
@@ -110,6 +152,7 @@ const dependencies = [
 	},
 	{
 		name: 'chart.js',
+		cdnPackage: true, // Loaded from CDN (jsDelivr)
 		files: [
 			{ src: 'dist/chart.umd.js', dest: 'chart.js/chart.umd.js' },
 			{ src: 'dist/chart.umd.min.js', dest: 'chart.js/chart.umd.min.js' },
@@ -134,6 +177,7 @@ const dependencies = [
 	},
 	{
 		name: 'prettier',
+		cdnPackage: true, // Loaded from CDN (jsDelivr)
 		files: [
 			{ src: 'standalone.js', dest: 'prettier/standalone.js' },
 			{ src: 'parser-babel.js', dest: 'prettier/parser-babel.js' },
@@ -203,6 +247,7 @@ const dependencies = [
 	},
 	{
 		name: 'axios',
+		cdnPackage: true, // Loaded from CDN (jsDelivr)
 		dirs: [
 			{ src: 'dist', dest: 'axios/dist' },
 		],
@@ -232,6 +277,7 @@ const dependencies = [
 	// Analytics Toolkit
 	{
 		name: 'd3',
+		cdnPackage: true, // Loaded from CDN (jsDelivr)
 		dirs: [
 			{ src: 'dist', dest: 'd3/dist' },
 		],
@@ -241,6 +287,7 @@ const dependencies = [
 	},
 	{
 		name: 'mathjs',
+		cdnPackage: true, // Loaded from CDN (jsDelivr) - browser build
 		dirs: [
 			{ src: 'lib', dest: 'mathjs/lib' },
 		],
@@ -488,12 +535,46 @@ const dependencies = [
 
 let totalCopied = 0;
 let totalSize = 0;
+let skippedCdn = 0;
+let skippedCdnSize = 0;
 
 dependencies.forEach(dep => {
 	const depPath = path.join(proPath, 'node_modules', dep.name);
 	
 	if (!fs.existsSync(depPath)) {
 		console.log(`${colors.yellow}⚠️  ${dep.name} not found in node_modules${colors.reset}`);
+		return;
+	}
+	
+	// Skip CDN packages unless explicitly included
+	if (dep.cdnPackage && !skipCdnPackages) {
+		// Calculate size for reporting
+		let cdnPackageSize = 0;
+		if (dep.dirs) {
+			dep.dirs.forEach(dir => {
+				const srcPath = path.join(depPath, dir.src);
+				if (fs.existsSync(srcPath)) {
+					cdnPackageSize += getSize(srcPath);
+				}
+			});
+		}
+		if (dep.files) {
+			dep.files.forEach(file => {
+				const srcPath = path.join(depPath, file.src);
+				if (fs.existsSync(srcPath)) {
+					const stats = fs.statSync(srcPath);
+					if (stats.isDirectory() || file.isDir) {
+						cdnPackageSize += getSize(srcPath);
+					} else {
+						cdnPackageSize += stats.size;
+					}
+				}
+			});
+		}
+		
+		console.log(`${colors.blue}⏭️  ${dep.name}${colors.reset} → ${formatSize(cdnPackageSize)} (CDN-loaded, skipped)`);
+		skippedCdn++;
+		skippedCdnSize += cdnPackageSize;
 		return;
 	}
 	
@@ -533,7 +614,8 @@ dependencies.forEach(dep => {
 	}
 	
 	if (depSize > 0) {
-		console.log(`${colors.green}✅ ${dep.name}${colors.reset} → ${formatSize(depSize)}`);
+		const cdnLabel = dep.cdnPackage ? ' (offline fallback)' : '';
+		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${colors.reset} → ${formatSize(depSize)}`);
 		totalCopied++;
 		totalSize += depSize;
 	}
@@ -543,4 +625,9 @@ const endTime = Date.now();
 const duration = ((endTime - startTime) / 1000).toFixed(2);
 
 console.log(`\n${colors.green}✅ Copied ${totalCopied} dependencies (${formatSize(totalSize)}) in ${duration}s${colors.reset}`);
+if (skippedCdn > 0) {
+	console.log(`${colors.blue}⏭️  Skipped ${skippedCdn} CDN packages (${formatSize(skippedCdnSize)} saved)${colors.reset}`);
+	console.log(`${colors.blue}💡 CDN packages will load from jsDelivr with automatic fallback${colors.reset}`);
+	console.log(`${colors.blue}💡 To include CDN packages: WP_MCP_AI_BUILD_OFFLINE=true npm run build${colors.reset}`);
+}
 console.log(`${colors.blue}📦 Vendor directory: ${path.relative(process.cwd(), vendorPath)}${colors.reset}`);

@@ -194,41 +194,33 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if NPM packages are installed.
 	 *
-	 * Checks vendor directory first (pre-packaged), then bundle files, then falls back to node_modules.
+	 * Checks CDN availability, vendor directory, bundle files, and node_modules.
 	 *
 	 * @return bool
 	 */
 	protected function check_npm_packages_installed() {
-		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		$bin_dir      = WP_MCP_AI_PRO_PATH . 'bin';
+		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
 		
-		// Check core document generation packages in vendor, bundle files, or node_modules.
-		// pdfkit: bundled in generate-pdf.bundle.js
+		// Use the centralized helper function for CDN-aware package checking.
 		$has_pdfkit = (
-			file_exists( $vendor_dir . '/pdfkit/package.json' ) ||
-			file_exists( $bin_dir . '/generate-pdf.bundle.js' ) ||
-			file_exists( $node_modules . '/pdfkit/package.json' )
+			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
 		);
 		
-		// docx: bundled in generate-word.bundle.js
 		$has_docx = (
-			file_exists( $vendor_dir . '/docx/package.json' ) ||
-			file_exists( $bin_dir . '/generate-word.bundle.js' ) ||
-			file_exists( $node_modules . '/docx/package.json' )
+			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' )
 		);
 		
-		// exceljs: bundled in generate-excel.bundle.js
 		$has_exceljs = (
-			file_exists( $vendor_dir . '/exceljs/package.json' ) ||
-			file_exists( $bin_dir . '/generate-excel.bundle.js' ) ||
-			file_exists( $node_modules . '/exceljs/package.json' )
+			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' )
 		);
 		
 		$core_packages = $has_pdfkit && $has_docx && $has_exceljs;
 		
-		// Check utility packages (optional) in vendor first, then node_modules.
-		$utility_packages = file_exists( $vendor_dir . '/pdf-lib/package.json' ) || file_exists( $node_modules . '/pdf-lib/package.json' );
+		// Check utility packages (optional).
+		$utility_packages = wp_mcp_ai_is_npm_package_available( 'pdf-lib' );
 		
 		return $core_packages && $utility_packages;
 	}
@@ -236,14 +228,12 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if optional NPM packages are installed.
 	 *
-	 * Checks vendor directory first (pre-packaged), then falls back to node_modules.
+	 * Checks CDN availability, vendor directory, and node_modules.
 	 *
 	 * @return bool
 	 */
 	protected function check_optional_npm_packages_installed() {
-		$vendor_dir   = WP_MCP_AI_PRO_PATH . 'assets/vendor';
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $vendor_dir . '/puppeteer-core/package.json' ) || file_exists( $node_modules . '/puppeteer-core/package.json' );
+		return wp_mcp_ai_is_npm_package_available( 'puppeteer-core' );
 	}
 
 	/**

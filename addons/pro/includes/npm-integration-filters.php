@@ -20,6 +20,97 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Check if an NPM package is available
+ *
+ * Checks for package availability in CDN (via CDN Loader), vendor directory,
+ * bundle files, or node_modules.
+ *
+ * @since 1.1.1
+ * @param string $package_name Package name (e.g., 'katex', 'chart.js', 'pdfkit').
+ * @return bool True if package is available.
+ */
+function wp_mcp_ai_is_npm_package_available( $package_name ) {
+	// Check if CDN Loader is available and handles this package.
+	if ( class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
+		if ( WP_MCP_AI_Pro_CDN_Loader::is_package_available( $package_name ) ) {
+			return true;
+		}
+	}
+
+	// Check vendor directory (pre-packaged distribution).
+	$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package_name;
+	if ( is_dir( $vendor_path ) || file_exists( $vendor_path . '/package.json' ) ) {
+		return true;
+	}
+
+	// Check node_modules (development environment).
+	$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
+	if ( is_dir( $node_modules_path ) || file_exists( $node_modules_path . '/package.json' ) ) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Get NPM package status information
+ *
+ * Returns detailed status about how a package is available (CDN, vendor, node_modules, etc.).
+ *
+ * @since 1.1.1
+ * @param string $package_name Package name.
+ * @return array Status array with 'available', 'source', and 'message' keys.
+ */
+function wp_mcp_ai_get_npm_package_status( $package_name ) {
+	// Check if CDN Loader is available and handles this package.
+	if ( class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
+		$status = WP_MCP_AI_Pro_CDN_Loader::get_package_status( $package_name );
+		if ( $status['available'] ) {
+			return $status;
+		}
+	}
+
+	// Check vendor directory (pre-packaged distribution).
+	$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package_name;
+	if ( is_dir( $vendor_path ) || file_exists( $vendor_path . '/package.json' ) ) {
+		return array(
+			'available' => true,
+			'source'    => 'vendor',
+			'message'   => sprintf(
+				/* translators: %s: package name */
+				__( '%s (Bundled)', 'mcp-ai-wpoos-pro' ),
+				$package_name
+			),
+		);
+	}
+
+	// Check node_modules (development environment).
+	$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
+	if ( is_dir( $node_modules_path ) || file_exists( $node_modules_path . '/package.json' ) ) {
+		return array(
+			'available' => true,
+			'source'    => 'node_modules',
+			'message'   => sprintf(
+				/* translators: %s: package name */
+				__( '%s (Development)', 'mcp-ai-wpoos-pro' ),
+				$package_name
+			),
+		);
+	}
+
+	// Not available.
+	return array(
+		'available' => false,
+		'source'    => 'none',
+		'message'   => sprintf(
+			/* translators: %s: package name */
+			__( '%s (Not installed)', 'mcp-ai-wpoos-pro' ),
+			$package_name
+		),
+	);
+}
+
+/**
  * Check if Node.js is available
  *
  * @return bool True if Node.js is available.
