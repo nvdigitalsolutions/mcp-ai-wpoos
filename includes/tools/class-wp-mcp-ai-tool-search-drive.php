@@ -56,7 +56,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'query'         => array(
 					'type'        => 'string',
-					'description' => __( 'Search query. Simple text (e.g., "360" or "report") searches all file and folder content and metadata. Advanced syntax: use "name contains \'text\'" for names, "mimeType = \'application/pdf\'" for file types, or "mimeType = \'application/vnd.google-apps.folder\'" for folders only. Combine with "and"/"or". All queries automatically exclude trashed items unless you specify "trashed = true".', 'mcp-ai-wpoos' ),
+					'description' => __( 'Search query. Simple text (e.g., "360" or "report") searches all file and folder content. Advanced syntax supported: "name contains \'text\'" for names, "mimeType = \'application/pdf\'" for file types, "mimeType = \'application/vnd.google-apps.folder\'" for folders. Combine with "and"/"or". Auto-excludes trashed items unless "trashed = true" specified.', 'mcp-ai-wpoos' ),
 				),
 				'item_type'     => array(
 					'type'        => 'string',
