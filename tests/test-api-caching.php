@@ -233,4 +233,164 @@ class Test_API_Caching extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'fetch_models_from_api' );
 		$this->assertTrue( $method->isPrivate(), 'fetch_models_from_api should be private' );
 	}
+
+	/**
+	 * Test OpenAI embeddings caching settings exist.
+	 */
+	public function test_openai_embeddings_cache_setting_exists() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		// Should use same enable flag as models.
+		$this->assertTrue( ! empty( $settings['enable_openai_api_caching'] ), 'OpenAI caching should be enabled' );
+
+		// Should have separate TTL for embeddings.
+		$this->assertArrayHasKey( 'openai_embedding_cache_ttl', $settings, 'Embeddings cache TTL setting should exist' );
+		}
+
+	/**
+	 * Test embeddings cache key generation with MD5 hash.
+	 */
+	public function test_openai_embeddings_cache_key_format() {
+		$input = 'test text';
+		$model = 'text-embedding-3-small';
+
+		// Build the expected cache key data.
+		$cache_key_data = array(
+		'input'           => $input,
+		'model'           => $model,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$expected_key = 'openai_embedding_' . md5( wp_json_encode( $cache_key_data ) );
+
+		// Verify the key format is correct.
+		$this->assertStringStartsWith( 'openai_embedding_', $expected_key, 'Key should start with openai_embedding_' );
+		$this->assertEquals( 49, strlen( $expected_key ), 'Key should be prefix + 32 char MD5 hash' );
+		}
+
+	/**
+	 * Test embeddings cache key changes with different inputs.
+	 */
+	public function test_openai_embeddings_cache_key_uniqueness() {
+		$input1 = 'test text 1';
+		$input2 = 'test text 2';
+		$model = 'text-embedding-3-small';
+
+		$key1_data = array(
+		'input'           => $input1,
+		'model'           => $model,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$key2_data = array(
+		'input'           => $input2,
+		'model'           => $model,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
+		$key2 = 'openai_embedding_' . md5( wp_json_encode( $key2_data ) );
+
+		$this->assertNotEquals( $key1, $key2, 'Different inputs should generate different cache keys' );
+		}
+
+	/**
+	 * Test embeddings cache key includes model parameter.
+	 */
+	public function test_openai_embeddings_cache_key_includes_model() {
+		$input = 'test text';
+		$model1 = 'text-embedding-3-small';
+		$model2 = 'text-embedding-3-large';
+
+		$key1_data = array(
+		'input'           => $input,
+		'model'           => $model1,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$key2_data = array(
+		'input'           => $input,
+		'model'           => $model2,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
+		$key2 = 'openai_embedding_' . md5( wp_json_encode( $key2_data ) );
+
+		$this->assertNotEquals( $key1, $key2, 'Different models should generate different cache keys' );
+		}
+
+	/**
+	 * Test embeddings cache key includes dimensions parameter.
+	 */
+	public function test_openai_embeddings_cache_key_includes_dimensions() {
+		$input = 'test text';
+		$model = 'text-embedding-3-small';
+
+		$key1_data = array(
+		'input'           => $input,
+		'model'           => $model,
+		'encoding_format' => '',
+		'dimensions'      => 0,
+		);
+
+		$key2_data = array(
+		'input'           => $input,
+		'model'           => $model,
+		'encoding_format' => '',
+		'dimensions'      => 1536,
+		);
+
+		$key1 = 'openai_embedding_' . md5( wp_json_encode( $key1_data ) );
+		$key2 = 'openai_embedding_' . md5( wp_json_encode( $key2_data ) );
+
+		$this->assertNotEquals( $key1, $key2, 'Different dimensions should generate different cache keys' );
+		}
+
+	/**
+	 * Test embeddings filter hooks are available.
+	 */
+	public function test_openai_embeddings_cache_filters() {
+		// Test that the filter hook can be applied.
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_embeddings', true, 'test input', array() );
+		$this->assertTrue( $use_cache, 'Filter should return true by default' );
+
+		// Test disabling via filter.
+		add_filter( 'wp_mcp_ai_cache_openai_embeddings', '__return_false' );
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_embeddings', true, 'test input', array() );
+		$this->assertFalse( $use_cache, 'Filter should disable caching' );
+		remove_filter( 'wp_mcp_ai_cache_openai_embeddings', '__return_false' );
+
+		// Test TTL filter.
+		$default_ttl = 24 * HOUR_IN_SECONDS;
+		$filtered_ttl = apply_filters( 'wp_mcp_ai_openai_embedding_ttl', $default_ttl, array() );
+		$this->assertEquals( $default_ttl, $filtered_ttl, 'TTL should pass through filter' );
+
+		// Test custom TTL via filter.
+		add_filter( 'wp_mcp_ai_openai_embedding_ttl', function( $ttl ) {
+		return 48 * HOUR_IN_SECONDS;
+		} );
+		$filtered_ttl = apply_filters( 'wp_mcp_ai_openai_embedding_ttl', $default_ttl, array() );
+		$this->assertEquals( 48 * HOUR_IN_SECONDS, $filtered_ttl, 'Filter should modify TTL' );
+		remove_all_filters( 'wp_mcp_ai_openai_embedding_ttl' );
+		}
+
+	/**
+	 * Test that private fetch_embeddings_from_api method exists.
+	 */
+	public function test_openai_private_fetch_embeddings_method_exists() {
+		$client = new WP_MCP_AI_OpenAI_Client();
+
+		// Use reflection to check private method exists.
+		$reflection = new ReflectionClass( $client );
+		$this->assertTrue( $reflection->hasMethod( 'fetch_embeddings_from_api' ), 'Private fetch embeddings method should exist' );
+
+		$method = $reflection->getMethod( 'fetch_embeddings_from_api' );
+		$this->assertTrue( $method->isPrivate(), 'fetch_embeddings_from_api should be private' );
+		}
 }

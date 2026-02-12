@@ -1001,135 +1001,202 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			return is_array( $decoded ) ? $decoded : array();
 		}
 
-		/**
-		 * Create embeddings using OpenAI's Embeddings API.
-		 *
-		 * @param string|array $input  Input text or array of texts to create embeddings for.
-		 * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout).
-		 * @return array|WP_Error Array containing embeddings or WP_Error on failure.
-		 */
-		public function create_embeddings( $input, array $options = array() ) {
-			$api_key = $this->get_api_key();
+	/**
+	 * Generate embeddings for text input.
+	 *
+	 * @param string|array $input   Text string or array of strings to embed.
+	 * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout, bypass_cache).
+	 * @return array|WP_Error Array containing embeddings or WP_Error on failure.
+	 */
+	public function create_embeddings( $input, array $options = array() ) {
+		$api_key = $this->get_api_key();
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ) );
-			}
-
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout  = max( 5, $timeout );
-
-			// Default model.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
-
-			$payload = array(
-				'model' => $model,
-				'input' => $input,
-			);
-
-			// Optional parameters.
-			if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
-				$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
-			}
-
-			if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
-				$payload['dimensions'] = absint( $options['dimensions'] );
-			}
-
-			if ( isset( $options['user'] ) && '' !== $options['user'] ) {
-				$payload['user'] = sanitize_text_field( $options['user'] );
-			}
-
-			$endpoint = 'https://api.openai.com/v1/embeddings';
-
-			$request_args = array(
-				'method'  => 'POST',
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-				),
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => $timeout,
-			);
-
-			WP_MCP_AI_Logger::log_event(
-				'openai_create_embeddings',
-				'Creating embeddings with OpenAI.',
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_api_key',
+				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'model'        => $model,
-					'input_type'   => is_array( $input ) ? 'array' : 'string',
-					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+					'status'  => 400,
+					'actions' => array(
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+					),
 				)
 			);
-
-			$response = $this->dispatch_http_request( $endpoint, $request_args );
-
-			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
-
-				return WP_MCP_AI_HTTP::prepare_transport_error(
-					$response,
-					'wp_mcp_ai_embeddings_http_error',
-					__( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' ),
-					__( 'OpenAI', 'mcp-ai-wpoos' )
-				);
-			}
-
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
-
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'mcp-ai-wpoos' ) );
-			}
-
-			if ( $code < 200 || $code >= 300 ) {
-				WP_MCP_AI_Logger::log_error(
-					'OpenAI embeddings returned an error.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' );
-
-				return new WP_Error(
-					'wp_mcp_ai_embeddings_error',
-					$message,
-					array(
-						'status'   => $code,
-						'response' => $decoded,
-					)
-				);
-			}
-
-			WP_MCP_AI_Logger::log_event(
-				'openai_embeddings_created',
-				'OpenAI embeddings created successfully.',
-				array(
-					'model'            => $model,
-					'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
-				)
-			);
-
-			return is_array( $decoded ) ? $decoded : array();
 		}
+
+		if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Check if caching is enabled.
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
+		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
+
+		// Allow disabling via constant.
+		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+			$use_cache = false;
+		}
+
+		/**
+		 * Filter whether to cache OpenAI embeddings requests.
+		 *
+		 * @param bool         $use_cache Whether to use caching.
+		 * @param string|array $input     Input text.
+		 * @param array        $options   Request options.
+		 */
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_embeddings', $use_cache, $input, $options );
+
+		if ( $use_cache && ! $bypass_cache ) {
+			// Build cache key from input and relevant options.
+			$model            = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+			$encoding_format  = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : '';
+			$dimensions       = isset( $options['dimensions'] ) && '' !== $options['dimensions'] ? absint( $options['dimensions'] ) : 0;
+
+			$cache_key_data = array(
+				'input'           => $input,
+				'model'           => $model,
+				'encoding_format' => $encoding_format,
+				'dimensions'      => $dimensions,
+			);
+
+			$cache_key = 'openai_embedding_' . md5( wp_json_encode( $cache_key_data ) );
+
+			// Get cache TTL from settings or use default (24 hours).
+			$cache_ttl = isset( $settings['openai_embedding_cache_ttl'] ) ? absint( $settings['openai_embedding_cache_ttl'] ) : 24 * HOUR_IN_SECONDS;
+
+			/**
+			 * Filter the cache TTL for OpenAI embeddings.
+			 *
+			 * @param int   $cache_ttl Cache TTL in seconds.
+			 * @param array $options   Request options.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_openai_embedding_ttl', $cache_ttl, $options );
+
+			return WP_MCP_AI_Cache_Helper::remember(
+				$cache_key,
+				function() use ( $api_key, $input, $options ) {
+					return $this->fetch_embeddings_from_api( $api_key, $input, $options );
+				},
+				$cache_ttl
+			);
+		}
+
+		return $this->fetch_embeddings_from_api( $api_key, $input, $options );
+	}
+
+	/**
+	 * Fetch embeddings from OpenAI API (internal method).
+	 *
+	 * @param string       $api_key OpenAI API key.
+	 * @param string|array $input   Text input.
+	 * @param array        $options Optional parameters.
+	 * @return array|WP_Error Array of embeddings or WP_Error on failure.
+	 */
+	private function fetch_embeddings_from_api( $api_key, $input, $options ) {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+		$timeout  = max( 5, $timeout );
+
+		// Default model.
+		$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+
+		$payload = array(
+			'model' => $model,
+			'input' => $input,
+		);
+
+		// Optional parameters.
+		if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
+			$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
+		}
+
+		if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
+			$payload['dimensions'] = absint( $options['dimensions'] );
+		}
+
+		if ( isset( $options['user'] ) && '' !== $options['user'] ) {
+			$payload['user'] = sanitize_text_field( $options['user'] );
+		}
+
+		$endpoint = 'https://api.openai.com/v1/embeddings';
+
+		$request_args = array(
+			'method'  => 'POST',
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $api_key,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => $timeout,
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'openai_create_embeddings',
+			'Creating embeddings with OpenAI.',
+			array(
+				'model'        => $model,
+				'input_type'   => is_array( $input ) ? 'array' : 'string',
+				'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
+			)
+		);
+
+		$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_embeddings_http_error',
+				__( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' ),
+				__( 'OpenAI', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			WP_MCP_AI_Logger::log_error(
+				'OpenAI embeddings returned an error.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' );
+
+			return new WP_Error(
+				'wp_mcp_ai_embeddings_error',
+				$message,
+				array(
+					'status'   => $code,
+					'response' => $decoded,
+				)
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'openai_embeddings_created',
+			'OpenAI embeddings created successfully.',
+			array(
+				'model'            => $model,
+				'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
+			)
+		);
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
 
 		/**
 		 * Moderate content using OpenAI's Moderation API.
