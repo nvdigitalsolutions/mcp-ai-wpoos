@@ -79,48 +79,104 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 		}
 
+	/**
+	 * List available models from the Ollama server.
+	 *
+	 * @param array $options Optional parameters (bypass_cache).
+	 * @return array|WP_Error Array of models or WP_Error on failure.
+	 */
+	public function list_models( array $options = array() ) {
+		$endpoint_url = $this->get_endpoint_url();
+		if ( empty( $endpoint_url ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Check if caching is enabled.
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache    = ! empty( $settings['enable_ollama_api_caching'] );
+		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
+
+		// Allow disabling via constant.
+		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+			$use_cache = false;
+		}
+
 		/**
-		 * List available models.
+		 * Filter whether to cache Ollama model list requests.
 		 *
-		 * @return array|WP_Error Array of models or error.
+		 * @param bool   $use_cache    Whether to use caching.
+		 * @param string $endpoint_url Ollama endpoint URL.
+		 * @param array  $options      Request options.
 		 */
-		public function list_models() {
-			$endpoint_url = $this->get_endpoint_url();
-			if ( empty( $endpoint_url ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
-			}
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_ollama_models', $use_cache, $endpoint_url, $options );
 
-			$url = untrailingslashit( $endpoint_url ) . '/api/tags';
+		if ( $use_cache && ! $bypass_cache ) {
+			// Build cache key including endpoint URL (Ollama is self-hosted, different endpoints = different models).
+			$cache_key = 'ollama_models_list_' . md5( $endpoint_url );
 
-			// Use a minimum of 30 seconds for listing models from local providers.
-			// Local network connections may have higher latency than localhost.
-			$timeout = max( 30, $this->resolve_timeout( array() ) );
+			// Get cache TTL from settings or use default (5 minutes for local servers).
+			$cache_ttl = isset( $settings['ollama_model_list_cache_ttl'] ) ? absint( $settings['ollama_model_list_cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
 
-			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
+			/**
+			 * Filter the cache TTL for Ollama model lists.
+			 *
+			 * @param int    $cache_ttl    Cache TTL in seconds.
+			 * @param string $endpoint_url Ollama endpoint URL.
+			 * @param array  $options      Request options.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_ollama_model_list_ttl', $cache_ttl, $endpoint_url, $options );
 
-			if ( is_wp_error( $response ) ) {
-				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
-			}
+			return WP_MCP_AI_Cache_Helper::remember(
+				$cache_key,
+				function () use ( $endpoint_url ) {
+					return $this->fetch_models_from_api( $endpoint_url );
+				},
+				$cache_ttl
+			);
+		}
 
-			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
-			}
+		return $this->fetch_models_from_api( $endpoint_url );
+	}
 
-			$models = array();
-			if ( isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
-				foreach ( $decoded['models'] as $model ) {
-					if ( isset( $model['name'] ) ) {
-						$models[] = array(
-							'name'   => $model['name'],
-							'size'   => isset( $model['size'] ) ? $model['size'] : 0,
-							'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
-						);
-					}
+	/**
+	 * Fetch models from Ollama API (internal method).
+	 *
+	 * @param string $endpoint_url Ollama endpoint URL.
+	 * @return array|WP_Error Array of models or WP_Error on failure.
+	 */
+	private function fetch_models_from_api( $endpoint_url ) {
+		$url = untrailingslashit( $endpoint_url ) . '/api/tags';
+
+		// Use a minimum of 30 seconds for listing models from local providers.
+		// Local network connections may have higher latency than localhost.
+		$timeout = max( 30, $this->resolve_timeout( array() ) );
+
+		$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
+
+		if ( is_wp_error( $response ) ) {
+			return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
+		}
+
+		$models = array();
+		if ( isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
+			foreach ( $decoded['models'] as $model ) {
+				if ( isset( $model['name'] ) ) {
+					$models[] = array(
+						'name'   => $model['name'],
+						'size'   => isset( $model['size'] ) ? $model['size'] : 0,
+						'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+					);
 				}
 			}
-			return $models;
 		}
+		return $models;
+	}
+
 
 		/**
 		 * Create a chat completion.
