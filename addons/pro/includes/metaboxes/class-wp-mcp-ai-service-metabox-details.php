@@ -63,12 +63,12 @@ class WP_MCP_AI_Service_Metabox_Details extends WP_MCP_AI_Service_Metabox_Base {
 		wp_nonce_field( 'wp_mcp_ai_service_details_nonce', 'wp_mcp_ai_service_details_nonce' );
 
 		// Get existing values.
-		$duration    = get_post_meta( $post->ID, '_service_duration', true );
-		$price       = get_post_meta( $post->ID, '_service_price', true );
-		$buffer_time = get_post_meta( $post->ID, '_service_buffer_time', true );
-		$max_bookings = get_post_meta( $post->ID, '_service_max_bookings_per_day', true );
+		$duration         = get_post_meta( $post->ID, '_service_duration', true );
+		$price            = get_post_meta( $post->ID, '_service_price', true );
+		$buffer_time      = get_post_meta( $post->ID, '_service_buffer_time', true );
+		$max_bookings     = get_post_meta( $post->ID, '_service_max_bookings_per_day', true );
 		$deposit_required = get_post_meta( $post->ID, '_service_deposit_required', true );
-		$deposit_amount = get_post_meta( $post->ID, '_service_deposit_amount', true );
+		$deposit_amount   = get_post_meta( $post->ID, '_service_deposit_amount', true );
 
 		?>
 		<div class="wp-mcp-ai-service-details-metabox">
@@ -232,8 +232,8 @@ class WP_MCP_AI_Service_Metabox_Details extends WP_MCP_AI_Service_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Verify nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_service_details_nonce'] ) || 
-		     ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_service_details_nonce'] ) ), 'wp_mcp_ai_service_details_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_service_details_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_service_details_nonce'] ) ), 'wp_mcp_ai_service_details_nonce' ) ) {
 			return;
 		}
 

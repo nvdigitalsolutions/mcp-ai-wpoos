@@ -80,21 +80,25 @@ class WP_MCP_AI_Appointment_Metabox_Details extends WP_MCP_AI_Appointment_Metabo
 		}
 
 		// Get all services and staff for dropdowns.
-		$services = get_posts( array(
-			'post_type'      => 'mcp_service',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-		) );
+		$services = get_posts(
+			array(
+				'post_type'      => 'mcp_service',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
 
-		$staff_members = get_posts( array(
-			'post_type'      => 'mcp_staff',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-		) );
+		$staff_members = get_posts(
+			array(
+				'post_type'      => 'mcp_staff',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
 
 		// Get author and creation date.
 		$created_by = get_userdata( $post->post_author );

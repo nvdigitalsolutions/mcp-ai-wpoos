@@ -369,8 +369,8 @@ class WP_MCP_AI_Calendar_Booking_Research_Page {
 
 		wp_send_json_success(
 			array(
-				'message' => __( 'Appointment created successfully.', 'mcp-ai-wpoos-pro' ),
-				'post_id' => $post_id,
+				'message'  => __( 'Appointment created successfully.', 'mcp-ai-wpoos-pro' ),
+				'post_id'  => $post_id,
 				'edit_url' => admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
 			)
 		);

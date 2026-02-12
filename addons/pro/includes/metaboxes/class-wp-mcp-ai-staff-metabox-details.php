@@ -63,12 +63,12 @@ class WP_MCP_AI_Staff_Metabox_Details extends WP_MCP_AI_Staff_Metabox_Base {
 		wp_nonce_field( 'wp_mcp_ai_staff_details_nonce', 'wp_mcp_ai_staff_details_nonce' );
 
 		// Get existing values.
-		$role        = get_post_meta( $post->ID, '_staff_role', true );
-		$email       = get_post_meta( $post->ID, '_staff_email', true );
-		$phone       = get_post_meta( $post->ID, '_staff_phone', true );
-		$available   = get_post_meta( $post->ID, '_staff_available', true );
-		$services    = get_post_meta( $post->ID, '_staff_services', true );
-		$color       = get_post_meta( $post->ID, '_staff_color', true );
+		$role      = get_post_meta( $post->ID, '_staff_role', true );
+		$email     = get_post_meta( $post->ID, '_staff_email', true );
+		$phone     = get_post_meta( $post->ID, '_staff_phone', true );
+		$available = get_post_meta( $post->ID, '_staff_available', true );
+		$services  = get_post_meta( $post->ID, '_staff_services', true );
+		$color     = get_post_meta( $post->ID, '_staff_color', true );
 
 		// Default values.
 		if ( empty( $available ) ) {
@@ -82,13 +82,15 @@ class WP_MCP_AI_Staff_Metabox_Details extends WP_MCP_AI_Staff_Metabox_Base {
 		}
 
 		// Get all services for dropdown.
-		$all_services = get_posts( array(
-			'post_type'      => 'mcp_service',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'orderby'        => 'title',
-			'order'          => 'ASC',
-		) );
+		$all_services = get_posts(
+			array(
+				'post_type'      => 'mcp_service',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
 
 		?>
 		<div class="wp-mcp-ai-staff-details-metabox">
@@ -256,8 +258,8 @@ class WP_MCP_AI_Staff_Metabox_Details extends WP_MCP_AI_Staff_Metabox_Base {
 	 */
 	public function save( $post_id, $post ) {
 		// Verify nonce.
-		if ( ! isset( $_POST['wp_mcp_ai_staff_details_nonce'] ) || 
-		     ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_staff_details_nonce'] ) ), 'wp_mcp_ai_staff_details_nonce' ) ) {
+		if ( ! isset( $_POST['wp_mcp_ai_staff_details_nonce'] ) ||
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_staff_details_nonce'] ) ), 'wp_mcp_ai_staff_details_nonce' ) ) {
 			return;
 		}
 
@@ -297,8 +299,8 @@ class WP_MCP_AI_Staff_Metabox_Details extends WP_MCP_AI_Staff_Metabox_Base {
 		}
 
 		// Save services (many-to-many relationship).
-		$services = isset( $_POST['staff_services'] ) && is_array( $_POST['staff_services'] ) 
-					? array_map( 'absint', $_POST['staff_services'] ) 
+		$services = isset( $_POST['staff_services'] ) && is_array( $_POST['staff_services'] )
+					? array_map( 'absint', $_POST['staff_services'] )
 					: array();
 		update_post_meta( $post_id, '_staff_services', $services );
 	}
