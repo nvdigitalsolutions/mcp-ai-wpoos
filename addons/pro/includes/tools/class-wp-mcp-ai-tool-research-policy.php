@@ -21,6 +21,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Maximum number of search queries to perform.
+	 *
+	 * @var int
+	 */
+	const MAX_SEARCH_QUERIES = 3;
+
+	/**
+	 * Maximum results per search query.
+	 *
+	 * @var int
+	 */
+	const MAX_RESULTS_PER_QUERY = 5;
+
+	/**
+	 * Maximum number of sources to display in prompt.
+	 *
+	 * @var int
+	 */
+	const MAX_DISPLAYED_SOURCES = 5;
+
+	/**
+	 * Number of queries for basic depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_BASIC = 1;
+
+	/**
+	 * Number of queries for standard depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_STANDARD = 2;
+
+	/**
+	 * Number of queries for comprehensive depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_COMPREHENSIVE = 3;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -38,7 +80,7 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about an insurance policy type using AI and web search. Returns policy name, description, coverage details, requirements, premiums, deductibles, exclusions, and terms ready for creating a policy template.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about an insurance policy type using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns policy name, description, coverage details, requirements, premiums, deductibles, exclusions, and terms ready for creating a policy template.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,6 +93,19 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 				'query'              => array(
 					'type'        => 'string',
 					'description' => __( 'The policy type to research (e.g., "Pet Health Insurance", "Life Insurance for Families", "Dental Insurance with Orthodontics")', 'mcp-ai-wpoos-pro' ),
+				),
+				'depth'              => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+					'default'     => 'standard',
+				),
+				'focus_areas'        => array(
+					'type'        => 'array',
+					'description' => __( 'Optional specific aspects to focus on (e.g., "coverage details", "legal requirements", "industry standards").', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'coverage_focus'     => array(
 					'type'        => 'string',
@@ -124,11 +179,20 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		$query              = sanitize_text_field( $arguments['query'] );
+		$depth              = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas        = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
+			: array();
 		$coverage_focus     = isset( $arguments['coverage_focus'] ) ? sanitize_text_field( $arguments['coverage_focus'] ) : '';
 		$include_comparison = isset( $arguments['include_comparison'] ) ? (bool) $arguments['include_comparison'] : false;
 
+		// Validate depth parameter.
+		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$depth = 'standard';
+		}
+
 		// Check cache first.
-		$cache_key = 'policy_research_' . md5( $query . '_' . $coverage_focus );
+		$cache_key = 'policy_research_' . md5( $query . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $coverage_focus );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_policy_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -142,13 +206,35 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'Starting policy research',
 			array(
 				'query'          => $query,
+				'depth'          => $depth,
+				'focus_areas'    => $focus_areas,
 				'coverage_focus' => $coverage_focus,
 				'user_id'        => $user_id,
 			)
 		);
 
-		// Build research prompt.
-		$prompt = $this->build_research_prompt( $query, $coverage_focus, $include_comparison );
+		// Step 1: Gather information through web searches.
+		$search_results = $this->gather_policy_information( $query, $coverage_focus, $depth, $focus_areas, $context );
+
+		if ( is_wp_error( $search_results ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Policy research web search failed: ' . $search_results->get_error_message(),
+				array(
+					'query' => $query,
+					'depth' => $depth,
+					'error' => $search_results->get_error_code(),
+				)
+			);
+			// Fall back to AI-only research if web search fails.
+			$search_results = array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_research_prompt( $query, $coverage_focus, $include_comparison, $depth, $focus_areas, $search_results );
 
 		// Use AI to research the policy.
 		$research_result = $this->perform_ai_research( $prompt, $context );
@@ -185,12 +271,169 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'policy_research_completed',
 			'Policy research completed successfully',
 			array(
-				'query'       => $query,
-				'policy_name' => isset( $policy_data['policy_name'] ) ? $policy_data['policy_name'] : '',
+				'query'         => $query,
+				'depth'         => $depth,
+				'focus_areas'   => $focus_areas,
+				'sources_count' => count( $search_results['sources'] ?? array() ),
+				'policy_name'   => isset( $policy_data['policy_name'] ) ? $policy_data['policy_name'] : '',
 			)
 		);
 
 		return $policy_data;
+	}
+
+	/**
+	 * Gather policy information through web searches.
+	 *
+	 * @param string $query          Policy query.
+	 * @param string $coverage_focus Coverage focus.
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @param array  $context        Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function gather_policy_information( $query, $coverage_focus, $depth, $focus_areas, $context ) {
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			WP_MCP_AI_Logger::log_event(
+				'policy_research_no_web_search',
+				'Web search tool not available, using AI-only mode',
+				array( 'query' => $query )
+			);
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		$search_queries = $this->generate_policy_search_queries( $query, $coverage_focus, $depth, $focus_areas );
+		$all_results    = array();
+		$all_sources    = array();
+
+		foreach ( $search_queries as $search_query ) {
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Policy research web search failed: ' . $search_result->get_error_message(),
+					array(
+						'query'      => $search_query,
+						'policy'     => $query,
+						'error_code' => $search_result->get_error_code(),
+					)
+				);
+				continue;
+			}
+
+			if ( ! empty( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$all_results[] = $result;
+					if ( ! empty( $result['url'] ) ) {
+						$all_sources[] = array(
+							'url'     => $result['url'],
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+					}
+				}
+			}
+		}
+
+		$all_sources = $this->deduplicate_sources( $all_sources );
+
+		WP_MCP_AI_Logger::log_event(
+			'policy_research_web_search_complete',
+			'Web search completed for policy research',
+			array(
+				'query'         => $query,
+				'queries_count' => count( $search_queries ),
+				'results_count' => count( $all_results ),
+				'sources_count' => count( $all_sources ),
+			)
+		);
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for policy research.
+	 *
+	 * @param string $query          Policy query.
+	 * @param string $coverage_focus Coverage focus.
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @return array Search queries.
+	 */
+	protected function generate_policy_search_queries( $query, $coverage_focus, $depth, $focus_areas ) {
+		$queries   = array();
+		$queries[] = $query . ( $coverage_focus ? ' ' . $coverage_focus : '' );
+
+		if ( 'basic' === $depth ) {
+			$num_queries = self::QUERIES_BASIC;
+		} elseif ( 'comprehensive' === $depth ) {
+			$num_queries = self::QUERIES_COMPREHENSIVE;
+		} else {
+			$num_queries = self::QUERIES_STANDARD;
+		}
+
+		if ( ! empty( $focus_areas ) ) {
+			foreach ( $focus_areas as $area ) {
+				if ( count( $queries ) >= $num_queries ) {
+					break;
+				}
+				$queries[] = $query . ' ' . $area . ( $coverage_focus ? ' ' . $coverage_focus : '' );
+			}
+		}
+
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $query . ' legal requirements compliance' . ( $coverage_focus ? ' ' . $coverage_focus : '' );
+				if ( count( $queries ) < $num_queries ) {
+					$queries[] = $query . ' industry standards best practices' . ( $coverage_focus ? ' ' . $coverage_focus : '' );
+				}
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $query . ' policy requirements' . ( $coverage_focus ? ' ' . $coverage_focus : '' );
+			}
+		}
+
+		return array_slice( $queries, 0, $num_queries );
+	}
+
+	/**
+	 * Deduplicate sources by URL.
+	 *
+	 * @param array $sources Sources array.
+	 * @return array Deduplicated sources.
+	 */
+	protected function deduplicate_sources( $sources ) {
+		$unique_sources = array();
+		$seen_urls      = array();
+
+		foreach ( $sources as $source ) {
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $source['url'], $seen_urls, true ) ) {
+				$unique_sources[] = $source;
+				$seen_urls[]      = $source['url'];
+			}
+		}
+
+		return $unique_sources;
 	}
 
 	/**
@@ -199,9 +442,12 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param string $query              Search query.
 	 * @param string $coverage_focus     Coverage focus areas.
 	 * @param bool   $include_comparison Whether to include comparison.
+	 * @param string $depth              Research depth.
+	 * @param array  $focus_areas        Focus areas.
+	 * @param array  $search_results     Search results from web search.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $query, $coverage_focus, $include_comparison ) {
+	protected function build_research_prompt( $query, $coverage_focus, $include_comparison, $depth, $focus_areas, $search_results ) {
 		$prompt = sprintf(
 			"Research comprehensive information about the following insurance policy type:\n\n**Policy Type:** %s\n",
 			$query
@@ -210,6 +456,38 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $coverage_focus ) ) {
 			$prompt .= sprintf( "**Coverage Focus:** %s\n", $coverage_focus );
 		}
+
+		// Add context from web search if available.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "\n**Available Research Sources:**\n";
+			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
+			for ( $i = 0; $i < $source_count; $i++ ) {
+				$source  = $search_results['sources'][ $i ];
+				$prompt .= sprintf(
+					"[%d] %s - %s\n",
+					$i + 1,
+					$source['title'],
+					$source['snippet']
+				);
+			}
+			$prompt .= "\n";
+		}
+
+		// Add depth-specific instructions.
+		if ( 'comprehensive' === $depth ) {
+			$prompt .= "**Research Depth: COMPREHENSIVE** - Include extensive legal requirements, compliance details, and industry standards information.\n\n";
+		} elseif ( 'basic' === $depth ) {
+			$prompt .= "**Research Depth: BASIC** - Focus on essential policy information only.\n\n";
+		} else {
+			$prompt .= "**Research Depth: STANDARD** - Provide thorough information appropriate for policy planning.\n\n";
+		}
+
+		// Add focus areas if specified.
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n";
 
 		$prompt .= "\nExtract and research the following information:\n\n";
 		$prompt .= "1. **Policy Name**: Official name of the policy type\n";

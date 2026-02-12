@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-product-research-tool',
+        'version' => 'dev-copilot/enhance-product-research-tool',
+        'reference' => '276aaa26952ff0448ba246308c6b7db243eeb2a6',
         'pretty_version' => 'dev-copilot/review-packages-for-cdn-cache',
         'version' => 'dev-copilot/review-packages-for-cdn-cache',
         'reference' => 'f088fc451865e656bdc3bdd81b9a208b58b542ea',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-product-research-tool',
+            'version' => 'dev-copilot/enhance-product-research-tool',
+            'reference' => '276aaa26952ff0448ba246308c6b7db243eeb2a6',
             'pretty_version' => 'dev-copilot/review-packages-for-cdn-cache',
             'version' => 'dev-copilot/review-packages-for-cdn-cache',
             'reference' => 'f088fc451865e656bdc3bdd81b9a208b58b542ea',

@@ -21,6 +21,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Maximum number of search queries to perform.
+	 *
+	 * @var int
+	 */
+	const MAX_SEARCH_QUERIES = 3;
+
+	/**
+	 * Maximum results per search query.
+	 *
+	 * @var int
+	 */
+	const MAX_RESULTS_PER_QUERY = 5;
+
+	/**
+	 * Maximum number of sources to display in prompt.
+	 *
+	 * @var int
+	 */
+	const MAX_DISPLAYED_SOURCES = 5;
+
+	/**
+	 * Number of queries for basic depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_BASIC = 1;
+
+	/**
+	 * Number of queries for standard depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_STANDARD = 2;
+
+	/**
+	 * Number of queries for comprehensive depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_COMPREHENSIVE = 3;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -38,7 +80,7 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about a project using AI and web search. Returns title, description, objectives, timeline, resources, milestones, deliverables, and implementation details ready for creating a project entry.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about a project using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, objectives, timeline, resources, milestones, deliverables, and implementation details ready for creating a project entry.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,6 +93,19 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 				'query'          => array(
 					'type'        => 'string',
 					'description' => __( 'The project to research (e.g., "Website Redesign", "Product Launch Campaign", "Employee Training Program")', 'mcp-ai-wpoos-pro' ),
+				),
+				'depth'          => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+					'default'     => 'standard',
+				),
+				'focus_areas'    => array(
+					'type'        => 'array',
+					'description' => __( 'Optional specific aspects to focus on (e.g., "methodology", "timeline", "resources", "risks").', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'project_type'   => array(
 					'type'        => 'string',
@@ -124,11 +179,20 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$query          = sanitize_text_field( $arguments['query'] );
+		$depth          = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas    = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
+			: array();
 		$project_type   = isset( $arguments['project_type'] ) ? sanitize_text_field( $arguments['project_type'] ) : '';
 		$include_phases = isset( $arguments['include_phases'] ) ? (bool) $arguments['include_phases'] : true;
 
+		// Validate depth parameter.
+		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$depth = 'standard';
+		}
+
 		// Check cache first.
-		$cache_key = 'project_research_' . md5( $query . '_' . $project_type );
+		$cache_key = 'project_research_' . md5( $query . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $project_type );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_project_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -142,15 +206,37 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			'Starting project research',
 			array(
 				'query'        => $query,
+				'depth'        => $depth,
+				'focus_areas'  => $focus_areas,
 				'project_type' => $project_type,
 				'user_id'      => $user_id,
 			)
 		);
 
-		// Build research prompt.
-		$prompt = $this->build_research_prompt( $query, $project_type, $include_phases );
+		// Step 1: Gather information through web searches.
+		$search_results = $this->gather_project_information( $query, $project_type, $depth, $focus_areas, $context );
 
-		// Use AI to research the project.
+		if ( is_wp_error( $search_results ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Project research web search failed: ' . $search_results->get_error_message(),
+				array(
+					'query' => $query,
+					'depth' => $depth,
+					'error' => $search_results->get_error_code(),
+				)
+			);
+			// Fall back to AI-only research if web search fails.
+			$search_results = array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_research_prompt( $query, $project_type, $depth, $focus_areas, $search_results, $include_phases );
+
+		// Step 3: Use AI to research the project.
 		$research_result = $this->perform_ai_research( $prompt, $context );
 
 		if ( is_wp_error( $research_result ) ) {
@@ -185,8 +271,11 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			'project_research_completed',
 			'Project research completed successfully',
 			array(
-				'query' => $query,
-				'title' => isset( $project_data['title'] ) ? $project_data['title'] : '',
+				'query'         => $query,
+				'depth'         => $depth,
+				'focus_areas'   => $focus_areas,
+				'sources_count' => count( $search_results['sources'] ?? array() ),
+				'title'         => isset( $project_data['title'] ) ? $project_data['title'] : '',
 			)
 		);
 
@@ -194,14 +283,171 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Gather project information through web searches.
+	 *
+	 * @param string $query        Project query.
+	 * @param string $project_type Project type.
+	 * @param string $depth        Research depth.
+	 * @param array  $focus_areas  Focus areas.
+	 * @param array  $context      Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function gather_project_information( $query, $project_type, $depth, $focus_areas, $context ) {
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			WP_MCP_AI_Logger::log_event(
+				'project_research_no_web_search',
+				'Web search tool not available, using AI-only mode',
+				array( 'query' => $query )
+			);
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $query ),
+			);
+		}
+
+		$search_queries = $this->generate_project_search_queries( $query, $project_type, $depth, $focus_areas );
+		$all_results    = array();
+		$all_sources    = array();
+
+		foreach ( $search_queries as $search_query ) {
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Project research web search failed: ' . $search_result->get_error_message(),
+					array(
+						'query'      => $search_query,
+						'project'    => $query,
+						'error_code' => $search_result->get_error_code(),
+					)
+				);
+				continue;
+			}
+
+			if ( ! empty( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$all_results[] = $result;
+					if ( ! empty( $result['url'] ) ) {
+						$all_sources[] = array(
+							'url'     => $result['url'],
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+					}
+				}
+			}
+		}
+
+		$all_sources = $this->deduplicate_sources( $all_sources );
+
+		WP_MCP_AI_Logger::log_event(
+			'project_research_web_search_complete',
+			'Web search completed for project research',
+			array(
+				'query'         => $query,
+				'queries_count' => count( $search_queries ),
+				'results_count' => count( $all_results ),
+				'sources_count' => count( $all_sources ),
+			)
+		);
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for project research.
+	 *
+	 * @param string $query        Project query.
+	 * @param string $project_type Project type.
+	 * @param string $depth        Research depth.
+	 * @param array  $focus_areas  Focus areas.
+	 * @return array Search queries.
+	 */
+	protected function generate_project_search_queries( $query, $project_type, $depth, $focus_areas ) {
+		$queries = array();
+		$queries[] = $query;
+
+		if ( 'basic' === $depth ) {
+			$num_queries = self::QUERIES_BASIC;
+		} elseif ( 'comprehensive' === $depth ) {
+			$num_queries = self::QUERIES_COMPREHENSIVE;
+		} else {
+			$num_queries = self::QUERIES_STANDARD;
+		}
+
+		if ( ! empty( $focus_areas ) ) {
+			foreach ( $focus_areas as $area ) {
+				if ( count( $queries ) >= $num_queries ) {
+					break;
+				}
+				$queries[] = $query . ' ' . $area;
+			}
+		}
+
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $query . ' ' . ( $project_type ? $project_type . ' ' : '' ) . 'methodology best practices';
+				if ( count( $queries ) < $num_queries ) {
+					$queries[] = $query . ' timeline resources risks';
+				}
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $query . ' ' . ( $project_type ? $project_type . ' ' : '' ) . 'planning guide';
+			}
+		}
+
+		return array_slice( $queries, 0, $num_queries );
+	}
+
+	/**
+	 * Deduplicate sources by URL.
+	 *
+	 * @param array $sources Sources array.
+	 * @return array Deduplicated sources.
+	 */
+	protected function deduplicate_sources( $sources ) {
+		$unique_sources = array();
+		$seen_urls      = array();
+
+		foreach ( $sources as $source ) {
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $source['url'], $seen_urls, true ) ) {
+				$unique_sources[] = $source;
+				$seen_urls[]      = $source['url'];
+			}
+		}
+
+		return $unique_sources;
+	}
+
+	/**
 	 * Build the research prompt for AI.
 	 *
 	 * @param string $query          Search query.
 	 * @param string $project_type   Project type.
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @param array  $search_results Search results from web search.
 	 * @param bool   $include_phases Whether to include phases.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $query, $project_type, $include_phases ) {
+	protected function build_research_prompt( $query, $project_type, $depth, $focus_areas, $search_results, $include_phases ) {
 		$prompt = sprintf(
 			"Research comprehensive information about the following project:\n\n**Project:** %s\n",
 			$query
@@ -211,6 +457,37 @@ class WP_MCP_AI_Tool_Research_Project implements WP_MCP_AI_Tool_Interface, WP_MC
 			$prompt .= sprintf( "**Project Type:** %s\n", $project_type );
 		}
 
+		// Add context from web search if available.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "\n**Available Research Sources:**\n";
+			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
+			for ( $i = 0; $i < $source_count; $i++ ) {
+				$source = $search_results['sources'][ $i ];
+				$prompt .= sprintf(
+					"[%d] %s - %s\n",
+					$i + 1,
+					$source['title'],
+					$source['snippet']
+				);
+			}
+			$prompt .= "\n";
+		}
+
+		// Add depth-specific instructions.
+		if ( 'comprehensive' === $depth ) {
+			$prompt .= "**Research Depth: COMPREHENSIVE** - Include extensive project details, risk analysis, and detailed planning.\n\n";
+		} elseif ( 'basic' === $depth ) {
+			$prompt .= "**Research Depth: BASIC** - Focus on essential project information only.\n\n";
+		} else {
+			$prompt .= "**Research Depth: STANDARD** - Provide comprehensive project planning information.\n\n";
+		}
+
+		// Add focus areas if specified.
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
 		$prompt .= "\nExtract and research the following information:\n\n";
 		$prompt .= "1. **Title**: Name of the project\n";
 		$prompt .= "2. **Description**: Comprehensive description (200-400 words) including purpose, goals, and key outcomes\n";
