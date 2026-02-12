@@ -782,112 +782,174 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 	}
 
 
+	/**
+	 * Count tokens for a given content payload.
+	 *
+	 * @param array $messages Message payload to count tokens for.
+	 * @param array $options  Additional options (model, timeout, bypass_cache).
+	 * @return array|WP_Error Token count data or WP_Error on failure.
+	 */
+	public function count_tokens( array $messages, array $options = array() ) {
+		$api_key = $this->get_api_key();
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_api_key',
+				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		$model = $this->resolve_model( $options );
+
+		if ( empty( $model ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_model',
+				__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+					),
+				)
+			);
+		}
+
+		// Check if caching is enabled.
+		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+		$use_cache    = ! empty( $settings['enable_gemini_api_caching'] );
+		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
+
+		// Allow disabling via constant.
+		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+			$use_cache = false;
+		}
+
 		/**
-		 * Count tokens for a given content payload.
+		 * Filter whether to cache Gemini token count requests.
 		 *
-		 * @param array $messages Message payload to count tokens for.
-		 * @param array $options  Additional options (model, timeout).
-		 * @return array|WP_Error Token count data or WP_Error on failure.
+		 * @param bool  $use_cache Whether to use caching.
+		 * @param array $messages  Messages to count.
+		 * @param array $options   Request options.
 		 */
-		public function count_tokens( array $messages, array $options = array() ) {
-			$api_key = $this->get_api_key();
+		$use_cache = apply_filters( 'wp_mcp_ai_cache_gemini_token_count', $use_cache, $messages, $options );
 
-			if ( empty( $api_key ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_gemini_api_key',
-					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			$model = $this->resolve_model( $options );
-
-			if ( empty( $model ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_gemini_model',
-					__( 'No Gemini model has been configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_gemini_model' => __( 'Choose a Gemini model in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			$payload = $this->build_payload( $messages, $options );
-
-			if ( is_wp_error( $payload ) ) {
-				return $payload;
-			}
-
-			$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
-			$url      = $endpoint;
-
-			$request_args = array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => $this->resolve_timeout( $options ),
+		if ( $use_cache && ! $bypass_cache ) {
+			// Build cache key from messages and model.
+			$cache_key_data = array(
+				'messages' => $messages,
+				'model'    => $model,
 			);
 
-			WP_MCP_AI_Logger::log_event( 'gemini_count_tokens', 'Sending token count request to Gemini.' );
+			$cache_key = 'gemini_token_count_' . md5( wp_json_encode( $cache_key_data ) );
 
-			$response = wp_remote_post( $url, $request_args );
+			// Get cache TTL from settings or use default (1 hour).
+			$cache_ttl = isset( $settings['gemini_token_count_cache_ttl'] ) ? absint( $settings['gemini_token_count_cache_ttl'] ) : HOUR_IN_SECONDS;
 
-			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'Gemini token count request failed.', array( 'error' => $response->get_error_message() ) );
+			/**
+			 * Filter the cache TTL for Gemini token count.
+			 *
+			 * @param int   $cache_ttl Cache TTL in seconds.
+			 * @param array $options   Request options.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_gemini_token_count_ttl', $cache_ttl, $options );
 
-				return WP_MCP_AI_HTTP::prepare_transport_error(
-					$response,
-					'wp_mcp_ai_http_error',
-					__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
-					__( 'Gemini', 'mcp-ai-wpoos' )
-				);
-			}
-
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
-
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini token count response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
-			}
-
-			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
-
-				WP_MCP_AI_Logger::log_error(
-					'Gemini returned an error response for token count.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_api_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
-			}
-
-			WP_MCP_AI_Logger::log_event( 'gemini_count_tokens_response', 'Gemini token count completed.' );
-
-			return $decoded;
+			return WP_MCP_AI_Cache_Helper::remember(
+				$cache_key,
+				function () use ( $api_key, $messages, $options, $model ) {
+					return $this->fetch_token_count_from_api( $api_key, $messages, $options, $model );
+				},
+				$cache_ttl
+			);
 		}
+
+		return $this->fetch_token_count_from_api( $api_key, $messages, $options, $model );
+	}
+
+	/**
+	 * Fetch token count from Gemini API (internal method).
+	 *
+	 * @param string $api_key Gemini API key.
+	 * @param array  $messages Messages to count.
+	 * @param array  $options Optional parameters.
+	 * @param string $model   Model name.
+	 * @return array|WP_Error Token count data or WP_Error on failure.
+	 */
+	private function fetch_token_count_from_api( $api_key, $messages, $options, $model ) {
+		$payload = $this->build_payload( $messages, $options );
+
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
+		$url      = $endpoint;
+
+		$request_args = array(
+			'headers' => array(
+				'Content-Type'   => 'application/json',
+				'x-goog-api-key' => $api_key,
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => $this->resolve_timeout( $options ),
+		);
+
+		WP_MCP_AI_Logger::log_event( 'gemini_count_tokens', 'Sending token count request to Gemini.' );
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini token count request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini API request failed to complete.', 'mcp-ai-wpoos' ),
+				__( 'Gemini', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$code    = wp_remote_retrieve_response_code( $response );
+		$body    = wp_remote_retrieve_body( $response );
+		$decoded = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini token count response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'mcp-ai-wpoos' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'mcp-ai-wpoos' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned an error response for token count.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		WP_MCP_AI_Logger::log_event( 'gemini_count_tokens_response', 'Gemini token count completed.' );
+
+		return $decoded;
+	}
+
 
 	/**
 	 * Create text embeddings for RAG/semantic search.
