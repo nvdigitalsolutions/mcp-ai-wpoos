@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( false === $graph_result || isset( $graph_result['error'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'error'   => __( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See docs/NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

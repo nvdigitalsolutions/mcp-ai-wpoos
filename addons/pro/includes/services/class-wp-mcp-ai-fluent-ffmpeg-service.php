@@ -138,7 +138,7 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg frame extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_frames filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'Fluent-ffmpeg frame extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_frames filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'fluent-ffmpeg',
@@ -191,7 +191,7 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg thumbnail generation requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_generate_thumbnail filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'Fluent-ffmpeg thumbnail generation requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_generate_thumbnail filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'fluent-ffmpeg',
@@ -248,7 +248,7 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg video transcoding requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_transcode_video filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'Fluent-ffmpeg video transcoding requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_transcode_video filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'fluent-ffmpeg',
@@ -303,7 +303,7 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_fluent_ffmpeg_not_configured',
-				__( 'Fluent-ffmpeg audio extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_audio filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'Fluent-ffmpeg audio extraction requires Node.js integration. Please implement the wp_mcp_ai_fluent_ffmpeg_extract_audio filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'fluent-ffmpeg',

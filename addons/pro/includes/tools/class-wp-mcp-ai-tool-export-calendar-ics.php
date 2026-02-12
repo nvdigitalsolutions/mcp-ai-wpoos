@@ -386,7 +386,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( false === $result ) {
 			// Default implementation note.
 			return array(
-				'error' => __( 'ICS generation requires a Node.js service. Please implement the wp_mcp_ai_ics_generate_calendar filter or set up a Node.js microservice. See INTEGRATION_BEST_PRACTICES.md for RFC 5545 compliant implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'ICS generation requires a Node.js service. Please implement the wp_mcp_ai_ics_generate_calendar filter or set up a Node.js microservice. See docs/INTEGRATION_BEST_PRACTICES.md for RFC 5545 compliant implementation guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
