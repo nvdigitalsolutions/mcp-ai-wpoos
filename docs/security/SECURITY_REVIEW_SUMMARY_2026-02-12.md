@@ -101,7 +101,7 @@ When user prompts: "Check my calendar", Claude executes the embedded command.
 - Emergency shutdown capability
 
 **After Enhancements (v1.1.1+):**
-- **32 total patterns** (16 existing + 16 new)
+- **36 total patterns** (19 existing + 17 new)
 - **New Prompt Injection Patterns:**
   - `ignore\s+(all\s+)?previous\s+instructions`
   - `disregard\s+(all\s+)?prior\s+(instructions|commands)`
@@ -141,7 +141,7 @@ When user prompts: "Check my calendar", Claude executes the embedded command.
 | **User Confirmation** | ❌ None (zero-click) | ✅ Required for destructive ops | ✅ **SAFE** |
 | **Sandboxing** | ❌ Unsandboxed extensions | ✅ WordPress + PHP isolation | ✅ **SAFE** |
 | **Input Sanitization** | Limited | ✅ Multi-layer (REST, validator, WordPress) | ✅ **SAFE** |
-| **Pattern Detection** | None | ✅ 32 patterns (malware, injection, phishing) | ✅ **SAFE** |
+| **Pattern Detection** | None | ✅ 36 patterns (malware, injection, phishing) | ✅ **SAFE** |
 | **Rate Limiting** | None | ✅ 60 req/min, 500 tools/hour | ✅ **SAFE** |
 | **Audit Logging** | None | ✅ Complete tool execution logs | ✅ **SAFE** |
 
