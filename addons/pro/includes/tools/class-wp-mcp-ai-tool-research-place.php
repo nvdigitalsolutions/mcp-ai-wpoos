@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * places, attractions, businesses, and locations.
  */
 class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -195,6 +196,9 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'place_name' => isset( $place_data['name'] ) ? $place_data['name'] : '',
 			)
 		);
+
+		// Build user-friendly report.
+		$place_data['report'] = $this->build_place_report_message( $place_data );
 
 		return $place_data;
 	}
@@ -556,5 +560,159 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		return $place_data;
+	}
+
+	/**
+	 * Build a user-friendly report message for place research.
+	 *
+	 * @param array $place_data Place research data.
+	 * @return string Markdown-formatted report.
+	 */
+	protected function build_place_report_message( $place_data ) {
+		$report = "## Place Research Complete\n\n";
+
+		// Place name.
+		if ( ! empty( $place_data['name'] ) ) {
+			$report .= "**Name:** " . esc_html( $place_data['name'] ) . "\n\n";
+		}
+
+		// Place type.
+		if ( ! empty( $place_data['place_type'] ) ) {
+			$type_label = ucwords( str_replace( '_', ' ', $place_data['place_type'] ) );
+			$report    .= "**Type:** " . esc_html( $type_label ) . "\n";
+		}
+
+		// Rating and reviews.
+		if ( ! empty( $place_data['rating'] ) ) {
+			$report .= "**Rating:** " . floatval( $place_data['rating'] ) . " / 5.0";
+			$report .= "\n";
+		}
+
+		// Price level.
+		if ( ! empty( $place_data['price_level'] ) ) {
+			$price_level = absint( $place_data['price_level'] );
+			$price_str   = str_repeat( '$', $price_level );
+			$report     .= "**Price Level:** " . esc_html( $price_str ) . "\n";
+		}
+
+		$report .= "\n";
+
+		// Location section.
+		$report .= "### Location\n";
+
+		// Full address.
+		if ( ! empty( $place_data['address'] ) ) {
+			$report .= "**Address:** " . esc_html( $place_data['address'] ) . "\n";
+		} elseif ( ! empty( $place_data['street'] ) || ! empty( $place_data['city'] ) ) {
+			// Build address from components.
+			$address_parts = array_filter(
+				array(
+					$place_data['street'] ?? '',
+					$place_data['city'] ?? '',
+					$place_data['state'] ?? '',
+					$place_data['postal_code'] ?? '',
+					$place_data['country'] ?? '',
+				)
+			);
+			if ( ! empty( $address_parts ) ) {
+				$report .= "**Address:** " . esc_html( implode( ', ', $address_parts ) ) . "\n";
+			}
+		}
+
+		// Coordinates.
+		if ( ! empty( $place_data['latitude'] ) && ! empty( $place_data['longitude'] ) ) {
+			$lat     = floatval( $place_data['latitude'] );
+			$lng     = floatval( $place_data['longitude'] );
+			$report .= "**Coordinates:** " . $lat . ", " . $lng . "\n";
+		}
+
+		$report .= "\n";
+
+		// Contact information.
+		$has_contact = false;
+		if ( ! empty( $place_data['phone'] ) || ! empty( $place_data['email'] ) || ! empty( $place_data['website'] ) ) {
+			$report     .= "### Contact Information\n";
+			$has_contact = true;
+		}
+
+		if ( ! empty( $place_data['phone'] ) ) {
+			$report .= "**Phone:** " . esc_html( $place_data['phone'] ) . "\n";
+		}
+
+		if ( ! empty( $place_data['email'] ) ) {
+			$report .= "**Email:** " . esc_html( $place_data['email'] ) . "\n";
+		}
+
+		if ( ! empty( $place_data['website'] ) ) {
+			$report .= "**Website:** " . esc_url( $place_data['website'] ) . "\n";
+		}
+
+		if ( $has_contact ) {
+			$report .= "\n";
+		}
+
+		// Business hours.
+		if ( ! empty( $place_data['business_hours'] ) && is_array( $place_data['business_hours'] ) ) {
+			$report .= "### Hours of Operation\n";
+			$days    = array( 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' );
+			foreach ( $days as $day ) {
+				if ( isset( $place_data['business_hours'][ $day ] ) ) {
+					$day_label = ucfirst( $day );
+					$hours     = $place_data['business_hours'][ $day ];
+					$report   .= "**" . esc_html( $day_label ) . ":** " . esc_html( $hours ) . "\n";
+				}
+			}
+			$report .= "\n";
+		}
+
+		// Amenities/Features.
+		if ( ! empty( $place_data['amenities'] ) && is_array( $place_data['amenities'] ) ) {
+			$report .= "### Amenities & Features\n";
+			foreach ( $place_data['amenities'] as $amenity ) {
+				$amenity_label = ucwords( str_replace( '_', ' ', $amenity ) );
+				$report       .= "- " . esc_html( $amenity_label ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Description.
+		if ( ! empty( $place_data['description'] ) ) {
+			$report         .= "### Description\n";
+			$plain_desc      = wp_strip_all_tags( $place_data['description'] );
+			$desc_excerpt    = substr( $plain_desc, 0, 300 );
+			if ( strlen( $plain_desc ) > 300 ) {
+				$desc_excerpt .= '...';
+			}
+			$report .= esc_html( $desc_excerpt ) . "\n\n";
+		}
+
+		// Research metadata.
+		$report .= "### Research Metadata\n";
+
+		// Sources count.
+		if ( ! empty( $place_data['sources'] ) && is_array( $place_data['sources'] ) ) {
+			$source_count = count( $place_data['sources'] );
+			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+		}
+
+		// Google Place ID.
+		if ( ! empty( $place_data['google_place_id'] ) ) {
+			$report .= "**Google Place ID:** " . esc_html( $place_data['google_place_id'] ) . "\n";
+		}
+
+		// AI model used.
+		if ( ! empty( $place_data['research_provider'] ) && ! empty( $place_data['research_model'] ) ) {
+			$report .= "**AI Model:** " . esc_html( $place_data['research_provider'] . ' / ' . $place_data['research_model'] ) . "\n";
+		}
+
+		// Research timestamp.
+		if ( ! empty( $place_data['researched_at'] ) ) {
+			$report .= "**Researched:** " . esc_html( $place_data['researched_at'] ) . "\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. This place information is ready to be added to your WordPress site.*";
+
+		return $report;
 	}
 }
