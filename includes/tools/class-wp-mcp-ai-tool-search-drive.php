@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches Google Drive and returns matching files and folders with names, types, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items.', 'mcp-ai-wpoos' );
+		return __( 'Searches Google Drive and returns matching files and folders with names, types, and metadata. Supports simple text queries (e.g., "report") or advanced Drive query syntax (e.g., "name contains \'invoice\'" or "mimeType = \'application/pdf\'"). Automatically excludes trashed items. Can include shared files and folders, and sort by creation or modification time.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -78,6 +78,17 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'folder_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Optional folder ID to limit search to a specific folder.', 'mcp-ai-wpoos' ),
+				),
+				'include_shared' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Include files and folders shared with the user. When true, searches both owned and shared items. Default is false (owned items only).', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
+				'sort_by'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sort results by time: "modified" (default, most recently modified first) or "created" (most recently created/added first).', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'modified', 'created' ),
+					'default'     => 'modified',
 				),
 			),
 			'required'             => array( 'query' ),
@@ -189,6 +200,9 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$item_type = isset( $arguments['item_type'] ) ? trim( strtolower( (string) $arguments['item_type'] ) ) : 'all';
 		$query     = $this->apply_item_type_filter( $query, $item_type );
 
+		// Get include_shared parameter.
+		$include_shared = isset( $arguments['include_shared'] ) ? (bool) $arguments['include_shared'] : false;
+
 		// Load timeout from settings.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
@@ -214,12 +228,18 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$query = sprintf( "('%s' in parents) and (%s)", $folder_id, $query );
 		}
 
+		// Get sort_by parameter.
+		$sort_by = isset( $arguments['sort_by'] ) ? trim( strtolower( (string) $arguments['sort_by'] ) ) : 'modified';
+		if ( ! in_array( $sort_by, array( 'modified', 'created' ), true ) ) {
+			$sort_by = 'modified';
+		}
+
 		$access_token = $this->request_access_token( $client_id, $client_secret, $refresh_token, $timeout );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
 		}
 
-		$list_url = $this->build_files_list_url( $query, $max_results, $page_token );
+		$list_url = $this->build_files_list_url( $query, $max_results, $page_token, $include_shared, $sort_by );
 
 		$response = wp_remote_get(
 			$list_url,
@@ -484,20 +504,32 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 	 * Build the Drive files list endpoint URL with query parameters.
 	 *
-	 * @param string $query       Search query.
-	 * @param int    $max_results Maximum number of results to return.
-	 * @param string $page_token  Optional page token.
+	 * @param string $query          Search query.
+	 * @param int    $max_results    Maximum number of results to return.
+	 * @param string $page_token     Optional page token.
+	 * @param bool   $include_shared Whether to include shared files and folders.
+	 * @param string $sort_by        Sort by 'modified' or 'created' time.
 	 * @return string
 	 */
-	protected function build_files_list_url( $query, $max_results, $page_token ) {
+	protected function build_files_list_url( $query, $max_results, $page_token, $include_shared = false, $sort_by = 'modified' ) {
 		$base = self::DRIVE_API_BASE . '/files';
+
+		// Determine sort order.
+		$order_by = ( 'created' === $sort_by ) ? 'createdTime desc' : 'modifiedTime desc';
 
 		$params = array(
 			'q'        => $query,
 			'pageSize' => $max_results,
 			'fields'   => 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink, iconLink, thumbnailLink, owners, permissions, shared, description)',
-			'orderBy'  => 'modifiedTime desc',
+			'orderBy'  => $order_by,
 		);
+
+		// Best practice: Include shared drives and shared items when requested.
+		if ( $include_shared ) {
+			$params['corpora']                   = 'allDrives';
+			$params['includeItemsFromAllDrives'] = 'true';
+			$params['supportsAllDrives']         = 'true';
+		}
 
 		if ( '' !== $page_token ) {
 			$params['pageToken'] = $page_token;
