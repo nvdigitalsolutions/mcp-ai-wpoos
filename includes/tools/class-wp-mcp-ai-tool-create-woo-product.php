@@ -192,22 +192,90 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'    => array(
+							'name'      => array(
 								'type'        => 'string',
 								'description' => __( 'Attribute name (e.g., "Size", "Color").', 'mcp-ai-wpoos' ),
 							),
-							'options' => array(
+							'options'   => array(
 								'type'        => 'array',
 								'description' => __( 'Array of attribute values.', 'mcp-ai-wpoos' ),
 								'items'       => array( 'type' => 'string' ),
 							),
-							'visible' => array(
+							'visible'   => array(
 								'type'        => 'boolean',
 								'description' => __( 'Whether attribute is visible on product page.', 'mcp-ai-wpoos' ),
 								'default'     => true,
 							),
+							'variation' => array(
+								'type'        => 'boolean',
+								'description' => __( 'Whether attribute should be used for variations (only for variable products).', 'mcp-ai-wpoos' ),
+								'default'     => false,
+							),
 						),
 						'required'   => array( 'name', 'options' ),
+					),
+				),
+				'variations'            => array(
+					'type'        => 'array',
+					'description' => __( 'Array of product variations (only for variable products). Each variation must specify attributes, SKU, and price.', 'mcp-ai-wpoos' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'attributes'      => array(
+								'type'        => 'object',
+								'description' => __( 'Variation attributes (e.g., {"Size": "Large", "Color": "Red"}). Keys must match attribute names.', 'mcp-ai-wpoos' ),
+								'additionalProperties' => array( 'type' => 'string' ),
+							),
+							'sku'             => array(
+								'type'        => 'string',
+								'description' => __( 'SKU for this variation.', 'mcp-ai-wpoos' ),
+							),
+							'regular_price'   => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Regular price for this variation.', 'mcp-ai-wpoos' ),
+							),
+							'sale_price'      => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Sale price for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+							'stock_quantity'  => array(
+								'type'        => 'integer',
+								'description' => __( 'Stock quantity for this variation (optional).', 'mcp-ai-wpoos' ),
+								'minimum'     => 0,
+							),
+							'stock_status'    => array(
+								'type'        => 'string',
+								'description' => __( 'Stock status for this variation: instock, outofstock, or onbackorder.', 'mcp-ai-wpoos' ),
+								'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
+								'default'     => 'instock',
+							),
+							'manage_stock'    => array(
+								'type'        => 'boolean',
+								'description' => __( 'Whether to enable stock management for this variation.', 'mcp-ai-wpoos' ),
+								'default'     => false,
+							),
+							'weight'          => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Weight for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+							'length'          => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Length for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+							'width'           => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Width for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+							'height'          => array(
+								'type'        => array( 'string', 'number' ),
+								'description' => __( 'Height for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+							'description'     => array(
+								'type'        => 'string',
+								'description' => __( 'Description for this variation (optional).', 'mcp-ai-wpoos' ),
+							),
+						),
+						'required'   => array( 'attributes', 'regular_price' ),
 					),
 				),
 				'meta_input'            => array(
@@ -507,7 +575,15 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Handle product attributes.
 		if ( isset( $arguments['attributes'] ) && is_array( $arguments['attributes'] ) ) {
-			$this->set_product_attributes( $product_id, $arguments['attributes'] );
+			$this->set_product_attributes( $product_id, $arguments['attributes'], $product_type );
+		}
+
+		// Handle product variations (only for variable products).
+		if ( 'variable' === $product_type && isset( $arguments['variations'] ) && is_array( $arguments['variations'] ) ) {
+			$variation_result = $this->create_product_variations( $product_id, $arguments['variations'], $messages );
+			if ( is_wp_error( $variation_result ) ) {
+				$messages[] = $variation_result->get_error_message();
+			}
 		}
 
 		// Handle custom meta fields.
@@ -992,10 +1068,11 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Sets product attributes.
 	 *
-	 * @param int   $product_id Product ID.
-	 * @param array $attributes Array of attribute definitions.
+	 * @param int    $product_id   Product ID.
+	 * @param array  $attributes   Array of attribute definitions.
+	 * @param string $product_type Product type (simple or variable).
 	 */
-	protected function set_product_attributes( $product_id, $attributes ) {
+	protected function set_product_attributes( $product_id, $attributes, $product_type = 'simple' ) {
 		$product = wc_get_product( $product_id );
 		if ( ! $product ) {
 			return;
@@ -1009,14 +1086,44 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				continue;
 			}
 
-			$attribute_name = wc_sanitize_taxonomy_name( $attribute_data['name'] );
-			$attribute      = new WC_Product_Attribute();
+			$attribute_name     = wc_sanitize_taxonomy_name( $attribute_data['name'] );
+			$is_variation       = isset( $attribute_data['variation'] ) ? (bool) $attribute_data['variation'] : false;
+			$taxonomy_name      = wc_attribute_taxonomy_name( $attribute_name );
+			$global_attr_exists = taxonomy_exists( $taxonomy_name );
 
-			$attribute->set_name( $attribute_name );
-			$attribute->set_options( array_map( 'sanitize_text_field', $attribute_data['options'] ) );
+			$attribute = new WC_Product_Attribute();
+
+			// If global attribute exists, use it; otherwise use local attribute.
+			if ( $global_attr_exists ) {
+				$attribute->set_id( wc_attribute_taxonomy_id_by_name( $taxonomy_name ) );
+				$attribute->set_name( $taxonomy_name );
+
+				// Ensure terms exist in the taxonomy.
+				$term_ids = array();
+				foreach ( $attribute_data['options'] as $option ) {
+					$option = sanitize_text_field( $option );
+					$term   = term_exists( $option, $taxonomy_name );
+					if ( ! $term ) {
+						$term = wp_insert_term( $option, $taxonomy_name );
+					}
+					if ( ! is_wp_error( $term ) && isset( $term['term_id'] ) ) {
+						$term_ids[] = $term['term_id'];
+					}
+				}
+				// Set terms for the product.
+				wp_set_object_terms( $product_id, $term_ids, $taxonomy_name, true );
+				$attribute->set_options( $term_ids );
+			} else {
+				// Use local attribute.
+				$attribute->set_name( $attribute_name );
+				$attribute->set_options( array_map( 'sanitize_text_field', $attribute_data['options'] ) );
+			}
+
 			$attribute->set_position( $position++ );
 			$attribute->set_visible( isset( $attribute_data['visible'] ) ? (bool) $attribute_data['visible'] : true );
-			$attribute->set_variation( false );
+
+			// Set variation flag - only true for variable products when explicitly set.
+			$attribute->set_variation( 'variable' === $product_type && $is_variation );
 
 			$product_attributes[] = $attribute;
 		}
@@ -1025,6 +1132,169 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			$product->set_attributes( $product_attributes );
 			$product->save();
 		}
+	}
+
+	/**
+	 * Creates product variations for a variable product.
+	 *
+	 * @param int   $product_id Product ID.
+	 * @param array $variations Array of variation definitions.
+	 * @param array $messages   Message buffer for notices.
+	 * @return bool|WP_Error True on success, WP_Error on failure.
+	 */
+	protected function create_product_variations( $product_id, $variations, &$messages ) {
+		$product = wc_get_product( $product_id );
+		if ( ! $product || ! $product->is_type( 'variable' ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_product', __( 'Product must be a variable product to create variations.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Check if WC_Product_Variation class exists.
+		if ( ! class_exists( 'WC_Product_Variation' ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_variation_class', __( 'WC_Product_Variation class not found.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Get product attributes to validate variation attributes.
+		$product_attributes = $product->get_attributes();
+		if ( empty( $product_attributes ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_attributes', __( 'Product must have attributes defined before creating variations.', 'mcp-ai-wpoos' ) );
+		}
+
+		$variation_ids = array();
+		$created_count = 0;
+
+		foreach ( $variations as $variation_data ) {
+			// Validate required fields.
+			if ( empty( $variation_data['attributes'] ) || ! is_array( $variation_data['attributes'] ) ) {
+				$messages[] = __( 'Skipped variation: attributes are required.', 'mcp-ai-wpoos' );
+				continue;
+			}
+
+			if ( empty( $variation_data['regular_price'] ) ) {
+				$messages[] = __( 'Skipped variation: regular_price is required.', 'mcp-ai-wpoos' );
+				continue;
+			}
+
+			// Normalize and validate attributes against product attributes.
+			$normalized_attributes = array();
+			foreach ( $variation_data['attributes'] as $attr_name => $attr_value ) {
+				$attr_name_sanitized = wc_sanitize_taxonomy_name( stripslashes( $attr_name ) );
+				
+				// Check if this attribute exists in product.
+				$found = false;
+				foreach ( $product_attributes as $product_attr ) {
+					$product_attr_name = $product_attr->get_name();
+					
+					// Handle both taxonomy-based (pa_color) and custom (color) attributes.
+					if ( $product_attr_name === $attr_name_sanitized || 
+					     $product_attr_name === wc_attribute_taxonomy_name( $attr_name_sanitized ) ||
+					     wc_sanitize_taxonomy_name( $product_attr_name ) === $attr_name_sanitized ) {
+						
+						// For taxonomy-based attributes, use full taxonomy name.
+						if ( taxonomy_exists( $product_attr_name ) ) {
+							$normalized_attributes[ $product_attr_name ] = sanitize_text_field( $attr_value );
+						} else {
+							// For custom attributes, use the attribute key with 'attribute_' prefix.
+							$normalized_attributes[ 'attribute_' . $product_attr_name ] = sanitize_text_field( $attr_value );
+						}
+						$found = true;
+						break;
+					}
+				}
+
+				if ( ! $found ) {
+					$messages[] = sprintf(
+						/* translators: %s: attribute name */
+						__( 'Skipped variation: attribute "%s" is not defined for this product.', 'mcp-ai-wpoos' ),
+						esc_html( $attr_name )
+					);
+					continue 2; // Skip this variation entirely.
+				}
+			}
+
+			// Create the variation.
+			$variation = new WC_Product_Variation();
+			$variation->set_parent_id( $product_id );
+			$variation->set_attributes( $normalized_attributes );
+
+			// Set regular price.
+			$regular_price = $this->normalise_price( $variation_data['regular_price'] );
+			if ( '' !== $regular_price ) {
+				$variation->set_regular_price( $regular_price );
+				$variation->set_price( $regular_price );
+			}
+
+			// Set sale price if provided.
+			if ( isset( $variation_data['sale_price'] ) ) {
+				$sale_price = $this->normalise_price( $variation_data['sale_price'] );
+				if ( '' !== $sale_price ) {
+					$variation->set_sale_price( $sale_price );
+					$variation->set_price( $sale_price );
+				}
+			}
+
+			// Set SKU if provided.
+			if ( isset( $variation_data['sku'] ) && '' !== $variation_data['sku'] ) {
+				$sku = function_exists( 'wc_clean' ) ? wc_clean( $variation_data['sku'] ) : sanitize_text_field( $variation_data['sku'] );
+				$variation->set_sku( $sku );
+			}
+
+			// Set stock management.
+			if ( isset( $variation_data['manage_stock'] ) && $variation_data['manage_stock'] ) {
+				$variation->set_manage_stock( true );
+				if ( isset( $variation_data['stock_quantity'] ) ) {
+					$variation->set_stock_quantity( absint( $variation_data['stock_quantity'] ) );
+				}
+			}
+
+			// Set stock status.
+			if ( isset( $variation_data['stock_status'] ) ) {
+				$stock_status = sanitize_key( $variation_data['stock_status'] );
+				if ( in_array( $stock_status, array( 'instock', 'outofstock', 'onbackorder' ), true ) ) {
+					$variation->set_stock_status( $stock_status );
+				}
+			}
+
+			// Set dimensions.
+			if ( isset( $variation_data['weight'] ) && '' !== $variation_data['weight'] ) {
+				$variation->set_weight( $this->sanitize_dimension( $variation_data['weight'] ) );
+			}
+			if ( isset( $variation_data['length'] ) && '' !== $variation_data['length'] ) {
+				$variation->set_length( $this->sanitize_dimension( $variation_data['length'] ) );
+			}
+			if ( isset( $variation_data['width'] ) && '' !== $variation_data['width'] ) {
+				$variation->set_width( $this->sanitize_dimension( $variation_data['width'] ) );
+			}
+			if ( isset( $variation_data['height'] ) && '' !== $variation_data['height'] ) {
+				$variation->set_height( $this->sanitize_dimension( $variation_data['height'] ) );
+			}
+
+			// Set description if provided.
+			if ( isset( $variation_data['description'] ) && '' !== $variation_data['description'] ) {
+				$variation->set_description( $this->sanitize_html( $variation_data['description'] ) );
+			}
+
+			// Save the variation.
+			$variation_id = $variation->save();
+			if ( $variation_id ) {
+				$variation_ids[] = $variation_id;
+				$created_count++;
+			}
+		}
+
+		if ( $created_count > 0 ) {
+			// Sync the variable product to update its available variations.
+			WC_Product_Variable::sync( $product_id );
+			
+			$messages[] = sprintf(
+				/* translators: %d: number of variations created */
+				_n( 'Created %d product variation.', 'Created %d product variations.', $created_count, 'mcp-ai-wpoos' ),
+				$created_count
+			);
+		} else {
+			$messages[] = __( 'No variations were created.', 'mcp-ai-wpoos' );
+		}
+
+		return true;
 	}
 
 	/**
