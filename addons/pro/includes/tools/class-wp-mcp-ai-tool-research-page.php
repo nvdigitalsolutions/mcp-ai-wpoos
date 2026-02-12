@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * WordPress page topics and generate ready-to-publish content.
  */
 class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -309,6 +310,9 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 			return $page_data;
 		}
+
+		// Build user-friendly research report for chat display.
+		$page_data['report'] = $this->build_page_report_message( $page_data, $search_results, $word_count, $page_type );
 
 		// Cache the results for 24 hours.
 		wp_cache_set( $cache_key, $page_data, 'wp_mcp_ai_page_research', DAY_IN_SECONDS );
@@ -975,5 +979,132 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return $page_data;
+	}
+
+	/**
+	 * Build user-friendly research report message for chat display.
+	 *
+	 * @param array  $page_data      Parsed page data.
+	 * @param array  $search_results Search results with sources.
+	 * @param int    $word_count     Target word count.
+	 * @param string $page_type      Page type.
+	 * @return string Formatted research report message.
+	 */
+	protected function build_page_report_message( $page_data, $search_results, $word_count, $page_type ) {
+		$report = "## WordPress Page Research Complete\n\n";
+
+		// Page title.
+		if ( ! empty( $page_data['title'] ) ) {
+			$report .= "**Title:** " . esc_html( $page_data['title'] ) . "\n\n";
+		}
+
+		// Page type/purpose.
+		if ( ! empty( $page_type ) ) {
+			$type_labels = array(
+				'about'             => 'About Us',
+				'contact'           => 'Contact',
+				'services'          => 'Services',
+				'privacy-policy'    => 'Privacy Policy',
+				'terms-conditions'  => 'Terms & Conditions',
+				'faq'               => 'FAQ',
+				'landing'           => 'Landing Page',
+				'custom'            => 'Custom Page',
+			);
+			$type_label  = isset( $type_labels[ $page_type ] ) ? $type_labels[ $page_type ] : ucwords( str_replace( '-', ' ', $page_type ) );
+			$report     .= "**Page Type:** " . esc_html( $type_label ) . "\n";
+		}
+
+		// Target word count.
+		if ( ! empty( $word_count ) ) {
+			$report .= "**Target Word Count:** " . absint( $word_count ) . " words\n";
+		}
+
+		// Template format.
+		if ( ! empty( $page_data['template'] ) ) {
+			$template_name = ucwords( str_replace( '-', ' ', $page_data['template'] ) );
+			$report       .= "**Template:** " . esc_html( $template_name ) . "\n\n";
+		}
+
+		// Content sections/structure.
+		if ( ! empty( $page_data['content'] ) ) {
+			$report .= "### Content Structure\n";
+			// Extract headings from content for structure outline.
+			$content = $page_data['content'];
+			preg_match_all( '/<h[2-4][^>]*>(.*?)<\/h[2-4]>/i', $content, $matches );
+			if ( ! empty( $matches[1] ) ) {
+				foreach ( $matches[1] as $heading ) {
+					$report .= "- " . wp_strip_all_tags( $heading ) . "\n";
+				}
+			} else {
+				// If no headings found, provide a brief excerpt.
+				$plain_content = wp_strip_all_tags( $content );
+				$excerpt       = substr( $plain_content, 0, 200 );
+				if ( strlen( $plain_content ) > 200 ) {
+					$excerpt .= '...';
+				}
+				$report .= $excerpt . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// SEO metadata.
+		$has_seo = false;
+		if ( ! empty( $page_data['keywords'] ) && is_array( $page_data['keywords'] ) ) {
+			if ( ! $has_seo ) {
+				$report  .= "### SEO Metadata\n";
+				$has_seo  = true;
+			}
+			$report .= "**Keywords:** " . implode( ', ', array_map( 'esc_html', $page_data['keywords'] ) ) . "\n";
+		}
+
+		if ( ! empty( $page_data['meta_description'] ) ) {
+			if ( ! $has_seo ) {
+				$report  .= "### SEO Metadata\n";
+				$has_seo  = true;
+			}
+			$report .= "**Meta Description:** " . esc_html( $page_data['meta_description'] ) . "\n";
+		}
+
+		if ( $has_seo ) {
+			$report .= "\n";
+		}
+
+		// Call-to-action elements (if detected in content).
+		if ( ! empty( $page_data['content'] ) ) {
+			$content_lower = strtolower( $page_data['content'] );
+			$cta_keywords  = array( 'contact us', 'get started', 'learn more', 'sign up', 'subscribe', 'buy now', 'get in touch', 'request', 'schedule', 'download' );
+			$found_ctas    = array();
+			foreach ( $cta_keywords as $keyword ) {
+				if ( strpos( $content_lower, $keyword ) !== false ) {
+					$found_ctas[] = ucfirst( $keyword );
+				}
+			}
+			if ( ! empty( $found_ctas ) ) {
+				$report .= "**Call-to-Action Elements:** " . implode( ', ', array_unique( $found_ctas ) ) . "\n\n";
+			}
+		}
+
+		// Word count estimate (actual content length).
+		if ( ! empty( $page_data['content'] ) ) {
+			$plain_content = wp_strip_all_tags( $page_data['content'] );
+			$actual_count  = str_word_count( $plain_content );
+			$report       .= "**Actual Word Count:** " . absint( $actual_count ) . " words\n";
+		}
+
+		// Sources count.
+		if ( ! empty( $search_results['sources'] ) && is_array( $search_results['sources'] ) ) {
+			$source_count = count( $search_results['sources'] );
+			$report      .= "**Research Sources:** " . absint( $source_count ) . " source(s)\n";
+		}
+
+		// Research metadata.
+		if ( ! empty( $page_data['research_provider'] ) && ! empty( $page_data['research_model'] ) ) {
+			$report .= "**AI Model:** " . esc_html( $page_data['research_provider'] . ' / ' . $page_data['research_model'] ) . "\n";
+		}
+
+		$report .= "\n---\n\n";
+		$report .= "*Research completed successfully. Use the `create_page` tool to publish this content to your WordPress site.*";
+
+		return $report;
 	}
 }
