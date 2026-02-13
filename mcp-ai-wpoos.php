@@ -612,6 +612,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-wellknown.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ai-peer-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-sync.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-tester.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-test-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-rate-limiter.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
@@ -894,6 +896,9 @@ if ( is_admin() ) {
 // REST API endpoints need to be registered for all request types, not just admin requests.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 new WP_MCP_AI_Pro_Dashboard_REST();
+
+// Initialize Mesh Peer Test REST API.
+new WP_MCP_AI_Mesh_Peer_Test_REST();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';

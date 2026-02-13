@@ -3442,7 +3442,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][name]" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>" /></td>
 						<td><input type="url" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" class="regular-text" placeholder="https://example.com" /></td>
 						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" placeholder="mesh_..." /></td>
-						<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button></td>
+						<td>
+							<button type="button" class="button wp-mcp-ai-test-mesh-peer" title="<?php esc_attr_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Test', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+						</td>
 					</tr>
 							<?php
 						}
