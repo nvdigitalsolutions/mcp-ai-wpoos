@@ -184,8 +184,8 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research zoning requirements for an urban infill project">
 								<?php esc_html_e( '"Research zoning requirements for urban infill..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate an AIA-standard project report with Executive Summary, Design Intent, Technical Solutions, Sustainability Assessment, Cost Estimate, and Project Schedule">
-								<?php esc_html_e( '"Generate AIA-standard project report..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research residential project feasibility and generate an AIA-standard report with comprehensive depth. Focus on sustainability assessment, building code compliance, and cost estimating.">
+								<?php esc_html_e( '"Research residential feasibility (AIA report)..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>

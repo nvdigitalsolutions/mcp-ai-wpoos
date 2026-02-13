@@ -185,8 +185,8 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate building sections with dimensions and annotations">
 								<?php esc_html_e( '"Generate sections with dimensions"', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate an NCS-compliant drawing documentation report with Sheet Organization, CAD Layer Structure following Discipline-Major-Minor-Status format, Drawing Type Breakdown, and Quality Control Checklist">
-								<?php esc_html_e( '"Generate NCS-compliant drawing report..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research CAD layer standards for commercial building and generate an NCS-compliant drawing documentation report. Use comprehensive depth and focus on layer organization and quality control.">
+								<?php esc_html_e( '"Research CAD standards (NCS report)..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>

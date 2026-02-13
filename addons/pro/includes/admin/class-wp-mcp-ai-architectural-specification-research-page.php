@@ -185,8 +185,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate Division 07 specifications for roofing and waterproofing">
 								<?php esc_html_e( '"Generate Division 07 roofing spec"', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate a CSI MasterFormat specification report using Three-Part Format: Part 1 (General requirements, scope, submittals, quality assurance), Part 2 (Products, materials, manufacturers, standards), Part 3 (Execution, installation methods, quality control, testing)">
-								<?php esc_html_e( '"Generate CSI three-part specification report..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research concrete specifications and generate a CSI MasterFormat report using comprehensive depth. Focus on ASTM standards and installation requirements.">
+								<?php esc_html_e( '"Research concrete specs (CSI report)..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
