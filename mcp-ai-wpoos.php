@@ -611,6 +611,7 @@ require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-wellknown.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ai-peer-cpt.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-sync.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-rate-limiter.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';

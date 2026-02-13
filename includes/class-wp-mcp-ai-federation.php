@@ -52,6 +52,13 @@ class WP_MCP_AI_Federation {
 	protected $directory_rest_handler;
 
 	/**
+	 * Mesh peer synchronization handler.
+	 *
+	 * @var WP_MCP_AI_Mesh_Peer_Sync
+	 */
+	protected $mesh_peer_sync;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
@@ -100,6 +107,12 @@ class WP_MCP_AI_Federation {
 			if ( $timestamp ) {
 				wp_unschedule_event( $timestamp, 'wp_mcp_ai_verify_peers' );
 			}
+		}
+
+		// Always initialize mesh peer sync if mesh is enabled (creates CPTs for manual mesh peers).
+		$is_mesh_enabled = WP_MCP_AI_Federation_Settings::is_mesh_enabled();
+		if ( $is_mesh_enabled && $is_directory_enabled ) {
+			$this->mesh_peer_sync = new WP_MCP_AI_Mesh_Peer_Sync();
 		}
 
 		// Check if we need to flush rewrite rules after CPT registration.
