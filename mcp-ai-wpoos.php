@@ -524,7 +524,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-cli
 
 require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-streaming.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
