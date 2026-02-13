@@ -183,4 +183,45 @@ class Test_Mesh_Peer_Tester extends WP_UnitTestCase {
 		// Clean up.
 		wp_delete_post( $post_id, true );
 	}
+
+	/**
+	 * Test that WP_Error from wellknown endpoint doesn't cause fatal error.
+	 *
+	 * This test verifies the fix for the issue where accessing $wellknown as an array
+	 * when it's a WP_Error would cause a fatal error.
+	 */
+	public function test_wellknown_wp_error_handling() {
+		// Use a peer that will fail wellknown but succeed reachability.
+		// We'll use a URL that exists but won't have the wellknown endpoint.
+		$peer = array(
+			'name' => 'Test Peer',
+			'url'  => 'https://wordpress.org', // Valid URL but no wellknown endpoint.
+		);
+
+		$result = WP_MCP_AI_Mesh_Peer_Tester::test_connection( $peer );
+
+		// Even if wellknown fails, the test should not produce a fatal error.
+		// The result should be an array (partial success) or WP_Error (complete failure).
+		$this->assertTrue(
+			is_array( $result ) || is_wp_error( $result ),
+			'Result should be array or WP_Error, not cause fatal error'
+		);
+
+		// If result is an array, verify it has the expected structure.
+		if ( is_array( $result ) ) {
+			$this->assertArrayHasKey( 'site_name', $result );
+			$this->assertArrayHasKey( 'capabilities', $result );
+			$this->assertArrayHasKey( 'wellknown', $result );
+
+			// Site name should be empty string when wellknown fails.
+			$this->assertIsString( $result['site_name'] );
+			// Capabilities should be empty array when wellknown fails.
+			$this->assertIsArray( $result['capabilities'] );
+			// Wellknown should be false when endpoint fails.
+			if ( ! $result['wellknown'] ) {
+				$this->assertEquals( '', $result['site_name'] );
+				$this->assertEquals( array(), $result['capabilities'] );
+			}
+		}
+	}
 }
