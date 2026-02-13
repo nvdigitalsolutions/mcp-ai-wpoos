@@ -269,6 +269,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 								'check_building_code_compliance',
 								'analyze_structural_feasibility',
 								'calculate_sustainability_metrics',
+								// Report generation.
+								'generate_research_report',
 								// Research tools.
 								'web_search',
 								'search_content',

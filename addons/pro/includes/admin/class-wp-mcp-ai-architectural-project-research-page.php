@@ -231,7 +231,7 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 							<?php
 							// Render chat interface with comprehensive architectural design tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,optimize_space_layout,create_floor_plan_variations,generate_3d_model,check_building_code_compliance,analyze_structural_feasibility,calculate_sustainability_metrics,estimate_construction_cost,generate_construction_timeline,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,optimize_space_layout,create_floor_plan_variations,generate_3d_model,check_building_code_compliance,analyze_structural_feasibility,calculate_sustainability_metrics,estimate_construction_cost,generate_construction_timeline,generate_research_report,web_search,search_content"]'
 							);
 							?>
 						</div>

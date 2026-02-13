@@ -244,7 +244,7 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 							<?php
 							// Render chat interface with drawing-focused tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,create_floor_plan_variations,convert_sketch_to_floor_plan,generate_3d_model,render_architectural_view,create_walkthrough_animation,generate_construction_drawings,generate_detail_drawings,export_architectural_documents,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,create_floor_plan_variations,convert_sketch_to_floor_plan,generate_3d_model,render_architectural_view,create_walkthrough_animation,generate_construction_drawings,generate_detail_drawings,export_architectural_documents,generate_research_report,web_search,search_content"]'
 							);
 							?>
 						</div>
