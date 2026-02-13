@@ -202,7 +202,21 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$orchestration_mode = isset( $arguments['orchestration_mode'] ) && $arguments['orchestration_mode'];
 
 		if ( $orchestration_mode ) {
-			return $this->execute_orchestrated( $arguments, $context, $user_id );
+			// Verify orchestration dependencies are available.
+			// Fall back to legacy mode if WP_MCP_AI_Streaming class is not available.
+			if ( ! class_exists( 'WP_MCP_AI_Streaming' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'orchestration_fallback',
+					'Orchestration requested but dependencies unavailable, falling back to legacy mode',
+					array(
+						'tool'    => 'save_post',
+						'user_id' => $user_id,
+					)
+				);
+				// Fall through to legacy execution.
+			} else {
+				return $this->execute_orchestrated( $arguments, $context, $user_id );
+			}
 		}
 
 		// Legacy execution path (maintain backward compatibility).

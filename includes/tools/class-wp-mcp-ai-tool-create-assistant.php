@@ -312,7 +312,21 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Execute synchronously.
 		if ( $orchestration_mode ) {
-			return $this->execute_orchestrated( $arguments, $user_id, $context );
+			// Verify orchestration dependencies are available.
+			// Fall back to legacy mode if WP_MCP_AI_Streaming class is not available.
+			if ( ! class_exists( 'WP_MCP_AI_Streaming' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'orchestration_fallback',
+					'Orchestration requested but dependencies unavailable, falling back to legacy mode',
+					array(
+						'tool'    => 'create_assistant',
+						'user_id' => $user_id,
+					)
+				);
+				// Fall through to legacy execution.
+			} else {
+				return $this->execute_orchestrated( $arguments, $user_id, $context );
+			}
 		}
 
 		return $this->create_assistant( $arguments, $user_id );
