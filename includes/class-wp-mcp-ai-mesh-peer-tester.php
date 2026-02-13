@@ -249,9 +249,17 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 		}
 
 		if ( 401 === $status_code || 403 === $status_code ) {
+			$error_message = __( 'API key authentication failed. Please verify the API key is correct.', 'mcp-ai-wpoos' );
+			
+			// Try to get more specific error details from the response body.
+			$remote_error = self::extract_error_message( $response );
+			if ( ! empty( $remote_error ) ) {
+				$error_message = $remote_error;
+			}
+			
 			return new WP_Error(
 				'mcp_auth_invalid',
-				__( 'API key authentication failed. Please verify the API key is correct.', 'mcp-ai-wpoos' )
+				$error_message
 			);
 		}
 
@@ -262,14 +270,48 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 			);
 		}
 
+		// For any other error status codes, try to extract details from the response.
+		$error_message = sprintf(
+			/* translators: %d: HTTP status code */
+			__( 'MCP endpoint returned status %d', 'mcp-ai-wpoos' ),
+			$status_code
+		);
+		
+		// Try to get more specific error details from the response body.
+		$remote_error = self::extract_error_message( $response );
+		if ( ! empty( $remote_error ) ) {
+			$error_message .= ': ' . $remote_error;
+		}
+		
 		return new WP_Error(
 			'mcp_error',
-			sprintf(
-				/* translators: %d: HTTP status code */
-				__( 'MCP endpoint returned status %d', 'mcp-ai-wpoos' ),
-				$status_code
-			)
+			$error_message
 		);
+	}
+
+	/**
+	 * Extract and sanitize error message from remote API response.
+	 *
+	 * @param array|WP_Error $response HTTP response from wp_remote_get.
+	 * @return string Sanitized error message or empty string.
+	 */
+	protected static function extract_error_message( $response ) {
+		if ( is_wp_error( $response ) ) {
+			return '';
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		if ( empty( $body ) ) {
+			return '';
+		}
+
+		$data = json_decode( $body, true );
+		if ( ! is_array( $data ) || empty( $data['message'] ) ) {
+			return '';
+		}
+
+		// Sanitize the error message to prevent XSS attacks.
+		return sanitize_text_field( $data['message'] );
 	}
 
 	/**

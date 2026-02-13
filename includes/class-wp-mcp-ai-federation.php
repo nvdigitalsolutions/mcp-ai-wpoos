@@ -86,15 +86,21 @@ class WP_MCP_AI_Federation {
 	public function maybe_load_federation_features() {
 		$is_federation_enabled = WP_MCP_AI_Federation_Settings::is_federation_enabled();
 		$is_directory_enabled  = WP_MCP_AI_Federation_Settings::is_directory_enabled();
+		$is_mesh_enabled       = WP_MCP_AI_Federation_Settings::is_mesh_enabled();
 
 		// Load well-known endpoints if either federation or directory is enabled.
 		if ( $is_federation_enabled || $is_directory_enabled ) {
 			$this->wellknown_handler = new WP_MCP_AI_Federation_WellKnown( $this->registry );
 		}
 
-		// Load directory features (AI Peers CPT, REST API) only if directory is enabled.
+		// Load AI Peer CPT if either directory OR mesh is enabled.
+		// Directory needs it for federation peers, mesh needs it for mesh peers.
+		if ( $is_directory_enabled || $is_mesh_enabled ) {
+			$this->peer_cpt_handler = new WP_MCP_AI_AI_Peer_CPT();
+		}
+
+		// Load directory REST API only if directory is enabled.
 		if ( $is_directory_enabled ) {
-			$this->peer_cpt_handler       = new WP_MCP_AI_AI_Peer_CPT();
 			$this->directory_rest_handler = new WP_MCP_AI_Federation_Directory_REST();
 
 			// Schedule peer verification cron if not already scheduled.
@@ -109,9 +115,9 @@ class WP_MCP_AI_Federation {
 			}
 		}
 
-		// Always initialize mesh peer sync if mesh is enabled (creates CPTs for manual mesh peers).
-		$is_mesh_enabled = WP_MCP_AI_Federation_Settings::is_mesh_enabled();
-		if ( $is_mesh_enabled && $is_directory_enabled ) {
+		// Initialize mesh peer sync if mesh is enabled (creates CPTs for manual mesh peers).
+		// This should work independently of federation directory status.
+		if ( $is_mesh_enabled ) {
 			$this->mesh_peer_sync = new WP_MCP_AI_Mesh_Peer_Sync();
 		}
 
