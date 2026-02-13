@@ -12,10 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Generate Research Report Tool Class
  */
 class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	public function get_slug() {
 		return 'generate_research_report';
@@ -96,11 +99,14 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			}
 		}
 
-		return array(
-			'success'       => true,
-			'report'        => $report,
-			'word_count'    => str_word_count( $report ),
-			'section_count' => count( $sections ),
+		// Return with message field for chat display.
+		return $this->format_success_response(
+			$report,
+			array(
+				'word_count'    => str_word_count( $report ),
+				'section_count' => count( $sections ),
+				'title'         => $title,
+			)
 		);
 	}
 }
