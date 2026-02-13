@@ -686,7 +686,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	protected function execute_orchestrated( array $arguments, array $context, int $user_id ) {
 		// Generate unique execution ID for tracking.
 		$execution_id = 'product_create_' . wp_generate_uuid4();
-		
+
 		$this->log_orchestration_step( $execution_id, 'started', array(
 			'user_id'   => $user_id,
 			'reference' => $arguments['reference'] ?? 'unknown',
@@ -696,7 +696,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $arguments['auto_research'] ) && $arguments['auto_research'] ) {
 			$this->log_orchestration_step( $execution_id, 'research', 'Starting product research' );
 			$research_data = $this->step_research_product( $arguments, $context );
-			
+
 			if ( is_wp_error( $research_data ) ) {
 				$this->log_orchestration_step( $execution_id, 'research_failed', $research_data->get_error_message() );
 				// Non-critical: Continue with provided data.
@@ -710,19 +710,19 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		// Step 2: Data Validation.
 		$this->log_orchestration_step( $execution_id, 'validate', 'Validating product data' );
 		$validation_result = $this->step_validate_product_data( $arguments, $user_id );
-		
+
 		if ( is_wp_error( $validation_result ) ) {
 			$this->log_orchestration_step( $execution_id, 'validation_failed', $validation_result->get_error_message() );
 			return $this->handle_orchestration_error( 'validate', $validation_result, $execution_id );
 		}
-		
+
 		$this->log_orchestration_step( $execution_id, 'validation_completed', 'Data validated successfully' );
 
 		// Step 3: Content Enhancement.
 		if ( ! empty( $arguments['enhance_content'] ) && $arguments['enhance_content'] ) {
 			$this->log_orchestration_step( $execution_id, 'enhance', 'Enhancing product content' );
 			$enhanced_data = $this->step_enhance_product_content( $arguments, $context );
-			
+
 			if ( ! is_wp_error( $enhanced_data ) ) {
 				$arguments = array_merge( $arguments, $enhanced_data );
 				$this->log_orchestration_step( $execution_id, 'enhancement_completed', 'Content enhanced' );
@@ -734,12 +734,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		// Step 4: Product Creation.
 		$this->log_orchestration_step( $execution_id, 'create', 'Creating WooCommerce product' );
 		$product_data = $this->execute_legacy( $arguments, $context, $user_id );
-		
+
 		if ( is_wp_error( $product_data ) ) {
 			$this->log_orchestration_step( $execution_id, 'creation_failed', $product_data->get_error_message() );
 			return $this->handle_orchestration_error( 'create', $product_data, $execution_id );
 		}
-		
+
 		$product_id = $product_data['product_id'];
 		$this->log_orchestration_step( $execution_id, 'creation_completed', array( 'product_id' => $product_id ) );
 
@@ -747,7 +747,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $arguments['optimize'] ) && $arguments['optimize'] ) {
 			$this->log_orchestration_step( $execution_id, 'optimize', 'Optimizing product' );
 			$optimization_result = $this->step_optimize_product( $product_id, $arguments, $context );
-			
+
 			if ( ! is_wp_error( $optimization_result ) ) {
 				$product_data = array_merge( $product_data, $optimization_result );
 				$this->log_orchestration_step( $execution_id, 'optimization_completed', 'Product optimized' );
@@ -782,14 +782,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$research_tool = WP_MCP_AI_Tool_Registry::get_tool( 'research_product' );
-		
+
 		if ( ! $research_tool ) {
 			return new WP_Error( 'research_tool_unavailable', 'Product research tool not available' );
 		}
 
 		// Build research query from product name or reference.
 		$query = ! empty( $arguments['title'] ) ? $arguments['title'] : $arguments['reference'];
-		
+
 		$research_args = array(
 			'query'           => $query,
 			'depth'           => 'standard',
@@ -799,29 +799,29 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		$research_result = $research_tool->execute( $research_args, $context );
-		
+
 		if ( is_wp_error( $research_result ) ) {
 			return $research_result;
 		}
 
 		// Extract relevant data from research results.
 		$enriched_data = array();
-		
+
 		if ( ! empty( $research_result['product_data'] ) ) {
 			$product_data = $research_result['product_data'];
-			
+
 			if ( ! empty( $product_data['name'] ) && empty( $arguments['title'] ) ) {
 				$enriched_data['title'] = $product_data['name'];
 			}
-			
+
 			if ( ! empty( $product_data['description'] ) && empty( $arguments['description'] ) ) {
 				$enriched_data['description'] = $product_data['description'];
 			}
-			
+
 			if ( ! empty( $product_data['price'] ) && empty( $arguments['local_price'] ) ) {
 				$enriched_data['local_price'] = $product_data['price'];
 			}
-			
+
 			if ( ! empty( $product_data['brand'] ) && empty( $arguments['brand'] ) ) {
 				$enriched_data['brand'] = $product_data['brand'];
 			}
@@ -842,7 +842,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Validate reference/SKU.
 		$reference = isset( $arguments['reference'] ) ? sanitize_text_field( $arguments['reference'] ) : '';
-		
+
 		if ( empty( $reference ) ) {
 			$errors[] = __( 'Product reference/SKU is required', 'mcp-ai-wpoos' );
 		} else {
@@ -884,7 +884,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			if ( empty( $arguments['attributes'] ) || ! is_array( $arguments['attributes'] ) ) {
 				$errors[] = __( 'Variable products require at least one attribute', 'mcp-ai-wpoos' );
 			}
-			
+
 			if ( empty( $arguments['variations'] ) || ! is_array( $arguments['variations'] ) ) {
 				$errors[] = __( 'Variable products require at least one variation', 'mcp-ai-wpoos' );
 			}
@@ -993,7 +993,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		$response = $ai_client->send_message( $prompt );
-		
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
@@ -1015,7 +1015,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$image_tool = WP_MCP_AI_Tool_Registry::get_tool( 'generate_openai_image' );
-		
+
 		if ( ! $image_tool ) {
 			return new WP_Error( 'image_tool_unavailable', 'Image generation tool not available' );
 		}
@@ -1079,7 +1079,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function get_orchestration_steps( $execution_id ) {
 		$steps = get_transient( "wp_mcp_ai_product_exec_{$execution_id}" ) ?: array();
-		
+
 		return array_map(
 			function( $step ) {
 				return array(
@@ -1101,7 +1101,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function handle_orchestration_error( $step_name, $error, $execution_id ) {
 		do_action( 'wp_mcp_ai_product_orchestration_failed', $step_name, $error, $execution_id );
-		
+
 		return new WP_Error(
 			'orchestration_failed',
 			sprintf(
@@ -1677,12 +1677,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				$found = false;
 				foreach ( $product_attributes as $product_attr ) {
 					$product_attr_name = $product_attr->get_name();
-					
+
 					// Handle both taxonomy-based (pa_color) and custom (color) attributes.
-					if ( $product_attr_name === $attr_name_sanitized || 
+					if ( $product_attr_name === $attr_name_sanitized ||
 					     $product_attr_name === wc_attribute_taxonomy_name( $attr_name_sanitized ) ||
 					     wc_sanitize_taxonomy_name( $product_attr_name ) === $attr_name_sanitized ) {
-						
+
 						// For taxonomy-based attributes, use full taxonomy name.
 						if ( taxonomy_exists( $product_attr_name ) ) {
 							$normalized_attributes[ $product_attr_name ] = sanitize_text_field( $attr_value );
@@ -1778,7 +1778,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		if ( $created_count > 0 ) {
 			// Sync the variable product to update its available variations.
 			WC_Product_Variable::sync( $product_id );
-			
+
 			$messages[] = sprintf(
 				/* translators: %d: number of variations created */
 				_n( 'Created %d product variation.', 'Created %d product variations.', $created_count, 'mcp-ai-wpoos' ),

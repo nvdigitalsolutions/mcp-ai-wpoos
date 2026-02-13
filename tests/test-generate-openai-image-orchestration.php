@@ -132,7 +132,7 @@ class WP_MCP_AI_Generate_OpenAI_Image_Orchestration_Test extends WP_UnitTestCase
 		$user_id = self::factory()->user->create( array( 'role' => 'editor' ) );
 
 		$tool   = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
-		
+
 		// Use reflection to test validation method directly.
 		$reflection = new ReflectionClass( $tool );
 		$method = $reflection->getMethod( 'step_validate_parameters' );
@@ -286,10 +286,10 @@ class WP_MCP_AI_Generate_OpenAI_Image_Orchestration_Test extends WP_UnitTestCase
 	public function test_orchestration_step_logging() {
 		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$reflection = new ReflectionClass( $tool );
-		
+
 		$log_method = $reflection->getMethod( 'log_orchestration_step' );
 		$log_method->setAccessible( true );
-		
+
 		$get_method = $reflection->getMethod( 'get_orchestration_steps' );
 		$get_method->setAccessible( true );
 
@@ -305,7 +305,7 @@ class WP_MCP_AI_Generate_OpenAI_Image_Orchestration_Test extends WP_UnitTestCase
 
 		$this->assertIsArray( $steps );
 		$this->assertCount( 3, $steps );
-		
+
 		$step_names = array_column( $steps, 'name' );
 		$this->assertContains( 'started', $step_names );
 		$this->assertContains( 'validate', $step_names );
@@ -328,7 +328,7 @@ class WP_MCP_AI_Generate_OpenAI_Image_Orchestration_Test extends WP_UnitTestCase
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'orchestration_failed', $result->get_error_code() );
-		
+
 		$data = $result->get_error_data();
 		$this->assertArrayHasKey( 'step', $data );
 		$this->assertArrayHasKey( 'original_code', $data );

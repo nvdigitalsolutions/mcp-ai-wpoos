@@ -362,7 +362,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	protected function execute_orchestrated( array $arguments, array $context, int $user_id ) {
 		// Generate unique execution ID for tracking.
 		$execution_id = 'gemini_image_' . wp_generate_uuid4();
-		
+
 		$this->log_orchestration_step( $execution_id, 'started', array(
 			'user_id' => $user_id,
 			'model'   => $arguments['model'] ?? 'default',
@@ -372,7 +372,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		if ( ! empty( $arguments['optimize_prompt'] ) && $arguments['optimize_prompt'] ) {
 			$this->log_orchestration_step( $execution_id, 'optimize', 'Starting prompt optimization' );
 			$optimized_prompt = $this->step_optimize_prompt( $arguments, $context );
-			
+
 			if ( is_wp_error( $optimized_prompt ) ) {
 				$this->log_orchestration_step( $execution_id, 'optimize_failed', $optimized_prompt->get_error_message() );
 				// Non-critical: Continue with original prompt.
@@ -385,23 +385,23 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		// Step 2: Parameter Validation.
 		$this->log_orchestration_step( $execution_id, 'validate', 'Validating parameters' );
 		$validation_result = $this->step_validate_parameters( $arguments );
-		
+
 		if ( is_wp_error( $validation_result ) ) {
 			$this->log_orchestration_step( $execution_id, 'validation_failed', $validation_result->get_error_message() );
 			return $this->handle_orchestration_error( 'validate', $validation_result, $execution_id );
 		}
-		
+
 		$this->log_orchestration_step( $execution_id, 'validation_completed', 'Parameters validated' );
 
 		// Step 3: Image Generation.
 		$this->log_orchestration_step( $execution_id, 'generate', 'Generating image' );
 		$image_data = $this->execute_legacy( $arguments, $context, $user_id );
-		
+
 		if ( is_wp_error( $image_data ) ) {
 			$this->log_orchestration_step( $execution_id, 'generation_failed', $image_data->get_error_message() );
 			return $this->handle_orchestration_error( 'generate', $image_data, $execution_id );
 		}
-		
+
 		$attachment_id = $image_data['attachment_id'];
 		$this->log_orchestration_step( $execution_id, 'generation_completed', array( 'attachment_id' => $attachment_id ) );
 
@@ -409,7 +409,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		if ( ! empty( $arguments['generate_alt_text'] ) && $arguments['generate_alt_text'] ) {
 			$this->log_orchestration_step( $execution_id, 'post_process', 'Generating alt text' );
 			$alt_text_result = $this->step_generate_alt_text( $attachment_id, $arguments, $context );
-			
+
 			if ( ! is_wp_error( $alt_text_result ) ) {
 				$image_data['alt_text'] = $alt_text_result;
 				$this->log_orchestration_step( $execution_id, 'alt_text_completed', 'Alt text generated' );
@@ -422,7 +422,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		if ( ! empty( $arguments['optimize_output'] ) && $arguments['optimize_output'] ) {
 			$this->log_orchestration_step( $execution_id, 'optimize_storage', 'Optimizing storage' );
 			$optimization_result = $this->step_optimize_storage( $attachment_id, $arguments, $context );
-			
+
 			if ( ! is_wp_error( $optimization_result ) ) {
 				$image_data = array_merge( $image_data, $optimization_result );
 				$this->log_orchestration_step( $execution_id, 'storage_optimization_completed', 'Storage optimized' );
@@ -434,7 +434,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		if ( ! empty( $arguments['generate_variants'] ) && $arguments['generate_variants'] ) {
 			$this->log_orchestration_step( $execution_id, 'generate_variants', 'Generating size variants' );
 			$variants_result = $this->step_generate_variants( $attachment_id, $arguments );
-			
+
 			if ( ! is_wp_error( $variants_result ) ) {
 				$image_data['variants'] = $variants_result;
 				$this->log_orchestration_step( $execution_id, 'variants_completed', 'Variants generated' );
@@ -468,7 +468,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$original_prompt = isset( $arguments['prompt'] ) ? $arguments['prompt'] : '';
-		
+
 		if ( empty( $original_prompt ) ) {
 			return new WP_Error( 'empty_prompt', 'Cannot optimize empty prompt' );
 		}
@@ -480,13 +480,13 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		);
 
 		$response = $ai_client->send_message( $enhance_prompt );
-		
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
 		$optimized = isset( $response['content'] ) ? trim( $response['content'] ) : '';
-		
+
 		if ( empty( $optimized ) ) {
 			return new WP_Error( 'optimization_failed', 'AI returned empty optimized prompt' );
 		}
@@ -577,13 +577,13 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$alt_text_tool = WP_MCP_AI_Tool_Registry::get_tool( 'generate_image_alt_text' );
-		
+
 		if ( ! $alt_text_tool ) {
 			return new WP_Error( 'alt_text_tool_unavailable', 'Alt text generation tool not available' );
 		}
 
 		$image_url = wp_get_attachment_url( $attachment_id );
-		
+
 		if ( ! $image_url ) {
 			return new WP_Error( 'image_url_not_found', 'Could not get image URL' );
 		}
@@ -598,7 +598,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$alt_text = isset( $result['alt_text'] ) ? $result['alt_text'] : '';
-		
+
 		if ( empty( $alt_text ) ) {
 			return new WP_Error( 'empty_alt_text', 'Alt text generation returned empty result' );
 		}
@@ -637,11 +637,11 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'orchestration'     => true,
 			'provider'          => 'gemini',
 		);
-		
+
 		foreach ( $metadata as $key => $value ) {
 			update_post_meta( $attachment_id, '_ai_' . $key, $value );
 		}
-		
+
 		$optimization_results['metadata_added'] = true;
 
 		return $optimization_results;
@@ -659,16 +659,16 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Get the attachment file path.
 		$file_path = get_attached_file( $attachment_id );
-		
+
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error( 'file_not_found', 'Attachment file not found' );
 		}
 
 		// Generate WordPress default image sizes.
 		require_once ABSPATH . 'wp-admin/includes/image.php';
-		
+
 		$metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
-		
+
 		if ( is_wp_error( $metadata ) ) {
 			return $metadata;
 		}
@@ -725,7 +725,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function get_orchestration_steps( $execution_id ) {
 		$steps = get_transient( "wp_mcp_ai_gemini_exec_{$execution_id}" ) ?: array();
-		
+
 		return array_map(
 			function( $step ) {
 				return array(
@@ -747,7 +747,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function handle_orchestration_error( $step_name, $error, $execution_id ) {
 		do_action( 'wp_mcp_ai_gemini_orchestration_failed', $step_name, $error, $execution_id );
-		
+
 		return new WP_Error(
 			'orchestration_failed',
 			sprintf(

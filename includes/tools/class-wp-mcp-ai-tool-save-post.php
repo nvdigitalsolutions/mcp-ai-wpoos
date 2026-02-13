@@ -400,7 +400,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	protected function execute_orchestrated( array $arguments, array $context, int $user_id ) {
 		// Generate unique execution ID for tracking.
 		$execution_id = 'post_save_' . wp_generate_uuid4();
-		
+
 		$this->log_orchestration_step( $execution_id, 'started', array(
 			'user_id'  => $user_id,
 			'post_id'  => $arguments['post_id'] ?? 0,
@@ -411,7 +411,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		if ( ! empty( $arguments['auto_research'] ) && $arguments['auto_research'] ) {
 			$this->log_orchestration_step( $execution_id, 'research', 'Starting content research' );
 			$research_data = $this->step_research_content( $arguments, $context );
-			
+
 			if ( is_wp_error( $research_data ) ) {
 				$this->log_orchestration_step( $execution_id, 'research_failed', $research_data->get_error_message() );
 				// Non-critical: Continue with provided data.
@@ -425,19 +425,19 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		// Step 2: Data Validation.
 		$this->log_orchestration_step( $execution_id, 'validate', 'Validating post data' );
 		$validation_result = $this->step_validate_post_data( $arguments, $user_id );
-		
+
 		if ( is_wp_error( $validation_result ) ) {
 			$this->log_orchestration_step( $execution_id, 'validation_failed', $validation_result->get_error_message() );
 			return $this->handle_orchestration_error( 'validate', $validation_result, $execution_id );
 		}
-		
+
 		$this->log_orchestration_step( $execution_id, 'validation_completed', 'Data validated successfully' );
 
 		// Step 3: Content Enhancement.
 		if ( ! empty( $arguments['enhance_content'] ) && $arguments['enhance_content'] ) {
 			$this->log_orchestration_step( $execution_id, 'enhance', 'Enhancing content quality' );
 			$enhanced_data = $this->step_enhance_content( $arguments, $context );
-			
+
 			if ( ! is_wp_error( $enhanced_data ) ) {
 				$arguments = array_merge( $arguments, $enhanced_data );
 				$this->log_orchestration_step( $execution_id, 'enhancement_completed', 'Content enhanced' );
@@ -449,12 +449,12 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		// Step 4: Post Save.
 		$this->log_orchestration_step( $execution_id, 'save', 'Saving post' );
 		$post_data = $this->execute_legacy( $arguments, $context, $user_id );
-		
+
 		if ( is_wp_error( $post_data ) ) {
 			$this->log_orchestration_step( $execution_id, 'save_failed', $post_data->get_error_message() );
 			return $this->handle_orchestration_error( 'save', $post_data, $execution_id );
 		}
-		
+
 		$post_id = $post_data['ID'];
 		$this->log_orchestration_step( $execution_id, 'save_completed', array( 'post_id' => $post_id ) );
 
@@ -462,7 +462,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		if ( ! empty( $arguments['optimize'] ) && $arguments['optimize'] ) {
 			$this->log_orchestration_step( $execution_id, 'optimize', 'Optimizing post' );
 			$optimization_result = $this->step_optimize_post( $post_id, $arguments, $context );
-			
+
 			if ( ! is_wp_error( $optimization_result ) ) {
 				$post_data = array_merge( $post_data, $optimization_result );
 				$this->log_orchestration_step( $execution_id, 'optimization_completed', 'Post optimized' );
@@ -497,20 +497,20 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		$search_tool = WP_MCP_AI_Tool_Registry::get_tool( 'web_search' );
-		
+
 		if ( ! $search_tool ) {
 			return new WP_Error( 'search_tool_unavailable', 'Web search tool not available' );
 		}
 
 		// Build search query from title or content.
 		$query = ! empty( $arguments['title'] ) ? $arguments['title'] : '';
-		
+
 		if ( empty( $query ) && ! empty( $arguments['content'] ) ) {
 			// Extract first sentence or first 50 words as query.
 			$content_text = wp_strip_all_tags( $arguments['content'] );
 			$query = wp_trim_words( $content_text, 10, '...' );
 		}
-		
+
 		if ( empty( $query ) ) {
 			return new WP_Error( 'no_search_query', 'Cannot research: no title or content provided' );
 		}
@@ -519,7 +519,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			array( 'query' => $query ),
 			$context
 		);
-		
+
 		if ( is_wp_error( $search_result ) ) {
 			return $search_result;
 		}
@@ -626,7 +626,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 
 			$response = $ai_client->send_message( $prompt );
-			
+
 			if ( ! is_wp_error( $response ) && ! empty( $response['content'] ) ) {
 				$enhanced_data['content'] = wp_kses_post( $response['content'] );
 			}
@@ -669,12 +669,12 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			$post = get_post( $post_id );
 			if ( $post ) {
 				update_post_meta( $post_id, 'rank_math_focus_keyword', sanitize_text_field( $post->post_title ) );
-				
+
 				$excerpt = get_the_excerpt( $post_id );
 				if ( ! empty( $excerpt ) ) {
 					update_post_meta( $post_id, 'rank_math_description', wp_trim_words( $excerpt, 30 ) );
 				}
-				
+
 				$optimization_results['seo_optimized'] = true;
 			}
 		}
@@ -706,7 +706,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		$image_tool = WP_MCP_AI_Tool_Registry::get_tool( 'generate_openai_image' );
-		
+
 		if ( ! $image_tool ) {
 			return new WP_Error( 'image_tool_unavailable', 'Image generation tool not available' );
 		}
@@ -772,7 +772,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	protected function get_orchestration_steps( $execution_id ) {
 		$steps = get_transient( "wp_mcp_ai_post_exec_{$execution_id}" ) ?: array();
-		
+
 		return array_map(
 			function( $step ) {
 				return array(
@@ -794,7 +794,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	protected function handle_orchestration_error( $step_name, $error, $execution_id ) {
 		do_action( 'wp_mcp_ai_post_orchestration_failed', $step_name, $error, $execution_id );
-		
+
 		return new WP_Error(
 			'orchestration_failed',
 			sprintf(

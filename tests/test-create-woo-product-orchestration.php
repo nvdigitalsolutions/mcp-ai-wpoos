@@ -242,9 +242,9 @@ class WP_MCP_AI_Create_Woo_Product_Orchestration_Test extends WP_UnitTestCase {
 
 		if ( ! is_wp_error( $result ) ) {
 			// If enhancement succeeded, steps should include 'enhance' and 'enhancement_completed'.
-			$steps = $result['orchestration']['steps'];
+			$steps      = $result['orchestration']['steps'];
 			$step_names = array_column( $steps, 'name' );
-			
+
 			// Enhancement may be skipped or completed, but should be logged.
 			$this->assertTrue(
 				in_array( 'enhance', $step_names, true ) ||
@@ -283,9 +283,9 @@ class WP_MCP_AI_Create_Woo_Product_Orchestration_Test extends WP_UnitTestCase {
 
 		if ( ! is_wp_error( $result ) ) {
 			// Research step should be in the logs.
-			$steps = $result['orchestration']['steps'];
+			$steps      = $result['orchestration']['steps'];
 			$step_names = array_column( $steps, 'name' );
-			
+
 			// Research may be completed, failed, or skipped.
 			$this->assertTrue(
 				in_array( 'research', $step_names, true ) ||

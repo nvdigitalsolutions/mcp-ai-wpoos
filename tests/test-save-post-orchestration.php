@@ -234,9 +234,9 @@ class WP_MCP_AI_Save_Post_Orchestration_Test extends WP_UnitTestCase {
 
 		if ( ! is_wp_error( $result ) ) {
 			// Enhancement step should be in logs.
-			$steps = $result['orchestration']['steps'];
+			$steps      = $result['orchestration']['steps'];
 			$step_names = array_column( $steps, 'name' );
-			
+
 			// Enhancement may be completed or skipped.
 			$this->assertTrue(
 				in_array( 'enhance', $step_names, true ) ||
@@ -270,9 +270,9 @@ class WP_MCP_AI_Save_Post_Orchestration_Test extends WP_UnitTestCase {
 
 		if ( ! is_wp_error( $result ) ) {
 			// Research step should be in logs.
-			$steps = $result['orchestration']['steps'];
+			$steps      = $result['orchestration']['steps'];
 			$step_names = array_column( $steps, 'name' );
-			
+
 			// Research may be completed, failed, or skipped.
 			$this->assertTrue(
 				in_array( 'research', $step_names, true ) ||
