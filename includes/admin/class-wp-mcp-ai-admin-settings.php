@@ -2567,7 +2567,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$clean['enable_mesh'] = ! empty( $settings['enable_mesh'] );
 
 			if ( isset( $settings['mesh_inbound_api_key'] ) ) {
-				$clean['mesh_inbound_api_key'] = sanitize_text_field( $settings['mesh_inbound_api_key'] );
+				$clean['mesh_inbound_api_key'] = trim( sanitize_text_field( $settings['mesh_inbound_api_key'] ) );
 			}
 
 			// Generate inbound API key if mesh is being enabled and no key exists - security improvement.
