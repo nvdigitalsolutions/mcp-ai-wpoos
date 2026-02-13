@@ -156,23 +156,23 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		<p>
 			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs, pdf-lib)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (pdfkit, docx, exceljs, pdf-lib via bundles or vendor)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
 				<br>
-				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
+				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install && npm run build</code>
 			<?php endif; ?>
 		</p>
 		<p>
 			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $optional_npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: gray;">○ <?php esc_html_e( 'Not Installed (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Available (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php endif; ?>
 		</p>
 		<p class="description">
-			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Core packages are pre-bundled in bin/*.bundle.js files or available in the vendor directory. Optional packages enhance functionality when available. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -194,18 +194,33 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if NPM packages are installed.
 	 *
+	 * Checks CDN availability, vendor directory, bundle files, and node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
+		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
 		
-		// Check core document generation packages.
-		$core_packages = file_exists( $node_modules . '/pdfkit/package.json' ) &&
-						file_exists( $node_modules . '/docx/package.json' ) &&
-						file_exists( $node_modules . '/exceljs/package.json' );
+		// Use the centralized helper function for CDN-aware package checking.
+		$has_pdfkit = (
+			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
+		);
+		
+		$has_docx = (
+			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' )
+		);
+		
+		$has_exceljs = (
+			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' )
+		);
+		
+		$core_packages = $has_pdfkit && $has_docx && $has_exceljs;
 		
 		// Check utility packages (optional).
-		$utility_packages = file_exists( $node_modules . '/pdf-lib/package.json' );
+		$utility_packages = wp_mcp_ai_is_npm_package_available( 'pdf-lib' );
 		
 		return $core_packages && $utility_packages;
 	}
@@ -213,11 +228,12 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if optional NPM packages are installed.
 	 *
+	 * Checks CDN availability, vendor directory, and node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_optional_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $node_modules . '/puppeteer-core/package.json' );
+		return wp_mcp_ai_is_npm_package_available( 'puppeteer-core' );
 	}
 
 	/**

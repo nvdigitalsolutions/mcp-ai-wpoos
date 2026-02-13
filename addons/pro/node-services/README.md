@@ -46,7 +46,7 @@ node ffmpeg-service.js transcode '{"video_path":"/path/to/input.mp4","output_pat
 
 ## Integration with WordPress
 
-These services are called via WordPress filters. See `NPM_INTEGRATION_GUIDE.md` in the parent directory for complete integration examples.
+These services are called via WordPress filters. See `docs/NPM_INTEGRATION_GUIDE.md` in the parent directory for complete integration examples.
 
 ### Quick Integration Example
 
@@ -127,4 +127,4 @@ chmod +x *.js
 
 ## Support
 
-See the main documentation in `NPM_INTEGRATION_GUIDE.md` for detailed integration examples and troubleshooting.
+See the main documentation in `docs/NPM_INTEGRATION_GUIDE.md` for detailed integration examples and troubleshooting.

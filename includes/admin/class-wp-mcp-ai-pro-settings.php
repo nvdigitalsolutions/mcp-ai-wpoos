@@ -789,9 +789,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				$toolkit['npm_status']    = array();
 
 				foreach ( $toolkit['npm_packages'] as $package ) {
-					$installed                         = self::check_package_installed( $package );
-					$toolkit['npm_status'][ $package ] = $installed;
-					if ( ! $installed ) {
+					$status                            = self::get_package_status( $package );
+					$toolkit['npm_status'][ $package ] = $status;
+					if ( ! $status['available'] ) {
 						$toolkit['npm_available'] = false;
 					}
 				}
@@ -887,13 +887,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 									</tr>
 								</thead>
 								<tbody>
-									<?php foreach ( $toolkit['npm_status'] as $package => $installed ) : ?>
+									<?php foreach ( $toolkit['npm_status'] as $package => $status ) : ?>
 										<tr>
 											<td><code><?php echo esc_html( $package ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo esc_attr( $installed ? 'available' : 'unavailable' ); ?>">
-													<?php echo $installed ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
-												</span>
+												<?php if ( $status['available'] ) : ?>
+													<span class="status-indicator available" title="<?php echo esc_attr( $status['message'] ); ?>">
+														<?php echo '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbol. ?>
+														<?php if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) : ?>
+															<span class="status-source"><?php esc_html_e( '(CDN)', 'mcp-ai-wpoos' ); ?></span>
+														<?php endif; ?>
+													</span>
+												<?php else : ?>
+													<span class="status-indicator unavailable">
+														<?php echo '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static cross symbol. ?>
+													</span>
+												<?php endif; ?>
 											</td>
 										</tr>
 									<?php endforeach; ?>
@@ -980,10 +989,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					// Sort packages alphabetically.
 					ksort( $packages );
 					foreach ( $packages as $package => $version ) :
-						// Check if package is installed (vendor file exists).
-						$package_installed = self::check_package_installed( $package );
-						$status_class      = $package_installed ? 'installed' : 'not-installed';
-						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
+						// Get detailed package status (includes CDN detection).
+						$status       = self::get_package_status( $package );
+						$status_class = $status['available'] ? 'installed' : 'not-installed';
+						$status_text  = $status['message'];
+
+						// Add special CSS class for CDN packages.
+						if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) {
+							$status_class .= ' cdn-loaded';
+						}
 						?>
 						<tr>
 							<td><code><?php echo esc_html( $package ); ?></code></td>
@@ -1071,6 +1085,44 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Get detailed package status including CDN availability.
+		 *
+		 * Returns an array with 'available', 'source', and 'message' keys.
+		 *
+		 * @param string $package Package name.
+		 * @return array Status array.
+		 */
+		private static function get_package_status( $package ) {
+			// Check if Pro CDN Loader is available and package is CDN-managed.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && class_exists( 'WP_MCP_AI_Pro_CDN_Loader' ) ) {
+				$cdn_packages = WP_MCP_AI_Pro_CDN_Loader::get_cdn_packages();
+				if ( in_array( $package, $cdn_packages, true ) ) {
+					$status = WP_MCP_AI_Pro_CDN_Loader::get_package_status( $package );
+					if ( ! empty( $status ) && is_array( $status ) ) {
+						return $status;
+					}
+				}
+			}
+
+			// For non-CDN packages, check if installed.
+			$installed = self::check_package_installed( $package );
+
+			if ( $installed ) {
+				return array(
+					'available' => true,
+					'source'    => 'installed',
+					'message'   => __( 'Installed', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			return array(
+				'available' => false,
+				'source'    => 'none',
+				'message'   => __( 'Not Found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
 		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
 		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
@@ -1136,6 +1188,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'csv-parse'                         => 'csv-parse/lib/index.js',
 				'csv-stringify'                     => 'csv-stringify/lib/index.js',
 				'ical-generator'                    => 'ical-generator/dist/index.js',
+				// Document generation packages.
+				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
+				// Browser automation packages (optional).
+				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
@@ -1919,6 +1975,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				.toolkit-details-table .status-indicator.unavailable {
 					color: #d63638;
+				}
+
+				.toolkit-details-table .status-source {
+					font-size: 11px;
+					font-weight: 500;
+					color: #2271b1;
+					margin-left: 4px;
+					text-transform: uppercase;
 				}
 
 				/* Toolkit Tools List */
