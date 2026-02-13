@@ -61,7 +61,9 @@
 	"overrides": {
 		"shelljs": "~0.8.5",
 		"html-minifier": "^5.0.0",
-		"tmp": ">=0.2.4"
+		"tmp": ">=0.2.4",
+		"tar-fs": ">=3.0.8",
+		"ws": ">=8.17.1"
 	},
 	"keywords": [
 		"wordpress",
