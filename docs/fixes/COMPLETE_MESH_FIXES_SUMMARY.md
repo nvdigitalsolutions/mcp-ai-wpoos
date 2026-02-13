@@ -1,6 +1,6 @@
 # Mesh Peer Fixes - Complete Summary
 
-This PR fixes **TWO critical mesh peer issues** that were affecting users at Victory Group oOS and bots.nvdigital.solutions.
+This PR fixes **THREE critical mesh peer issues** that were affecting users at Victory Group oOS and bots.nvdigital.solutions.
 
 ---
 
@@ -40,8 +40,6 @@ But the tester only checked HTTP status codes and returned a generic message.
 - `/includes/class-wp-mcp-ai-mesh-peer-tester.php`
 - `/includes/admin/class-wp-mcp-ai-admin-settings.php`
 - `/tests/test-mesh-api-key-whitespace.php` (new)
-- `/docs/fixes/MESH_AUTHENTICATION_WHITESPACE_FIX.md` (new)
-- `/docs/fixes/MESH_AUTHENTICATION_COMPLETE_SUMMARY.md` (new)
 
 ### Result
 Users now see actionable error messages:
@@ -53,14 +51,10 @@ Instead of just "Authentication failed".
 
 ---
 
-## Issue #2: AI Peer CPT Creation
+## Issue #2: Mesh Peer Sync Initialization
 
 ### Problem
-AI Peer CPT entries were **not being created** when users added mesh peers through:
-1. Federation & Mesh Settings Page (https://bots.nvdigital.solutions/wp-admin/admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=federation_mesh)
-2. Remote Sites (https://bots.nvdigital.solutions/wp-admin/admin.php?page=wp-mcp-ai-remote-sites)
-
-Users would add mesh peers, but they wouldn't appear in AI Peers (https://bots.nvdigital.solutions/wp-admin/edit.php?post_type=ai_peer).
+Mesh peer sync only initialized when BOTH mesh computing AND federation directory were enabled.
 
 ### Root Cause
 In `/includes/class-wp-mcp-ai-federation.php` line 114:
@@ -72,7 +66,7 @@ if ( $is_mesh_enabled && $is_directory_enabled ) {
 }
 ```
 
-The mesh peer sync only initialized when **BOTH** mesh computing AND federation directory were enabled. This prevented CPT creation for users who only enabled mesh.
+Required both features enabled, but they should be independent.
 
 ### Solution Implemented
 Changed the condition to only require mesh enabled:
@@ -87,14 +81,68 @@ if ( $is_mesh_enabled ) {
 ### Files Changed
 - `/includes/class-wp-mcp-ai-federation.php`
 - `/tests/test-mesh-peer-cpt-creation.php` (new)
-- `/docs/fixes/MESH_PEER_CPT_CREATION_FIX.md` (new)
 
 ### Result
-Mesh peer sync now works independently of federation directory:
-- ✅ Users can enable mesh without federation directory
-- ✅ CPT entries properly created for all mesh peers
-- ✅ Works for both Remote Sites and settings page workflows
-- ✅ Backward compatible - still works when both features enabled
+- ✅ Mesh peer sync works independently of federation directory
+
+---
+
+## Issue #3: AI Peer CPT Registration ⚠️ CRITICAL
+
+### Problem
+**Even with ALL settings enabled**, AI Peer CPT entries were not being created. At Victory Group oOS:
+- ✅ Enable Mesh Computing: **Enabled**
+- ✅ Enable Federation: **Enabled**  
+- ✅ Enable Federation Directory: **Enabled**
+- ✅ Mesh peer configured: "Bots"
+- ❌ **Registered AI Peers: 0** ← **THE BUG!**
+
+### Root Cause
+In `/includes/class-wp-mcp-ai-federation.php` lines 96-97:
+
+```php
+// BEFORE (BUG):
+// Load directory features (AI Peers CPT, REST API) only if directory is enabled.
+if ( $is_directory_enabled ) {
+    $this->peer_cpt_handler = new WP_MCP_AI_AI_Peer_CPT();
+```
+
+**The ai_peer CPT was ONLY registered when federation directory was enabled!**
+
+### The Issue Chain
+1. **Mesh sync initialized** (Issue #2 fixed this) ✅
+2. **Sync tries to create CPT posts** via `wp_insert_post(post_type => 'ai_peer')`
+3. **But CPT not registered** unless directory enabled ❌
+4. **`wp_insert_post()` fails silently** because post type doesn't exist
+5. **No CPT entries created** - user sees "Registered AI Peers: 0"
+
+### Solution Implemented
+Split CPT registration from directory REST API:
+
+```php
+// AFTER (FIXED):
+// Load AI Peer CPT if either directory OR mesh is enabled.
+// Directory needs it for federation peers, mesh needs it for mesh peers.
+if ( $is_directory_enabled || $is_mesh_enabled ) {
+    $this->peer_cpt_handler = new WP_MCP_AI_AI_Peer_CPT();
+}
+
+// Load directory REST API only if directory is enabled.
+if ( $is_directory_enabled ) {
+    $this->directory_rest_handler = new WP_MCP_AI_Federation_Directory_REST();
+}
+```
+
+### Files Changed
+- `/includes/class-wp-mcp-ai-federation.php`
+- `/tests/test-mesh-peer-cpt-creation.php` (updated)
+- `/docs/fixes/CPT_REGISTRATION_CRITICAL_FIX.md` (new)
+
+### Result
+- ✅ CPT registers when mesh OR directory enabled
+- ✅ Mesh peers now create CPT entries
+- ✅ "Registered AI Peers" count accurate
+- ✅ Works with any feature combination
 
 ---
 
