@@ -978,6 +978,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Mesh Peer -->
+				<tr class="mesh_peer-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mesh_inbound_api_key"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="mesh_inbound_api_key" id="mesh_inbound_api_key" class="regular-text" value="" autocomplete="off" placeholder="mesh_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description">
+								<?php 
+								echo wp_kses_post( 
+									sprintf(
+										/* translators: %s: link to remote site settings */
+										__( 'The mesh inbound API key from the remote site. Find this at Settings → Advanced → Federation & Mesh on the remote site.', 'mcp-ai-wpoos-pro' )
+									)
+								); 
+								?>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="mesh_peer-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #7e57c2; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'About Mesh Peer Connections', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 8px 0; font-size: 13px;">
+								<?php esc_html_e( 'Mesh peers enable distributed AI workload processing across multiple WordPress sites. This connection type is specifically designed for:', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ul style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Querying remote site assistants and data', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Distributed processing of AI tasks', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Federation discovery via .well-known/ai-peer', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ul>
+							<p style="margin: 0; font-size: 13px;">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'The remote site must have this plugin installed with Federation & Mesh enabled.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</div>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for QuickBooks -->
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
@@ -1765,6 +1812,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var teamsFields = document.querySelectorAll('.microsoft_teams-only-field');
 			var messengerFields = document.querySelectorAll('.facebook_messenger-only-field');
 			var webchatFields = document.querySelectorAll('.webchat-only-field');
+			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -1818,6 +1866,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			webchatFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			meshPeerFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -1966,6 +2017,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+			} else if (connectionType === 'mesh_peer') {
+				meshPeerFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Mesh peer uses custom header auth with mesh API key
+				authTypeSelect.value = 'custom_header';
+				// URL field should remain editable for mesh peers
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
 			}
 		}
 
