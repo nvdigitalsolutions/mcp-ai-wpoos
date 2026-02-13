@@ -94,8 +94,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			<h3><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<p><?php esc_html_e( 'For detailed integration guide, architecture patterns, and best practices, see:', 'mcp-ai-wpoos-pro' ); ?></p>
 			<ul>
-				<li><code>addons/pro/CRM_EMAIL_MARKETING_GUIDE.md</code> - Comprehensive integration guide</li>
-				<li><code>addons/pro/NPM_PACKAGE_OPPORTUNITIES.md</code> - Package documentation</li>
+				<li><code>addons/pro/docs/CRM_EMAIL_MARKETING_GUIDE.md</code> - Comprehensive integration guide</li>
+				<li><code>addons/pro/docs/NPM_PACKAGE_OPPORTUNITIES.md</code> - Package documentation</li>
 			</ul>
 		</div>
 		<?php

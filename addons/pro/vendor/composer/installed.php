@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
-        'pretty_version' => 'dev-copilot/review-document-template-toolkit',
-        'version' => 'dev-copilot/review-document-template-toolkit',
-        'reference' => 'eb52f49ef398626d36391b83ef2ff1efd3b923b2',
+        'pretty_version' => 'dev-copilot/pre-bundle-npm-packages',
+        'version' => 'dev-copilot/pre-bundle-npm-packages',
+        'reference' => '012b7d0ce7472c452272d418ed087c7b1930ef68',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
-            'pretty_version' => 'dev-copilot/review-document-template-toolkit',
-            'version' => 'dev-copilot/review-document-template-toolkit',
-            'reference' => 'eb52f49ef398626d36391b83ef2ff1efd3b923b2',
+            'pretty_version' => 'dev-copilot/pre-bundle-npm-packages',
+            'version' => 'dev-copilot/pre-bundle-npm-packages',
+            'reference' => '012b7d0ce7472c452272d418ed087c7b1930ef68',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

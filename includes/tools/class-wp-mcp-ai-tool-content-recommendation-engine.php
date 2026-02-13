@@ -108,6 +108,23 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 					'description' => __( 'Interaction type: view, click, share, or convert', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'view', 'click', 'share', 'convert' ),
 				),
+				// Research pattern parameters.
+				'use_research'        => array(
+					'type'        => 'boolean',
+					'description' => __( 'Enable web research for enhanced trending recommendations (web search → source collection → AI synthesis)', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
+				'research_depth'      => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth: basic (1 query), standard (2 queries), comprehensive (3 queries)', 'mcp-ai-wpoos' ),
+					'default'     => 'standard',
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+				),
+				'focus_areas'         => array(
+					'type'        => 'array',
+					'description' => __( 'Specific focus areas for research queries (e.g., trending topics, popular formats, user engagement)', 'mcp-ai-wpoos' ),
+					'items'       => array( 'type' => 'string' ),
+				),
 			),
 		);
 	}
@@ -136,13 +153,23 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$recency_weight      = isset( $arguments['recency_weight'] ) ? floatval( $arguments['recency_weight'] ) : 0.3;
 		$interaction_type    = isset( $arguments['interaction_type'] ) ? sanitize_text_field( $arguments['interaction_type'] ) : 'view';
 
+		// Research pattern parameters.
+		$use_research    = isset( $arguments['use_research'] ) ? (bool) $arguments['use_research'] : false;
+		$research_depth  = isset( $arguments['research_depth'] ) ? sanitize_text_field( $arguments['research_depth'] ) : 'standard';
+		$focus_areas     = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
+
+		// Validate research_depth.
+		if ( ! in_array( $research_depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$research_depth = 'standard';
+		}
+
 		// Before execution hook.
 		$this->do_before_execute( $arguments, $context );
 
 		// Route to action handler.
 		switch ( $action ) {
 			case 'get_recommendations':
-				$result = $this->handle_get_recommendations( $post_id, $user_id, $recommendation_type, $limit, $exclude_categories, $include_post_types, $use_semantic_search, $use_collaborative, $recency_weight );
+				$result = $this->handle_get_recommendations( $post_id, $user_id, $recommendation_type, $limit, $exclude_categories, $include_post_types, $use_semantic_search, $use_collaborative, $recency_weight, $use_research, $research_depth, $focus_areas, $context );
 				break;
 
 			case 'train_model':
@@ -186,11 +213,15 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool   $use_semantic_search Use semantic search.
 	 * @param bool   $use_collaborative   Use collaborative filtering.
 	 * @param float  $recency_weight      Recency weight.
+	 * @param bool   $use_research        Use research pattern.
+	 * @param string $research_depth      Research depth.
+	 * @param array  $focus_areas         Research focus areas.
+	 * @param array  $context             Execution context.
 	 * @return array Recommendations result.
 	 */
-	private function handle_get_recommendations( $post_id, $user_id, $recommendation_type, $limit, $exclude_categories, $include_post_types, $use_semantic_search, $use_collaborative, $recency_weight ) {
+	private function handle_get_recommendations( $post_id, $user_id, $recommendation_type, $limit, $exclude_categories, $include_post_types, $use_semantic_search, $use_collaborative, $recency_weight, $use_research, $research_depth, $focus_areas, $context ) {
 		// Check cache first.
-		$cache_key = $this->generate_cache_key( array( $post_id, $user_id, $recommendation_type, $limit ) );
+		$cache_key = $this->generate_cache_key( array( $post_id, $user_id, $recommendation_type, $limit, $use_research, $research_depth ) );
 		$cached    = $this->get_cached_result( array( 'cache_key' => $cache_key ) );
 
 		if ( false !== $cached ) {
@@ -200,6 +231,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 
 		// Get recommendations based on type.
 		$recommendations = array();
+		$research_data   = null;
 
 		switch ( $recommendation_type ) {
 			case 'similar_content':
@@ -211,7 +243,14 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 				break;
 
 			case 'trending':
-				$recommendations = $this->get_trending_content( $limit, $exclude_categories, $include_post_types, $recency_weight );
+				// Use research pattern for trending if enabled.
+				if ( $use_research ) {
+					$result = $this->get_trending_content_with_research( $limit, $exclude_categories, $include_post_types, $recency_weight, $research_depth, $focus_areas, $context );
+					$recommendations = $result['recommendations'];
+					$research_data   = $result['research_data'];
+				} else {
+					$recommendations = $this->get_trending_content( $limit, $exclude_categories, $include_post_types, $recency_weight );
+				}
 				break;
 
 			case 'category_based':
@@ -230,12 +269,20 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 				'semantic_search' => $use_semantic_search,
 				'collaborative'   => $use_collaborative,
 				'recency_weight'  => $recency_weight,
+				'use_research'    => $use_research,
+				'research_depth'  => $research_depth,
 			),
 			'from_cache'          => false,
 		);
 
+		// Add research data if available.
+		if ( null !== $research_data ) {
+			$result['research_data'] = $research_data;
+		}
+
 		// Cache result.
-		$this->set_cached_result( array( 'cache_key' => $cache_key ), $result, HOUR_IN_SECONDS );
+		$cache_duration = $use_research ? DAY_IN_SECONDS : HOUR_IN_SECONDS; // 24h for research, 1h for local.
+		$this->set_cached_result( array( 'cache_key' => $cache_key ), $result, $cache_duration );
 
 		return $result;
 	}
@@ -891,6 +938,357 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		}
 
 		return $by_type;
+	}
+
+	/**
+	 * Get trending content with research pattern
+	 *
+	 * Implements 4-step research pattern:
+	 * 1. Web Search - Gather trending topics from web
+	 * 2. Source Collection - Aggregate and deduplicate
+	 * 3. AI Synthesis - Analyze trends with AI
+	 * 4. Report Generation - Integrate with local recommendations
+	 *
+	 * @since 1.0.0
+	 * @param int    $limit              Limit.
+	 * @param array  $exclude_categories Excluded categories.
+	 * @param array  $include_post_types Included post types.
+	 * @param float  $recency_weight     Recency weight.
+	 * @param string $research_depth     Research depth (basic, standard, comprehensive).
+	 * @param array  $focus_areas        Focus areas.
+	 * @param array  $context            Execution context.
+	 * @return array Recommendations with research data.
+	 */
+	private function get_trending_content_with_research( $limit, $exclude_categories, $include_post_types, $recency_weight, $research_depth, $focus_areas, $context ) {
+		// Step 1: Gather trending information through web searches.
+		$search_results = $this->gather_trending_information( $research_depth, $focus_areas, $context );
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_trending_research_prompt( $research_depth, $focus_areas, $search_results );
+
+		// Step 3: Use AI to analyze trending topics.
+		$research_result = $this->perform_trending_ai_research( $prompt, $context );
+
+		// Step 4: Get local trending content.
+		$local_recommendations = $this->get_trending_content( $limit, $exclude_categories, $include_post_types, $recency_weight );
+
+		// Parse research results to extract trending topics.
+		$trending_topics = $this->parse_trending_research_results( $research_result );
+
+		// Boost local content matching trending topics.
+		$enhanced_recommendations = $this->boost_recommendations_by_trends( $local_recommendations, $trending_topics, $limit );
+
+		return array(
+			'recommendations' => $enhanced_recommendations,
+			'research_data'   => array(
+				'trending_topics' => $trending_topics,
+				'sources_count'   => count( $search_results['sources'] ),
+				'queries_count'   => count( $search_results['queries'] ),
+				'research_depth'  => $research_depth,
+			),
+		);
+	}
+
+	/**
+	 * Gather trending information through web searches
+	 *
+	 * @since 1.0.0
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @param array  $context     Execution context.
+	 * @return array Search results.
+	 */
+	private function gather_trending_information( $depth, $focus_areas, $context ) {
+		// Check if web search tool is available.
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			// Return empty results if web search is not available.
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array(),
+			);
+		}
+
+		// Get site niche/categories for context.
+		$site_context = $this->get_site_context();
+
+		// Generate search queries based on depth and focus areas.
+		$search_queries = $this->generate_trending_search_queries( $depth, $focus_areas, $site_context );
+
+		$all_results = array();
+		$all_sources = array();
+		$seen_urls   = array();
+
+		foreach ( $search_queries as $search_query ) {
+			// Execute web search.
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => 5,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) || empty( $search_result['results'] ) ) {
+				continue;
+			}
+
+			// Collect results.
+			if ( is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$url = isset( $result['url'] ) ? $result['url'] : '';
+
+					// Deduplicate by URL.
+					if ( $url && ! in_array( $url, $seen_urls, true ) ) {
+						$all_results[] = $result;
+						$all_sources[] = array(
+							'url'     => $url,
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+						$seen_urls[] = $url;
+					}
+				}
+			}
+		}
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for trending research
+	 *
+	 * @since 1.0.0
+	 * @param string $depth        Research depth.
+	 * @param array  $focus_areas  Focus areas.
+	 * @param array  $site_context Site context.
+	 * @return array Search queries.
+	 */
+	private function generate_trending_search_queries( $depth, $focus_areas, $site_context ) {
+		$queries_count = array(
+			'basic'         => 1,
+			'standard'      => 2,
+			'comprehensive' => 3,
+		);
+
+		$num_queries = isset( $queries_count[ $depth ] ) ? $queries_count[ $depth ] : 2;
+		$queries     = array();
+
+		// Build base query from site context.
+		$base_topics = implode( ' ', array_slice( $site_context['categories'], 0, 3 ) );
+
+		// First query: general trending.
+		$queries[] = 'trending topics ' . gmdate( 'Y' ) . ' ' . $base_topics;
+
+		if ( $num_queries > 1 ) {
+			// Second query: popular content formats.
+			$queries[] = 'popular content types ' . $base_topics;
+		}
+
+		if ( $num_queries > 2 ) {
+			// Third query: engagement patterns.
+			$queries[] = 'high engagement content ' . $base_topics;
+		}
+
+		// Add focus area queries if provided.
+		foreach ( $focus_areas as $area ) {
+			if ( count( $queries ) < 3 ) {
+				$queries[] = $area . ' trends ' . $base_topics;
+			}
+		}
+
+		return array_slice( $queries, 0, 3 ); // Max 3 queries.
+	}
+
+	/**
+	 * Build research prompt for trending analysis
+	 *
+	 * @since 1.0.0
+	 * @param string $depth          Research depth.
+	 * @param array  $focus_areas    Focus areas.
+	 * @param array  $search_results Search results.
+	 * @return string Research prompt.
+	 */
+	private function build_trending_research_prompt( $depth, $focus_areas, $search_results ) {
+		$prompt = "You are a content trend analyst. Analyze the following web sources to identify current trending topics and content patterns.\n\n";
+
+		$prompt .= "## Task\n";
+		$prompt .= "Identify the top 5-10 trending topics and content themes based on the sources below.\n\n";
+
+		$prompt .= "## Research Depth\n";
+		$prompt .= ucfirst( $depth ) . " analysis\n\n";
+
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "## Focus Areas\n";
+			foreach ( $focus_areas as $area ) {
+				$prompt .= "- " . $area . "\n";
+			}
+			$prompt .= "\n";
+		}
+
+		// Add sources.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "## Sources\n";
+			$source_count = 0;
+
+			foreach ( array_slice( $search_results['sources'], 0, 10 ) as $source ) {
+				++$source_count;
+				$prompt .= sprintf(
+					"[%d] %s\n%s\n%s\n\n",
+					$source_count,
+					$source['title'],
+					$source['url'],
+					wp_trim_words( $source['snippet'], 50 )
+				);
+			}
+		}
+
+		$prompt .= "## Output Format\n";
+		$prompt .= "Provide your response in JSON format:\n";
+		$prompt .= "{\n";
+		$prompt .= '  "trending_topics": [\n';
+		$prompt .= '    {"topic": "Topic name", "relevance": 0.95, "keywords": ["keyword1", "keyword2"]}\n';
+		$prompt .= "  ],\n";
+		$prompt .= '  "content_themes": ["theme1", "theme2"],\n';
+		$prompt .= '  "popular_formats": ["format1", "format2"],\n';
+		$prompt .= '  "confidence": 0.90\n';
+		$prompt .= "}\n";
+
+		return $prompt;
+	}
+
+	/**
+	 * Perform AI research on trending topics
+	 *
+	 * @since 1.0.0
+	 * @param string $prompt  Research prompt.
+	 * @param array  $context Execution context.
+	 * @return array|WP_Error AI response.
+	 */
+	private function perform_trending_ai_research( $prompt, $context ) {
+		// Use API manager to send request.
+		$api_manager = new WP_MCP_AI_API_Manager();
+
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are a content trend analyst. Provide accurate, data-driven trend analysis.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => $prompt,
+			),
+		);
+
+		$options = array(
+			'model'           => 'gpt-4o',
+			'temperature'     => 0.3, // Low temperature for factual analysis.
+			'max_tokens'      => 1500,
+			'response_format' => array( 'type' => 'json_object' ),
+		);
+
+		$response = $api_manager->send_message( $messages, $options );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		return isset( $response['choices'][0]['message']['content'] ) ? $response['choices'][0]['message']['content'] : '';
+	}
+
+	/**
+	 * Parse trending research results
+	 *
+	 * @since 1.0.0
+	 * @param string $research_result AI research result.
+	 * @return array Parsed trending topics.
+	 */
+	private function parse_trending_research_results( $research_result ) {
+		if ( empty( $research_result ) ) {
+			return array();
+		}
+
+		$data = json_decode( $research_result, true );
+
+		if ( null === $data || ! isset( $data['trending_topics'] ) ) {
+			return array();
+		}
+
+		return $data['trending_topics'];
+	}
+
+	/**
+	 * Boost recommendations based on trending topics
+	 *
+	 * @since 1.0.0
+	 * @param array $recommendations  Local recommendations.
+	 * @param array $trending_topics  Trending topics from research.
+	 * @param int   $limit            Result limit.
+	 * @return array Enhanced recommendations.
+	 */
+	private function boost_recommendations_by_trends( $recommendations, $trending_topics, $limit ) {
+		if ( empty( $trending_topics ) ) {
+			return $recommendations;
+		}
+
+		// Extract keywords from trending topics.
+		$trending_keywords = array();
+		foreach ( $trending_topics as $topic ) {
+			if ( isset( $topic['keywords'] ) && is_array( $topic['keywords'] ) ) {
+				$trending_keywords = array_merge( $trending_keywords, $topic['keywords'] );
+			}
+			if ( isset( $topic['topic'] ) ) {
+				$trending_keywords[] = $topic['topic'];
+			}
+		}
+
+		$trending_keywords = array_unique( array_map( 'strtolower', $trending_keywords ) );
+
+		// Score recommendations based on trending keywords.
+		foreach ( $recommendations as &$rec ) {
+			$content = strtolower( $rec['title'] . ' ' . $rec['excerpt'] );
+			$matches = 0;
+
+			foreach ( $trending_keywords as $keyword ) {
+				if ( false !== strpos( $content, strtolower( $keyword ) ) ) {
+					++$matches;
+				}
+			}
+
+			// Boost score based on keyword matches.
+			$rec['score']          = isset( $rec['score'] ) ? $rec['score'] : 0.5;
+			$rec['score']         += ( $matches * 0.1 ); // +0.1 per keyword match.
+			$rec['trending_match'] = $matches > 0;
+			$rec['trend_score']    = $matches;
+		}
+
+		// Re-sort by enhanced score.
+		usort( $recommendations, fn( $a, $b ) => $b['score'] <=> $a['score'] );
+
+		return array_slice( $recommendations, 0, $limit );
+	}
+
+	/**
+	 * Get site context for trending research
+	 *
+	 * @since 1.0.0
+	 * @return array Site context.
+	 */
+	private function get_site_context() {
+		$categories = get_categories( array( 'number' => 10 ) );
+		$cat_names  = array_map( fn( $cat ) => $cat->name, $categories );
+
+		return array(
+			'categories' => $cat_names,
+			'site_title' => get_bloginfo( 'name' ),
+		);
 	}
 
 	/**

@@ -558,7 +558,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( false === $result ) {
 			return array(
-				'error' => __( 'Turf.js operations require client-side JavaScript or Node.js service. Please implement the wp_mcp_ai_turf_execute_operation filter. See INTEGRATION_BEST_PRACTICES.md for client-side geospatial analysis patterns.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Turf.js operations require client-side JavaScript or Node.js service. Please implement the wp_mcp_ai_turf_execute_operation filter. See docs/INTEGRATION_BEST_PRACTICES.md for client-side geospatial analysis patterns.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

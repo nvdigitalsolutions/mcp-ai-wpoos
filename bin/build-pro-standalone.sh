@@ -53,15 +53,65 @@ echo "Step 1: Preparing Pro add-on directory..."
 mkdir -p "$PRO_BUILD_DIR"
 
 # Copy Pro addon files with exclusions
-echo "Step 2: Copying Pro add-on files..."
+echo "Step 2: Copying Pro add-on files (excluding tests, docs, dev files)..."
 rsync -av --quiet addons/pro/ "$PRO_BUILD_DIR/" \
     --exclude 'node_modules' \
     --exclude 'tests' \
+    --exclude 'test' \
+    --exclude 'Test' \
+    --exclude 'Tests' \
     --exclude '.npmrc' \
+    --exclude '.git' \
+    --exclude '.gitignore' \
     --exclude 'package-lock.json' \
+    --exclude 'composer.lock' \
     --exclude '*.md' \
     --exclude '.DS_Store' \
-    --exclude 'Thumbs.db'
+    --exclude 'Thumbs.db' \
+    --exclude 'vendor/*/tests' \
+    --exclude 'vendor/*/test' \
+    --exclude 'vendor/*/Test' \
+    --exclude 'vendor/*/Tests' \
+    --exclude 'vendor/*/*/tests' \
+    --exclude 'vendor/*/*/test' \
+    --exclude 'vendor/*/*/Test' \
+    --exclude 'vendor/*/*/Tests' \
+    --exclude 'vendor/*/docs' \
+    --exclude 'vendor/*/doc' \
+    --exclude 'vendor/*/Docs' \
+    --exclude 'vendor/*/examples' \
+    --exclude 'vendor/*/example' \
+    --exclude 'vendor/*/*/docs' \
+    --exclude 'vendor/*/*/doc' \
+    --exclude 'vendor/*/*/Docs' \
+    --exclude 'vendor/*/*/examples' \
+    --exclude 'vendor/*/*/example' \
+    --exclude 'vendor/*/README*' \
+    --exclude 'vendor/*/CHANGELOG*' \
+    --exclude 'vendor/*/CONTRIBUTING*' \
+    --exclude 'vendor/*/LICENSE*' \
+    --exclude 'vendor/*/*/README*' \
+    --exclude 'vendor/*/*/CHANGELOG*' \
+    --exclude 'vendor/*/*/CONTRIBUTING*' \
+    --exclude 'vendor/*/*/LICENSE*' \
+    --exclude 'vendor/*/.travis.yml' \
+    --exclude 'vendor/*/.circleci' \
+    --exclude 'vendor/*/.github' \
+    --exclude 'vendor/*/*/.travis.yml' \
+    --exclude 'vendor/*/*/.circleci' \
+    --exclude 'vendor/*/*/.github' \
+    --exclude 'vendor/*/phpunit.xml*' \
+    --exclude 'vendor/*/phpstan.neon*' \
+    --exclude 'vendor/*/psalm.xml*' \
+    --exclude 'vendor/*/.php-cs-fixer*' \
+    --exclude 'vendor/*/*/phpunit.xml*' \
+    --exclude 'vendor/*/*/phpstan.neon*' \
+    --exclude 'vendor/*/*/psalm.xml*' \
+    --exclude 'vendor/*/*/.php-cs-fixer*' \
+    --exclude 'vendor/*/Makefile' \
+    --exclude 'vendor/*/*/Makefile'
+
+echo "   Excluded: tests, docs, examples, README files, CI configs, QA tools"
 
 # Transform text domain for consistency
 echo "Step 3: Transforming text domain..."

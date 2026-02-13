@@ -239,13 +239,30 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	/**
 	 * Check if NPM packages are installed
 	 *
+	 * Checks CDN availability, vendor directory, bundle files, and node_modules.
+	 *
 	 * @return bool
 	 */
 	private function check_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return is_dir( $node_modules . '/pdfkit' ) &&
-				is_dir( $node_modules . '/docx' ) &&
-				is_dir( $node_modules . '/exceljs' );
+		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
+		
+		// Use the centralized helper function for CDN-aware package checking.
+		$has_pdfkit = (
+			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
+		);
+		
+		$has_docx = (
+			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' )
+		);
+		
+		$has_exceljs = (
+			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' )
+		);
+		
+		return $has_pdfkit && $has_docx && $has_exceljs;
 	}
 }
 

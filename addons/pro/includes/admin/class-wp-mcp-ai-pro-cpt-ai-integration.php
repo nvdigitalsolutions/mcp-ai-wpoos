@@ -128,6 +128,65 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	}
 
 	/**
+	 * Get JetEngine custom post types.
+	 *
+	 * @return array Array of JetEngine CPT slugs.
+	 */
+	private function get_jetengine_cpts() {
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
+		}
+
+		$cpts = WP_MCP_AI_JetEngine_Compat::get_jetengine_cpts();
+
+		// Extract slugs only.
+		$cpt_slugs = array();
+		foreach ( $cpts as $cpt ) {
+			if ( isset( $cpt['slug'] ) && ! empty( $cpt['slug'] ) ) {
+				$cpt_slugs[] = $cpt['slug'];
+			}
+		}
+
+		return $cpt_slugs;
+	}
+
+	/**
+	 * Get JetEngine custom taxonomies.
+	 *
+	 * @return array Array of JetEngine taxonomy slugs.
+	 */
+	private function get_jetengine_taxonomies() {
+		// Use compatibility layer for version-safe access.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Compat' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-compat.php';
+		}
+
+		$taxonomies = WP_MCP_AI_JetEngine_Compat::get_jetengine_taxonomies();
+
+		// Extract slugs only.
+		$taxonomy_slugs = array();
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( isset( $taxonomy['slug'] ) && ! empty( $taxonomy['slug'] ) ) {
+				$taxonomy_slugs[] = $taxonomy['slug'];
+			}
+		}
+
+		return $taxonomy_slugs;
+	}
+
+	/**
+	 * Check if JetEngine CPT support is enabled in settings.
+	 *
+	 * @return bool
+	 */
+	private function is_jetengine_cpt_support_enabled() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		// Default to enabled if setting not present.
+		return isset( $settings['enable_jetengine_cpt_ai'] ) ? (bool) $settings['enable_jetengine_cpt_ai'] : true;
+	}
+
+	/**
 	 * Get supported post types.
 	 *
 	 * @return array
@@ -150,6 +209,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		// and context-aware features specific to project management. See:
 		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php).
 
+		// Add JetEngine CPTs if enabled.
+		if ( $this->is_jetengine_cpt_support_enabled() ) {
+			$jetengine_cpts = $this->get_jetengine_cpts();
+			if ( ! empty( $jetengine_cpts ) ) {
+				$post_types = array_merge( $post_types, $jetengine_cpts );
+			}
+		}
+
 		/**
 		 * Filter the supported post types for AI assistant integration.
 		 *
@@ -170,6 +237,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 
 		// NOTE: WooCommerce taxonomies (product_cat, product_tag) are also excluded by default.
 		// NOTE: Core taxonomies (category, post_tag) are also excluded by default.
+
+		// Add JetEngine taxonomies if enabled.
+		if ( $this->is_jetengine_cpt_support_enabled() ) {
+			$jetengine_taxonomies = $this->get_jetengine_taxonomies();
+			if ( ! empty( $jetengine_taxonomies ) ) {
+				$taxonomies = array_merge( $taxonomies, $jetengine_taxonomies );
+			}
+		}
 
 		/**
 		 * Filter the supported taxonomies for AI assistant integration.
