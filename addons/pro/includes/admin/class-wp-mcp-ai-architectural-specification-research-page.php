@@ -169,6 +169,7 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 							<li><strong><?php esc_html_e( 'Three-part:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include Part 1 (General), Part 2 (Products), Part 3 (Execution)', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Manufacturers:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Specify product names, model numbers, and acceptable alternatives', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Standards:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Reference industry standards (ASTM, ANSI, UL)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'CSI Reports:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request specification reports using Three-Part Format (Part 1: General/Scope/Submittals, Part 2: Products/Materials/Standards, Part 3: Execution/Installation/Quality Control)', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -183,6 +184,9 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate Division 07 specifications for roofing and waterproofing">
 								<?php esc_html_e( '"Generate Division 07 roofing spec"', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research concrete specifications and generate a CSI MasterFormat report using comprehensive depth. Focus on ASTM standards and installation requirements.">
+								<?php esc_html_e( '"Research concrete specs (CSI report)..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -269,6 +273,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 								'check_building_code_compliance',
 								'analyze_structural_feasibility',
 								'calculate_sustainability_metrics',
+								// Report generation.
+								'generate_research_report',
 								// Research tools.
 								'web_search',
 								'search_content',
