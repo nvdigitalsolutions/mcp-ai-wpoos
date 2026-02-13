@@ -99,14 +99,13 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			}
 		}
 
-		// Return with message field for chat display.
-		return $this->format_success_response(
-			$report,
-			array(
-				'word_count'    => str_word_count( $report ),
-				'section_count' => count( $sections ),
-				'title'         => $title,
-			)
+		// Return structured response matching research_product tool pattern.
+		return array(
+			'success'       => true,
+			'title'         => $title,
+			'report'        => $report,
+			'word_count'    => str_word_count( $report ),
+			'section_count' => count( $sections ),
 		);
 	}
 }
