@@ -1083,9 +1083,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Document Generation Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			$document_generation_tools = array(
+				// Core document generation tools (Pro).
 				'WP_MCP_AI_Tool_Pro_PDF'            => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php',
 				'WP_MCP_AI_Tool_Pro_Word'           => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php',
 				'WP_MCP_AI_Tool_Pro_Excel_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-excel-document.php',
+				// Simplified document generation tools.
+				'WP_MCP_AI_Tool_Generate_PDF'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-pdf.php',
+				'WP_MCP_AI_Tool_Generate_Word'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-word.php',
+				'WP_MCP_AI_Tool_Generate_Excel'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-excel.php',
+				// PDF manipulation tools.
+				'WP_MCP_AI_Tool_Extract_PDF_Text'   => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php',
+				'WP_MCP_AI_Tool_HTML_To_PDF'        => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-html-to-pdf.php',
+				'WP_MCP_AI_Tool_Merge_PDFs'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php',
+				'WP_MCP_AI_Tool_Add_Watermark_To_PDF' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-add-watermark-to-pdf.php',
+				'WP_MCP_AI_Tool_Generate_Invoice_PDF' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+				// Excel data tools.
+				'WP_MCP_AI_Tool_Excel_Data_Import'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-import.php',
+				'WP_MCP_AI_Tool_Excel_Data_Export'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-export.php',
 			);
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}
