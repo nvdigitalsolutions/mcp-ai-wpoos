@@ -2514,4 +2514,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 // Initialize the admin interface.
 if ( is_admin() ) {
 	new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+	// Initialize bidirectional sync for mesh peers.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-mesh-peer-bidirectional-sync.php';
+	new WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync();
 }

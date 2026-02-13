@@ -278,6 +278,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		/**
+		 * Fires after a remote site connection is saved.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $connection_id Connection ID.
+		 * @param array  $connection    Connection data.
+		 */
+		do_action( 'wp_mcp_ai_pro_remote_site_saved', $connection_id, $connection );
+
 		return $connection_id;
 	}
 
@@ -296,6 +306,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! isset( $connections[ $connection_id ] ) ) {
 			return false;
 		}
+
+		/**
+		 * Fires before a remote site connection is deleted.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $connection_id Connection ID.
+		 */
+		do_action( 'wp_mcp_ai_pro_remote_site_deleted', $connection_id );
 
 		unset( $connections[ $connection_id ] );
 
