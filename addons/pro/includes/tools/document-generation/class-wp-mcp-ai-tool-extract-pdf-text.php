@@ -109,6 +109,9 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
 			// Download URL to temp file.
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = download_url( $arguments['url'] );
 
 			if ( is_wp_error( $temp_file ) ) {
