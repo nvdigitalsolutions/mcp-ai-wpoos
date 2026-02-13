@@ -168,6 +168,7 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 							<li><strong><?php esc_html_e( 'Check codes:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Research applicable building codes and zoning', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Use standards:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Follow AIA and CSI MasterFormat conventions', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Generate plans:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Create floor plans and visualizations', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'AIA Reports:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request project reports with Executive Summary, Design Intent, Technical Solutions, Cost Estimates, and Schedule', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -182,6 +183,9 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research zoning requirements for an urban infill project">
 								<?php esc_html_e( '"Research zoning requirements for urban infill..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate an AIA-standard project report with Executive Summary, Design Intent, Technical Solutions, Sustainability Assessment, Cost Estimate, and Project Schedule">
+								<?php esc_html_e( '"Generate AIA-standard project report..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
