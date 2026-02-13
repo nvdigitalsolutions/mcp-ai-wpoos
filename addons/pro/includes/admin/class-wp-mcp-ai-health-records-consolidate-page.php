@@ -68,6 +68,20 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		'generate_health_chart',
 		'guide_health_record_creation',
 		'parse_health_information',
+		// Document processing tools (from Document Generation toolkit).
+		'extract_pdf_text',          // Extract text from medical documents.
+		'pro_pdf_document',          // Generate professional health reports as PDFs.
+		'pro_word_document',         // Generate medical documents in Word format.
+		'pro_excel_document',        // Export health data to Excel for analysis.
+		'generate_pdf',              // Quick PDF generation for prescriptions/reports.
+		'generate_word',             // Quick Word document generation.
+		'generate_excel',            // Quick Excel generation for health data.
+		'html_to_pdf',               // Convert health records from HTML to PDF.
+		'merge_pdfs',                // Combine multiple medical documents.
+		'add_watermark_to_pdf',      // Add confidentiality watermarks.
+		'excel_data_import',         // Import health data from spreadsheets.
+		'excel_data_export',         // Export consolidated health data.
+		'generate_invoice_pdf',      // Generate medical billing invoices.
 		// Research tools.
 		'web_search',
 		'search_content',

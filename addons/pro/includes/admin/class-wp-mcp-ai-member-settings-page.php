@@ -140,6 +140,7 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
+			// Member management tools.
 			'create_member'         => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
 			'update_member'         => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
 			'get_members'           => __( 'Get Members', 'mcp-ai-wpoos-pro' ),
@@ -150,6 +151,20 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			'update_allergy'        => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
 			'create_checkup'        => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
 			'update_checkup'        => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
+			// Document processing tools.
+			'extract_pdf_text'      => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
+			'pro_pdf_document'      => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
+			'pro_word_document'     => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
+			'pro_excel_document'    => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
+			'generate_pdf'          => __( 'Generate PDF', 'mcp-ai-wpoos-pro' ),
+			'generate_word'         => __( 'Generate Word', 'mcp-ai-wpoos-pro' ),
+			'generate_excel'        => __( 'Generate Excel', 'mcp-ai-wpoos-pro' ),
+			'html_to_pdf'           => __( 'HTML to PDF', 'mcp-ai-wpoos-pro' ),
+			'merge_pdfs'            => __( 'Merge PDFs', 'mcp-ai-wpoos-pro' ),
+			'add_watermark_to_pdf'  => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
+			'excel_data_import'     => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
+			'excel_data_export'     => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
+			'generate_invoice_pdf'  => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
