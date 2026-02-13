@@ -189,18 +189,22 @@ class Test_Mesh_Peer_Tester extends WP_UnitTestCase {
 	 *
 	 * This test verifies the fix for the issue where accessing $wellknown as an array
 	 * when it's a WP_Error would cause a fatal error.
+	 *
+	 * Note: This test uses an external URL which may cause intermittent failures
+	 * if the network is unavailable. However, it's a valuable integration test
+	 * that verifies the real-world scenario of the bug.
 	 */
 	public function test_wellknown_wp_error_handling() {
-		// Use a peer that will fail wellknown but succeed reachability.
-		// We'll use a URL that exists but won't have the wellknown endpoint.
+		// Use a peer that will likely fail wellknown but may succeed reachability.
+		// We use wordpress.org as it exists but won't have our wellknown endpoint.
 		$peer = array(
 			'name' => 'Test Peer',
-			'url'  => 'https://wordpress.org', // Valid URL but no wellknown endpoint.
+			'url'  => 'https://wordpress.org',
 		);
 
 		$result = WP_MCP_AI_Mesh_Peer_Tester::test_connection( $peer );
 
-		// Even if wellknown fails, the test should not produce a fatal error.
+		// The primary goal: verify no fatal error occurs.
 		// The result should be an array (partial success) or WP_Error (complete failure).
 		$this->assertTrue(
 			is_array( $result ) || is_wp_error( $result ),
@@ -209,18 +213,29 @@ class Test_Mesh_Peer_Tester extends WP_UnitTestCase {
 
 		// If result is an array, verify it has the expected structure.
 		if ( is_array( $result ) ) {
+			// Verify all expected keys exist.
 			$this->assertArrayHasKey( 'site_name', $result );
 			$this->assertArrayHasKey( 'capabilities', $result );
 			$this->assertArrayHasKey( 'wellknown', $result );
 
-			// Site name should be empty string when wellknown fails.
+			// Verify data types are correct regardless of wellknown success.
 			$this->assertIsString( $result['site_name'] );
-			// Capabilities should be empty array when wellknown fails.
 			$this->assertIsArray( $result['capabilities'] );
-			// Wellknown should be false when endpoint fails.
-			if ( ! $result['wellknown'] ) {
-				$this->assertEquals( '', $result['site_name'] );
-				$this->assertEquals( array(), $result['capabilities'] );
+			$this->assertIsBool( $result['wellknown'] );
+
+			// When wellknown fails (expected for wordpress.org), verify defaults.
+			// This validates the fix: empty values instead of fatal error.
+			if ( false === $result['wellknown'] ) {
+				$this->assertEquals(
+					'',
+					$result['site_name'],
+					'site_name should be empty string when wellknown fails'
+				);
+				$this->assertEquals(
+					array(),
+					$result['capabilities'],
+					'capabilities should be empty array when wellknown fails'
+				);
 			}
 		}
 	}
