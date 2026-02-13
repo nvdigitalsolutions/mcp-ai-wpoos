@@ -225,6 +225,8 @@
 					if (callback && typeof callback === 'function') {
 						callback(data);
 					}
+					// Emit job updates through event bus for REST polling too
+					self.emitJobUpdates(data);
 				}
 			});
 
@@ -236,6 +238,8 @@
 						if (callback && typeof callback === 'function') {
 							callback(data);
 						}
+						// Emit job updates through event bus for REST polling too
+						self.emitJobUpdates(data);
 					}
 				});
 			}, this.fallbackPollingInterval);
