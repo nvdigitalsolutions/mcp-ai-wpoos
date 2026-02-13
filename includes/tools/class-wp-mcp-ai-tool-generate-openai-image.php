@@ -256,21 +256,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$orchestration_mode = isset( $arguments['orchestration_mode'] ) && $arguments['orchestration_mode'];
 
 		if ( $orchestration_mode ) {
-			// Verify orchestration dependencies are available.
-			// Fall back to legacy mode if WP_MCP_AI_Streaming class is not available.
-			if ( ! class_exists( 'WP_MCP_AI_Streaming' ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'orchestration_fallback',
-					'Orchestration requested but dependencies unavailable, falling back to legacy mode',
-					array(
-						'tool'    => 'generate_openai_image',
-						'user_id' => $user_id,
-					)
-				);
-				// Fall through to legacy execution.
-			} else {
-				return $this->execute_orchestrated( $arguments, $context, $user_id );
-			}
+			return $this->execute_orchestrated( $arguments, $context, $user_id );
 		}
 
 		// Legacy execution path (maintain backward compatibility).

@@ -3204,16 +3204,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Convert WP_Error to serializable format to prevent JSON encoding failures.
 					$tool_result = $this->normalize_tool_result( $tool_result );
 
-					// Get the tool instance for interface-based sanitization.
-					// Resolve tool_slug BEFORE using it in async logging below.
-					$tool_instance   = null;
-					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
-					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
-					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
-						$tool_instance = $this->registry->get_tool( $tool_slug );
-					}
-
 					// Check if this is an async pending result (background-only tools like video generation).
 					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
@@ -3231,6 +3221,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'tool_slug' => $tool_slug ?? $tool_name,
 							)
 						);
+					}
+
+					// Get the tool instance for interface-based sanitization.
+					$tool_instance   = null;
+					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+						$tool_instance = $this->registry->get_tool( $tool_slug );
 					}
 
 					// Extract usage information from tool result before sanitization.
