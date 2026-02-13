@@ -47,7 +47,7 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 	 * Test that CPT is created when mesh peer is added via settings.
 	 */
 	public function test_cpt_created_when_mesh_peer_added() {
-		// Enable mesh.
+		// Enable mesh and initialize federation.
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -58,9 +58,17 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 		);
 
 		// Initialize federation and mesh sync.
-		new WP_MCP_AI_Federation();
+		$federation = new WP_MCP_AI_Federation();
 
-		// Add a mesh peer.
+		// Verify mesh sync was initialized.
+		$reflection = new ReflectionClass( $federation );
+		$property   = $reflection->getProperty( 'mesh_peer_sync' );
+		$property->setAccessible( true );
+		$mesh_sync = $property->getValue( $federation );
+
+		$this->assertNotNull( $mesh_sync, 'Mesh sync should be initialized' );
+
+		// Add a mesh peer (this will trigger the update_option hook).
 		$test_peer = array(
 			'name'    => 'Test Peer Site',
 			'url'     => 'https://test-peer.example.com',
@@ -75,6 +83,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 				'mesh_peer_sites'      => array( $test_peer ),
 			)
 		);
+
+		// The update_option call above should have triggered the sync_mesh_peers_on_option_update hook.
+		// Give it a moment to process.
+		wp_cache_flush();
 
 		// Check if CPT was created.
 		$peer_id = 'mesh_' . md5( $test_peer['url'] );
@@ -127,9 +139,17 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 		);
 
 		// Initialize federation and mesh sync.
-		new WP_MCP_AI_Federation();
+		$federation = new WP_MCP_AI_Federation();
 
-		// Add a mesh peer.
+		// Verify mesh sync was initialized.
+		$reflection = new ReflectionClass( $federation );
+		$property   = $reflection->getProperty( 'mesh_peer_sync' );
+		$property->setAccessible( true );
+		$mesh_sync = $property->getValue( $federation );
+
+		$this->assertNotNull( $mesh_sync, 'Mesh sync should be initialized with both features enabled' );
+
+		// Add a mesh peer (this will trigger the update_option hook).
 		$test_peer = array(
 			'name'    => 'Test Peer Both Enabled',
 			'url'     => 'https://test-both.example.com',
@@ -145,6 +165,9 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 				'mesh_peer_sites'            => array( $test_peer ),
 			)
 		);
+
+		// Flush cache to ensure fresh query.
+		wp_cache_flush();
 
 		// Check if CPT was created.
 		$peer_id = 'mesh_' . md5( $test_peer['url'] );
