@@ -3096,6 +3096,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( is_wp_error( $response ) ) {
+				// Send accumulated tool results before error exit.
+				// Critical: Tool execution may have completed successfully even if
+				// the subsequent LLM call failed. The client needs to see tool results
+				// (e.g., generated images, API responses) before the error.
+				if ( ! empty( $tool_result_messages ) ) {
+					$error_payload = array(
+						'assistant_id'  => $assistant_id,
+						'tool_results'  => $tool_result_messages,
+						'error_context' => 'llm_call_failed',
+					);
+
+					// Normalize payload to ensure JSON-serializable.
+					$error_payload = $this->normalize_data_recursive( $error_payload );
+
+					WP_MCP_AI_Logger::log_event(
+						'sse_error_with_tool_results',
+						'Sending tool results before LLM error exit',
+						array(
+							'assistant_id'      => $assistant_id,
+							'tool_result_count' => count( $tool_result_messages ),
+							'error_code'        => $response->get_error_code(),
+						)
+					);
+
+					$this->send_sse_event( 'message', $error_payload );
+				}
+
 				$this->send_sse_event(
 					'error',
 					array(
@@ -3401,6 +3428,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
 
 						if ( is_wp_error( $tpm_validation ) ) {
+							// Send accumulated tool results before error exit.
+							// Critical: Tool execution may have completed successfully even if
+							// the next LLM call would exceed token limits. The client needs to
+							// see tool results (e.g., generated images) before the error.
+							if ( ! empty( $tool_result_messages ) ) {
+								$error_payload = array(
+									'assistant_id'  => $assistant_id,
+									'tool_results'  => $tool_result_messages,
+									'error_context' => 'token_limit_exceeded',
+								);
+
+								// Normalize payload to ensure JSON-serializable.
+								$error_payload = $this->normalize_data_recursive( $error_payload );
+
+								WP_MCP_AI_Logger::log_event(
+									'sse_error_with_tool_results',
+									'Sending tool results before token limit error exit',
+									array(
+										'assistant_id'      => $assistant_id,
+										'tool_result_count' => count( $tool_result_messages ),
+										'error_code'        => $tpm_validation->get_error_code(),
+									)
+								);
+
+								$this->send_sse_event( 'message', $error_payload );
+							}
+
 							$this->send_sse_event(
 								'error',
 								array(
@@ -3450,6 +3504,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				if ( is_wp_error( $response ) ) {
+					// Send accumulated tool results before error exit.
+					// Critical: Tool execution may have completed successfully even if
+					// the subsequent LLM call (after tool execution) failed. The client needs
+					// to see tool results (e.g., generated images, API responses) before the error.
+					if ( ! empty( $tool_result_messages ) ) {
+						$error_payload = array(
+							'assistant_id'  => $assistant_id,
+							'tool_results'  => $tool_result_messages,
+							'error_context' => 'llm_call_failed_in_agentic_loop',
+						);
+
+						// Normalize payload to ensure JSON-serializable.
+						$error_payload = $this->normalize_data_recursive( $error_payload );
+
+						WP_MCP_AI_Logger::log_event(
+							'sse_error_with_tool_results',
+							'Sending tool results before LLM error exit in agentic loop',
+							array(
+								'assistant_id'      => $assistant_id,
+								'tool_result_count' => count( $tool_result_messages ),
+								'error_code'        => $response->get_error_code(),
+								'iteration'         => $iteration,
+							)
+						);
+
+						$this->send_sse_event( 'message', $error_payload );
+					}
+
 					$this->send_sse_event(
 						'error',
 						array(
