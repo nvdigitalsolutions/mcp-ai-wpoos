@@ -330,6 +330,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 
+		// Handle Mesh Peer connections separately.
+		if ( 'mesh_peer' === $connection_type ) {
+			return self::test_mesh_peer_connection( $connection );
+		}
+
 		// Handle Flowhub connections separately.
 		if ( 'flowhub' === $connection_type ) {
 			return self::test_flowhub_connection( $connection );
@@ -545,6 +550,33 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test mesh peer connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_mesh_peer_connection( $connection ) {
+		// Use the base plugin's mesh peer tester if available.
+		if ( class_exists( 'WP_MCP_AI_Mesh_Peer_Tester' ) ) {
+			$peer = array(
+				'name'    => isset( $connection['name'] ) ? $connection['name'] : '',
+				'url'     => isset( $connection['url'] ) ? $connection['url'] : '',
+				'api_key' => isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '',
+			);
+
+			return WP_MCP_AI_Mesh_Peer_Tester::test_connection( $peer );
+		}
+
+		// Fallback if tester not available (shouldn't happen).
+		return new WP_Error(
+			'wp_mcp_ai_pro_tester_unavailable',
+			__( 'Mesh peer tester not available. Please ensure the base plugin is up to date.', 'mcp-ai-wpoos-pro' )
+		);
 	}
 
 	/**

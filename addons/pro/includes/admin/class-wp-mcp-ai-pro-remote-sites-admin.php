@@ -185,6 +185,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$user_email    = '';
 
 			switch ( $connection_type ) {
+				case 'mesh_peer':
+					$api_key = isset( $_POST['mesh_inbound_api_key'] ) ? wp_unslash( $_POST['mesh_inbound_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'isams':
 					$api_key    = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -300,6 +303,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'webchat' === $connection_type ) {
 				$url       = home_url( '/wp-json/mcp-ai/v1/webhooks/webchat' );
 				$auth_type = 'none';
+			}
+
+			// For mesh peer connections, use custom_header auth with mesh API key
+			if ( 'mesh_peer' === $connection_type ) {
+				$auth_type = 'custom_header';
 			}
 
 			$connection_data = array(
@@ -491,41 +499,43 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'         => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
-									'generic'           => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
-									'isams'             => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
-									'flowhub'           => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
-									'payhere'           => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
-									'quickbooks'        => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
-									'ezuite_erp'        => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
-									'gmail'             => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
-									'google_drive'      => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
-									'telegram'          => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
-									'whatsapp'          => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
-									'slack'             => __( 'Slack', 'mcp-ai-wpoos-pro' ),
-									'discord'           => __( 'Discord', 'mcp-ai-wpoos-pro' ),
-									'microsoft_teams'   => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
+									'wordpress'          => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
+									'mesh_peer'          => __( 'Mesh Peer', 'mcp-ai-wpoos-pro' ),
+									'generic'            => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
+									'isams'              => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
+									'flowhub'            => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
+									'payhere'            => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
+									'quickbooks'         => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
+									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
+									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
+									'slack'              => __( 'Slack', 'mcp-ai-wpoos-pro' ),
+									'discord'            => __( 'Discord', 'mcp-ai-wpoos-pro' ),
+									'microsoft_teams'    => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
 									'facebook_messenger' => __( 'Messenger', 'mcp-ai-wpoos-pro' ),
-									'webchat'           => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
+									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
-									'wordpress'         => '#2271b1',
-									'generic'           => '#50575e',
-									'isams'             => '#d63638',
-									'flowhub'           => '#00a32a',
-									'payhere'           => '#f0b849',
-									'quickbooks'        => '#2c9f47',
-									'ezuite_erp'        => '#8c50a7',
-									'gmail'             => '#ea4335', // Google red color
-									'google_drive'      => '#4285f4', // Google blue color
-									'telegram'          => '#0088cc', // Telegram blue
-									'whatsapp'          => '#25d366', // WhatsApp green
-									'slack'             => '#4a154b', // Slack purple
-									'discord'           => '#5865f2', // Discord blurple
-									'microsoft_teams'   => '#6264a7', // Teams purple
+									'wordpress'          => '#2271b1',
+									'mesh_peer'          => '#7e57c2', // Purple - same as MESH badge in ai_peer
+									'generic'            => '#50575e',
+									'isams'              => '#d63638',
+									'flowhub'            => '#00a32a',
+									'payhere'            => '#f0b849',
+									'quickbooks'         => '#2c9f47',
+									'ezuite_erp'         => '#8c50a7',
+									'gmail'              => '#ea4335', // Google red color
+									'google_drive'       => '#4285f4', // Google blue color
+									'telegram'           => '#0088cc', // Telegram blue
+									'whatsapp'           => '#25d366', // WhatsApp green
+									'slack'              => '#4a154b', // Slack purple
+									'discord'            => '#5865f2', // Discord blurple
+									'microsoft_teams'    => '#6264a7', // Teams purple
 									'facebook_messenger' => '#0084ff', // Messenger blue
-									'webchat'           => '#ff6b6b', // WebChat coral red
+									'webchat'            => '#ff6b6b', // WebChat coral red
 								);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -742,6 +752,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<select name="connection_type" id="connection_type" class="regular-text" required>
 							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="mesh_peer" <?php selected( $connection_type, 'mesh_peer' ); ?>>
+								<?php esc_html_e( 'Mesh Peer (Distributed AI)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
 								<?php esc_html_e( 'Generic REST API', 'mcp-ai-wpoos-pro' ); ?>
