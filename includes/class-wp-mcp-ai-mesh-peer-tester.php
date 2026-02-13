@@ -249,9 +249,20 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 		}
 
 		if ( 401 === $status_code || 403 === $status_code ) {
+			// Try to get more specific error details from the response body.
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+			
+			$error_message = __( 'API key authentication failed. Please verify the API key is correct.', 'mcp-ai-wpoos' );
+			
+			// If the response contains a more specific error message, use it.
+			if ( is_array( $data ) && ! empty( $data['message'] ) ) {
+				$error_message = $data['message'];
+			}
+			
 			return new WP_Error(
 				'mcp_auth_invalid',
-				__( 'API key authentication failed. Please verify the API key is correct.', 'mcp-ai-wpoos' )
+				$error_message
 			);
 		}
 
@@ -262,13 +273,24 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 			);
 		}
 
+		// For any other error status codes, try to extract details from the response.
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+		
+		$error_message = sprintf(
+			/* translators: %d: HTTP status code */
+			__( 'MCP endpoint returned status %d', 'mcp-ai-wpoos' ),
+			$status_code
+		);
+		
+		// If the response contains a more specific error message, append it.
+		if ( is_array( $data ) && ! empty( $data['message'] ) ) {
+			$error_message .= ': ' . $data['message'];
+		}
+		
 		return new WP_Error(
 			'mcp_error',
-			sprintf(
-				/* translators: %d: HTTP status code */
-				__( 'MCP endpoint returned status %d', 'mcp-ai-wpoos' ),
-				$status_code
-			)
+			$error_message
 		);
 	}
 

@@ -80,15 +80,11 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 		// Create authenticator instance.
 		$authenticator = new WP_MCP_AI_REST_Authenticator();
 
-		// Test with key that has whitespace (simulating copy/paste).
-		$key_with_whitespace = '  ' . $test_key . '  ';
-
-		// Validate the key (after it's been trimmed by the form handler).
-		// In reality, the form would trim it, but we're testing the stored value.
+		// Test authentication with the correctly trimmed and stored key.
 		$result = $authenticator->validate_mesh_key( $test_key );
 
 		$this->assertTrue(
-			$result === true,
+			$result,
 			'Authentication should succeed with properly trimmed key'
 		);
 
@@ -99,17 +95,19 @@ class Test_Mesh_API_Key_Whitespace extends WP_UnitTestCase {
 	/**
 	 * Test that authentication fails with mismatched whitespace.
 	 *
-	 * This test demonstrates the bug: if the stored key has whitespace,
-	 * but the incoming key doesn't, authentication fails.
+	 * This test demonstrates the bug that was fixed: if the stored key has whitespace
+	 * (because it wasn't trimmed during sanitization), authentication fails even with
+	 * the correct key value.
 	 */
 	public function test_authentication_fails_with_whitespace_mismatch() {
-		// Simulate the bug: stored key has whitespace.
+		// Intentionally store a key with whitespace to demonstrate the issue.
+		// This simulates the old behavior before the trim() fix was applied.
 		$stored_key = '  mesh_test123456789012345678901234567890  ';
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
 				'enable_mesh'          => true,
-				'mesh_inbound_api_key' => $stored_key, // Bug: not trimmed!
+				'mesh_inbound_api_key' => $stored_key, // Intentionally not trimmed to demonstrate the issue.
 			)
 		);
 
