@@ -41,6 +41,17 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 			$mesh_sync,
 			'Mesh peer sync should be initialized when mesh is enabled, even without federation directory'
 		);
+
+		// Also verify that the CPT handler was initialized.
+		$cpt_property = $reflection->getProperty( 'peer_cpt_handler' );
+		$cpt_property->setAccessible( true );
+		$cpt_handler = $cpt_property->getValue( $federation );
+
+		$this->assertInstanceOf(
+			'WP_MCP_AI_AI_Peer_CPT',
+			$cpt_handler,
+			'AI Peer CPT should be registered when mesh is enabled, even without federation directory'
+		);
 	}
 
 	/**
