@@ -8,12 +8,12 @@
 Your configuration was **100% CORRECT**:
 
 **Site 1 (Victory):**
-- Inbound Key: `mesh_c992a6062a3360beac6b4da02b1b1c4f8e4e382595e175bfce84d06b2587fa56`
-- Peer "Bots" Key: `mesh_e828de587c68d8030a0b57a769610b610b4a59b9c35c8f8d0354736fb82ab0cb`
+- Inbound Key: `mesh_<VICTORY_INBOUND_KEY>`
+- Peer "Bots" Key: `mesh_<BOTS_INBOUND_KEY>`
 
 **Site 2 (Bots):**
-- Inbound Key: `mesh_e828de587c68d8030a0b57a769610b610b4a59b9c35c8f8d0354736fb82ab0cb`
-- Peer "Victory" Key: `mesh_c992a6062a3360beac6b4da02b1b1c4f8e4e382595e175bfce84d06b2587fa56`
+- Inbound Key: `mesh_<BOTS_INBOUND_KEY>`
+- Peer "Victory" Key: `mesh_<VICTORY_INBOUND_KEY>`
 
 This is the correct peer-to-peer setup! Each site's inbound key is the other site's outbound key.
 
@@ -133,14 +133,14 @@ Connection test to Bots:
 ### Authentication Flow
 ```
 POST /wp-json/mcp-ai/v1/assistants
-Authorization: Bearer mesh_e828de587c68d8030a0b57a769610b610b4a59b9c35c8f8d0354736fb82ab0cb
+Authorization: Bearer mesh_<PEER_INBOUND_KEY>
 
 ↓
 
 Authenticator checks:
 1. WordPress nonce? No
 2. Authorization header? Yes
-   → Extract token: mesh_e828de...
+   → Extract token: mesh_<PEER_INBOUND_KEY>
    
 3. Local credential (cred_*)? No (wrong prefix)
    

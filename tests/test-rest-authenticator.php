@@ -154,10 +154,11 @@ class Test_REST_Authenticator extends WP_UnitTestCase {
 	 * Test validate_mesh_key with non-mesh-format key returns null.
 	 */
 	public function test_validate_mesh_key_not_mesh_format() {
-		// Auth0-style token (doesn't start with "mesh_").
-		$auth0_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+		// Example JWT token (not a real credential - just a test fixture).
+		// This token format doesn't start with "mesh_" so should return null.
+		$jwt_example = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
 		
-		$result = $this->authenticator->validate_mesh_key( $auth0_token );
+		$result = $this->authenticator->validate_mesh_key( $jwt_example );
 
 		// Should return null for non-mesh tokens (allows fallthrough to Auth0 validation).
 		$this->assertNull( $result );
