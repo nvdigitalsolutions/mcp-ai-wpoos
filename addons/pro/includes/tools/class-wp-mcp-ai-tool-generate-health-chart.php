@@ -440,7 +440,7 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 
 		if ( false === $result ) {
 			return array(
-				'error' => __( 'Chart image generation requires a Node.js service with chart rendering capability. Please implement the wp_mcp_ai_chartjs_generate_image filter. See INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Chart image generation requires a Node.js service with chart rendering capability. Please implement the wp_mcp_ai_chartjs_generate_image filter. See docs/INTEGRATION_BEST_PRACTICES.md for implementation guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

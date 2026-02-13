@@ -251,6 +251,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// This enables Node.js microservice integration for Prettier, MJML, and fluent-ffmpeg.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/npm-integration-filters.php';
 
+		// Load CDN loader for optimized asset delivery.
+		// Reduces plugin size by loading popular libraries from CDN with automatic fallback.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-cdn-loader.php';
+
 		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
 		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';
@@ -370,6 +374,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
 
+		// Load Calendar Booking Toolkit CPT registration (Pro feature - Phase 2.6).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
+
 		// ========================================================================
 		// NEW PRO TOOLKITS (Phase 1 - Foundation)
 		// ========================================================================
@@ -402,11 +409,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Financial Planner Toolkit if enabled (Pro feature - Phase 2.5).
 		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/financial-planner-toolkit-init.php';
-		}
-
-		// Load Calendar Booking Toolkit if enabled (Pro feature - Phase 2.6).
-		if ( ! empty( $settings['enable_calendar_booking_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
 		}
 
 		// Load DJ Management Toolkit if enabled (Pro feature - Phase 2.7).

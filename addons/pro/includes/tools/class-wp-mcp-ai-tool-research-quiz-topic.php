@@ -19,6 +19,49 @@ if ( ! defined( 'ABSPATH' ) ) {
  * educational topics and generate quiz content.
  */
 class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
+
+	/**
+	 * Maximum number of search queries to perform.
+	 *
+	 * @var int
+	 */
+	const MAX_SEARCH_QUERIES = 3;
+
+	/**
+	 * Maximum results per search query.
+	 *
+	 * @var int
+	 */
+	const MAX_RESULTS_PER_QUERY = 5;
+
+	/**
+	 * Maximum number of sources to display in prompt.
+	 *
+	 * @var int
+	 */
+	const MAX_DISPLAYED_SOURCES = 5;
+
+	/**
+	 * Number of queries for basic depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_BASIC = 1;
+
+	/**
+	 * Number of queries for standard depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_STANDARD = 2;
+
+	/**
+	 * Number of queries for comprehensive depth research.
+	 *
+	 * @var int
+	 */
+	const QUERIES_COMPREHENSIVE = 3;
 
 	/**
 	 * {@inheritdoc}
@@ -38,7 +81,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about an educational topic and generate quiz questions with answers. Returns title, description, difficulty level, suggested questions with multiple choice answers, and educational metadata ready for creating a quiz.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about an educational topic and generate quiz questions with answers using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, description, difficulty level, suggested questions with multiple choice answers, and educational metadata ready for creating a quiz.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,6 +94,19 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 				'topic'                => array(
 					'type'        => 'string',
 					'description' => __( 'The topic to research (e.g., "World War II", "Basic Algebra", "Shakespeare Works")', 'mcp-ai-wpoos-pro' ),
+				),
+				'depth'                => array(
+					'type'        => 'string',
+					'description' => __( 'Research depth level.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
+					'default'     => 'standard',
+				),
+				'focus_areas'          => array(
+					'type'        => 'array',
+					'description' => __( 'Optional specific aspects to focus on (e.g., "historical context", "key concepts", "practical applications").', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'string',
+					),
 				),
 				'question_count'       => array(
 					'type'        => 'integer',
@@ -133,6 +189,10 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$topic                = sanitize_text_field( $arguments['topic'] );
+		$depth                = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas          = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
+			: array();
 		$question_count       = isset( $arguments['question_count'] ) ? absint( $arguments['question_count'] ) : 10;
 		$difficulty           = isset( $arguments['difficulty'] ) ? sanitize_key( $arguments['difficulty'] ) : 'intermediate';
 		$include_explanations = isset( $arguments['include_explanations'] ) ? (bool) $arguments['include_explanations'] : true;
@@ -147,8 +207,13 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			$difficulty = 'intermediate';
 		}
 
+		// Validate depth parameter.
+		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
+			$depth = 'standard';
+		}
+
 		// Check cache first.
-		$cache_key = 'quiz_research_' . md5( $topic . '_' . $question_count . '_' . $difficulty );
+		$cache_key = 'quiz_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $question_count . '_' . $difficulty );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_quiz_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -162,14 +227,36 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			'Starting quiz topic research',
 			array(
 				'topic'          => $topic,
+				'depth'          => $depth,
+				'focus_areas'    => $focus_areas,
 				'question_count' => $question_count,
 				'difficulty'     => $difficulty,
 				'user_id'        => $user_id,
 			)
 		);
 
-		// Build research prompt.
-		$prompt = $this->build_research_prompt( $topic, $question_count, $difficulty, $include_explanations );
+		// Step 1: Gather information through web searches.
+		$search_results = $this->gather_quiz_topic_information( $topic, $depth, $focus_areas, $context );
+
+		if ( is_wp_error( $search_results ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Quiz research web search failed: ' . $search_results->get_error_message(),
+				array(
+					'topic' => $topic,
+					'depth' => $depth,
+					'error' => $search_results->get_error_code(),
+				)
+			);
+			// Fall back to AI-only research if web search fails.
+			$search_results = array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $topic ),
+			);
+		}
+
+		// Step 2: Build research prompt with gathered information.
+		$prompt = $this->build_research_prompt( $topic, $question_count, $difficulty, $include_explanations, $depth, $focus_areas, $search_results );
 
 		// Use AI to research the topic and generate questions.
 		$research_result = $this->perform_ai_research( $prompt, $context );
@@ -207,11 +294,169 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			'Quiz research completed successfully',
 			array(
 				'topic'          => $topic,
+				'depth'          => $depth,
+				'focus_areas'    => $focus_areas,
+				'sources_count'  => count( $search_results['sources'] ?? array() ),
 				'question_count' => count( isset( $quiz_data['questions'] ) ? $quiz_data['questions'] : array() ),
 			)
 		);
 
+		// Generate user-friendly report message.
+		$quiz_data['report'] = $this->build_quiz_report_message( $quiz_data, $search_results );
+
 		return $quiz_data;
+	}
+
+	/**
+	 * Gather quiz topic information through web searches.
+	 *
+	 * @param string $topic       Quiz topic.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @param array  $context     Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function gather_quiz_topic_information( $topic, $depth, $focus_areas, $context ) {
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+		$web_search_tool = $registry->get_tool( 'web_search' );
+
+		if ( ! $web_search_tool ) {
+			WP_MCP_AI_Logger::log_event(
+				'quiz_research_no_web_search',
+				'Web search tool not available, using AI-only mode',
+				array( 'topic' => $topic )
+			);
+			return array(
+				'results' => array(),
+				'sources' => array(),
+				'queries' => array( $topic ),
+			);
+		}
+
+		$search_queries = $this->generate_quiz_topic_search_queries( $topic, $depth, $focus_areas );
+		$all_results    = array();
+		$all_sources    = array();
+
+		foreach ( $search_queries as $search_query ) {
+			$search_result = $web_search_tool->execute(
+				array(
+					'query'       => $search_query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
+				),
+				$context
+			);
+
+			if ( is_wp_error( $search_result ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Quiz research web search failed: ' . $search_result->get_error_message(),
+					array(
+						'query'      => $search_query,
+						'topic'      => $topic,
+						'error_code' => $search_result->get_error_code(),
+					)
+				);
+				continue;
+			}
+
+			if ( ! empty( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+				foreach ( $search_result['results'] as $result ) {
+					$all_results[] = $result;
+					if ( ! empty( $result['url'] ) ) {
+						$all_sources[] = array(
+							'url'     => $result['url'],
+							'title'   => isset( $result['title'] ) ? $result['title'] : '',
+							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+						);
+					}
+				}
+			}
+		}
+
+		$all_sources = $this->deduplicate_sources( $all_sources );
+
+		WP_MCP_AI_Logger::log_event(
+			'quiz_research_web_search_complete',
+			'Web search completed for quiz research',
+			array(
+				'topic'         => $topic,
+				'queries_count' => count( $search_queries ),
+				'results_count' => count( $all_results ),
+				'sources_count' => count( $all_sources ),
+			)
+		);
+
+		return array(
+			'results' => $all_results,
+			'sources' => $all_sources,
+			'queries' => $search_queries,
+		);
+	}
+
+	/**
+	 * Generate search queries for quiz topic research.
+	 *
+	 * @param string $topic       Quiz topic.
+	 * @param string $depth       Research depth.
+	 * @param array  $focus_areas Focus areas.
+	 * @return array Search queries.
+	 */
+	protected function generate_quiz_topic_search_queries( $topic, $depth, $focus_areas ) {
+		$queries   = array();
+		$queries[] = $topic;
+
+		if ( 'basic' === $depth ) {
+			$num_queries = self::QUERIES_BASIC;
+		} elseif ( 'comprehensive' === $depth ) {
+			$num_queries = self::QUERIES_COMPREHENSIVE;
+		} else {
+			$num_queries = self::QUERIES_STANDARD;
+		}
+
+		if ( ! empty( $focus_areas ) ) {
+			foreach ( $focus_areas as $area ) {
+				if ( count( $queries ) >= $num_queries ) {
+					break;
+				}
+				$queries[] = $topic . ' ' . $area;
+			}
+		}
+
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $topic . ' quiz questions assessment';
+				if ( count( $queries ) < $num_queries ) {
+					$queries[] = $topic . ' educational standards';
+				}
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $topic . ' quiz questions practice';
+			}
+		}
+
+		return array_slice( $queries, 0, $num_queries );
+	}
+
+	/**
+	 * Deduplicate sources by URL.
+	 *
+	 * @param array $sources Sources array.
+	 * @return array Deduplicated sources.
+	 */
+	protected function deduplicate_sources( $sources ) {
+		$unique_sources = array();
+		$seen_urls      = array();
+
+		foreach ( $sources as $source ) {
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $source['url'], $seen_urls, true ) ) {
+				$unique_sources[] = $source;
+				$seen_urls[]      = $source['url'];
+			}
+		}
+
+		return $unique_sources;
 	}
 
 	/**
@@ -221,15 +466,50 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 	 * @param int    $question_count       Number of questions.
 	 * @param string $difficulty           Difficulty level.
 	 * @param bool   $include_explanations Whether to include explanations.
+	 * @param string $depth                Research depth.
+	 * @param array  $focus_areas          Focus areas.
+	 * @param array  $search_results       Search results from web search.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $topic, $question_count, $difficulty, $include_explanations ) {
+	protected function build_research_prompt( $topic, $question_count, $difficulty, $include_explanations, $depth, $focus_areas, $search_results ) {
 		$prompt = sprintf(
-			"Research the following educational topic and generate quiz questions:\n\n**Topic:** %s\n**Number of Questions:** %d\n**Difficulty Level:** %s\n\n",
+			"Research the following educational topic and generate quiz questions:\n\n**Topic:** %s\n**Number of Questions:** %d\n**Difficulty Level:** %s\n",
 			$topic,
 			$question_count,
 			$difficulty
 		);
+
+		// Add context from web search if available.
+		if ( ! empty( $search_results['sources'] ) ) {
+			$prompt .= "\n**Available Research Sources:**\n";
+			$source_count = min( self::MAX_DISPLAYED_SOURCES, count( $search_results['sources'] ) );
+			for ( $i = 0; $i < $source_count; $i++ ) {
+				$source  = $search_results['sources'][ $i ];
+				$prompt .= sprintf(
+					"[%d] %s - %s\n",
+					$i + 1,
+					$source['title'],
+					$source['snippet']
+				);
+			}
+			$prompt .= "\n";
+		}
+
+		// Add depth-specific instructions.
+		if ( 'comprehensive' === $depth ) {
+			$prompt .= "**Research Depth: COMPREHENSIVE** - Use extensive research to create well-validated questions with detailed explanations and educational context.\n\n";
+		} elseif ( 'basic' === $depth ) {
+			$prompt .= "**Research Depth: BASIC** - Focus on essential topic information for core quiz questions.\n\n";
+		} else {
+			$prompt .= "**Research Depth: STANDARD** - Provide thorough research appropriate for educational quiz content.\n\n";
+		}
+
+		// Add focus areas if specified.
+		if ( ! empty( $focus_areas ) ) {
+			$prompt .= "**Focus Areas:** " . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		$prompt .= "Use the provided sources and web search to find current, factually correct information.\n\n";
 
 		$prompt .= "Generate a comprehensive quiz covering key aspects of this topic. Include:\n\n";
 		$prompt .= "1. **Quiz Title**: Engaging title for the quiz\n";
@@ -571,5 +851,150 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return $quiz_data;
+	}
+
+	/**
+	 * Build a user-friendly quiz report message.
+	 *
+	 * @param array $quiz_data       Quiz data from research.
+	 * @param array $search_results  Search results metadata.
+	 * @return string Markdown-formatted report.
+	 */
+	protected function build_quiz_report_message( $quiz_data, $search_results ) {
+		$report = "# 📝 Quiz Research Complete\n\n";
+
+		// Quiz title and basic info.
+		$report .= "## **" . esc_html( $quiz_data['title'] ) . "**\n\n";
+
+		if ( ! empty( $quiz_data['description'] ) ) {
+			$report .= esc_html( $quiz_data['description'] ) . "\n\n";
+		}
+
+		// Metadata section.
+		$report .= "---\n\n";
+		$report .= "### 📊 Quiz Details\n\n";
+
+		if ( ! empty( $quiz_data['subject'] ) ) {
+			$report .= "**Subject Area:** " . esc_html( $quiz_data['subject'] ) . "\n\n";
+		}
+
+		$report .= "**Difficulty Level:** " . ucfirst( esc_html( $quiz_data['difficulty'] ) ) . "\n\n";
+
+		if ( ! empty( $quiz_data['topic'] ) ) {
+			$report .= "**Topic:** " . esc_html( $quiz_data['topic'] ) . "\n\n";
+		}
+
+		$question_count = count( $quiz_data['questions'] );
+		$report        .= "**Number of Questions:** {$question_count}\n\n";
+
+		if ( ! empty( $quiz_data['time_limit'] ) ) {
+			$report .= "**Estimated Time:** " . absint( $quiz_data['time_limit'] ) . " minutes\n\n";
+		}
+
+		if ( ! empty( $quiz_data['pass_score'] ) ) {
+			$report .= "**Passing Score:** " . absint( $quiz_data['pass_score'] ) . "%\n\n";
+		}
+
+		// Sample questions section - show up to 5 questions.
+		if ( ! empty( $quiz_data['questions'] ) ) {
+			$report       .= "---\n\n";
+			$report       .= "### 📚 Sample Questions\n\n";
+			$sample_count  = min( 5, count( $quiz_data['questions'] ) );
+
+			for ( $i = 0; $i < $sample_count; $i++ ) {
+				$question = $quiz_data['questions'][ $i ];
+				$report  .= "**Question " . ( $i + 1 ) . ":** " . esc_html( $question['question'] ) . "\n\n";
+
+				if ( ! empty( $question['options'] ) && is_array( $question['options'] ) ) {
+					foreach ( $question['options'] as $key => $value ) {
+						$is_correct = ( $key === $question['correct_answer'] );
+						$marker     = $is_correct ? '✓' : ' ';
+						$report    .= "- [{$marker}] **{$key}.** " . esc_html( $value ) . "\n";
+					}
+					$report .= "\n";
+				}
+
+				if ( ! empty( $question['explanation'] ) ) {
+					$report .= "_Explanation:_ " . esc_html( $question['explanation'] ) . "\n\n";
+				}
+			}
+
+			if ( $question_count > $sample_count ) {
+				$remaining = $question_count - $sample_count;
+				$report   .= "_... and {$remaining} more question" . ( $remaining > 1 ? 's' : '' ) . "_\n\n";
+			}
+		}
+
+		// Topics covered section.
+		if ( ! empty( $quiz_data['questions'] ) ) {
+			$report .= "---\n\n";
+			$report .= "### 🎯 Learning Objectives\n\n";
+			$report .= "This quiz covers the following aspects of **" . esc_html( $quiz_data['topic'] ) . "**:\n\n";
+
+			// Extract unique topics from questions (first 10 questions for analysis).
+			$topics_limit = min( 10, count( $quiz_data['questions'] ) );
+			for ( $i = 0; $i < $topics_limit; $i++ ) {
+				$question = $quiz_data['questions'][ $i ];
+				$report  .= "- " . esc_html( $question['question'] ) . "\n";
+			}
+			$report .= "\n";
+		}
+
+		// Target audience.
+		$report .= "---\n\n";
+		$report .= "### 👥 Target Audience\n\n";
+		switch ( $quiz_data['difficulty'] ) {
+			case 'beginner':
+				$report .= "This quiz is designed for **beginners** who are new to " . esc_html( $quiz_data['topic'] ) . " and want to learn the fundamentals.\n\n";
+				break;
+			case 'advanced':
+				$report .= "This quiz is designed for **advanced learners** with deep knowledge of " . esc_html( $quiz_data['topic'] ) . " seeking to test expert-level understanding.\n\n";
+				break;
+			default:
+				$report .= "This quiz is designed for **intermediate learners** with basic knowledge of " . esc_html( $quiz_data['topic'] ) . " who want to deepen their understanding.\n\n";
+		}
+
+		// Sources section.
+		if ( ! empty( $quiz_data['sources'] ) ) {
+			$report        .= "---\n\n";
+			$report        .= "### 🔗 Research Sources\n\n";
+			$sources_count  = count( $quiz_data['sources'] );
+			$report        .= "This quiz was researched using **{$sources_count}** authoritative source" . ( $sources_count > 1 ? 's' : '' ) . ":\n\n";
+
+			$display_limit = min( 5, count( $quiz_data['sources'] ) );
+			for ( $i = 0; $i < $display_limit; $i++ ) {
+				$source  = $quiz_data['sources'][ $i ];
+				$report .= ( $i + 1 ) . ". [" . esc_url( $source ) . "](" . esc_url( $source ) . ")\n";
+			}
+
+			if ( $sources_count > $display_limit ) {
+				$remaining = $sources_count - $display_limit;
+				$report   .= "\n_... and {$remaining} more source" . ( $remaining > 1 ? 's' : '' ) . "_\n";
+			}
+			$report .= "\n";
+		}
+
+		// Research metadata.
+		if ( ! empty( $quiz_data['research_provider'] ) || ! empty( $quiz_data['research_model'] ) ) {
+			$report .= "---\n\n";
+			$report .= "### 🤖 Research Details\n\n";
+
+			if ( ! empty( $quiz_data['research_provider'] ) ) {
+				$report .= "**AI Provider:** " . ucfirst( esc_html( $quiz_data['research_provider'] ) ) . "\n\n";
+			}
+
+			if ( ! empty( $quiz_data['research_model'] ) ) {
+				$report .= "**Model:** " . esc_html( $quiz_data['research_model'] ) . "\n\n";
+			}
+
+			if ( ! empty( $quiz_data['researched_at'] ) ) {
+				$report .= "**Researched:** " . esc_html( $quiz_data['researched_at'] ) . "\n\n";
+			}
+		}
+
+		$report .= "---\n\n";
+		$report .= "✅ **Quiz research complete!** You can now create a quiz using this data or request modifications.\n";
+
+		return $report;
 	}
 }

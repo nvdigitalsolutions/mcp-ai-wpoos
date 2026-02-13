@@ -85,7 +85,7 @@ class WP_MCP_AI_MJML_Service {
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_mjml_not_configured',
-				__( 'MJML compilation requires Node.js integration. Please implement the wp_mcp_ai_mjml_compile filter. See INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
+				__( 'MJML compilation requires Node.js integration. Please implement the wp_mcp_ai_mjml_compile filter. See docs/INTEGRATION_BEST_PRACTICES.md for setup guide.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 501,
 					'package' => 'mjml',

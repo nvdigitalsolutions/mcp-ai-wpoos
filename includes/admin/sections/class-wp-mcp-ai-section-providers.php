@@ -372,6 +372,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'gemini-2.5-flash',
 				),
 
+				// OpenAI Caching Settings.
+				'enable_openai_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OpenAI API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache OpenAI API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and embedding responses to reduce API calls and improve performance. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'openai_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'OpenAI Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the OpenAI model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+				'openai_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'OpenAI Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
+				),
+
 				// Anthropic Settings.
 				'enable_anthropic'                   => array(
 					'type'           => 'checkbox',
@@ -411,6 +438,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Maximum number of tokens to allocate for image analysis. Higher values allow more detailed analysis but use more tokens. Leave empty to use model defaults. Typical range: 1000-4000.', 'mcp-ai-wpoos' ),
 					'placeholder' => '1568',
 					'sanitize'    => 'absint',
+				),
+
+				// Anthropic Caching Settings.
+				'enable_anthropic_api_caching'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Anthropic API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Anthropic API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and other deterministic API responses to reduce API calls and improve performance. Chat completions are never cached.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'anthropic_model_list_cache_ttl'     => array(
+					'type'        => 'number',
+					'label'       => __( 'Anthropic Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Anthropic model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
 				),
 
 				// Google Gemini Settings.
@@ -518,6 +563,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '5',
 				),
 
+				// Gemini Caching Settings.
+				'enable_gemini_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Gemini API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Gemini API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists, token counts, and embedding responses to reduce API calls and improve performance. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'gemini_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Gemini model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+				'gemini_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
+				),
+				'gemini_token_count_cache_ttl'       => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Token Count Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache token counting results. Token counts are deterministic for the same input and model. Default: 1 hour (3600 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '3600',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+
 				// Gemini Audio Settings (Speech-to-Text & Text-to-Speech).
 				'gemini_audio_language'              => array(
 					'type'        => 'text',
@@ -577,6 +658,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Ollama Network Interface (Optional)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your Ollama is on a different machine (e.g., 192.168.2.100), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
+				),
+
+				// Ollama Caching Settings.
+				'enable_ollama_api_caching'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Ollama API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Ollama API responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and embedding responses to reduce API calls and improve performance. Uses shorter TTLs since Ollama is local. Only deterministic operations are cached (chat completions are never cached).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'ollama_model_list_cache_ttl'        => array(
+					'type'        => 'number',
+					'label'       => __( 'Ollama Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Ollama model list. Since Ollama is local, shorter caching is sufficient. Default: 5 minutes (300 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '300',
+					'min'         => '60',
+					'max'         => '3600',
+					'step'        => '60',
+				),
+				'ollama_embedding_cache_ttl'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Ollama Embedding Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache embedding responses. Embeddings are deterministic (same input = same output), so longer caching is safe. Default: 24 hours (86400 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '86400',
+					'min'         => '300',
+					'max'         => '604800',
+					'step'        => '3600',
 				),
 
 				// LM Studio Settings.
@@ -813,6 +921,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'step'        => 0.5,
 				),
 
+				// Cloudflare Caching Settings.
+				'enable_cloudflare_api_caching'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Cloudflare API Response Caching', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Cache Cloudflare Workers AI responses to improve performance', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, caches model lists and other deterministic API responses to reduce API calls and improve performance. Chat completions and image generations are never cached.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'cloudflare_model_list_cache_ttl'    => array(
+					'type'        => 'number',
+					'label'       => __( 'Cloudflare Model List Cache Duration (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to cache the Cloudflare Workers AI model list. Model lists rarely change, so longer caching is recommended. Default: 12 hours (43200 seconds).', 'mcp-ai-wpoos' ),
+					'default'     => '43200',
+					'min'         => '300',
+					'max'         => '86400',
+					'step'        => '300',
+				),
+
 				// Cloudflare Audio Settings (Speech-to-Text).
 				'cloudflare_audio_model'             => array(
 					'type'        => 'select',
@@ -857,25 +983,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_openai_api_caching', 'openai_model_list_cache_ttl', 'openai_embedding_cache_ttl', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'enable_anthropic_api_caching', 'anthropic_model_list_cache_ttl' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'gemini_audio_language', 'gemini_speech_voice' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
 					'label'  => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'enable_ollama', 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface' ),
+					'fields' => array( 'enable_ollama', 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface', 'enable_ollama_api_caching', 'ollama_model_list_cache_ttl', 'ollama_embedding_cache_ttl' ),
 				),
 				'lm_studio'            => array(
 					'id'     => 'lm_studio',
@@ -905,7 +1031,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'cloudflare_audio_model' ),
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'enable_cloudflare_api_caching', 'cloudflare_model_list_cache_ttl', 'cloudflare_audio_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',

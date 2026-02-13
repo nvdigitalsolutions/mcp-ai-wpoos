@@ -284,6 +284,22 @@ The plugin defines the following trust boundaries:
 - No direct SQL execution
 - Regular security audits
 
+#### 8. Prompt Injection
+
+**Threat:** Attacker embeds malicious instructions in content processed by AI (posts, emails, external data).
+
+**Likelihood:** Low (WordPress context)  
+**Impact:** Medium (unauthorized tool execution within user permissions)  
+**Mitigation:**
+- No arbitrary command execution tools exposed
+- WordPress sandboxed PHP environment
+- Multi-layer input sanitization (sanitize_text_field, wp_kses_post)
+- Nefarious usage monitor detects suspicious patterns
+- Tool capability checks enforce WordPress permissions
+- Rate limiting prevents bulk abuse (60 req/min, 500 tools/hour)
+- External data sources (Gmail, webhooks) are read-only or signature-verified
+- See [Prompt Injection Protection Analysis](security/PROMPT_INJECTION_PROTECTION.md) for detailed assessment
+
 ### Data Classification
 
 | Data Type | Classification | Storage | Encryption | Access Control |
