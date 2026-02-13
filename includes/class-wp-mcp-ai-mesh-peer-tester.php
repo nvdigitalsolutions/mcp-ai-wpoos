@@ -64,8 +64,8 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 			'reachable'    => true,
 			'wellknown'    => ! is_wp_error( $wellknown ),
 			'authenticated' => ! empty( $api_key ) && ! is_wp_error( $mcp_auth ),
-			'site_name'    => isset( $wellknown['site_name'] ) ? $wellknown['site_name'] : '',
-			'capabilities' => isset( $wellknown['capabilities'] ) ? $wellknown['capabilities'] : array(),
+			'site_name'    => ! is_wp_error( $wellknown ) && isset( $wellknown['site_name'] ) ? $wellknown['site_name'] : '',
+			'capabilities' => ! is_wp_error( $wellknown ) && isset( $wellknown['capabilities'] ) ? $wellknown['capabilities'] : array(),
 			'message'      => __( 'Connection test successful.', 'mcp-ai-wpoos' ),
 			'details'      => array(),
 		);
