@@ -317,4 +317,14 @@ class WP_MCP_AI_Federation_Settings {
 		$settings = self::get_settings();
 		return ! empty( $settings['enable_federation_directory'] );
 	}
+
+	/**
+	 * Check if mesh computing is enabled.
+	 *
+	 * @return bool True if mesh computing is enabled.
+	 */
+	public static function is_mesh_enabled() {
+		$settings = self::get_settings();
+		return ! empty( $settings['enable_mesh'] );
+	}
 }

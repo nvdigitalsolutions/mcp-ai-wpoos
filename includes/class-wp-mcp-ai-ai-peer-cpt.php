@@ -205,13 +205,14 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render_peer_info_meta_box( $post ) {
-		$site_url      = get_post_meta( $post->ID, self::META_SITE_URL, true );
-		$wellknown_url = get_post_meta( $post->ID, self::META_WELLKNOWN_URL, true );
-		$mcp_url       = get_post_meta( $post->ID, self::META_MCP_URL, true );
-		$jwks_uri      = get_post_meta( $post->ID, self::META_JWKS_URI, true );
-		$capabilities  = get_post_meta( $post->ID, self::META_CAPABILITIES, true );
-		$regions       = get_post_meta( $post->ID, self::META_REGIONS, true );
-		$data_tags     = get_post_meta( $post->ID, self::META_DATA_TAGS, true );
+		$connection_type = get_post_meta( $post->ID, '_wp_mcp_ai_connection_type', true );
+		$site_url        = get_post_meta( $post->ID, self::META_SITE_URL, true );
+		$wellknown_url   = get_post_meta( $post->ID, self::META_WELLKNOWN_URL, true );
+		$mcp_url         = get_post_meta( $post->ID, self::META_MCP_URL, true );
+		$jwks_uri        = get_post_meta( $post->ID, self::META_JWKS_URI, true );
+		$capabilities    = get_post_meta( $post->ID, self::META_CAPABILITIES, true );
+		$regions         = get_post_meta( $post->ID, self::META_REGIONS, true );
+		$data_tags       = get_post_meta( $post->ID, self::META_DATA_TAGS, true );
 
 		$capabilities = is_string( $capabilities ) ? json_decode( $capabilities, true ) : array();
 		$regions      = is_string( $regions ) ? json_decode( $regions, true ) : array();
@@ -219,6 +220,26 @@ class WP_MCP_AI_AI_Peer_CPT {
 
 		?>
 		<table class="form-table">
+			<tr>
+				<th><label><?php esc_html_e( 'Connection Type', 'mcp-ai-wpoos' ); ?></label></th>
+				<td>
+					<?php if ( 'mesh' === $connection_type ) : ?>
+						<span style="background: #7e57c2; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+							<?php esc_html_e( 'MESH', 'mcp-ai-wpoos' ); ?>
+						</span>
+						<p class="description">
+							<?php esc_html_e( 'This peer was configured manually via mesh networking settings.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php else : ?>
+						<span style="background: #2196f3; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+							<?php esc_html_e( 'FEDERATION', 'mcp-ai-wpoos' ); ?>
+						</span>
+						<p class="description">
+							<?php esc_html_e( 'This peer was registered through the federation directory service.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
 			<tr>
 				<th><label><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
@@ -426,14 +447,15 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 */
 	public function add_list_columns( $columns ) {
 		$new_columns = array(
-			'cb'           => $columns['cb'],
-			'title'        => $columns['title'],
-			'health'       => __( 'Health', 'mcp-ai-wpoos' ),
-			'capabilities' => __( 'Capabilities', 'mcp-ai-wpoos' ),
-			'regions'      => __( 'Regions', 'mcp-ai-wpoos' ),
-			'latency'      => __( 'Latency', 'mcp-ai-wpoos' ),
-			'last_check'   => __( 'Last Check', 'mcp-ai-wpoos' ),
-			'date'         => $columns['date'],
+			'cb'              => $columns['cb'],
+			'title'           => $columns['title'],
+			'connection_type' => __( 'Type', 'mcp-ai-wpoos' ),
+			'health'          => __( 'Health', 'mcp-ai-wpoos' ),
+			'capabilities'    => __( 'Capabilities', 'mcp-ai-wpoos' ),
+			'regions'         => __( 'Regions', 'mcp-ai-wpoos' ),
+			'latency'         => __( 'Latency', 'mcp-ai-wpoos' ),
+			'last_check'      => __( 'Last Check', 'mcp-ai-wpoos' ),
+			'date'            => $columns['date'],
 		);
 
 		return $new_columns;
@@ -447,6 +469,15 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 */
 	public function render_list_columns( $column, $post_id ) {
 		switch ( $column ) {
+			case 'connection_type':
+				$connection_type = get_post_meta( $post_id, '_wp_mcp_ai_connection_type', true );
+				if ( 'mesh' === $connection_type ) {
+					echo '<span style="background: #7e57c2; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600;">' . esc_html__( 'MESH', 'mcp-ai-wpoos' ) . '</span>';
+				} else {
+					echo '<span style="background: #2196f3; color: white; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600;">' . esc_html__( 'FEDERATION', 'mcp-ai-wpoos' ) . '</span>';
+				}
+				break;
+
 			case 'health':
 				$health_status = get_post_meta( $post_id, self::META_HEALTH_STATUS, true );
 				$status_colors = array(

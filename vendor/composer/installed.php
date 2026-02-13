@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-testing-for-mesh-site',
+        'version' => 'dev-copilot/add-testing-for-mesh-site',
+        'reference' => '8b94c844ac36e0b0bdb95eb15c7a415aca61ebf1',
         'pretty_version' => 'dev-copilot/reconnect-status-bar-job-notifications',
         'version' => 'dev-copilot/reconnect-status-bar-job-notifications',
         'reference' => '852015694e350cc20bad546e4f25e7700d0ced02',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-testing-for-mesh-site',
+            'version' => 'dev-copilot/add-testing-for-mesh-site',
+            'reference' => '8b94c844ac36e0b0bdb95eb15c7a415aca61ebf1',
             'pretty_version' => 'dev-copilot/reconnect-status-bar-job-notifications',
             'version' => 'dev-copilot/reconnect-status-bar-job-notifications',
             'reference' => '852015694e350cc20bad546e4f25e7700d0ced02',
