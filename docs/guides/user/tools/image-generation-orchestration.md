@@ -1,16 +1,30 @@
 # Image Generation with Multi-Step Orchestration
 
-**Tool:** `generate_openai_image`  
+**Tools:** `generate_openai_image` and `generate_gemini_image`  
 **Feature:** Multi-step orchestration mode  
 **Status:** Available in latest version
 
+Both OpenAI (DALL-E) and Google Gemini (Imagen) image generation tools support the same orchestration pattern with provider-specific parameters.
+
 ## Quick Start
+
+### OpenAI (DALL-E)
 
 Enable orchestration for enhanced image generation:
 
 ```php
 $result = $tool->execute(array(
     'prompt'             => 'A serene mountain landscape at sunset',
+    'orchestration_mode' => true,
+), $context);
+```
+
+### Gemini (Imagen)
+
+```php
+$result = $tool->execute(array(
+    'prompt'             => 'A serene mountain landscape at sunset',
+    'aspect_ratio'       => '16:9',
     'orchestration_mode' => true,
 ), $context);
 ```
@@ -25,6 +39,8 @@ $result = $tool->execute(array(
 
 ## Full Automation Example
 
+### OpenAI (DALL-E)
+
 ```php
 $result = $tool->execute(array(
     'prompt'              => 'Mountain landscape',
@@ -38,10 +54,25 @@ $result = $tool->execute(array(
 ), $context);
 ```
 
-This will:
+### Gemini (Imagen)
+
+```php
+$result = $tool->execute(array(
+    'prompt'              => 'Mountain landscape',
+    'aspect_ratio'        => '16:9',
+    'mime_type'           => 'image/png',
+    'orchestration_mode'  => true,
+    'optimize_prompt'     => true,
+    'generate_alt_text'   => true,
+    'optimize_output'     => true,
+    'generate_variants'   => true,
+), $context);
+```
+
+Both will:
 1. Enhance the prompt with AI (makes it more detailed)
-2. Validate all parameters
-3. Generate the image via OpenAI
+2. Validate all parameters (provider-specific)
+3. Generate the image via OpenAI or Gemini
 4. Generate alt text for accessibility
 5. Create responsive size variants and optimize metadata
 
@@ -172,13 +203,36 @@ Orchestration provides detailed error messages:
 
 ## Parameter Validation
 
+### OpenAI Parameters
+
 Orchestration mode validates:
 - **Prompt length**: 3-4000 characters
 - **Size**: Must be valid OpenAI size (1024x1024, 1792x1024, 1024x1792, etc.)
-- **Quality**: Must be low, medium, high, or auto
-- **Model**: Must be valid OpenAI model name
+- **Quality**: Must be standard or hd
+- **Model**: Must be valid OpenAI model name (dall-e-2, dall-e-3)
+
+### Gemini Parameters
+
+Orchestration mode validates:
+- **Prompt length**: 3-4000 characters
+- **Aspect ratio**: Must be 1:1, 3:4, 4:3, 16:9, or 9:16
+- **MIME type**: Must be image/png, image/jpeg, or image/webp
+- **Model**: Must be valid Gemini model name (imagen-3.0-generate-001, etc.)
 
 Validation prevents API errors before making expensive API calls.
+
+## Provider Comparison
+
+| Feature | OpenAI (DALL-E) | Gemini (Imagen) |
+|---------|-----------------|-----------------|
+| **Orchestration** | ✅ 5-step workflow | ✅ 5-step workflow |
+| **Size Control** | Fixed sizes (1024x1024, etc.) | Aspect ratios (16:9, etc.) |
+| **Format Control** | PNG only | PNG, JPEG, WebP |
+| **Quality Modes** | Standard, HD | Standard |
+| **Prompt Optimization** | ✅ AI-enhanced | ✅ AI-enhanced |
+| **Alt Text** | ✅ Auto-generated | ✅ Auto-generated |
+| **Variants** | ✅ Responsive sizes | ✅ Responsive sizes |
+| **Metadata** | ✅ Full metadata | ✅ Full metadata + provider tag |
 
 ## Performance Considerations
 
@@ -245,7 +299,7 @@ alpine meadows with wildflowers, and dramatic lighting"
 
 ## Integration Examples
 
-### With Featured Images
+### With Featured Images (OpenAI)
 
 ```php
 // Generate and set as featured image
@@ -263,14 +317,43 @@ if (!is_wp_error($result)) {
 }
 ```
 
+### With Featured Images (Gemini)
+
+```php
+// Generate and set as featured image
+$result = $tool->execute(array(
+    'prompt'              => 'Blog post hero image about technology',
+    'aspect_ratio'        => '16:9',  // Wide format
+    'orchestration_mode'  => true,
+    'optimize_prompt'     => true,
+    'generate_alt_text'   => true,
+    'generate_variants'   => true,
+), $context);
+
+if (!is_wp_error($result)) {
+    set_post_thumbnail($post_id, $result['attachment_id']);
+}
+```
+
 ### With Product Images
 
 ```php
-// Generate product photo
+// Generate product photo (OpenAI)
 $result = $tool->execute(array(
     'prompt'              => 'Product photo of ' . $product_name,
     'size'                => '1024x1024',  // Square format
     'quality'             => 'hd',
+    'orchestration_mode'  => true,
+    'optimize_prompt'     => true,
+    'generate_alt_text'   => true,
+    'optimize_output'     => true,
+), $context);
+
+// Or use Gemini
+$result = $tool->execute(array(
+    'prompt'              => 'Product photo of ' . $product_name,
+    'aspect_ratio'        => '1:1',  // Square format
+    'mime_type'           => 'image/webp',  // Smaller file size
     'orchestration_mode'  => true,
     'optimize_prompt'     => true,
     'generate_alt_text'   => true,
