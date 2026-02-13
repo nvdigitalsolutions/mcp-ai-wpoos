@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-sse-tool-error-again',
-        'version' => 'dev-copilot/fix-sse-tool-error-again',
-        'reference' => '1b6ffd22285bf171baf0795fade7262fcec44046',
+        'pretty_version' => 'dev-copilot/fix-sse-tool-fatal-error',
+        'version' => 'dev-copilot/fix-sse-tool-fatal-error',
+        'reference' => 'b78923cab0e0952af7721606490ae71f2559e484',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-sse-tool-error-again',
-            'version' => 'dev-copilot/fix-sse-tool-error-again',
-            'reference' => '1b6ffd22285bf171baf0795fade7262fcec44046',
+            'pretty_version' => 'dev-copilot/fix-sse-tool-fatal-error',
+            'version' => 'dev-copilot/fix-sse-tool-fatal-error',
+            'reference' => 'b78923cab0e0952af7721606490ae71f2559e484',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
