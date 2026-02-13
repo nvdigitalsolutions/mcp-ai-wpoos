@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/pro-addon',
-        'pretty_version' => 'dev-copilot/pre-bundle-npm-packages',
-        'version' => 'dev-copilot/pre-bundle-npm-packages',
-        'reference' => '012b7d0ce7472c452272d418ed087c7b1930ef68',
+        'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
+        'version' => 'dev-copilot/fix-excel-data-export-error',
+        'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -83,9 +83,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/pro-addon' => array(
-            'pretty_version' => 'dev-copilot/pre-bundle-npm-packages',
-            'version' => 'dev-copilot/pre-bundle-npm-packages',
-            'reference' => '012b7d0ce7472c452272d418ed087c7b1930ef68',
+            'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
+            'version' => 'dev-copilot/fix-excel-data-export-error',
+            'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

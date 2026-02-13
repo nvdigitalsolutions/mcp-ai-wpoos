@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-one-more-time',
-        'version' => 'dev-copilot/rebuild-all-zips-with-script-one-more-time',
-        'reference' => '0fa3ac87c0dbc4821c6f1233ec0b3ba63f33223f',
+        'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
+        'version' => 'dev-copilot/fix-excel-data-export-error',
+        'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script-one-more-time',
-            'version' => 'dev-copilot/rebuild-all-zips-with-script-one-more-time',
-            'reference' => '0fa3ac87c0dbc4821c6f1233ec0b3ba63f33223f',
+            'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
+            'version' => 'dev-copilot/fix-excel-data-export-error',
+            'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

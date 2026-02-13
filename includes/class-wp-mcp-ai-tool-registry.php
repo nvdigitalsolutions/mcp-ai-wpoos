@@ -258,6 +258,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				);
 			}
 
+			// Check if tool is globally enabled.
+			if ( ! $this->is_tool_enabled( $slug ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_tool_disabled',
+					sprintf(
+						/* translators: %s: tool slug */
+						__( 'Tool "%s" is disabled and cannot be executed.', 'mcp-ai-wpoos' ),
+						$slug
+					)
+				);
+			}
+
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
 		}
