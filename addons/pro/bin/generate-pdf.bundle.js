@@ -177275,6 +177275,7 @@ var require_symbols = __commonJS({
       kEnableConnectProtocol: /* @__PURE__ */ Symbol("http2session connect protocol"),
       kRemoteSettings: /* @__PURE__ */ Symbol("http2session remote settings"),
       kHTTP2Stream: /* @__PURE__ */ Symbol("http2session client stream"),
+      kPingInterval: /* @__PURE__ */ Symbol("ping interval"),
       kNoProxyAgent: /* @__PURE__ */ Symbol("no proxy agent"),
       kHttpProxyAgent: /* @__PURE__ */ Symbol("http proxy agent"),
       kHttpsProxyAgent: /* @__PURE__ */ Symbol("https proxy agent")
@@ -178393,45 +178394,30 @@ var require_util = __commonJS({
             val = [val];
             obj[key] = val;
           }
-          val.push(headers[i + 1].toString("utf8"));
+          val.push(headers[i + 1].toString("latin1"));
         } else {
           const headersValue = headers[i + 1];
           if (typeof headersValue === "string") {
             obj[key] = headersValue;
           } else {
-            obj[key] = Array.isArray(headersValue) ? headersValue.map((x) => x.toString("utf8")) : headersValue.toString("utf8");
+            obj[key] = Array.isArray(headersValue) ? headersValue.map((x) => x.toString("latin1")) : headersValue.toString("latin1");
           }
         }
-      }
-      if ("content-length" in obj && "content-disposition" in obj) {
-        obj["content-disposition"] = Buffer.from(obj["content-disposition"]).toString("latin1");
       }
       return obj;
     }
     function parseRawHeaders(headers) {
       const headersLength = headers.length;
       const ret = new Array(headersLength);
-      let hasContentLength = false;
-      let contentDispositionIdx = -1;
       let key;
       let val;
-      let kLen = 0;
       for (let n = 0; n < headersLength; n += 2) {
         key = headers[n];
         val = headers[n + 1];
         typeof key !== "string" && (key = key.toString());
-        typeof val !== "string" && (val = val.toString("utf8"));
-        kLen = key.length;
-        if (kLen === 14 && key[7] === "-" && (key === "content-length" || key.toLowerCase() === "content-length")) {
-          hasContentLength = true;
-        } else if (kLen === 19 && key[7] === "-" && (key === "content-disposition" || key.toLowerCase() === "content-disposition")) {
-          contentDispositionIdx = n + 1;
-        }
+        typeof val !== "string" && (val = val.toString("latin1"));
         ret[n] = key;
         ret[n + 1] = val;
-      }
-      if (hasContentLength && contentDispositionIdx !== -1) {
-        ret[contentDispositionIdx] = Buffer.from(ret[contentDispositionIdx]).toString("latin1");
       }
       return ret;
     }
@@ -181503,6 +181489,7 @@ var require_runtime_features = __commonJS({
 var require_webidl = __commonJS({
   "addons/pro/node_modules/undici/lib/web/webidl/index.js"(exports2, module2) {
     "use strict";
+    var assert = require("assert");
     var { types, inspect } = require("util");
     var { runtimeFeatures } = require_runtime_features();
     var UNDEFINED = 1;
@@ -181847,6 +181834,27 @@ var require_webidl = __commonJS({
     webidl.is.MessagePort = webidl.util.MakeTypeAssertion(MessagePort);
     webidl.is.BufferSource = function(V) {
       return types.isArrayBuffer(V) || ArrayBuffer.isView(V) && types.isArrayBuffer(V.buffer);
+    };
+    webidl.util.getCopyOfBytesHeldByBufferSource = function(bufferSource) {
+      const jsBufferSource = bufferSource;
+      let jsArrayBuffer = jsBufferSource;
+      let offset = 0;
+      let length = 0;
+      if (types.isTypedArray(jsBufferSource) || types.isDataView(jsBufferSource)) {
+        jsArrayBuffer = jsBufferSource.buffer;
+        offset = jsBufferSource.byteOffset;
+        length = jsBufferSource.byteLength;
+      } else {
+        assert(types.isAnyArrayBuffer(jsBufferSource));
+        length = jsBufferSource.byteLength;
+      }
+      if (jsArrayBuffer.detached) {
+        return new Uint8Array(0);
+      }
+      const bytes = new Uint8Array(length);
+      const view = new Uint8Array(jsArrayBuffer, offset, length);
+      bytes.set(view);
+      return bytes;
     };
     webidl.converters.DOMString = function(V, prefix, argument, flags) {
       if (V === null && webidl.util.HasFlag(flags, webidl.attributes.LegacyNullToEmptyString)) {
@@ -183378,7 +183386,7 @@ var require_body = __commonJS({
     var { webidl } = require_webidl();
     var assert = require("assert");
     var { isErrored, isDisturbed } = require("stream");
-    var { isArrayBuffer } = require("util/types");
+    var { isUint8Array } = require("util/types");
     var { serializeAMimeType } = require_data_url();
     var { multipartFormDataParser } = require_formdata_parser();
     var { createDeferredPromise } = require_promise();
@@ -183397,20 +183405,19 @@ var require_body = __commonJS({
     });
     function extractBody(object, keepalive = false) {
       let stream = null;
+      let controller = null;
       if (webidl.is.ReadableStream(object)) {
         stream = object;
       } else if (webidl.is.Blob(object)) {
         stream = object.stream();
       } else {
         stream = new ReadableStream({
-          pull(controller) {
-            const buffer = typeof source === "string" ? textEncoder.encode(source) : source;
-            if (buffer.byteLength) {
-              controller.enqueue(buffer);
-            }
-            queueMicrotask(() => readableStreamClose(controller));
+          pull() {
           },
-          start() {
+          start(c) {
+            controller = c;
+          },
+          cancel() {
           },
           type: "bytes"
         });
@@ -183427,7 +183434,7 @@ var require_body = __commonJS({
         source = object.toString();
         type = "application/x-www-form-urlencoded;charset=UTF-8";
       } else if (webidl.is.BufferSource(object)) {
-        source = isArrayBuffer(object) ? new Uint8Array(object.slice()) : new Uint8Array(object.buffer.slice(object.byteOffset, object.byteOffset + object.byteLength));
+        source = webidl.util.getCopyOfBytesHeldByBufferSource(object);
       } else if (webidl.is.FormData(object)) {
         const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`;
         const prefix = `--${boundary}\r
@@ -183494,39 +183501,30 @@ Content-Type: ${value.type || "application/octet-stream"}\r
         }
         stream = webidl.is.ReadableStream(object) ? object : ReadableStreamFrom(object);
       }
-      if (typeof source === "string" || util.isBuffer(source)) {
-        length = Buffer.byteLength(source);
+      if (typeof source === "string" || isUint8Array(source)) {
+        action = () => {
+          length = typeof source === "string" ? Buffer.byteLength(source) : source.length;
+          return source;
+        };
       }
       if (action != null) {
-        let iterator;
-        stream = new ReadableStream({
-          start() {
-            iterator = action(object)[Symbol.asyncIterator]();
-          },
-          pull(controller) {
-            return iterator.next().then(({ value, done }) => {
-              if (done) {
-                queueMicrotask(() => {
-                  var _a;
-                  controller.close();
-                  (_a = controller.byobRequest) == null ? void 0 : _a.respond(0);
-                });
-              } else {
-                if (!isErrored(stream)) {
-                  const buffer = new Uint8Array(value);
-                  if (buffer.byteLength) {
-                    controller.enqueue(buffer);
-                  }
-                }
+        ;
+        (async () => {
+          var _a;
+          const result = action();
+          const iterator = (_a = result == null ? void 0 : result[Symbol.asyncIterator]) == null ? void 0 : _a.call(result);
+          if (iterator) {
+            for await (const bytes of iterator) {
+              if (isErrored(stream)) break;
+              if (bytes.length) {
+                controller.enqueue(new Uint8Array(bytes));
               }
-              return controller.desiredSize > 0;
-            });
-          },
-          cancel(reason) {
-            return iterator.return();
-          },
-          type: "bytes"
-        });
+            }
+          } else if ((result == null ? void 0 : result.length) && !isErrored(stream)) {
+            controller.enqueue(typeof result === "string" ? textEncoder.encode(result) : new Uint8Array(result));
+          }
+          queueMicrotask(() => readableStreamClose(controller));
+        })();
       }
       const body = { stream, source, length };
       return [body, type];
@@ -183614,12 +183612,9 @@ Content-Type: ${value.type || "application/octet-stream"}\r
       } catch (e) {
         return Promise.reject(e);
       }
-      const state = getInternalState(object);
-      if (bodyUnusable(state)) {
+      object = getInternalState(object);
+      if (bodyUnusable(object)) {
         return Promise.reject(new TypeError("Body is unusable: Body has already been read"));
-      }
-      if (state.aborted) {
-        return Promise.reject(new DOMException("The operation was aborted.", "AbortError"));
       }
       const promise = createDeferredPromise();
       const errorSteps = promise.reject;
@@ -183630,11 +183625,11 @@ Content-Type: ${value.type || "application/octet-stream"}\r
           errorSteps(e);
         }
       };
-      if (state.body == null) {
+      if (object.body == null) {
         successSteps(Buffer.allocUnsafe(0));
         return promise.promise;
       }
-      fullyReadBody(state.body, successSteps, errorSteps);
+      fullyReadBody(object.body, successSteps, errorSteps);
       return promise.promise;
     }
     function bodyUnusable(object) {
@@ -184237,8 +184232,12 @@ var require_client_h1 = __commonJS({
         return 0;
       }
     };
-    function onParserTimeout(parser) {
-      const { socket, timeoutType, client, paused } = parser.deref();
+    function onParserTimeout(parserWeakRef) {
+      const parser = parserWeakRef.deref();
+      if (!parser) {
+        return;
+      }
+      const { socket, timeoutType, client, paused } = parser;
       if (timeoutType === TIMEOUT_HEADERS) {
         if (!socket[kWriting] || socket.writableNeedDrain || client[kRunning] > 1) {
           assert(!paused, "cannot be paused while waiting for headers");
@@ -184849,6 +184848,7 @@ var require_client_h2 = __commonJS({
       kStrictContentLength,
       kOnError,
       kMaxConcurrentStreams,
+      kPingInterval,
       kHTTP2Session,
       kHTTP2InitialWindowSize,
       kHTTP2ConnectionWindowSize,
@@ -184859,7 +184859,8 @@ var require_client_h2 = __commonJS({
       kBodyTimeout,
       kEnableConnectProtocol,
       kRemoteSettings,
-      kHTTP2Stream
+      kHTTP2Stream,
+      kHTTP2SessionState
     } = require_symbols();
     var { channels } = require_diagnostics();
     var kOpenStreams = /* @__PURE__ */ Symbol("open streams");
@@ -184910,10 +184911,15 @@ var require_client_h2 = __commonJS({
           ...http2InitialWindowSize != null ? { initialWindowSize: http2InitialWindowSize } : null
         }
       });
+      client[kSocket] = socket;
       session[kOpenStreams] = 0;
       session[kClient] = client;
       session[kSocket] = socket;
-      session[kHTTP2Session] = null;
+      session[kHTTP2SessionState] = {
+        ping: {
+          interval: client[kPingInterval] === 0 ? null : setInterval(onHttp2SendPing, client[kPingInterval], session).unref()
+        }
+      };
       session[kEnableConnectProtocol] = false;
       session[kRemoteSettings] = false;
       if (http2ConnectionWindowSize) {
@@ -185016,6 +185022,26 @@ var require_client_h2 = __commonJS({
       this[kRemoteSettings] = true;
       this[kClient][kResume]();
     }
+    function onHttp2SendPing(session) {
+      const state = session[kHTTP2SessionState];
+      if ((session.closed || session.destroyed) && state.ping.interval != null) {
+        clearInterval(state.ping.interval);
+        state.ping.interval = null;
+        return;
+      }
+      session.ping(onPing.bind(session));
+      function onPing(err, duration) {
+        const client = this[kClient];
+        const socket = this[kClient];
+        if (err != null) {
+          const error = new InformationalError(`HTTP/2: "PING" errored - type ${err.message}`);
+          socket[kError] = error;
+          client[kOnError](error);
+        } else {
+          client.emit("ping", duration);
+        }
+      }
+    }
     function onHttp2SessionError(err) {
       assert(err.code !== "ERR_TLS_CERT_ALTNAME_INVALID");
       this[kSocket][kError] = err;
@@ -185053,11 +185079,15 @@ var require_client_h2 = __commonJS({
       client[kResume]();
     }
     function onHttp2SessionClose() {
-      const { [kClient]: client } = this;
+      const { [kClient]: client, [kHTTP2SessionState]: state } = this;
       const { [kSocket]: socket } = client;
       const err = this[kSocket][kError] || this[kError] || new SocketError("closed", util.getSocketInfo(socket));
       client[kSocket] = null;
       client[kHTTPContext] = null;
+      if (state.ping.interval != null) {
+        clearInterval(state.ping.interval);
+        state.ping.interval = null;
+      }
       if (client.destroyed) {
         assert(client[kPending] === 0);
         const requests = client[kQueue].splice(client[kRunningIdx]);
@@ -185262,9 +185292,11 @@ var require_client_h2 = __commonJS({
       }
       ++session[kOpenStreams];
       stream.setTimeout(requestTimeout);
+      let responseReceived = false;
       stream.once("response", (headers2) => {
         const { [HTTP2_HEADER_STATUS]: statusCode, ...realHeaders } = headers2;
         request.onResponseStarted();
+        responseReceived = true;
         if (request.aborted) {
           stream.removeAllListeners("data");
           return;
@@ -185278,21 +185310,16 @@ var require_client_h2 = __commonJS({
           stream.pause();
         }
       });
-      stream.once("end", (err) => {
-        var _a;
+      stream.once("end", () => {
         stream.removeAllListeners("data");
-        if (((_a = stream.state) == null ? void 0 : _a.state) == null || stream.state.state < 6) {
+        if (responseReceived) {
           if (!request.aborted && !request.completed) {
             request.onComplete({});
           }
           client[kQueue][client[kRunningIdx]++] = null;
           client[kResume]();
         } else {
-          --session[kOpenStreams];
-          if (session[kOpenStreams] === 0) {
-            session.unref();
-          }
-          abort(err ?? new InformationalError("HTTP/2: stream half-closed (remote)"));
+          abort(new InformationalError("HTTP/2: stream half-closed (remote)"));
           client[kQueue][client[kRunningIdx]++] = null;
           client[kPendingIdx] = client[kRunningIdx];
           client[kResume]();
@@ -185574,7 +185601,8 @@ var require_client = __commonJS({
       kMaxConcurrentStreams,
       kHTTP2InitialWindowSize,
       kHTTP2ConnectionWindowSize,
-      kResume
+      kResume,
+      kPingInterval
     } = require_symbols();
     var connectH1 = require_client_h1();
     var connectH2 = require_client_h2();
@@ -185623,7 +185651,8 @@ var require_client = __commonJS({
         allowH2,
         useH2c,
         initialWindowSize,
-        connectionWindowSize
+        connectionWindowSize,
+        pingInterval
       } = {}) {
         if (keepAlive !== void 0) {
           throw new InvalidArgumentError("unsupported keepAlive, use pipelining=0 instead");
@@ -185698,6 +185727,9 @@ var require_client = __commonJS({
         if (connectionWindowSize != null && (!Number.isInteger(connectionWindowSize) || connectionWindowSize < 1)) {
           throw new InvalidArgumentError("connectionWindowSize must be a positive integer, greater than 0");
         }
+        if (pingInterval != null && (typeof pingInterval !== "number" || !Number.isInteger(pingInterval) || pingInterval < 0)) {
+          throw new InvalidArgumentError("pingInterval must be a positive integer, greater or equal to 0");
+        }
         super();
         if (typeof connect2 !== "function") {
           connect2 = buildConnector({
@@ -185731,10 +185763,11 @@ var require_client = __commonJS({
         this[kMaxRequests] = maxRequestsPerClient;
         this[kClosedResolve] = null;
         this[kMaxResponseSize] = maxResponseSize > -1 ? maxResponseSize : -1;
+        this[kHTTPContext] = null;
         this[kMaxConcurrentStreams] = maxConcurrentStreams != null ? maxConcurrentStreams : 100;
         this[kHTTP2InitialWindowSize] = initialWindowSize != null ? initialWindowSize : 262144;
         this[kHTTP2ConnectionWindowSize] = connectionWindowSize != null ? connectionWindowSize : 524288;
-        this[kHTTPContext] = null;
+        this[kPingInterval] = pingInterval != null ? pingInterval : 6e4;
         this[kQueue] = [];
         this[kRunningIdx] = 0;
         this[kPendingIdx] = 0;
@@ -186139,9 +186172,12 @@ var require_pool_base = __commonJS({
           this.emit("drain", origin, [this, ...targets]);
         }
         if (this[kClosedResolve] && queue.isEmpty()) {
-          const closeAll = new Array(this[kClients].length);
+          const closeAll = [];
           for (let i = 0; i < this[kClients].length; i++) {
-            closeAll[i] = this[kClients][i].close();
+            const client2 = this[kClients][i];
+            if (!client2.destroyed) {
+              closeAll.push(client2.close());
+            }
           }
           return Promise.all(closeAll).then(this[kClosedResolve]);
         }
@@ -186198,9 +186234,12 @@ var require_pool_base = __commonJS({
       }
       [kClose]() {
         if (this[kQueue].isEmpty()) {
-          const closeAll = new Array(this[kClients].length);
+          const closeAll = [];
           for (let i = 0; i < this[kClients].length; i++) {
-            closeAll[i] = this[kClients][i].close();
+            const client = this[kClients][i];
+            if (!client.destroyed) {
+              closeAll.push(client.close());
+            }
           }
           return Promise.all(closeAll);
         } else {
@@ -186712,7 +186751,9 @@ var require_agent = __commonJS({
               if (connected) result2.count -= 1;
               if (result2.count <= 0) {
                 this[kClients].delete(key);
-                result2.dispatcher.close();
+                if (!result2.dispatcher.destroyed) {
+                  result2.dispatcher.close();
+                }
               }
               this[kOrigins].delete(key);
             }
@@ -188046,6 +188087,7 @@ var require_api_request = __commonJS({
           try {
             this.runInAsyncScope(callback, null, null, {
               statusCode,
+              statusText: statusMessage,
               headers,
               trailers: this.trailers,
               opaque,
@@ -189024,6 +189066,7 @@ var require_mock_utils = __commonJS({
       return Buffer.concat(buffers).toString("utf8");
     }
     function mockDispatch(opts, handler) {
+      var _a;
       const key = buildKey(opts);
       const mockDispatch2 = getMockDispatch(this[kDispatches], key);
       mockDispatch2.timesInvoked++;
@@ -189039,27 +189082,47 @@ var require_mock_utils = __commonJS({
         handler.onError(error);
         return true;
       }
+      let aborted = false;
+      let timer = null;
+      function abort(err) {
+        if (aborted) {
+          return;
+        }
+        aborted = true;
+        if (timer !== null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        handler.onError(err);
+      }
+      (_a = handler.onConnect) == null ? void 0 : _a.call(handler, abort, null);
       if (typeof delay === "number" && delay > 0) {
-        setTimeout(() => {
+        timer = setTimeout(() => {
+          timer = null;
           handleReply(this[kDispatches]);
         }, delay);
       } else {
         handleReply(this[kDispatches]);
       }
       function handleReply(mockDispatches, _data = data) {
-        var _a, _b, _c, _d;
+        var _a2, _b, _c;
+        if (aborted) {
+          return;
+        }
         const optsHeaders = Array.isArray(opts.headers) ? buildHeadersFromArray(opts.headers) : opts.headers;
         const body = typeof _data === "function" ? _data({ ...opts, headers: optsHeaders }) : _data;
         if (isPromise(body)) {
           return body.then((newData) => handleReply(mockDispatches, newData));
         }
+        if (aborted) {
+          return;
+        }
         const responseData = getResponseData(body);
         const responseHeaders = generateKeyValues(headers);
         const responseTrailers = generateKeyValues(trailers);
-        (_a = handler.onConnect) == null ? void 0 : _a.call(handler, (err) => handler.onError(err), null);
-        (_b = handler.onHeaders) == null ? void 0 : _b.call(handler, statusCode, responseHeaders, resume, getStatusText(statusCode));
-        (_c = handler.onData) == null ? void 0 : _c.call(handler, Buffer.from(responseData));
-        (_d = handler.onComplete) == null ? void 0 : _d.call(handler, responseTrailers);
+        (_a2 = handler.onHeaders) == null ? void 0 : _a2.call(handler, statusCode, responseHeaders, resume, getStatusText(statusCode));
+        (_b = handler.onData) == null ? void 0 : _b.call(handler, Buffer.from(responseData));
+        (_c = handler.onComplete) == null ? void 0 : _c.call(handler, responseTrailers);
         deleteMockDispatch(mockDispatches, key);
       }
       function resume() {
@@ -193283,15 +193346,13 @@ var require_decompress2 = __commonJS({
       /** @type {boolean} */
       false
     );
-    var _decompressors, _pipelineStream, _skipStatusCodes, _skipErrorResponses, _DecompressHandler_instances, shouldSkipDecompression_fn, createDecompressionChain_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, cleanupDecompressors_fn;
+    var _decompressors, _skipStatusCodes, _skipErrorResponses, _DecompressHandler_instances, shouldSkipDecompression_fn, createDecompressionChain_fn, setupDecompressorEvents_fn, setupSingleDecompressor_fn, setupMultipleDecompressors_fn, cleanupDecompressors_fn;
     var _DecompressHandler = class _DecompressHandler extends DecoratorHandler {
       constructor(handler, { skipStatusCodes = defaultSkipStatusCodes, skipErrorResponses = true } = {}) {
         super(handler);
         __privateAdd(this, _DecompressHandler_instances);
         /** @type {Transform[]} */
         __privateAdd(this, _decompressors, []);
-        /** @type {NodeJS.WritableStream&NodeJS.ReadableStream|null} */
-        __privateAdd(this, _pipelineStream);
         /** @type {Readonly<number[]>} */
         __privateAdd(this, _skipStatusCodes);
         /** @type {boolean} */
@@ -193323,7 +193384,7 @@ var require_decompress2 = __commonJS({
         } else {
           __privateMethod(this, _DecompressHandler_instances, setupMultipleDecompressors_fn).call(this, controller);
         }
-        super.onResponseStart(controller, statusCode, newHeaders, statusMessage);
+        return super.onResponseStart(controller, statusCode, newHeaders, statusMessage);
       }
       /**
        * @param {Controller} controller
@@ -193366,7 +193427,6 @@ var require_decompress2 = __commonJS({
       }
     };
     _decompressors = new WeakMap();
-    _pipelineStream = new WeakMap();
     _skipStatusCodes = new WeakMap();
     _skipErrorResponses = new WeakMap();
     _DecompressHandler_instances = new WeakSet();
@@ -193447,13 +193507,13 @@ var require_decompress2 = __commonJS({
     setupMultipleDecompressors_fn = function(controller) {
       const lastDecompressor = __privateGet(this, _decompressors)[__privateGet(this, _decompressors).length - 1];
       __privateMethod(this, _DecompressHandler_instances, setupDecompressorEvents_fn).call(this, lastDecompressor, controller);
-      __privateSet(this, _pipelineStream, pipeline(__privateGet(this, _decompressors), (err) => {
+      pipeline(__privateGet(this, _decompressors), (err) => {
         if (err) {
           __superGet(_DecompressHandler.prototype, this, "onResponseError").call(this, controller, err);
           return;
         }
         __superGet(_DecompressHandler.prototype, this, "onResponseEnd").call(this, controller, {});
-      }));
+      });
     };
     /**
      * Cleans up decompressor references to prevent memory leaks
@@ -193461,7 +193521,6 @@ var require_decompress2 = __commonJS({
      */
     cleanupDecompressors_fn = function() {
       __privateGet(this, _decompressors).length = 0;
-      __privateSet(this, _pipelineStream, null);
     };
     var DecompressHandler = _DecompressHandler;
     function createDecompressInterceptor(options = {}) {
@@ -194754,7 +194813,7 @@ var require_response = __commonJS({
           });
         }
         const clonedResponse = cloneResponse(__privateGet(this, _state));
-        if ((_a = __privateGet(this, _state).body) == null ? void 0 : _a.stream) {
+        if (__privateGet(this, _state).urlList.length !== 0 && ((_a = __privateGet(this, _state).body) == null ? void 0 : _a.stream)) {
           streamRegistry.register(this, new WeakRef(__privateGet(this, _state).body.stream));
         }
         return fromInnerResponse(clonedResponse, getHeadersGuard(__privateGet(this, _headers)));
@@ -196055,7 +196114,7 @@ var require_fetch = __commonJS({
       }
       const request = getRequestState(requestObject);
       if (requestObject.signal.aborted) {
-        abortFetch(p, request, null, requestObject.signal.reason);
+        abortFetch(p, request, null, requestObject.signal.reason, null);
         return p.promise;
       }
       const globalObject = request.client.globalObject;
@@ -196072,7 +196131,7 @@ var require_fetch = __commonJS({
           assert(controller != null);
           controller.abort(requestObject.signal.reason);
           const realResponse = responseObject == null ? void 0 : responseObject.deref();
-          abortFetch(p, request, realResponse, requestObject.signal.reason);
+          abortFetch(p, request, realResponse, requestObject.signal.reason, controller.controller);
         }
       );
       const processResponse = (response) => {
@@ -196080,7 +196139,7 @@ var require_fetch = __commonJS({
           return;
         }
         if (response.aborted) {
-          abortFetch(p, request, responseObject, controller.serializedAbortReason);
+          abortFetch(p, request, responseObject, controller.serializedAbortReason, controller.controller);
           return;
         }
         if (response.type === "error") {
@@ -196137,7 +196196,7 @@ var require_fetch = __commonJS({
       );
     }
     var markResourceTiming = performance.markResourceTiming;
-    function abortFetch(p, request, responseObject, error) {
+    function abortFetch(p, request, responseObject, error, controller) {
       var _a, _b;
       if (p) {
         p.reject(error);
@@ -196155,12 +196214,7 @@ var require_fetch = __commonJS({
       }
       const response = getResponseState(responseObject);
       if (((_b = response.body) == null ? void 0 : _b.stream) != null && isReadable(response.body.stream)) {
-        response.body.stream.cancel(error).catch((err) => {
-          if (err.code === "ERR_INVALID_STATE") {
-            return;
-          }
-          throw err;
-        });
+        controller.error(error);
       }
     }
     function fetching({
@@ -196695,7 +196749,7 @@ var require_fetch = __commonJS({
           if (isCancelled(fetchParams)) {
             return makeAppropriateNetworkError(fetchParams);
           }
-          return makeNetworkError();
+          return response;
         }
         fetchParams.controller.connection.destroy();
         response = await httpNetworkOrCacheFetch(fetchParams, true);
@@ -201030,10 +201084,31 @@ var require_undici = __commonJS({
     module2.exports.setGlobalDispatcher = setGlobalDispatcher;
     module2.exports.getGlobalDispatcher = getGlobalDispatcher;
     var fetchImpl = require_fetch().fetch;
+    var currentFilename = typeof __filename !== "undefined" ? __filename : void 0;
+    function appendFetchStackTrace(err, filename) {
+      if (!err || typeof err !== "object") {
+        return;
+      }
+      const stack = typeof err.stack === "string" ? err.stack : "";
+      const normalizedFilename = filename.replace(/\\/g, "/");
+      if (stack && (stack.includes(filename) || stack.includes(normalizedFilename))) {
+        return;
+      }
+      const capture = {};
+      Error.captureStackTrace(capture, appendFetchStackTrace);
+      if (!capture.stack) {
+        return;
+      }
+      const captureLines = capture.stack.split("\n").slice(1).join("\n");
+      err.stack = stack ? `${stack}
+${captureLines}` : capture.stack;
+    }
     module2.exports.fetch = function fetch(init, options = void 0) {
       return fetchImpl(init, options).catch((err) => {
-        if (err && typeof err === "object") {
-          Error.captureStackTrace(err);
+        if (currentFilename) {
+          appendFetchStackTrace(err, currentFilename);
+        } else if (err && typeof err === "object") {
+          Error.captureStackTrace(err, module2.exports.fetch);
         }
         throw err;
       });
