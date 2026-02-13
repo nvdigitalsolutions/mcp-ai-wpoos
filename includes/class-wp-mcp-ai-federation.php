@@ -109,9 +109,10 @@ class WP_MCP_AI_Federation {
 			}
 		}
 
-		// Always initialize mesh peer sync if mesh is enabled (creates CPTs for manual mesh peers).
+		// Initialize mesh peer sync if mesh is enabled (creates CPTs for manual mesh peers).
+		// This should work independently of federation directory status.
 		$is_mesh_enabled = WP_MCP_AI_Federation_Settings::is_mesh_enabled();
-		if ( $is_mesh_enabled && $is_directory_enabled ) {
+		if ( $is_mesh_enabled ) {
 			$this->mesh_peer_sync = new WP_MCP_AI_Mesh_Peer_Sync();
 		}
 
