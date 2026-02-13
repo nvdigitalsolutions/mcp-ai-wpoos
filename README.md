@@ -13,6 +13,7 @@
 
 **Version:** 1.1.1  
 **Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
+**Latest Updates:** February 2026 - Package pre-bundling, Product Research page fixes, Pro Workflow Builder stability  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -23,6 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
+- [🆕 Latest Updates (February 2026)](#-latest-updates-february-2026)
 - [🆕 Latest Updates (January 2026)](#-latest-updates-january-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
@@ -266,7 +268,79 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January-February 2026)
 
-### Slash Commands & Workflow System - Phase 1 & 2 Complete (February 3-4, 2026) ⭐ **NEW**
+### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
+
+**Major Improvement: Vendor directory pre-bundling eliminates npm install requirement**
+
+NV oOS Pro now pre-bundles critical npm packages in the vendor directory, dramatically simplifying deployment:
+
+**Benefits:**
+- ✅ **No npm install required** on production servers
+- ✅ **Faster deployment** - packages ready out-of-the-box
+- ✅ **Reduced dependencies** on external npm registry
+- ✅ **Backward compatible** - falls back to node_modules if present
+
+**Pre-Bundled Packages:**
+- **Document Generation**: pdf-lib ^1.17.1, pdfkit, docx, exceljs
+- **Image Processing**: qrcode, cheerio, turndown
+- **Optional Advanced**: puppeteer-core ^21.0.0 (HTML rendering)
+
+**Implementation:**
+- Enhanced `copy-dependencies.js` script with 8 new package definitions
+- Updated Document Generation settings page to check vendor directory first
+- Automatic fallback mechanism for backward compatibility
+
+**Files Modified:**
+- `addons/pro/scripts/copy-dependencies.js` - Added document generation utility packages
+- `addons/pro/includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php` - Enhanced package detection
+
+[Complete February 2026 Updates →](docs/FEBRUARY_2026_UPDATES.md)
+
+### Product Research Page Fixes (February 10-11, 2026) ⭐ **NEW**
+
+**Critical Fixes: Resolved rendering and tab system issues**
+
+Multiple fixes to ensure Product Research and Consolidate pages work reliably:
+
+**1. Admin Hook Detection Fix (Feb 10)**
+- Fixed CSS/JS not loading on Product Consolidate page
+- Corrected hook pattern from CPT to custom menu format
+- [Detailed Documentation →](docs/fixes/product-page-admin-hook-detection-fix-2026-02-10.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_FIX_SUMMARY.md)
+
+**2. Tab System Fix (Feb 11)**
+- Fixed all workflow tabs displaying simultaneously
+- Added defensive inline styles and flexible hook matching
+- Enhanced CSS specificity to prevent overrides
+- [Detailed Documentation →](docs/fixes/product-research-tab-system-fix-2026-02-11.md) | [Summary →](archive/2025/fixes/PRODUCT_RESEARCH_TAB_FIX_SUMMARY.md)
+
+**3. Additional Fixes:**
+- Improved asset enqueuing priority
+- Removed duplicate "Research & Add" menu item
+- Fixed CSS/JS loading reliability
+
+### Pro Workflow Builder Stability (February 4-5, 2026) ⭐ **NEW**
+
+**Multiple React-based fixes for reliability:**
+- ✅ Fixed React asset loading and initialization
+- ✅ Fixed double instantiation causing duplicate DOM elements
+- ✅ Fixed initialization timing race conditions
+- ✅ Fixed menu placement inconsistencies
+- ✅ Fixed empty page display issue
+
+[Quick Reference →](docs/fixes/pro-workflow-builder-fix-quick-reference-2026-02-05.md)
+
+### OAuth & API Connection Fixes (February 3, 2026) ⭐ **NEW**
+
+**Improved third-party integrations:**
+- Fixed Google OAuth approval prompt display
+- Fixed Yahoo OAuth redirect URL construction
+- Fixed Mailjet API authentication handling
+
+### E-commerce Toolkit (February 10, 2026) ⭐ **NEW**
+
+**Now enabled by default** for new installations to reduce setup friction
+
+### Slash Commands & Workflow System - Phase 1 & 2 Complete (February 3-4, 2026) ⭐
 
 **Major Feature: Comprehensive slash command system for content management and pro toolkits**
 
@@ -1155,6 +1229,8 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 ### Without JetEngine (Crocoblock - Paid Plugin)
 
 **Lost Features:**
+- ❌ **AI metaboxes for JetEngine CPTs/Taxonomies** - No AI assistant integration on JetEngine edit screens
+- ❌ **Research & Add pages** - No AI-powered content creation with automatic field mapping
 - ❌ **Server-side chat transcript storage** - Chat history only stored in browser localStorage (24 hours)
 - ❌ **Cross-device chat synchronization** - No database-backed conversation history
 - ❌ **Admin chat history access** - Cannot view/audit conversations from admin panel
