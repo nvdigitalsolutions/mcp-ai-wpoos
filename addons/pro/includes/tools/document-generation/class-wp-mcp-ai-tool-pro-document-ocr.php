@@ -322,21 +322,13 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Handle batch URLs.
 		if ( ! empty( $source['urls'] ) && is_array( $source['urls'] ) ) {
 			foreach ( array_slice( $source['urls'], 0, self::MAX_BATCH_IMAGES ) as $url ) {
-				$documents[] = array(
-					'type'   => 'url',
-					'source' => esc_url_raw( $url ),
-					'path'   => null,
-				);
+				$documents[] = $this->resolve_url_document( $url );
 			}
 		}
 
 		// Handle single URL.
 		if ( ! empty( $source['url'] ) ) {
-			$documents[] = array(
-				'type'   => 'url',
-				'source' => esc_url_raw( $source['url'] ),
-				'path'   => null,
-			);
+			$documents[] = $this->resolve_url_document( $source['url'] );
 		}
 
 		// Handle batch file IDs.
@@ -390,6 +382,32 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Resolve URL document.
+	 *
+	 * @param string $url Document URL.
+	 * @return array Document info.
+	 */
+	private function resolve_url_document( $url ) {
+		$url = esc_url_raw( $url );
+
+		// Detect document type from URL extension.
+		$path_info = pathinfo( parse_url( $url, PHP_URL_PATH ) );
+		$extension = isset( $path_info['extension'] ) ? strtolower( $path_info['extension'] ) : '';
+
+		$type = 'image'; // Default to image.
+		if ( 'pdf' === $extension ) {
+			$type = 'pdf';
+		}
+
+		return array(
+			'type'   => $type,
+			'source' => $url,
+			'path'   => null, // Will be downloaded in process_document.
+			'url'    => $url,
+		);
+	}
+
+	/**
 	 * Process a single document.
 	 *
 	 * @param array                 $doc         Document info.
@@ -399,6 +417,29 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function process_document( $doc, $options, $ocr_service ) {
 		$doc_start = microtime( true );
+		$temp_file = null;
+
+		// Download URL to temp file if needed.
+		if ( null === $doc['path'] && ! empty( $doc['url'] ) ) {
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+
+			$temp_file = download_url( $doc['url'] );
+
+			if ( is_wp_error( $temp_file ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_download_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to download document from URL: %s', 'mcp-ai-wpoos-pro' ),
+						$temp_file->get_error_message()
+					)
+				);
+			}
+
+			$doc['path'] = $temp_file;
+		}
 
 		// Prepare OCR options.
 		$ocr_options = array(
@@ -408,12 +449,26 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		// Extract text based on document type.
-		if ( 'pdf' === $doc['type'] ) {
-			$ocr_options['max_pages'] = $options['max_pages_per_pdf'];
-			$ocr_options['dpi']       = 300;
-			$text                     = $ocr_service->extract_text_from_pdf( $doc['path'], $ocr_options );
-		} else {
-			$text = $ocr_service->extract_text_from_image( $doc['path'], $ocr_options );
+		// Use try-finally pattern to ensure temp file cleanup.
+		try {
+			if ( 'pdf' === $doc['type'] ) {
+				$ocr_options['max_pages'] = $options['max_pages_per_pdf'];
+				$ocr_options['dpi']       = 300;
+				$text                     = $ocr_service->extract_text_from_pdf( $doc['path'], $ocr_options );
+			} else {
+				$text = $ocr_service->extract_text_from_image( $doc['path'], $ocr_options );
+			}
+		} finally {
+			// Clean up temp file if we downloaded one.
+			if ( $temp_file && file_exists( $temp_file ) ) {
+				if ( ! unlink( $temp_file ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'ocr_temp_cleanup_failed',
+						'Failed to delete temporary OCR file',
+						array( 'file' => $temp_file )
+					);
+				}
+			}
 		}
 
 		if ( is_wp_error( $text ) ) {

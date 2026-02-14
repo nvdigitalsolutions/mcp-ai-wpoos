@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-multiple-url-handling',
+        'version' => 'dev-copilot/add-multiple-url-handling',
+        'reference' => 'ee96cbb73899faf98af9af3389612de8b727bf1e',
         'pretty_version' => 'dev-copilot/fix-ocr-pdf-text-error',
         'version' => 'dev-copilot/fix-ocr-pdf-text-error',
         'reference' => '4742861a16d1e92da35343301957e0892a484b4c',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-multiple-url-handling',
+            'version' => 'dev-copilot/add-multiple-url-handling',
+            'reference' => 'ee96cbb73899faf98af9af3389612de8b727bf1e',
             'pretty_version' => 'dev-copilot/fix-ocr-pdf-text-error',
             'version' => 'dev-copilot/fix-ocr-pdf-text-error',
             'reference' => '4742861a16d1e92da35343301957e0892a484b4c',

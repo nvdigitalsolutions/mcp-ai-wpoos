@@ -78,6 +78,28 @@ The **Pro Document OCR** tool is an advanced AI-powered OCR (Optical Character R
 }
 ```
 
+### Multiple URL Processing
+
+```json
+{
+  "tool": "pro_document_ocr",
+  "arguments": {
+    "source": {
+      "urls": [
+        "https://example.com/document1.pdf",
+        "https://example.com/document2.pdf",
+        "https://example.com/scan1.jpg",
+        "https://example.com/scan2.png"
+      ]
+    },
+    "options": {
+      "output_format": "text",
+      "include_metadata": true
+    }
+  }
+}
+```
+
 ### Structured Output with Export
 
 ```json
@@ -106,9 +128,9 @@ The **Pro Document OCR** tool is an advanced AI-powered OCR (Optical Character R
 Specify the document source using ONE of:
 
 - `attachment_id` (integer): Single WordPress attachment ID
-- `attachment_ids` (array): Multiple attachment IDs for batch processing
+- `attachment_ids` (array): Multiple attachment IDs for batch processing (up to 20)
 - `url` (string): Single image/PDF URL
-- `urls` (array): Multiple URLs for batch processing
+- `urls` (array): Multiple URLs for batch processing (up to 20)
 - `file_ids` (array): OpenAI file IDs for batch processing
 
 ### Options
