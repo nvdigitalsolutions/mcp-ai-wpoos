@@ -531,6 +531,13 @@ const dependencies = [
 			{ src: 'package.json', dest: 'cheerio/package.json' },
 		],
 	},
+	{
+		name: 'pdf-parse',
+		files: [
+			{ src: 'lib/pdf-parse.js', dest: 'pdf-parse/pdf-parse.js' },
+			{ src: 'package.json', dest: 'pdf-parse/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

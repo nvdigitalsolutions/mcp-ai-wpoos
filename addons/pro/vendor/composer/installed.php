@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/pro-addon',
         'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
         'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-        'reference' => 'a685beefdf8ae65eab03e8336c20dd2882e54322',
+        'reference' => 'dd667b3eb25c0979b4f6a88d570f2c4c9f50a123',
         'type' => 'wordpress-plugin-addon',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/pro-addon' => array(
             'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
             'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-            'reference' => 'a685beefdf8ae65eab03e8336c20dd2882e54322',
+            'reference' => 'dd667b3eb25c0979b4f6a88d570f2c4c9f50a123',
             'type' => 'wordpress-plugin-addon',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
