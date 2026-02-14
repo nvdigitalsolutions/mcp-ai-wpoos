@@ -1130,7 +1130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						$package_installed = self::check_composer_package_installed( $package );
 						$status_class      = $package_installed ? 'installed' : 'not-installed';
 						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
-						
+
 						// For PHP, show actual version instead of just installed status.
 						if ( 'php' === $package ) {
 							$current_php     = phpversion();

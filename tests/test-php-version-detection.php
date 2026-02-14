@@ -63,7 +63,7 @@ class WP_MCP_AI_PHP_Version_Detection_Test extends WP_UnitTestCase {
 	 */
 	public function test_phpversion_returns_valid_version() {
 		$php_version = phpversion();
-		
+
 		// Should not be empty.
 		$this->assertNotEmpty( $php_version, 'phpversion() should return a non-empty string' );
 
@@ -88,7 +88,7 @@ class WP_MCP_AI_PHP_Version_Detection_Test extends WP_UnitTestCase {
 		// Simulate the version comparison logic from render_composer_table.
 		$required_version = '8.1.0';
 		$current_version  = phpversion();
-		
+
 		// Remove common version constraint characters.
 		$required_clean = trim( $required_version, '^><=~' );
 		
