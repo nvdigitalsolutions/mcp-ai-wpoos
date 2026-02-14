@@ -11,12 +11,20 @@ const path = require('path');
 // Load sharp from bundled vendor or node_modules
 let sharp;
 try {
-	// Try bundled version first
+	// Try bundled version first with path validation
 	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
-	try {
-		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
-	} catch (e) {
-		sharp = require('sharp'); // Fallback to node_modules
+	
+	if (fs.existsSync(vendorPath)) {
+		const sharpPath = path.join(vendorPath, 'sharp', 'lib');
+		if (fs.existsSync(sharpPath)) {
+			sharp = require(sharpPath);
+		} else {
+			// Bundled path doesn't exist, try node_modules
+			sharp = require('sharp');
+		}
+	} else {
+		// Vendor directory doesn't exist, fallback to node_modules
+		sharp = require('sharp');
 	}
 } catch (error) {
 	console.log(JSON.stringify({ 

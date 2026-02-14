@@ -16,9 +16,21 @@ try {
 	// Try to load from bundled vendor directory first
 	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
 	
+	// Validate vendor path exists before attempting to load
+	const vendorExists = fs.existsSync(vendorPath);
+	
 	// Load Tesseract.js
 	try {
-		Tesseract = require(path.join(vendorPath, 'tesseract.js', 'src'));
+		if (vendorExists) {
+			const tesseractPath = path.join(vendorPath, 'tesseract.js', 'src');
+			if (fs.existsSync(tesseractPath)) {
+				Tesseract = require(tesseractPath);
+			} else {
+				throw new Error('Bundled tesseract.js not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
 		try {
 			Tesseract = require('tesseract.js'); // Fallback to node_modules
@@ -29,7 +41,16 @@ try {
 	
 	// Load Sharp
 	try {
-		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
+		if (vendorExists) {
+			const sharpPath = path.join(vendorPath, 'sharp', 'lib');
+			if (fs.existsSync(sharpPath)) {
+				sharp = require(sharpPath);
+			} else {
+				throw new Error('Bundled sharp not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
 		try {
 			sharp = require('sharp'); // Fallback to node_modules
@@ -40,7 +61,16 @@ try {
 	
 	// Load Canvas
 	try {
-		canvas = require(path.join(vendorPath, 'canvas'));
+		if (vendorExists) {
+			const canvasPath = path.join(vendorPath, 'canvas');
+			if (fs.existsSync(canvasPath)) {
+				canvas = require(canvasPath);
+			} else {
+				throw new Error('Bundled canvas not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
 		try {
 			canvas = require('canvas'); // Fallback to node_modules
@@ -220,16 +250,23 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 		// Load PDF.js (lazy load to avoid issues if not needed)
 		if (!pdfjsLib) {
 			try {
-				// Try bundled version first
+				// Try bundled version first with path validation
 				const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
-				pdfjsLib = require(path.join(vendorPath, 'pdfjs-dist', 'legacy', 'build', 'pdf.js'));
-			} catch (e) {
-				try {
+				
+				if (fs.existsSync(vendorPath)) {
+					const pdfjsPath = path.join(vendorPath, 'pdfjs-dist', 'legacy', 'build', 'pdf.js');
+					if (fs.existsSync(pdfjsPath)) {
+						pdfjsLib = require(pdfjsPath);
+					} else {
+						// Try node_modules
+						pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+					}
+				} else {
 					// Fallback to node_modules
 					pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-				} catch (error) {
-					throw new Error('pdfjs-dist module not available. PDF OCR requires pdfjs-dist for rendering.');
 				}
+			} catch (error) {
+				throw new Error('pdfjs-dist module not available. PDF OCR requires pdfjs-dist for rendering. Details: ' + error.message);
 			}
 		}
 

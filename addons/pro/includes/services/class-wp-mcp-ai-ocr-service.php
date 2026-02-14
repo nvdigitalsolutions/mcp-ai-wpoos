@@ -430,12 +430,14 @@ class WP_MCP_AI_OCR_Service {
 	 * @return array|WP_Error Array of image paths or error.
 	 */
 	protected function convert_pdf_with_imagick( $pdf_path, $dpi = 300, $max_pages = 0 ) {
+		$images = array();
+		$pdf = null;
+
 		try {
 			$pdf = new Imagick();
 			$pdf->setResolution( $dpi, $dpi );
 			$pdf->readImage( $pdf_path );
 
-			$images    = array();
 			$num_pages = $pdf->getNumberImages();
 			$pages_to_process = ( $max_pages > 0 && $max_pages < $num_pages ) ? $max_pages : $num_pages;
 
@@ -456,6 +458,19 @@ class WP_MCP_AI_OCR_Service {
 
 			return $images;
 		} catch ( Exception $e ) {
+			// Clean up any temp files created before the error.
+			foreach ( $images as $temp_file ) {
+				if ( file_exists( $temp_file ) ) {
+					@unlink( $temp_file );
+				}
+			}
+
+			// Clean up Imagick object if it exists.
+			if ( $pdf instanceof Imagick ) {
+				$pdf->clear();
+				$pdf->destroy();
+			}
+
 			return new WP_Error( 'imagick_conversion_failed', sprintf( 'PDF to image conversion failed: %s', $e->getMessage() ) );
 		}
 	}
@@ -929,14 +944,25 @@ class WP_MCP_AI_OCR_Service {
 			)
 		);
 
-		// Execute Node.js service.
+		// Execute Node.js service with timeout protection.
 		$cmd = sprintf(
 			'node %s image %s 2>&1',
 			escapeshellarg( $service_path ),
 			escapeshellarg( $args )
 		);
 
-		exec( $cmd, $output, $return_code );
+		$result = $this->execute_node_service_with_timeout( $cmd, 120 ); // 2 minute timeout for OCR
+		$output = $result['output'];
+		$return_code = $result['return_code'];
+
+		// Check for timeout.
+		if ( $result['timed_out'] ) {
+			return new WP_Error(
+				'node_ocr_timeout',
+				__( 'Node.js OCR service timed out after 120 seconds. Try processing fewer pages or a smaller image.', 'mcp-ai-wpoos-pro' ),
+				array( 'timeout' => 120 )
+			);
+		}
 
 		// Check for execution errors.
 		if ( 0 !== $return_code ) {
@@ -1138,8 +1164,13 @@ class WP_MCP_AI_OCR_Service {
 
 		// Check if cooldown period has passed.
 		if ( time() - $state['opened_at'] > self::CIRCUIT_BREAKER_COOLDOWN ) {
-			// Reset circuit to half-open state.
+			// Reset circuit to half-open state for testing.
 			self::$circuit_breaker[ $provider ]['status'] = 'half-open';
+			WP_MCP_AI_Logger::log_event(
+				'ocr_circuit_half_open',
+				sprintf( 'Circuit breaker entering half-open state for provider: %s', $provider ),
+				array( 'provider' => $provider )
+			);
 			return false;
 		}
 
@@ -1175,17 +1206,23 @@ class WP_MCP_AI_OCR_Service {
 	 * @param string $provider Provider name.
 	 */
 	protected function close_circuit( $provider ) {
+		// Only reset if circuit exists and was open/half-open.
+		$was_open = isset( self::$circuit_breaker[ $provider ] ) &&
+					in_array( self::$circuit_breaker[ $provider ]['status'], array( 'open', 'half-open' ), true );
+
 		self::$circuit_breaker[ $provider ] = array(
 			'status'    => 'closed',
 			'opened_at' => 0,
 			'reason'    => '',
 		);
 
-		WP_MCP_AI_Logger::log_event(
-			'ocr_circuit_closed',
-			sprintf( 'Circuit breaker closed for provider: %s', $provider ),
-			array( 'provider' => $provider )
-		);
+		if ( $was_open ) {
+			WP_MCP_AI_Logger::log_event(
+				'ocr_circuit_closed',
+				sprintf( 'Circuit breaker closed for provider: %s (recovered from failure)', $provider ),
+				array( 'provider' => $provider )
+			);
+		}
 	}
 
 	/**
@@ -1246,6 +1283,110 @@ class WP_MCP_AI_OCR_Service {
 
 		// All retries exhausted.
 		return $last_error;
+	}
+
+	/**
+	 * Execute Node.js command with timeout protection.
+	 *
+	 * Uses proc_open() instead of exec() to prevent infinite hangs.
+	 *
+	 * @param string $command Command to execute.
+	 * @param int    $timeout Timeout in seconds.
+	 * @return array Array with 'output', 'return_code', and 'timed_out' keys.
+	 */
+	protected function execute_node_service_with_timeout( $command, $timeout = 60 ) {
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ), // stdin
+			1 => array( 'pipe', 'w' ), // stdout
+			2 => array( 'pipe', 'w' ), // stderr
+		);
+
+		$process = proc_open( $command, $descriptors, $pipes );
+
+		if ( ! is_resource( $process ) ) {
+			return array(
+				'output'      => array(),
+				'return_code' => -1,
+				'timed_out'   => false,
+				'error'       => 'Failed to start process',
+			);
+		}
+
+		// Close stdin.
+		fclose( $pipes[0] );
+
+		// Set non-blocking mode for reading.
+		stream_set_blocking( $pipes[1], false );
+		stream_set_blocking( $pipes[2], false );
+
+		$output       = '';
+		$error_output = '';
+		$start_time   = time();
+		$timed_out    = false;
+
+		// Read output with timeout.
+		while ( true ) {
+			$elapsed = time() - $start_time;
+			if ( $elapsed >= $timeout ) {
+				$timed_out = true;
+				// Kill the process.
+				proc_terminate( $process, 9 ); // SIGKILL
+				WP_MCP_AI_Logger::log_event(
+					'node_service_timeout',
+					sprintf( 'Node.js service timed out after %d seconds', $timeout ),
+					array( 'command' => substr( $command, 0, 200 ) )
+				);
+				break;
+			}
+
+			// Check if process is still running.
+			$status = proc_get_status( $process );
+			if ( ! $status['running'] ) {
+				// Process finished, read any remaining output.
+				$output .= stream_get_contents( $pipes[1] );
+				$error_output .= stream_get_contents( $pipes[2] );
+				break;
+			}
+
+			// Read available data.
+			$read_output = fread( $pipes[1], 8192 );
+			if ( false !== $read_output ) {
+				$output .= $read_output;
+			}
+
+			$read_error = fread( $pipes[2], 8192 );
+			if ( false !== $read_error ) {
+				$error_output .= $read_error;
+			}
+
+			// Small sleep to prevent busy waiting.
+			usleep( 100000 ); // 100ms
+		}
+
+		// Close pipes.
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+
+		// Get return code.
+		$return_code = proc_close( $process );
+
+		// If timed out, return specific error.
+		if ( $timed_out ) {
+			$return_code = -1;
+		}
+
+		// Combine output.
+		$combined_output = trim( $output );
+		if ( ! empty( $error_output ) && empty( $combined_output ) ) {
+			$combined_output = trim( $error_output );
+		}
+
+		return array(
+			'output'      => explode( "\n", $combined_output ),
+			'return_code' => $return_code,
+			'timed_out'   => $timed_out,
+			'error'       => trim( $error_output ),
+		);
 	}
 
 	/**
