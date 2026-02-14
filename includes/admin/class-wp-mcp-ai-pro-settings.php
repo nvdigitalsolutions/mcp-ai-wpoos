@@ -1343,6 +1343,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'ical-generator'                    => 'ical-generator/dist/index.js',
 				// Document generation packages.
 				'pdf-lib'                           => 'pdf-lib/cjs/index.js',
+				'pdf-parse'                         => 'pdf-parse/index.js',
 				// Browser automation packages (optional).
 				'puppeteer-core'                    => 'puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js',
 			);
@@ -1460,6 +1461,35 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 				// These packages are not in base, so return false if not found.
+				return false;
+			}
+
+			// Check for OCR packages used by Node.js services.
+			// These packages (tesseract.js, pdfjs-dist, canvas) are dependencies for node-services.
+			// They're bundled with the plugin in node-services directory for serverless OCR operations.
+			$ocr_node_packages = array(
+				'tesseract.js',
+				'pdfjs-dist',
+				'canvas',
+			);
+			if ( in_array( $package, $ocr_node_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if Node.js OCR service exists (production).
+				// The presence of this service file indicates OCR packages are available.
+				$ocr_service_path = WP_MCP_AI_PRO_PATH . 'node-services/ocr-service.js';
+				if ( file_exists( $ocr_service_path ) ) {
+					return true;
+				}
+				// Priority 2: Check image preprocessing service (for sharp/canvas).
+				$preprocess_service_path = WP_MCP_AI_PRO_PATH . 'node-services/image-preprocess-service.js';
+				if ( file_exists( $preprocess_service_path ) ) {
+					return true;
+				}
+				// Priority 3: Fallback to Pro addon's node_modules (development).
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+				// If none exist, return false (not installed).
 				return false;
 			}
 
