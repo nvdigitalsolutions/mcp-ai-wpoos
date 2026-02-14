@@ -1766,6 +1766,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 							<div style="margin-top: 30px;"></div>
 							
 							<?php self::render_individual_toolkits_status( $toolkit_status ); ?>
+
+							<!-- Optional Dependencies (NPM) -->
+							<?php if ( ! isset( $packages['error'] ) && ! empty( $packages['optionalDependencies'] ) ) : ?>
+								<div style="margin-top: 30px;"></div>
+								
+								<h3><?php esc_html_e( 'Optional Dependencies', 'mcp-ai-wpoos' ); ?> <span class="count">(<?php echo count( $packages['optionalDependencies'] ); ?>)</span></h3>
+								<p class="description" style="margin-bottom: 15px;">
+									<?php esc_html_e( 'Optional NPM packages for advanced features (LangChain, FFmpeg, Puppeteer).', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<?php self::render_packages_table( $packages['optionalDependencies'], __( 'Optional NPM Packages', 'mcp-ai-wpoos' ) ); ?>
+							<?php endif; ?>
 						</div>
 					</div>
 
@@ -1780,12 +1791,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<div style="margin-top: 30px;"></div>
 								
 								<?php self::render_packages_table( $packages['devDependencies'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
-
-								<?php if ( ! empty( $packages['optionalDependencies'] ) ) : ?>
-									<div style="margin-top: 30px;"></div>
-									
-									<?php self::render_packages_table( $packages['optionalDependencies'], __( 'Optional Dependencies', 'mcp-ai-wpoos' ) ); ?>
-								<?php endif; ?>
 
 								<!-- Composer Packages (PHP Dependencies) -->
 								<?php if ( ! isset( $composer['error'] ) && ! empty( $composer['require'] ) ) : ?>
