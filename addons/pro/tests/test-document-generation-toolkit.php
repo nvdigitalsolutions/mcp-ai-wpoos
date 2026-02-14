@@ -25,6 +25,24 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	protected $user_id;
 
 	/**
+	 * List of document generation tools to test.
+	 *
+	 * @var array
+	 */
+	protected $tools_list = array(
+		'WP_MCP_AI_Tool_Generate_PDF',
+		'WP_MCP_AI_Tool_Generate_Word',
+		'WP_MCP_AI_Tool_Generate_Excel',
+		'WP_MCP_AI_Tool_Pro_PDF',
+		'WP_MCP_AI_Tool_Pro_Word',
+		'WP_MCP_AI_Tool_Generate_Invoice_PDF',
+		'WP_MCP_AI_Tool_HTML_To_PDF',
+		'WP_MCP_AI_Tool_Excel_Data_Import',
+		'WP_MCP_AI_Tool_OCR_PDF_Text',
+		'WP_MCP_AI_Tool_Pro_Document_OCR',
+	);
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -51,6 +69,16 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
+	}
+
+	/**
+	 * Helper method to convert class name to file path.
+	 *
+	 * @param string $tool_class Tool class name.
+	 * @return string File path to the tool class.
+	 */
+	protected function get_tool_file_path( $tool_class ) {
+		return WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-' . strtolower( str_replace( '_', '-', $tool_class ) ) . '.php';
 	}
 
 	// ============================================================================
@@ -539,21 +567,8 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	 * Test all document generation tools have required capability.
 	 */
 	public function test_all_tools_have_required_capability() {
-		$tools = array(
-			'WP_MCP_AI_Tool_Generate_PDF',
-			'WP_MCP_AI_Tool_Generate_Word',
-			'WP_MCP_AI_Tool_Generate_Excel',
-			'WP_MCP_AI_Tool_Pro_PDF',
-			'WP_MCP_AI_Tool_Pro_Word',
-			'WP_MCP_AI_Tool_Generate_Invoice_PDF',
-			'WP_MCP_AI_Tool_HTML_To_PDF',
-			'WP_MCP_AI_Tool_Excel_Data_Import',
-			'WP_MCP_AI_Tool_OCR_PDF_Text',
-			'WP_MCP_AI_Tool_Pro_Document_OCR',
-		);
-
-		foreach ( $tools as $tool_class ) {
-			$class_file = WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-' . strtolower( str_replace( '_', '-', $tool_class ) ) . '.php';
+		foreach ( $this->tools_list as $tool_class ) {
+			$class_file = $this->get_tool_file_path( $tool_class );
 			
 			if ( file_exists( $class_file ) ) {
 				require_once $class_file;
@@ -580,21 +595,8 @@ class Test_WP_MCP_AI_Document_Generation_Toolkit extends WP_UnitTestCase {
 	 * Test all document generation tools implement base interface.
 	 */
 	public function test_all_tools_implement_base_interface() {
-		$tools = array(
-			'WP_MCP_AI_Tool_Generate_PDF',
-			'WP_MCP_AI_Tool_Generate_Word',
-			'WP_MCP_AI_Tool_Generate_Excel',
-			'WP_MCP_AI_Tool_Pro_PDF',
-			'WP_MCP_AI_Tool_Pro_Word',
-			'WP_MCP_AI_Tool_Generate_Invoice_PDF',
-			'WP_MCP_AI_Tool_HTML_To_PDF',
-			'WP_MCP_AI_Tool_Excel_Data_Import',
-			'WP_MCP_AI_Tool_OCR_PDF_Text',
-			'WP_MCP_AI_Tool_Pro_Document_OCR',
-		);
-
-		foreach ( $tools as $tool_class ) {
-			$class_file = WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-' . strtolower( str_replace( '_', '-', $tool_class ) ) . '.php';
+		foreach ( $this->tools_list as $tool_class ) {
+			$class_file = $this->get_tool_file_path( $tool_class );
 			
 			if ( file_exists( $class_file ) ) {
 				require_once $class_file;
