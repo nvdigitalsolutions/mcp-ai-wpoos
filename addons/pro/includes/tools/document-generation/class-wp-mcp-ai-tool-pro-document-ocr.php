@@ -449,17 +449,26 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		// Extract text based on document type.
-		if ( 'pdf' === $doc['type'] ) {
-			$ocr_options['max_pages'] = $options['max_pages_per_pdf'];
-			$ocr_options['dpi']       = 300;
-			$text                     = $ocr_service->extract_text_from_pdf( $doc['path'], $ocr_options );
-		} else {
-			$text = $ocr_service->extract_text_from_image( $doc['path'], $ocr_options );
-		}
-
-		// Clean up temp file if we downloaded one.
-		if ( $temp_file ) {
-			@unlink( $temp_file );
+		// Use try-finally pattern to ensure temp file cleanup.
+		try {
+			if ( 'pdf' === $doc['type'] ) {
+				$ocr_options['max_pages'] = $options['max_pages_per_pdf'];
+				$ocr_options['dpi']       = 300;
+				$text                     = $ocr_service->extract_text_from_pdf( $doc['path'], $ocr_options );
+			} else {
+				$text = $ocr_service->extract_text_from_image( $doc['path'], $ocr_options );
+			}
+		} finally {
+			// Clean up temp file if we downloaded one.
+			if ( $temp_file && file_exists( $temp_file ) ) {
+				if ( ! unlink( $temp_file ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'ocr_temp_cleanup_failed',
+						'Failed to delete temporary OCR file',
+						array( 'file' => $temp_file )
+					);
+				}
+			}
 		}
 
 		if ( is_wp_error( $text ) ) {
