@@ -908,26 +908,26 @@ class WP_MCP_AI_OCR_Service {
 	protected function get_fallback_providers( $primary ) {
 		// Check if a specific fallback is configured.
 		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
-		if ( ! empty( $doc_settings['ocr_fallback_provider'] ) && 'none' !== $doc_settings['ocr_fallback_provider'] ) {
+		if ( ! empty( $doc_settings['ocr_fallback_provider'] ) ) {
 			$fallback = $doc_settings['ocr_fallback_provider'];
+			
+			// No fallback configured - return empty array.
+			if ( 'none' === $fallback ) {
+				return array();
+			}
 			
 			if ( 'auto' === $fallback ) {
 				// Auto mode - try all providers except primary.
 				$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
 				$fallbacks     = array_diff( $all_providers, array( $primary ) );
 				return array_values( $fallbacks );
-			} else {
-				// Specific fallback configured - use it if different from primary.
-				if ( $fallback !== $primary ) {
-					return array( $fallback );
-				}
-				// If same as primary, return empty (no fallback).
-				return array();
 			}
-		}
-
-		// No fallback configured - return empty array.
-		if ( ! empty( $doc_settings['ocr_fallback_provider'] ) && 'none' === $doc_settings['ocr_fallback_provider'] ) {
+			
+			// Specific fallback configured - use it if different from primary.
+			if ( $fallback !== $primary ) {
+				return array( $fallback );
+			}
+			// If same as primary, return empty (no fallback).
 			return array();
 		}
 
