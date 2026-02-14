@@ -550,8 +550,6 @@ probe_chat = bug
 probe_remote_mcp = bug
 update_option = bug
 excel_data_export = bug
-ocr_pdf_text = bug
-pro_document_ocr = bug
 
 
 # ========================================
