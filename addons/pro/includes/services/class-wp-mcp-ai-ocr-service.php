@@ -436,7 +436,7 @@ class WP_MCP_AI_OCR_Service {
 		$mime_type  = mime_content_type( $image_path );
 
 		// Prepare API request.
-		$client = WP_MCP_AI_OpenAI_Client::get_instance();
+		$client = new WP_MCP_AI_OpenAI_Client();
 		
 		$messages = array(
 			array(
@@ -457,13 +457,12 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = $client->send_chat_request(
+		$response = $client->create_chat_completion(
+			$messages,
 			array(
 				'model'      => 'gpt-4o',
-				'messages'   => $messages,
 				'max_tokens' => 4096,
-			),
-			$settings
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -495,27 +494,31 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		$client = WP_MCP_AI_Gemini_Client::get_instance();
+		$client = new WP_MCP_AI_Gemini_Client();
 		
-		$request = array(
-			'contents' => array(
-				array(
-					'parts' => array(
-						array(
-							'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
-						),
-						array(
-							'inline_data' => array(
-								'mime_type' => $mime_type,
-								'data'      => $base64,
-							),
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'parts'   => array(
+					array(
+						'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
+					),
+					array(
+						'inline_data' => array(
+							'mime_type' => $mime_type,
+							'data'      => $base64,
 						),
 					),
 				),
 			),
 		);
 
-		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
+		$response = $client->create_chat_completion(
+			$messages,
+			array(
+				'model' => 'gemini-1.5-flash',
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
