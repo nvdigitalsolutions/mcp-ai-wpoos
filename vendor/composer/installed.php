@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
         'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-        'reference' => '170f18622205ee2a1b510e865c9d828e60bd18be',
+        'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
             'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-            'reference' => '170f18622205ee2a1b510e865c9d828e60bd18be',
+            'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

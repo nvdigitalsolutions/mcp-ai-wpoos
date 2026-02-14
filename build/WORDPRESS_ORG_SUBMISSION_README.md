@@ -51,7 +51,7 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 
 ### 2. PRO Add-on Package
 **Original:** `mcp-ai-wpoos-pro-1.1.1.zip`  
-**WordPress.org:** `nvdigital-open-operator-system-oos-pro-1.1.1.zip` (53M)
+**WordPress.org:** `nvdigital-open-operator-system-oos-pro-1.1.1.zip` (39M)
 
 **What's Included:**
 - 70+ Pro tools

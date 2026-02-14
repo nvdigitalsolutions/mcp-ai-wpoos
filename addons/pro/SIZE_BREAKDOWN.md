@@ -2,69 +2,76 @@
 
 ## Overview
 
-**Distributed ZIP File Size**: 54 MB (mcp-ai-wpoos-pro-1.1.1.zip)  
-**Uncompressed Size**: 190 MB  
-**Number of Files**: 9,108 files  
-**Compression Ratio**: 70.65% size reduction
+**Distributed ZIP File Size**: 39 MB (mcp-ai-wpoos-pro-1.1.1.zip)  
+**Uncompressed Size**: 126 MB  
+**Number of Files**: ~8,250 files  
+**Compression Ratio**: 69% size reduction
 
 This document provides a detailed breakdown of what's actually included in the distributed pro plugin zip file.
+
+> **Optimization Note**: Previously 54 MB. Reduced by 15 MB (28%) by excluding source maps, Facebook SDK, and test files from distribution.
 
 ---
 
 ## What's In The ZIP File
 
-The 54 MB zip file contains:
+The 39 MB zip file contains:
 
 | Directory | Uncompressed | Files | % of Total | Description |
 |-----------|--------------|-------|------------|-------------|
-| `assets/vendor` | 101 MB | 5,629 | 53% | Bundled NPM packages (JavaScript libraries) |
-| `vendor` | 52 MB | 2,474 | 27% | PHP Composer dependencies |
-| `bin` | 27 MB | 23 | 14% | Webpack-bundled document generation scripts |
-| `includes` | 8.4 MB | 874 | 4% | PHP source code (tools, admin UI, integrations) |
-| `docs` | 709 KB | 59 | <1% | Documentation files |
-| `build` | 228 KB | 8 | <1% | Build artifacts |
-| `examples` | 75 KB | 14 | <1% | Example code and usage samples |
-| `scripts` | 35 KB | 5 | <1% | Build and maintenance scripts |
-| `services` | 27 KB | 6 | <1% | Service definitions |
-| `node-services` | 24 KB | 7 | <1% | Node.js microservices |
+| `vendor` | 56 MB | ~2,400 | 44% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser) |
+| `assets/vendor` | 48 MB | ~4,800 | 38% | Bundled NPM packages (JavaScript libraries - without maps/Facebook SDK) |
+| `bin` | 11 MB | 8 | 9% | Webpack-bundled document generation scripts (PDF/Word/Excel - no maps) |
+| `includes` | 10 MB | ~900 | 8% | PHP source code (tools, admin UI, integrations) |
+| `docs` | 800 KB | ~60 | <1% | Documentation files |
+| `build` | 244 KB | 8 | <1% | Build artifacts |
+| `examples` | 112 KB | ~15 | <1% | Example code and usage samples |
+| `scripts` | 48 KB | 5 | <1% | Build and maintenance scripts |
+| `services` | 48 KB | ~6 | <1% | Service definitions |
+| `node-services` | 40 KB | ~7 | <1% | Node.js microservices (PDF extraction, etc.) |
 
-**Total Uncompressed**: 190 MB → **Compressed to 54 MB**
+**Total Uncompressed**: 126 MB → **Compressed to 39 MB**
+
+### What's Excluded (Not in Distribution ZIP)
+
+These files are excluded from the distribution to reduce size:
+- ✅ **Source maps** (*.js.map, *.css.map): 860 files, ~31 MB uncompressed, ~12 MB compressed
+- ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
+- ✅ **Test PDF samples**: ~1.7 MB uncompressed
+- ✅ **Vendor tests/docs**: ~15 MB uncompressed
+
+**Total excluded**: ~76 MB uncompressed → ~19 MB compressed savings
 
 ---
 
-## Top 30 Largest Files (What Takes Up Space)
+## Top 20 Largest Files in Distribution (What Takes Up Space)
+
+Now that source maps and Facebook SDK are excluded, here's what remains:
 
 | Size | File | Purpose |
 |------|------|---------|
-| 7.4 MB | bin/generate-pdf.bundle.js.map | PDF generation source map (debugging) |
-| 5.0 MB | bin/generate-pdf.bundle.js | PDF generation bundle |
-| 4.9 MB | bin/generate-word.bundle.js.map | Word generation source map (debugging) |
-| 4.1 MB | bin/generate-excel.bundle.js.map | Excel generation source map (debugging) |
-| 3.8 MB | assets/vendor/exceljs/dist/exceljs.js.map | ExcelJS source map |
-| 3.6 MB | assets/vendor/exceljs/dist/exceljs.bare.js.map | ExcelJS bare source map |
-| 3.3 MB | bin/generate-word.bundle.js | Word generation bundle |
-| 3.2 MB | assets/vendor/exceljs/dist/exceljs.min.js.map | ExcelJS minified source map |
-| 3.0 MB | assets/vendor/pdf-parse/.../pdf.worker.js.map (v1.10.100) | PDF.js worker v1.10.100 source map |
-| 3.0 MB | assets/vendor/exceljs/dist/exceljs.bare.min.js.map | ExcelJS bare minified source map |
-| 3.0 MB | assets/vendor/pdf-parse/.../pdf.worker.js.map (v2.0.550) | PDF.js worker v2.0.550 source map |
-| 2.8 MB | assets/vendor/pdf-parse/.../pdf.worker.js.map (v1.10.88) | PDF.js worker v1.10.88 source map |
-| 2.7 MB | assets/vendor/pdf-parse/.../pdf.worker.js.map (v1.9.426) | PDF.js worker v1.9.426 source map |
-| 2.6 MB | assets/vendor/pdfkit/js/pdfkit.standalone.js | PDFKit standalone |
-| 2.6 MB | assets/vendor/facebook-nodejs-business-sdk/dist/umd.js.map | Facebook SDK UMD source map |
-| 2.6 MB | assets/vendor/facebook-nodejs-business-sdk/dist/iife.js.map | Facebook SDK IIFE source map |
-| 2.6 MB | assets/vendor/facebook-nodejs-business-sdk/dist/cjs.js.map | Facebook SDK CommonJS source map |
-| 2.6 MB | assets/vendor/facebook-nodejs-business-sdk/dist/amd.js.map | Facebook SDK AMD source map |
-| 2.5 MB | assets/vendor/facebook-nodejs-business-sdk/dist/es.js.map | Facebook SDK ES6 source map |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/umd.js | Facebook SDK UMD |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/cjs.js | Facebook SDK CommonJS |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/amd.js | Facebook SDK AMD |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/iife.js | Facebook SDK IIFE |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/es.js | Facebook SDK ES6 |
-| 2.3 MB | assets/vendor/facebook-nodejs-business-sdk/dist/globals.js.map | Facebook SDK globals source map |
-| 2.2 MB | bin/generate-excel.bundle.js | Excel generation bundle |
-| 2.1 MB | assets/vendor/facebook-nodejs-business-sdk/dist/globals.js | Facebook SDK globals |
-| 1.9 MB | assets/vendor/exceljs/dist/exceljs.js | ExcelJS library |
-| 1.8 MB | vendor/tecnickcom/tcpdf/fonts/freeserif.z | TCPDF FreeSerif font |
+| 5.0 MB | bin/generate-pdf.bundle.js | PDF generation bundle (includes PDFKit) |
+| 3.3 MB | bin/generate-word.bundle.js | Word generation bundle (includes docx library) |
+| 2.6 MB | assets/vendor/pdfkit/js/pdfkit.standalone.js | PDFKit standalone for PDF creation |
+| 2.2 MB | bin/generate-excel.bundle.js | Excel generation bundle (includes ExcelJS) |
+| 1.9 MB | assets/vendor/exceljs/dist/exceljs.js | ExcelJS library for Excel files |
+| 1.8 MB | vendor/tecnickcom/tcpdf/fonts/freeserif.z | TCPDF FreeSerif font (international characters) |
+| 1.8 MB | vendor/tecnickcom/tcpdf/fonts/dejavusans.z | TCPDF DejaVu Sans font (international characters) |
+| 1.4 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v2.0.550) | PDF.js worker v2.0.550 (latest) |
+| 1.4 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.10.100) | PDF.js worker v1.10.100 (compatibility) |
+| 1.3 MB | assets/vendor/pdf-parse/.../pdf.js (v2.0.550) | PDF.js core v2.0.550 |
+| 1.3 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.10.88) | PDF.js worker v1.10.88 (compatibility) |
+| 1.3 MB | assets/vendor/pdf-parse/.../pdf.js (v1.10.100) | PDF.js core v1.10.100 |
+| 1.2 MB | assets/vendor/pdf-parse/.../pdf.worker.js (v1.9.426) | PDF.js worker v1.9.426 (compatibility) |
+| 1.2 MB | assets/vendor/pdf-parse/.../pdf.js (v1.10.88) | PDF.js core v1.10.88 |
+| 1.1 MB | assets/vendor/pdf-parse/.../pdf.js (v1.9.426) | PDF.js core v1.9.426 |
+| 931 KB | vendor/phpoffice/phpspreadsheet/.../OoxmlRelationships.php | PHPSpreadsheet OOXML relationships |
+| 845 KB | assets/vendor/cheerio/dist/browser/index.js | Cheerio for HTML parsing |
+| 836 KB | assets/vendor/exceljs/dist/exceljs.min.js | ExcelJS minified |
+| 804 KB | vendor/tecnickcom/tcpdf/tcpdf.php | TCPDF main library file |
+| 764 KB | vendor/phpoffice/phpspreadsheet/.../Style.php | PHPSpreadsheet styles |
+
+**Note**: All source maps (*.js.map) and Facebook SDK files are now excluded from distribution.
 
 **Key Observation**: The top 30 files account for ~83 MB uncompressed (~22 MB compressed in zip)
 
@@ -144,38 +151,45 @@ PHP libraries included in the zip (tests/docs excluded via .distignore):
 | `smalot/pdfparser` | 476 KB | PHP PDF text extraction fallback |
 | `symfony/*` | 152 KB | mbstring polyfills |
 
-**Note**: Tests, examples, and docs are excluded from the zip via .distignore, significantly reducing the vendor size from source (71 MB) to distribution (52 MB).
+**Note**: Tests, examples, and docs are excluded from the zip via build script, significantly reducing the vendor size from source (71 MB) to distribution (56 MB).
 
 ---
 
-## Bundled JavaScript (bin/) - 27 MB Uncompressed
+## Bundled JavaScript (bin/) - 11 MB Uncompressed
 
-Webpack-bundled files for document generation (included in zip):
+Webpack-bundled files for document generation (source maps excluded from distribution):
 
 | File | Uncompressed | Purpose | Compressed in ZIP |
 |------|--------------|---------|-------------------|
 | `generate-pdf.bundle.js` | 5.0 MB | PDF generation bundle | ~1.2 MB |
-| `generate-pdf.bundle.js.map` | 7.4 MB | Source map (debugging) | ~1.8 MB |
 | `generate-word.bundle.js` | 3.3 MB | Word generation bundle | ~800 KB |
-| `generate-word.bundle.js.map` | 4.9 MB | Source map (debugging) | ~1.2 MB |
 | `generate-excel.bundle.js` | 2.2 MB | Excel generation bundle | ~550 KB |
-| `generate-excel.bundle.js.map` | 4.1 MB | Source map (debugging) | ~1.0 MB |
-| **Total** | **27 MB** | | **~6.5 MB in zip** |
+| **Total** | **11 MB** | | **~2.6 MB in zip** |
 
-**Note**: Source maps (.map files) are primarily for debugging. They compress very well (75% reduction) but could be excluded from production builds.
+**Note**: Source maps (.map files) are excluded from distribution. They were 16 MB uncompressed (~4 MB compressed) and only needed for debugging.
 
 ---
 
 ## File Type Analysis
 
-| File Type | Size | Percentage | Notes |
-|-----------|------|------------|-------|
-| JavaScript Maps (.js.map) | 61 MB | 28% | Debugging source maps (can be excluded) |
-| JavaScript (.js) | 54 MB | 25% | NPM packages and bundles |
-| Fonts (.ttf, .z, .woff) | 12 MB | 6% | TCPDF fonts for international PDFs |
-| PHP (.php) | 11 MB | 5% | PHP source code and libraries |
-| PDF (.pdf) | 1.7 MB | <1% | Sample documents and test files |
-| Other | 75 MB | 35% | Character maps, locale files, documentation |
+| File Type | Uncompressed | Percentage | Status |
+|-----------|--------------|------------|--------|
+| JavaScript (.js) | 54 MB | 43% | Included - NPM packages and bundles |
+| PHP (.php) | 11 MB | 9% | Included - Source code and libraries |
+| Fonts (.ttf, .z, .woff) | 12 MB | 9% | Included - TCPDF fonts for international PDFs |
+| Character maps (.bcmap) | 15 MB | 12% | Included - PDF.js international character support |
+| Locale files (.properties) | 8 MB | 6% | Included - PDF.js multi-language support |
+| Other (JSON, XML, etc.) | 26 MB | 21% | Included - Various data files |
+| **Total Included** | **126 MB** | **100%** | **Compresses to 39 MB** |
+
+### Excluded from Distribution
+
+| File Type | Uncompressed | Compressed Savings | Status |
+|-----------|--------------|-------------------|--------|
+| JavaScript Maps (.js.map, .css.map) | 31 MB | ~12 MB | ✅ Excluded |
+| Facebook SDK | 28 MB | ~5 MB | ✅ Excluded |
+| PDF samples (.pdf) | 1.7 MB | ~2 MB | ✅ Excluded |
+| **Total Excluded** | **~61 MB** | **~19 MB** | ✅ Excluded |
 
 ---
 
@@ -183,13 +197,29 @@ Webpack-bundled files for document generation (included in zip):
 
 ### ✅ Implemented Optimizations (v1.1.2+)
 
-The following optimizations have been implemented via `.distignore`:
+The following optimizations have been implemented in the build process:
 
 1. **✅ JavaScript Source Maps Excluded** (-12 MB compressed, -31 MB uncompressed)
    - All `*.js.map` and `*.css.map` files excluded from distribution
    - Only needed for debugging in development
-   - Affects 2,771 files
-   - **Status**: Implemented in .distignore
+   - Excluded 860 files
+   - **Status**: ✅ Implemented in build script
+
+2. **✅ Facebook SDK Excluded** (-5 MB compressed, -28 MB uncompressed)
+   - `assets/vendor/facebook-nodejs-business-sdk/` excluded from distribution
+   - Facebook tools use direct Graph API calls (no SDK needed)
+   - CDN available if ever needed in future
+   - **Status**: ✅ Implemented in build script
+
+3. **✅ Sample PDF Files Excluded** (-2 MB compressed, -1.7 MB uncompressed)
+   - Test PDFs in vendor packages excluded
+   - No impact on functionality
+   - **Status**: ✅ Implemented in build script
+
+**Total Optimization Impact**: 
+- **Before**: 54 MB compressed (205 MB uncompressed)
+- **After**: 39 MB compressed (126 MB uncompressed)
+- **Savings**: 15 MB compressed (28% reduction), 79 MB uncompressed (39% reduction)
 
 2. **✅ Sample PDF Files Excluded** (-2 MB compressed, -1.7 MB uncompressed)
    - PDF samples in vendor test directories removed
