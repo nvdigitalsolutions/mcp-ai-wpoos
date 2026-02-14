@@ -106,9 +106,12 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
-			return $this->format_chat_response(
-				array( 'error' => 'permission_denied' ),
-				__( 'You do not have permission to access files. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'permission_denied',
+				'report'  => __( '❌ **Permission Denied**
+
+You do not have permission to access files. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -121,9 +124,18 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$file_path     = get_attached_file( $attachment_id );
 
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return $this->format_chat_response(
-					array( 'error' => 'file_not_found' ),
-					__( 'PDF file not found. This may be due to an incorrect attachment ID. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+				return array(
+					'success' => false,
+					'error'   => 'file_not_found',
+					'report'  => sprintf(
+						/* translators: %d: attachment ID */
+						__( '❌ **PDF File Not Found**
+
+The PDF file with attachment ID %d could not be found. This may be due to an incorrect attachment ID or the file may have been deleted.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+						$attachment_id
+					),
 				);
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
@@ -134,21 +146,31 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$temp_file = download_url( $arguments['url'] );
 
 			if ( is_wp_error( $temp_file ) ) {
-				return $this->format_chat_response(
-					array( 'error' => 'download_failed' ),
-					sprintf(
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => sprintf(
 						/* translators: %s: error message */
-						__( 'Failed to download PDF: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+						__( '❌ **Download Failed**
+
+Failed to download PDF from URL: %s
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 						$temp_file->get_error_message()
-					)
+					),
 				);
 			}
 
 			$file_path = $temp_file;
 		} else {
-			return $this->format_chat_response(
-				array( 'error' => 'missing_input' ),
-				__( 'Either attachment_id or url is required. Please provide one of these parameters. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'missing_input',
+				'report'  => __( '❌ **Missing Input**
+
+Either `attachment_id` or `url` parameter is required. Please provide one of these parameters.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -160,9 +182,18 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( $temp_file ) {
 				@unlink( $temp_file );
 			}
-			return $this->format_chat_response(
-				array( 'error' => 'invalid_file_type' ),
-				__( 'File is not a valid PDF document. Please provide a PDF file. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'invalid_file_type',
+				'report'  => sprintf(
+					/* translators: %s: detected MIME type */
+					__( '❌ **Invalid File Type**
+
+The file is not a valid PDF document (detected type: %s). Please provide a PDF file.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					$mime_type
+				),
 			);
 		}
 
@@ -192,16 +223,24 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 
 			if ( is_wp_error( $text ) ) {
-				return $this->format_chat_response(
-					array(
-						'error'      => 'ocr_failed',
-						'error_code' => $text->get_error_code(),
-					),
-					sprintf(
+				return array(
+					'success'    => false,
+					'error'      => 'ocr_failed',
+					'error_code' => $text->get_error_code(),
+					'report'     => sprintf(
 						/* translators: %s: error message */
-						__( 'OCR extraction failed: %s. This may be due to provider unavailability or document complexity. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+						__( '❌ **OCR Extraction Failed**
+
+%s
+
+This may be due to:
+- Provider unavailability or API issues
+- Document complexity or poor image quality
+- Unsupported document format
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 						$text->get_error_message()
-					)
+					),
 				);
 			}
 
@@ -221,8 +260,13 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				)
 			);
 
-			return $this->format_chat_response(
-				array(
+			// Build OCR report for chat display.
+			$report = $this->build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration );
+
+			return array(
+				'success'   => true,
+				'report'    => $report,
+				'ocr_data'  => array(
 					'text'       => $text,
 					'word_count' => $word_count,
 					'char_count' => $char_count,
@@ -231,12 +275,6 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'duration'   => round( $duration, 2 ),
 					'pages'      => $ocr_options['max_pages'],
 				),
-				sprintf(
-					/* translators: 1: word count, 2: OCR provider */
-					__( 'Successfully extracted %1$d words using OCR (%2$s).', 'mcp-ai-wpoos-pro' ),
-					$word_count,
-					$ocr_options['provider']
-				)
 			);
 
 		} catch ( Exception $e ) {
@@ -254,14 +292,84 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				)
 			);
 
-			return $this->format_chat_response(
-				array( 'error' => 'exception' ),
-				sprintf(
+			return array(
+				'success' => false,
+				'error'   => 'exception',
+				'report'  => sprintf(
 					/* translators: %s: error message */
-					__( 'OCR extraction encountered an unexpected error: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					__( '❌ **Unexpected Error**
+
+OCR extraction encountered an unexpected error: %s
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
-				)
+				),
 			);
 		}
+	}
+
+	/**
+	 * Build a user-friendly OCR report message.
+	 *
+	 * Creates a comprehensive summary of the OCR extraction that can be
+	 * displayed in the chat client.
+	 *
+	 * @param int    $word_count   Number of words extracted.
+	 * @param int    $char_count   Number of characters extracted.
+	 * @param array  $ocr_options  OCR options used.
+	 * @param bool   $is_scanned   Whether the PDF was detected as scanned.
+	 * @param float  $duration     Processing duration in seconds.
+	 * @return string Formatted OCR report message.
+	 */
+	protected function build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration ) {
+		$report = "## ✅ OCR Extraction Complete\n\n";
+
+		// Summary.
+		$report .= sprintf(
+			/* translators: 1: word count, 2: character count */
+			__( '**Extracted:** %1$d words (%2$d characters)', 'mcp-ai-wpoos-pro' ),
+			$word_count,
+			$char_count
+		);
+		$report .= "\n";
+
+		// Provider info.
+		$report .= sprintf(
+			/* translators: %s: OCR provider */
+			__( '**Provider:** %s', 'mcp-ai-wpoos-pro' ),
+			ucfirst( $ocr_options['provider'] )
+		);
+		$report .= "\n";
+
+		// Document type.
+		$doc_type = $is_scanned ? __( 'Scanned PDF (image-based)', 'mcp-ai-wpoos-pro' ) : __( 'Digital PDF (with OCR applied)', 'mcp-ai-wpoos-pro' );
+		$report  .= sprintf(
+			/* translators: %s: document type */
+			__( '**Document Type:** %s', 'mcp-ai-wpoos-pro' ),
+			$doc_type
+		);
+		$report .= "\n";
+
+		// Processing details.
+		if ( $ocr_options['max_pages'] > 0 ) {
+			$report .= sprintf(
+				/* translators: %d: number of pages */
+				__( '**Pages Processed:** Up to %d pages', 'mcp-ai-wpoos-pro' ),
+				$ocr_options['max_pages']
+			);
+			$report .= "\n";
+		}
+
+		$report .= sprintf(
+			/* translators: %s: processing time */
+			__( '**Processing Time:** %.2f seconds', 'mcp-ai-wpoos-pro' ),
+			$duration
+		);
+		$report .= "\n\n";
+
+		$report .= "---\n\n";
+		$report .= __( '✨ *Text extracted successfully and is available for use in the workflow.*', 'mcp-ai-wpoos-pro' );
+
+		return $report;
 	}
 }

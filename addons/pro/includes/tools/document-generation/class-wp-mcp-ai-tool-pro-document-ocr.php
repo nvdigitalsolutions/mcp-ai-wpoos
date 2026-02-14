@@ -210,18 +210,31 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Check user permissions.
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
-			return $this->format_chat_response(
-				array( 'error' => 'permission_denied' ),
-				__( 'You do not have permission to perform OCR operations. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'permission_denied',
+				'report'  => __( '❌ **Permission Denied**
+
+You do not have permission to perform OCR operations. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Parse arguments.
 		$source = isset( $arguments['source'] ) ? $arguments['source'] : array();
 		if ( empty( $source ) ) {
-			return $this->format_chat_response(
-				array( 'error' => 'missing_source' ),
-				__( 'Source document(s) required. Provide attachment_id(s), url(s), or file_id(s). The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'missing_source',
+				'report'  => __( '❌ **Missing Source**
+
+Source document(s) required. Provide one of:
+- `attachment_id` (single ID)
+- `attachment_ids` (array of IDs)
+- `url` (single URL)
+- `urls` (array of URLs)
+- `file_ids` (array of OpenAI file IDs)
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -245,20 +258,36 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Resolve source documents to processable items.
 		$documents = $this->resolve_documents( $source );
 		if ( is_wp_error( $documents ) ) {
-			return $this->format_chat_response(
-				array( 'error' => 'resolve_failed', 'error_code' => $documents->get_error_code() ),
-				sprintf(
+			return array(
+				'success'    => false,
+				'error'      => 'resolve_failed',
+				'error_code' => $documents->get_error_code(),
+				'report'     => sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to resolve source documents: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					__( '❌ **Failed to Resolve Documents**
+
+%s
+
+Please check your source parameters and try again.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 					$documents->get_error_message()
-				)
+				),
 			);
 		}
 
 		if ( empty( $documents ) ) {
-			return $this->format_chat_response(
-				array( 'error' => 'no_documents' ),
-				__( 'No valid documents found to process. Please check your source parameters. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
+			return array(
+				'success' => false,
+				'error'   => 'no_documents',
+				'report'  => __( '❌ **No Valid Documents**
+
+No valid documents found to process. Please check your source parameters:
+- Verify attachment IDs exist
+- Ensure URLs are accessible
+- Check file IDs are valid
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -725,48 +754,148 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Formatted response.
 	 */
 	private function format_response( $response, $options ) {
-		// If all documents failed, return error message.
+		// If all documents failed, return error message with report.
 		if ( 0 === $response['successful'] && $response['failed'] > 0 ) {
 			$error_summary = '';
 			if ( ! empty( $response['errors'] ) ) {
 				$error_messages = array_column( $response['errors'], 'error' );
-				$error_summary  = implode( '; ', array_slice( $error_messages, 0, 3 ) ); // Show first 3 errors.
+				$error_list     = array_slice( $error_messages, 0, 3 ); // Show first 3 errors.
+				$error_summary  = '- ' . implode( "\n- ", $error_list ); // Add leading dash.
 			}
 			
-			return $this->format_chat_response(
-				array( 'error' => 'all_failed', 'details' => $response['errors'] ),
-				sprintf(
+			return array(
+				'success' => false,
+				'error'   => 'all_failed',
+				'details' => $response['errors'],
+				'report'  => sprintf(
 					/* translators: 1: failed count, 2: error summary */
-					__( 'OCR failed for all %1$d document(s). Common errors: %2$s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					__( '❌ **All OCR Operations Failed**
+
+Failed to process all %1$d document(s).
+
+**Common Errors:**
+%2$s
+
+This may be due to provider issues, invalid documents, or connectivity problems.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 					$response['failed'],
 					$error_summary
-				)
+				),
 			);
 		}
 
-		// For text output, use chat response formatting.
-		if ( 'text' === $options['output_format'] && ! empty( $response['text'] ) ) {
-			$message = sprintf(
-				/* translators: 1: successful count, 2: total count, 3: word count */
-				__( 'Successfully extracted text from %1$d of %2$d documents (%3$d words total).', 'mcp-ai-wpoos-pro' ),
-				$response['successful'],
-				$response['documents_count'],
-				isset( $response['metadata']['total_words'] ) ? $response['metadata']['total_words'] : 0
-			);
+		// Build OCR report for chat display.
+		$report = $this->build_pro_ocr_report( $response, $options );
 
-			// Add note about failures if any.
-			if ( $response['failed'] > 0 ) {
-				$message .= ' ' . sprintf(
-					/* translators: %d: number of failed documents */
-					__( 'Note: %d document(s) failed to process but the workflow continues.', 'mcp-ai-wpoos-pro' ),
-					$response['failed']
-				);
-			}
+		// Return response with report field.
+		$response['success'] = true;
+		$response['report']  = $report;
 
-			return $this->format_chat_response( $response, $message );
-		}
-
-		// For other formats, return structured response.
 		return $response;
+	}
+
+	/**
+	 * Build a comprehensive OCR report message.
+	 *
+	 * Creates a detailed summary of the OCR extraction that can be
+	 * displayed in the chat client, following the research_product pattern.
+	 *
+	 * @param array $response Processing results.
+	 * @param array $options  Processing options.
+	 * @return string Formatted OCR report message.
+	 */
+	private function build_pro_ocr_report( $response, $options ) {
+		$report = "## ✅ Advanced OCR Processing Complete\n\n";
+
+		// Summary statistics.
+		$report .= sprintf(
+			/* translators: 1: successful count, 2: total count */
+			__( '**Documents Processed:** %1$d of %2$d successful', 'mcp-ai-wpoos-pro' ),
+			$response['successful'],
+			$response['documents_count']
+		);
+		$report .= "\n";
+
+		// Total content extracted.
+		if ( isset( $response['metadata']['total_words'] ) ) {
+			$report .= sprintf(
+				/* translators: 1: word count, 2: character count */
+				__( '**Content Extracted:** %1$d words (%2$d characters)', 'mcp-ai-wpoos-pro' ),
+				$response['metadata']['total_words'],
+				$response['metadata']['total_chars']
+			);
+			$report .= "\n";
+		}
+
+		// Processing details.
+		$report .= sprintf(
+			/* translators: %s: output format */
+			__( '**Output Format:** %s', 'mcp-ai-wpoos-pro' ),
+			ucfirst( $options['output_format'] )
+		);
+		$report .= "\n";
+
+		if ( isset( $response['metadata']['providers_used'] ) && ! empty( $response['metadata']['providers_used'] ) ) {
+			$providers = implode( ', ', array_map( 'ucfirst', $response['metadata']['providers_used'] ) );
+			$report   .= sprintf(
+				/* translators: %s: provider names */
+				__( '**OCR Providers Used:** %s', 'mcp-ai-wpoos-pro' ),
+				$providers
+			);
+			$report .= "\n";
+		}
+
+		$report .= sprintf(
+			/* translators: %s: processing time */
+			__( '**Total Processing Time:** %.2f seconds', 'mcp-ai-wpoos-pro' ),
+			$response['total_duration']
+		);
+		$report .= "\n\n";
+
+		// Failed documents note (if any).
+		if ( $response['failed'] > 0 ) {
+			$report .= sprintf(
+				/* translators: %d: number of failed documents */
+				__( '⚠️ **Note:** %d document(s) failed to process but the workflow continues.', 'mcp-ai-wpoos-pro' ),
+				$response['failed']
+			);
+			$report .= "\n\n";
+		}
+
+		// Document-level details for text format.
+		if ( 'text' === $options['output_format'] && ! empty( $response['documents'] ) && count( $response['documents'] ) > 1 ) {
+			$report .= "### Document Details\n\n";
+			foreach ( $response['documents'] as $i => $doc ) {
+				if ( isset( $doc['metadata'] ) ) {
+					$report .= sprintf(
+						/* translators: 1: document number, 2: word count */
+						__( '**Document %1$d:** %2$d words', 'mcp-ai-wpoos-pro' ),
+						$i + 1,
+						$doc['metadata']['word_count']
+					);
+					$report .= "\n";
+				}
+			}
+			$report .= "\n";
+		}
+
+		// Quality metrics.
+		if ( isset( $response['metadata']['quality_standard'] ) ) {
+			$report .= "### Quality Assurance\n\n";
+			$report .= sprintf(
+				/* translators: %s: quality standard */
+				__( '**Standards Compliance:** %s', 'mcp-ai-wpoos-pro' ),
+				$response['metadata']['quality_standard']
+			);
+			$report .= "\n";
+			$report .= __( '**Features:** Layout preservation, batch processing, structured output', 'mcp-ai-wpoos-pro' );
+			$report .= "\n\n";
+		}
+
+		$report .= "---\n\n";
+		$report .= __( '✨ *OCR extraction complete. Text and structured data are available for use in the workflow.*', 'mcp-ai-wpoos-pro' );
+
+		return $report;
 	}
 }

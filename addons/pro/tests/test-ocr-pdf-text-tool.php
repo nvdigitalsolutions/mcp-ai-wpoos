@@ -108,8 +108,11 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 		$result = $this->tool->execute( array(), array() );
 		
 		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertFalse( $result['success'] );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'attachment_id or url', $result['error'] );
+		$this->assertArrayHasKey( 'report', $result );
+		$this->assertStringContainsString( 'attachment_id or url', $result['report'] );
 	}
 
 	/**
@@ -125,8 +128,11 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 		);
 		
 		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertFalse( $result['success'] );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'permission', $result['error'] );
+		$this->assertArrayHasKey( 'report', $result );
+		$this->assertStringContainsString( 'permission', $result['report'] );
 	}
 
 	/**
@@ -143,8 +149,11 @@ class Test_WP_MCP_AI_Tool_OCR_PDF_Text extends WP_UnitTestCase {
 		);
 		
 		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertFalse( $result['success'] );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'not found', $result['error'] );
+		$this->assertArrayHasKey( 'report', $result );
+		$this->assertStringContainsString( 'not found', $result['report'] );
 	}
 
 	/**
