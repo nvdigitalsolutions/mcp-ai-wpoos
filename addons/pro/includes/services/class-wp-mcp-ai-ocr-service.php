@@ -515,13 +515,14 @@ class WP_MCP_AI_OCR_Service {
 
 		// Make direct API call to Gemini.
 		$model    = 'gemini-1.5-flash';
-		$api_key  = sanitize_text_field( $settings['gemini_api_key'] );
+		$api_key  = trim( $settings['gemini_api_key'] );
 		
-		if ( empty( $api_key ) ) {
-			return new WP_Error( 'no_api_key', __( 'Gemini API key not configured.', 'mcp-ai-wpoos-pro' ) );
+		// Validate API key format (should be alphanumeric with possible hyphens/underscores).
+		if ( empty( $api_key ) || ! preg_match( '/^[A-Za-z0-9_-]+$/', $api_key ) ) {
+			return new WP_Error( 'invalid_api_key', __( 'Invalid Gemini API key format.', 'mcp-ai-wpoos-pro' ) );
 		}
 		
-		$endpoint = sprintf( 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent', rawurlencode( $model ) );
+		$endpoint = sprintf( 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent', $model );
 
 		$response = wp_remote_post(
 			$endpoint,
@@ -544,19 +545,25 @@ class WP_MCP_AI_OCR_Service {
 		$data = json_decode( $body, true );
 
 		if ( $code < 200 || $code >= 300 ) {
-			$error_message = isset( $data['error']['message'] ) ? sanitize_text_field( $data['error']['message'] ) : __( 'Gemini API request failed.', 'mcp-ai-wpoos-pro' );
-			
-			// Log the detailed error for debugging but return a sanitized message.
+			// Log the detailed error for debugging.
 			WP_MCP_AI_Logger::log_error(
 				'gemini_ocr_failed',
 				'Gemini OCR API request failed',
 				array(
-					'code'    => $code,
-					'message' => $error_message,
+					'code'     => $code,
+					'response' => $data,
 				)
 			);
 			
-			return new WP_Error( 'gemini_api_error', $error_message );
+			// Return a generic error message to avoid exposing API details.
+			return new WP_Error( 
+				'gemini_api_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Gemini API request failed with status code %d.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
 		}
 
 		if ( isset( $data['candidates'][0]['content']['parts'][0]['text'] ) ) {
