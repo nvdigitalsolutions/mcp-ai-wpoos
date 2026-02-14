@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
         'version' => 'dev-copilot/enhance-document-toolkit-ocr',
-        'reference' => 'a9dd4923c466841c6802a146072ad61c21ad3173',
+        'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
             'version' => 'dev-copilot/enhance-document-toolkit-ocr',
-            'reference' => 'a9dd4923c466841c6802a146072ad61c21ad3173',
+            'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
