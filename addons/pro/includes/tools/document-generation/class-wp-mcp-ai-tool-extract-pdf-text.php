@@ -198,7 +198,13 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_text_from_pdf( $file_path, $max_pages = 0 ) {
-		// Try pdftotext command-line tool.
+		// Primary method: Try Node.js pdf-parse service (fast, reliable, pre-bundled).
+		$node_result = $this->extract_with_node_service( $file_path, $max_pages );
+		if ( ! is_wp_error( $node_result ) ) {
+			return $node_result;
+		}
+
+		// Secondary method: Try pdftotext command-line tool (if available on system).
 		$pdftotext = shell_exec( 'which pdftotext 2>/dev/null' );
 
 		if ( ! empty( $pdftotext ) ) {
@@ -219,10 +225,96 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
-		// Return clear error message instead of unreliable fallback.
+		// Tertiary fallback: Use smalot/pdfparser (pure PHP, always available).
+		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
+			try {
+				$parser = new \Smalot\PdfParser\Parser();
+				$pdf    = $parser->parseFile( $file_path );
+				
+				// Extract text from all pages or limited pages.
+				if ( $max_pages > 0 ) {
+					$text  = '';
+					$pages = $pdf->getPages();
+					$count = min( $max_pages, count( $pages ) );
+					
+					for ( $i = 0; $i < $count; $i++ ) {
+						$text .= $pages[ $i ]->getText();
+					}
+				} else {
+					$text = $pdf->getText();
+				}
+				
+				return $text;
+			} catch ( \Exception $e ) {
+				// If all methods fail, return error with exception details.
+				return new WP_Error(
+					'extraction_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'PDF text extraction failed: %s', 'mcp-ai-wpoos-pro' ),
+						$e->getMessage()
+					)
+				);
+			}
+		}
+
+		// Return error if all methods failed.
 		return new WP_Error(
 			'extraction_failed',
-			__( 'PDF text extraction requires pdftotext utility (install poppler-utils package: apt-get install poppler-utils or brew install poppler). Alternative: Use a dedicated PDF parsing library via Composer.', 'mcp-ai-wpoos-pro' )
+			__( 'PDF text extraction failed. No extraction method available. Install Node.js dependencies (npm install), install poppler-utils (apt-get install poppler-utils), or run "composer install" in the pro addon directory.', 'mcp-ai-wpoos-pro' )
 		);
+	}
+
+	/**
+	 * Extract text using Node.js pdf-parse service.
+	 *
+	 * @param string $file_path Path to PDF file.
+	 * @param int    $max_pages Maximum pages to extract (0 = all).
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_node_service( $file_path, $max_pages = 0 ) {
+		// Check if Node.js service exists.
+		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/pdf-extract-service.js';
+		if ( ! file_exists( $service_path ) ) {
+			return new WP_Error( 'service_not_found', 'Node.js PDF extraction service not found.' );
+		}
+
+		// Prepare service arguments.
+		$args = wp_json_encode(
+			array(
+				'filePath' => $file_path,
+				'maxPages' => $max_pages,
+			)
+		);
+
+		// Execute Node.js service.
+		$cmd = sprintf(
+			'node %s extract %s 2>&1',
+			escapeshellarg( $service_path ),
+			escapeshellarg( $args )
+		);
+
+		exec( $cmd, $output, $return_code );
+
+		// Check for execution errors.
+		if ( 0 !== $return_code ) {
+			return new WP_Error(
+				'node_service_failed',
+				'Node.js PDF extraction service failed: ' . implode( "\n", $output )
+			);
+		}
+
+		// Parse JSON response.
+		$result = json_decode( implode( "\n", $output ), true );
+
+		if ( isset( $result['error'] ) ) {
+			return new WP_Error( 'extraction_error', $result['error'] );
+		}
+
+		if ( ! isset( $result['text'] ) ) {
+			return new WP_Error( 'invalid_response', 'Invalid response from Node.js service.' );
+		}
+
+		return $result['text'];
 	}
 }

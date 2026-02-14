@@ -8,7 +8,8 @@
         "phpoffice/phpspreadsheet": "^5.4",
         "phpoffice/phpword": "^1.3",
         "dompdf/dompdf": "^3.0",
-        "tecnickcom/tcpdf": "^6.7"
+        "tecnickcom/tcpdf": "^6.7",
+        "smalot/pdfparser": "^2.10"
     },
     "suggest": {
         "mpdf/mpdf": "Alternative PDF library with better HTML/CSS support (requires mb_string extension)",

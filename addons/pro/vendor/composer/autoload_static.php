@@ -87,6 +87,7 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         '4af1dca6db8c527c6eed27bff85ff0e5' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/yaz.php',
         'fe43ca06499ac37bc2dedd823af71eb5' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/zip.php',
         '356736db98a6834f0a886b8d509b0ecd' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/zlib.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -96,6 +97,7 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         ),
         'S' =>
         array (
+            'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Svg\\' => 4,
             'Sabberworm\\CSS\\' => 15,
         ),
@@ -130,6 +132,10 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         'ZipStream\\' =>
         array (
             0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
+        ),
+        'Symfony\\Polyfill\\Mbstring\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
         ),
         'Svg\\' =>
         array (
@@ -178,6 +184,16 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         'Complex\\' =>
         array (
             0 => __DIR__ . '/..' . '/markbaker/complex/classes/src',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'S' =>
+        array (
+            'Smalot\\PdfParser\\' =>
+            array (
+                0 => __DIR__ . '/..' . '/smalot/pdfparser/src',
+            ),
         ),
     );
 
@@ -1320,6 +1336,52 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         'Safe\\Exceptions\\YazException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/YazException.php',
         'Safe\\Exceptions\\ZipException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZipException.php',
         'Safe\\Exceptions\\ZlibException' => __DIR__ . '/..' . '/thecodingmachine/safe/generated/Exceptions/ZlibException.php',
+        'Smalot\\PdfParser\\Config' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Config.php',
+        'Smalot\\PdfParser\\Document' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Document.php',
+        'Smalot\\PdfParser\\Element' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element.php',
+        'Smalot\\PdfParser\\Element\\ElementArray' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementArray.php',
+        'Smalot\\PdfParser\\Element\\ElementBoolean' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementBoolean.php',
+        'Smalot\\PdfParser\\Element\\ElementDate' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementDate.php',
+        'Smalot\\PdfParser\\Element\\ElementHexa' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementHexa.php',
+        'Smalot\\PdfParser\\Element\\ElementMissing' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementMissing.php',
+        'Smalot\\PdfParser\\Element\\ElementName' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementName.php',
+        'Smalot\\PdfParser\\Element\\ElementNull' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementNull.php',
+        'Smalot\\PdfParser\\Element\\ElementNumeric' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementNumeric.php',
+        'Smalot\\PdfParser\\Element\\ElementString' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementString.php',
+        'Smalot\\PdfParser\\Element\\ElementStruct' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementStruct.php',
+        'Smalot\\PdfParser\\Element\\ElementXRef' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Element/ElementXRef.php',
+        'Smalot\\PdfParser\\Encoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding.php',
+        'Smalot\\PdfParser\\Encoding\\AbstractEncoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/AbstractEncoding.php',
+        'Smalot\\PdfParser\\Encoding\\EncodingLocator' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/EncodingLocator.php',
+        'Smalot\\PdfParser\\Encoding\\ISOLatin1Encoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/ISOLatin1Encoding.php',
+        'Smalot\\PdfParser\\Encoding\\ISOLatin9Encoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/ISOLatin9Encoding.php',
+        'Smalot\\PdfParser\\Encoding\\MacRomanEncoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/MacRomanEncoding.php',
+        'Smalot\\PdfParser\\Encoding\\PDFDocEncoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/PDFDocEncoding.php',
+        'Smalot\\PdfParser\\Encoding\\PostScriptGlyphs' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/PostScriptGlyphs.php',
+        'Smalot\\PdfParser\\Encoding\\StandardEncoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/StandardEncoding.php',
+        'Smalot\\PdfParser\\Encoding\\WinAnsiEncoding' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Encoding/WinAnsiEncoding.php',
+        'Smalot\\PdfParser\\Exception\\EmptyPdfException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/EmptyPdfException.php',
+        'Smalot\\PdfParser\\Exception\\EncodingNotFoundException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/EncodingNotFoundException.php',
+        'Smalot\\PdfParser\\Exception\\InvalidDictionaryObjectException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/InvalidDictionaryObjectException.php',
+        'Smalot\\PdfParser\\Exception\\MissingCatalogException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/MissingCatalogException.php',
+        'Smalot\\PdfParser\\Exception\\MissingPdfHeaderException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/MissingPdfHeaderException.php',
+        'Smalot\\PdfParser\\Exception\\NotImplementedException' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Exception/NotImplementedException.php',
+        'Smalot\\PdfParser\\Font' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font.php',
+        'Smalot\\PdfParser\\Font\\FontCIDFontType0' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontCIDFontType0.php',
+        'Smalot\\PdfParser\\Font\\FontCIDFontType2' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontCIDFontType2.php',
+        'Smalot\\PdfParser\\Font\\FontTrueType' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontTrueType.php',
+        'Smalot\\PdfParser\\Font\\FontType0' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontType0.php',
+        'Smalot\\PdfParser\\Font\\FontType1' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontType1.php',
+        'Smalot\\PdfParser\\Font\\FontType3' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Font/FontType3.php',
+        'Smalot\\PdfParser\\Header' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Header.php',
+        'Smalot\\PdfParser\\PDFObject' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/PDFObject.php',
+        'Smalot\\PdfParser\\Page' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Page.php',
+        'Smalot\\PdfParser\\Pages' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Pages.php',
+        'Smalot\\PdfParser\\Parser' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/Parser.php',
+        'Smalot\\PdfParser\\RawData\\FilterHelper' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/RawData/FilterHelper.php',
+        'Smalot\\PdfParser\\RawData\\RawDataParser' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/RawData/RawDataParser.php',
+        'Smalot\\PdfParser\\XObject\\Form' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/XObject/Form.php',
+        'Smalot\\PdfParser\\XObject\\Image' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/XObject/Image.php',
         'Svg\\CssLength' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/CssLength.php',
         'Svg\\DefaultStyle' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/DefaultStyle.php',
         'Svg\\Document' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/Document.php',
@@ -1349,6 +1411,7 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         'Svg\\Tag\\Symbol' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/Tag/Symbol.php',
         'Svg\\Tag\\Text' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/Tag/Text.php',
         'Svg\\Tag\\UseTag' => __DIR__ . '/..' . '/dompdf/php-svg-lib/src/Svg/Tag/UseTag.php',
+        'Symfony\\Polyfill\\Mbstring\\Mbstring' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/Mbstring.php',
         'TCPDF' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf.php',
         'TCPDF2DBarcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf_barcodes_2d.php',
         'TCPDFBarcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/tcpdf_barcodes_1d.php',
@@ -1365,6 +1428,7 @@ class ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050::$prefixesPsr0;
             $loader->classMap = ComposerStaticInitbc43de0cc3f62ad03c38ea7cd3dc9050::$classMap;
 
         }, null, ClassLoader::class);

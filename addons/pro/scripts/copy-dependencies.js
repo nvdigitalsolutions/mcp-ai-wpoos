@@ -531,6 +531,23 @@ const dependencies = [
 			{ src: 'package.json', dest: 'cheerio/package.json' },
 		],
 	},
+	{
+		name: 'pdf-parse',
+		dirs: [
+			{ src: 'lib', dest: 'pdf-parse/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdf-parse/package.json' },
+			{ src: 'index.js', dest: 'pdf-parse/index.js' },
+		],
+	},
+	{
+		name: 'node-ensure',
+		files: [
+			{ src: 'index.js', dest: 'node-ensure/index.js' },
+			{ src: 'package.json', dest: 'node-ensure/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

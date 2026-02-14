@@ -131,3 +131,14 @@ Thumbs.db
 # Build artifacts
 build/
 dist/
+
+# JavaScript source maps (development only) - OPTIMIZATION #1
+*.js.map
+*.css.map
+
+# Sample and test PDF files - OPTIMIZATION #2
+vendor/*/*/tests/**/*.pdf
+vendor/*/*/*/tests/**/*.pdf
+
+# Facebook SDK (not used, CDN available if needed) - OPTIMIZATION #4
+assets/vendor/facebook-nodejs-business-sdk/

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-extract-pdf-text-tool',
-        'version' => 'dev-copilot/fix-extract-pdf-text-tool',
-        'reference' => '9c0207d77d659629c67fa59a0e98de09db0e5306',
+        'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
+        'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
+        'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-extract-pdf-text-tool',
-            'version' => 'dev-copilot/fix-extract-pdf-text-tool',
-            'reference' => '9c0207d77d659629c67fa59a0e98de09db0e5306',
+            'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
+            'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
+            'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
