@@ -435,58 +435,43 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		// Prepare API request using direct HTTP call (same pattern as extract_image_text tool).
-		$model        = isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o';
-		$request_body = array(
-			'model'      => $model,
-			'messages'   => array(
-				array(
-					'role'    => 'user',
-					'content' => array(
-						array(
-							'type' => 'text',
-							'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible. Do not add any commentary or explanation.',
-						),
-						array(
-							'type'      => 'image_url',
-							'image_url' => array(
-								'url'    => "data:{$mime_type};base64,{$base64}",
-								'detail' => 'high',
-							),
+		// Prepare API request.
+		$client = WP_MCP_AI_OpenAI_Client::get_instance();
+		
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible. Do not add any commentary or explanation.',
+					),
+					array(
+						'type'      => 'image_url',
+						'image_url' => array(
+							'url'    => "data:{$mime_type};base64,{$base64}",
+							'detail' => 'high',
 						),
 					),
 				),
 			),
-			'max_tokens' => 4096,
 		);
 
-		$response = wp_remote_post(
-			'https://api.openai.com/v1/chat/completions',
+		$response = $client->send_chat_request(
 			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $settings['openai_api_key'],
-					'Content-Type'  => 'application/json',
-				),
-				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 60,
-			)
+				'model'      => 'gpt-4o',
+				'messages'   => $messages,
+				'max_tokens' => 4096,
+			),
+			$settings
 		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-			$error_message = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'OpenAI API request failed.', 'mcp-ai-wpoos-pro' );
-			return new WP_Error( 'api_error', $error_message );
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( isset( $body['choices'][0]['message']['content'] ) ) {
-			return trim( $body['choices'][0]['message']['content'] );
+		if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			return trim( $response['choices'][0]['message']['content'] );
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from OpenAI API.', 'mcp-ai-wpoos-pro' ) );
@@ -510,9 +495,9 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		// Prepare API request using direct HTTP call (same pattern as extract_image_text tool).
-		$model        = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-1.5-flash';
-		$request_body = array(
+		$client = WP_MCP_AI_Gemini_Client::get_instance();
+		
+		$request = array(
 			'contents' => array(
 				array(
 					'parts' => array(
@@ -530,32 +515,14 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = wp_remote_post(
-			'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $settings['gemini_api_key'],
-			array(
-				'headers' => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'    => wp_json_encode( $request_body ),
-				'timeout' => 60,
-			)
-		);
+		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $response_code ) {
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-			$error_message = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Gemini API request failed.', 'mcp-ai-wpoos-pro' );
-			return new WP_Error( 'api_error', $error_message );
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( isset( $body['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			return trim( $body['candidates'][0]['content']['parts'][0]['text'] );
+		if ( isset( $response['candidates'][0]['content']['parts'][0]['text'] ) ) {
+			return trim( $response['candidates'][0]['content']['parts'][0]['text'] );
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API.', 'mcp-ai-wpoos-pro' ) );
