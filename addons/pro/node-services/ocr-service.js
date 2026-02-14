@@ -8,15 +8,36 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load dependencies
-let Tesseract, pdfjsLib, sharp;
+// Load dependencies from bundled vendor directory
+let Tesseract, pdfjsLib, sharp, canvas;
 
 try {
-	Tesseract = require('tesseract.js');
-	sharp = require('sharp');
+	// Try to load from bundled vendor directory first
+	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
+	
+	// Load Tesseract.js
+	try {
+		Tesseract = require(path.join(vendorPath, 'tesseract.js', 'src'));
+	} catch (e) {
+		Tesseract = require('tesseract.js'); // Fallback to node_modules
+	}
+	
+	// Load Sharp
+	try {
+		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
+	} catch (e) {
+		sharp = require('sharp'); // Fallback to node_modules
+	}
+	
+	// Load Canvas
+	try {
+		canvas = require(path.join(vendorPath, 'canvas'));
+	} catch (e) {
+		canvas = require('canvas'); // Fallback to node_modules
+	}
 } catch (error) {
 	console.error(JSON.stringify({
-		error: 'Required packages not found. Run: npm install tesseract.js sharp pdfjs-dist'
+		error: 'Required packages not found. Run: npm install tesseract.js sharp pdfjs-dist canvas'
 	}));
 	process.exit(1);
 }
@@ -153,9 +174,16 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 		// Load PDF.js (lazy load to avoid issues if not needed)
 		if (!pdfjsLib) {
 			try {
-				pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-			} catch (error) {
-				throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
+				// Try bundled version first
+				const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
+				pdfjsLib = require(path.join(vendorPath, 'pdfjs-dist', 'legacy', 'build', 'pdf.js'));
+			} catch (e) {
+				try {
+					// Fallback to node_modules
+					pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+				} catch (error) {
+					throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
+				}
 			}
 		}
 
@@ -187,7 +215,6 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 			const viewport = page.getViewport({ scale });
 
 			// Create canvas
-			const canvas = require('canvas');
 			const canvasNode = canvas.createCanvas(viewport.width, viewport.height);
 			const context = canvasNode.getContext('2d');
 
@@ -239,8 +266,16 @@ async function extractTextFromPdf(pdfPath, options = {}) {
  */
 async function isScannedPdf(pdfPath) {
 	try {
-		// Use pdf-parse to check for text
-		const pdfParse = require(path.join(__dirname, '..', 'assets', 'vendor', 'pdf-parse'));
+		// Use pdf-parse from bundled vendor directory
+		const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
+		let pdfParse;
+		try {
+			pdfParse = require(path.join(vendorPath, 'pdf-parse'));
+		} catch (e) {
+			// Fallback to node_modules
+			pdfParse = require('pdf-parse');
+		}
+		
 		const dataBuffer = fs.readFileSync(pdfPath);
 		const pdfData = await pdfParse(dataBuffer, { max: 1 }); // Just check first page
 
