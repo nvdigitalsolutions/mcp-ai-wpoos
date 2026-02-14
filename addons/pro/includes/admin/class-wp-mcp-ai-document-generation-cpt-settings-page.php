@@ -114,6 +114,14 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$this->option_name,
 			$this->option_name . '_section'
 		);
+
+		add_settings_field(
+			'ocr_max_pages_default',
+			__( 'OCR Max Pages Default', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_max_pages_default_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
 	}
 
 	/**
@@ -173,8 +181,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * Render Node.js status field.
 	 */
 	public function render_nodejs_status_field() {
-		$nodejs_available     = $this->check_nodejs_available();
-		$npm_packages         = $this->check_npm_packages_installed();
+		$nodejs_available      = $this->check_nodejs_available();
+		$npm_packages          = $this->check_npm_packages_installed();
 		$optional_npm_packages = $this->check_optional_npm_packages_installed();
 
 		?>
@@ -233,28 +241,28 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function check_npm_packages_installed() {
 		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
-		
+
 		// Use the centralized helper function for CDN-aware package checking.
 		$has_pdfkit = (
 			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
 			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
 		);
-		
+
 		$has_docx = (
 			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
 			file_exists( $bin_dir . '/generate-word.bundle.js' )
 		);
-		
+
 		$has_exceljs = (
 			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
 			file_exists( $bin_dir . '/generate-excel.bundle.js' )
 		);
-		
+
 		$core_packages = $has_pdfkit && $has_docx && $has_exceljs;
-		
+
 		// Check utility packages (optional).
 		$utility_packages = wp_mcp_ai_is_npm_package_available( 'pdf-lib' );
-		
+
 		return $core_packages && $utility_packages;
 	}
 
@@ -297,8 +305,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * Render OCR provider field.
 	 */
 	public function render_ocr_provider_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['ocr_provider'] ) ? $options['ocr_provider'] : 'auto';
+		$options       = get_option( $this->option_name, array() );
+		$value         = isset( $options['ocr_provider'] ) ? $options['ocr_provider'] : 'auto';
 		$main_settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		?>
@@ -327,11 +335,11 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			</option>
 		</select>
 		<p class="description">
-			<?php 
-			esc_html_e( 'Select the OCR provider for extracting text from scanned images and PDFs. Auto mode automatically selects the best available provider.', 'mcp-ai-wpoos-pro' ); 
+			<?php
+			esc_html_e( 'Select the OCR provider for extracting text from scanned images and PDFs. Auto mode automatically selects the best available provider.', 'mcp-ai-wpoos-pro' );
 			echo '<br>';
 			/* translators: %s: Settings page URL */
-			printf( 
+			printf(
 				esc_html__( 'Configure API keys in %s', 'mcp-ai-wpoos-pro' ),
 				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ) . '">' . esc_html__( 'Provider Settings', 'mcp-ai-wpoos-pro' ) . '</a>'
 			);
@@ -405,6 +413,30 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		<?php esc_html_e( 'seconds', 'mcp-ai-wpoos-pro' ); ?>
 		<p class="description">
 			<?php esc_html_e( 'Maximum time to wait for OCR processing before timing out. Range: 30-600 seconds.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR max pages default field.
+	 */
+	public function render_ocr_max_pages_default_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['ocr_max_pages_default'] ) ? absint( $options['ocr_max_pages_default'] ) : 10;
+
+		?>
+		<input
+			type="number"
+			name="<?php echo esc_attr( $this->option_name ); ?>[ocr_max_pages_default]"
+			value="<?php echo esc_attr( $value ); ?>"
+			min="0"
+			max="100"
+			step="1"
+			class="small-text"
+		/>
+		<?php esc_html_e( 'pages', 'mcp-ai-wpoos-pro' ); ?>
+		<p class="description">
+			<?php esc_html_e( 'Default maximum number of pages to process with OCR. OCR is resource-intensive; limiting pages prevents timeouts on large documents. Individual tools can override this setting. Set to 0 for unlimited (not recommended).', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -547,6 +579,12 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 
 		if ( isset( $input['ocr_timeout'] ) ) {
 			$sanitized['ocr_timeout'] = absint( $input['ocr_timeout'] );
+		}
+
+		if ( isset( $input['ocr_max_pages_default'] ) ) {
+			$value = absint( $input['ocr_max_pages_default'] );
+			// Enforce min/max bounds.
+			$sanitized['ocr_max_pages_default'] = min( 100, max( 0, $value ) );
 		}
 
 		return $sanitized;
