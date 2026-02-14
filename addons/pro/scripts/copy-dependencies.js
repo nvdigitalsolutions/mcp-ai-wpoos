@@ -548,6 +548,40 @@ const dependencies = [
 			{ src: 'package.json', dest: 'node-ensure/package.json' },
 		],
 	},
+	// ========================================================================
+	// OCR PACKAGES (Document Generation Toolkit - Phase 3)
+	// ========================================================================
+	{
+		name: 'tesseract.js',
+		dirs: [
+			{ src: 'src', dest: 'tesseract.js/src' },
+		],
+		files: [
+			{ src: 'dist/tesseract.min.js', dest: 'tesseract.js/tesseract.min.js' },
+			{ src: 'package.json', dest: 'tesseract.js/package.json' },
+		],
+	},
+	{
+		name: 'pdfjs-dist',
+		dirs: [
+			{ src: 'legacy/build', dest: 'pdfjs-dist/legacy/build' },
+			{ src: 'legacy/web', dest: 'pdfjs-dist/legacy/web' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdfjs-dist/package.json' },
+		],
+	},
+	{
+		name: 'canvas',
+		dirs: [
+			{ src: 'lib', dest: 'canvas/lib' },
+			{ src: 'build', dest: 'canvas/build' },
+		],
+		files: [
+			{ src: 'browser.js', dest: 'canvas/browser.js' },
+			{ src: 'package.json', dest: 'canvas/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

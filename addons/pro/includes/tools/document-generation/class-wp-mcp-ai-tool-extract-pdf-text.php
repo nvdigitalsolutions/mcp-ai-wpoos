@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Extract text content from PDF documents. Parse PDF files and retrieve their text for processing, indexing, or analysis. Supports multi-page PDFs and maintains basic formatting.', 'mcp-ai-wpoos-pro' );
+		return __( 'Extract text content from PDF documents. Parse PDF files and retrieve their text for processing, indexing, or analysis. Supports multi-page PDFs and maintains basic formatting. Automatically detects scanned PDFs and applies OCR when needed (if enable_ocr parameter is true).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,6 +66,15 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 				'max_pages'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of pages to extract. Default: all pages', 'mcp-ai-wpoos-pro' ),
+				),
+				'enable_ocr'    => array(
+					'type'        => 'boolean',
+					'description' => __( 'Enable automatic OCR for scanned PDFs (image-only documents with no readable text). Default: true', 'mcp-ai-wpoos-pro' ),
+				),
+				'ocr_provider'  => array(
+					'type'        => 'string',
+					'enum'        => array( 'auto', 'openai', 'gemini', 'ollama', 'tesseract' ),
+					'description' => __( 'OCR provider to use when OCR is needed. "auto" selects best available. Default: auto', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array(),
@@ -142,11 +151,52 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
-		$max_pages = ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 0;
+		$max_pages   = ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 0;
+		$enable_ocr  = isset( $arguments['enable_ocr'] ) ? (bool) $arguments['enable_ocr'] : true;
+		$ocr_provider = ! empty( $arguments['ocr_provider'] ) ? sanitize_text_field( $arguments['ocr_provider'] ) : 'auto';
 
 		try {
 			// Extract text from PDF.
 			$text = $this->extract_text_from_pdf( $file_path, $max_pages );
+
+			// Check if we got minimal text (might be scanned).
+			$used_ocr = false;
+			if ( ! is_wp_error( $text ) && $enable_ocr ) {
+				$clean_text = trim( preg_replace( '/\s+/', '', $text ) );
+				
+				// If very little text extracted, try OCR.
+				if ( strlen( $clean_text ) < 50 ) {
+					// Load OCR service if available.
+					$ocr_service_path = WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-ocr-service.php';
+					if ( file_exists( $ocr_service_path ) ) {
+						require_once $ocr_service_path;
+						
+						$ocr_service = new WP_MCP_AI_OCR_Service();
+						$ocr_options = array(
+							'max_pages' => $max_pages > 0 ? $max_pages : 10, // Limit OCR to 10 pages by default.
+							'provider'  => $ocr_provider,
+							'dpi'       => 300,
+						);
+						
+						$ocr_text = $ocr_service->extract_text_from_pdf( $file_path, $ocr_options );
+						
+						if ( ! is_wp_error( $ocr_text ) && strlen( $ocr_text ) > strlen( $text ) ) {
+							$text     = $ocr_text;
+							$used_ocr = true;
+							
+							WP_MCP_AI_Logger::log_event(
+								'pdf_ocr_fallback',
+								'Used OCR for scanned PDF',
+								array(
+									'provider'       => $ocr_provider,
+									'standard_chars' => strlen( $clean_text ),
+									'ocr_chars'      => strlen( $ocr_text ),
+								)
+							);
+						}
+					}
+				}
+			}
 
 			// Clean up temp file if we downloaded one.
 			if ( isset( $temp_file ) ) {
@@ -161,18 +211,33 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			$word_count = str_word_count( $text );
 
-			return $this->format_chat_response(
-				array(
-					'text'       => $text,
-					'word_count' => $word_count,
-					'char_count' => strlen( $text ),
-				),
-				sprintf(
+			$response_data = array(
+				'text'       => $text,
+				'word_count' => $word_count,
+				'char_count' => strlen( $text ),
+			);
+
+			if ( $used_ocr ) {
+				$response_data['extraction_method'] = 'ocr';
+				$response_data['ocr_provider']      = $ocr_provider;
+				
+				$message = sprintf(
+					/* translators: 1: word count, 2: OCR provider */
+					__( 'Successfully extracted %1$d words from scanned PDF using OCR (%2$s).', 'mcp-ai-wpoos-pro' ),
+					$word_count,
+					$ocr_provider
+				);
+			} else {
+				$response_data['extraction_method'] = 'standard';
+				
+				$message = sprintf(
 					/* translators: %d: word count */
 					__( 'Successfully extracted %d words from PDF.', 'mcp-ai-wpoos-pro' ),
 					$word_count
-				)
-			);
+				);
+			}
+
+			return $this->format_chat_response( $response_data, $message );
 
 		} catch ( Exception $e ) {
 			// Clean up temp file if we downloaded one.

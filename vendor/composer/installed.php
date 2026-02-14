@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-pro-packages-display-issue',
-        'version' => 'dev-copilot/fix-pro-packages-display-issue',
-        'reference' => '87f6b4be8e856449e054d331e0a3ede4cfe23c7f',
+        'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
+        'version' => 'dev-copilot/enhance-document-toolkit-ocr',
+        'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-pro-packages-display-issue',
-            'version' => 'dev-copilot/fix-pro-packages-display-issue',
-            'reference' => '87f6b4be8e856449e054d331e0a3ede4cfe23c7f',
+            'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
+            'version' => 'dev-copilot/enhance-document-toolkit-ocr',
+            'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
