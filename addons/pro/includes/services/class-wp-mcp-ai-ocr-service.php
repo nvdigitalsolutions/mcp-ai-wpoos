@@ -515,7 +515,12 @@ class WP_MCP_AI_OCR_Service {
 
 		// Make direct API call to Gemini.
 		$model    = 'gemini-1.5-flash';
-		$api_key  = $settings['gemini_api_key'];
+		$api_key  = sanitize_text_field( $settings['gemini_api_key'] );
+		
+		if ( empty( $api_key ) ) {
+			return new WP_Error( 'no_api_key', __( 'Gemini API key not configured.', 'mcp-ai-wpoos-pro' ) );
+		}
+		
 		$endpoint = sprintf( 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent', rawurlencode( $model ) );
 
 		$response = wp_remote_post(
@@ -539,7 +544,18 @@ class WP_MCP_AI_OCR_Service {
 		$data = json_decode( $body, true );
 
 		if ( $code < 200 || $code >= 300 ) {
-			$error_message = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Gemini API request failed.', 'mcp-ai-wpoos-pro' );
+			$error_message = isset( $data['error']['message'] ) ? sanitize_text_field( $data['error']['message'] ) : __( 'Gemini API request failed.', 'mcp-ai-wpoos-pro' );
+			
+			// Log the detailed error for debugging but return a sanitized message.
+			WP_MCP_AI_Logger::log_error(
+				'gemini_ocr_failed',
+				'Gemini OCR API request failed',
+				array(
+					'code'    => $code,
+					'message' => $error_message,
+				)
+			);
+			
 			return new WP_Error( 'gemini_api_error', $error_message );
 		}
 
