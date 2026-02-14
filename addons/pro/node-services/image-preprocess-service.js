@@ -8,13 +8,28 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load sharp from node_modules
+// Load sharp from bundled vendor or node_modules
 let sharp;
 try {
-	sharp = require('sharp');
+	// Try bundled version first with path validation
+	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
+	
+	if (fs.existsSync(vendorPath)) {
+		const sharpPath = path.join(vendorPath, 'sharp', 'lib');
+		if (fs.existsSync(sharpPath)) {
+			sharp = require(sharpPath);
+		} else {
+			// Bundled path doesn't exist, try node_modules
+			sharp = require('sharp');
+		}
+	} else {
+		// Vendor directory doesn't exist, fallback to node_modules
+		sharp = require('sharp');
+	}
 } catch (error) {
-	console.error(JSON.stringify({ 
-		error: 'Sharp library not found. Run: npm install sharp' 
+	console.log(JSON.stringify({ 
+		error: 'Sharp library not available. Image preprocessing disabled.',
+		details: error.message
 	}));
 	process.exit(1);
 }
@@ -83,15 +98,12 @@ async function preprocessImage(options) {
 			// - m1: Sharpening multiplier for detected edges
 			// - m2: Flat area slope - how much to sharpen areas without edges
 			// - x1: Minimum luminance difference to be considered an edge
-			// - y2: Luminance threshold for flat areas (edges below this aren't sharpened)
-			// - y3: Maximum luminance change (prevents over-sharpening/jagged edges)
+			// Note: Sharp 0.33+ only supports sigma, m1, m2, x1 parameters
 			pipeline = pipeline.sharpen({
 				sigma: 1,      // Slight blur to reduce noise before sharpening
 				m1: 1,         // Edge sharpening amount (1.0 = normal strength)
 				m2: 0.5,       // Flat area sharpening (0.5 = moderate)
 				x1: 2,         // Min edge detection threshold
-				y2: 10,        // Flat area threshold
-				y3: 20,        // Max sharpening to prevent jaggies
 			});
 		}
 
@@ -140,15 +152,23 @@ if (require.main === module) {
 	const dataJson = process.argv[3];
 	
 	if (!action || !dataJson) {
-		console.error('Usage: node image-preprocess-service.js <action> <json-data>');
-		console.error('Actions: preprocess');
-		console.error('Example: node image-preprocess-service.js preprocess \'{"input":"/path/to/image.jpg","output":"/path/to/output.png"}\'');
+		console.log(JSON.stringify({
+			error: 'Invalid usage',
+			usage: 'node image-preprocess-service.js <action> <json-data>',
+			actions: ['preprocess'],
+			example: 'node image-preprocess-service.js preprocess \'{"input":"/path/to/image.jpg","output":"/path/to/output.png"}\''
+		}));
 		process.exit(1);
 	}
 	
 	(async () => {
 		try {
-			const data = JSON.parse(dataJson);
+			let data;
+			try {
+				data = JSON.parse(dataJson);
+			} catch (parseError) {
+				throw new Error('Invalid JSON data: ' + parseError.message);
+			}
 			
 			switch (action) {
 				case 'preprocess':
@@ -157,11 +177,23 @@ if (require.main === module) {
 					break;
 					
 				default:
-					console.error(JSON.stringify({ error: `Unknown action: ${action}` }));
-					process.exit(1);
+					throw new Error(`Unknown action: ${action}. Valid actions: preprocess`);
 			}
+			process.exit(0);
 		} catch (error) {
-			console.error(JSON.stringify({ error: error.message }));
+			// Output error in JSON format to stdout (not stderr) for easier parsing
+			// Note: Stack traces are sanitized in production to avoid exposing server paths
+			const errorResponse = { 
+				error: error.message,
+				action: action
+			};
+			
+			// Only include stack trace in development/debug mode
+			if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+				errorResponse.stack = error.stack;
+			}
+			
+			console.log(JSON.stringify(errorResponse));
 			process.exit(1);
 		}
 	})();

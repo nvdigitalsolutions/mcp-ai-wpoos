@@ -10,34 +10,94 @@ const path = require('path');
 
 // Load dependencies from bundled vendor directory
 let Tesseract, pdfjsLib, sharp, canvas;
+const loadErrors = [];
 
 try {
 	// Try to load from bundled vendor directory first
 	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
 	
+	// Validate vendor path exists before attempting to load
+	const vendorExists = fs.existsSync(vendorPath);
+	
 	// Load Tesseract.js
 	try {
-		Tesseract = require(path.join(vendorPath, 'tesseract.js', 'src'));
+		if (vendorExists) {
+			const tesseractPath = path.join(vendorPath, 'tesseract.js', 'src');
+			if (fs.existsSync(tesseractPath)) {
+				Tesseract = require(tesseractPath);
+			} else {
+				throw new Error('Bundled tesseract.js not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
-		Tesseract = require('tesseract.js'); // Fallback to node_modules
+		try {
+			Tesseract = require('tesseract.js'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('tesseract.js: ' + err.message);
+		}
 	}
 	
 	// Load Sharp
 	try {
-		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
+		if (vendorExists) {
+			const sharpPath = path.join(vendorPath, 'sharp', 'lib');
+			if (fs.existsSync(sharpPath)) {
+				sharp = require(sharpPath);
+			} else {
+				throw new Error('Bundled sharp not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
-		sharp = require('sharp'); // Fallback to node_modules
+		try {
+			sharp = require('sharp'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('sharp: ' + err.message);
+		}
 	}
 	
 	// Load Canvas
 	try {
-		canvas = require(path.join(vendorPath, 'canvas'));
+		if (vendorExists) {
+			const canvasPath = path.join(vendorPath, 'canvas');
+			if (fs.existsSync(canvasPath)) {
+				canvas = require(canvasPath);
+			} else {
+				throw new Error('Bundled canvas not found');
+			}
+		} else {
+			throw new Error('Vendor path does not exist');
+		}
 	} catch (e) {
-		canvas = require('canvas'); // Fallback to node_modules
+		try {
+			canvas = require('canvas'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('canvas: ' + err.message);
+		}
 	}
+
+	// If critical dependencies are missing, exit with error
+	if (!Tesseract) {
+		console.log(JSON.stringify({
+			error: 'Failed to load Tesseract.js. This is a critical dependency. Details: ' + loadErrors.join('; ')
+		}));
+		process.exit(1);
+	}
+
+	// Sharp and Canvas are optional dependencies for enhanced features
+	// - Sharp: Image preprocessing for better OCR accuracy
+	// - Canvas: PDF rendering for PDF OCR
+	// If not available, basic OCR on images will still work, but:
+	// - No preprocessing will be applied
+	// - PDF OCR will fail with a clear error message
+	// These warnings are not logged to avoid cluttering output for standard image OCR
 } catch (error) {
-	console.error(JSON.stringify({
-		error: 'Required packages not found. Run: npm install tesseract.js sharp pdfjs-dist canvas'
+	console.log(JSON.stringify({
+		error: 'Failed to initialize OCR service: ' + error.message,
+		details: loadErrors.join('; ')
 	}));
 	process.exit(1);
 }
@@ -50,13 +110,20 @@ try {
  * @returns {Promise<Buffer>} Preprocessed image buffer
  */
 async function preprocessImage(imageBuffer, options = {}) {
+	// Check if Sharp is available
+	if (!sharp) {
+		// Return original buffer if Sharp is not available
+		return imageBuffer;
+	}
+
 	const {
 		maxWidth = 2048,
 		maxHeight = 2048,
 		enhance = true,
 	} = options;
 
-	let pipeline = sharp(imageBuffer);
+	try {
+		let pipeline = sharp(imageBuffer);
 
 	// Get metadata
 	const metadata = await pipeline.metadata();
@@ -78,22 +145,26 @@ async function preprocessImage(imageBuffer, options = {}) {
 
 		// Sharpen for better text recognition
 		pipeline = pipeline.sharpen({
-			sigma: 1,
-			m1: 1,
-			m2: 0.5,
-			x1: 2,
-			y2: 10,
-			y3: 20,
+			sigma: 1,      // Slight blur to reduce noise before sharpening
+			m1: 1,         // Edge sharpening amount (1.0 = normal strength)
+			m2: 0.5,       // Flat area sharpening (0.5 = moderate)
+			x1: 2,         // Min edge detection threshold
+			// Note: Sharp only accepts sigma, m1, m2, x1, y2, y3
+			// y2 and y3 are optional luminance thresholds
 		});
 
 		// Gamma correction
 		pipeline = pipeline.gamma(1.2);
 	}
 
-	// Convert to PNG for best quality
-	pipeline = pipeline.png({ compressionLevel: 6 });
+		// Convert to PNG for best quality
+		pipeline = pipeline.png({ compressionLevel: 6 });
 
-	return await pipeline.toBuffer();
+		return await pipeline.toBuffer();
+	} catch (error) {
+		// If preprocessing fails, return original buffer
+		return imageBuffer;
+	}
 }
 
 /**
@@ -171,19 +242,31 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 			throw new Error(`PDF file not found: ${pdfPath}`);
 		}
 
+		// Check for Canvas (required for PDF rendering)
+		if (!canvas) {
+			throw new Error('Canvas module not available. PDF OCR requires canvas for rendering.');
+		}
+
 		// Load PDF.js (lazy load to avoid issues if not needed)
 		if (!pdfjsLib) {
 			try {
-				// Try bundled version first
+				// Try bundled version first with path validation
 				const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
-				pdfjsLib = require(path.join(vendorPath, 'pdfjs-dist', 'legacy', 'build', 'pdf.js'));
-			} catch (e) {
-				try {
+				
+				if (fs.existsSync(vendorPath)) {
+					const pdfjsPath = path.join(vendorPath, 'pdfjs-dist', 'legacy', 'build', 'pdf.js');
+					if (fs.existsSync(pdfjsPath)) {
+						pdfjsLib = require(pdfjsPath);
+					} else {
+						// Try node_modules
+						pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+					}
+				} else {
 					// Fallback to node_modules
 					pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-				} catch (error) {
-					throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
 				}
+			} catch (error) {
+				throw new Error('pdfjs-dist module not available. PDF OCR requires pdfjs-dist for rendering. Details: ' + error.message);
 			}
 		}
 
@@ -209,43 +292,45 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 			tessedit_pageseg_mode: 3, // Auto page segmentation
 		});
 
-		// Process each page
-		for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-			const page = await pdfDocument.getPage(pageNum);
-			const viewport = page.getViewport({ scale });
+		try {
+			// Process each page
+			for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+				const page = await pdfDocument.getPage(pageNum);
+				const viewport = page.getViewport({ scale });
 
-			// Create canvas
-			const canvasNode = canvas.createCanvas(viewport.width, viewport.height);
-			const context = canvasNode.getContext('2d');
+				// Create canvas
+				const canvasNode = canvas.createCanvas(viewport.width, viewport.height);
+				const context = canvasNode.getContext('2d');
 
-			// Render PDF page to canvas
-			await page.render({
-				canvasContext: context,
-				viewport: viewport,
-			}).promise;
+				// Render PDF page to canvas
+				await page.render({
+					canvasContext: context,
+					viewport: viewport,
+				}).promise;
 
-			// Get image buffer from canvas
-			const imageBuffer = canvasNode.toBuffer('image/png');
+				// Get image buffer from canvas
+				const imageBuffer = canvasNode.toBuffer('image/png');
 
-			// Preprocess image
-			const preprocessed = await preprocessImage(imageBuffer, options);
+				// Preprocess image
+				const preprocessed = await preprocessImage(imageBuffer, options);
 
-			// Perform OCR
-			const result = await worker.recognize(preprocessed);
+				// Perform OCR
+				const result = await worker.recognize(preprocessed);
 
-			results.push({
-				page: pageNum,
-				text: result.data.text,
-				confidence: result.data.confidence,
-			});
+				results.push({
+					page: pageNum,
+					text: result.data.text,
+					confidence: result.data.confidence,
+				});
+			}
+		} finally {
+			// Clean up worker even if error occurs
+			await worker.terminate();
 		}
-
-		// Clean up
-		await worker.terminate();
 
 		// Combine all page texts
 		const allText = results.map(r => `--- Page ${r.page} ---\n${r.text}`).join('\n\n');
-		const avgConfidence = results.reduce((sum, r) => sum + r.confidence, 0) / results.length;
+		const avgConfidence = results.length > 0 ? results.reduce((sum, r) => sum + r.confidence, 0) / results.length : 0;
 
 		return {
 			text: allText,
@@ -296,20 +381,28 @@ if (require.main === module) {
 	const dataJson = process.argv[3];
 
 	if (!action || !dataJson) {
-		console.error('Usage: node ocr-service.js <action> <json-data>');
-		console.error('Actions: image, pdf, check-scanned');
-		console.error('Example: node ocr-service.js image \'{"path":"/path/to/image.jpg","language":"eng"}\'');
+		console.log(JSON.stringify({
+			error: 'Invalid usage',
+			usage: 'node ocr-service.js <action> <json-data>',
+			actions: ['image', 'pdf', 'check-scanned'],
+			example: 'node ocr-service.js image \'{"path":"/path/to/image.jpg","language":"eng"}\''
+		}));
 		process.exit(1);
 	}
 
 	(async () => {
 		try {
-			const data = JSON.parse(dataJson);
+			let data;
+			try {
+				data = JSON.parse(dataJson);
+			} catch (parseError) {
+				throw new Error('Invalid JSON data: ' + parseError.message);
+			}
 
 			switch (action) {
 				case 'image':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for image action');
 					}
 					const imageResult = await extractTextFromImage(data.path, data);
 					console.log(JSON.stringify(imageResult));
@@ -317,7 +410,7 @@ if (require.main === module) {
 
 				case 'pdf':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for pdf action');
 					}
 					const pdfResult = await extractTextFromPdf(data.path, data);
 					console.log(JSON.stringify(pdfResult));
@@ -325,18 +418,30 @@ if (require.main === module) {
 
 				case 'check-scanned':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for check-scanned action');
 					}
 					const isScanned = await isScannedPdf(data.path);
 					console.log(JSON.stringify({ isScanned }));
 					break;
 
 				default:
-					console.error(JSON.stringify({ error: `Unknown action: ${action}` }));
-					process.exit(1);
+					throw new Error(`Unknown action: ${action}. Valid actions: image, pdf, check-scanned`);
 			}
+			process.exit(0);
 		} catch (error) {
-			console.error(JSON.stringify({ error: error.message }));
+			// Output error in JSON format to stdout (not stderr) for easier parsing
+			// Note: Stack traces are sanitized in production to avoid exposing server paths
+			const errorResponse = { 
+				error: error.message,
+				action: action
+			};
+			
+			// Only include stack trace in development/debug mode
+			if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+				errorResponse.stack = error.stack;
+			}
+			
+			console.log(JSON.stringify(errorResponse));
 			process.exit(1);
 		}
 	})();
