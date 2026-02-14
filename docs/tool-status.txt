@@ -550,7 +550,7 @@ probe_chat = bug
 probe_remote_mcp = bug
 update_option = bug
 excel_data_export = bug
-
+pro_document_ocr = bug
 
 # ========================================
 # PRACTICAL SETTINGS & RECOMMENDATIONS
