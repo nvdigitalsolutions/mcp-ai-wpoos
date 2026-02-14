@@ -529,6 +529,26 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$sanitized['enable_research'] = false;
 		}
 
+		// OCR settings sanitization.
+		if ( isset( $input['ocr_provider'] ) ) {
+			$sanitized['ocr_provider'] = sanitize_text_field( $input['ocr_provider'] );
+		}
+
+		if ( isset( $input['ocr_fallback_provider'] ) ) {
+			$sanitized['ocr_fallback_provider'] = sanitize_text_field( $input['ocr_fallback_provider'] );
+		}
+
+		if ( isset( $input['ocr_preprocessing'] ) ) {
+			$sanitized['ocr_preprocessing'] = (bool) $input['ocr_preprocessing'];
+		} else {
+			// Checkbox not checked.
+			$sanitized['ocr_preprocessing'] = false;
+		}
+
+		if ( isset( $input['ocr_timeout'] ) ) {
+			$sanitized['ocr_timeout'] = absint( $input['ocr_timeout'] );
+		}
+
 		return $sanitized;
 	}
 }
