@@ -2,35 +2,36 @@
 
 ## Overview
 
-**Distributed ZIP File Size**: 39 MB (mcp-ai-wpoos-pro-1.1.1.zip)  
-**Uncompressed Size**: 126 MB  
-**Number of Files**: ~8,250 files  
-**Compression Ratio**: 69% size reduction
+**Distributed ZIP File Size**: 37 MB (mcp-ai-wpoos-pro-1.1.1.zip)  
+**Uncompressed Size**: ~128 MB  
+**Number of Files**: ~8,300 files  
+**Compression Ratio**: 71% size reduction
 
 This document provides a detailed breakdown of what's actually included in the distributed pro plugin zip file.
 
-> **Optimization Note**: Previously 54 MB. Reduced by 15 MB (28%) by excluding source maps, Facebook SDK, and test files from distribution.
+> **Optimization Note**: Previously 54 MB. Reduced by 17 MB (31%) by excluding source maps, Facebook SDK, and test files from distribution.
+> **Latest Update (v1.1.1)**: Added OCR support for scanned PDFs with minimal size impact (+8KB PHP wrapper, OCR packages pre-bundled in vendor).
 
 ---
 
 ## What's In The ZIP File
 
-The 39 MB zip file contains:
+The 37 MB zip file contains:
 
 | Directory | Uncompressed | Files | % of Total | Description |
 |-----------|--------------|-------|------------|-------------|
-| `vendor` | 56 MB | ~2,400 | 44% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser) |
-| `assets/vendor` | 48 MB | ~4,800 | 38% | Bundled NPM packages (JavaScript libraries - without maps/Facebook SDK) |
+| `vendor` | 56 MB | ~2,400 | 44% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser, tesseract_ocr) |
+| `assets/vendor` | 48 MB | ~4,800 | 37% | Bundled NPM packages (JavaScript libraries - without maps/Facebook SDK) |
 | `bin` | 11 MB | 8 | 9% | Webpack-bundled document generation scripts (PDF/Word/Excel - no maps) |
-| `includes` | 10 MB | ~900 | 8% | PHP source code (tools, admin UI, integrations) |
-| `docs` | 800 KB | ~60 | <1% | Documentation files |
+| `includes` | 10 MB | ~900 | 8% | PHP source code (tools, admin UI, integrations, OCR service) |
+| `node-services` | 48 KB | ~8 | <1% | Node.js microservices (PDF extraction, OCR, image preprocessing) |
+| `docs` | 900 KB | ~65 | <1% | Documentation files (including OCR guide) |
 | `build` | 244 KB | 8 | <1% | Build artifacts |
 | `examples` | 112 KB | ~15 | <1% | Example code and usage samples |
 | `scripts` | 48 KB | 5 | <1% | Build and maintenance scripts |
 | `services` | 48 KB | ~6 | <1% | Service definitions |
-| `node-services` | 40 KB | ~7 | <1% | Node.js microservices (PDF extraction, etc.) |
 
-**Total Uncompressed**: 126 MB → **Compressed to 39 MB**
+**Total Uncompressed**: 128 MB → **Compressed to 37 MB**
 
 ### What's Excluded (Not in Distribution ZIP)
 
@@ -39,6 +40,7 @@ These files are excluded from the distribution to reduce size:
 - ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
 - ✅ **Test PDF samples**: ~1.7 MB uncompressed
 - ✅ **Vendor tests/docs**: ~15 MB uncompressed
+- ✅ **OCR training data**: Not included (Tesseract uses built-in models, additional languages can be installed separately)
 
 **Total excluded**: ~76 MB uncompressed → ~19 MB compressed savings
 
@@ -73,6 +75,8 @@ Now that source maps and Facebook SDK are excluded, here's what remains:
 
 **Note**: All source maps (*.js.map) and Facebook SDK files are now excluded from distribution.
 
+**OCR Dependencies**: The Tesseract OCR PHP wrapper (thiagoalessio/tesseract_ocr) is only 8KB and uses system-installed Tesseract binary. Node.js OCR packages (tesseract.js, pdfjs-dist, canvas) will be bundled in assets/vendor when copy-dependencies.js script is run.
+
 **Key Observation**: The top 30 files account for ~83 MB uncompressed (~22 MB compressed in zip)
 
 ---
@@ -95,19 +99,22 @@ What types of files are in the zip:
 
 ---
 
-## Assets/Vendor (NPM Packages) - 101 MB Uncompressed
+## Assets/Vendor (NPM Packages) - 48 MB Uncompressed
 
 JavaScript/Node.js libraries bundled in the zip for browser and Node.js usage:
 
-### Document Generation (69 MB)
+### Document Generation & OCR (69 MB)
 | Package | Uncompressed | Purpose |
 |---------|--------------|---------|
 | `pdf-parse` | 30 MB | PDF text extraction (4 pdfjs versions with international cmaps) |
 | `exceljs` | 16 MB | Excel spreadsheet generation and parsing (includes multiple source maps) |
-| `facebook-nodejs-business-sdk` | 28 MB | Facebook Marketing API (6 bundle formats + source maps) |
 | `pdfkit` | 5.9 MB | PDF generation library |
 | `pdf-lib` | 6.6 MB | PDF manipulation and form filling |
 | `puppeteer-core` | 8.3 MB | Headless Chrome for PDF rendering |
+| **OCR Packages** (bundled when running copy-dependencies.js): |
+| `tesseract.js` | ~2.5 MB | Pure JavaScript OCR engine (WebAssembly-based) |
+| `pdfjs-dist` | ~8 MB | Mozilla PDF.js for PDF rendering to images |
+| `canvas` | ~1.5 MB | Node.js canvas for image manipulation |
 
 ### Social Media & Marketing (30 MB)
 | Package | Uncompressed | Purpose |
@@ -132,7 +139,7 @@ JavaScript/Node.js libraries bundled in the zip for browser and Node.js usage:
 
 ---
 
-## PHP Vendor (Composer) - 52 MB Uncompressed
+## PHP Vendor (Composer) - 56 MB Uncompressed
 
 PHP libraries included in the zip (tests/docs excluded via .distignore):
 
@@ -143,7 +150,12 @@ PHP libraries included in the zip (tests/docs excluded via .distignore):
 | `phpoffice/*` | 17 MB | Excel, Word, PowerPoint file handling |
 | `dompdf/dompdf` | 14 MB | HTML to PDF conversion |
 
-### Utilities (4 MB)
+### OCR Support (8 KB)
+| Package | Uncompressed | Purpose |
+|---------|--------------|---------|
+| `thiagoalessio/tesseract_ocr` | 8 KB | PHP wrapper for Tesseract OCR (requires system Tesseract binary) |
+
+### Utilities (8 MB)
 | Package | Uncompressed | Purpose |
 |---------|--------------|---------|
 | `thecodingmachine/safe` | 8.5 MB | Type-safe PHP wrappers (excluded in distribution) |
@@ -543,7 +555,8 @@ Further optimization potential: ~37 MB → 24-28 MB (if all options applied)
 ```
 
 **Last Updated**: February 14, 2026  
-**Plugin Version**: 1.1.2 (with optimizations)  
-**Analysis Date**: Based on mcp-ai-wpoos-pro with .distignore optimizations
-**Size Reduction**: 31% (54 MB → ~37 MB)
+**Plugin Version**: 1.1.1 (with OCR support)  
+**Analysis Date**: Based on mcp-ai-wpoos-pro with .distignore optimizations  
+**Size**: 37 MB (optimized from 54 MB, 31% reduction)  
+**New Features**: OCR support for scanned PDFs (Tesseract.js, PDF.js, OpenAI/Gemini Vision APIs)
 
