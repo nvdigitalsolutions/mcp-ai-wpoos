@@ -115,12 +115,12 @@ async function preprocessImage(imageBuffer, options = {}) {
 
 		// Sharpen for better text recognition
 		pipeline = pipeline.sharpen({
-			sigma: 1,
-			m1: 1,
-			m2: 0.5,
-			x1: 2,
-			y2: 10,
-			y3: 20,
+			sigma: 1,      // Slight blur to reduce noise before sharpening
+			m1: 1,         // Edge sharpening amount (1.0 = normal strength)
+			m2: 0.5,       // Flat area sharpening (0.5 = moderate)
+			x1: 2,         // Min edge detection threshold
+			// Note: Sharp only accepts sigma, m1, m2, x1, y2, y3
+			// y2 and y3 are optional luminance thresholds
 		});
 
 		// Gamma correction
@@ -255,43 +255,45 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 			tessedit_pageseg_mode: 3, // Auto page segmentation
 		});
 
-		// Process each page
-		for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-			const page = await pdfDocument.getPage(pageNum);
-			const viewport = page.getViewport({ scale });
+		try {
+			// Process each page
+			for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+				const page = await pdfDocument.getPage(pageNum);
+				const viewport = page.getViewport({ scale });
 
-			// Create canvas
-			const canvasNode = canvas.createCanvas(viewport.width, viewport.height);
-			const context = canvasNode.getContext('2d');
+				// Create canvas
+				const canvasNode = canvas.createCanvas(viewport.width, viewport.height);
+				const context = canvasNode.getContext('2d');
 
-			// Render PDF page to canvas
-			await page.render({
-				canvasContext: context,
-				viewport: viewport,
-			}).promise;
+				// Render PDF page to canvas
+				await page.render({
+					canvasContext: context,
+					viewport: viewport,
+				}).promise;
 
-			// Get image buffer from canvas
-			const imageBuffer = canvasNode.toBuffer('image/png');
+				// Get image buffer from canvas
+				const imageBuffer = canvasNode.toBuffer('image/png');
 
-			// Preprocess image
-			const preprocessed = await preprocessImage(imageBuffer, options);
+				// Preprocess image
+				const preprocessed = await preprocessImage(imageBuffer, options);
 
-			// Perform OCR
-			const result = await worker.recognize(preprocessed);
+				// Perform OCR
+				const result = await worker.recognize(preprocessed);
 
-			results.push({
-				page: pageNum,
-				text: result.data.text,
-				confidence: result.data.confidence,
-			});
+				results.push({
+					page: pageNum,
+					text: result.data.text,
+					confidence: result.data.confidence,
+				});
+			}
+		} finally {
+			// Clean up worker even if error occurs
+			await worker.terminate();
 		}
-
-		// Clean up
-		await worker.terminate();
 
 		// Combine all page texts
 		const allText = results.map(r => `--- Page ${r.page} ---\n${r.text}`).join('\n\n');
-		const avgConfidence = results.reduce((sum, r) => sum + r.confidence, 0) / results.length;
+		const avgConfidence = results.length > 0 ? results.reduce((sum, r) => sum + r.confidence, 0) / results.length : 0;
 
 		return {
 			text: allText,

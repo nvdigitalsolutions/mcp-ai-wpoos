@@ -90,15 +90,12 @@ async function preprocessImage(options) {
 			// - m1: Sharpening multiplier for detected edges
 			// - m2: Flat area slope - how much to sharpen areas without edges
 			// - x1: Minimum luminance difference to be considered an edge
-			// - y2: Luminance threshold for flat areas (edges below this aren't sharpened)
-			// - y3: Maximum luminance change (prevents over-sharpening/jagged edges)
+			// Note: Sharp 0.33+ only supports sigma, m1, m2, x1 parameters
 			pipeline = pipeline.sharpen({
 				sigma: 1,      // Slight blur to reduce noise before sharpening
 				m1: 1,         // Edge sharpening amount (1.0 = normal strength)
 				m2: 0.5,       // Flat area sharpening (0.5 = moderate)
 				x1: 2,         // Min edge detection threshold
-				y2: 10,        // Flat area threshold
-				y3: 20,        // Max sharpening to prevent jaggies
 			});
 		}
 

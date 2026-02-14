@@ -149,7 +149,9 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Validate it's a PDF.
-		$mime_type = mime_content_type( $file_path );
+		$filetype = wp_check_filetype( $file_path );
+		$mime_type = ! empty( $filetype['type'] ) ? $filetype['type'] : '';
+		
 		if ( 'application/pdf' !== $mime_type ) {
 			if ( $temp_file ) {
 				@unlink( $temp_file );
@@ -161,7 +163,7 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Prepare OCR options.
 		$ocr_options = array(
-			'max_pages'  => ! empty( $arguments['max_pages'] ) ? absint( $arguments['max_pages'] ) : 10,
+			'max_pages'  => ! empty( $arguments['max_pages'] ) ? min( absint( $arguments['max_pages'] ), 50 ) : 10, // Cap at 50 pages.
 			'provider'   => ! empty( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : 'auto',
 			'preprocess' => isset( $arguments['preprocess'] ) ? (bool) $arguments['preprocess'] : true,
 			'language'   => ! empty( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : 'eng',

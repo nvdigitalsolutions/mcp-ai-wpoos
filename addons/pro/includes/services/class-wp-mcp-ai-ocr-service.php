@@ -567,7 +567,7 @@ class WP_MCP_AI_OCR_Service {
 		// Encode image to base64.
 		$image_data = file_get_contents( $image_path );
 		$base64     = base64_encode( $image_data );
-		$mime_type  = mime_content_type( $image_path );
+		$mime_type  = $this->get_mime_type( $image_path );
 
 		// Get singleton client instance.
 		if ( null === self::$openai_client ) {
@@ -641,7 +641,7 @@ class WP_MCP_AI_OCR_Service {
 		// Encode image to base64.
 		$image_data = file_get_contents( $image_path );
 		$base64     = base64_encode( $image_data );
-		$mime_type  = mime_content_type( $image_path );
+		$mime_type  = $this->get_mime_type( $image_path );
 
 		// Get singleton client instance.
 		if ( null === self::$gemini_client ) {
@@ -727,7 +727,7 @@ class WP_MCP_AI_OCR_Service {
 			array(
 				'body'    => $body,
 				'headers' => array( 'Content-Type' => 'application/json' ),
-				'timeout' => 60,
+				'timeout' => self::DEFAULT_TIMEOUT,
 			)
 		);
 
@@ -737,11 +737,11 @@ class WP_MCP_AI_OCR_Service {
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		
-		if ( isset( $body['response'] ) ) {
+		if ( isset( $body['response'] ) && ! empty( trim( $body['response'] ) ) ) {
 			return trim( $body['response'] );
 		}
 
-		return new WP_Error( 'invalid_response', __( 'Invalid response from Ollama.', 'mcp-ai-wpoos-pro' ) );
+		return new WP_Error( 'invalid_response', __( 'Invalid or empty response from Ollama.', 'mcp-ai-wpoos-pro' ) );
 	}
 
 	/**
@@ -1035,7 +1035,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		// Check MIME type.
-		$mime_type = mime_content_type( $image_path );
+		$mime_type = $this->get_mime_type( $image_path );
 		$allowed_types = array( 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/tiff' );
 		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
 			return new WP_Error(
@@ -1092,7 +1092,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		// Check MIME type.
-		$mime_type = mime_content_type( $pdf_path );
+		$mime_type = $this->get_mime_type( $pdf_path );
 		if ( 'application/pdf' !== $mime_type ) {
 			return new WP_Error(
 				'invalid_file_type',
@@ -1227,6 +1227,7 @@ class WP_MCP_AI_OCR_Service {
 			$attempt++;
 
 			// Exponential backoff: 1s, 2s, 4s, etc.
+			// Only sleep if we have retries remaining.
 			if ( $attempt < $max_retries ) {
 				$wait_time = pow( 2, $attempt - 1 );
 				WP_MCP_AI_Logger::log_event(
@@ -1245,5 +1246,43 @@ class WP_MCP_AI_OCR_Service {
 
 		// All retries exhausted.
 		return $last_error;
+	}
+
+	/**
+	 * Get MIME type of file using modern finfo API.
+	 *
+	 * Replaces deprecated mime_content_type() for PHP 9.0 compatibility.
+	 *
+	 * @param string $file_path Path to file.
+	 * @return string|false MIME type or false on failure.
+	 */
+	protected function get_mime_type( $file_path ) {
+		if ( ! file_exists( $file_path ) ) {
+			return false;
+		}
+
+		// Use WordPress function if available.
+		if ( function_exists( 'wp_check_filetype' ) ) {
+			$filetype = wp_check_filetype( $file_path );
+			if ( ! empty( $filetype['type'] ) ) {
+				return $filetype['type'];
+			}
+		}
+
+		// Fallback to finfo (PHP 8.1+ preferred method).
+		if ( class_exists( 'finfo' ) ) {
+			$finfo = new \finfo( FILEINFO_MIME_TYPE );
+			$mime  = $finfo->file( $file_path );
+			if ( false !== $mime ) {
+				return $mime;
+			}
+		}
+
+		// Last resort: try deprecated function if still available.
+		if ( function_exists( 'mime_content_type' ) ) {
+			return mime_content_type( $file_path );
+		}
+
+		return false;
 	}
 }
