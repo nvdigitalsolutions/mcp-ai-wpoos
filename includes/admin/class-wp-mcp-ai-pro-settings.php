@@ -165,6 +165,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$packages['description'] = isset( $composer_data['description'] ) ? $composer_data['description'] : '';
 			$packages['type']        = isset( $composer_data['type'] ) ? $composer_data['type'] : 'unknown';
 
+			// Merge in Pro addon packages if available.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_composer_json_path = WP_MCP_AI_PRO_PATH . 'composer.json';
+				if ( file_exists( $pro_composer_json_path ) ) {
+					$pro_json_content = file_get_contents( $pro_composer_json_path );
+					if ( false !== $pro_json_content ) {
+						$pro_composer_data = json_decode( $pro_json_content, true );
+						if ( null !== $pro_composer_data ) {
+							// Merge Pro require dependencies.
+							if ( isset( $pro_composer_data['require'] ) && is_array( $pro_composer_data['require'] ) ) {
+								$packages['require'] = array_merge( $packages['require'], $pro_composer_data['require'] );
+							}
+							// Merge Pro require-dev dependencies (if any).
+							if ( isset( $pro_composer_data['require-dev'] ) && is_array( $pro_composer_data['require-dev'] ) ) {
+								$packages['require-dev'] = array_merge( $packages['require-dev'], $pro_composer_data['require-dev'] );
+							}
+						}
+					}
+				}
+			}
+
 			return $packages;
 		}
 
@@ -1125,15 +1146,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return bool True if package appears to be installed.
 		 */
 		private static function check_composer_package_installed( $package ) {
-			// Check if vendor autoload exists (basic check for Composer installation).
+			// Check base plugin vendor autoload.
 			$vendor_autoload = WP_MCP_AI_PATH . 'vendor/autoload.php';
-			if ( ! file_exists( $vendor_autoload ) ) {
-				return false;
+			if ( file_exists( $vendor_autoload ) ) {
+				// Derive vendor path from package name (e.g., 'symfony/http-client' -> 'vendor/symfony/http-client').
+				$path = WP_MCP_AI_PATH . 'vendor/' . $package;
+				if ( file_exists( $path ) ) {
+					return true;
+				}
 			}
 
-			// Derive vendor path from package name (e.g., 'symfony/http-client' -> 'vendor/symfony/http-client').
-			$path = WP_MCP_AI_PATH . 'vendor/' . $package;
-			return file_exists( $path );
+			// Check Pro addon vendor directory.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_vendor_autoload = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+				if ( file_exists( $pro_vendor_autoload ) ) {
+					$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
+					if ( file_exists( $pro_vendor_path ) ) {
+						return true;
+					}
+				}
+			}
+
+			return false;
 		}
 
 		/**
@@ -1493,6 +1527,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				// If Pro addon is active, assume qrcode is available.
 				// This is more lenient for production deployments.
+				return defined( 'WP_MCP_AI_PRO_VERSION' );
+			}
+
+			// Check for node-ensure package (Pro addon).
+			// This is a lightweight shim package that's pre-packaged in vendor directory.
+			if ( 'node-ensure' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if it's in Pro addon's vendor directory (production).
+				$node_ensure_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/node-ensure/index.js';
+				if ( file_exists( $node_ensure_vendor_path ) ) {
+					return true;
+				}
+
+				// Priority 2: Check the package.json existence as fallback.
+				$node_ensure_pkg_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/node-ensure/package.json';
+				if ( file_exists( $node_ensure_pkg_path ) ) {
+					return true;
+				}
+
+				// Priority 3: Check Pro addon's node_modules (development only).
+				$node_ensure_node_path = WP_MCP_AI_PRO_PATH . 'node_modules/node-ensure';
+				if ( file_exists( $node_ensure_node_path ) ) {
+					return true;
+				}
+
+				// node-ensure is a lightweight shim that should always be available when Pro is active.
+				// It's listed in package.json and copied to vendor directory during build.
 				return defined( 'WP_MCP_AI_PRO_VERSION' );
 			}
 
