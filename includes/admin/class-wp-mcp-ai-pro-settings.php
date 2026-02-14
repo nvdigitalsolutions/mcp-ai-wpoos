@@ -1767,6 +1767,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 							
 							<?php self::render_individual_toolkits_status( $toolkit_status ); ?>
 
+							<!-- Composer Packages (PHP Dependencies) -->
+							<?php if ( ! isset( $composer['error'] ) && ! empty( $composer['require'] ) ) : ?>
+								<div style="margin-top: 30px;"></div>
+								
+								<h3><?php esc_html_e( 'PHP Composer Packages', 'mcp-ai-wpoos' ); ?> <span class="count">(<?php echo absint( count( $composer['require'] ) ); ?>)</span></h3>
+								<p class="description" style="margin-bottom: 15px;">
+									<?php esc_html_e( 'Server-side PHP dependencies managed by Composer (Pro addon).', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<?php self::render_composer_table( $composer['require'], __( 'Required PHP Packages', 'mcp-ai-wpoos' ) ); ?>
+							<?php endif; ?>
+
 							<!-- Optional Dependencies (NPM) -->
 							<?php if ( ! isset( $packages['error'] ) && ! empty( $packages['optionalDependencies'] ) ) : ?>
 								<div style="margin-top: 30px;"></div>
@@ -1791,17 +1802,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<div style="margin-top: 30px;"></div>
 								
 								<?php self::render_packages_table( $packages['devDependencies'], __( 'Development Dependencies', 'mcp-ai-wpoos' ) ); ?>
-
-								<!-- Composer Packages (PHP Dependencies) -->
-								<?php if ( ! isset( $composer['error'] ) && ! empty( $composer['require'] ) ) : ?>
-									<div style="margin-top: 30px;"></div>
-									
-									<h3><?php esc_html_e( 'PHP Composer Packages', 'mcp-ai-wpoos' ); ?> <span class="count">(<?php echo absint( count( $composer['require'] ) ); ?>)</span></h3>
-									<p class="description" style="margin-bottom: 15px;">
-										<?php esc_html_e( 'Server-side PHP dependencies managed by Composer (Pro addon).', 'mcp-ai-wpoos' ); ?>
-									</p>
-									<?php self::render_composer_table( $composer['require'], __( 'Required PHP Packages', 'mcp-ai-wpoos' ) ); ?>
-								<?php endif; ?>
 
 								<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
 									<p style="margin: 0;">
