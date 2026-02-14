@@ -9,11 +9,13 @@
         "phpoffice/phpword": "^1.3",
         "dompdf/dompdf": "^3.0",
         "tecnickcom/tcpdf": "^6.7",
-        "smalot/pdfparser": "^2.10"
+        "smalot/pdfparser": "^2.10",
+        "thiagoalessio/tesseract_ocr": "^2.13"
     },
     "suggest": {
         "mpdf/mpdf": "Alternative PDF library with better HTML/CSS support (requires mb_string extension)",
-        "setasign/fpdi": "PDF manipulation library for merging and modifying PDFs"
+        "setasign/fpdi": "PDF manipulation library for merging and modifying PDFs",
+        "intervention/image": "Alternative image manipulation library (fallback when Imagick extension not available)"
     },
     "config": {
         "allow-plugins": {

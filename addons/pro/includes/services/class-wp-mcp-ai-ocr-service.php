@@ -589,13 +589,35 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_with_tesseract( $image_path, $options = array() ) {
-		// Check if tesseract is installed.
-		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
-		if ( empty( $tesseract ) ) {
-			return new WP_Error( 'tesseract_not_found', __( 'Tesseract OCR not installed on system.', 'mcp-ai-wpoos-pro' ) );
+		$language = isset( $options['language'] ) ? $options['language'] : 'eng';
+
+		// Try PHP wrapper first if available.
+		if ( class_exists( '\thiagoalessio\TesseractOCR\TesseractOCR' ) ) {
+			try {
+				$ocr = new \thiagoalessio\TesseractOCR\TesseractOCR( $image_path );
+				$ocr->lang( $language );
+				
+				// Set optimal PSM for document OCR.
+				$ocr->psm( 3 ); // Fully automatic page segmentation.
+				
+				$text = $ocr->run();
+				return trim( $text );
+			} catch ( \Exception $e ) {
+				// Fall through to command-line method.
+				WP_MCP_AI_Logger::log_event(
+					'tesseract_wrapper_failed',
+					'Tesseract PHP wrapper failed, trying command-line',
+					array( 'error' => $e->getMessage() )
+				);
+			}
 		}
 
-		$language    = isset( $options['language'] ) ? $options['language'] : 'eng';
+		// Fallback to command-line tesseract.
+		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
+		if ( empty( $tesseract ) ) {
+			return new WP_Error( 'tesseract_not_found', __( 'Tesseract OCR not installed on system. Install via: apt-get install tesseract-ocr or composer require thiagoalessio/tesseract_ocr', 'mcp-ai-wpoos-pro' ) );
+		}
+
 		$output_file = tempnam( sys_get_temp_dir(), 'ocr_' );
 
 		$cmd = sprintf(
