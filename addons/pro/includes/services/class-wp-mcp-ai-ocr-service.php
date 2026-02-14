@@ -609,13 +609,12 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = $client->send_chat_request(
+		$response = $client->create_chat_completion(
+			$messages,
 			array(
 				'model'      => 'gpt-4o',
-				'messages'   => $messages,
 				'max_tokens' => 4096,
-			),
-			$settings
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {

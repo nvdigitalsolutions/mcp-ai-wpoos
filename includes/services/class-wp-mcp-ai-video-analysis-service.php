@@ -336,7 +336,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		}
 
 		// Send request to OpenAI.
-		$response = $openai_client->chat_completion(
+		$response = $openai_client->create_chat_completion(
 			$messages,
 			array(
 				'model'       => $model,
