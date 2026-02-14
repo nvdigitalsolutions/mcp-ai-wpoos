@@ -165,6 +165,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$packages['description'] = isset( $composer_data['description'] ) ? $composer_data['description'] : '';
 			$packages['type']        = isset( $composer_data['type'] ) ? $composer_data['type'] : 'unknown';
 
+			// Extract platform requirements (php, ext-*, lib-*).
+			if ( isset( $composer_data['config']['platform'] ) && is_array( $composer_data['config']['platform'] ) ) {
+				// Add platform requirements to the require array so they display in the table.
+				$packages['require'] = array_merge( $composer_data['config']['platform'], $packages['require'] );
+			}
+
 			// Merge in Pro addon packages if available.
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_composer_json_path = WP_MCP_AI_PRO_PATH . 'composer.json';
@@ -1124,6 +1130,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						$package_installed = self::check_composer_package_installed( $package );
 						$status_class      = $package_installed ? 'installed' : 'not-installed';
 						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
+
+						// For PHP, show actual version instead of just installed status.
+						if ( 'php' === $package ) {
+							$current_php     = phpversion();
+							$required_php    = trim( $version, '^><=~' ); // Remove version constraints.
+							$version_compare = version_compare( $current_php, $required_php, '>=' );
+							$status_class    = $version_compare ? 'installed' : 'not-installed';
+							$status_text     = sprintf(
+								/* translators: %s: PHP version number */
+								__( 'PHP %s', 'mcp-ai-wpoos' ),
+								$current_php
+							);
+						}
 						?>
 						<tr>
 							<td><code><?php echo esc_html( $package ); ?></code></td>
@@ -1144,11 +1163,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * Check if a Composer package is installed.
 		 *
 		 * Checks if package exists in vendor directory by looking for composer autoload.
+		 * For PHP platform requirement, checks the installed PHP version.
 		 *
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
 		 */
 		private static function check_composer_package_installed( $package ) {
+			// Handle PHP as a special case - it's a platform requirement, not a package.
+			if ( 'php' === $package ) {
+				return true; // PHP is always "installed" since WordPress requires it.
+			}
+
 			// Check base plugin vendor autoload.
 			$vendor_autoload = WP_MCP_AI_PATH . 'vendor/autoload.php';
 			if ( file_exists( $vendor_autoload ) ) {
