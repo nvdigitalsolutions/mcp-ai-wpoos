@@ -14,6 +14,18 @@
 class WP_MCP_AI_Pro_Settings_Dependencies_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up test environment.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure the Pro Settings class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Settings class not available' );
+		}
+	}
+
+	/**
 	 * Test that get_composer_packages includes Pro addon packages.
 	 */
 	public function test_get_composer_packages_includes_pro_addon() {

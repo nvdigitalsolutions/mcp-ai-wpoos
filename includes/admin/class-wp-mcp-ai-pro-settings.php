@@ -174,6 +174,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						$pro_composer_data = json_decode( $pro_json_content, true );
 						if ( null !== $pro_composer_data ) {
 							// Merge Pro require dependencies.
+							// Note: If a package exists in both base and Pro with different versions,
+							// the Pro version will override the base version (array_merge behavior).
+							// This is intentional as Pro packages may require specific versions.
 							if ( isset( $pro_composer_data['require'] ) && is_array( $pro_composer_data['require'] ) ) {
 								$packages['require'] = array_merge( $packages['require'], $pro_composer_data['require'] );
 							}
@@ -1553,6 +1556,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				// node-ensure is a lightweight shim that should always be available when Pro is active.
 				// It's listed in package.json and copied to vendor directory during build.
+				// However, it's version ^0.0.0 (a minimal package) and may not be physically present.
+				// Used by pdf-parse's pdf.js library for async module loading pattern.
+				// Returning true here is a pragmatic fallback for this special case.
 				return defined( 'WP_MCP_AI_PRO_VERSION' );
 			}
 
