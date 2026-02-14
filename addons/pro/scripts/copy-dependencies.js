@@ -541,6 +541,13 @@ const dependencies = [
 			{ src: 'index.js', dest: 'pdf-parse/index.js' },
 		],
 	},
+	{
+		name: 'node-ensure',
+		files: [
+			{ src: 'index.js', dest: 'node-ensure/index.js' },
+			{ src: 'package.json', dest: 'node-ensure/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

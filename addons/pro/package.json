@@ -37,6 +37,7 @@
 		"mailparser": "^3.7.1",
 		"mathjs": "^12.3.0",
 		"mjml": "^5.0.0-alpha.10",
+		"node-ensure": "^0.0.0",
 		"nodemailer": "^7.0.12",
 		"p-queue": "^8.0.1",
 		"pdf-lib": "^1.17.1",
