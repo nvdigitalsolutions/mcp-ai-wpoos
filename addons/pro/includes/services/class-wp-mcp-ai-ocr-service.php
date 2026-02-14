@@ -609,13 +609,12 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = $client->send_chat_request(
+		$response = $client->create_chat_completion(
+			$messages,
 			array(
 				'model'      => 'gpt-4o',
-				'messages'   => $messages,
 				'max_tokens' => 4096,
-			),
-			$settings
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -664,25 +663,30 @@ class WP_MCP_AI_OCR_Service {
 		}
 		$client = self::$gemini_client;
 		
-		$request = array(
-			'contents' => array(
-				array(
-					'parts' => array(
-						array(
-							'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
-						),
-						array(
-							'inline_data' => array(
-								'mime_type' => $mime_type,
-								'data'      => $base64,
-							),
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Extract all text from this image. Return only the extracted text, maintaining the original layout and structure as much as possible.',
+					),
+					array(
+						'type'      => 'image_url',
+						'image_url' => array(
+							'url' => "data:{$mime_type};base64,{$base64}",
 						),
 					),
 				),
 			),
 		);
 
-		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
+		$response = $client->create_chat_completion(
+			$messages,
+			array(
+				'model' => 'gemini-1.5-flash',
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -699,8 +703,25 @@ class WP_MCP_AI_OCR_Service {
 			);
 		}
 
-		if ( isset( $response['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			return trim( $response['candidates'][0]['content']['parts'][0]['text'] );
+		// Extract text from normalized response.
+		if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			$content = $response['choices'][0]['message']['content'];
+			
+			// Content can be a string or array of segments.
+			if ( is_string( $content ) ) {
+				return trim( $content );
+			}
+			
+			// If it's an array of segments, concatenate text segments.
+			if ( is_array( $content ) ) {
+				$text = '';
+				foreach ( $content as $segment ) {
+					if ( isset( $segment['type'] ) && 'text' === $segment['type'] && isset( $segment['text'] ) ) {
+						$text .= $segment['text'];
+					}
+				}
+				return trim( $text );
+			}
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API. Will try fallback provider.', 'mcp-ai-wpoos-pro' ) );
