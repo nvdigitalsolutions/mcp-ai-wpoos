@@ -247,9 +247,6 @@ This may be due to:
 			$word_count = str_word_count( $text );
 			$char_count = strlen( $text );
 
-			// Build OCR report.
-			$report = $this->build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration );
-
 			// Log successful OCR.
 			WP_MCP_AI_Logger::log_event(
 				'ocr_extraction_success',
@@ -262,6 +259,9 @@ This may be due to:
 					'is_scanned' => $is_scanned,
 				)
 			);
+
+			// Build OCR report for chat display.
+			$report = $this->build_ocr_report( $word_count, $char_count, $ocr_options, $is_scanned, $duration );
 
 			return array(
 				'success'   => true,

@@ -759,7 +759,8 @@ No valid documents found to process. Please check your source parameters:
 			$error_summary = '';
 			if ( ! empty( $response['errors'] ) ) {
 				$error_messages = array_column( $response['errors'], 'error' );
-				$error_summary  = implode( "\n- ", array_slice( $error_messages, 0, 3 ) ); // Show first 3 errors.
+				$error_list     = array_slice( $error_messages, 0, 3 ); // Show first 3 errors.
+				$error_summary  = '- ' . implode( "\n- ", $error_list ); // Add leading dash.
 			}
 			
 			return array(
@@ -773,7 +774,7 @@ No valid documents found to process. Please check your source parameters:
 Failed to process all %1$d document(s).
 
 **Common Errors:**
-- %2$s
+%2$s
 
 This may be due to provider issues, invalid documents, or connectivity problems.
 
