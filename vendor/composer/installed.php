@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-        'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-        'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
+        'pretty_version' => 'dev-copilot/fix-pro-packages-display-issue',
+        'version' => 'dev-copilot/fix-pro-packages-display-issue',
+        'reference' => '87f6b4be8e856449e054d331e0a3ede4cfe23c7f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-            'version' => 'dev-copilot/update-pro-plugin-with-pdftotext',
-            'reference' => '923a591722fe4a1df14a22f07042112c40455e66',
+            'pretty_version' => 'dev-copilot/fix-pro-packages-display-issue',
+            'version' => 'dev-copilot/fix-pro-packages-display-issue',
+            'reference' => '87f6b4be8e856449e054d331e0a3ede4cfe23c7f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -366,7 +366,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
 					'category'      => 'specialized',
 					'php_functions' => array( 'exec' ),
-					'npm_packages'  => array( 'pdfkit', 'docx', 'exceljs' ),
+					'npm_packages'  => array( 'pdfkit', 'docx', 'exceljs', 'pdf-parse', 'qrcode' ),
+					'composer_packages' => array( 'smalot/pdfparser' ),
 					'tools_count'   => 3,
 					'tools'         => array(
 						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
@@ -796,9 +797,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					}
 				}
 
+				// Check Composer package availability.
+				$toolkit['composer_available'] = true;
+				$toolkit['composer_status']    = array();
+
+				if ( isset( $toolkit['composer_packages'] ) && is_array( $toolkit['composer_packages'] ) ) {
+					foreach ( $toolkit['composer_packages'] as $package ) {
+						$status                                = self::get_composer_package_status( $package );
+						$toolkit['composer_status'][ $package ] = $status;
+						if ( ! $status['available'] ) {
+							$toolkit['composer_available'] = false;
+						}
+					}
+				}
+
 				// Overall status.
-				$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'];
-				$toolkit['has_issues']        = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
+				$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'] && $toolkit['composer_available'];
+				$toolkit['has_issues']        = ! $toolkit['php_available'] || ! $toolkit['npm_available'] || ! $toolkit['composer_available'];
 			}
 
 			return $toolkits;
@@ -897,6 +912,43 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 														<?php if ( isset( $status['source'] ) && 'cdn' === $status['source'] ) : ?>
 															<span class="status-source"><?php esc_html_e( '(CDN)', 'mcp-ai-wpoos' ); ?></span>
 														<?php endif; ?>
+													</span>
+												<?php else : ?>
+													<span class="status-indicator unavailable">
+														<?php echo '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static cross symbol. ?>
+													</span>
+												<?php endif; ?>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</details>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $toolkit['composer_packages'] ) ) : ?>
+						<details class="toolkit-section">
+							<summary>
+								<?php esc_html_e( 'Composer Dependencies', 'mcp-ai-wpoos' ); ?>
+								<span class="section-badge <?php echo esc_attr( $toolkit['composer_available'] ? 'ok' : 'error' ); ?>">
+									<?php echo $toolkit['composer_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</summary>
+							<table class="toolkit-details-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $toolkit['composer_status'] as $package => $status ) : ?>
+										<tr>
+											<td><code><?php echo esc_html( $package ); ?></code></td>
+											<td>
+												<?php if ( $status['available'] ) : ?>
+													<span class="status-indicator available" title="<?php echo esc_attr( $status['message'] ); ?>">
+														<?php echo '✓'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbol. ?>
 													</span>
 												<?php else : ?>
 													<span class="status-indicator unavailable">
@@ -1113,6 +1165,45 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'source'    => 'installed',
 					'message'   => __( 'Installed', 'mcp-ai-wpoos' ),
 				);
+			}
+
+			return array(
+				'available' => false,
+				'source'    => 'none',
+				'message'   => __( 'Not Found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
+		 * Get detailed Composer package status.
+		 *
+		 * Returns an array with 'available', 'source', and 'message' keys.
+		 *
+		 * @param string $package Package name (e.g., 'smalot/pdfparser').
+		 * @return array Status array.
+		 */
+		private static function get_composer_package_status( $package ) {
+			// Check if package is installed via Composer.
+			$installed = self::check_composer_package_installed( $package );
+
+			if ( $installed ) {
+				return array(
+					'available' => true,
+					'source'    => 'composer',
+					'message'   => __( 'Installed via Composer', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			// Check Pro addon vendor directory.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_vendor_path = WP_MCP_AI_PRO_PATH . 'vendor/' . $package;
+				if ( file_exists( $pro_vendor_path ) ) {
+					return array(
+						'available' => true,
+						'source'    => 'composer',
+						'message'   => __( 'Installed via Composer (Pro)', 'mcp-ai-wpoos' ),
+					);
+				}
 			}
 
 			return array(
@@ -1347,6 +1438,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( $embedded_client_path );
 			}
 
+			// Check for pdf-parse package (Pro addon).
+			// This package is used for PDF text extraction via Node.js service.
+			if ( 'pdf-parse' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check if it's in Pro addon's vendor directory (production).
+				$pdf_parse_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-parse/lib/pdf-parse.js';
+				if ( file_exists( $pdf_parse_vendor_path ) ) {
+					return true;
+				}
+
+				// Priority 2: Check the package.json existence as fallback.
+				$pdf_parse_pkg_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-parse/package.json';
+				if ( file_exists( $pdf_parse_pkg_path ) ) {
+					return true;
+				}
+
+				// Priority 3: Check Pro addon's node_modules (development only).
+				$pdf_parse_node_path = WP_MCP_AI_PRO_PATH . 'node_modules/pdf-parse';
+				if ( file_exists( $pdf_parse_node_path ) ) {
+					return true;
+				}
+
+				// If Pro addon is active, assume pdf-parse is available.
+				return defined( 'WP_MCP_AI_PRO_VERSION' );
+			}
+
 			// Check for qrcode package (Pro addon).
 			// This package should be bundled in Pro addon vendor directory.
 			if ( 'qrcode' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -1356,14 +1472,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					return true;
 				}
 
-				// Priority 2: Check if it's bundled into a Pro script.
+				// Priority 2: Check the package.json existence as fallback.
+				$qrcode_pkg_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/qrcode/package.json';
+				if ( file_exists( $qrcode_pkg_path ) ) {
+					return true;
+				}
+
+				// Priority 3: Check if it's bundled into a Pro script.
 				// QR code might be bundled into a specific tool bundle.
 				$qrcode_bundle_path = WP_MCP_AI_PRO_PATH . 'bin/generate-qrcode.bundle.js';
 				if ( file_exists( $qrcode_bundle_path ) ) {
 					return true;
 				}
 
-				// Priority 3: Check Pro addon's node_modules (development only).
+				// Priority 4: Check Pro addon's node_modules (development only).
 				$qrcode_node_path = WP_MCP_AI_PRO_PATH . 'node_modules/qrcode';
 				if ( file_exists( $qrcode_node_path ) ) {
 					return true;

@@ -188,4 +188,3 @@ test-transcript-routes.php
 /assets/js/vendor/neplex-vectorizer/*/node_modules/
 /assets/js/vendor/neplex-vectorizer/**/*.node
 test-modal-fix.html
-vendor/
