@@ -198,7 +198,33 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_text_from_pdf( $file_path, $max_pages = 0 ) {
-		// Try pdftotext command-line tool.
+		// Primary method: Use smalot/pdfparser (pure PHP, no system dependencies).
+		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
+			try {
+				$parser = new \Smalot\PdfParser\Parser();
+				$pdf    = $parser->parseFile( $file_path );
+				
+				// Extract text from all pages or limited pages.
+				if ( $max_pages > 0 ) {
+					$text  = '';
+					$pages = $pdf->getPages();
+					$count = min( $max_pages, count( $pages ) );
+					
+					for ( $i = 0; $i < $count; $i++ ) {
+						$text .= $pages[ $i ]->getText();
+					}
+				} else {
+					$text = $pdf->getText();
+				}
+				
+				return $text;
+			} catch ( \Exception $e ) {
+				// If PHP parser fails, try pdftotext fallback.
+				// Continue to pdftotext fallback below.
+			}
+		}
+
+		// Fallback method: Try pdftotext command-line tool.
 		$pdftotext = shell_exec( 'which pdftotext 2>/dev/null' );
 
 		if ( ! empty( $pdftotext ) ) {
@@ -219,10 +245,10 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			}
 		}
 
-		// Return clear error message instead of unreliable fallback.
+		// Return error if all methods failed.
 		return new WP_Error(
 			'extraction_failed',
-			__( 'PDF text extraction requires pdftotext utility (install poppler-utils package: apt-get install poppler-utils or brew install poppler). Alternative: Use a dedicated PDF parsing library via Composer.', 'mcp-ai-wpoos-pro' )
+			__( 'PDF text extraction failed. The smalot/pdfparser library is not available. Please run "composer install" in the pro addon directory.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 }
