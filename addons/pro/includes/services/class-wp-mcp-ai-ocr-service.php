@@ -933,28 +933,53 @@ class WP_MCP_AI_OCR_Service {
 
 		// Check for execution errors.
 		if ( 0 !== $return_code ) {
+			$output_text = implode( "\n", $output );
+			
+			// Try to parse as JSON error.
+			$json_output = json_decode( $output_text, true );
+			$error_message = isset( $json_output['error'] ) 
+				? $json_output['error'] 
+				: $output_text;
+			
 			return new WP_Error(
 				'node_ocr_failed',
 				sprintf(
 					__( 'Pre-bundled Node.js OCR service failed. Ensure Node.js is installed. Error: %s', 'mcp-ai-wpoos-pro' ),
-					implode( "\n", $output )
+					$error_message
 				),
 				array(
 					'return_code' => $return_code,
 					'output'      => $output,
+					'raw_error'   => $output_text,
 				)
 			);
 		}
 
 		// Parse JSON response.
-		$result = json_decode( implode( "\n", $output ), true );
+		$output_text = implode( "\n", $output );
+		$result = json_decode( $output_text, true );
+
+		if ( null === $result ) {
+			return new WP_Error(
+				'invalid_json_response',
+				sprintf(
+					__( 'Node.js OCR service returned invalid JSON. Raw output: %s', 'mcp-ai-wpoos-pro' ),
+					substr( $output_text, 0, 200 )
+				),
+				array( 'raw_output' => $output_text )
+			);
+		}
 
 		if ( isset( $result['error'] ) ) {
-			return new WP_Error( 'ocr_error', $result['error'] );
+			return new WP_Error( 'ocr_error', $result['error'], $result );
 		}
 
 		if ( ! isset( $result['text'] ) ) {
-			return new WP_Error( 'invalid_response', 'Invalid response from Node.js OCR service.' );
+			return new WP_Error(
+				'invalid_response',
+				__( 'Invalid response from Node.js OCR service. Missing "text" field.', 'mcp-ai-wpoos-pro' ),
+				array( 'result' => $result )
+			);
 		}
 
 		// Log confidence if available.

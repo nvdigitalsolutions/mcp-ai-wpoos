@@ -10,6 +10,7 @@ const path = require('path');
 
 // Load dependencies from bundled vendor directory
 let Tesseract, pdfjsLib, sharp, canvas;
+const loadErrors = [];
 
 try {
 	// Try to load from bundled vendor directory first
@@ -19,25 +20,52 @@ try {
 	try {
 		Tesseract = require(path.join(vendorPath, 'tesseract.js', 'src'));
 	} catch (e) {
-		Tesseract = require('tesseract.js'); // Fallback to node_modules
+		try {
+			Tesseract = require('tesseract.js'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('tesseract.js: ' + err.message);
+		}
 	}
 	
 	// Load Sharp
 	try {
 		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
 	} catch (e) {
-		sharp = require('sharp'); // Fallback to node_modules
+		try {
+			sharp = require('sharp'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('sharp: ' + err.message);
+		}
 	}
 	
 	// Load Canvas
 	try {
 		canvas = require(path.join(vendorPath, 'canvas'));
 	} catch (e) {
-		canvas = require('canvas'); // Fallback to node_modules
+		try {
+			canvas = require('canvas'); // Fallback to node_modules
+		} catch (err) {
+			loadErrors.push('canvas: ' + err.message);
+		}
+	}
+
+	// If critical dependencies are missing, exit with error
+	if (!Tesseract) {
+		console.log(JSON.stringify({
+			error: 'Failed to load Tesseract.js. This is a critical dependency. Details: ' + loadErrors.join('; ')
+		}));
+		process.exit(1);
+	}
+
+	// Sharp and Canvas are optional (only needed for preprocessing and PDF)
+	if (loadErrors.length > 0) {
+		// Log warnings but continue (some features may be disabled)
+		// These are captured in catch blocks but don't stop execution
 	}
 } catch (error) {
-	console.error(JSON.stringify({
-		error: 'Required packages not found. Run: npm install tesseract.js sharp pdfjs-dist canvas'
+	console.log(JSON.stringify({
+		error: 'Failed to initialize OCR service: ' + error.message,
+		details: loadErrors.join('; ')
 	}));
 	process.exit(1);
 }
@@ -50,13 +78,20 @@ try {
  * @returns {Promise<Buffer>} Preprocessed image buffer
  */
 async function preprocessImage(imageBuffer, options = {}) {
+	// Check if Sharp is available
+	if (!sharp) {
+		// Return original buffer if Sharp is not available
+		return imageBuffer;
+	}
+
 	const {
 		maxWidth = 2048,
 		maxHeight = 2048,
 		enhance = true,
 	} = options;
 
-	let pipeline = sharp(imageBuffer);
+	try {
+		let pipeline = sharp(imageBuffer);
 
 	// Get metadata
 	const metadata = await pipeline.metadata();
@@ -90,10 +125,14 @@ async function preprocessImage(imageBuffer, options = {}) {
 		pipeline = pipeline.gamma(1.2);
 	}
 
-	// Convert to PNG for best quality
-	pipeline = pipeline.png({ compressionLevel: 6 });
+		// Convert to PNG for best quality
+		pipeline = pipeline.png({ compressionLevel: 6 });
 
-	return await pipeline.toBuffer();
+		return await pipeline.toBuffer();
+	} catch (error) {
+		// If preprocessing fails, return original buffer
+		return imageBuffer;
+	}
 }
 
 /**
@@ -171,6 +210,11 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 			throw new Error(`PDF file not found: ${pdfPath}`);
 		}
 
+		// Check for Canvas (required for PDF rendering)
+		if (!canvas) {
+			throw new Error('Canvas module not available. PDF OCR requires canvas for rendering.');
+		}
+
 		// Load PDF.js (lazy load to avoid issues if not needed)
 		if (!pdfjsLib) {
 			try {
@@ -182,7 +226,7 @@ async function extractTextFromPdf(pdfPath, options = {}) {
 					// Fallback to node_modules
 					pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 				} catch (error) {
-					throw new Error('pdfjs-dist not installed. Run: npm install pdfjs-dist');
+					throw new Error('pdfjs-dist module not available. PDF OCR requires pdfjs-dist for rendering.');
 				}
 			}
 		}
@@ -296,20 +340,28 @@ if (require.main === module) {
 	const dataJson = process.argv[3];
 
 	if (!action || !dataJson) {
-		console.error('Usage: node ocr-service.js <action> <json-data>');
-		console.error('Actions: image, pdf, check-scanned');
-		console.error('Example: node ocr-service.js image \'{"path":"/path/to/image.jpg","language":"eng"}\'');
+		console.log(JSON.stringify({
+			error: 'Invalid usage',
+			usage: 'node ocr-service.js <action> <json-data>',
+			actions: ['image', 'pdf', 'check-scanned'],
+			example: 'node ocr-service.js image \'{"path":"/path/to/image.jpg","language":"eng"}\''
+		}));
 		process.exit(1);
 	}
 
 	(async () => {
 		try {
-			const data = JSON.parse(dataJson);
+			let data;
+			try {
+				data = JSON.parse(dataJson);
+			} catch (parseError) {
+				throw new Error('Invalid JSON data: ' + parseError.message);
+			}
 
 			switch (action) {
 				case 'image':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for image action');
 					}
 					const imageResult = await extractTextFromImage(data.path, data);
 					console.log(JSON.stringify(imageResult));
@@ -317,7 +369,7 @@ if (require.main === module) {
 
 				case 'pdf':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for pdf action');
 					}
 					const pdfResult = await extractTextFromPdf(data.path, data);
 					console.log(JSON.stringify(pdfResult));
@@ -325,18 +377,23 @@ if (require.main === module) {
 
 				case 'check-scanned':
 					if (!data.path) {
-						throw new Error('path is required');
+						throw new Error('path is required for check-scanned action');
 					}
 					const isScanned = await isScannedPdf(data.path);
 					console.log(JSON.stringify({ isScanned }));
 					break;
 
 				default:
-					console.error(JSON.stringify({ error: `Unknown action: ${action}` }));
-					process.exit(1);
+					throw new Error(`Unknown action: ${action}. Valid actions: image, pdf, check-scanned`);
 			}
+			process.exit(0);
 		} catch (error) {
-			console.error(JSON.stringify({ error: error.message }));
+			// Output error in JSON format to stdout (not stderr) for easier parsing
+			console.log(JSON.stringify({ 
+				error: error.message,
+				stack: error.stack,
+				action: action
+			}));
 			process.exit(1);
 		}
 	})();

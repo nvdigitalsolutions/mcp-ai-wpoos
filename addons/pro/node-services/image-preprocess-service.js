@@ -8,13 +8,20 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load sharp from node_modules
+// Load sharp from bundled vendor or node_modules
 let sharp;
 try {
-	sharp = require('sharp');
+	// Try bundled version first
+	const vendorPath = path.join(__dirname, '..', 'assets', 'vendor');
+	try {
+		sharp = require(path.join(vendorPath, 'sharp', 'lib'));
+	} catch (e) {
+		sharp = require('sharp'); // Fallback to node_modules
+	}
 } catch (error) {
-	console.error(JSON.stringify({ 
-		error: 'Sharp library not found. Run: npm install sharp' 
+	console.log(JSON.stringify({ 
+		error: 'Sharp library not available. Image preprocessing disabled.',
+		details: error.message
 	}));
 	process.exit(1);
 }
@@ -140,15 +147,23 @@ if (require.main === module) {
 	const dataJson = process.argv[3];
 	
 	if (!action || !dataJson) {
-		console.error('Usage: node image-preprocess-service.js <action> <json-data>');
-		console.error('Actions: preprocess');
-		console.error('Example: node image-preprocess-service.js preprocess \'{"input":"/path/to/image.jpg","output":"/path/to/output.png"}\'');
+		console.log(JSON.stringify({
+			error: 'Invalid usage',
+			usage: 'node image-preprocess-service.js <action> <json-data>',
+			actions: ['preprocess'],
+			example: 'node image-preprocess-service.js preprocess \'{"input":"/path/to/image.jpg","output":"/path/to/output.png"}\''
+		}));
 		process.exit(1);
 	}
 	
 	(async () => {
 		try {
-			const data = JSON.parse(dataJson);
+			let data;
+			try {
+				data = JSON.parse(dataJson);
+			} catch (parseError) {
+				throw new Error('Invalid JSON data: ' + parseError.message);
+			}
 			
 			switch (action) {
 				case 'preprocess':
@@ -157,11 +172,16 @@ if (require.main === module) {
 					break;
 					
 				default:
-					console.error(JSON.stringify({ error: `Unknown action: ${action}` }));
-					process.exit(1);
+					throw new Error(`Unknown action: ${action}. Valid actions: preprocess`);
 			}
+			process.exit(0);
 		} catch (error) {
-			console.error(JSON.stringify({ error: error.message }));
+			// Output error in JSON format to stdout (not stderr) for easier parsing
+			console.log(JSON.stringify({ 
+				error: error.message,
+				stack: error.stack,
+				action: action
+			}));
 			process.exit(1);
 		}
 	})();
