@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-ocr-service-errors',
-        'version' => 'dev-copilot/fix-ocr-service-errors',
-        'reference' => '34b219594dd1e53356eeb2fd2adf04cd92a925b3',
+        'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
+        'version' => 'dev-copilot/enhance-document-toolkit-ocr',
+        'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-ocr-service-errors',
-            'version' => 'dev-copilot/fix-ocr-service-errors',
-            'reference' => '34b219594dd1e53356eeb2fd2adf04cd92a925b3',
+            'pretty_version' => 'dev-copilot/enhance-document-toolkit-ocr',
+            'version' => 'dev-copilot/enhance-document-toolkit-ocr',
+            'reference' => 'd236b2b59e3d6f347c079ecbf50e6b7bb7f83bee',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
