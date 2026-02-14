@@ -372,3 +372,4 @@ OCR extraction encountered an unexpected error: %s
 
 		return $report;
 	}
+}
