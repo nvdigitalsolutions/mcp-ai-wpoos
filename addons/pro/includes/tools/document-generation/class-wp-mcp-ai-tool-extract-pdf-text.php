@@ -220,22 +220,22 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( $used_ocr ) {
 				$response_data['extraction_method'] = 'ocr';
 				$response_data['ocr_provider']      = $ocr_provider;
-			} else {
-				$response_data['extraction_method'] = 'standard';
-			}
-
-			$message = $used_ocr 
-				? sprintf(
+				
+				$message = sprintf(
 					/* translators: 1: word count, 2: OCR provider */
 					__( 'Successfully extracted %1$d words from scanned PDF using OCR (%2$s).', 'mcp-ai-wpoos-pro' ),
 					$word_count,
 					$ocr_provider
-				)
-				: sprintf(
+				);
+			} else {
+				$response_data['extraction_method'] = 'standard';
+				
+				$message = sprintf(
 					/* translators: %d: word count */
 					__( 'Successfully extracted %d words from PDF.', 'mcp-ai-wpoos-pro' ),
 					$word_count
 				);
+			}
 
 			return $this->format_chat_response( $response_data, $message );
 

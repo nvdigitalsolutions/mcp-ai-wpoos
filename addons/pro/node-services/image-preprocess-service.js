@@ -78,13 +78,20 @@ async function preprocessImage(options) {
 
 		// Sharpen for better OCR
 		if (sharpen) {
+			// Sharp sharpening parameters optimized for OCR text recognition:
+			// - sigma: Amount of blur to apply before sharpening (reduces noise)
+			// - m1: Sharpening multiplier for detected edges
+			// - m2: Flat area slope - how much to sharpen areas without edges
+			// - x1: Minimum luminance difference to be considered an edge
+			// - y2: Luminance threshold for flat areas (edges below this aren't sharpened)
+			// - y3: Maximum luminance change (prevents over-sharpening/jagged edges)
 			pipeline = pipeline.sharpen({
-				sigma: 1,
-				m1: 1,
-				m2: 0.5,
-				x1: 2,
-				y2: 10,
-				y3: 20,
+				sigma: 1,      // Slight blur to reduce noise before sharpening
+				m1: 1,         // Edge sharpening amount (1.0 = normal strength)
+				m2: 0.5,       // Flat area sharpening (0.5 = moderate)
+				x1: 2,         // Min edge detection threshold
+				y2: 10,        // Flat area threshold
+				y3: 20,        // Max sharpening to prevent jaggies
 			});
 		}
 
