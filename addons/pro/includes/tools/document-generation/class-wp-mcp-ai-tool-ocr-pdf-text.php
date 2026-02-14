@@ -106,8 +106,9 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check user capability.
 		if ( ! current_user_can( 'read' ) ) {
-			return array(
-				'error' => __( 'You do not have permission to access files.', 'mcp-ai-wpoos-pro' ),
+			return $this->format_chat_response(
+				array( 'error' => 'permission_denied' ),
+				__( 'You do not have permission to access files. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -120,8 +121,9 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$file_path     = get_attached_file( $attachment_id );
 
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return array(
-					'error' => __( 'PDF file not found.', 'mcp-ai-wpoos-pro' ),
+				return $this->format_chat_response(
+					array( 'error' => 'file_not_found' ),
+					__( 'PDF file not found. This may be due to an incorrect attachment ID. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
@@ -132,19 +134,21 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$temp_file = download_url( $arguments['url'] );
 
 			if ( is_wp_error( $temp_file ) ) {
-				return array(
-					'error' => sprintf(
+				return $this->format_chat_response(
+					array( 'error' => 'download_failed' ),
+					sprintf(
 						/* translators: %s: error message */
-						__( 'Failed to download PDF: %s', 'mcp-ai-wpoos-pro' ),
+						__( 'Failed to download PDF: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 						$temp_file->get_error_message()
-					),
+					)
 				);
 			}
 
 			$file_path = $temp_file;
 		} else {
-			return array(
-				'error' => __( 'Either attachment_id or url is required.', 'mcp-ai-wpoos-pro' ),
+			return $this->format_chat_response(
+				array( 'error' => 'missing_input' ),
+				__( 'Either attachment_id or url is required. Please provide one of these parameters. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -156,8 +160,9 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( $temp_file ) {
 				@unlink( $temp_file );
 			}
-			return array(
-				'error' => __( 'File is not a valid PDF document.', 'mcp-ai-wpoos-pro' ),
+			return $this->format_chat_response(
+				array( 'error' => 'invalid_file_type' ),
+				__( 'File is not a valid PDF document. Please provide a PDF file. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -187,12 +192,16 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 
 			if ( is_wp_error( $text ) ) {
-				return array(
-					'error' => sprintf(
-						/* translators: %s: error message */
-						__( 'OCR extraction failed: %s', 'mcp-ai-wpoos-pro' ),
-						$text->get_error_message()
+				return $this->format_chat_response(
+					array(
+						'error'      => 'ocr_failed',
+						'error_code' => $text->get_error_code(),
 					),
+					sprintf(
+						/* translators: %s: error message */
+						__( 'OCR extraction failed: %s. This may be due to provider unavailability or document complexity. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+						$text->get_error_message()
+					)
 				);
 			}
 
@@ -245,12 +254,13 @@ class WP_MCP_AI_Tool_OCR_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				)
 			);
 
-			return array(
-				'error' => sprintf(
+			return $this->format_chat_response(
+				array( 'error' => 'exception' ),
+				sprintf(
 					/* translators: %s: error message */
-					__( 'OCR extraction failed: %s', 'mcp-ai-wpoos-pro' ),
+					__( 'OCR extraction encountered an unexpected error: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
-				),
+				)
 			);
 		}
 	}

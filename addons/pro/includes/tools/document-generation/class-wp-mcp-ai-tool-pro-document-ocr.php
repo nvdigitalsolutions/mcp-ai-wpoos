@@ -210,20 +210,18 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Check user permissions.
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to perform OCR operations.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 403 )
+			return $this->format_chat_response(
+				array( 'error' => 'permission_denied' ),
+				__( 'You do not have permission to perform OCR operations. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Parse arguments.
 		$source = isset( $arguments['source'] ) ? $arguments['source'] : array();
 		if ( empty( $source ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_source',
-				__( 'Source document(s) required. Provide attachment_id(s), url(s), or file_id(s).', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 400 )
+			return $this->format_chat_response(
+				array( 'error' => 'missing_source' ),
+				__( 'Source document(s) required. Provide attachment_id(s), url(s), or file_id(s). The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -247,14 +245,20 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Resolve source documents to processable items.
 		$documents = $this->resolve_documents( $source );
 		if ( is_wp_error( $documents ) ) {
-			return $documents;
+			return $this->format_chat_response(
+				array( 'error' => 'resolve_failed', 'error_code' => $documents->get_error_code() ),
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to resolve source documents: %s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					$documents->get_error_message()
+				)
+			);
 		}
 
 		if ( empty( $documents ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_no_documents',
-				__( 'No valid documents found to process.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 400 )
+			return $this->format_chat_response(
+				array( 'error' => 'no_documents' ),
+				__( 'No valid documents found to process. Please check your source parameters. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -721,6 +725,25 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Formatted response.
 	 */
 	private function format_response( $response, $options ) {
+		// If all documents failed, return error message.
+		if ( 0 === $response['successful'] && $response['failed'] > 0 ) {
+			$error_summary = '';
+			if ( ! empty( $response['errors'] ) ) {
+				$error_messages = array_column( $response['errors'], 'error' );
+				$error_summary  = implode( '; ', array_slice( $error_messages, 0, 3 ) ); // Show first 3 errors.
+			}
+			
+			return $this->format_chat_response(
+				array( 'error' => 'all_failed', 'details' => $response['errors'] ),
+				sprintf(
+					/* translators: 1: failed count, 2: error summary */
+					__( 'OCR failed for all %1$d document(s). Common errors: %2$s. The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+					$response['failed'],
+					$error_summary
+				)
+			);
+		}
+
 		// For text output, use chat response formatting.
 		if ( 'text' === $options['output_format'] && ! empty( $response['text'] ) ) {
 			$message = sprintf(
@@ -730,6 +753,15 @@ class WP_MCP_AI_Tool_Pro_Document_OCR implements WP_MCP_AI_Tool_Interface, WP_MC
 				$response['documents_count'],
 				isset( $response['metadata']['total_words'] ) ? $response['metadata']['total_words'] : 0
 			);
+
+			// Add note about failures if any.
+			if ( $response['failed'] > 0 ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: number of failed documents */
+					__( 'Note: %d document(s) failed to process but the workflow continues.', 'mcp-ai-wpoos-pro' ),
+					$response['failed']
+				);
+			}
 
 			return $this->format_chat_response( $response, $message );
 		}

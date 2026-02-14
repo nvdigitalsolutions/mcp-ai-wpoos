@@ -103,14 +103,16 @@ class WP_MCP_AI_OCR_Service {
 			return $validation;
 		}
 
-		// Default options.
-		$defaults = array(
-			'provider'    => 'auto', // auto, openai, gemini, ollama, tesseract.
-			'preprocess'  => true,   // Apply image preprocessing.
-			'language'    => 'eng',  // OCR language.
-			'enhance'     => true,   // Enhance image quality.
+		// Get defaults from settings.
+		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		$defaults     = array(
+			'provider'   => 'auto', // auto, openai, gemini, ollama, tesseract.
+			'preprocess' => isset( $doc_settings['ocr_preprocessing'] ) ? (bool) $doc_settings['ocr_preprocessing'] : true,
+			'language'   => 'eng',  // OCR language.
+			'enhance'    => true,   // Enhance image quality.
+			'timeout'    => isset( $doc_settings['ocr_timeout'] ) ? absint( $doc_settings['ocr_timeout'] ) : self::DEFAULT_TIMEOUT,
 		);
-		$options  = wp_parse_args( $options, $defaults );
+		$options      = wp_parse_args( $options, $defaults );
 
 		// Preprocess image if enabled.
 		if ( $options['preprocess'] ) {
@@ -857,9 +859,19 @@ class WP_MCP_AI_OCR_Service {
 	/**
 	 * Determine the best OCR provider based on availability.
 	 *
+	 * Checks document generation settings first, then falls back to
+	 * detecting available providers from main settings.
+	 *
 	 * @return string Provider name.
 	 */
 	protected function determine_best_provider() {
+		// Check document generation settings first.
+		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		if ( ! empty( $doc_settings['ocr_provider'] ) && 'auto' !== $doc_settings['ocr_provider'] ) {
+			return $doc_settings['ocr_provider'];
+		}
+
+		// Auto mode or not configured - detect best available provider.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Prefer OpenAI if API key is configured.
@@ -894,10 +906,34 @@ class WP_MCP_AI_OCR_Service {
 	 * @return array Fallback providers in order.
 	 */
 	protected function get_fallback_providers( $primary ) {
+		// Check if a specific fallback is configured.
+		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		if ( ! empty( $doc_settings['ocr_fallback_provider'] ) ) {
+			$fallback = $doc_settings['ocr_fallback_provider'];
+			
+			// No fallback configured - return empty array.
+			if ( 'none' === $fallback ) {
+				return array();
+			}
+			
+			if ( 'auto' === $fallback ) {
+				// Auto mode - try all providers except primary.
+				$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
+				$fallbacks     = array_diff( $all_providers, array( $primary ) );
+				return array_values( $fallbacks );
+			}
+			
+			// Specific fallback configured - use it if different from primary.
+			if ( $fallback !== $primary ) {
+				return array( $fallback );
+			}
+			// If same as primary, return empty (no fallback).
+			return array();
+		}
+
+		// Default behavior - try all available providers except primary.
 		$all_providers = array( 'openai', 'gemini', 'ollama', 'tesseract' );
-		
-		// Remove primary from list.
-		$fallbacks = array_diff( $all_providers, array( $primary ) );
+		$fallbacks     = array_diff( $all_providers, array( $primary ) );
 		
 		return array_values( $fallbacks );
 	}
