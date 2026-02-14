@@ -436,7 +436,7 @@ class WP_MCP_AI_OCR_Service {
 		$mime_type  = mime_content_type( $image_path );
 
 		// Prepare API request.
-		$client = new WP_MCP_AI_OpenAI_Client();
+		$client = WP_MCP_AI_OpenAI_Client::get_instance();
 		
 		$messages = array(
 			array(
@@ -457,12 +457,13 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		$response = $client->create_chat_completion(
-			$messages,
+		$response = $client->send_chat_request(
 			array(
 				'model'      => 'gpt-4o',
+				'messages'   => $messages,
 				'max_tokens' => 4096,
-			)
+			),
+			$settings
 		);
 
 		if ( is_wp_error( $response ) ) {
@@ -494,8 +495,9 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		// Prepare API request payload (direct API call, as client doesn't support inline_data).
-		$payload = array(
+		$client = WP_MCP_AI_Gemini_Client::get_instance();
+		
+		$request = array(
 			'contents' => array(
 				array(
 					'parts' => array(
@@ -513,61 +515,14 @@ class WP_MCP_AI_OCR_Service {
 			),
 		);
 
-		// Make direct API call to Gemini.
-		$model    = 'gemini-1.5-flash';
-		$api_key  = trim( $settings['gemini_api_key'] );
-		
-		// Validate API key format (should be alphanumeric with possible hyphens/underscores).
-		if ( empty( $api_key ) || ! preg_match( '/^[A-Za-z0-9_-]+$/', $api_key ) ) {
-			return new WP_Error( 'invalid_api_key', __( 'Invalid Gemini API key format.', 'mcp-ai-wpoos-pro' ) );
-		}
-		
-		$endpoint = sprintf( 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent', $model );
-
-		$response = wp_remote_post(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => 60,
-			)
-		);
+		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
-		$code = wp_remote_retrieve_response_code( $response );
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( $code < 200 || $code >= 300 ) {
-			// Log the detailed error for debugging.
-			WP_MCP_AI_Logger::log_error(
-				'gemini_ocr_failed',
-				'Gemini OCR API request failed',
-				array(
-					'code'     => $code,
-					'response' => $data,
-				)
-			);
-			
-			// Return a generic error message to avoid exposing API details.
-			return new WP_Error( 
-				'gemini_api_error',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'Gemini API request failed with status code %d.', 'mcp-ai-wpoos-pro' ),
-					$code
-				)
-			);
-		}
-
-		if ( isset( $data['candidates'][0]['content']['parts'][0]['text'] ) ) {
-			return trim( $data['candidates'][0]['content']['parts'][0]['text'] );
+		if ( isset( $response['candidates'][0]['content']['parts'][0]['text'] ) ) {
+			return trim( $response['candidates'][0]['content']['parts'][0]['text'] );
 		}
 
 		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API.', 'mcp-ai-wpoos-pro' ) );
