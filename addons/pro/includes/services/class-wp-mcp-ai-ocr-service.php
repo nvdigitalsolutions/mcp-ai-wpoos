@@ -591,7 +591,13 @@ class WP_MCP_AI_OCR_Service {
 	protected function extract_with_tesseract( $image_path, $options = array() ) {
 		$language = isset( $options['language'] ) ? $options['language'] : 'eng';
 
-		// Try PHP wrapper first if available.
+		// Try Node.js service first (best performance).
+		$node_result = $this->extract_with_node_ocr( $image_path, $options );
+		if ( ! is_wp_error( $node_result ) ) {
+			return $node_result;
+		}
+
+		// Try PHP wrapper if available.
 		if ( class_exists( '\thiagoalessio\TesseractOCR\TesseractOCR' ) ) {
 			try {
 				$ocr = new \thiagoalessio\TesseractOCR\TesseractOCR( $image_path );
@@ -615,7 +621,7 @@ class WP_MCP_AI_OCR_Service {
 		// Fallback to command-line tesseract.
 		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
 		if ( empty( $tesseract ) ) {
-			return new WP_Error( 'tesseract_not_found', __( 'Tesseract OCR not installed on system. Install via: apt-get install tesseract-ocr or composer require thiagoalessio/tesseract_ocr', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'tesseract_not_found', __( 'Tesseract OCR not installed on system. Install via: npm install (for Node.js), apt-get install tesseract-ocr, or composer require thiagoalessio/tesseract_ocr', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$output_file = tempnam( sys_get_temp_dir(), 'ocr_' );
@@ -720,5 +726,75 @@ class WP_MCP_AI_OCR_Service {
 	protected function is_sharp_available() {
 		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/image-preprocess-service.js';
 		return file_exists( $service_path );
+	}
+
+	/**
+	 * Extract text using Node.js OCR service (Tesseract.js).
+	 *
+	 * Offers better performance than PHP-based OCR.
+	 *
+	 * @param string $image_path Path to image file.
+	 * @param array  $options    Extraction options.
+	 * @return string|WP_Error Extracted text or error.
+	 */
+	protected function extract_with_node_ocr( $image_path, $options = array() ) {
+		// Check if Node.js OCR service exists.
+		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/ocr-service.js';
+		if ( ! file_exists( $service_path ) ) {
+			return new WP_Error( 'service_not_found', 'Node.js OCR service not found.' );
+		}
+
+		$language = isset( $options['language'] ) ? $options['language'] : 'eng';
+
+		// Prepare service arguments.
+		$args = wp_json_encode(
+			array(
+				'path'       => $image_path,
+				'language'   => $language,
+				'preprocess' => true,
+			)
+		);
+
+		// Execute Node.js service.
+		$cmd = sprintf(
+			'node %s image %s 2>&1',
+			escapeshellarg( $service_path ),
+			escapeshellarg( $args )
+		);
+
+		exec( $cmd, $output, $return_code );
+
+		// Check for execution errors.
+		if ( 0 !== $return_code ) {
+			return new WP_Error(
+				'node_ocr_failed',
+				'Node.js OCR service failed: ' . implode( "\n", $output )
+			);
+		}
+
+		// Parse JSON response.
+		$result = json_decode( implode( "\n", $output ), true );
+
+		if ( isset( $result['error'] ) ) {
+			return new WP_Error( 'ocr_error', $result['error'] );
+		}
+
+		if ( ! isset( $result['text'] ) ) {
+			return new WP_Error( 'invalid_response', 'Invalid response from Node.js OCR service.' );
+		}
+
+		// Log confidence if available.
+		if ( isset( $result['confidence'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'node_ocr_success',
+				'Node.js OCR completed',
+				array(
+					'confidence' => $result['confidence'],
+					'words'      => isset( $result['words'] ) ? $result['words'] : 0,
+				)
+			);
+		}
+
+		return $result['text'];
 	}
 }
