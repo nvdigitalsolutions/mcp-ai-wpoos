@@ -20,7 +20,7 @@ class WP_MCP_AI_Pro_Settings_Dependencies_Test extends WP_UnitTestCase {
 		$packages = WP_MCP_AI_Pro_Settings::get_composer_packages();
 
 		// Should not have error.
-		$this->assertNull( $packages['error'], 'Composer packages should load without error' );
+		$this->assertTrue( empty( $packages['error'] ), 'Composer packages should load without error' );
 
 		// Should have require array.
 		$this->assertIsArray( $packages['require'], 'Should have require array' );
