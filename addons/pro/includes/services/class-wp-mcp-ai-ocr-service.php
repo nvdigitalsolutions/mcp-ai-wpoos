@@ -41,6 +41,48 @@ class WP_MCP_AI_OCR_Service {
 	const MAX_IMAGE_DIMENSION = 2048;
 
 	/**
+	 * Maximum file size for OCR processing (50MB).
+	 *
+	 * @var int
+	 */
+	const MAX_FILE_SIZE = 52428800;
+
+	/**
+	 * Default timeout for OCR operations (seconds).
+	 *
+	 * @var int
+	 */
+	const DEFAULT_TIMEOUT = 300;
+
+	/**
+	 * Maximum retry attempts for transient failures.
+	 *
+	 * @var int
+	 */
+	const MAX_RETRIES = 3;
+
+	/**
+	 * Singleton instance of OpenAI client.
+	 *
+	 * @var WP_MCP_AI_OpenAI_Client|null
+	 */
+	private static $openai_client = null;
+
+	/**
+	 * Singleton instance of Gemini client.
+	 *
+	 * @var WP_MCP_AI_Gemini_Client|null
+	 */
+	private static $gemini_client = null;
+
+	/**
+	 * Circuit breaker state for providers.
+	 *
+	 * @var array
+	 */
+	private static $circuit_breaker = array();
+
+	/**
 	 * Extract text from image using OCR.
 	 *
 	 * @param string $image_path Path to image file.
@@ -48,8 +90,10 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	public function extract_text_from_image( $image_path, $options = array() ) {
-		if ( ! file_exists( $image_path ) ) {
-			return new WP_Error( 'file_not_found', __( 'Image file not found.', 'mcp-ai-wpoos-pro' ) );
+		// Validate input.
+		$validation = $this->validate_image_input( $image_path );
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
 		}
 
 		// Default options.
@@ -87,10 +131,31 @@ class WP_MCP_AI_OCR_Service {
 
 		// If failed and auto mode, try fallback providers.
 		if ( is_wp_error( $result ) && 'auto' === $options['provider'] ) {
+			$primary_error = $result->get_error_message();
+			WP_MCP_AI_Logger::log_event(
+				'ocr_fallback_triggered',
+				sprintf( 'Primary OCR provider (%s) failed, trying fallbacks', $provider ),
+				array( 
+					'primary_provider' => $provider,
+					'error'            => $primary_error,
+				)
+			);
+			
 			$fallback_providers = $this->get_fallback_providers( $provider );
 			foreach ( $fallback_providers as $fallback ) {
+				WP_MCP_AI_Logger::log_event(
+					'ocr_trying_fallback',
+					sprintf( 'Trying fallback provider: %s', $fallback ),
+					array( 'provider' => $fallback )
+				);
+				
 				$result = $this->extract_with_provider( $image_path, $fallback, $options );
 				if ( ! is_wp_error( $result ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'ocr_fallback_success',
+						sprintf( 'Fallback provider succeeded: %s', $fallback ),
+						array( 'provider' => $fallback )
+					);
 					break;
 				}
 			}
@@ -114,8 +179,10 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	public function extract_text_from_pdf( $pdf_path, $options = array() ) {
-		if ( ! file_exists( $pdf_path ) ) {
-			return new WP_Error( 'file_not_found', __( 'PDF file not found.', 'mcp-ai-wpoos-pro' ) );
+		// Validate input.
+		$validation = $this->validate_pdf_input( $pdf_path );
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
 		}
 
 		// Default options.
@@ -134,6 +201,7 @@ class WP_MCP_AI_OCR_Service {
 
 		// Extract text from each image.
 		$all_text = array();
+		$failed_pages = array();
 		foreach ( $images as $page_num => $image_path ) {
 			$text = $this->extract_text_from_image( $image_path, $options );
 			
@@ -141,10 +209,19 @@ class WP_MCP_AI_OCR_Service {
 			@unlink( $image_path );
 
 			if ( is_wp_error( $text ) ) {
+				$error_message = $text->get_error_message();
+				$failed_pages[] = array(
+					'page'  => $page_num + 1,
+					'error' => $error_message,
+				);
+				
 				WP_MCP_AI_Logger::log_event(
 					'ocr_page_failed',
-					sprintf( 'OCR failed for page %d', $page_num + 1 ),
-					array( 'error' => $text->get_error_message() )
+					sprintf( 'OCR failed for page %d: %s', $page_num + 1, $error_message ),
+					array( 
+						'page'  => $page_num + 1,
+						'error' => $error_message,
+					)
 				);
 				continue;
 			}
@@ -153,7 +230,24 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		if ( empty( $all_text ) ) {
-			return new WP_Error( 'ocr_failed', __( 'Failed to extract text from any pages.', 'mcp-ai-wpoos-pro' ) );
+			$error_details = '';
+			if ( ! empty( $failed_pages ) ) {
+				$error_details = ' Failed pages: ' . wp_json_encode( $failed_pages );
+			}
+			return new WP_Error( 
+				'ocr_failed', 
+				__( 'Failed to extract text from any pages.', 'mcp-ai-wpoos-pro' ) . $error_details
+			);
+		}
+
+		// Add summary if some pages failed.
+		if ( ! empty( $failed_pages ) ) {
+			$summary = sprintf(
+				"\n\n--- OCR Summary ---\nSuccessfully processed: %d page(s)\nFailed: %d page(s)",
+				count( $all_text ),
+				count( $failed_pages )
+			);
+			$all_text[] = $summary;
 		}
 
 		return implode( "\n\n", $all_text );
@@ -402,18 +496,51 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_with_provider( $image_path, $provider, $options = array() ) {
-		switch ( $provider ) {
-			case 'openai':
-				return $this->extract_with_openai( $image_path, $options );
-			case 'gemini':
-				return $this->extract_with_gemini( $image_path, $options );
-			case 'ollama':
-				return $this->extract_with_ollama( $image_path, $options );
-			case 'tesseract':
-				return $this->extract_with_tesseract( $image_path, $options );
-			default:
-				return new WP_Error( 'unknown_provider', sprintf( 'Unknown OCR provider: %s', $provider ) );
+		// Check circuit breaker.
+		if ( $this->is_circuit_open( $provider ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'ocr_provider_skipped',
+				sprintf( 'Provider %s skipped due to open circuit breaker', $provider ),
+				array( 'provider' => $provider )
+			);
+			return new WP_Error(
+				'provider_unavailable',
+				sprintf( __( 'Provider %s is temporarily unavailable', 'mcp-ai-wpoos-pro' ), $provider )
+			);
 		}
+
+		// Execute with retry logic.
+		$result = $this->execute_with_retry(
+			function () use ( $image_path, $provider, $options ) {
+				switch ( $provider ) {
+					case 'openai':
+						return $this->extract_with_openai( $image_path, $options );
+					case 'gemini':
+						return $this->extract_with_gemini( $image_path, $options );
+					case 'ollama':
+						return $this->extract_with_ollama( $image_path, $options );
+					case 'tesseract':
+						return $this->extract_with_tesseract( $image_path, $options );
+					default:
+						return new WP_Error( 'unknown_provider', sprintf( 'Unknown OCR provider: %s', $provider ) );
+				}
+			}
+		);
+
+		// Update circuit breaker based on result.
+		if ( is_wp_error( $result ) ) {
+			$error_code = $result->get_error_code();
+			// Open circuit for persistent failures (not validation errors).
+			$validation_errors = array( 'no_api_key', 'no_endpoint', 'file_not_found' );
+			if ( ! in_array( $error_code, $validation_errors, true ) ) {
+				$this->open_circuit( $provider, $result->get_error_message() );
+			}
+		} else {
+			// Success - close circuit if it was open.
+			$this->close_circuit( $provider );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -435,8 +562,11 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		// Prepare API request.
-		$client = WP_MCP_AI_OpenAI_Client::get_instance();
+		// Get singleton client instance.
+		if ( null === self::$openai_client ) {
+			self::$openai_client = new WP_MCP_AI_OpenAI_Client();
+		}
+		$client = self::$openai_client;
 		
 		$messages = array(
 			array(
@@ -467,14 +597,25 @@ class WP_MCP_AI_OCR_Service {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			WP_MCP_AI_Logger::log_event(
+				'ocr_openai_failed',
+				'OpenAI Vision OCR failed',
+				array( 'error' => $response->get_error_message() )
+			);
+			return new WP_Error(
+				'ocr_openai_failed',
+				sprintf(
+					__( 'OpenAI Vision OCR failed: %s. Will try fallback provider.', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
 		}
 
 		if ( isset( $response['choices'][0]['message']['content'] ) ) {
 			return trim( $response['choices'][0]['message']['content'] );
 		}
 
-		return new WP_Error( 'invalid_response', __( 'Invalid response from OpenAI API.', 'mcp-ai-wpoos-pro' ) );
+		return new WP_Error( 'invalid_response', __( 'Invalid response from OpenAI API. Will try fallback provider.', 'mcp-ai-wpoos-pro' ) );
 	}
 
 	/**
@@ -495,7 +636,11 @@ class WP_MCP_AI_OCR_Service {
 		$base64     = base64_encode( $image_data );
 		$mime_type  = mime_content_type( $image_path );
 
-		$client = WP_MCP_AI_Gemini_Client::get_instance();
+		// Get singleton client instance.
+		if ( null === self::$gemini_client ) {
+			self::$gemini_client = new WP_MCP_AI_Gemini_Client();
+		}
+		$client = self::$gemini_client;
 		
 		$request = array(
 			'contents' => array(
@@ -518,14 +663,25 @@ class WP_MCP_AI_OCR_Service {
 		$response = $client->generate_content( 'gemini-1.5-flash', $request, $settings );
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			WP_MCP_AI_Logger::log_event(
+				'ocr_gemini_failed',
+				'Gemini Vision OCR failed',
+				array( 'error' => $response->get_error_message() )
+			);
+			return new WP_Error(
+				'ocr_gemini_failed',
+				sprintf(
+					__( 'Gemini Vision OCR failed: %s. Will try fallback provider.', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
 		}
 
 		if ( isset( $response['candidates'][0]['content']['parts'][0]['text'] ) ) {
 			return trim( $response['candidates'][0]['content']['parts'][0]['text'] );
 		}
 
-		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API.', 'mcp-ai-wpoos-pro' ) );
+		return new WP_Error( 'invalid_response', __( 'Invalid response from Gemini API. Will try fallback provider.', 'mcp-ai-wpoos-pro' ) );
 	}
 
 	/**
@@ -621,7 +777,14 @@ class WP_MCP_AI_OCR_Service {
 		// Fallback to command-line tesseract.
 		$tesseract = shell_exec( 'which tesseract 2>/dev/null' );
 		if ( empty( $tesseract ) ) {
-			return new WP_Error( 'tesseract_not_found', __( 'Tesseract OCR not installed on system. Install via: npm install (for Node.js), apt-get install tesseract-ocr, or composer require thiagoalessio/tesseract_ocr', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error(
+				'tesseract_not_found',
+				__( 'Tesseract OCR is not installed on the system. The plugin includes pre-bundled Node.js OCR service, but it appears unavailable. Please ensure Node.js is installed or install system Tesseract with: apt-get install tesseract-ocr (Linux) or brew install tesseract (macOS).', 'mcp-ai-wpoos-pro' ),
+				array(
+					'bundled_service' => 'Node.js OCR service (included)',
+					'system_install'  => 'apt-get install tesseract-ocr',
+				)
+			);
 		}
 
 		$output_file = tempnam( sys_get_temp_dir(), 'ocr_' );
@@ -741,7 +904,11 @@ class WP_MCP_AI_OCR_Service {
 		// Check if Node.js OCR service exists.
 		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/ocr-service.js';
 		if ( ! file_exists( $service_path ) ) {
-			return new WP_Error( 'service_not_found', 'Node.js OCR service not found.' );
+			return new WP_Error(
+				'service_not_found',
+				__( 'Pre-bundled Node.js OCR service not found. This is a plugin installation issue.', 'mcp-ai-wpoos-pro' ),
+				array( 'expected_path' => $service_path )
+			);
 		}
 
 		$language = isset( $options['language'] ) ? $options['language'] : 'eng';
@@ -768,7 +935,14 @@ class WP_MCP_AI_OCR_Service {
 		if ( 0 !== $return_code ) {
 			return new WP_Error(
 				'node_ocr_failed',
-				'Node.js OCR service failed: ' . implode( "\n", $output )
+				sprintf(
+					__( 'Pre-bundled Node.js OCR service failed. Ensure Node.js is installed. Error: %s', 'mcp-ai-wpoos-pro' ),
+					implode( "\n", $output )
+				),
+				array(
+					'return_code' => $return_code,
+					'output'      => $output,
+				)
 			);
 		}
 
@@ -796,5 +970,249 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		return $result['text'];
+	}
+
+	/**
+	 * Validate image input before processing.
+	 *
+	 * @param string $image_path Path to image file.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_image_input( $image_path ) {
+		// Check file exists.
+		if ( ! file_exists( $image_path ) ) {
+			return new WP_Error(
+				'file_not_found',
+				__( 'Image file not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Check file size.
+		$file_size = filesize( $image_path );
+		if ( $file_size > self::MAX_FILE_SIZE ) {
+			return new WP_Error(
+				'file_too_large',
+				sprintf(
+					__( 'Image file is too large (%s). Maximum size is %s.', 'mcp-ai-wpoos-pro' ),
+					size_format( $file_size ),
+					size_format( self::MAX_FILE_SIZE )
+				),
+				array( 'status' => 413 )
+			);
+		}
+
+		// Check MIME type.
+		$mime_type = mime_content_type( $image_path );
+		$allowed_types = array( 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/tiff' );
+		if ( ! in_array( $mime_type, $allowed_types, true ) ) {
+			return new WP_Error(
+				'invalid_file_type',
+				sprintf(
+					__( 'Invalid image file type: %s. Allowed types: %s', 'mcp-ai-wpoos-pro' ),
+					$mime_type,
+					implode( ', ', $allowed_types )
+				),
+				array( 'status' => 415 )
+			);
+		}
+
+		// Check file is readable.
+		if ( ! is_readable( $image_path ) ) {
+			return new WP_Error(
+				'file_not_readable',
+				__( 'Image file is not readable. Check file permissions.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validate PDF input before processing.
+	 *
+	 * @param string $pdf_path Path to PDF file.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_pdf_input( $pdf_path ) {
+		// Check file exists.
+		if ( ! file_exists( $pdf_path ) ) {
+			return new WP_Error(
+				'file_not_found',
+				__( 'PDF file not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Check file size.
+		$file_size = filesize( $pdf_path );
+		if ( $file_size > self::MAX_FILE_SIZE ) {
+			return new WP_Error(
+				'file_too_large',
+				sprintf(
+					__( 'PDF file is too large (%s). Maximum size is %s.', 'mcp-ai-wpoos-pro' ),
+					size_format( $file_size ),
+					size_format( self::MAX_FILE_SIZE )
+				),
+				array( 'status' => 413 )
+			);
+		}
+
+		// Check MIME type.
+		$mime_type = mime_content_type( $pdf_path );
+		if ( 'application/pdf' !== $mime_type ) {
+			return new WP_Error(
+				'invalid_file_type',
+				sprintf(
+					__( 'Invalid file type: %s. Expected application/pdf', 'mcp-ai-wpoos-pro' ),
+					$mime_type
+				),
+				array( 'status' => 415 )
+			);
+		}
+
+		// Check file is readable.
+		if ( ! is_readable( $pdf_path ) ) {
+			return new WP_Error(
+				'file_not_readable',
+				__( 'PDF file is not readable. Check file permissions.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check circuit breaker state for a provider.
+	 *
+	 * Implements circuit breaker pattern to prevent cascading failures.
+	 *
+	 * @param string $provider Provider name.
+	 * @return bool True if circuit is open (provider should be skipped).
+	 */
+	protected function is_circuit_open( $provider ) {
+		if ( ! isset( self::$circuit_breaker[ $provider ] ) ) {
+			return false;
+		}
+
+		$state = self::$circuit_breaker[ $provider ];
+		
+		// If circuit is closed, provider is available.
+		if ( 'closed' === $state['status'] ) {
+			return false;
+		}
+
+		// Check if cooldown period has passed.
+		$cooldown = 300; // 5 minutes.
+		if ( time() - $state['opened_at'] > $cooldown ) {
+			// Reset circuit to half-open state.
+			self::$circuit_breaker[ $provider ]['status'] = 'half-open';
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Open circuit breaker for a provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @param string $reason   Reason for opening circuit.
+	 */
+	protected function open_circuit( $provider, $reason = '' ) {
+		self::$circuit_breaker[ $provider ] = array(
+			'status'    => 'open',
+			'opened_at' => time(),
+			'reason'    => $reason,
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'ocr_circuit_opened',
+			sprintf( 'Circuit breaker opened for provider: %s', $provider ),
+			array(
+				'provider' => $provider,
+				'reason'   => $reason,
+			)
+		);
+	}
+
+	/**
+	 * Close circuit breaker for a provider.
+	 *
+	 * @param string $provider Provider name.
+	 */
+	protected function close_circuit( $provider ) {
+		self::$circuit_breaker[ $provider ] = array(
+			'status'    => 'closed',
+			'opened_at' => 0,
+			'reason'    => '',
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'ocr_circuit_closed',
+			sprintf( 'Circuit breaker closed for provider: %s', $provider ),
+			array( 'provider' => $provider )
+		);
+	}
+
+	/**
+	 * Execute operation with retry logic.
+	 *
+	 * Implements exponential backoff for transient failures.
+	 *
+	 * @param callable $operation Operation to execute.
+	 * @param int      $max_retries Maximum retry attempts.
+	 * @return mixed Operation result.
+	 */
+	protected function execute_with_retry( $operation, $max_retries = self::MAX_RETRIES ) {
+		$attempt = 0;
+		$last_error = null;
+
+		while ( $attempt < $max_retries ) {
+			$result = $operation();
+
+			// Success - return result.
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			$last_error = $result;
+			$error_code = $result->get_error_code();
+
+			// Don't retry on non-transient errors.
+			$non_retryable = array(
+				'no_api_key',
+				'invalid_file_type',
+				'file_not_found',
+				'file_too_large',
+			);
+
+			if ( in_array( $error_code, $non_retryable, true ) ) {
+				return $result;
+			}
+
+			$attempt++;
+
+			// Exponential backoff: 1s, 2s, 4s, etc.
+			if ( $attempt < $max_retries ) {
+				$wait_time = pow( 2, $attempt - 1 );
+				WP_MCP_AI_Logger::log_event(
+					'ocr_retry_attempt',
+					sprintf( 'Retrying OCR operation (attempt %d/%d) after %ds', $attempt + 1, $max_retries, $wait_time ),
+					array(
+						'attempt'    => $attempt + 1,
+						'max_retries' => $max_retries,
+						'wait_time'  => $wait_time,
+						'error'      => $result->get_error_message(),
+					)
+				);
+				sleep( $wait_time );
+			}
+		}
+
+		// All retries exhausted.
+		return $last_error;
 	}
 }
