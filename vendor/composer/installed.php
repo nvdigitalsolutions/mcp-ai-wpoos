@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
-        'version' => 'dev-copilot/fix-excel-data-export-error',
-        'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
+        'pretty_version' => 'dev-copilot/fix-extract-pdf-text-tool',
+        'version' => 'dev-copilot/fix-extract-pdf-text-tool',
+        'reference' => '9c0207d77d659629c67fa59a0e98de09db0e5306',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-excel-data-export-error',
-            'version' => 'dev-copilot/fix-excel-data-export-error',
-            'reference' => '843d42be1dc71e68b476a5a3a3306e7fa5fc8d43',
+            'pretty_version' => 'dev-copilot/fix-extract-pdf-text-tool',
+            'version' => 'dev-copilot/fix-extract-pdf-text-tool',
+            'reference' => '9c0207d77d659629c67fa59a0e98de09db0e5306',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
