@@ -57,11 +57,13 @@ try {
 		process.exit(1);
 	}
 
-	// Sharp and Canvas are optional (only needed for preprocessing and PDF)
-	if (loadErrors.length > 0) {
-		// Log warnings but continue (some features may be disabled)
-		// These are captured in catch blocks but don't stop execution
-	}
+	// Sharp and Canvas are optional dependencies for enhanced features
+	// - Sharp: Image preprocessing for better OCR accuracy
+	// - Canvas: PDF rendering for PDF OCR
+	// If not available, basic OCR on images will still work, but:
+	// - No preprocessing will be applied
+	// - PDF OCR will fail with a clear error message
+	// These warnings are not logged to avoid cluttering output for standard image OCR
 } catch (error) {
 	console.log(JSON.stringify({
 		error: 'Failed to initialize OCR service: ' + error.message,
@@ -389,11 +391,18 @@ if (require.main === module) {
 			process.exit(0);
 		} catch (error) {
 			// Output error in JSON format to stdout (not stderr) for easier parsing
-			console.log(JSON.stringify({ 
+			// Note: Stack traces are sanitized in production to avoid exposing server paths
+			const errorResponse = { 
 				error: error.message,
-				stack: error.stack,
 				action: action
-			}));
+			};
+			
+			// Only include stack trace in development/debug mode
+			if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+				errorResponse.stack = error.stack;
+			}
+			
+			console.log(JSON.stringify(errorResponse));
 			process.exit(1);
 		}
 	})();

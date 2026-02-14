@@ -62,6 +62,13 @@ class WP_MCP_AI_OCR_Service {
 	const MAX_RETRIES = 3;
 
 	/**
+	 * Circuit breaker cooldown period (seconds).
+	 *
+	 * @var int
+	 */
+	const CIRCUIT_BREAKER_COOLDOWN = 300;
+
+	/**
 	 * Singleton instance of OpenAI client.
 	 *
 	 * @var WP_MCP_AI_OpenAI_Client|null
@@ -1130,8 +1137,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		// Check if cooldown period has passed.
-		$cooldown = 300; // 5 minutes.
-		if ( time() - $state['opened_at'] > $cooldown ) {
+		if ( time() - $state['opened_at'] > self::CIRCUIT_BREAKER_COOLDOWN ) {
 			// Reset circuit to half-open state.
 			self::$circuit_breaker[ $provider ]['status'] = 'half-open';
 			return false;

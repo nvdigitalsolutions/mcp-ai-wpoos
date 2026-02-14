@@ -177,11 +177,18 @@ if (require.main === module) {
 			process.exit(0);
 		} catch (error) {
 			// Output error in JSON format to stdout (not stderr) for easier parsing
-			console.log(JSON.stringify({ 
+			// Note: Stack traces are sanitized in production to avoid exposing server paths
+			const errorResponse = { 
 				error: error.message,
-				stack: error.stack,
 				action: action
-			}));
+			};
+			
+			// Only include stack trace in development/debug mode
+			if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
+				errorResponse.stack = error.stack;
+			}
+			
+			console.log(JSON.stringify(errorResponse));
 			process.exit(1);
 		}
 	})();
