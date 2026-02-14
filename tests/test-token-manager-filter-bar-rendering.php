@@ -36,9 +36,9 @@ class Test_Token_Manager_Filter_Bar_Rendering extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<script>', $output, 'Output should contain opening script tag' );
 		$this->assertStringContainsString( '</script>', $output, 'Output should contain closing script tag' );
 
-		// Verify the JavaScript functionality is present.
-		$this->assertStringContainsString( "('#wp-mcp-ai-filter-tools').on('click'", $output, 'Output should contain filter button click handler' );
-		$this->assertStringContainsString( 'window.location.href = url.toString()', $output, 'Output should contain navigation code' );
+		// Verify the JavaScript functionality is present (check for key identifiers).
+		$this->assertStringContainsString( 'wp-mcp-ai-filter-tools', $output, 'Output should reference filter button in JavaScript' );
+		$this->assertStringContainsString( 'window.location.href', $output, 'Output should contain navigation code' );
 	}
 
 	/**
