@@ -6,7 +6,11 @@
  * Provides a pure Node.js solution for PDF text extraction.
  */
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
+const path = require('path');
+
+// Load pdf-parse from bundled vendor directory (works without npm install)
+const vendorPath = path.join(__dirname, '..', 'assets', 'vendor', 'pdf-parse');
+const pdfParse = require(vendorPath);
 
 /**
  * Extract text from PDF file.

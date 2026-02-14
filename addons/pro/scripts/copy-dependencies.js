@@ -533,9 +533,12 @@ const dependencies = [
 	},
 	{
 		name: 'pdf-parse',
+		dirs: [
+			{ src: 'lib', dest: 'pdf-parse/lib' },
+		],
 		files: [
-			{ src: 'lib/pdf-parse.js', dest: 'pdf-parse/pdf-parse.js' },
 			{ src: 'package.json', dest: 'pdf-parse/package.json' },
+			{ src: 'index.js', dest: 'pdf-parse/index.js' },
 		],
 	},
 ];
