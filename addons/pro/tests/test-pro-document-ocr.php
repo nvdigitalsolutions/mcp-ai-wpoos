@@ -269,4 +269,46 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 		$this->assertContains( 'WP_MCP_AI_Tool_Document_Response', $uses_traits );
 		$this->assertContains( 'WP_MCP_AI_Attachment_File_Resolver', $uses_traits );
 	}
+
+	/**
+	 * Test multi-URL support in schema.
+	 */
+	public function test_multi_url_support() {
+		$schema = $this->tool->get_parameters_schema();
+		$source = $schema['properties']['source']['properties'];
+
+		// Verify urls array is supported.
+		$this->assertArrayHasKey( 'urls', $source );
+		$this->assertEquals( 'array', $source['urls']['type'] );
+		$this->assertArrayHasKey( 'items', $source['urls'] );
+		$this->assertEquals( 'string', $source['urls']['items']['type'] );
+		$this->assertEquals( 20, $source['urls']['maxItems'] );
+	}
+
+	/**
+	 * Test multi-attachment-ID support in schema.
+	 */
+	public function test_multi_attachment_id_support() {
+		$schema = $this->tool->get_parameters_schema();
+		$source = $schema['properties']['source']['properties'];
+
+		// Verify attachment_ids array is supported.
+		$this->assertArrayHasKey( 'attachment_ids', $source );
+		$this->assertEquals( 'array', $source['attachment_ids']['type'] );
+		$this->assertArrayHasKey( 'items', $source['attachment_ids'] );
+		$this->assertEquals( 'integer', $source['attachment_ids']['items']['type'] );
+		$this->assertEquals( 20, $source['attachment_ids']['maxItems'] );
+	}
+
+	/**
+	 * Test URL array parameter is properly documented.
+	 */
+	public function test_url_array_documentation() {
+		$schema = $this->tool->get_parameters_schema();
+		$source = $schema['properties']['source'];
+
+		// Check that source description mentions arrays.
+		$this->assertStringContainsString( 'array', $source['description'] );
+		$this->assertStringContainsString( 'ONE of', $source['description'] );
+	}
 }
