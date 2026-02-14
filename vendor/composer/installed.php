@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-ocr-tool-for-documents',
-        'version' => 'dev-copilot/add-ocr-tool-for-documents',
-        'reference' => '1f667af967e00bb1a67d71e603bc852ae7b16969',
+        'pretty_version' => 'dev-copilot/fix-ocr-pdf-text-error',
+        'version' => 'dev-copilot/fix-ocr-pdf-text-error',
+        'reference' => '4742861a16d1e92da35343301957e0892a484b4c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-ocr-tool-for-documents',
-            'version' => 'dev-copilot/add-ocr-tool-for-documents',
-            'reference' => '1f667af967e00bb1a67d71e603bc852ae7b16969',
+            'pretty_version' => 'dev-copilot/fix-ocr-pdf-text-error',
+            'version' => 'dev-copilot/fix-ocr-pdf-text-error',
+            'reference' => '4742861a16d1e92da35343301957e0892a484b4c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
