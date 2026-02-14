@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-openai-to-singleton-pattern',
-        'version' => 'dev-copilot/update-openai-to-singleton-pattern',
-        'reference' => '6828036271623e68be59bcbf6a57eece7f44f538',
+        'pretty_version' => 'dev-copilot/add-ocr-tool-for-documents',
+        'version' => 'dev-copilot/add-ocr-tool-for-documents',
+        'reference' => '1f667af967e00bb1a67d71e603bc852ae7b16969',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-openai-to-singleton-pattern',
-            'version' => 'dev-copilot/update-openai-to-singleton-pattern',
-            'reference' => '6828036271623e68be59bcbf6a57eece7f44f538',
+            'pretty_version' => 'dev-copilot/add-ocr-tool-for-documents',
+            'version' => 'dev-copilot/add-ocr-tool-for-documents',
+            'reference' => '1f667af967e00bb1a67d71e603bc852ae7b16969',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

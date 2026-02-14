@@ -1093,6 +1093,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Generate_Excel'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-excel.php',
 				// PDF manipulation tools.
 				'WP_MCP_AI_Tool_Extract_PDF_Text'   => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php',
+				'WP_MCP_AI_Tool_OCR_PDF_Text'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-ocr-pdf-text.php',
+				'WP_MCP_AI_Tool_Pro_Document_OCR'   => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-document-ocr.php',
 				'WP_MCP_AI_Tool_HTML_To_PDF'        => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-html-to-pdf.php',
 				'WP_MCP_AI_Tool_Merge_PDFs'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php',
 				'WP_MCP_AI_Tool_Add_Watermark_To_PDF' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-add-watermark-to-pdf.php',
