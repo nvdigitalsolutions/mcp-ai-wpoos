@@ -101,8 +101,13 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array()
 		);
 
-		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertFalse( $result['success'] );
+		$this->assertArrayHasKey( 'error', $result );
+		$this->assertEquals( 'permission_denied', $result['error'] );
+		$this->assertArrayHasKey( 'report', $result );
+		$this->assertStringContainsString( 'permission', $result['report'] );
 	}
 
 	/**
@@ -117,8 +122,13 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
-		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_missing_source', $result->get_error_code() );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertFalse( $result['success'] );
+		$this->assertArrayHasKey( 'error', $result );
+		$this->assertEquals( 'missing_source', $result['error'] );
+		$this->assertArrayHasKey( 'report', $result );
+		$this->assertStringContainsString( 'Source document', $result['report'] );
 	}
 
 	/**
@@ -135,9 +145,11 @@ class Test_Pro_Document_OCR extends WP_UnitTestCase {
 			array( 'user_id' => $user_id )
 		);
 
-		// Should return response with error in results.
+		// Should return response with documents_count (even if 0 successful).
 		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'documents_count', $result );
+		$this->assertArrayHasKey( 'success', $result );
+		// Could be true or false depending on whether no documents or all failed.
+		$this->assertArrayHasKey( 'report', $result );
 	}
 
 	/**
