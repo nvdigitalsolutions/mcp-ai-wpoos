@@ -155,6 +155,14 @@ class WP_MCP_AI_Optional_Components {
 		
 		// Use uploads directory instead of plugin directory.
 		$upload_dir = wp_upload_dir();
+		
+		// Check for upload directory errors.
+		if ( ! empty( $upload_dir['error'] ) ) {
+			$error_msg = $upload_dir['error'];
+			self::update_status( 'vectorizer', 'error', $error_msg );
+			return new WP_Error( 'upload_dir_error', $error_msg );
+		}
+		
 		$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/vendor/';
 		
 		// Create directory if it doesn't exist.
@@ -195,6 +203,14 @@ class WP_MCP_AI_Optional_Components {
 		
 		// Use uploads directory instead of plugin directory.
 		$upload_dir = wp_upload_dir();
+		
+		// Check for upload directory errors.
+		if ( ! empty( $upload_dir['error'] ) ) {
+			$error_msg = $upload_dir['error'];
+			self::update_status( 'knowledge_base', 'error', $error_msg );
+			return new WP_Error( 'upload_dir_error', $error_msg );
+		}
+		
 		$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/knowledge-base/';
 		
 		// Create directory if it doesn't exist.
