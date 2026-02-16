@@ -32,13 +32,13 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-sa
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-page.php';
 
 // Register autoloader for settings sections (lazy loading).
-// This loads section class files only when they are actually instantiated,.
-
+// This loads section class files only when they are actually instantiated,
 // significantly improving admin page load performance.
 spl_autoload_register(
 	function ( $class_name ) {
 		// Map of section class names to their file paths.
 		$section_files = array(
+			// Base sections.
 			'WP_MCP_AI_Section_Overview'            => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
 			'WP_MCP_AI_Section_General'             => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
 			'WP_MCP_AI_Section_Chat_Client'         => 'includes/admin/sections/class-wp-mcp-ai-section-chat-client.php',
@@ -56,9 +56,21 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
 		);
 
+		// Add Pro sections if Pro addon is loaded.
+		// Pro sections are only available when WP_MCP_AI_PRO_VERSION is defined.
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$section_files['WP_MCP_AI_Section_Performance']      = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			$section_files['WP_MCP_AI_Section_Pro_Providers']    = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+			$section_files['WP_MCP_AI_Section_Pro_Integrations'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+		}
+
 		// Check if this is a section class we should autoload.
 		if ( isset( $section_files[ $class_name ] ) ) {
-			$file = WP_MCP_AI_PATH . $section_files[ $class_name ];
+			$file = $section_files[ $class_name ];
+			// Handle both absolute paths (Pro sections) and relative paths (base sections).
+			if ( strpos( $file, WP_MCP_AI_PATH ) !== 0 && strpos( $file, '/' ) !== 0 ) {
+				$file = WP_MCP_AI_PATH . $file;
+			}
 			if ( file_exists( $file ) ) {
 				require_once $file;
 			}
