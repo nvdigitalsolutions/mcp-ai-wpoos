@@ -67,10 +67,26 @@ spl_autoload_register(
 		// Check if this is a section class we should autoload.
 		if ( isset( $section_files[ $class_name ] ) ) {
 			$file = $section_files[ $class_name ];
+			
 			// Handle both absolute paths (Pro sections) and relative paths (base sections).
-			if ( strpos( $file, WP_MCP_AI_PATH ) !== 0 && strpos( $file, '/' ) !== 0 ) {
+			// Check if path is already absolute (cross-platform compatible).
+			// Unix/Linux: starts with /
+			// Windows: starts with drive letter (e.g., C:\) or UNC path (\\)
+			$is_absolute = (
+				// Unix/Linux absolute path.
+				0 === strpos( $file, '/' ) ||
+				// Already contains the base path.
+				0 === strpos( $file, WP_MCP_AI_PATH ) ||
+				// Windows drive letter (e.g., C:\).
+				( strlen( $file ) >= 3 && ':' === $file[1] && DIRECTORY_SEPARATOR === $file[2] ) ||
+				// Windows UNC path (e.g., \\server\share).
+				0 === strpos( $file, '\\\\' )
+			);
+			
+			if ( ! $is_absolute ) {
 				$file = WP_MCP_AI_PATH . $file;
 			}
+			
 			if ( file_exists( $file ) ) {
 				require_once $file;
 			}
