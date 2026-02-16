@@ -1002,8 +1002,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			// Merge Pro provider subtabs if Pro addon is active.
 			// This allows the Embedded LLM subtab to appear alongside other providers.
-			if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
-				$pro_providers_section = WP_MCP_AI_Settings_Registry::get_section( 'pro_providers' );
+			// Note: Pro Providers section is NOT registered in Settings Registry (to prevent duplicate rendering),
+			// so we must get it from the container instead.
+			if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) && function_exists( 'wp_mcp_ai_container' ) ) {
+				$container             = wp_mcp_ai_container();
+				$pro_providers_section = $container->get( 'section.pro_providers' );
 				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_subtab_groups' ) ) {
 					// Get Pro provider subtabs using reflection to call protected method.
 					$reflection = new ReflectionClass( $pro_providers_section );
@@ -1130,8 +1133,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			$active_group = $subtab_groups[ $active_subtab ];
 
 			// If this is the 'embedded' subtab, delegate to Pro Providers section.
-			if ( 'embedded' === $active_subtab && class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
-				$pro_providers_section = WP_MCP_AI_Settings_Registry::get_section( 'pro_providers' );
+			// Note: Pro Providers section is NOT registered in Settings Registry (to prevent duplicate rendering),
+			// so we must get it from the container instead.
+			if ( 'embedded' === $active_subtab && class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) && function_exists( 'wp_mcp_ai_container' ) ) {
+				$container             = wp_mcp_ai_container();
+				$pro_providers_section = $container->get( 'section.pro_providers' );
 				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_fields' ) ) {
 					// Get Pro provider fields using reflection to call protected method.
 					$reflection = new ReflectionClass( $pro_providers_section );

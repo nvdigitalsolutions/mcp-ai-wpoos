@@ -181,29 +181,47 @@ class WP_MCP_AI_Pro_Providers_Autoloader_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Pro sections are properly registered in Settings Registry.
+	 * Test that Pro sections are properly registered in Settings Registry or Container.
+	 *
+	 * Note: Pro Providers section is intentionally NOT registered in Settings Registry
+	 * to prevent duplicate rendering. It's only available via the container.
 	 */
-	public function test_pro_sections_registered_in_settings_registry() {
-		// Test Pro Providers section.
+	public function test_pro_sections_registered_correctly() {
+		// Test Pro Providers section - should be in container but NOT in registry.
 		$pro_providers = WP_MCP_AI_Settings_Registry::get_section( 'pro_providers' );
-		$this->assertNotNull(
+		$this->assertNull(
 			$pro_providers,
-			'Pro Providers section should be registered in Settings Registry'
+			'Pro Providers section should NOT be registered in Settings Registry (prevents duplicate rendering)'
 		);
-		$this->assertEquals(
-			'providers',
-			$pro_providers->get_tab(),
-			'Pro Providers section should be on providers tab'
-		);
+		
+		// But it should be available from the container.
+		if ( function_exists( 'wp_mcp_ai_container' ) ) {
+			$container     = wp_mcp_ai_container();
+			$pro_providers = $container->get( 'section.pro_providers' );
+			$this->assertNotNull(
+				$pro_providers,
+				'Pro Providers section should be available from container'
+			);
+			$this->assertInstanceOf(
+				'WP_MCP_AI_Section_Pro_Providers',
+				$pro_providers,
+				'Container should return correct Pro Providers instance'
+			);
+			$this->assertEquals(
+				'providers',
+				$pro_providers->get_tab(),
+				'Pro Providers section should be on providers tab'
+			);
+		}
 
-		// Test Performance section.
+		// Test Performance section - should be in registry (renders standalone).
 		$performance = WP_MCP_AI_Settings_Registry::get_section( 'performance' );
 		$this->assertNotNull(
 			$performance,
 			'Performance section should be registered in Settings Registry'
 		);
 
-		// Test Pro Integrations section.
+		// Test Pro Integrations section - should be in registry (renders standalone).
 		$pro_integrations = WP_MCP_AI_Settings_Registry::get_section( 'pro_integrations' );
 		$this->assertNotNull(
 			$pro_integrations,
