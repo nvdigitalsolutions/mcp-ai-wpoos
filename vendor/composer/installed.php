@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-providers-section-registration',
-        'version' => 'dev-copilot/fix-providers-section-registration',
-        'reference' => 'e4552c9f96a8e07c4a76e86bb16303d0aada56b6',
+        'pretty_version' => 'dev-copilot/fix-duplicate-embedded-llm',
+        'version' => 'dev-copilot/fix-duplicate-embedded-llm',
+        'reference' => '78baf926470e4d088f36014d1e9731e9a4251b7d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-providers-section-registration',
-            'version' => 'dev-copilot/fix-providers-section-registration',
-            'reference' => 'e4552c9f96a8e07c4a76e86bb16303d0aada56b6',
+            'pretty_version' => 'dev-copilot/fix-duplicate-embedded-llm',
+            'version' => 'dev-copilot/fix-duplicate-embedded-llm',
+            'reference' => '78baf926470e4d088f36014d1e9731e9a4251b7d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

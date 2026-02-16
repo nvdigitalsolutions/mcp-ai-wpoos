@@ -146,11 +146,13 @@ function wp_mcp_ai_init_settings_dashboard() {
 			WP_MCP_AI_Settings_Registry::register_section( $performance_section );
 		}
 
-		// Pro Providers section is only available with Pro addon.
-		$pro_providers_section = $container->get( 'section.pro_providers' );
-		if ( null !== $pro_providers_section ) {
-			WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
-		}
+		// Pro Providers section is NOT registered as a standalone section.
+		// Its subtabs are merged into the base Providers section instead.
+		// The class is still loaded and instantiated by the container for subtab merging.
+		// $pro_providers_section = $container->get( 'section.pro_providers' );
+		// if ( null !== $pro_providers_section ) {
+		// 	WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
+		// }
 
 		// Pro Integrations section is only available with Pro addon.
 		$pro_integrations_section = $container->get( 'section.pro_integrations' );
