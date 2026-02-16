@@ -520,7 +520,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php if ( empty( $settings['enable_embedded'] ) ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab to use client-side AI models that run directly in the browser.', 'mcp-ai-wpoos' ); ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ); ?>">
 								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
