@@ -1090,6 +1090,19 @@ The following items remain but are **acceptable per WordPress standards**:
    - Properly escaped with `esc_js()` and `wp_json_encode()`
    - Acceptable per WordPress guidelines for admin areas
 
+**Already Resolved in v1.1.2:** ✅
+
+4. ~~Embedded LLM Settings~~ → **MOVED to pro addon**
+   - Created: `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php`
+   - 3 settings moved: enable_embedded, embedded_model, embedded_model_management
+   - Clean architectural separation achieved
+
+5. ~~External CDN Dependencies~~ → **CLARIFIED - No base plugin issues**
+   - **Chart.js**: Bundled locally at `assets/js/vendor/chart.min.js` (v4.5.1, MIT license) ✅
+   - **LangChain.js**: Pro-only feature, only loads with `defined('WP_MCP_AI_PRO_VERSION')` ✅
+   - **Result**: Base plugin has ZERO external CDN dependencies
+   - Pro addon manages its own resources (acceptable per guidelines)
+
 ### Appendix C: Documentation Created
 
 1. **WORDPRESS_ORG_COMPLIANCE_COMPLETE.md** - Initial compliance certification

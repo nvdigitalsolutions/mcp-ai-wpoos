@@ -219,12 +219,15 @@ The following are NOT blockers but could be improved in future major releases:
 ### Low Priority (Non-Blocking)
 - **40 files with minor inline scripts** - Small configuration blocks, acceptable per guidelines
 - **Elementor widgets** - Already use proper WordPress methods
-- **Embedded LLM settings** - Uses soft filtering (returns `null`), doesn't block UI
+
+### Already Completed in v1.1.2 ✅
+- ~~Embedded LLM settings~~ - **MOVED to pro addon** (`addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php`)
+- ~~Chart.js CDN~~ - **BUNDLED locally** (`assets/js/vendor/chart.min.js` v4.5.1, MIT license)
+- ~~LangChain.js CDN~~ - **PRO-ONLY feature** (`includes/class-wp-mcp-ai-langchain-enqueue.php`, only loads with pro plugin)
 
 ### Future Enhancements (v1.3.0+)
 - Consider moving all inline scripts to enqueued files for best practices
-- Consider bundling CDN resources (LangChain.js, Chart.js)
-- Consider moving embedded LLM settings to pro addon
+- Evaluate any new external dependencies before adding
 
 ## Release History
 
@@ -238,13 +241,19 @@ The following are NOT blockers but could be improved in future major releases:
 - Some menu position fixes
 
 ### v1.1.2 (February 16, 2026)
-- **Architectural correction** - Moved pro integration settings to pro addon
+- **Architectural correction** - Moved pro settings to pro addon
 - **Complete menu position compliance** - Fixed ALL hardcoded positions
-- 12 pro integration settings relocated to pro addon
-- 6 hardcoded menu positions → null (1 admin + 5 CPTs)
+- **Pro integration settings:** 16 settings relocated (Mailjet, Analytics, ITA Tariff, Plaid, Yahoo, ESPN)
+- **Embedded LLM settings:** 3 settings moved to pro addon
+- **UI cleanup:** 6 pro subtabs removed from base, 2 misleading labels fixed
+- **Menu positions:** 6 hardcoded positions → null (1 admin + 5 CPTs)
 - Base plugin now only has settings for base tools
-- Pro addon adds its own settings section when active
+- Pro addon adds its own settings sections when active
 - Proper plugin architecture achieved
+
+**External Dependencies Clarified:**
+- Chart.js: Confirmed bundled locally (`assets/js/vendor/chart.min.js`) - Not a CDN dependency
+- LangChain.js: Confirmed pro-only feature - Base plugin has no CDN dependencies
 
 ## Recommendation
 
