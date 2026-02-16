@@ -17,6 +17,62 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabox_Base {
 
 	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct();
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+	}
+
+	/**
+	 * Enqueue metabox assets.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public function enqueue_assets( $hook ) {
+		// Only load on profession edit pages.
+		if ( ! in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( ! $screen || WP_MCP_AI_Profession_CPT::POST_TYPE !== $screen->post_type ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'wp-mcp-ai-profession-expertise-metabox',
+			WP_MCP_AI_URL . 'assets/css/admin/metaboxes/profession-expertise.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-profession-expertise-metabox',
+			WP_MCP_AI_URL . 'assets/js/admin/metaboxes/profession-expertise.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		$settings          = get_option( 'wp_mcp_ai_settings', array() );
+		$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
+
+		wp_localize_script(
+			'wp-mcp-ai-profession-expertise-metabox',
+			'wpMcpAiProfessionMetabox',
+			array(
+				'recommendedToolCount' => $recommended_count,
+				'strings'              => array(
+					'remove'        => __( 'Remove', 'mcp-ai-wpoos' ),
+					'selected'      => __( 'selected', 'mcp-ai-wpoos' ),
+					'resetConfirm'  => __( 'Are you sure you want to reset the tools selection to the initial state?', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Get the metabox ID.
 	 *
 	 * @return string
@@ -244,155 +300,6 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			</tbody>
 		</table>
 
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			// Expertise area management.
-			$('#add-profession-expertise').on('click', function() {
-				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
-					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
-					'</div>';
-				$('#profession-expertise-list').append(expertiseHtml);
-			});
-
-			$(document).on('click', '.remove-expertise', function() {
-				$(this).closest('.profession-expertise-item').remove();
-			});
-
-			// Tools management functionality.
-			var searchDebounceTimer = null;
-			var $toolsList = $('#profession-default-tools-list');
-			var $noResultsMsg = $('#no-tools-found');
-			var $searchInput = $('#profession-tools-search');
-			var $selectedCount = $('#tools-selected-count');
-
-			// Update selected count.
-			function updateSelectedCount() {
-				var count = $('.profession-tool-checkbox:checked').length;
-				$selectedCount.html('<strong>' + count + '</strong> <?php echo esc_js( __( 'selected', 'mcp-ai-wpoos' ) ); ?>');
-			}
-
-			// Filter tools based on search term.
-			function filterTools() {
-				var searchTerm = $searchInput.val().toLowerCase().trim();
-				var $toolItems = $('.profession-tool-item');
-				var visibleCount = 0;
-
-				$toolItems.each(function() {
-					var $item = $(this);
-					var toolName = $item.data('tool-name') || '';
-					var toolDesc = $item.data('tool-description') || '';
-
-					var matches = searchTerm === '' ||
-						toolName.indexOf(searchTerm) !== -1 ||
-						toolDesc.indexOf(searchTerm) !== -1;
-
-					if (matches) {
-						$item.show();
-						visibleCount++;
-					} else {
-						$item.hide();
-					}
-				});
-
-				// Toggle no results message.
-				if (visibleCount === 0 && searchTerm !== '') {
-					$toolsList.hide();
-					$noResultsMsg.show();
-				} else {
-					$toolsList.show();
-					$noResultsMsg.hide();
-				}
-			}
-
-			// Search input handler with debounce.
-			$searchInput.on('input', function() {
-				clearTimeout(searchDebounceTimer);
-				searchDebounceTimer = setTimeout(filterTools, 300);
-			});
-
-			// Clear search button.
-			$('#clear-tools-search').on('click', function() {
-				$searchInput.val('');
-				filterTools();
-				$searchInput.focus();
-			});
-
-			// Toggle all visible tools (used by Select All and Deselect All).
-			function toggleAllVisibleTools(checked) {
-				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', checked);
-				updateSelectedCount();
-			}
-
-			// Select all visible tools.
-			$('#select-all-tools').on('click', function() {
-				toggleAllVisibleTools(true);
-			});
-
-			// Deselect all visible tools.
-			$('#deselect-all-tools').on('click', function() {
-				toggleAllVisibleTools(false);
-			});
-
-			// Reset to initial state.
-			$('#reset-tools').on('click', function() {
-				// Use native confirm as it's consistent with WordPress admin UX patterns.
-				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'mcp-ai-wpoos' ) ); ?>')) {
-					return;
-				}
-
-				$('.profession-tool-item').each(function() {
-					var $item = $(this);
-					var $checkbox = $item.find('.profession-tool-checkbox');
-					var initiallyChecked = $item.data('initially-checked') === 1;
-					$checkbox.prop('checked', initiallyChecked);
-				});
-				updateSelectedCount();
-			});
-
-			// Update count when checkboxes change.
-			$(document).on('change', '.profession-tool-checkbox', function() {
-				updateSelectedCount();
-			});
-
-			// Initialize count on page load.
-			updateSelectedCount();
-		});
-		</script>
-
-		<style>
-			.profession-tool-item {
-				transition: background-color 0.2s ease;
-			}
-			.profession-tool-item:hover {
-				background-color: #f0f0f0 !important;
-			}
-			#profession-tools-search {
-				padding: 6px 10px;
-				font-size: 14px;
-				border: 1px solid #8c8f94;
-				border-radius: 4px;
-				box-shadow: 0 0 0 transparent;
-				transition: border-color .1s ease-in-out, box-shadow .1s linear;
-			}
-			#profession-tools-search:focus {
-				border-color: #2271b1;
-				box-shadow: 0 0 0 1px #2271b1;
-				outline: 2px solid transparent;
-			}
-			.profession-tools-controls .button {
-				height: 32px;
-				line-height: 30px;
-				padding: 0 12px;
-			}
-			#tools-selected-count {
-				display: inline-block;
-				padding: 4px 8px;
-				background: #f0f0f0;
-				border-radius: 3px;
-				font-size: 13px;
-			}
-		</style>
 		<?php
 		$this->render_documentation_link();
 	}

@@ -87,124 +87,37 @@ if ( $has_analytics ) {
 		</div>
 
 		<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js hourly and daily pattern visualization with dynamic data
+		wp_enqueue_script(
+			'wp-mcp-ai-analytics-patterns',
+			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/analytics-patterns.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-analytics-patterns',
+			'wpMcpAiPatternData',
+			array(
+				'hourlyPattern' => array_values( $pattern_data['hourly_pattern'] ),
+				'dailyPattern'  => array_values( $pattern_data['daily_pattern'] ),
+				'labels'        => array(
+					'tokensUsed'  => __( 'Tokens Used', 'mcp-ai-wpoos' ),
+					'hourlyTitle' => __( 'Hourly Usage Pattern', 'mcp-ai-wpoos' ),
+					'dailyTitle'  => __( 'Daily Usage Pattern (by Day of Week)', 'mcp-ai-wpoos' ),
+					'dayLabels'   => array(
+						__( 'Sun', 'mcp-ai-wpoos' ),
+						__( 'Mon', 'mcp-ai-wpoos' ),
+						__( 'Tue', 'mcp-ai-wpoos' ),
+						__( 'Wed', 'mcp-ai-wpoos' ),
+						__( 'Thu', 'mcp-ai-wpoos' ),
+						__( 'Fri', 'mcp-ai-wpoos' ),
+						__( 'Sat', 'mcp-ai-wpoos' ),
+					),
+				),
+			)
+		);
 		?>
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			if (typeof Chart !== 'undefined') {
-				// Hourly Pattern Chart.
-				var hourlyCtx = document.getElementById('wp-mcp-ai-hourly-pattern-chart');
-				if (hourlyCtx) {
-					var hourlyPattern = <?php echo wp_json_encode( array_values( $pattern_data['hourly_pattern'] ) ); ?>;
-					var hourLabels = [];
-					for (var i = 0; i < 24; i++) {
-						hourLabels.push(i.toString().padStart(2, '0') + ':00');
-					}
-
-					new Chart(hourlyCtx.getContext('2d'), {
-						type: 'bar',
-						data: {
-							labels: hourLabels,
-							datasets: [{
-								label: '<?php esc_attr_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?>',
-								data: hourlyPattern,
-								backgroundColor: 'rgba(54, 162, 235, 0.6)',
-								borderColor: 'rgba(54, 162, 235, 1)',
-								borderWidth: 1
-							}]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: {
-									display: false
-								},
-								title: {
-									display: true,
-									text: '<?php esc_attr_e( 'Hourly Usage Pattern', 'mcp-ai-wpoos' ); ?>'
-								},
-								tooltip: {
-									callbacks: {
-										label: function(context) {
-											return context.parsed.y.toLocaleString() + ' tokens';
-										}
-									}
-								}
-							},
-							scales: {
-								y: {
-									beginAtZero: true,
-									ticks: {
-										callback: function(value) {
-											if (value >= 1000) {
-												return (value / 1000).toFixed(1) + 'K';
-											}
-											return value;
-										}
-									}
-								}
-							}
-						}
-					});
-				}
-
-				// Daily Pattern Chart.
-				var dailyCtx = document.getElementById('wp-mcp-ai-daily-pattern-chart');
-				if (dailyCtx) {
-					var dailyPattern = <?php echo wp_json_encode( array_values( $pattern_data['daily_pattern'] ) ); ?>;
-					var dayLabels = ['<?php echo esc_js( __( 'Sun', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Mon', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Tue', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Wed', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Thu', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Fri', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Sat', 'mcp-ai-wpoos' ) ); ?>'];
-
-					new Chart(dailyCtx.getContext('2d'), {
-						type: 'bar',
-						data: {
-							labels: dayLabels,
-							datasets: [{
-								label: '<?php esc_attr_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?>',
-								data: dailyPattern,
-								backgroundColor: 'rgba(75, 192, 192, 0.6)',
-								borderColor: 'rgba(75, 192, 192, 1)',
-								borderWidth: 1
-							}]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: {
-									display: false
-								},
-								title: {
-									display: true,
-									text: '<?php esc_attr_e( 'Daily Usage Pattern (by Day of Week)', 'mcp-ai-wpoos' ); ?>'
-								},
-								tooltip: {
-									callbacks: {
-										label: function(context) {
-											return context.parsed.y.toLocaleString() + ' tokens';
-										}
-									}
-								}
-							},
-							scales: {
-								y: {
-									beginAtZero: true,
-									ticks: {
-										callback: function(value) {
-											if (value >= 1000) {
-												return (value / 1000).toFixed(1) + 'K';
-											}
-											return value;
-										}
-									}
-								}
-							}
-						}
-					});
-				}
-			}
-		});
-		</script>
 	<?php else : ?>
 		<!-- No Data Notice -->
 		<div class="wp-mcp-ai-widget-notice" style="padding: 20px; background: #f7f7f7; border-left: 4px solid #2271b1; text-align: center;">
