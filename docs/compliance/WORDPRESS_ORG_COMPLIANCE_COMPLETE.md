@@ -88,15 +88,17 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 #### Configuration Files (1)
 - `.distignore` - AI file exclusions
 
-### v1.1.2 - Complete Freemium Elimination
+### v1.1.2 - Architectural Correction
 
-#### PHP Files (6)
+#### PHP Files (8)
 - `includes/admin/class-wp-mcp-ai-settings-dashboard.php` - Menu position (30→null)
-- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Pro gating removal (15 fields)
+- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Removed 12 pro integration settings
 - `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` - Menu position (56→null)
 - `includes/teams/class-wp-mcp-ai-team-cpt.php` - Menu position (58→null)
 - `includes/professions/class-wp-mcp-ai-profession-cpt.php` - Menu position (57→null)
 - `includes/class-wp-mcp-ai-ai-peer-cpt.php` - Menu position (57→null)
+- `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php` - New pro settings file (12 settings)
+- `addons/pro/mcp-ai-wpoos-pro.php` - Register pro integrations section
 
 #### Documentation Files (3)
 - `mcp-ai-wpoos.php` - Version 1.1.2
@@ -179,8 +181,8 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 
 All reviewer concerns addressed:
 - ✅ **No trial/freemium model** - Base plugin fully functional (PR #3741 + v1.1.2)
-- ✅ **No pro feature gating** - All 18 gated features eliminated (v1.1.2 completed)
-- ✅ **No disabled fields** - All 15 integration settings enabled in base (v1.1.2)
+- ✅ **No pro feature gating** - Proper architectural separation (v1.1.2)
+- ✅ **No misleading settings** - Settings match tool locations (v1.1.2)
 - ✅ **No hardcoded menu positions** - All 7 positions fixed to null/85 (v1.1.2 completed)
 - ✅ **No plugin directory storage** - Uses uploads directory (PR #3741)
 - ✅ **No forced attribution** - Opt-in only (PR #3741)
@@ -223,12 +225,13 @@ The following are NOT blockers but could be improved in future major releases:
 - Some menu position fixes
 
 ### v1.1.2 (February 16, 2026)
-- **Complete freemium elimination** - Removed ALL pro feature gating
+- **Architectural correction** - Moved pro integration settings to pro addon
 - **Complete menu position compliance** - Fixed ALL hardcoded positions
-- 15 disabled integration fields enabled
-- 15 "(Pro Version required)" messages removed
-- 5 hardcoded menu positions → null
-- Base plugin fully functional without pro addon
+- 12 pro integration settings relocated to pro addon
+- 6 hardcoded menu positions → null (1 admin + 5 CPTs)
+- Base plugin now only has settings for base tools
+- Pro addon adds its own settings section when active
+- Proper plugin architecture achieved
 
 ## Recommendation
 
