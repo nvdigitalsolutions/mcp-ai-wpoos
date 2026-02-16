@@ -567,12 +567,6 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueu
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
 }
 
-// Load LangChain.js enqueue manager (Phase 3: Orchestration & Agents).
-// Note: Excluded from WordPress.org deployment due to CDN dependencies.
-if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
-}
-
 // Load Web Worker enqueue manager (Phase 4: Performance & Non-Blocking UI).
 // Note: Excluded from WordPress.org deployment due to CDN dependencies.
 if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php' ) ) {

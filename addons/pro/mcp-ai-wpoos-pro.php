@@ -165,6 +165,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			}
 		}
 
+		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
+		$langchain_enqueue_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+		if ( file_exists( $langchain_enqueue_file ) ) {
+			require_once $langchain_enqueue_file;
+			// Class instantiates itself at end of file.
+		}
+
 		// Load Pro Workflow Builder (Phase 2.0.0 - Visual workflow builder with ReactFlow).
 		$workflow_builder_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-workflow-builder-page.php';
 		if ( file_exists( $workflow_builder_file ) ) {

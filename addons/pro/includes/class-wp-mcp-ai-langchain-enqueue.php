@@ -37,12 +37,8 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 * @return void
 	 */
 	public function register_scripts() {
-		// Only register if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
-		if ( ! $is_pro_available ) {
-			return;
-		}
-
+		// No need to check for pro - this file is in pro addon.
+		
 		// Tool adapter (NEW - thin wrapper, ~3KB minified).
 		wp_register_script(
 			'wp-mcp-ai-langchain-tool-adapter',
@@ -100,12 +96,8 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 * @return void
 	 */
 	public function maybe_enqueue_scripts() {
-		// Check if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
-		if ( ! $is_pro_available ) {
-			return;
-		}
-
+		// No need to check for pro - this file is in pro addon.
+		
 		// Check if LangChain orchestration feature flag is enabled.
 		$langchain_enabled = get_option( 'wp_mcp_ai_enable_langchain_orchestration', false );
 		if ( ! $langchain_enabled ) {
@@ -200,10 +192,10 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 * @return array Status information
 	 */
 	public static function get_feature_status() {
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
+		// Always true since we're in pro addon.
 		return array(
 			'enabled'                   => get_option( 'wp_mcp_ai_enable_langchain_orchestration', false ),
-			'embedded_provider_enabled' => $is_pro_available,
+			'embedded_provider_enabled' => true,
 			'has_transformers'          => defined( 'WP_MCP_AI_TRANSFORMERS_VERSION' ),
 			'has_webllm'                => class_exists( 'WP_MCP_AI_WebLLM_Enqueue' ),
 		);
