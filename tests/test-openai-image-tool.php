@@ -116,7 +116,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-content/uploads/', $result['url'] );
 		$this->assertSame( 'png', $result['format'] );
 		$this->assertSame( '1024x1536', $result['size'] );
-		$this->assertSame( 'high', $result['quality'] );
+		$this->assertSame( 'hd', $result['quality'] ); // 'high' is translated to 'hd'
 		$this->assertSame( 'gpt-image-test', $result['model'] );
 		$this->assertSame( 'b64_json', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
@@ -127,7 +127,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Successfully generated image', $result['text'] );
 		$this->assertStringContainsString( 'Revised prompt: A friendlier robot', $result['text'] );
 		$this->assertStringContainsString( '1024x1536', $result['text'] );
-		$this->assertStringContainsString( 'high', $result['text'] );
+		$this->assertStringContainsString( 'hd', $result['text'] ); // 'high' is translated to 'hd'
 
 		$attachment_id = $result['attachment_id'];
 		$this->assertNotEmpty( $attachment_id );
@@ -212,7 +212,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$payload = json_decode( $captured_request['args']['body'], true );
 		$this->assertIsArray( $payload );
 		$this->assertSame( '1536x1024', $payload['size'] );
-		$this->assertSame( 'high', $payload['quality'] );
+		$this->assertSame( 'hd', $payload['quality'] ); // 'high' is translated to 'hd' for OpenAI
 		$this->assertArrayHasKey( 'response_format', $payload );
 		$this->assertSame( 'url', $payload['response_format'] );
 
@@ -547,8 +547,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertSame( 'medium', $payload['quality'] );
-		$this->assertSame( 'medium', $result['quality'] );
+		$this->assertSame( 'standard', $payload['quality'] ); // 'medium' is translated to 'standard' for OpenAI
+		$this->assertSame( 'standard', $result['quality'] ); // Result reports translated value
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -608,8 +608,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertSame( 'high', $payload['quality'] );
-		$this->assertSame( 'high', $result['quality'] );
+		$this->assertSame( 'hd', $payload['quality'] ); // 'high' is translated to 'hd' for OpenAI
+		$this->assertSame( 'hd', $result['quality'] ); // Result reports translated value
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -670,9 +670,9 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		// Should have fallen back to 'medium' (gpt-image-1's default).
-		$this->assertSame( 'medium', $payload['quality'] );
-		$this->assertSame( 'medium', $result['quality'] );
+		// Should have fallen back to 'standard' (translated from 'medium', which is gpt-image-1's default).
+		$this->assertSame( 'standard', $payload['quality'] );
+		$this->assertSame( 'standard', $result['quality'] );
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
@@ -924,8 +924,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			$this->assertNotNull( $captured_request, 'Request not captured for quality: ' . var_export( $invalid_quality, true ) );
 			$payload = json_decode( $captured_request['args']['body'], true );
-			// All invalid qualities should fall back to 'medium'.
-			$this->assertSame( 'medium', $payload['quality'], "Quality should be 'medium' for invalid value: " . var_export( $invalid_quality, true ) );
+			// All invalid qualities should fall back to 'standard' (OpenAI's default).
+			$this->assertSame( 'standard', $payload['quality'], "Quality should be 'standard' for invalid value: " . var_export( $invalid_quality, true ) );
 
 			if ( ! empty( $result['attachment_id'] ) ) {
 				wp_delete_attachment( $result['attachment_id'], true );
