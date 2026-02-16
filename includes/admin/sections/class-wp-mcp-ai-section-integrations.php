@@ -338,22 +338,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
-			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
 			return array(
 				'gmail'            => array(
 					'id'     => 'gmail',
-					'label'  => $is_pro_active ? __( 'Gmail', 'mcp-ai-wpoos' ) : __( 'Gmail (Pro)', 'mcp-ai-wpoos' ),
+					'label'  => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
-					'pro'    => true,
 				),
 				'google_drive'     => array(
 					'id'     => 'google_drive',
-					'label'  => $is_pro_active ? __( 'Google Drive', 'mcp-ai-wpoos' ) : __( 'Google Drive (Pro)', 'mcp-ai-wpoos' ),
+					'label'  => __( 'Google Drive', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
-					'pro'    => true,
 				),
 				'crawl4ai'         => array(
 					'id'     => 'crawl4ai',
@@ -392,28 +388,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-cloud-upload',
 					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
-				'mailjet'          => array(
-					'id'     => 'mailjet',
-					'label'  => $is_pro_active ? __( 'Mailjet', 'mcp-ai-wpoos' ) : __( 'Mailjet (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-email-alt',
-					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
-					'pro'    => true,
-				),
-				// QuickBooks and iSAMS moved to Remote Sites.
-				'google_analytics' => array(
-					'id'     => 'google_analytics',
-					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-chart-bar',
-					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json' ),
-					'pro'    => true,
-				),
-				'ita_tariff'       => array(
-					'id'     => 'ita_tariff',
-					'label'  => $is_pro_active ? __( 'Trade.gov Tariff Rates', 'mcp-ai-wpoos' ) : __( 'Trade.gov Tariff Rates (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-admin-site',
-					'fields' => array( 'ita_tariff_api_key' ),
-					'pro'    => true,
-				),
 				'meta'             => array(
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'mcp-ai-wpoos' ),
@@ -425,27 +399,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
-				),
-				'plaid'            => array(
-					'id'     => 'plaid',
-					'label'  => $is_pro_active ? __( 'Plaid', 'mcp-ai-wpoos' ) : __( 'Plaid (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'plaid_client_id', 'plaid_secret', 'plaid_environment' ),
-					'pro'    => true,
-				),
-				'yahoo_sports'     => array(
-					'id'     => 'yahoo_sports',
-					'label'  => $is_pro_active ? __( 'Yahoo Sports', 'mcp-ai-wpoos' ) : __( 'Yahoo Sports (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-awards',
-					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret' ),
-					'pro'    => true,
-				),
-				'espn_sports'      => array(
-					'id'     => 'espn_sports',
-					'label'  => $is_pro_active ? __( 'ESPN Sports', 'mcp-ai-wpoos' ) : __( 'ESPN Sports (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-awards',
-					'fields' => array( 'espn_fantasy_espn_s2', 'espn_fantasy_swid' ),
-					'pro'    => true,
 				),
 				// iSAMS moved to Remote Sites.
 			);
