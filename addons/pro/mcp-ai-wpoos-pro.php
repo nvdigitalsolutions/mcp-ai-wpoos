@@ -125,8 +125,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 	/**
 	 * Load Pro admin sections.
 	 *
-	 * Loads the Performance monitoring section and other Pro-specific admin sections.
-	 * Also instantiates the Performance section to register its AJAX handlers.
+	 * Loads the Pro-specific admin section class files.
+	 * The sections are instantiated and registered via the container system
+	 * in settings-dashboard-init.php.
 	 *
 	 * @since 1.0.0
 	 */
@@ -135,34 +136,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		$performance_section_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 		if ( file_exists( $performance_section_file ) ) {
 			require_once $performance_section_file;
-
-			// Instantiate the Performance section to register AJAX handlers.
-			// The instance is needed early so AJAX hooks are registered before WordPress processes AJAX requests.
-			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
-				new WP_MCP_AI_Section_Performance();
-			}
 		}
 
 		// Load Pro Integrations section (Mailjet, Google Analytics, Fantasy Sports).
 		$pro_integrations_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
 		if ( file_exists( $pro_integrations_file ) ) {
 			require_once $pro_integrations_file;
-
-			// Instantiate the Pro Integrations section to register settings.
-			if ( class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
-				new WP_MCP_AI_Section_Pro_Integrations();
-			}
 		}
 
 		// Load Pro Providers section (Embedded LLM).
 		$pro_providers_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
 		if ( file_exists( $pro_providers_file ) ) {
 			require_once $pro_providers_file;
-
-			// Instantiate the Pro Providers section to register settings.
-			if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
-				new WP_MCP_AI_Section_Pro_Providers();
-			}
 		}
 
 		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
