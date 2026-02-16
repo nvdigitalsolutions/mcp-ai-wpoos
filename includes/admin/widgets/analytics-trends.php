@@ -89,110 +89,28 @@ if ( $has_analytics ) {
 		</div>
 
 		<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js analytics trend visualization with dynamic data
+		wp_enqueue_script(
+			'wp-mcp-ai-analytics-trends',
+			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/analytics-trends.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-analytics-trends',
+			'wpMcpAiTrendData',
+			array(
+				'dailyUsage' => $trend_data['daily_usage'],
+				'trend'      => $trend_data['trend'],
+				'labels'     => array(
+					'actualUsage' => __( 'Actual Usage', 'mcp-ai-wpoos' ),
+					'trendLine'   => __( 'Trend Line', 'mcp-ai-wpoos' ),
+					'chartTitle'  => __( 'Usage Trend Analysis', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 		?>
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			if (typeof Chart !== 'undefined') {
-				var ctx = document.getElementById('wp-mcp-ai-analytics-trend-chart');
-				if (ctx) {
-					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
-					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
-
-					// Prepare data points for chart.
-					var labels = [];
-					var dataPoints = [];
-					var trendLine = [];
-					var dayIndex = 0;
-
-					for (var date in dailyUsage) {
-						labels.push(date);
-						dataPoints.push(dailyUsage[date]);
-
-						// Calculate trend line point: y = slope * x + intercept
-						var trendValue = trendInfo.slope * dayIndex + trendInfo.intercept;
-						trendLine.push(Math.max(0, trendValue));
-						dayIndex++;
-					}
-
-					new Chart(ctx.getContext('2d'), {
-						type: 'line',
-						data: {
-							labels: labels,
-							datasets: [
-								{
-									label: '<?php esc_attr_e( 'Actual Usage', 'mcp-ai-wpoos' ); ?>',
-									data: dataPoints,
-									borderColor: 'rgba(54, 162, 235, 1)',
-									backgroundColor: 'rgba(54, 162, 235, 0.1)',
-									fill: true,
-									tension: 0.4,
-									pointRadius: 3,
-									pointHoverRadius: 5
-								},
-								{
-									label: '<?php esc_attr_e( 'Trend Line', 'mcp-ai-wpoos' ); ?>',
-									data: trendLine,
-									borderColor: 'rgba(255, 99, 132, 1)',
-									borderDash: [5, 5],
-									borderWidth: 2,
-									fill: false,
-									pointRadius: 0
-								}
-							]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: {
-									display: true,
-									position: 'top'
-								},
-								title: {
-									display: true,
-									text: '<?php esc_attr_e( 'Usage Trend Analysis', 'mcp-ai-wpoos' ); ?>'
-								},
-								tooltip: {
-									callbacks: {
-										label: function(context) {
-											var label = context.dataset.label || '';
-											if (label) {
-												label += ': ';
-											}
-											label += context.parsed.y.toLocaleString() + ' tokens';
-											return label;
-										}
-									}
-								}
-							},
-							scales: {
-								y: {
-									beginAtZero: true,
-									ticks: {
-										callback: function(value) {
-											if (value >= 1000000) {
-												return (value / 1000000).toFixed(1) + 'M';
-											} else if (value >= 1000) {
-												return (value / 1000).toFixed(1) + 'K';
-											}
-											return value;
-										}
-									}
-								},
-								x: {
-									ticks: {
-										maxRotation: 45,
-										minRotation: 45
-									}
-								}
-							}
-						}
-					});
-				}
-			}
-		});
-		</script>
 	<?php else : ?>
 		<!-- No Data / Implementation Notice -->
 		<div class="wp-mcp-ai-widget-notice" style="padding: 20px; background: #f7f7f7; border-left: 4px solid #2271b1; text-align: center;">

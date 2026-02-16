@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/find-orc-settings-document-toolkit',
-        'version' => 'dev-copilot/find-orc-settings-document-toolkit',
-        'reference' => 'ad87a0c6354b0507fa6c1ec78c3e6e9f78a9e8b8',
+        'pretty_version' => 'dev-copilot/enable-pro-dashboard-default',
+        'version' => 'dev-copilot/enable-pro-dashboard-default',
+        'reference' => '3397683b5cd7233f97d2eb62a28a4c332b1eec19',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/find-orc-settings-document-toolkit',
-            'version' => 'dev-copilot/find-orc-settings-document-toolkit',
-            'reference' => 'ad87a0c6354b0507fa6c1ec78c3e6e9f78a9e8b8',
+            'pretty_version' => 'dev-copilot/enable-pro-dashboard-default',
+            'version' => 'dev-copilot/enable-pro-dashboard-default',
+            'reference' => '3397683b5cd7233f97d2eb62a28a4c332b1eec19',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

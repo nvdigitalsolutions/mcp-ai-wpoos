@@ -64,6 +64,18 @@ if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
 }
 
 /**
+ * Define Pro Dashboard enabled constant.
+ *
+ * Defaults to true (Pro Dashboard features enabled).
+ * Set to false in wp-config.php to disable Pro Dashboard features.
+ * This ensures compliance with WordPress.org guidelines by not requiring
+ * license activation or trial periods for core Pro Dashboard functionality.
+ */
+if ( ! defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) ) {
+	define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );
+}
+
+/**
  * Check PHP version compatibility before loading any classes.
  *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
