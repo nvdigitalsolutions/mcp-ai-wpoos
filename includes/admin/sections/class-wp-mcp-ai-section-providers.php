@@ -1000,6 +1000,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 			);
 
+			// Merge Pro provider subtabs if Pro addon is active.
+			// This allows the Embedded LLM subtab to appear alongside other providers.
+			if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+				$pro_providers_section = WP_MCP_AI_Settings_Registry::get_section( 'pro_providers' );
+				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_subtab_groups' ) ) {
+					// Get Pro provider subtabs using reflection to call protected method.
+					$reflection = new ReflectionClass( $pro_providers_section );
+					if ( $reflection->hasMethod( 'get_subtab_groups' ) ) {
+						$method = $reflection->getMethod( 'get_subtab_groups' );
+						$method->setAccessible( true );
+						$pro_groups = $method->invoke( $pro_providers_section );
+						if ( is_array( $pro_groups ) ) {
+							// Merge Pro subtabs into the main groups array.
+							$groups = array_merge( $groups, $pro_groups );
+						}
+					}
+				}
+			}
+
 			// Filter out null values (e.g., embedded provider in base version).
 			return array_filter( $groups );
 		}
@@ -1109,6 +1128,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			$active_group = $subtab_groups[ $active_subtab ];
+
+			// If this is the 'embedded' subtab, delegate to Pro Providers section.
+			if ( 'embedded' === $active_subtab && class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+				$pro_providers_section = WP_MCP_AI_Settings_Registry::get_section( 'pro_providers' );
+				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_fields' ) ) {
+					// Get Pro provider fields using reflection to call protected method.
+					$reflection = new ReflectionClass( $pro_providers_section );
+					if ( $reflection->hasMethod( 'get_fields' ) ) {
+						$method = $reflection->getMethod( 'get_fields' );
+						$method->setAccessible( true );
+						$pro_fields = $method->invoke( $pro_providers_section );
+						
+						// Render Pro provider fields for the embedded subtab.
+						foreach ( $active_group['fields'] as $key ) {
+							if ( isset( $pro_fields[ $key ] ) ) {
+								// Use Pro section's render_field method if available, otherwise use our own.
+								if ( method_exists( $pro_providers_section, 'render_field' ) ) {
+									$render_method = $reflection->getMethod( 'render_field' );
+									$render_method->setAccessible( true );
+									$render_method->invoke( $pro_providers_section, $key, $pro_fields[ $key ] );
+								} else {
+									$this->render_field( $key, $pro_fields[ $key ] );
+								}
+							}
+						}
+						return;
+					}
+				}
+			}
 
 			// Render fields for the active sub-tab.
 			if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
