@@ -41,7 +41,7 @@ This implementation adds comprehensive connection testing for mesh peer sites an
 - `addons/pro/includes/class-wp-mcp-ai-pro-mesh-peer-bidirectional-sync.php` - Sync logic
 - `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php` - UI integration
 - `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php` - Test method + hooks
-- `docs/pro/mesh-peer-remote-sites-integration.md` - Pro documentation
+- `addons/pro/docs/mesh-peer-remote-sites-integration.md` - Pro documentation
 
 ## Technical Architecture
 
@@ -327,7 +327,7 @@ add_action('wp_mcp_ai_pro_remote_site_deleted', ...);
    - Integration with AI Peers
 
 **Pro Addon:**
-1. **Integration Guide:** `docs/pro/mesh-peer-remote-sites-integration.md`
+1. **Integration Guide:** `addons/pro/docs/mesh-peer-remote-sites-integration.md`
    - Getting started
    - Adding mesh peers
    - Bidirectional sync explanation
