@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-code-leak-in-dashboard',
+        'version' => 'dev-copilot/fix-code-leak-in-dashboard',
+        'reference' => 'a3f6b23c61b950f78d7521477ac002ea76214b00',
         'pretty_version' => 'dev-copilot/enable-pro-dashboard-default',
         'version' => 'dev-copilot/enable-pro-dashboard-default',
         'reference' => '3397683b5cd7233f97d2eb62a28a4c332b1eec19',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-code-leak-in-dashboard',
+            'version' => 'dev-copilot/fix-code-leak-in-dashboard',
+            'reference' => 'a3f6b23c61b950f78d7521477ac002ea76214b00',
             'pretty_version' => 'dev-copilot/enable-pro-dashboard-default',
             'version' => 'dev-copilot/enable-pro-dashboard-default',
             'reference' => '3397683b5cd7233f97d2eb62a28a4c332b1eec19',
