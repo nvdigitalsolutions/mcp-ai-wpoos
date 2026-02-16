@@ -12,21 +12,21 @@
   - Prevents conflicts with other plugins per WordPress.org guidelines
   - Related to PR #3741 compliance fixes
 
-- **Pro Feature Gating Removed (February 16, 2026)**: Eliminated freemium model violations
-  - Removed 15 disabled fields with "Pro Version required" messages from integration settings
-  - All integrations now fully functional in base plugin:
-    - Mailjet (email service)
-    - Google Analytics 4
-    - Plaid (financial services)
-    - Yahoo Fantasy Sports
-    - ESPN Fantasy Sports
-  - Removed conditional pro checks that blocked base functionality
-  - Changed notices from "Pro required" to "Pro enables multiple connections"
-  - WordPress.org prohibits freemium models - base must work fully without upgrade prompts
+- **Pro Integration Settings Architecture (February 16, 2026)**: Moved pro-only integration settings to pro addon
+  - Moved Mailjet settings to pro addon (5 fields) - Tools exist in pro
+  - Moved Google Analytics settings to pro addon (3 fields) - Tools exist in pro
+  - Moved Yahoo Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Moved ESPN Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Created `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php`
+  - Base plugin now only includes settings for base tools
+  - Pro addon adds its own settings when active
+  - Better architecture: Settings match tool location
+  - Still WordPress.org compliant: No gating, proper separation
 
 ### Changed
 - Updated plugin version to 1.1.2 across all files
-- Integration settings now enable all features without pro addon requirement
+- Base plugin integration settings reduced to base-only features
+- Pro addon integration settings added for pro-only features
 
 ## [Unreleased]
 
