@@ -258,6 +258,11 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 
 		// Check that embedded is auto-enabled with default model.
 		$this->assertArrayHasKey( 'embedded', $providers, 'Embedded provider should auto-enable on fresh install when Pro is active' );
+
+		// Verify that the effective settings return the correct defaults.
+		$effective = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings();
+		$this->assertTrue( $effective['enabled'], 'Effective settings should show provider as enabled' );
+		$this->assertEquals( WP_MCP_AI_Admin_Settings::DEFAULT_EMBEDDED_MODEL, $effective['model'], 'Effective settings should use default model' );
 	}
 
 	/**

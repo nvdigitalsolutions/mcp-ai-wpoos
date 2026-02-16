@@ -1075,8 +1075,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$settings = get_option( self::OPTION_NAME, array() );
 			}
 
+			// Check if Pro addon is active and properly initialized.
+			$pro_active = defined( 'WP_MCP_AI_PRO_VERSION' ) && WP_MCP_AI_PRO_VERSION;
+
 			// Auto-enable when Pro is active and not explicitly disabled.
-			$enabled = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : defined( 'WP_MCP_AI_PRO_VERSION' );
+			$enabled = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : $pro_active;
 
 			// Use default model when not explicitly set (distinguish between unset and empty string).
 			$model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : self::DEFAULT_EMBEDDED_MODEL;
