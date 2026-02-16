@@ -84,7 +84,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 			'show_ui'            => true,
 			'show_in_menu'       => true,
 			'menu_icon'          => 'dashicons-networking',
-			'menu_position'      => 57,
+			'menu_position'      => null,
 			'query_var'          => false,
 			'rewrite'            => false,
 			'capability_type'    => 'post',

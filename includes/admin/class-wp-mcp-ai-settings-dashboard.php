@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
 				'dashicons-format-chat',
-				30
+				null // Let WordPress automatically position the menu
 			);
 
 			// Remove the auto-generated submenu item (has same title as top-level menu).

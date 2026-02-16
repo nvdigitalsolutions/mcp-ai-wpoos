@@ -76,10 +76,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$gmail_notice  = $is_pro_active ? ' <em>' . __( '(Pro also supports multiple connections via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>' : ' <em>' . __( '(Base supports 1 connection. Pro enables multiple via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>';
-			$drive_notice  = $is_pro_active ? ' <em>' . __( '(Pro also supports multiple connections via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>' : ' <em>' . __( '(Base supports 1 connection. Pro enables multiple via Remote Sites.)', 'mcp-ai-wpoos' ) . '</em>';
-			$pro_notice    = $is_pro_active ? '' : ' <em>' . __( '(Pro Version required)', 'mcp-ai-wpoos' ) . '</em>';
+			// Note: Gmail and Drive support 1 connection in base, multiple in pro via Remote Sites.
+			$gmail_notice  = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
+			$drive_notice  = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
 
 			return array(
 				// Gmail OAuth.
@@ -205,46 +204,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => '',
 				),
 
-				// Mailjet.
-				'mailjet_api_key'                   => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Get this from your Mailjet account under API Keys.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-				'mailjet_api_secret'                => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet Secret Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Mailjet uses Basic Authentication (API Key + Secret Key), not OAuth.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-				'mailjet_from_email'                => array(
-					'type'        => 'email',
-					'label'       => __( 'Mailjet From Email', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" email address for Mailjet messages. Must be a verified sender in your Mailjet account.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => 'noreply@example.com',
-					'disabled'    => ! $is_pro_active,
-				),
-				'mailjet_from_name'                 => array(
-					'type'        => 'text',
-					'label'       => __( 'Mailjet From Name', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" name for Mailjet messages.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => 'My Site',
-					'disabled'    => ! $is_pro_active,
-				),
-				'mailjet_webhook_secret'            => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet Webhook Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Optional secret for verifying webhook requests from Mailjet.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-
 				// remove.bg API.
 				'removebg_api_key'                  => array(
 					'type'         => 'password',
@@ -260,31 +219,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 				// PayHere, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
 				// These settings have been removed. Please use Remote Sites page to manage these connections.
-
-				// Google Analytics.
-				'google_analytics_property_id'      => array(
-					'type'        => 'text',
-					'label'       => __( 'Google Analytics Property ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '123456789',
-					'disabled'    => ! $is_pro_active,
-				),
-				'google_analytics_credentials'      => array(
-					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics Service Account JSON (Legacy)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Service account credentials in JSON format from Google Cloud Console. This field is being phased out in favor of google_analytics_credentials_json.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '{"type": "service_account", ...}',
-					'disabled'    => ! $is_pro_active,
-					'rows'        => 5,
-				),
-				'google_analytics_credentials_json' => array(
-					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics 4 Credentials JSON', 'mcp-ai-wpoos' ),
-					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '{"type": "service_account", "project_id": "your-project", ...}',
-					'disabled'    => ! $is_pro_active,
-					'rows'        => 8,
-				),
 
 				// ITA Tariff Rate API.
 				'ita_tariff_api_key'                => array(
@@ -367,74 +301,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						/* translators: %s: URL to Plaid Dashboard */
 						__( 'Client ID from Plaid dashboard for financial account integration. Get your credentials from %s. Used for optional bank account sync in Financial Planner Toolkit.', 'mcp-ai-wpoos' ),
 						'<a href="https://dashboard.plaid.com/" target="_blank">Plaid Dashboard</a>'
-					) . $pro_notice,
+					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
+					// Removed pro gating - WordPress.org compliance
 				),
 				'plaid_secret'                      => array(
 					'type'         => 'password',
 					'label'        => __( 'Plaid Secret Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
+					// Removed pro gating - WordPress.org compliance
 				),
 				'plaid_environment'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Plaid Environment', 'mcp-ai-wpoos' ),
-					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'sandbox'     => __( 'Sandbox (Testing)', 'mcp-ai-wpoos' ),
 						'development' => __( 'Development', 'mcp-ai-wpoos' ),
 						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'sandbox',
-					'disabled'    => ! $is_pro_active,
-				),
-
-				// Yahoo Fantasy Sports.
-				'yahoo_client_id'                   => array(
-					'type'         => 'text',
-					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to Yahoo Developer */
-						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.', 'mcp-ai-wpoos' ),
-						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
-					) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
-				),
-				'yahoo_client_secret'               => array(
-					'type'         => 'password',
-					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-
-				// ESPN Fantasy Sports.
-				'espn_fantasy_espn_s2'              => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN S2 Cookie', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to ESPN authentication docs */
-						__( 'ESPN S2 authentication cookie for accessing private leagues. Required along with SWID cookie. See %s for how to obtain these cookies from your browser.', 'mcp-ai-wpoos' ),
-						'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
-					) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-				'espn_fantasy_swid'                 => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN SWID Cookie', 'mcp-ai-wpoos' ),
-					'description'  => __( 'ESPN SWID authentication cookie for accessing private leagues. Required along with S2 cookie. Extract from browser after logging into ESPN Fantasy.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
+					// Removed pro gating - WordPress.org compliance
 				),
 
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
@@ -448,22 +338,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
-			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
 			return array(
 				'gmail'            => array(
 					'id'     => 'gmail',
-					'label'  => $is_pro_active ? __( 'Gmail', 'mcp-ai-wpoos' ) : __( 'Gmail (Pro)', 'mcp-ai-wpoos' ),
+					'label'  => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
-					'pro'    => true,
 				),
 				'google_drive'     => array(
 					'id'     => 'google_drive',
-					'label'  => $is_pro_active ? __( 'Google Drive', 'mcp-ai-wpoos' ) : __( 'Google Drive (Pro)', 'mcp-ai-wpoos' ),
+					'label'  => __( 'Google Drive', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
-					'pro'    => true,
 				),
 				'crawl4ai'         => array(
 					'id'     => 'crawl4ai',
@@ -502,28 +388,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-cloud-upload',
 					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
-				'mailjet'          => array(
-					'id'     => 'mailjet',
-					'label'  => $is_pro_active ? __( 'Mailjet', 'mcp-ai-wpoos' ) : __( 'Mailjet (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-email-alt',
-					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
-					'pro'    => true,
-				),
-				// QuickBooks and iSAMS moved to Remote Sites.
-				'google_analytics' => array(
-					'id'     => 'google_analytics',
-					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-chart-bar',
-					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json' ),
-					'pro'    => true,
-				),
-				'ita_tariff'       => array(
-					'id'     => 'ita_tariff',
-					'label'  => $is_pro_active ? __( 'Trade.gov Tariff Rates', 'mcp-ai-wpoos' ) : __( 'Trade.gov Tariff Rates (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-admin-site',
-					'fields' => array( 'ita_tariff_api_key' ),
-					'pro'    => true,
-				),
 				'meta'             => array(
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'mcp-ai-wpoos' ),
@@ -535,27 +399,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
-				),
-				'plaid'            => array(
-					'id'     => 'plaid',
-					'label'  => $is_pro_active ? __( 'Plaid', 'mcp-ai-wpoos' ) : __( 'Plaid (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'plaid_client_id', 'plaid_secret', 'plaid_environment' ),
-					'pro'    => true,
-				),
-				'yahoo_sports'     => array(
-					'id'     => 'yahoo_sports',
-					'label'  => $is_pro_active ? __( 'Yahoo Sports', 'mcp-ai-wpoos' ) : __( 'Yahoo Sports (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-awards',
-					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret' ),
-					'pro'    => true,
-				),
-				'espn_sports'      => array(
-					'id'     => 'espn_sports',
-					'label'  => $is_pro_active ? __( 'ESPN Sports', 'mcp-ai-wpoos' ) : __( 'ESPN Sports (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-awards',
-					'fields' => array( 'espn_fantasy_espn_s2', 'espn_fantasy_swid' ),
-					'pro'    => true,
 				),
 				// iSAMS moved to Remote Sites.
 			);

@@ -3,7 +3,7 @@
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Set WP_MCP_AI_BASE_VERSION to false in wp-config.php for Full Version (519 tools including Pro add-ons with WooCommerce, JetEngine CPT/Taxonomy AI integration, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
- * Version: 1.1.1
+ * Version: 1.1.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Tested up to: 6.9
@@ -41,7 +41,7 @@ if ( function_exists( 'wp_mcp_ai_core_loaded' ) ) {
  * These constants are needed throughout the plugin, including in error handlers.
  */
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
-	define( 'WP_MCP_AI_VERSION', '1.1.1' );
+	define( 'WP_MCP_AI_VERSION', '1.1.2' );
 }
 if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
 	define( 'WP_MCP_AI_FILE', __FILE__ );
@@ -565,12 +565,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
 // Note: Excluded from WordPress.org deployment due to CDN dependencies.
 if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
-}
-
-// Load LangChain.js enqueue manager (Phase 3: Orchestration & Agents).
-// Note: Excluded from WordPress.org deployment due to CDN dependencies.
-if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
 }
 
 // Load Web Worker enqueue manager (Phase 4: Performance & Non-Blocking UI).
