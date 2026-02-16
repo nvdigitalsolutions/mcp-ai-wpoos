@@ -681,6 +681,30 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// Pro Providers section is only available with Pro addon.
+		$this->singleton(
+			'section.pro_providers',
+			function () {
+				// Return null if Pro Providers section is not available (Pro addon not active).
+				if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
+					return null;
+				}
+				return new WP_MCP_AI_Section_Pro_Providers();
+			}
+		);
+
+		// Pro Integrations section is only available with Pro addon.
+		$this->singleton(
+			'section.pro_integrations',
+			function () {
+				// Return null if Pro Integrations section is not available (Pro addon not active).
+				if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
+					return null;
+				}
+				return new WP_MCP_AI_Section_Pro_Integrations();
+			}
+		);
+
 		$this->singleton(
 			'section.advanced',
 			function () {

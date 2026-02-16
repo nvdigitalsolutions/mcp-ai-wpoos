@@ -120,13 +120,25 @@ function wp_mcp_ai_init_settings_dashboard() {
 			WP_MCP_AI_Settings_Registry::register_section( $performance_section );
 		}
 
+		// Pro Providers section is only available with Pro addon.
+		$pro_providers_section = $container->get( 'section.pro_providers' );
+		if ( null !== $pro_providers_section ) {
+			WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
+		}
+
+		// Pro Integrations section is only available with Pro addon.
+		$pro_integrations_section = $container->get( 'section.pro_integrations' );
+		if ( null !== $pro_integrations_section ) {
+			WP_MCP_AI_Settings_Registry::register_section( $pro_integrations_section );
+		}
+
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
+		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "NV oOS" menu item.
