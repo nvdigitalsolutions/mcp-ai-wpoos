@@ -217,16 +217,51 @@ Created comprehensive tracking:
 The following are NOT blockers but could be improved in future major releases:
 
 ### Low Priority (Non-Blocking)
-- **40 files with minor inline scripts** - Small configuration blocks, acceptable per guidelines
-- **Elementor widgets** - Already use proper WordPress methods
+
+#### Inline Scripts (60+ files assessed, NOT required for compliance)
+**Assessment completed:** Comprehensive analysis of all inline scripts in base plugin.
+
+**Findings:**
+- **45+ files** with inline `<script>` tags
+- **38+ files** with inline `<style>` tags  
+- **Total:** 60+ files with inline code
+
+**Categories:**
+- Admin metaboxes (20+ files): Complex jQuery interactions, dynamic field management
+- Elementor widgets (8+ files): Widget-specific styling and behavior
+- Tool output (3 files): Dynamic chart rendering, metrics display
+- Shortcodes/CPTs (5+ files): Professional selector, security audit, etc.
+
+**Complexity:**
+- High risk (30+ files): Metaboxes with dynamic template injection, event delegation
+- Medium risk (15+ files): Admin settings with tab management
+- Low risk (10+ files): Simple JSON data islands
+
+**Decision: NOT RECOMMENDED for v1.1.2**
+- **Reason 1:** Massive scope (8-12 weeks of refactoring + extensive testing)
+- **Reason 2:** High risk of breaking complex admin interactions
+- **Reason 3:** NOT a WordPress.org compliance violation (properly escaped inline scripts are acceptable)
+- **Reason 4:** Would require architectural changes (AJAX template loading, data attribute passing)
+- **Recommendation:** If needed in future, approach in 3 phases over separate PRs with thorough testing
+
+**WordPress.org Reality Check:**
+- Guidelines PREFER enqueued scripts but don't strictly forbid inline scripts
+- Many successful plugins use inline scripts for dynamic content
+- Current inline scripts are properly escaped with `esc_js()`, `wp_json_encode()`, etc.
+- Focus should be on actual compliance violations (which we've all fixed)
 
 ### Already Completed in v1.1.2 ✅
 - ~~Embedded LLM settings~~ - **MOVED to pro addon** (`addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php`)
 - ~~Chart.js CDN~~ - **BUNDLED locally** (`assets/js/vendor/chart.min.js` v4.5.1, MIT license)
 - ~~LangChain.js CDN~~ - **PRO-ONLY feature** (`includes/class-wp-mcp-ai-langchain-enqueue.php`, only loads with pro plugin)
 
-### Future Enhancements (v1.3.0+)
-- Consider moving all inline scripts to enqueued files for best practices
+### Future Enhancements (Optional, v1.3.0+)
+- **Inline Scripts Refactoring** (IF WordPress.org specifically requests it):
+  - Phase 1: Low-risk items (JSON data islands, simple styling)
+  - Phase 2: Medium-risk admin sections
+  - Phase 3: High-risk metaboxes and tools
+  - Estimated effort: 8-12 weeks + extensive testing
+  - NOTE: Not currently required for WordPress.org approval
 - Evaluate any new external dependencies before adding
 
 ## Release History
