@@ -1118,7 +1118,7 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 ### For Developers (GitHub Clone)
 
 > **✅ Production-Ready Repository**  
-> This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
+> This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading configured by default in composer.json. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
 
 If you're cloning from GitHub:
 
@@ -1142,7 +1142,8 @@ pwd  # Should show the plugins path
 # npm install && npm run build
 
 # Optional: Only run if you need to update dependencies or add dev tools
-# composer install --no-dev --classmap-authoritative
+# Note: Autoloader optimization is now configured by default in composer.json
+# composer install --no-dev
 ```
 
 **⚠️ Cloudways Important Notes:**
@@ -1171,7 +1172,8 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```bash
 # Only if you need to rebuild assets or modify dependencies:
 npm install && npm run build
-composer install --no-dev --classmap-authoritative
+# Note: Autoloader optimization is now configured by default in composer.json
+composer install --no-dev
 ```
 
 #### Final Steps
@@ -2964,8 +2966,8 @@ cd mcp-ai-wpoos
 # Verify you're in the right place
 pwd  # Should show the full plugins path
 
-# Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+# Install dependencies (autoloader optimization is configured by default)
+npm install && composer install --no-dev
 ```
 
 **For Local Development or VPS:**
@@ -2979,9 +2981,9 @@ npm install && composer install --no-dev --optimize-autoloader
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
    cd mcp-ai-wpoos
    
-   # Install dependencies BEFORE moving/copying
+   # Install dependencies BEFORE moving/copying (optimization is configured by default)
    npm install
-   composer install --no-dev --optimize-autoloader
+   composer install --no-dev
    
    # THEN copy to WordPress plugins directory
    cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
@@ -2992,7 +2994,7 @@ npm install && composer install --no-dev --optimize-autoloader
    cd /path/to/wordpress/wp-content/plugins/
    git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
    cd mcp-ai-wpoos
-   npm install && composer install --no-dev --optimize-autoloader
+   npm install && composer install --no-dev
    ```
 
 #### Chat Not Working
