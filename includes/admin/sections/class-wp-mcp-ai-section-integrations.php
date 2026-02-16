@@ -204,46 +204,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => '',
 				),
 
-				// Mailjet.
-				'mailjet_api_key'                   => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Get this from your Mailjet account under API Keys.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'mailjet_api_secret'                => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet Secret Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Mailjet uses Basic Authentication (API Key + Secret Key), not OAuth.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'mailjet_from_email'                => array(
-					'type'        => 'email',
-					'label'       => __( 'Mailjet From Email', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" email address for Mailjet messages. Must be a verified sender in your Mailjet account.', 'mcp-ai-wpoos' ),
-					'placeholder' => 'noreply@example.com',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'mailjet_from_name'                 => array(
-					'type'        => 'text',
-					'label'       => __( 'Mailjet From Name', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" name for Mailjet messages.', 'mcp-ai-wpoos' ),
-					'placeholder' => 'My Site',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'mailjet_webhook_secret'            => array(
-					'type'         => 'password',
-					'label'        => __( 'Mailjet Webhook Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Optional secret for verifying webhook requests from Mailjet.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
-				),
-
 				// remove.bg API.
 				'removebg_api_key'                  => array(
 					'type'         => 'password',
@@ -259,31 +219,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 				// PayHere, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
 				// These settings have been removed. Please use Remote Sites page to manage these connections.
-
-				// Google Analytics.
-				'google_analytics_property_id'      => array(
-					'type'        => 'text',
-					'label'       => __( 'Google Analytics Property ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'mcp-ai-wpoos' ),
-					'placeholder' => '123456789',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'google_analytics_credentials'      => array(
-					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics Service Account JSON (Legacy)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Service account credentials in JSON format from Google Cloud Console. This field is being phased out in favor of google_analytics_credentials_json.', 'mcp-ai-wpoos' ),
-					'placeholder' => '{"type": "service_account", ...}',
-					// Removed pro gating - WordPress.org compliance
-					'rows'        => 5,
-				),
-				'google_analytics_credentials_json' => array(
-					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics 4 Credentials JSON', 'mcp-ai-wpoos' ),
-					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields.', 'mcp-ai-wpoos' ),
-					'placeholder' => '{"type": "service_account", "project_id": "your-project", ...}',
-					// Removed pro gating - WordPress.org compliance
-					'rows'        => 8,
-				),
 
 				// ITA Tariff Rate API.
 				'ita_tariff_api_key'                => array(
@@ -389,50 +324,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'sandbox',
-					// Removed pro gating - WordPress.org compliance
-				),
-
-				// Yahoo Fantasy Sports.
-				'yahoo_client_id'                   => array(
-					'type'         => 'text',
-					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to Yahoo Developer */
-						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.', 'mcp-ai-wpoos' ),
-						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'yahoo_client_secret'               => array(
-					'type'         => 'password',
-					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
-				),
-
-				// ESPN Fantasy Sports.
-				'espn_fantasy_espn_s2'              => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN S2 Cookie', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: URL to ESPN authentication docs */
-						__( 'ESPN S2 authentication cookie for accessing private leagues. Required along with SWID cookie. See %s for how to obtain these cookies from your browser.', 'mcp-ai-wpoos' ),
-						'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
-				),
-				'espn_fantasy_swid'                 => array(
-					'type'         => 'password',
-					'label'        => __( 'ESPN SWID Cookie', 'mcp-ai-wpoos' ),
-					'description'  => __( 'ESPN SWID authentication cookie for accessing private leagues. Required along with S2 cookie. Extract from browser after logging into ESPN Fantasy.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
 					// Removed pro gating - WordPress.org compliance
 				),
 
