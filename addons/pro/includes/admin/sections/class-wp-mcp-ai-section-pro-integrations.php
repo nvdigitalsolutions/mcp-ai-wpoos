@@ -206,5 +206,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 				),
 			);
 		}
+
+		/**
+		 * Render the section content.
+		 */
+		public function render() {
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
+
+			// Get the active group.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return;
+			}
+
+			$active_group = $subtab_groups[ $active_subtab ];
+
+			// Render fields for the active sub-tab.
+			foreach ( $active_group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
+			}
+		}
 	}
 }
