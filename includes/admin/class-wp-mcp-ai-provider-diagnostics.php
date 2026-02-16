@@ -474,7 +474,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
-				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
+				if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) :
 					// Get effective embedded provider settings with defaults applied.
 					$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
 					$enable_embedded   = $embedded_settings['enabled'];
@@ -1395,8 +1395,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_embedded( $settings ) {
-			// Check if in base version (embedded not available).
-			if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			// Check if Pro version is not available (embedded requires Pro).
+			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is only available in the Pro version.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
