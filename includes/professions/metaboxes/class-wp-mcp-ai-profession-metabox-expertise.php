@@ -20,7 +20,6 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * Constructor.
 	 */
 	public function __construct() {
-		parent::__construct();
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
