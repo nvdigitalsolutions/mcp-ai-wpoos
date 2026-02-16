@@ -133,12 +133,12 @@ function wp_mcp_ai_init_settings_dashboard() {
 		}
 
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
+		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "NV oOS" menu item.
