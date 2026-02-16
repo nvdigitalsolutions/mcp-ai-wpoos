@@ -70,15 +70,13 @@ spl_autoload_register(
 			
 			// Handle both absolute paths (Pro sections) and relative paths (base sections).
 			// Check if path is already absolute (cross-platform compatible).
-			// Unix/Linux: starts with /
-			// Windows: starts with drive letter (e.g., C:\) or UNC path (\\)
 			$is_absolute = (
+				// Already contains the base path (Pro sections with WP_MCP_AI_PRO_PATH).
+				0 === strpos( $file, WP_MCP_AI_PATH ) ||
 				// Unix/Linux absolute path.
 				0 === strpos( $file, '/' ) ||
-				// Already contains the base path.
-				0 === strpos( $file, WP_MCP_AI_PATH ) ||
-				// Windows drive letter (e.g., C:\).
-				( strlen( $file ) >= 3 && ':' === $file[1] && DIRECTORY_SEPARATOR === $file[2] ) ||
+				// Windows drive letter (e.g., C:\ or C:/).
+				( strlen( $file ) >= 3 && ':' === $file[1] && ( '\\' === $file[2] || '/' === $file[2] ) ) ||
 				// Windows UNC path (e.g., \\server\share).
 				0 === strpos( $file, '\\\\' )
 			);

@@ -66,10 +66,24 @@ spl_autoload_register(
         
         if ( isset( $section_files[ $class_name ] ) ) {
             $file = $section_files[ $class_name ];
+            
             // Handle both absolute paths (Pro sections) and relative paths (base sections).
-            if ( strpos( $file, WP_MCP_AI_PATH ) !== 0 && strpos( $file, '/' ) !== 0 ) {
+            // Check if path is already absolute (cross-platform compatible).
+            $is_absolute = (
+                // Already contains the base path (Pro sections with WP_MCP_AI_PRO_PATH).
+                0 === strpos( $file, WP_MCP_AI_PATH ) ||
+                // Unix/Linux absolute path.
+                0 === strpos( $file, '/' ) ||
+                // Windows drive letter (e.g., C:\ or C:/).
+                ( strlen( $file ) >= 3 && ':' === $file[1] && ( '\\' === $file[2] || '/' === $file[2] ) ) ||
+                // Windows UNC path (e.g., \\server\share).
+                0 === strpos( $file, '\\\\' )
+            );
+            
+            if ( ! $is_absolute ) {
                 $file = WP_MCP_AI_PATH . $file;
             }
+            
             if ( file_exists( $file ) ) {
                 require_once $file;
             }
@@ -94,9 +108,20 @@ This ensures:
 - Works in both scenarios (Pro as separate plugin or bundled)
 
 ### 2. Path Handling Enhancement
-The autoloader now handles both absolute and relative paths:
+The autoloader now handles both absolute and relative paths with cross-platform support:
 ```php
-if ( strpos( $file, WP_MCP_AI_PATH ) !== 0 && strpos( $file, '/' ) !== 0 ) {
+$is_absolute = (
+    // Already contains the base path (Pro sections with WP_MCP_AI_PRO_PATH).
+    0 === strpos( $file, WP_MCP_AI_PATH ) ||
+    // Unix/Linux absolute path.
+    0 === strpos( $file, '/' ) ||
+    // Windows drive letter (e.g., C:\ or C:/).
+    ( strlen( $file ) >= 3 && ':' === $file[1] && ( '\\' === $file[2] || '/' === $file[2] ) ) ||
+    // Windows UNC path (e.g., \\server\share).
+    0 === strpos( $file, '\\\\' )
+);
+
+if ( ! $is_absolute ) {
     $file = WP_MCP_AI_PATH . $file;
 }
 ```
@@ -104,6 +129,7 @@ if ( strpos( $file, WP_MCP_AI_PATH ) !== 0 && strpos( $file, '/' ) !== 0 ) {
 This allows:
 - Base sections: Use relative paths for simplicity
 - Pro sections: Use absolute paths with `WP_MCP_AI_PRO_PATH` constant
+- Cross-platform compatibility: Works on Unix/Linux, Windows, and network paths
 - Flexibility for future sections in different locations
 
 ### 3. Maintains Lazy Loading
