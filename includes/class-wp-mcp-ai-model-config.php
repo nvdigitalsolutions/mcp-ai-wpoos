@@ -2199,11 +2199,14 @@ class WP_MCP_AI_Model_Config {
 			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
 		}
 
-		// Check enable_embedded setting (defaults to false if not set).
+		// Check enable_embedded setting (defaults to true when Pro is active, matching field definition).
 		// Embedded LLM runs in the browser, so no API key is required - just check if enabled and a model is selected.
 		// Note: Embedded LLM is only available when Pro addon is active.
-		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : false;
-		if ( $enable_embedded && ! empty( $settings['embedded_model'] ) && defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+		// Auto-enable when Pro is active to match the field's 'default' => true in Pro Providers section.
+		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : defined( 'WP_MCP_AI_PRO_VERSION' );
+		// Use default model only if not explicitly set (distinguish between unset and empty string).
+		$embedded_model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+		if ( $enable_embedded && ! empty( $embedded_model ) && defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			$providers['embedded'] = __( 'Embedded LLM', 'mcp-ai-wpoos' );
 		}
 
