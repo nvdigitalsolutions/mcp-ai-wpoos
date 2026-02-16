@@ -119,7 +119,7 @@ class WP_MCP_AI_Team_CPT {
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
-			'menu_position'      => 58,
+			'menu_position'      => null,
 			'menu_icon'          => 'dashicons-groups',
 			'supports'           => array( 'title', 'editor' ),
 			'show_in_rest'       => false,

@@ -1,5 +1,19 @@
 # oOS – Changelog
 
+## [1.1.2] - 2026-02-16
+
+### Fixed - WordPress.org Compliance
+- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 4 Custom Post Types
+  - Changed Assistant CPT menu_position from 56 to null for automatic positioning
+  - Changed Team CPT menu_position from 58 to null for automatic positioning  
+  - Changed Profession CPT menu_position from 57 to null for automatic positioning
+  - Changed AI Peer CPT menu_position from 57 to null for automatic positioning
+  - Prevents conflicts with other plugins per WordPress.org guidelines
+  - Related to PR #3741 compliance fixes
+
+### Changed
+- Updated plugin version to 1.1.2 across all files
+
 ## [Unreleased]
 
 ### Added - February 2026
