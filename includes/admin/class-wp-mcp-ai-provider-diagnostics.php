@@ -475,10 +475,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
 				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
-					// Get effective enable_embedded value (defaults to true when Pro is active).
-					$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : defined( 'WP_MCP_AI_PRO_VERSION' );
-					// Get effective embedded_model value (defaults to Hermes when not set).
-					$embedded_model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+					// Get effective embedded provider settings with defaults applied.
+					$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+					$enable_embedded   = $embedded_settings['enabled'];
+					$embedded_model    = $embedded_settings['model'];
 					?>
 				<div class="card">
 					<h2><?php esc_html_e( '8. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
@@ -1401,8 +1401,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			// Get effective enable_embedded value (defaults to true when Pro is active).
-			$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : defined( 'WP_MCP_AI_PRO_VERSION' );
+			// Get effective embedded provider settings with defaults applied.
+			$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+			$enable_embedded   = $embedded_settings['enabled'];
 			if ( empty( $enable_embedded ) ) {
 				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is not enabled.', 'mcp-ai-wpoos' ) ) );
 				return;

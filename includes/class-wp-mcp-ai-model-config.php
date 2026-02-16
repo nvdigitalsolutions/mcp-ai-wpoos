@@ -2203,9 +2203,9 @@ class WP_MCP_AI_Model_Config {
 		// Embedded LLM runs in the browser, so no API key is required - just check if enabled and a model is selected.
 		// Note: Embedded LLM is only available when Pro addon is active.
 		// Auto-enable when Pro is active to match the field's 'default' => true in Pro Providers section.
-		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : defined( 'WP_MCP_AI_PRO_VERSION' );
-		// Use default model only if not explicitly set (distinguish between unset and empty string).
-		$embedded_model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+		$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+		$enable_embedded   = $embedded_settings['enabled'];
+		$embedded_model    = $embedded_settings['model'];
 		if ( $enable_embedded && ! empty( $embedded_model ) && defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			$providers['embedded'] = __( 'Embedded LLM', 'mcp-ai-wpoos' );
 		}
