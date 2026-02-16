@@ -124,6 +124,60 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 		}
 
 		/**
+		 * Get the active sub-tab.
+		 *
+		 * @return string
+		 */
+		protected function get_active_subtab() {
+			$subtab_groups = $this->get_subtab_groups();
+			$subtab        = '';
+
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// Use section-specific field name to avoid conflicts with other sections.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$subtab_field_name = 'subtab_' . $this->get_id();
+			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+			} elseif ( isset( $_POST['subtab'] ) ) {
+				// Fallback to legacy field name for backward compatibility.
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+
+			// Default to 'embedded' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
+				$subtab = 'embedded';
+			}
+
+			return $subtab;
+		}
+
+		/**
+		 * Render section fields.
+		 */
+		public function render() {
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
+
+			// Get the active group.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return;
+			}
+
+			$active_group = $subtab_groups[ $active_subtab ];
+
+			// Render fields for the active sub-tab.
+			foreach ( $active_group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
+			}
+		}
+
+		/**
 		 * Render embedded model management custom field.
 		 *
 		 * @param array $field_data Field configuration data.
