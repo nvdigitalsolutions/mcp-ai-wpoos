@@ -4,27 +4,40 @@ This document describes the production build process for the Open Operator Syste
 
 ## Overview
 
-The repository is configured to be cloned and used directly as a production plugin. This is achieved through optimized Composer autoloading that eliminates the need for a separate build step.
+The repository is configured to be cloned and used directly as a production plugin. This is achieved through optimized Composer autoloading (configured by default in composer.json) that eliminates the need for a separate build step.
 
 ## Composer Production Optimization
 
-### What Was Done
+### Configuration
 
-The repository has been optimized for production deployment using:
+As of February 2026, production optimization is **configured by default** in `composer.json`:
+
+```json
+{
+  "config": {
+    "optimize-autoloader": true,
+    "classmap-authoritative": true
+  }
+}
+```
+
+This means you can now simply run:
 
 ```bash
 # Base plugin
-composer install --no-dev --classmap-authoritative
+composer install --no-dev
 
 # Pro addon
 cd addons/pro
-composer install --no-dev --classmap-authoritative
+composer install --no-dev
 ```
+
+The `--classmap-authoritative` flag is no longer required (but is still supported for backward compatibility).
 
 ### Flags Explained
 
 - **`--no-dev`**: Excludes development dependencies (PHPUnit, coding standards, etc.)
-- **`--classmap-authoritative`**: Generates an optimized classmap and disables PSR-0/PSR-4 filesystem scanning
+- **`classmap-authoritative` (configured)**: Generates an optimized classmap and disables PSR-0/PSR-4 filesystem scanning
 
 ### Benefits
 
@@ -90,12 +103,12 @@ composer run lint
 ### Production Environment
 
 ```bash
-# Update dependencies
-composer update --no-dev --classmap-authoritative
+# Update dependencies (optimization is configured by default)
+composer update --no-dev
 
 # For pro addon
 cd addons/pro
-composer update --no-dev --classmap-authoritative
+composer update --no-dev
 ```
 
 ## CI/CD Integration
@@ -103,7 +116,7 @@ composer update --no-dev --classmap-authoritative
 The production build is automatically maintained in the repository. When dependencies are updated:
 
 1. Run `composer update` in development
-2. Run `composer install --no-dev --classmap-authoritative` before committing
+2. Run `composer install --no-dev` before committing (optimization is automatic)
 3. Commit the updated `vendor/composer/*` files
 
 ## File Structure
