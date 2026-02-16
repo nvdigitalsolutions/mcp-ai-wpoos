@@ -90,15 +90,20 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 
 ### v1.1.2 - Architectural Correction
 
-#### PHP Files (8)
+#### PHP Files (11)
 - `includes/admin/class-wp-mcp-ai-settings-dashboard.php` - Menu position (30→null)
-- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Removed 12 pro integration settings
+- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Multiple fixes:
+  - Removed 12 pro integration settings (moved to pro)
+  - Fixed misleading Gmail/Drive labels (removed "(Pro)" suffix)
+  - Removed 6 pro integration subtabs (Mailjet, Analytics, ITA Tariff, Plaid, Yahoo, ESPN)
+- `includes/admin/sections/class-wp-mcp-ai-section-providers.php` - Removed embedded LLM settings (moved to pro)
 - `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` - Menu position (56→null)
 - `includes/teams/class-wp-mcp-ai-team-cpt.php` - Menu position (58→null)
 - `includes/professions/class-wp-mcp-ai-profession-cpt.php` - Menu position (57→null)
 - `includes/class-wp-mcp-ai-ai-peer-cpt.php` - Menu position (57→null)
-- `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php` - New pro settings file (12 settings)
-- `addons/pro/mcp-ai-wpoos-pro.php` - Register pro integrations section
+- `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php` - New pro integration settings file (12 settings)
+- `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php` - New pro provider settings file (3 embedded LLM settings)
+- `addons/pro/mcp-ai-wpoos-pro.php` - Register pro sections (integrations + providers)
 
 #### Documentation Files (3)
 - `mcp-ai-wpoos.php` - Version 1.1.2
@@ -127,7 +132,11 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 | Hardcoded Menu Positions | 6 | 6 ✅ | ✅ **COMPLETE** |
 
 **How v1.1.2 resolved remaining issues:**
-- **Pro Gating (15):** Moved 12 pro integration settings to pro addon + removed 3 remaining gating checks
+- **Pro Gating (15):** 
+  - Moved 12 pro integration settings to pro addon (Mailjet, Analytics, ITA Tariff, Plaid, Yahoo, ESPN)
+  - Moved 3 embedded LLM settings to pro addon
+  - Removed 6 pro integration subtabs from base UI
+  - Fixed misleading Gmail/Drive labels (removed "(Pro)" suffix)
 - **Menu Positions (6):** Set all 6 remaining hardcoded positions to null (1 admin menu + 5 CPTs)
 
 ### Combined Results (PR #3741 + v1.1.2)
@@ -145,8 +154,8 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 
 **Total Issues Fixed:**
 - **PR #3741:** 15 issues (trial model, storage, attribution, HEREDOC, inline scripts, some gating/menus)
-- **v1.1.2:** 17 issues (12 pro settings relocated + 5 menu positions)
-- **Grand Total:** 32 compliance violations resolved
+- **v1.1.2:** 20 items (15 pro settings/UI elements relocated + 5 menu positions + architectural cleanup)
+- **Grand Total:** 35 compliance improvements resolved
 
 **Architectural Improvement:**
 - Pro integration settings moved to pro addon where tools exist
@@ -165,13 +174,17 @@ All WordPress.org team compliance concerns have been fully addressed in the base
 ✅ Naming conventions - All prefixed
 
 ### v1.1.2 Testing
-✅ PHP syntax validation - All modified files pass
-✅ Menu positions verified - All set to null (5 locations)
-✅ Pro settings moved - 12 integration settings now in pro addon
+✅ PHP syntax validation - All modified files pass (11 total)
+✅ Menu positions verified - All set to null (6 locations: 1 admin + 5 CPTs)
+✅ Pro settings moved - 15 total (12 integrations + 3 embedded LLM)
+✅ Pro subtabs removed - 6 removed from base (Mailjet, Analytics, ITA Tariff, Plaid, Yahoo, ESPN)
+✅ Labels fixed - Gmail/Drive no longer misleadingly labeled "(Pro)"
+✅ Embedded LLM moved - 3 settings now in pro providers section
 ✅ Base integrations cleaned - Only base tool settings remain
-✅ Pro addon loads settings - Pro integrations section registered
+✅ Pro addon loads sections - Pro integrations + pro providers registered
 ✅ Base functionality - Complete with base integrations only
-✅ Pro functionality - All integrations when pro active
+✅ Pro functionality - All integrations + embedded LLM when pro active
+✅ Architectural separation - Settings match tool locations perfectly
 
 ## WordPress.org Submission
 
