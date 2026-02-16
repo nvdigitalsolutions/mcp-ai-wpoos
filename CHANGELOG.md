@@ -3,16 +3,30 @@
 ## [1.1.2] - 2026-02-16
 
 ### Fixed - WordPress.org Compliance
-- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 4 Custom Post Types
+- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 5 locations
   - Changed Assistant CPT menu_position from 56 to null for automatic positioning
   - Changed Team CPT menu_position from 58 to null for automatic positioning  
   - Changed Profession CPT menu_position from 57 to null for automatic positioning
   - Changed AI Peer CPT menu_position from 57 to null for automatic positioning
+  - Changed Main Admin Menu position from 30 to null for automatic positioning
   - Prevents conflicts with other plugins per WordPress.org guidelines
   - Related to PR #3741 compliance fixes
 
+- **Pro Feature Gating Removed (February 16, 2026)**: Eliminated freemium model violations
+  - Removed 15 disabled fields with "Pro Version required" messages from integration settings
+  - All integrations now fully functional in base plugin:
+    - Mailjet (email service)
+    - Google Analytics 4
+    - Plaid (financial services)
+    - Yahoo Fantasy Sports
+    - ESPN Fantasy Sports
+  - Removed conditional pro checks that blocked base functionality
+  - Changed notices from "Pro required" to "Pro enables multiple connections"
+  - WordPress.org prohibits freemium models - base must work fully without upgrade prompts
+
 ### Changed
 - Updated plugin version to 1.1.2 across all files
+- Integration settings now enable all features without pro addon requirement
 
 ## [Unreleased]
 
