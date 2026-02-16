@@ -96,7 +96,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select a model for client-side inference. Models are downloaded on-demand to the user\'s browser cache when first used. Models marked with * support tool/function calling. Recommended: Hermes 2 Pro for best function calling accuracy.', 'mcp-ai-wpoos' ),
 					'options'     => $embedded_models,
-					'default'     => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+					'default'     => WP_MCP_AI_Admin_Settings::DEFAULT_EMBEDDED_MODEL,
 				),
 				'embedded_model_management' => array(
 					'type'        => 'custom',

@@ -38,6 +38,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
+		// Embedded LLM provider defaults (Pro addon).
+		const DEFAULT_EMBEDDED_MODEL = 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+
 		/**
 		 * Cached settings for the current request.
 		 *
@@ -1053,6 +1056,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
+		 * Get effective embedded provider settings with defaults applied.
+		 *
+		 * Returns the embedded provider enable status and model selection with defaults
+		 * applied when settings are not explicitly set. This ensures consistent behavior
+		 * across Model Config, Model Service, and Provider Diagnostics.
+		 *
+		 * @since 1.0.0
+		 * @param array $settings Optional. Settings array. If not provided, uses saved settings.
+		 * @return array Array with 'enabled' (bool) and 'model' (string) keys.
+		 */
+		public static function get_embedded_provider_effective_settings( $settings = null ) {
+			if ( null === $settings ) {
+				$settings = get_option( self::OPTION_NAME, array() );
+			}
+
+			// Check if Pro addon is active and properly initialized.
+			$pro_active = defined( 'WP_MCP_AI_PRO_VERSION' ) && ! empty( WP_MCP_AI_PRO_VERSION );
+
+			// Auto-enable when Pro is active and not explicitly disabled.
+			$enabled = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : $pro_active;
+
+			// Use default model when not explicitly set (distinguish between unset and empty string).
+			$model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : self::DEFAULT_EMBEDDED_MODEL;
+
+			return array(
+				'enabled' => $enabled,
+				'model'   => $model,
 			);
 		}
 
