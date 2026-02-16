@@ -1,0 +1,10 @@
+/**
+ * Create AI Team Button Styles
+ *
+ * @package WP_MCP_AI
+ */
+
+.wp-mcp-ai-create-team-btn {
+	margin-left: 10px;
+	vertical-align: middle;
+}

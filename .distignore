@@ -143,3 +143,8 @@ assets/js/workers
 # Keep these files (negation - they will be included)
 !readme.txt
 !LICENSE
+
+# AI-generated documentation and development files (WordPress.org compliance)
+archive/wordpress-org-submission/
+archive/development-phases/
+archive/production-status/
