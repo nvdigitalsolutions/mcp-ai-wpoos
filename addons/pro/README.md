@@ -382,12 +382,48 @@ This is **proprietary commercial software** and requires a valid license for use
 
 ⚠️ **IMPORTANT**: Installation requires a valid commercial license.
 
-The plugin is **production-ready** after deployment. All required dependencies are included:
+#### From ZIP File (Distributed Package)
+
+The ZIP distribution includes most dependencies (~35+ NPM packages) pre-packaged in `assets/vendor` for immediate functionality. CDN-loaded packages (chart.js, katex, d3, axios, mathjs, prettier) are loaded automatically from jsDelivr with fallback support.
 
 ```bash
-# Deployment via authorized channels only
-# Contact NV Digital Solutions for deployment instructions
+# Extract the plugin ZIP file to wp-content/plugins/
+# Plugin works immediately - no npm install required!
+# Optional: To include CDN packages locally for offline use
+cd wp-content/plugins/mcp-ai-wpoos-pro
+npm install --production
 ```
+
+**Note:** The ZIP distribution (~33MB) includes most vendor packages pre-packaged. Six CDN-loaded packages are loaded from jsDelivr for optimal performance. Run `npm install` only if you need these packages locally (offline installations).
+
+#### From Git Clone (Development)
+
+When cloning from the repository, all dependencies are already included:
+
+```bash
+# The repo includes fully pre-packaged assets/vendor directory (all 40+ packages)
+# No additional setup required - works immediately!
+cd addons/pro
+# Optional: Update dependencies
+npm install
+```
+
+**Note:** The Git repository includes the complete pre-packaged `assets/vendor` directory (~80MB with all packages including CDN ones) so the plugin works immediately after cloning without running `npm install`.
+
+### CDN-Loaded Packages (ZIP Distribution)
+
+For performance and size optimization, these packages are loaded from jsDelivr CDN with automatic fallback:
+- **chart.js** (~420KB) - Chart rendering
+- **katex** (~3.1MB) - LaTeX math rendering  
+- **d3** (~864KB) - Data visualization
+- **axios** (~1.6MB) - HTTP client
+- **mathjs** (~17MB) - Advanced mathematics
+- **prettier** (~500KB) - Code formatting
+
+To disable CDN loading and use local copies:
+1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
+2. Enable "Disable CDN Loading" in plugin settings, OR  
+3. Run `npm install --production` after installation
 
 ### Development Setup (Authorized Developers Only)
 

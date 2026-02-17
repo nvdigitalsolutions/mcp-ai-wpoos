@@ -4,7 +4,29 @@ This document describes the production build process for the Open Operator Syste
 
 ## Overview
 
-The repository is configured to be cloned and used directly as a production plugin. This is achieved through optimized Composer autoloading (configured by default in composer.json) that eliminates the need for a separate build step.
+The repository is configured to be cloned and used directly as a production plugin. This is achieved through:
+1. Optimized Composer autoloading (configured by default in composer.json)
+2. Pre-packaged NPM dependencies in the Pro addon
+3. Optimized ZIP distributions that regenerate dependencies on installation
+
+## Distribution Strategy
+
+### Git Repository (Clone)
+- **Base Plugin**: Includes all PHP vendor dependencies (~13 packages)
+- **Pro Addon**: Includes all PHP vendor + pre-packaged `assets/vendor` directory (~80MB with all 40+ NPM packages including CDN ones)
+- **Ready to use**: Works immediately after cloning, no build step required
+
+### ZIP Distributions (Download)
+- **Base Plugin ZIP**: ~5.4MB - Includes PHP vendor, excludes development files
+- **Pro Addon ZIP**: ~33MB - Includes most vendor packages (~35+ packages), excludes only CDN-loaded packages
+- **Installation requirement**: Pro addon ZIP works immediately without npm install; CDN packages load from jsDelivr with fallback
+- **Build optimization**: The build process excludes ~23MB of CDN-loaded packages (chart.js, katex, d3, axios, mathjs, prettier) that are loaded from jsDelivr CDN
+
+This hybrid strategy ensures:
+- Cloned repositories work immediately with all packages (developers)
+- Distributed ZIPs are optimized (~33MB) and work immediately with CDN loading (users)
+- All installations end up with the same core functionality
+- CDN packages provide better performance and caching across sites
 
 ## Composer Production Optimization
 
@@ -45,6 +67,68 @@ The `--classmap-authoritative` flag is no longer required (but is still supporte
 2. **Production Ready**: No development dependencies in vendor directory
 3. **Smaller Footprint**: Reduced repository size by removing dev packages
 4. **Direct Clone**: Repository can be cloned directly into `wp-content/plugins/` and used
+
+## NPM Dependencies (Pro Addon)
+
+The Pro addon uses a hybrid approach for NPM dependencies to balance repository size, user experience, and performance:
+
+### Pre-packaged in Repository
+
+The `addons/pro/assets/vendor` directory (~80MB) is committed to the repository and contains all 40+ pre-built NPM packages. This allows developers who clone the repository to use the plugin immediately without running `npm install`.
+
+**Included packages**: All packages including sharp, pdfkit, cheerio, turndown, stripe, exceljs, docx, fluent-ffmpeg, chart.js, katex, d3, axios, mathjs, prettier, and 30+ more
+
+### Partially Packaged in ZIP Distributions
+
+The build process (`bin/build-plugin-zip.sh`) excludes only CDN-loaded packages from the Pro addon ZIP file to optimize size while maintaining immediate functionality:
+
+- **Repository size**: ~80MB vendor directory (all packages)
+- **Pro ZIP size**: ~33MB (excludes 6 CDN packages)
+- **Size savings**: ~23MB (CDN packages loaded from jsDelivr)
+- **Pre-packaged in ZIP**: ~35+ packages (~57MB)
+
+### Installation Process
+
+When users install the Pro addon from a ZIP file:
+
+**Immediate functionality** - The plugin works immediately without running `npm install`:
+- 35+ packages are pre-packaged in `assets/vendor`
+- 6 CDN packages load from jsDelivr with automatic fallback
+- No build step required
+
+**Optional - For offline installations**:
+```bash
+cd wp-content/plugins/mcp-ai-wpoos-pro
+npm install --production
+```
+
+The `postinstall` script runs `addons/pro/scripts/copy-dependencies.js`, which:
+1. Checks if CDN packages are already in `assets/vendor`
+2. If missing, copies them from `node_modules` to `assets/vendor`
+3. Applies cleanup (removes unnecessary files)
+
+### CDN-Loaded Packages
+
+These packages are excluded from the ZIP but loaded from CDN (jsDelivr) for optimal performance:
+- **chart.js** (~420KB) - Chart rendering
+- **katex** (~3.1MB) - LaTeX math rendering with fonts
+- **d3** (~864KB) - Data visualization
+- **axios** (~1.6MB) - HTTP client
+- **mathjs** (~17MB) - Advanced mathematics library
+- **prettier** (~500KB) - Code formatting
+
+**Total CDN savings**: ~23MB
+
+These packages:
+- Load faster from CDN (cached across sites)
+- Are automatically downloaded when needed
+- Have local fallback if CDN is unreachable
+- Can be installed locally with `npm install` for offline use
+
+To disable CDN loading and use only local copies:
+- Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
+- Enable "Disable CDN Loading" in plugin settings, OR
+- Run `npm install --production` (copies CDN packages to `assets/vendor`)
 
 ## Autoloader Details
 

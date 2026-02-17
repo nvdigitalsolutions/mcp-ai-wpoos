@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-professionals-cardiologist-oncologist-gastr',
-        'version' => 'dev-copilot/create-professionals-cardiologist-oncologist-gastr',
-        'reference' => 'f16196dde160cd26a7fab5bb5c0ffd40e4695ced',
+        'pretty_version' => 'dev-copilot/update-build-process-packages',
+        'version' => 'dev-copilot/update-build-process-packages',
+        'reference' => 'af20fe163f50c0d0b6d001746867ec3d2be10ab4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-professionals-cardiologist-oncologist-gastr',
-            'version' => 'dev-copilot/create-professionals-cardiologist-oncologist-gastr',
-            'reference' => 'f16196dde160cd26a7fab5bb5c0ffd40e4695ced',
+            'pretty_version' => 'dev-copilot/update-build-process-packages',
+            'version' => 'dev-copilot/update-build-process-packages',
+            'reference' => 'af20fe163f50c0d0b6d001746867ec3d2be10ab4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
