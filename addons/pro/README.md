@@ -422,8 +422,16 @@ For performance and size optimization, these packages are loaded from jsDelivr C
 
 ### System-Dependent Packages (ZIP Distribution)
 
-These packages require system-level dependencies and are excluded from the ZIP:
-- **canvas** (~2-50MB depending on binaries) - Requires system installation of libvips/Cairo for PDF OCR functionality
+These packages require system-level dependencies:
+
+**canvas** - PDF OCR functionality:
+- **Cloned Repo**: Canvas JavaScript library files included (72KB)
+- **ZIP Distribution**: Canvas excluded (users install when needed)  
+- **Usage**: PDF OCR tools require canvas with native binaries compiled for your platform
+- **Installation**: `cd addons/pro && npm install canvas`
+- **System Requirements**: Requires libvips (Linux), Cairo (macOS/Windows) for compilation
+
+The canvas JavaScript library is pre-packaged in cloned repositories (without native binaries). When you need PDF OCR functionality, run `npm install canvas` to compile the native binaries for your platform.
 
 To install system-dependent and CDN packages:
 1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR

@@ -167,6 +167,10 @@ composer.phar
 !addons/pro/assets/vendor/**/*.min.css
 !addons/pro/assets/vendor/**/*.js
 !addons/pro/assets/vendor/**/*.css
+
+# Exclude canvas native binaries (platform-specific, must be compiled via npm install)
+addons/pro/assets/vendor/canvas/build/
+
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html
