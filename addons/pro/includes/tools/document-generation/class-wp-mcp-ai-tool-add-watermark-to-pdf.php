@@ -58,6 +58,10 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the PDF to watermark.', 'mcp-ai-wpoos-pro' ),
 				),
+				'url'           => array(
+					'type'        => 'string',
+					'description' => __( 'URL of the PDF file to watermark (alternative to attachment_id).', 'mcp-ai-wpoos-pro' ),
+				),
 				'text'          => array(
 					'type'        => 'string',
 					'description' => __( 'Watermark text (e.g., "CONFIDENTIAL", "DRAFT", company name).', 'mcp-ai-wpoos-pro' ),
@@ -74,7 +78,7 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Watermark position. Default: diagonal', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'   => array( 'attachment_id', 'text' ),
+			'required'   => array( 'text' ),
 		);
 	}
 
@@ -103,13 +107,20 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Validate required parameters.
-		if ( empty( $arguments['attachment_id'] ) || empty( $arguments['text'] ) ) {
+		if ( empty( $arguments['text'] ) ) {
 			return array(
-				'error' => __( 'attachment_id and text are required.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'text parameter is required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
-		$attachment_id = absint( $arguments['attachment_id'] );
+		if ( empty( $arguments['attachment_id'] ) && empty( $arguments['url'] ) ) {
+			return array(
+				'error' => __( 'Either attachment_id or url is required.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$attachment_id = ! empty( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+		$url           = ! empty( $arguments['url'] ) ? $arguments['url'] : '';
 		$text          = sanitize_text_field( $arguments['text'] );
 		$opacity       = isset( $arguments['opacity'] ) ? floatval( $arguments['opacity'] ) : 0.3;
 		$position      = ! empty( $arguments['position'] ) ? $arguments['position'] : 'diagonal';
@@ -119,7 +130,7 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 
 		try {
 			// Add watermark to PDF.
-			$result = $this->add_watermark( $attachment_id, $text, $opacity, $position );
+			$result = $this->add_watermark( $attachment_id, $url, $text, $opacity, $position );
 
 			if ( is_wp_error( $result ) ) {
 				return array(
@@ -144,28 +155,69 @@ class WP_MCP_AI_Tool_Add_Watermark_To_PDF implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Add watermark to PDF.
 	 *
-	 * @param int    $attachment_id Attachment ID.
+	 * @param int    $attachment_id Attachment ID (0 if using URL).
+	 * @param string $url           PDF URL (empty if using attachment_id).
 	 * @param string $text          Watermark text.
 	 * @param float  $opacity       Opacity.
 	 * @param string $position      Position.
 	 * @return array|WP_Error Result array or error.
 	 */
-	protected function add_watermark( $attachment_id, $text, $opacity, $position ) {
-		$file_path = get_attached_file( $attachment_id );
+	protected function add_watermark( $attachment_id, $url, $text, $opacity, $position ) {
+		$file_path = null;
+		$temp_file = null;
 
-		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'file_not_found', __( 'PDF file not found.', 'mcp-ai-wpoos-pro' ) );
+		if ( ! empty( $attachment_id ) ) {
+			$file_path = get_attached_file( $attachment_id );
+
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error( 'file_not_found', __( 'PDF file not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+		} elseif ( ! empty( $url ) ) {
+			// Download URL to temp file.
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			$temp_file = download_url( $url );
+
+			if ( is_wp_error( $temp_file ) ) {
+				return new WP_Error(
+					'download_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to download PDF: %s', 'mcp-ai-wpoos-pro' ),
+						$temp_file->get_error_message()
+					)
+				);
+			}
+
+			$file_path = $temp_file;
+		}
+
+		if ( ! $file_path ) {
+			return new WP_Error( 'no_file', __( 'No file specified.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate it's a PDF.
 		$mime_type = mime_content_type( $file_path );
 		if ( 'application/pdf' !== $mime_type ) {
+			if ( $temp_file ) {
+				@unlink( $temp_file );
+			}
 			return new WP_Error( 'invalid_file', __( 'File is not a valid PDF.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Try TCPDF library.
 		if ( class_exists( '\TCPDF' ) ) {
-			return $this->add_watermark_with_tcpdf( $file_path, $text, $opacity, $position );
+			$result = $this->add_watermark_with_tcpdf( $file_path, $text, $opacity, $position );
+			if ( $temp_file ) {
+				@unlink( $temp_file );
+			}
+			return $result;
+		}
+
+		// Clean up temp file if we downloaded one.
+		if ( $temp_file ) {
+			@unlink( $temp_file );
 		}
 
 		// No suitable watermarking method available.

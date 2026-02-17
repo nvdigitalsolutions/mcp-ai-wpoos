@@ -414,6 +414,9 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		// If URL, download to temporary location.
 		if ( filter_var( $video_source, FILTER_VALIDATE_URL ) ) {
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = download_url( $video_source );
 
 			if ( is_wp_error( $temp_file ) ) {

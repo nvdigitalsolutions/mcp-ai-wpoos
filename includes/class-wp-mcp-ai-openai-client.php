@@ -1530,7 +1530,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$default_model = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			$default_size = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
-			$default_quality = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
+			$default_quality = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'standard';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
 
 			if ( ! in_array( $default_response_format, array( 'b64_json', 'url' ), true ) ) {
@@ -1541,11 +1541,22 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$size = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
 			$quality = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
 
-			// Sanitize quality to only allowed values: low, medium, high, auto.
-			// This prevents 400 errors from OpenAI API.
-			$allowed = array( 'low', 'medium', 'high', 'auto' );
-			if ( empty( $quality ) || ! in_array( $quality, $allowed, true ) ) {
-				$quality = 'medium';
+			// Translate quality values to OpenAI-compatible values.
+			// OpenAI API only accepts 'standard' and 'hd' for quality parameter.
+			// Map gpt-image quality values (low, medium, high, auto) to DALL-E values.
+			$quality_map = array(
+				'low'    => 'standard',
+				'medium' => 'standard',
+				'auto'   => 'standard',
+				'high'   => 'hd',
+			);
+
+			// If quality is in the map, translate it. Otherwise, validate it's a valid OpenAI value.
+			if ( isset( $quality_map[ $quality ] ) ) {
+				$quality = $quality_map[ $quality ];
+			} elseif ( ! in_array( $quality, array( 'standard', 'hd' ), true ) ) {
+				// Default to 'standard' if not a valid OpenAI quality value.
+				$quality = 'standard';
 			}
 
 			$requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';

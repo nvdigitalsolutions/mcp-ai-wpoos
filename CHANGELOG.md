@@ -1,5 +1,33 @@
 # oOS – Changelog
 
+## [1.1.2] - 2026-02-16
+
+### Fixed - WordPress.org Compliance
+- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 5 locations
+  - Changed Assistant CPT menu_position from 56 to null for automatic positioning
+  - Changed Team CPT menu_position from 58 to null for automatic positioning  
+  - Changed Profession CPT menu_position from 57 to null for automatic positioning
+  - Changed AI Peer CPT menu_position from 57 to null for automatic positioning
+  - Changed Main Admin Menu position from 30 to null for automatic positioning
+  - Prevents conflicts with other plugins per WordPress.org guidelines
+  - Related to PR #3741 compliance fixes
+
+- **Pro Integration Settings Architecture (February 16, 2026)**: Moved pro-only integration settings to pro addon
+  - Moved Mailjet settings to pro addon (5 fields) - Tools exist in pro
+  - Moved Google Analytics settings to pro addon (3 fields) - Tools exist in pro
+  - Moved Yahoo Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Moved ESPN Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Created `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php`
+  - Base plugin now only includes settings for base tools
+  - Pro addon adds its own settings when active
+  - Better architecture: Settings match tool location
+  - Still WordPress.org compliant: No gating, proper separation
+
+### Changed
+- Updated plugin version to 1.1.2 across all files
+- Base plugin integration settings reduced to base-only features
+- Pro addon integration settings added for pro-only features
+
 ## [Unreleased]
 
 ### Added - February 2026

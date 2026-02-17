@@ -4,11 +4,28 @@ AI-powered PDF, Word, and Excel document generation for WordPress.
 
 ## Overview
 
-The Document Generation Toolkit provides three pro-tier tools that leverage AI to create professional documents from natural language descriptions:
+The Document Generation Toolkit provides 13 professional document generation and manipulation tools:
 
-- **pro_pdf** - Generate PDF documents
-- **pro_word** - Generate Word (.docx) documents  
-- **pro_excel_document** - Generate Excel (.xlsx) spreadsheets
+### AI-Powered Document Generation (3)
+- **pro_pdf_document** - Advanced AI-powered PDF generation with templates and formatting
+- **pro_word_document** - Advanced AI-powered Word document generation
+- **pro_excel_document** - Advanced AI-powered Excel spreadsheet generation
+
+### Simplified Document Generation (3)
+- **generate_pdf** - Quick PDF generation (simpler interface)
+- **generate_word** - Quick Word document generation
+- **generate_excel** - Quick Excel spreadsheet generation
+
+### PDF Manipulation Tools (5)
+- **extract_pdf_text** - Extract text content from PDF files
+- **html_to_pdf** - Convert HTML content to PDF documents
+- **merge_pdfs** - Combine multiple PDF files into one
+- **add_watermark_to_pdf** - Add text or image watermarks to PDFs
+- **generate_invoice_pdf** - Generate professional invoice PDFs
+
+### Excel Data Tools (2)
+- **excel_data_import** - Import data from Excel spreadsheets
+- **excel_data_export** - Export data to Excel spreadsheets
 
 ## Requirements
 
@@ -67,7 +84,11 @@ If you installed base + pro as separate plugins:
 
 ## Tools
 
-### pro_pdf - PDF Document Generation
+### AI-Powered Document Generation
+
+These tools use AI to generate professional documents from natural language descriptions.
+
+#### pro_pdf_document - PDF Document Generation
 
 Generate professional PDF documents from AI-generated content.
 
@@ -97,7 +118,7 @@ $result = $registry->execute_tool('pro_pdf', [
 ], $context);
 ```
 
-### pro_word - Word Document Generation
+#### pro_word_document - Word Document Generation
 
 Generate Word documents with rich formatting and templates.
 
@@ -172,6 +193,210 @@ $result = $registry->execute_tool('pro_excel_document', [
         ['cell' => 'D3', 'formula' => '=B3-C3'],
         ['cell' => 'D4', 'formula' => '=B4-C4']
     ]
+], $context);
+```
+
+### Simplified Document Generation
+
+These tools provide simpler interfaces for quick document generation by delegating to the advanced Pro tools.
+
+#### generate_pdf - Quick PDF Generation
+
+Generate PDF documents with a simplified parameter set.
+
+**Parameters:**
+- `content` (required) - Content to include in the PDF
+- `title` - Document title
+
+**Example:**
+```php
+$result = $registry->execute_tool('generate_pdf', [
+    'content' => 'This is a simple PDF document.',
+    'title' => 'My Document'
+], $context);
+```
+
+#### generate_word - Quick Word Generation
+
+Generate Word documents with basic formatting.
+
+**Parameters:**
+- `content` (required) - Content to include
+- `title` - Document title
+
+#### generate_excel - Quick Excel Generation
+
+Generate Excel spreadsheets from data.
+
+**Parameters:**
+- `data` (required) - Data to include
+- `title` - Spreadsheet title
+
+### PDF Manipulation Tools
+
+These tools work with existing PDF files without requiring AI.
+
+#### extract_pdf_text - PDF Text Extraction
+
+Extract text content from PDF documents for processing or analysis.
+
+**Requirements:** `pdftotext` command-line tool (poppler-utils package)
+
+**Parameters:**
+- `attachment_id` - WordPress attachment ID of PDF file
+- `url` - URL of PDF file (alternative to attachment_id)
+- `max_pages` - Maximum number of pages to extract
+
+**Example:**
+```php
+$result = $registry->execute_tool('extract_pdf_text', [
+    'attachment_id' => 123,
+    'max_pages' => 10
+], $context);
+```
+
+#### html_to_pdf - HTML to PDF Conversion
+
+Convert HTML content into PDF documents with CSS styling support.
+
+**Requirements:** DomPDF (Composer) OR wkhtmltopdf command-line tool
+
+**Parameters:**
+- `html` (required) - HTML content to convert
+- `title` - PDF document title
+- `filename` - Output filename (without extension)
+- `page_size` - a4, letter, legal (default: a4)
+- `orientation` - portrait, landscape (default: portrait)
+
+**Example:**
+```php
+$result = $registry->execute_tool('html_to_pdf', [
+    'html' => '<h1>Hello World</h1><p>This is a test.</p>',
+    'title' => 'Test Document',
+    'page_size' => 'letter'
+], $context);
+```
+
+#### merge_pdfs - PDF Merging
+
+Combine multiple PDF files into a single document.
+
+**Requirements:** pdftk command-line tool OR TCPDF library
+
+**Parameters:**
+- `attachment_ids` (required) - Array of WordPress attachment IDs
+- `title` - Title for merged document
+- `filename` - Output filename (without extension)
+
+**Example:**
+```php
+$result = $registry->execute_tool('merge_pdfs', [
+    'attachment_ids' => [123, 124, 125],
+    'title' => 'Combined Report'
+], $context);
+```
+
+#### add_watermark_to_pdf - PDF Watermarking
+
+Add text watermarks to PDF documents for branding or security.
+
+**Requirements:** TCPDF library
+
+**Parameters:**
+- `attachment_id` (required) - WordPress attachment ID of PDF
+- `text` (required) - Watermark text
+- `opacity` - Watermark opacity (0.0 to 1.0, default: 0.3)
+- `position` - center, diagonal, top, bottom (default: diagonal)
+
+**Example:**
+```php
+$result = $registry->execute_tool('add_watermark_to_pdf', [
+    'attachment_id' => 123,
+    'text' => 'CONFIDENTIAL',
+    'opacity' => 0.5,
+    'position' => 'diagonal'
+], $context);
+```
+
+#### generate_invoice_pdf - Invoice Generation
+
+Generate professional invoice PDFs with itemized billing and calculations.
+
+**Requirements:** DomPDF library
+
+**Parameters:**
+- `invoice_number` (required) - Invoice number or ID
+- `items` (required) - Array of invoice items
+- `date` - Invoice date (YYYY-MM-DD)
+- `due_date` - Payment due date
+- `bill_to` - Billing recipient information
+- `subtotal` - Subtotal amount
+- `tax_rate` - Tax rate percentage
+- `total` - Total amount
+- `currency` - Currency code (default: USD)
+
+**Example:**
+```php
+$result = $registry->execute_tool('generate_invoice_pdf', [
+    'invoice_number' => 'INV-2025-001',
+    'items' => [
+        ['description' => 'Web Design', 'quantity' => 1, 'rate' => 5000, 'amount' => 5000],
+        ['description' => 'Development', 'quantity' => 40, 'rate' => 150, 'amount' => 6000]
+    ],
+    'date' => '2025-01-15',
+    'due_date' => '2025-02-15',
+    'currency' => 'USD'
+], $context);
+```
+
+### Excel Data Tools
+
+Tools for importing and exporting Excel data without AI.
+
+#### excel_data_import - Excel Import
+
+Import data from Excel spreadsheets for processing or database import.
+
+**Requirements:** PHPSpreadsheet library
+
+**Parameters:**
+- `attachment_id` (required) - WordPress attachment ID of Excel file
+- `sheet_index` - Sheet index to import (0-based, default: 0)
+- `has_headers` - Whether first row contains headers (default: true)
+- `max_rows` - Maximum number of rows to import
+
+**Example:**
+```php
+$result = $registry->execute_tool('excel_data_import', [
+    'attachment_id' => 123,
+    'sheet_index' => 0,
+    'has_headers' => true,
+    'max_rows' => 1000
+], $context);
+```
+
+#### excel_data_export - Excel Export
+
+Export data arrays to Excel spreadsheets for reporting and data sharing.
+
+**Requirements:** PHPSpreadsheet library
+
+**Parameters:**
+- `data` (required) - Array of data rows
+- `headers` - Column headers array
+- `title` - Spreadsheet title
+- `filename` - Output filename (without extension)
+
+**Example:**
+```php
+$result = $registry->execute_tool('excel_data_export', [
+    'data' => [
+        ['John', 'Doe', 'john@example.com'],
+        ['Jane', 'Smith', 'jane@example.com']
+    ],
+    'headers' => ['First Name', 'Last Name', 'Email'],
+    'title' => 'Contact List',
+    'filename' => 'contacts-export'
 ], $context);
 ```
 
