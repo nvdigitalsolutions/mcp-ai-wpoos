@@ -119,11 +119,26 @@ These packages are excluded from the ZIP but loaded from CDN (jsDelivr) for opti
 
 **Total CDN savings**: ~23MB
 
-These packages:
+### System-Dependent Packages
+
+These packages require system-level dependencies and are excluded from the ZIP:
+- **canvas** (~2-50MB) - Requires libvips (Linux) or Cairo (macOS/Windows) for PDF OCR
+- **facebook-nodejs-business-sdk** (~28MB) - Large SDK excluded by default
+
+**Note**: Canvas requires system-level libraries to be installed on the server. It cannot be bundled effectively as it needs to compile native bindings for the specific platform.
+
+### How Excluded Packages Work
+
+**CDN packages**:
 - Load faster from CDN (cached across sites)
 - Are automatically downloaded when needed
 - Have local fallback if CDN is unreachable
 - Can be installed locally with `npm install` for offline use
+
+**System-dependent packages**:
+- Require `npm install` to compile native bindings
+- Need system libraries installed (libvips, Cairo, etc.)
+- Cannot be pre-compiled and bundled in ZIP
 
 To disable CDN loading and use only local copies:
 - Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR

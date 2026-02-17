@@ -420,10 +420,17 @@ For performance and size optimization, these packages are loaded from jsDelivr C
 - **mathjs** (~17MB) - Advanced mathematics
 - **prettier** (~500KB) - Code formatting
 
-To disable CDN loading and use local copies:
+### System-Dependent Packages (ZIP Distribution)
+
+These packages require system-level dependencies and are excluded from the ZIP:
+- **canvas** (~2-50MB depending on binaries) - Requires system installation of libvips/Cairo for PDF OCR functionality
+
+To install system-dependent and CDN packages:
 1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
 2. Enable "Disable CDN Loading" in plugin settings, OR  
 3. Run `npm install --production` after installation
+
+**Note**: Canvas requires system-level libraries (libvips on Linux, Cairo on macOS/Windows) to be installed on the server for PDF OCR functionality.
 
 ### Development Setup (Authorized Developers Only)
 
