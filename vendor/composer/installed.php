@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-vector-storage-tools',
         'version' => 'dev-copilot/enhance-vector-storage-tools',
-        'reference' => '7281b6f559a35b99569d7298a47cb839f65ad665',
+        'reference' => '0828f65913f4765097c44a6d01046f3ba7e8fca8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -67,7 +67,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-vector-storage-tools',
             'version' => 'dev-copilot/enhance-vector-storage-tools',
-            'reference' => '7281b6f559a35b99569d7298a47cb839f65ad665',
+            'reference' => '0828f65913f4765097c44a6d01046f3ba7e8fca8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

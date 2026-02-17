@@ -94,11 +94,11 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 	 * Check format suitability for vector stores.
 	 *
 	 * @param string $file_ext File extension.
-	 * @param string $purpose  Upload purpose.
+	 * @param string $purpose  Upload purpose (not currently used, reserved for future).
 	 * @return array Result with 'suitable', 'warnings', 'recommendations'.
 	 */
 	private static function check_format_suitability( $file_ext, $purpose ) {
-		$reliable_formats = array( 'pdf', 'txt', 'md', 'json', 'docx', 'html' );
+		$reliable_formats   = array( 'pdf', 'txt', 'md', 'json', 'docx', 'html' );
 		$unreliable_formats = array( 'csv', 'xlsx', 'xls', 'pptx', 'ppt' );
 
 		$result = array(

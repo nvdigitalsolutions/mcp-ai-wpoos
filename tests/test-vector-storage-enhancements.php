@@ -54,7 +54,7 @@ class Test_File_Preprocessing_Helper extends WP_UnitTestCase {
 		$this->assertEquals( 'UTF-8', $result['encoding'] );
 
 		// Clean up.
-		unlink( $temp_file );
+		wp_delete_file( $temp_file );
 	}
 
 	/**
