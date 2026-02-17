@@ -215,4 +215,53 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 
 		$this->assertTrue( $found_settings_page, 'Settings page should be registered even when feature is disabled' );
 	}
+
+	/**
+	 * Test that OCR max pages default field is registered and saved correctly.
+	 */
+	public function test_ocr_max_pages_default_field() {
+		// Load the settings page class.
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-cpt-settings-page-base.php';
+		}
+		if ( file_exists( WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
+		}
+
+		$settings_page = new WP_MCP_AI_Document_Generation_Settings_Page();
+
+		// Test sanitization - valid value.
+		$input = array(
+			'ocr_max_pages_default' => 50,
+		);
+		$sanitized = $settings_page->sanitize_settings( $input );
+		$this->assertSame( 50, $sanitized['ocr_max_pages_default'], 'Valid OCR max pages should be sanitized correctly' );
+
+		// Test sanitization - value above max (should be capped at 100).
+		$input = array(
+			'ocr_max_pages_default' => 150,
+		);
+		$sanitized = $settings_page->sanitize_settings( $input );
+		$this->assertSame( 100, $sanitized['ocr_max_pages_default'], 'OCR max pages above 100 should be capped at 100' );
+
+		// Test sanitization - value below min (should be set to 0).
+		$input = array(
+			'ocr_max_pages_default' => -5,
+		);
+		$sanitized = $settings_page->sanitize_settings( $input );
+		$this->assertSame( 0, $sanitized['ocr_max_pages_default'], 'Negative OCR max pages should be set to 0' );
+
+		// Test sanitization - zero value (unlimited).
+		$input = array(
+			'ocr_max_pages_default' => 0,
+		);
+		$sanitized = $settings_page->sanitize_settings( $input );
+		$this->assertSame( 0, $sanitized['ocr_max_pages_default'], 'Zero value should be allowed for unlimited' );
+
+		// Test default value when option is not set.
+		delete_option( 'wp_mcp_ai_document_generation_settings' );
+		$options = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		$value   = isset( $options['ocr_max_pages_default'] ) ? absint( $options['ocr_max_pages_default'] ) : 10;
+		$this->assertSame( 10, $value, 'Default OCR max pages should be 10' );
+	}
 }

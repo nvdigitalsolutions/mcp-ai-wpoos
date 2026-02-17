@@ -38,10 +38,25 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		wp_enqueue_style(
+			'wp-mcp-ai-create-team-button',
+			WP_MCP_AI_URL . 'assets/css/admin/admin-create-team-button.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		wp_enqueue_style(
 			'wp-mcp-ai-create-team-modal',
 			WP_MCP_AI_URL . 'assets/css/admin-create-team-modal.css',
 			array(),
 			WP_MCP_AI_VERSION
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-create-team-button',
+			WP_MCP_AI_URL . 'assets/js/admin/admin-create-team-button.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
 		);
 
 		wp_enqueue_script(
@@ -50,6 +65,14 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 			array( 'jquery' ),
 			WP_MCP_AI_VERSION,
 			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-create-team-button',
+			'wpMcpAiCreateTeamButton',
+			array(
+				'buttonText' => __( 'Create AI Team', 'mcp-ai-wpoos' ),
+			)
 		);
 
 		wp_localize_script(
@@ -77,23 +100,6 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 	 * @return array Modified views.
 	 */
 	public static function add_create_button( $views ) {
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Create Team button positioning on this admin page only.
-		?>
-		<style>
-			.wp-mcp-ai-create-team-btn {
-				margin-left: 10px;
-				vertical-align: middle;
-			}
-		</style>
-		<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script to dynamically add Create Team button after Create Assistant button. ?>
-		<script type="text/javascript">
-			jQuery(document).ready(function($) {
-				// Add button after the Create AI Assistant button.
-				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-team-btn" id="wp-mcp-ai-open-create-team-modal"><?php echo esc_js( __( 'Create AI Team', 'mcp-ai-wpoos' ) ); ?></button>';
-				$('#wp-mcp-ai-open-create-modal').after(button);
-			});
-		</script>
-		<?php
 		return $views;
 	}
 

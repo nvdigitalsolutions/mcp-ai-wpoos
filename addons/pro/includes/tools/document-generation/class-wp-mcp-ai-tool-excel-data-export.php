@@ -56,7 +56,17 @@ class WP_MCP_AI_Tool_Excel_Data_Export implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties' => array(
 				'data'     => array(
 					'type'        => 'array',
-					'items'       => array( 'type' => 'array' ),
+					'items'       => array(
+						'type'  => 'array',
+						'items' => array(
+							'anyOf' => array(
+								array( 'type' => 'string' ),
+								array( 'type' => 'number' ),
+								array( 'type' => 'boolean' ),
+								array( 'type' => 'null' ),
+							),
+						),
+					),
 					'description' => __( 'Array of data rows to export. Each row is an array of cell values.', 'mcp-ai-wpoos-pro' ),
 				),
 				'headers'  => array(

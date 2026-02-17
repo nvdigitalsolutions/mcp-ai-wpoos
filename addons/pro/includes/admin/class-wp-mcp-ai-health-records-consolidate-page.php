@@ -68,6 +68,20 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		'generate_health_chart',
 		'guide_health_record_creation',
 		'parse_health_information',
+		// Document processing tools (from Document Generation toolkit).
+		'extract_pdf_text',          // Extract text from medical documents.
+		'pro_pdf_document',          // Generate professional health reports as PDFs.
+		'pro_word_document',         // Generate medical documents in Word format.
+		'pro_excel_document',        // Export health data to Excel for analysis.
+		'generate_pdf',              // Quick PDF generation for prescriptions/reports.
+		'generate_word',             // Quick Word document generation.
+		'generate_excel',            // Quick Excel generation for health data.
+		'html_to_pdf',               // Convert health records from HTML to PDF.
+		'merge_pdfs',                // Combine multiple medical documents.
+		'add_watermark_to_pdf',      // Add confidentiality watermarks.
+		'excel_data_import',         // Import health data from spreadsheets.
+		'excel_data_export',         // Export consolidated health data.
+		'generate_invoice_pdf',      // Generate medical billing invoices.
 		// Research tools.
 		'web_search',
 		'search_content',
@@ -269,6 +283,22 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						</ul>
 					</div>
 
+					<div class="wp-mcp-ai-document-tools-info">
+						<h3><?php esc_html_e( '📄 Document Processing Tools', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p><strong><?php esc_html_e( 'The AI assistant now has access to 13 document tools:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+						<ul>
+							<li><?php esc_html_e( 'Extract text from PDFs (lab reports, prescriptions)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate health reports (PDF, Word, Excel)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Import/export health data from spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Merge multiple medical documents', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Add confidentiality watermarks', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate medical billing invoices', 'mcp-ai-wpoos-pro' ); ?></li>
+						</ul>
+						<p>
+							<em><?php esc_html_e( 'Try: "Extract text from this lab report PDF" or "Generate a health summary for this member"', 'mcp-ai-wpoos-pro' ); ?></em>
+						</p>
+					</div>
+
 					<div class="wp-mcp-ai-consolidate-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
@@ -445,6 +475,45 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 							<p class="description">
 								<?php esc_html_e( 'Use the AI assistant below to help you create and manage health records. The AI can guide you through adding missing records, suggest necessary checkups, and help maintain complete health profiles.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
+							
+							<div class="wp-mcp-ai-document-capabilities">
+								<h3>
+									<span class="dashicons dashicons-media-document"></span>
+									<?php esc_html_e( 'Document Processing Capabilities', 'mcp-ai-wpoos-pro' ); ?>
+								</h3>
+								<div class="wp-mcp-ai-document-capabilities-grid">
+									<div>
+										<strong><?php esc_html_e( '📥 Extract & Import:', 'mcp-ai-wpoos-pro' ); ?></strong>
+										<ul>
+											<li><?php esc_html_e( 'Extract text from PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
+											<li><?php esc_html_e( 'Import Excel data', 'mcp-ai-wpoos-pro' ); ?></li>
+										</ul>
+									</div>
+									<div>
+										<strong><?php esc_html_e( '📄 Generate Documents:', 'mcp-ai-wpoos-pro' ); ?></strong>
+										<ul>
+											<li><?php esc_html_e( 'PDF health reports', 'mcp-ai-wpoos-pro' ); ?></li>
+											<li><?php esc_html_e( 'Word documents', 'mcp-ai-wpoos-pro' ); ?></li>
+											<li><?php esc_html_e( 'Excel spreadsheets', 'mcp-ai-wpoos-pro' ); ?></li>
+										</ul>
+									</div>
+									<div>
+										<strong><?php esc_html_e( '🔧 Manage Files:', 'mcp-ai-wpoos-pro' ); ?></strong>
+										<ul>
+											<li><?php esc_html_e( 'Merge PDFs', 'mcp-ai-wpoos-pro' ); ?></li>
+											<li><?php esc_html_e( 'Add watermarks', 'mcp-ai-wpoos-pro' ); ?></li>
+											<li><?php esc_html_e( 'Generate invoices', 'mcp-ai-wpoos-pro' ); ?></li>
+										</ul>
+									</div>
+								</div>
+								<p class="wp-mcp-ai-document-capabilities-examples">
+									<strong><?php esc_html_e( '💡 Example prompts:', 'mcp-ai-wpoos-pro' ); ?></strong><br>
+									<em>
+										<?php esc_html_e( '"Extract text from the uploaded lab report" • "Generate a health summary PDF for John Doe" • "Merge all medical documents into one PDF" • "Export medication list to Excel"', 'mcp-ai-wpoos-pro' ); ?>
+									</em>
+								</p>
+							</div>
+							
 							<div class="wp-mcp-ai-consolidate-chat">
 								<?php
 								// Render chat interface with comprehensive health management tools.

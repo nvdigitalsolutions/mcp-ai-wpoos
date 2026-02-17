@@ -131,3 +131,20 @@ Thumbs.db
 # Build artifacts
 build/
 dist/
+
+# JavaScript source maps (development only) - OPTIMIZATION #1
+*.js.map
+*.css.map
+
+# Sample and test PDF files - OPTIMIZATION #2
+vendor/*/*/tests/**/*.pdf
+vendor/*/*/*/tests/**/*.pdf
+
+# Facebook SDK (not used, CDN available if needed) - OPTIMIZATION #4
+assets/vendor/facebook-nodejs-business-sdk/
+
+# Canvas native binaries (platform-specific, requires system installation) - OPTIMIZATION #5
+# Node canvas requires system-level libraries (librsvg, cairo, pango, etc.)
+# These binaries are Linux-specific (~181MB) and won't work on other platforms
+# Users needing PDF OCR should install canvas via npm on their server
+assets/vendor/canvas/build/

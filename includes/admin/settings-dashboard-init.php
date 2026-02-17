@@ -32,13 +32,13 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-sa
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-page.php';
 
 // Register autoloader for settings sections (lazy loading).
-// This loads section class files only when they are actually instantiated,.
-
+// This loads section class files only when they are actually instantiated,
 // significantly improving admin page load performance.
 spl_autoload_register(
 	function ( $class_name ) {
 		// Map of section class names to their file paths.
 		$section_files = array(
+			// Base sections.
 			'WP_MCP_AI_Section_Overview'            => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
 			'WP_MCP_AI_Section_General'             => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
 			'WP_MCP_AI_Section_Chat_Client'         => 'includes/admin/sections/class-wp-mcp-ai-section-chat-client.php',
@@ -56,9 +56,35 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
 		);
 
+		// Add Pro sections if Pro addon is loaded.
+		// Pro sections are only available when WP_MCP_AI_PRO_VERSION is defined.
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$section_files['WP_MCP_AI_Section_Performance']      = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
+			$section_files['WP_MCP_AI_Section_Pro_Providers']    = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+			$section_files['WP_MCP_AI_Section_Pro_Integrations'] = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+		}
+
 		// Check if this is a section class we should autoload.
 		if ( isset( $section_files[ $class_name ] ) ) {
-			$file = WP_MCP_AI_PATH . $section_files[ $class_name ];
+			$file = $section_files[ $class_name ];
+			
+			// Handle both absolute paths (Pro sections) and relative paths (base sections).
+			// Check if path is already absolute (cross-platform compatible).
+			$is_absolute = (
+				// Already contains the base path (Pro sections with WP_MCP_AI_PRO_PATH).
+				0 === strpos( $file, WP_MCP_AI_PATH ) ||
+				// Unix/Linux absolute path.
+				0 === strpos( $file, '/' ) ||
+				// Windows drive letter (e.g., C:\ or C:/).
+				( strlen( $file ) >= 3 && ':' === $file[1] && ( '\\' === $file[2] || '/' === $file[2] ) ) ||
+				// Windows UNC path (e.g., \\server\share).
+				0 === strpos( $file, '\\\\' )
+			);
+			
+			if ( ! $is_absolute ) {
+				$file = WP_MCP_AI_PATH . $file;
+			}
+			
 			if ( file_exists( $file ) ) {
 				require_once $file;
 			}
@@ -120,13 +146,27 @@ function wp_mcp_ai_init_settings_dashboard() {
 			WP_MCP_AI_Settings_Registry::register_section( $performance_section );
 		}
 
+		// Pro Providers section is NOT registered as a standalone section.
+		// Its subtabs are merged into the base Providers section instead.
+		// The class is still loaded and instantiated by the container for subtab merging.
+		// $pro_providers_section = $container->get( 'section.pro_providers' );
+		// if ( null !== $pro_providers_section ) {
+		// 	WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
+		// }
+
+		// Pro Integrations section is only available with Pro addon.
+		$pro_integrations_section = $container->get( 'section.pro_integrations' );
+		if ( null !== $pro_integrations_section ) {
+			WP_MCP_AI_Settings_Registry::register_section( $pro_integrations_section );
+		}
+
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );.
+		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
 
-		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "NV oOS" menu item.

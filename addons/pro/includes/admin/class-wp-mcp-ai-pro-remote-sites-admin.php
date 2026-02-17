@@ -185,6 +185,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$user_email    = '';
 
 			switch ( $connection_type ) {
+				case 'mesh_peer':
+					$api_key = isset( $_POST['mesh_inbound_api_key'] ) ? wp_unslash( $_POST['mesh_inbound_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'isams':
 					$api_key    = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -300,6 +303,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'webchat' === $connection_type ) {
 				$url       = home_url( '/wp-json/mcp-ai/v1/webhooks/webchat' );
 				$auth_type = 'none';
+			}
+
+			// For mesh peer connections, use custom_header auth with mesh API key
+			if ( 'mesh_peer' === $connection_type ) {
+				$auth_type = 'custom_header';
 			}
 
 			$connection_data = array(
@@ -491,41 +499,43 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'         => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
-									'generic'           => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
-									'isams'             => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
-									'flowhub'           => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
-									'payhere'           => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
-									'quickbooks'        => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
-									'ezuite_erp'        => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
-									'gmail'             => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
-									'google_drive'      => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
-									'telegram'          => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
-									'whatsapp'          => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
-									'slack'             => __( 'Slack', 'mcp-ai-wpoos-pro' ),
-									'discord'           => __( 'Discord', 'mcp-ai-wpoos-pro' ),
-									'microsoft_teams'   => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
+									'wordpress'          => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
+									'mesh_peer'          => __( 'Mesh Peer', 'mcp-ai-wpoos-pro' ),
+									'generic'            => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
+									'isams'              => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
+									'flowhub'            => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
+									'payhere'            => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
+									'quickbooks'         => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
+									'google_drive'       => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
+									'telegram'           => __( 'Telegram', 'mcp-ai-wpoos-pro' ),
+									'whatsapp'           => __( 'WhatsApp', 'mcp-ai-wpoos-pro' ),
+									'slack'              => __( 'Slack', 'mcp-ai-wpoos-pro' ),
+									'discord'            => __( 'Discord', 'mcp-ai-wpoos-pro' ),
+									'microsoft_teams'    => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
 									'facebook_messenger' => __( 'Messenger', 'mcp-ai-wpoos-pro' ),
-									'webchat'           => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
+									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
-									'wordpress'         => '#2271b1',
-									'generic'           => '#50575e',
-									'isams'             => '#d63638',
-									'flowhub'           => '#00a32a',
-									'payhere'           => '#f0b849',
-									'quickbooks'        => '#2c9f47',
-									'ezuite_erp'        => '#8c50a7',
-									'gmail'             => '#ea4335', // Google red color
-									'google_drive'      => '#4285f4', // Google blue color
-									'telegram'          => '#0088cc', // Telegram blue
-									'whatsapp'          => '#25d366', // WhatsApp green
-									'slack'             => '#4a154b', // Slack purple
-									'discord'           => '#5865f2', // Discord blurple
-									'microsoft_teams'   => '#6264a7', // Teams purple
+									'wordpress'          => '#2271b1',
+									'mesh_peer'          => '#7e57c2', // Purple - same as MESH badge in ai_peer
+									'generic'            => '#50575e',
+									'isams'              => '#d63638',
+									'flowhub'            => '#00a32a',
+									'payhere'            => '#f0b849',
+									'quickbooks'         => '#2c9f47',
+									'ezuite_erp'         => '#8c50a7',
+									'gmail'              => '#ea4335', // Google red color
+									'google_drive'       => '#4285f4', // Google blue color
+									'telegram'           => '#0088cc', // Telegram blue
+									'whatsapp'           => '#25d366', // WhatsApp green
+									'slack'              => '#4a154b', // Slack purple
+									'discord'            => '#5865f2', // Discord blurple
+									'microsoft_teams'    => '#6264a7', // Teams purple
 									'facebook_messenger' => '#0084ff', // Messenger blue
-									'webchat'           => '#ff6b6b', // WebChat coral red
+									'webchat'            => '#ff6b6b', // WebChat coral red
 								);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -742,6 +752,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<select name="connection_type" id="connection_type" class="regular-text" required>
 							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="mesh_peer" <?php selected( $connection_type, 'mesh_peer' ); ?>>
+								<?php esc_html_e( 'Mesh Peer (Distributed AI)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
 								<?php esc_html_e( 'Generic REST API', 'mcp-ai-wpoos-pro' ); ?>
@@ -962,6 +975,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Enable sandbox/test mode', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Use PayHere sandbox environment for testing.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Mesh Peer -->
+				<tr class="mesh_peer-only-field" style="display: none;">
+					<th scope="row">
+						<label for="mesh_inbound_api_key"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="mesh_inbound_api_key" id="mesh_inbound_api_key" class="regular-text" value="" autocomplete="off" placeholder="mesh_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description">
+								<?php 
+								echo wp_kses_post( 
+									sprintf(
+										/* translators: %s: link to remote site settings */
+										__( 'The mesh inbound API key from the remote site. Find this at Settings → Advanced → Federation & Mesh on the remote site.', 'mcp-ai-wpoos-pro' )
+									)
+								); 
+								?>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="mesh_peer-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #7e57c2; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'About Mesh Peer Connections', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 8px 0; font-size: 13px;">
+								<?php esc_html_e( 'Mesh peers enable distributed AI workload processing across multiple WordPress sites. This connection type is specifically designed for:', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ul style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Querying remote site assistants and data', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Distributed processing of AI tasks', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Federation discovery via .well-known/ai-peer', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ul>
+							<p style="margin: 0; font-size: 13px;">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'The remote site must have this plugin installed with Federation & Mesh enabled.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</div>
 					</td>
 				</tr>
 
@@ -1752,6 +1812,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var teamsFields = document.querySelectorAll('.microsoft_teams-only-field');
 			var messengerFields = document.querySelectorAll('.facebook_messenger-only-field');
 			var webchatFields = document.querySelectorAll('.webchat-only-field');
+			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -1805,6 +1866,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			webchatFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			meshPeerFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -1953,6 +2017,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+			} else if (connectionType === 'mesh_peer') {
+				meshPeerFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Mesh peer uses custom header auth with mesh API key
+				authTypeSelect.value = 'custom_header';
+				// URL field should remain editable for mesh peers
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
 			}
 		}
 
@@ -2441,4 +2514,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 // Initialize the admin interface.
 if ( is_admin() ) {
 	new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+	// Initialize bidirectional sync for mesh peers.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-mesh-peer-bidirectional-sync.php';
+	new WP_MCP_AI_Pro_Mesh_Peer_Bidirectional_Sync();
 }

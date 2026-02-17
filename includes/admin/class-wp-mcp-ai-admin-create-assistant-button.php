@@ -19,10 +19,49 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 	 * Initialize hooks.
 	 */
 	public static function init() {
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_scripts' ) );
 		add_filter( 'views_edit-mcp_ai_assistant', array( __CLASS__, 'add_create_button' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_assistant_from_modal', array( __CLASS__, 'handle_ajax_create' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_build_assistant_from_conversation', array( __CLASS__, 'handle_ajax_build_from_conversation' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_upload_assistant_attachment', array( __CLASS__, 'handle_ajax_upload_attachment' ) );
+	}
+
+	/**
+	 * Enqueue scripts and styles for the create assistant button.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_scripts( $hook ) {
+		// Only load on the assistant list page.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for script enqueue.
+		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== $_GET['post_type'] ) {
+			return;
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		wp_enqueue_style(
+			'wp-mcp-ai-create-assistant-button',
+			WP_MCP_AI_URL . 'assets/css/admin/admin-create-assistant-button.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-create-assistant-button',
+			WP_MCP_AI_URL . 'assets/js/admin/admin-create-assistant-button.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-create-assistant-button',
+			'wpMcpAiCreateAssistantButton',
+			array(
+				'buildUrl'   => admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-build-assistant' ),
+				'buttonText' => __( 'Build AI Assistant', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 
 	/**
@@ -32,24 +71,6 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 	 * @return array Modified views.
 	 */
 	public static function add_create_button( $views ) {
-		$build_assistant_url = admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-build-assistant' );
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Build AI Assistant button positioning on this admin page only
-		?>
-		<style>
-			.wp-mcp-ai-create-assistant-btn {
-				margin-left: 10px;
-				vertical-align: middle;
-			}
-		</style>
-		<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for adding Build AI Assistant button after page title on this admin page only ?>
-		<script type="text/javascript">
-			jQuery(document).ready(function($) {
-				// Add link button after the page title that navigates to the Build Assistant page.
-				var button = '<a href="<?php echo esc_url( $build_assistant_url ); ?>" class="page-title-action wp-mcp-ai-create-assistant-btn"><?php echo esc_js( __( 'Build AI Assistant', 'mcp-ai-wpoos' ) ); ?></a>';
-				$('.wrap h1.wp-heading-inline').after(button);
-			});
-		</script>
-		<?php
 		return $views;
 	}
 

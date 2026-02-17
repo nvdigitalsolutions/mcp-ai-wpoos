@@ -52,7 +52,7 @@ This quick reference provides fast access to the most common tasks and commands 
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 ```
 
 **For Local/VPS:**
@@ -61,18 +61,19 @@ npm install && composer install --no-dev --classmap-authoritative
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 
 # Option 2: Clone, install, then copy
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 
 **⚠️ Important:** 
 - Always run `npm install` and `composer install` BEFORE moving/copying files
 - On Cloudways: Clone directly into the plugins directory to avoid errors
+- **Note:** Autoloader optimization is configured by default in composer.json
 - If you get `ENOENT: uv_cwd` or `getcwd() failed` errors: EXIT your shell and start a NEW terminal session, then navigate to the plugin directory and run the install commands
 - Running npm/composer after moving files OR from an orphaned directory will fail
 

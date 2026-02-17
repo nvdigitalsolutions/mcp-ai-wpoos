@@ -17408,6 +17408,16 @@
             const systemStatus = data.system_status || {};
             const total = counts.total || 0;
 
+            // Emit individual job updates through the job event bus
+            // This ensures all jobs are synchronized across the system
+            if (window.wpMcpAiJobBus && data.jobs && Array.isArray(data.jobs)) {
+                data.jobs.forEach(function(job) {
+                    if (job && job.job_id) {
+                        window.wpMcpAiJobBus.handleJobUpdate(job.job_id, job);
+                    }
+                });
+            }
+
             // Hide if no jobs and system status is not critical
             const hasCriticalStatus = systemStatus.async && (systemStatus.async.stuck_jobs > 0 || systemStatus.async.status === 'warning');
             if (total === 0 && !hasCriticalStatus) {
@@ -17489,11 +17499,231 @@
     }
 
     /**
+     * Initialize global job event bus listeners
+     * 
+     * This connects the job notification system to all chat instances' status bars.
+     * Listens to job:started, job:progress, job:completed, and job:failed events
+     * and updates status bars across all active chat instances.
+     */
+    function initializeGlobalJobListeners() {
+        // Only initialize once
+        if (window.wpMcpAiJobListenersInitialized) {
+            return;
+        }
+
+        // Check if job event bus is available
+        if (!window.wpMcpAiJobBus) {
+            return;
+        }
+
+        // Track active jobs by instance ID
+        const activeJobsByInstance = {};
+
+        /**
+         * Find the chat instance associated with a job
+         * 
+         * @param {string} jobId Job identifier
+         * @return {Object|null} Object with {container, config, state} or null
+         */
+        function findInstanceForJob(jobId) {
+            if (!jobId) {
+                return null;
+            }
+
+            // Check each initialized chat instance
+            const containers = document.querySelectorAll('[data-wp-mcp-ai-chat][data-wp-mcp-ai-initialized]');
+            for (let i = 0; i < containers.length; i++) {
+                const container = containers[i];
+                const instanceId = container.getAttribute('id');
+                const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+                
+                if (!config) {
+                    continue;
+                }
+
+                // Check if this instance has an active job with this ID
+                if (activeJobsByInstance[instanceId] && activeJobsByInstance[instanceId][jobId]) {
+                    return {
+                        container: container,
+                        config: config,
+                        instanceId: instanceId
+                    };
+                }
+
+                // Check if any pending async tools match this job ID
+                const state = config.state;
+                if (state && state.pendingAsyncTools && state.pendingAsyncTools[jobId]) {
+                    return {
+                        container: container,
+                        config: config,
+                        instanceId: instanceId,
+                        state: state
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * Register a job with an instance
+         * 
+         * @param {string} instanceId Instance identifier
+         * @param {string} jobId Job identifier
+         */
+        function registerJobWithInstance(instanceId, jobId) {
+            if (!activeJobsByInstance[instanceId]) {
+                activeJobsByInstance[instanceId] = {};
+            }
+            activeJobsByInstance[instanceId][jobId] = true;
+        }
+
+        /**
+         * Unregister a job from an instance
+         * 
+         * @param {string} instanceId Instance identifier
+         * @param {string} jobId Job identifier
+         */
+        function unregisterJobFromInstance(instanceId, jobId) {
+            if (activeJobsByInstance[instanceId]) {
+                delete activeJobsByInstance[instanceId][jobId];
+            }
+        }
+
+        // Listen for job started events
+        window.wpMcpAiJobBus.on('job:started', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Register this job with the instance
+                registerJobWithInstance(instance.instanceId, evt.jobId);
+
+                // Update status bar with job started indicator
+                const message = evt.data && evt.data.message ? evt.data.message : getString('jobStarted', 'Job started…');
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'processing',
+                    showTime: true,
+                    startTime: Date.now()
+                });
+            }
+        });
+
+        // Listen for job progress events
+        window.wpMcpAiJobBus.on('job:progress', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Update status bar with progress
+                let message = getString('jobProgress', 'Job in progress…');
+                
+                if (evt.data) {
+                    if (evt.data.progress_message) {
+                        message = evt.data.progress_message;
+                    } else if (evt.data.message) {
+                        message = evt.data.message;
+                    } else if (typeof evt.data.progress === 'number' && evt.data.progress > 0) {
+                        message = formatString(getString('jobProgressPercent', 'Job in progress… (%s%%)'), String(Math.round(evt.data.progress)));
+                    }
+                }
+
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'tool',
+                    showTime: true
+                });
+            }
+        });
+
+        // Listen for job completed events
+        window.wpMcpAiJobBus.on('job:completed', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Show success indicator briefly
+                const message = evt.data && evt.data.message ? evt.data.message : getString('jobCompleted', 'Job completed successfully');
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'success',
+                    showTime: false
+                });
+
+                // Clear status after 3 seconds
+                setTimeout(function() {
+                    setStatus(instance.container, '');
+                }, 3000);
+
+                // Unregister the job
+                unregisterJobFromInstance(instance.instanceId, evt.jobId);
+
+                // Clean up job from cache after a delay
+                setTimeout(function() {
+                    if (window.wpMcpAiJobBus && window.wpMcpAiJobBus.clearCache) {
+                        window.wpMcpAiJobBus.clearCache(evt.jobId);
+                    }
+                }, 30000); // 30 seconds
+            }
+        });
+
+        // Listen for job failed events
+        window.wpMcpAiJobBus.on('job:failed', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Show error in status bar
+                const errorMsg = evt.data && evt.data.error ? evt.data.error : getString('jobFailed', 'Job failed');
+                setStatus(instance.container, {
+                    message: formatString(getString('jobError', 'Error: %s'), errorMsg),
+                    type: 'processing',
+                    showTime: false
+                });
+
+                // Clear status after 5 seconds
+                setTimeout(function() {
+                    setStatus(instance.container, '');
+                }, 5000);
+
+                // Unregister the job
+                unregisterJobFromInstance(instance.instanceId, evt.jobId);
+
+                // Clean up job from cache after a delay
+                setTimeout(function() {
+                    if (window.wpMcpAiJobBus && window.wpMcpAiJobBus.clearCache) {
+                        window.wpMcpAiJobBus.clearCache(evt.jobId);
+                    }
+                }, 30000); // 30 seconds
+            }
+        });
+
+        // Mark as initialized
+        window.wpMcpAiJobListenersInitialized = true;
+
+        if (window.console && console.log) {
+            console.log('[NV oOS] Global job event listeners initialized');
+        }
+    }
+
+    /**
      * Enhanced init function to include cron status
      */
     function initWithCronStatus() {
         // Call original init
         init();
+
+        // Initialize global job event bus listeners (once)
+        initializeGlobalJobListeners();
 
         // Initialize cron status for all chat containers after a brief delay
         // Use requestIdleCallback to avoid blocking main thread

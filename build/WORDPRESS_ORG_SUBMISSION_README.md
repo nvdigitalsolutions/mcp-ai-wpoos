@@ -1,7 +1,7 @@
 # WordPress.org Submission Packages
 
-**Date:** February 13, 2026  
-**Version:** 1.1.1  
+**Date:** February 17, 2026  
+**Version:** 1.1.2  
 **Status:** ✅ Ready for Distribution
 
 ---
@@ -12,16 +12,16 @@ This build creates **8 ZIP files** for distribution:
 
 ### Original Packages (4 files) - Repository Text Domains
 Built by `build-plugin-zip.sh` with repository text domains for internal development:
-1. `mcp-ai-wpoos-base-1.1.1.zip` - Base version (text domain: `mcp-ai-wpoos-base`)
-2. `mcp-ai-wpoos-pro-1.1.1.zip` - Pro add-on (text domain: `mcp-ai-wpoos-pro`)
-3. `mcp-ai-wpoos-1.1.1.zip` - Combined (text domain: `mcp-ai-wpoos`)
+1. `mcp-ai-wpoos-base-1.1.2.zip` - Base version (text domain: `mcp-ai-wpoos-base`)
+2. `mcp-ai-wpoos-pro-1.1.2.zip` - Pro add-on (text domain: `mcp-ai-wpoos-pro`)
+3. `mcp-ai-wpoos-1.1.2.zip` - Combined (text domain: `mcp-ai-wpoos`)
 4. `mcp-ai-wpoos-core-1.0.0.zip` - Core (text domain: `mcp-ai-wpoos-core`)
 
 ### WordPress.org Packages (4 files) - WordPress Text Domains
 Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains transformed throughout:
-5. `nvdigital-open-operator-system-oos-1.1.1.zip` - Base (text domain: `nvdigital-open-operator-system-oos`)
-6. `nvdigital-open-operator-system-oos-pro-1.1.1.zip` - Pro (text domain: `nvdigital-open-operator-system-oos-pro`)
-7. `nvdigital-open-operator-system-oos-complete-1.1.1.zip` - Combined (text domain: `nvdigital-open-operator-system-oos`)
+5. `nvdigital-open-operator-system-oos-1.1.2.zip` - Base (text domain: `nvdigital-open-operator-system-oos`)
+6. `nvdigital-open-operator-system-oos-pro-1.1.2.zip` - Pro (text domain: `nvdigital-open-operator-system-oos-pro`)
+7. `nvdigital-open-operator-system-oos-complete-1.1.2.zip` - Combined (text domain: `nvdigital-open-operator-system-oos`)
 8. `nvdigital-open-operator-system-oos-core-1.0.0.zip` - Core (text domain: `nvdigital-open-operator-system-oos-core`)
 
 ---
@@ -29,8 +29,8 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 ## Package Details
 
 ### 1. BASE Package (WordPress.org Submission)
-**Original:** `mcp-ai-wpoos-base-1.1.1.zip`  
-**WordPress.org:** `nvdigital-open-operator-system-oos-1.1.1.zip` (5.3M)
+**Original:** `mcp-ai-wpoos-base-1.1.2.zip`  
+**WordPress.org:** `nvdigital-open-operator-system-oos-1.1.2.zip` (5.4M)
 
 **What's Included:**
 - 127 base tools
@@ -50,8 +50,8 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 ---
 
 ### 2. PRO Add-on Package
-**Original:** `mcp-ai-wpoos-pro-1.1.1.zip`  
-**WordPress.org:** `nvdigital-open-operator-system-oos-pro-1.1.1.zip` (46M)
+**Original:** `mcp-ai-wpoos-pro-1.1.2.zip`  
+**WordPress.org:** `nvdigital-open-operator-system-oos-pro-1.1.2.zip` (33M)
 
 **What's Included:**
 - 70+ Pro tools
@@ -72,8 +72,8 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 ---
 
 ### 3. COMPLETE Package (Self-hosted Distribution)
-**Original:** `mcp-ai-wpoos-1.1.1.zip`  
-**WordPress.org:** `nvdigital-open-operator-system-oos-complete-1.1.1.zip` (41M)
+**Original:** `mcp-ai-wpoos-1.1.2.zip`  
+**WordPress.org:** `nvdigital-open-operator-system-oos-complete-1.1.2.zip` (42M)
 
 **What's Included:**
 - Everything in BASE package
@@ -135,17 +135,17 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 ## Installation
 
 ### BASE Package (WordPress.org)
-- **File to use:** `nvdigital-open-operator-system-oos-1.1.1.zip`
+- **File to use:** `nvdigital-open-operator-system-oos-1.1.2.zip`
 - **WordPress.org:** Submit to https://wordpress.org/plugins/developers/add/
 - **Manual Install:** Upload via Plugins → Add New → Upload Plugin
 
 ### PRO Package  
-- **File to use:** `nvdigital-open-operator-system-oos-pro-1.1.1.zip`
+- **File to use:** `nvdigital-open-operator-system-oos-pro-1.1.2.zip`
 - **Requirements:** Base plugin must be installed first
 - **Manual Install:** Upload via Plugins → Add New → Upload Plugin
 
 ### COMPLETE Package (Self-hosted)
-- **File to use:** `nvdigital-open-operator-system-oos-complete-1.1.1.zip`
+- **File to use:** `nvdigital-open-operator-system-oos-complete-1.1.2.zip`
 - **Self-hosted Only:** Cannot submit to WordPress.org (includes Pro)
 - **Manual Install:** Upload via Plugins → Add New → Upload Plugin
 - **Distribution:** Host on your website for customer downloads
@@ -187,4 +187,4 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 - **GitHub:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 - **Issues:** GitHub Issues
 
-Built: February 13, 2026
+Built: February 17, 2026

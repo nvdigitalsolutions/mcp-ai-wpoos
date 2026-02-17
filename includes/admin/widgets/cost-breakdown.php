@@ -62,70 +62,26 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 		</div>
 
 		<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js cost breakdown chart initialization with dynamic data
-		?>
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			if (typeof Chart !== 'undefined') {
-				var ctx = document.getElementById('wp-mcp-ai-dashboard-cost-breakdown');
-				if (ctx) {
-					var providers = <?php echo wp_json_encode( array_keys( $by_provider ) ); ?>;
-					var costs = <?php echo wp_json_encode( array_values( $by_provider ) ); ?>;
+		wp_enqueue_script(
+			'wp-mcp-ai-cost-breakdown',
+			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/cost-breakdown.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
 
-					new Chart(ctx.getContext('2d'), {
-						type: 'doughnut',
-						data: {
-							labels: providers,
-							datasets: [{
-								data: costs,
-								backgroundColor: [
-									'rgba(54, 162, 235, 0.8)',
-									'rgba(75, 192, 192, 0.8)',
-									'rgba(153, 102, 255, 0.8)',
-									'rgba(255, 159, 64, 0.8)',
-									'rgba(255, 99, 132, 0.8)'
-								],
-								borderColor: [
-									'rgba(54, 162, 235, 1)',
-									'rgba(75, 192, 192, 1)',
-									'rgba(153, 102, 255, 1)',
-									'rgba(255, 159, 64, 1)',
-									'rgba(255, 99, 132, 1)'
-								],
-								borderWidth: 1
-							}]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: {
-									display: true,
-									position: 'bottom'
-								},
-								title: {
-									display: true,
-									text: '<?php esc_attr_e( 'Cost by Provider', 'mcp-ai-wpoos' ); ?>'
-								},
-								tooltip: {
-									callbacks: {
-										label: function(context) {
-											var label = context.label || '';
-											if (label) {
-												label += ': ';
-											}
-											label += '$' + context.parsed.toFixed(4);
-											return label;
-										}
-									}
-								}
-							}
-						}
-					});
-				}
-			}
-		});
-		</script>
+		wp_localize_script(
+			'wp-mcp-ai-cost-breakdown',
+			'wpMcpAiCostData',
+			array(
+				'providers' => array_keys( $by_provider ),
+				'costs'     => array_values( $by_provider ),
+				'labels'    => array(
+					'chartTitle' => __( 'Cost by Provider', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
+		?>
 
 		<!-- AI Cost Breakdown by Model -->
 		<?php if ( ! empty( $by_model ) ) : ?>

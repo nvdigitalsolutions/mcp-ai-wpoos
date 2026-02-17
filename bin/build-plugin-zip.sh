@@ -437,6 +437,10 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'assets/examples' \
             --exclude 'composer.lock' \
             --exclude 'package-lock.json' \
+            --exclude '*.js.map' \
+            --exclude '*.css.map' \
+            --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
+            --exclude 'assets/vendor/canvas/build' \
             --exclude 'vendor/*/tests' \
             --exclude 'vendor/*/test' \
             --exclude 'vendor/*/Test' \
@@ -480,7 +484,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/Makefile' \
             --exclude 'vendor/*/*/Makefile'
         
-        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools"
+        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB), Canvas native binaries (~181MB)"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then
