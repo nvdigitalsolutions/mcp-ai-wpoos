@@ -681,4 +681,65 @@ if (skippedCdn > 0) {
 	console.log(`${colors.blue}💡 CDN packages will load from jsDelivr with automatic fallback${colors.reset}`);
 	console.log(`${colors.blue}💡 To include CDN packages: WP_MCP_AI_BUILD_OFFLINE=true npm run build${colors.reset}`);
 }
+
+// ============================================================================
+// POST-COPY CLEANUP: Remove unnecessary files to reduce plugin size
+// ============================================================================
+console.log(`\n${colors.blue}🧹 Cleaning up unnecessary files...${colors.reset}\n`);
+
+let cleanupSaved = 0;
+
+// 1. Remove canvas native binaries (~181MB uncompressed, ~50MB compressed)
+//    Canvas requires system-level installation, bundling binaries doesn't work
+const canvasBuildPath = path.join(vendorPath, 'canvas', 'build');
+if (fs.existsSync(canvasBuildPath)) {
+	const canvasSize = getSize(canvasBuildPath);
+	fs.rmSync(canvasBuildPath, { recursive: true, force: true });
+	cleanupSaved += canvasSize;
+	console.log(`${colors.green}✓ Removed canvas native binaries${colors.reset} → ${formatSize(canvasSize)} saved`);
+	console.log(`  ${colors.yellow}Note: Canvas requires system installation for PDF OCR${colors.reset}`);
+}
+
+// 2. Remove old pdf.js versions from pdf-parse (keep only v2.0.550)
+//    Old versions: v1.9.426, v1.10.88, v1.10.100 (~18MB total)
+const pdfParseLibPath = path.join(vendorPath, 'pdf-parse', 'lib', 'pdf.js');
+if (fs.existsSync(pdfParseLibPath)) {
+	const oldVersions = ['v1.9.426', 'v1.10.88', 'v1.10.100'];
+	oldVersions.forEach(version => {
+		const versionPath = path.join(pdfParseLibPath, version);
+		if (fs.existsSync(versionPath)) {
+			const versionSize = getSize(versionPath);
+			fs.rmSync(versionPath, { recursive: true, force: true });
+			cleanupSaved += versionSize;
+			console.log(`${colors.green}✓ Removed pdf-parse ${version}${colors.reset} → ${formatSize(versionSize)} saved`);
+		}
+	});
+}
+
+// 3. Remove source maps from pdfjs-dist (~8MB)
+const pdfjsDistPath = path.join(vendorPath, 'pdfjs-dist');
+if (fs.existsSync(pdfjsDistPath)) {
+	let mapSize = 0;
+	const removeMapFiles = (dir) => {
+		if (!fs.existsSync(dir)) return;
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		entries.forEach(entry => {
+			const fullPath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				removeMapFiles(fullPath);
+			} else if (entry.name.endsWith('.map')) {
+				mapSize += getSize(fullPath);
+				fs.unlinkSync(fullPath);
+			}
+		});
+	};
+	removeMapFiles(pdfjsDistPath);
+	if (mapSize > 0) {
+		cleanupSaved += mapSize;
+		console.log(`${colors.green}✓ Removed pdfjs-dist source maps${colors.reset} → ${formatSize(mapSize)} saved`);
+	}
+}
+
+console.log(`\n${colors.green}✅ Cleanup complete: ${formatSize(cleanupSaved)} total saved${colors.reset}\n`);
+
 console.log(`${colors.blue}📦 Vendor directory: ${path.relative(process.cwd(), vendorPath)}${colors.reset}`);

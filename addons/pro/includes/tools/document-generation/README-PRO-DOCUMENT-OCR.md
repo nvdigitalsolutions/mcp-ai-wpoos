@@ -297,6 +297,21 @@ Built on international AI standards:
 - **Interfaces**: `WP_MCP_AI_Tool_Interface`, `WP_MCP_AI_Tool_Capability_Flags_Interface`
 - **Traits**: `WP_MCP_AI_Tool_Chat_Response`, `WP_MCP_AI_Tool_Document_Response`, `WP_MCP_AI_Attachment_File_Resolver`
 
+### Optional: Tesseract OCR for PDF Processing
+
+For Tesseract-based PDF OCR (fallback when AI providers are unavailable), the **canvas** npm package is required but NOT included in the plugin distribution (to reduce size by ~50MB).
+
+To enable Tesseract PDF OCR:
+1. Install Node.js on your server (v18 or v20)
+2. Navigate to the plugin directory: `cd wp-content/plugins/mcp-ai-wpoos-pro/`
+3. Install canvas: `npm install canvas`
+4. Install system dependencies (Linux):
+   ```bash
+   apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev librsvg2-dev
+   ```
+
+**Note**: Tesseract PDF OCR is a fallback feature. The primary OCR methods using AI vision models (OpenAI, Anthropic, Google) do not require canvas.
+
 ### Capability Flags
 
 - `pro`: Pro tier feature
