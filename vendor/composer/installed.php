@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-embedded-provider-issue-again',
-        'version' => 'dev-copilot/fix-embedded-provider-issue-again',
-        'reference' => 'b3274d5f9a9ff83fb253d3044ad0f4c09e747a14',
+        'pretty_version' => 'dev-copilot/investigate-plugin-size-increase',
+        'version' => 'dev-copilot/investigate-plugin-size-increase',
+        'reference' => '506076dc3de58073b5c8cd1b76c37160e4c44b01',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-embedded-provider-issue-again',
-            'version' => 'dev-copilot/fix-embedded-provider-issue-again',
-            'reference' => 'b3274d5f9a9ff83fb253d3044ad0f4c09e747a14',
+            'pretty_version' => 'dev-copilot/investigate-plugin-size-increase',
+            'version' => 'dev-copilot/investigate-plugin-size-increase',
+            'reference' => '506076dc3de58073b5c8cd1b76c37160e4c44b01',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

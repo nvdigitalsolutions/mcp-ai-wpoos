@@ -2,15 +2,15 @@
 
 ## Overview
 
-**Distributed ZIP File Size**: 37 MB (mcp-ai-wpoos-pro-1.1.1.zip)  
+**Distributed ZIP File Size**: 37 MB (mcp-ai-wpoos-pro-1.1.2.zip)  
 **Uncompressed Size**: ~128 MB  
 **Number of Files**: ~8,300 files  
 **Compression Ratio**: 71% size reduction
 
 This document provides a detailed breakdown of what's actually included in the distributed pro plugin zip file.
 
-> **Optimization Note**: Previously 54 MB. Reduced by 17 MB (31%) by excluding source maps, Facebook SDK, and test files from distribution.
-> **Latest Update (v1.1.1)**: Added OCR support for scanned PDFs with minimal size impact (+8KB PHP wrapper, OCR packages pre-bundled in vendor).
+> **Optimization Note**: Previously 54 MB → 87 MB (regression with canvas binaries) → 37 MB.  
+> **Latest Update (v1.1.2)**: Fixed size regression by excluding canvas native binaries (~181MB uncompressed, ~50MB compressed). Canvas library is used for PDF OCR but requires system-level installation, not bundling.
 
 ---
 
@@ -38,11 +38,26 @@ The 37 MB zip file contains:
 These files are excluded from the distribution to reduce size:
 - ✅ **Source maps** (*.js.map, *.css.map): 860 files, ~31 MB uncompressed, ~12 MB compressed
 - ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
+- ✅ **Canvas native binaries**: ~181 MB uncompressed, ~50 MB compressed (requires system installation)
 - ✅ **Test PDF samples**: ~1.7 MB uncompressed
 - ✅ **Vendor tests/docs**: ~15 MB uncompressed
 - ✅ **OCR training data**: Not included (Tesseract uses built-in models, additional languages can be installed separately)
 
-**Total excluded**: ~76 MB uncompressed → ~19 MB compressed savings
+**Total excluded**: ~257 MB uncompressed → ~69 MB compressed savings
+
+#### Why Canvas Binaries Are Excluded
+
+The `canvas` npm package includes native binary libraries (~181MB) for Linux:
+- `librsvg-2.so.2` (101MB), `libharfbuzz.so.0` (26MB), and 25+ other shared libraries
+- These are platform-specific and won't work on Windows/Mac
+- Canvas requires system-level installation: `apt-get install libcairo2-dev libjpeg-dev libpango1.0-dev`
+- Used only for PDF OCR feature which requires Node.js environment setup
+- The OCR service has proper error handling when canvas is unavailable
+
+**For PDF OCR support**, users should:
+1. Install Node.js on their server
+2. Run `npm install canvas` in the plugin directory (installs native binaries for their platform)
+3. Install system dependencies as needed
 
 ---
 
