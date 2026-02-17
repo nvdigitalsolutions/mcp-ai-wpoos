@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications.', 'mcp-ai-wpoos' );
+		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications. Best file formats: PDF, TXT, DOCX, MD, JSON, HTML. Avoid CSV/XLSX (convert to PDF/TXT first for reliable parsing).', 'mcp-ai-wpoos' );
 	}
 
 	/**
