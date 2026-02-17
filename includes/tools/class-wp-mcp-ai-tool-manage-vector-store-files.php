@@ -155,9 +155,18 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			$result = $client->add_vector_store_files( $vector_store_id, array( $file_id ) );
 
 			if ( is_wp_error( $result ) ) {
+				$error_message = $result->get_error_message();
+				
+				// Enhance error with helpful guidance.
+				if ( stripos( $error_message, 'invalid file' ) !== false || stripos( $error_message, 'unsupported' ) !== false ) {
+					$error_message .= ' ' . __( 'Tip: Use PDF, TXT, DOCX, MD, JSON, or HTML formats. Avoid CSV/XLSX (convert to PDF first).', 'mcp-ai-wpoos' );
+				} elseif ( stripos( $error_message, 'not found' ) !== false ) {
+					$error_message .= ' ' . __( 'File may have been deleted or expired. Re-upload the file to OpenAI first.', 'mcp-ai-wpoos' );
+				}
+				
 				$errors[] = array(
 					'file_id' => $file_id,
-					'error'   => $result->get_error_message(),
+					'error'   => $error_message,
 				);
 			} else {
 				$results[] = array(

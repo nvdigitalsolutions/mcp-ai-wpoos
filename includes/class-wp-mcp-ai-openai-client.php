@@ -230,12 +230,35 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file upload failed.', 'mcp-ai-wpoos' );
 
+				// Enhance error message with actionable guidance.
+				$enhanced_message = $message;
+				$error_type       = isset( $decoded['error']['type'] ) ? $decoded['error']['type'] : '';
+
+				// Check for common error patterns and provide helpful guidance.
+				if ( stripos( $message, 'invalid file' ) !== false || stripos( $message, 'unsupported' ) !== false || stripos( $error_type, 'invalid_request' ) !== false ) {
+					$file_ext = wp_check_filetype( $file_path );
+					if ( in_array( strtolower( $file_ext['ext'] ), array( 'csv', 'xlsx', 'xls', 'pptx', 'ppt' ), true ) ) {
+						$enhanced_message .= ' ' . sprintf(
+							/* translators: %s: file extension */
+							__( 'Note: %s files are unreliable for vector stores. Convert to PDF or TXT format first for best results.', 'mcp-ai-wpoos' ),
+							strtoupper( $file_ext['ext'] )
+						);
+					} else {
+						$enhanced_message .= ' ' . __( 'Ensure file is in a supported format (PDF, TXT, DOCX, MD, JSON, HTML) and is properly formatted.', 'mcp-ai-wpoos' );
+					}
+				} elseif ( stripos( $message, 'size' ) !== false || stripos( $message, 'too large' ) !== false ) {
+					$enhanced_message .= ' ' . __( 'Try reducing file size by removing images, compressing content, or splitting into smaller files.', 'mcp-ai-wpoos' );
+				} elseif ( stripos( $message, 'parse' ) !== false || stripos( $message, 'encoding' ) !== false ) {
+					$enhanced_message .= ' ' . __( 'Check file encoding (should be UTF-8) and ensure text is properly formatted.', 'mcp-ai-wpoos' );
+				}
+
 				return new WP_Error(
 					'wp_mcp_ai_file_upload_error',
-					$message,
+					$enhanced_message,
 					array(
-						'status' => $code,
-						'response' => $decoded,
+						'status'           => $code,
+						'response'         => $decoded,
+						'original_message' => $message,
 					)
 				);
 			}
