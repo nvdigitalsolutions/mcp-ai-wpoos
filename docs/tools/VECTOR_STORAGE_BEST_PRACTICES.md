@@ -4,6 +4,8 @@
 
 This guide provides industry-standard best practices for using OpenAI vector stores effectively with the MCP AI WordPress plugin (mcp-ai-wpoos). These recommendations are based on 2024 research and real-world RAG (Retrieval-Augmented Generation) implementations.
 
+**🎯 Pro Plugin Users**: See [Pro Plugin Vector Storage Tools](../../addons/pro/docs/VECTOR_STORAGE_PRO_TOOLS.md) for automatic file conversion and advanced preprocessing capabilities.
+
 ## Table of Contents
 
 1. [Supported File Formats](#supported-file-formats)
@@ -11,6 +13,7 @@ This guide provides industry-standard best practices for using OpenAI vector sto
 3. [Chunking Strategies](#chunking-strategies)
 4. [Optimization Tips](#optimization-tips)
 5. [Common Issues & Solutions](#common-issues--solutions)
+6. [Pro Plugin Enhancements](#pro-plugin-enhancements)
 
 ---
 
@@ -284,12 +287,61 @@ knowledge-base/
 
 ---
 
+## Pro Plugin Enhancements
+
+**🚀 Automatic File Preparation** (Pro Plugin Only)
+
+The Pro plugin includes advanced tools that automate the preprocessing workflow:
+
+### `prepare_file_for_vector_store` Tool
+
+**What it does:**
+- ✅ Automatically converts CSV/XLSX to structured text
+- ✅ Applies OCR to scanned PDFs (multiple providers)
+- ✅ Fixes UTF-8 encoding issues
+- ✅ Cleans formatting (headers, footers, whitespace)
+- ✅ Generates chunk previews for validation
+
+**Example Workflow:**
+
+Instead of manual conversion:
+```
+1. Upload CSV file
+2. Manually export to PDF
+3. Upload PDF to vector store
+4. Hope for best results
+```
+
+With Pro plugin:
+```
+1. Upload CSV file
+2. Run: prepare_file_for_vector_store(attachment_id: 123)
+3. Pro tool converts to structured markdown automatically
+4. Upload optimized file to vector store
+5. Get excellent RAG results
+```
+
+**Benefits:**
+- ⚡ **One-Click Optimization**: No manual conversion needed
+- 🎯 **Better Results**: Structured format optimized for RAG
+- 🔍 **Preview Before Upload**: See how content will be chunked
+- 📊 **Multiple Formats**: Handles CSV, XLSX, scanned PDFs, encoding issues
+
+**See Full Documentation:**
+- [Pro Plugin Vector Storage Tools](../../addons/pro/docs/VECTOR_STORAGE_PRO_TOOLS.md)
+
+**Availability:**
+- Pro plugin with composer dependencies installed
+- Automatic registration when pro plugin is active
+
+---
+
 ## Quick Start Checklist
 
 Before uploading files to a vector store:
 
 - [ ] File format is PDF, TXT, DOCX, MD, JSON, or HTML
-- [ ] If CSV/XLSX/PPTX, converted to PDF or TXT
+- [ ] If CSV/XLSX/PPTX, converted to PDF or TXT (or use Pro tool)
 - [ ] File encoding is UTF-8 (for text files)
 - [ ] Removed headers, footers, and navigation elements
 - [ ] PDF contains text layer (not scanned images)
@@ -297,6 +349,7 @@ Before uploading files to a vector store:
 - [ ] Content is logically structured with clear sections
 - [ ] Ran `analyze_file_suitability` tool
 - [ ] Addressed any warnings or recommendations
+- [ ] (Pro) Used `prepare_file_for_vector_store` for automatic optimization
 
 ---
 
@@ -305,6 +358,7 @@ Before uploading files to a vector store:
 - [OpenAI Vector Stores API](https://platform.openai.com/docs/api-reference/vector-stores)
 - [OpenAI Assistants Documentation](https://platform.openai.com/docs/assistants/overview)
 - [RAG Best Practices (External)](https://www.anthropic.com/research/rag)
+- [Pro Plugin Vector Storage Tools](../../addons/pro/docs/VECTOR_STORAGE_PRO_TOOLS.md) (Pro users)
 
 ---
 
@@ -313,9 +367,10 @@ Before uploading files to a vector store:
 **Key Takeaways:**
 
 1. ✅ Use PDF, TXT, DOCX, MD, JSON, or HTML
-2. ❌ Avoid CSV, XLSX, PPTX (convert first)
+2. ❌ Avoid CSV, XLSX, PPTX (convert first, or use Pro tool)
 3. 🔧 Preprocess: Clean up, verify UTF-8, remove noise
 4. 📏 Optimal chunks: 256-512 tokens with 10-20% overlap
 5. 🎯 Quality over quantity - well-prepared files perform better
+6. 🚀 Pro Plugin: Automatic conversion and optimization available
 
 For questions or issues, consult the tool descriptions or contact support.
