@@ -1757,6 +1757,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		/**
 		 * Get available profession count from knowledge base JSON files.
 		 *
+		 * Uses a 1-hour transient cache to avoid repeated file I/O operations.
+		 * The cache is cleared automatically when professions are reseeded.
+		 *
+		 * Note: On cache miss, this loads full profession data from JSON files
+		 * to get the count. The WP_MCP_AI_Profession_Knowledge_Base_Loader
+		 * class is lightweight (no expensive initialization), but loading full
+		 * profession data could be optimized in the future with a count-only method.
+		 *
 		 * @return int Number of professions available in knowledge base.
 		 */
 		private function get_available_profession_count() {
