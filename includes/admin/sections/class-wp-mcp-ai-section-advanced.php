@@ -1760,6 +1760,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * @return int Number of professions available in knowledge base.
 		 */
 		private function get_available_profession_count() {
+			// Check cache first (1 hour expiration).
+			$cached_count = get_transient( 'wp_mcp_ai_available_profession_count' );
+			if ( false !== $cached_count ) {
+				return absint( $cached_count );
+			}
+
 			// Load the knowledge base loader if not already loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Profession_Knowledge_Base_Loader' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
@@ -1774,7 +1780,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				return 0;
 			}
 
-			return count( $professions );
+			$count = count( $professions );
+
+			// Cache for 1 hour.
+			set_transient( 'wp_mcp_ai_available_profession_count', $count, HOUR_IN_SECONDS );
+
+			return $count;
 		}
 
 		/**

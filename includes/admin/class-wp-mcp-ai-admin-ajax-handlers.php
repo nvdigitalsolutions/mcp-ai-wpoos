@@ -2377,6 +2377,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Clear cache.
 			$repository->clear_cache();
 
+			// Clear available profession count cache.
+			delete_transient( 'wp_mcp_ai_available_profession_count' );
+
 			// Refresh base knowledge documents and MIME types.
 			WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
 
