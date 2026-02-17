@@ -474,7 +474,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				<!-- Embedded LLM (Pro) -->
 				<?php
 				// Only show Embedded LLM section if Pro version is active.
-				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
+				if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) :
+					// Get effective embedded provider settings with defaults applied.
+					$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+					$enable_embedded   = $embedded_settings['enabled'];
+					$embedded_model    = $embedded_settings['model'];
 					?>
 				<div class="card">
 					<h2><?php esc_html_e( '8. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
@@ -483,8 +487,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['enable_embedded'] ) ) : ?>
+									<?php if ( ! empty( $enable_embedded ) ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<?php if ( ! isset( $settings['enable_embedded'] ) ) : ?>
+											<em><?php esc_html_e( '(auto-enabled, not explicitly set)', 'mcp-ai-wpoos' ); ?></em>
+										<?php endif; ?>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
@@ -493,8 +500,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							<tr>
 								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<?php if ( ! empty( $settings['embedded_model'] ) ) : ?>
-										<code><?php echo esc_html( $settings['embedded_model'] ); ?></code>
+									<?php if ( ! empty( $embedded_model ) ) : ?>
+										<code><?php echo esc_html( $embedded_model ); ?></code>
+										<?php if ( ! isset( $settings['embedded_model'] ) ) : ?>
+											<em><?php esc_html_e( '(default)', 'mcp-ai-wpoos' ); ?></em>
+										<?php endif; ?>
 									<?php else : ?>
 										<?php esc_html_e( 'Not Selected', 'mcp-ai-wpoos' ); ?>
 									<?php endif; ?>
@@ -513,14 +523,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						type="button"
 						class="button button-primary test-provider"
 						data-provider="embedded"
-						<?php echo esc_attr( empty( $settings['enable_embedded'] ) ? 'disabled' : '' ); ?>>
+						<?php echo esc_attr( empty( $enable_embedded ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Embedded LLM Connection', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<?php if ( empty( $settings['enable_embedded'] ) ) : ?>
+					<?php if ( empty( $enable_embedded ) ) : ?>
 						<p class="description" style="margin-top: 10px;">
 							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab to use client-side AI models that run directly in the browser.', 'mcp-ai-wpoos' ); ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ); ?>">
 								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
@@ -1385,13 +1395,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_embedded( $settings ) {
-			// Check if in base version (embedded not available).
-			if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			// Check if Pro version is not available (embedded requires Pro).
+			if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is only available in the Pro version.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
-			if ( empty( $settings['enable_embedded'] ) ) {
+			// Get effective embedded provider settings with defaults applied.
+			$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+			$enable_embedded   = $embedded_settings['enabled'];
+			if ( empty( $enable_embedded ) ) {
 				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is not enabled.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}

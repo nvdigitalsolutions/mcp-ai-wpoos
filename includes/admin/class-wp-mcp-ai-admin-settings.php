@@ -38,6 +38,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
+		// Embedded LLM provider defaults (Pro addon).
+		const DEFAULT_EMBEDDED_MODEL = 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC';
+
 		/**
 		 * Cached settings for the current request.
 		 *
@@ -1053,6 +1056,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
+		 * Get effective embedded provider settings with defaults applied.
+		 *
+		 * Returns the embedded provider enable status and model selection with defaults
+		 * applied when settings are not explicitly set. This ensures consistent behavior
+		 * across Model Config, Model Service, and Provider Diagnostics.
+		 *
+		 * @since 1.0.0
+		 * @param array $settings Optional. Settings array. If not provided, uses saved settings.
+		 * @return array Array with 'enabled' (bool) and 'model' (string) keys.
+		 */
+		public static function get_embedded_provider_effective_settings( $settings = null ) {
+			if ( null === $settings ) {
+				$settings = get_option( self::OPTION_NAME, array() );
+			}
+
+			// Check if Pro addon is active and properly initialized.
+			$pro_active = defined( 'WP_MCP_AI_PRO_VERSION' ) && ! empty( WP_MCP_AI_PRO_VERSION );
+
+			// Auto-enable when Pro is active and not explicitly disabled.
+			$enabled = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : $pro_active;
+
+			// Use default model when not explicitly set (distinguish between unset and empty string).
+			$model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : self::DEFAULT_EMBEDDED_MODEL;
+
+			return array(
+				'enabled' => $enabled,
+				'model'   => $model,
 			);
 		}
 
@@ -2567,7 +2601,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$clean['enable_mesh'] = ! empty( $settings['enable_mesh'] );
 
 			if ( isset( $settings['mesh_inbound_api_key'] ) ) {
-				$clean['mesh_inbound_api_key'] = sanitize_text_field( $settings['mesh_inbound_api_key'] );
+				$clean['mesh_inbound_api_key'] = trim( sanitize_text_field( $settings['mesh_inbound_api_key'] ) );
 			}
 
 			// Generate inbound API key if mesh is being enabled and no key exists - security improvement.
@@ -3442,7 +3476,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][name]" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>" /></td>
 						<td><input type="url" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" class="regular-text" placeholder="https://example.com" /></td>
 						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" placeholder="mesh_..." /></td>
-						<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button></td>
+						<td>
+							<button type="button" class="button wp-mcp-ai-test-mesh-peer" title="<?php esc_attr_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Test', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
+						</td>
 					</tr>
 							<?php
 						}

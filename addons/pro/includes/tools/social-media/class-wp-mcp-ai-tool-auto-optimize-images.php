@@ -400,6 +400,9 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 
 		// If URL, download to temporary location.
 		if ( filter_var( $image_source, FILTER_VALIDATE_URL ) ) {
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$temp_file = download_url( $image_source );
 
 			if ( is_wp_error( $temp_file ) ) {
@@ -535,6 +538,9 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 	protected function add_watermark( $image_path, $watermark_path, $position ) {
 		// Get watermark path if URL.
 		if ( filter_var( $watermark_path, FILTER_VALIDATE_URL ) ) {
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$watermark_path = download_url( $watermark_path );
 			if ( is_wp_error( $watermark_path ) ) {
 				return $watermark_path;

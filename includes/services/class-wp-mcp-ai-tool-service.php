@@ -72,6 +72,19 @@ class WP_MCP_AI_Tool_Service {
 			);
 		}
 
+		// Check if tool is globally enabled.
+		if ( ! $this->registry->is_tool_enabled( $tool_name ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tool_disabled',
+				sprintf(
+					/* translators: %s: tool name */
+					__( 'Tool "%s" is disabled and cannot be executed.', 'mcp-ai-wpoos' ),
+					$tool_name
+				),
+				array( 'status' => 403 )
+			);
+		}
+
 		// Check if user has required capability for tool.
 		$tool_capability = $this->registry->get_tool_capability( $tool_name );
 		if ( $tool_capability && ! current_user_can( $tool_capability ) ) {
@@ -185,6 +198,11 @@ class WP_MCP_AI_Tool_Service {
 			}
 
 			$slug = $tool->get_slug();
+
+			// Skip globally disabled tools.
+			if ( ! $this->registry->is_tool_enabled( $slug ) ) {
+				continue;
+			}
 
 			// Check capability if the tool has one.
 			$capability = $this->registry->get_tool_capability( $slug );

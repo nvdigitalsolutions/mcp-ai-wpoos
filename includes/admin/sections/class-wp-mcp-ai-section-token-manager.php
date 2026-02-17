@@ -381,16 +381,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<?php
 			// Render filter bar if component is available.
 			if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
-				echo wp_kses_post(
-					WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
-						array(
-							'tab'          => 'token_manager',
-							'view'         => 'per_tool',
-							'search'       => esc_attr( $search ),
-							'filter_group' => esc_attr( $filter_group ),
-							'clear_url'    => esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ) ),
-						)
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in render() method.
+				echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
+					array(
+						'tab'          => 'token_manager',
+						'view'         => 'per_tool',
+						'search'       => $search, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_attr() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
+						'filter_group' => $filter_group, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_attr() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
+						'clear_url'    => admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Value is escaped with esc_url() in WP_MCP_AI_Tools_Filter_Bar_Renderer::render().
 					)
 				);
 			}

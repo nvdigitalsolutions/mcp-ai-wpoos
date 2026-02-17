@@ -141,13 +141,126 @@ class Test_REST_Authenticator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test validate_mesh_key with missing key.
+	 * Test validate_mesh_key with missing key returns null.
 	 */
 	public function test_validate_mesh_key_missing() {
 		$result = $this->authenticator->validate_mesh_key( '' );
 
+		// Empty key should return null (not applicable), not an error.
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Test validate_mesh_key with non-mesh-format key returns null.
+	 */
+	public function test_validate_mesh_key_not_mesh_format() {
+		// Example JWT token (not a real credential - just a test fixture).
+		// This token format doesn't start with "mesh_" so should return null.
+		$jwt_example = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+		
+		$result = $this->authenticator->validate_mesh_key( $jwt_example );
+
+		// Should return null for non-mesh tokens (allows fallthrough to Auth0 validation).
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Test validate_mesh_key when mesh is disabled returns error.
+	 *
+	 * When a key that looks like a mesh key is provided but mesh is disabled,
+	 * it should return an error (not null) because the user explicitly tried
+	 * to use mesh authentication.
+	 */
+	public function test_validate_mesh_key_disabled() {
+		// Ensure mesh is disabled.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_mesh' => false,
+			)
+		);
+
+		$result = $this->authenticator->validate_mesh_key( 'mesh_test_key_123' );
+
+		// Should return error when mesh-format key is used but mesh is disabled.
 		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_missing_mesh_key', $result->get_error_code() );
+		$this->assertEquals( 'wp_mcp_ai_mesh_disabled', $result->get_error_code() );
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test validate_mesh_key when mesh is enabled but not configured returns error.
+	 */
+	public function test_validate_mesh_key_not_configured() {
+		// Mesh enabled but no inbound key set.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_mesh'          => true,
+				'mesh_inbound_api_key' => '', // Empty key.
+			)
+		);
+
+		$result = $this->authenticator->validate_mesh_key( 'mesh_test_key_123' );
+
+		// Should return error when mesh-format key is used but mesh isn't configured.
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_mesh_not_configured', $result->get_error_code() );
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test validate_mesh_key with correct key returns true.
+	 */
+	public function test_validate_mesh_key_valid() {
+		$valid_key = 'mesh_valid_test_key_12345';
+
+		// Configure mesh with a valid inbound key.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_mesh'          => true,
+				'mesh_inbound_api_key' => $valid_key,
+			)
+		);
+
+		$result = $this->authenticator->validate_mesh_key( $valid_key );
+
+		// Should return true for valid key.
+		$this->assertTrue( $result );
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test validate_mesh_key with incorrect key returns WP_Error.
+	 */
+	public function test_validate_mesh_key_invalid() {
+		$valid_key   = 'mesh_valid_key_12345';
+		$invalid_key = 'mesh_invalid_key_67890';
+
+		// Configure mesh with a valid inbound key.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_mesh'          => true,
+				'mesh_inbound_api_key' => $valid_key,
+			)
+		);
+
+		$result = $this->authenticator->validate_mesh_key( $invalid_key );
+
+		// Should return WP_Error when key doesn't match.
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_mesh_key', $result->get_error_code() );
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_settings' );
 	}
 
 	/**

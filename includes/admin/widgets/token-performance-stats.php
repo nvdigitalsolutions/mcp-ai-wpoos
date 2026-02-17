@@ -12,6 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Enqueue widget styles.
+wp_enqueue_style(
+	'wp-mcp-ai-token-performance-stats',
+	plugin_dir_url( __DIR__ . '/../' ) . 'assets/css/admin/widgets/token-performance-stats.css',
+	array(),
+	WP_MCP_AI_VERSION
+);
+
 $stats    = isset( $data['stats'] ) ? $data['stats'] : array();
 $analysis = isset( $data['analysis'] ) ? $data['analysis'] : array();
 ?>
@@ -181,124 +189,3 @@ $analysis = isset( $data['analysis'] ) ? $data['analysis'] : array();
 	</div>
 </div>
 
-<?php
-// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for token performance stats widget layout and styling on this admin page only
-?>
-<style>
-	.wp-mcp-ai-widget-performance-stats {
-		padding: 15px;
-	}
-
-	.wp-mcp-ai-widget-performance-stats h3 {
-		margin-top: 0;
-		border-bottom: 1px solid #ddd;
-		padding-bottom: 10px;
-	}
-
-	.wp-mcp-ai-widget-performance-stats h4 {
-		margin: 15px 0 10px;
-		color: #23282d;
-	}
-
-	.wp-mcp-ai-status-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 10px;
-		margin-bottom: 15px;
-	}
-
-	.wp-mcp-ai-status-item {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.wp-mcp-ai-status-label {
-		font-weight: 600;
-		color: #555;
-	}
-
-	.wp-mcp-ai-status-value {
-		color: #2271b1;
-		font-weight: 600;
-	}
-
-	.wp-mcp-ai-status-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		padding: 3px 8px;
-		border-radius: 3px;
-		font-size: 12px;
-		font-weight: 600;
-	}
-
-	.wp-mcp-ai-status-badge.wp-mcp-ai-status-active {
-		background: #d1f0d7;
-		color: #0a5d1f;
-	}
-
-	.wp-mcp-ai-status-badge.wp-mcp-ai-status-inactive {
-		background: #fef7e0;
-		color: #735c0f;
-	}
-
-	.wp-mcp-ai-stats-table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-	.wp-mcp-ai-stats-table th,
-	.wp-mcp-ai-stats-table td {
-		padding: 8px;
-		text-align: left;
-		border-bottom: 1px solid #f0f0f1;
-	}
-
-	.wp-mcp-ai-stats-table th {
-		font-weight: 600;
-		background: #f9f9f9;
-	}
-
-	.wp-mcp-ai-badge-success {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		padding: 2px 6px;
-		background: #d1f0d7;
-		color: #0a5d1f;
-		border-radius: 3px;
-		font-size: 11px;
-		font-weight: 600;
-	}
-
-	.wp-mcp-ai-badge-warning {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		padding: 2px 6px;
-		background: #fef7e0;
-		color: #735c0f;
-		border-radius: 3px;
-		font-size: 11px;
-		font-weight: 600;
-	}
-
-	.wp-mcp-ai-widget-actions {
-		margin-top: 15px;
-		padding-top: 15px;
-		border-top: 1px solid #ddd;
-	}
-
-	.wp-mcp-ai-widget-actions button {
-		display: inline-flex;
-		align-items: center;
-		gap: 5px;
-	}
-
-	.wp-mcp-ai-widget-actions .dashicons {
-		font-size: 16px;
-		width: 16px;
-		height: 16px;
-	}
-</style>

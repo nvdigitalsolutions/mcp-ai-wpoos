@@ -234,11 +234,35 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 		$providers = WP_MCP_AI_Model_Config::get_available_providers();
 		$this->assertArrayNotHasKey( 'embedded', $providers, 'Embedded should NOT appear when disabled' );
 
-		// Test 4: Not set (defaults to false) - should NOT appear.
+		// Test 4: Not set (defaults to true when Pro is active) - should appear with default model.
 		update_option( 'wp_mcp_ai_settings', array() );
 
 		$providers = WP_MCP_AI_Model_Config::get_available_providers();
-		$this->assertArrayNotHasKey( 'embedded', $providers, 'Embedded should NOT appear when settings not set' );
+		$this->assertArrayHasKey( 'embedded', $providers, 'Embedded should auto-enable when Pro is active and settings not set (defaults to true with default model)' );
+	}
+
+	/**
+	 * Test that embedded provider auto-enables when Pro is active and no settings exist.
+	 */
+	public function test_embedded_auto_enables_on_fresh_install() {
+		// Skip if base version.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Embedded LLM is not available in base version.' );
+		}
+
+		// Clear all settings to simulate fresh install.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		// Get available providers.
+		$providers = WP_MCP_AI_Model_Config::get_available_providers();
+
+		// Check that embedded is auto-enabled with default model.
+		$this->assertArrayHasKey( 'embedded', $providers, 'Embedded provider should auto-enable on fresh install when Pro is active' );
+
+		// Verify that the effective settings return the correct defaults.
+		$effective = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings();
+		$this->assertTrue( $effective['enabled'], 'Effective settings should show provider as enabled' );
+		$this->assertEquals( WP_MCP_AI_Admin_Settings::DEFAULT_EMBEDDED_MODEL, $effective['model'], 'Effective settings should use default model' );
 	}
 
 	/**
