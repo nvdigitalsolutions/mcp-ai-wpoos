@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.1  
-**Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
-**Latest Updates:** February 2026 - Package pre-bundling, Product Research page fixes, Pro Workflow Builder stability  
+**Version:** 1.1.2  
+**Release Date:** 2026-02-16 (February 2026 update with WordPress.org compliance fixes, pro integration settings architecture)  
+**Latest Updates:** February 2026 - WordPress.org compliance, JetEngine integration, package pre-bundling, Product Research fixes  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -267,6 +267,35 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ---
 
 ## 🆕 Latest Updates (January-February 2026)
+
+### WordPress.org Compliance Fixes (February 16, 2026) ⭐ **NEW**
+
+**Version 1.1.2 Released: Critical WordPress.org compliance updates**
+
+**Hardcoded Admin Menu Positions Removed:**
+- ✅ Removed hardcoded menu positions from 5 locations (CPTs and main menu)
+- ✅ Changed from fixed positions to null for automatic positioning
+- ✅ Prevents conflicts with other plugins per WordPress.org guidelines
+- ✅ Affects: Assistant CPT, Team CPT, Profession CPT, AI Peer CPT, Main Admin Menu
+
+**Pro Integration Settings Architecture:**
+- ✅ Moved pro-only integration settings to pro addon
+- ✅ Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings relocated
+- ✅ Base plugin now only includes settings for base tools
+- ✅ Better architecture: Settings match tool location
+- ✅ Still WordPress.org compliant: No gating, proper separation
+
+### JetEngine CPT/Taxonomy AI Integration (February 12, 2026) ⭐ **NEW**
+
+**Comprehensive AI assistance for all JetEngine custom post types and taxonomies**
+
+- ✅ **AI Assistant Metaboxes**: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+- ✅ **Research & Add Pages**: Dedicated submenu pages for each JetEngine CPT with AI-powered content creation
+- ✅ **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.)
+- ✅ **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer
+- ✅ **Settings**: Two independent toggles for metaboxes and research pages
+- ✅ **Testing**: Comprehensive test suite with 100% passing tests
+- [Complete Integration Guide →](docs/jetengine-integration-guide.md)
 
 ### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
 
