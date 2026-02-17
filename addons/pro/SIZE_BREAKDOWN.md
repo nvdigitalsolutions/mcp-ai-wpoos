@@ -2,48 +2,57 @@
 
 ## Overview
 
-**Distributed ZIP File Size**: 37 MB (mcp-ai-wpoos-pro-1.1.2.zip)  
-**Uncompressed Size**: ~128 MB  
-**Number of Files**: ~8,300 files  
-**Compression Ratio**: 71% size reduction
+**Distributed ZIP File Size**: 33 MB (mcp-ai-wpoos-pro-1.1.2.zip)  
+**Uncompressed Size**: ~103 MB  
+**Number of Files**: ~6,500 files  
+**Compression Ratio**: 68% size reduction
 
 This document provides a detailed breakdown of what's actually included in the distributed pro plugin zip file.
 
-> **Optimization Note**: Previously 54 MB → 87 MB (regression with canvas binaries) → 37 MB.  
-> **Latest Update (v1.1.2)**: Fixed size regression by excluding canvas native binaries (~181MB uncompressed, ~50MB compressed). Canvas library is used for PDF OCR but requires system-level installation, not bundling.
+> **Optimization History**:  
+> - v1.1.0: 54 MB (source maps, Facebook SDK included)
+> - v1.1.1: 87 MB (regression: canvas native binaries accidentally included)  
+> - **v1.1.2: 33 MB** (fixed: excluded canvas binaries, old pdf.js versions, source maps)
+>
+> **Latest Update (v1.1.2)**: Fixed size regression by excluding:
+> - Canvas native binaries (~181MB uncompressed, ~50MB compressed)
+> - Old pdf.js versions from pdf-parse (~21MB uncompressed, ~6MB compressed)
+> - pdfjs-dist source maps (~8MB uncompressed, ~3MB compressed)
+> - **Total savings: ~210MB uncompressed → ~59MB compressed**
 
 ---
 
 ## What's In The ZIP File
 
-The 37 MB zip file contains:
+The 33 MB zip file contains:
 
 | Directory | Uncompressed | Files | % of Total | Description |
 |-----------|--------------|-------|------------|-------------|
-| `vendor` | 56 MB | ~2,400 | 44% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser, tesseract_ocr) |
-| `assets/vendor` | 48 MB | ~4,800 | 37% | Bundled NPM packages (JavaScript libraries - without maps/Facebook SDK) |
-| `bin` | 11 MB | 8 | 9% | Webpack-bundled document generation scripts (PDF/Word/Excel - no maps) |
-| `includes` | 10 MB | ~900 | 8% | PHP source code (tools, admin UI, integrations, OCR service) |
-| `node-services` | 48 KB | ~8 | <1% | Node.js microservices (PDF extraction, OCR, image preprocessing) |
-| `docs` | 900 KB | ~65 | <1% | Documentation files (including OCR guide) |
+| `vendor` | 56 MB | ~2,400 | 54% | PHP Composer dependencies (TCPDF, phpoffice, smalot/pdfparser, tesseract_ocr) |
+| `assets/vendor` | 35 MB | ~3,100 | 34% | Bundled NPM packages (JavaScript libraries - optimized) |
+| `includes` | 11 MB | ~900 | 11% | PHP source code (tools, admin UI, integrations, OCR service) |
+| `bin` | 684 KB | 7 | <1% | Webpack-bundled document generation scripts (PDF/Word/Excel) |
+| `node-services` | 60 KB | ~8 | <1% | Node.js microservices (PDF extraction, OCR, image preprocessing) |
+| `docs` | 804 KB | ~50 | <1% | Documentation files (including OCR guide) |
 | `build` | 244 KB | 8 | <1% | Build artifacts |
 | `examples` | 112 KB | ~15 | <1% | Example code and usage samples |
-| `scripts` | 48 KB | 5 | <1% | Build and maintenance scripts |
+| `scripts` | 52 KB | 5 | <1% | Build and maintenance scripts |
 | `services` | 48 KB | ~6 | <1% | Service definitions |
 
-**Total Uncompressed**: 128 MB → **Compressed to 37 MB**
+**Total Uncompressed**: 103 MB → **Compressed to 33 MB**
 
 ### What's Excluded (Not in Distribution ZIP)
 
 These files are excluded from the distribution to reduce size:
-- ✅ **Source maps** (*.js.map, *.css.map): 860 files, ~31 MB uncompressed, ~12 MB compressed
+- ✅ **Source maps** (*.js.map, *.css.map): ~31 MB uncompressed, ~12 MB compressed
 - ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
 - ✅ **Canvas native binaries**: ~181 MB uncompressed, ~50 MB compressed (requires system installation)
+- ✅ **Old pdf.js versions**: ~21 MB uncompressed, ~6 MB compressed (kept only v2.0.550)
+- ✅ **pdfjs-dist source maps**: ~8 MB uncompressed, ~3 MB compressed
 - ✅ **Test PDF samples**: ~1.7 MB uncompressed
 - ✅ **Vendor tests/docs**: ~15 MB uncompressed
-- ✅ **OCR training data**: Not included (Tesseract uses built-in models, additional languages can be installed separately)
 
-**Total excluded**: ~257 MB uncompressed → ~69 MB compressed savings
+**Total excluded**: ~286 MB uncompressed → ~77 MB compressed savings
 
 #### Why Canvas Binaries Are Excluded
 
@@ -58,6 +67,16 @@ The `canvas` npm package includes native binary libraries (~181MB) for Linux:
 1. Install Node.js on their server
 2. Run `npm install canvas` in the plugin directory (installs native binaries for their platform)
 3. Install system dependencies as needed
+
+#### Why Old pdf.js Versions Are Excluded
+
+The `pdf-parse` package bundled 4 versions of pdf.js for compatibility:
+- v1.9.426 (7.2 MB)
+- v1.10.88 (7.8 MB)  
+- v1.10.100 (6.1 MB)
+- v2.0.550 (2.1 MB) ← **kept**
+
+We keep only the latest version (v2.0.550) which has the best PDF parsing capabilities.
 
 ---
 
