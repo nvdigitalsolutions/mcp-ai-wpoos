@@ -108,7 +108,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -295,7 +295,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -322,7 +322,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_args = array(
 				'method'  => 'DELETE',
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -410,7 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -430,8 +430,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content';
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -477,8 +477,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'OpenAI file download returned an error.',
 					array(
 						'file_id' => $file_id,
-						'status' => $status_code,
-						'body' => is_array( $decoded ) ? $decoded : $body,
+						'status'  => $status_code,
+						'body'    => is_array( $decoded ) ? $decoded : $body,
 					)
 				);
 
@@ -548,7 +548,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -584,8 +584,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -669,7 +669,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -689,8 +689,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -783,7 +783,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 			array(
 			'status' => 400,
-			'actions'                  => array(
+			'actions' => array(
 			'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
@@ -848,8 +848,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		$endpoint = 'https://api.openai.com/v1/models';
 
 		$request_args = array(
-			'method' => 'GET',
-			'headers'       => array(
+			'method'  => 'GET',
+			'headers' => array(
 			'Authorization' => 'Bearer ' . $api_key,
 			),
 			'timeout' => $timeout,
@@ -929,7 +929,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 			array(
 			'status' => 400,
-			'actions'                  => array(
+			'actions' => array(
 			'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -949,8 +949,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -1043,8 +1043,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'wp_mcp_ai_missing_api_key',
 				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 400,
-					'actions'                  => array(
+					'status' => 400,
+					'actions' => array(
 						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
@@ -1149,12 +1149,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		$endpoint = 'https://api.openai.com/v1/embeddings';
 
 		$request_args = array(
-			'method' => 'POST',
-			'headers'       => array(
+			'method'  => 'POST',
+			'headers' => array(
 				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type'  => 'application/json',
+				'Content-Type' => 'application/json',
 			),
-			'body' => wp_json_encode( $payload ),
+			'body'    => wp_json_encode( $payload ),
 			'timeout' => $timeout,
 		);
 
@@ -1162,8 +1162,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			'openai_create_embeddings',
 			'Creating embeddings with OpenAI.',
 			array(
-				'model' => $model,
-				'input_type' => is_array( $input ) ? 'array' : 'string',
+				'model'        => $model,
+				'input_type'   => is_array( $input ) ? 'array' : 'string',
 				'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
 			)
 		);
@@ -1216,7 +1216,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			'openai_embeddings_created',
 			'OpenAI embeddings created successfully.',
 			array(
-				'model' => $model,
+				'model'            => $model,
 				'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
 			)
 		);
@@ -1257,7 +1257,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -1295,12 +1295,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			$request_args = array(
-				'method' => 'POST',
-				'headers'       => array(
+				'method'  => 'POST',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					'Content-Type' => 'application/json',
 				),
-				'body' => wp_json_encode( $payload ),
+				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
 
@@ -1308,8 +1308,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_moderate_content',
 				'Moderating content with OpenAI.',
 				array(
-					'model' => $model,
-					'input_type' => is_array( $input ) ? 'array' : 'string',
+					'model'        => $model,
+					'input_type'   => is_array( $input ) ? 'array' : 'string',
 					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
 				)
 			);
@@ -1536,7 +1536,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -1636,12 +1636,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					'Content-Type' => 'application/json',
 				),
 				'timeout' => $timeout,
-				'body' => $encoded_payload,
+				'body'    => $encoded_payload,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -1699,7 +1699,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'wp_mcp_ai_image_error',
 					$message,
 					array(
-						'status' => $status_code,
+						'status'   => $status_code,
 						'response' => JSON_ERROR_NONE === $json_error ? $decoded : array( 'body' => $body ),
 					)
 				);
@@ -2124,7 +2124,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -2153,9 +2153,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 30, $timeout ); // Image editing needs more time.
 
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
-			$n     = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
-			$n = max( 1, min( 10, $n ) );
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
 			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
 
@@ -2213,12 +2213,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "--{$boundary}--\r\n";
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+					'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
 				),
 				'timeout' => $timeout,
-				'body' => $body,
+				'body'    => $body,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -2286,7 +2286,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -2306,9 +2306,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout = max( 30, $timeout ); // Image generation needs more time.
 
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
-			$n     = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
-			$n = max( 1, min( 10, $n ) );
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'dall-e-2';
+			$n               = isset( $options['n'] ) ? absint( $options['n'] ) : 1;
+			$n               = max( 1, min( 10, $n ) );
 			$size            = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
 			$response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : 'b64_json';
 
@@ -2350,12 +2350,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body .= "--{$boundary}--\r\n";
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+					'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
 				),
 				'timeout' => $timeout,
-				'body' => $body,
+				'body'    => $body,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -2423,7 +2423,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -2493,12 +2493,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					'Content-Type' => 'application/json',
 				),
 				'timeout' => $timeout,
-				'body' => $encoded_payload,
+				'body'    => $encoded_payload,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -2582,7 +2582,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -2714,13 +2714,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			$request_args = array(
-				'method' => 'POST',
-				'headers'       => array(
+				'method'  => 'POST',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+					'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
 				),
 				'timeout' => $timeout,
-				'body' => $request_body,
+				'body'    => $request_body,
 			);
 
 			$endpoint = $translate ? self::AUDIO_TRANSLATIONS_ENDPOINT : self::AUDIO_TRANSCRIPTIONS_ENDPOINT;
@@ -2828,7 +2828,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -2899,7 +2899,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                => array(
+						'actions' => array(
 							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -4197,9 +4197,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$content_fallback = is_array( $content_payload ) ? array_values( $content_payload ) : $content_payload;
 
 					$choices[] = array(
-						'index' => $index,
+						'index'         => $index,
 						'message' => array(
-							'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
+							'role' => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
 							'content' => '' !== $content_text ? $content_text : $content_fallback,
 						),
 						'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
@@ -4234,9 +4234,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				if ( '' !== $output_text ) {
 					$choices[] = array(
-						'index' => 0,
+						'index'         => 0,
 						'message' => array(
-							'role'    => 'assistant',
+							'role' => 'assistant',
 							'content' => $output_text,
 						),
 						'finish_reason' => 'stop',
@@ -4440,7 +4440,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								// Convert to image_url type with proper structure.
 
 								$converted_segment = array(
-									'type' => 'image_url',
+									'type'      => 'image_url',
 									'image_url' => array( 'url' => $image_url ),
 								);
 
@@ -4510,7 +4510,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								$image_url = wp_get_attachment_url( $attachment_id );
 								if ( $image_url ) {
 									$converted_segment = array(
-										'type' => 'image_url',
+										'type'      => 'image_url',
 										'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
 									);
 
@@ -4670,7 +4670,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -4712,13 +4712,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
-				'body' => $encoded_payload,
+				'body'    => $encoded_payload,
 			);
 
 			WP_MCP_AI_Logger::log_event(
@@ -4773,7 +4773,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -4808,10 +4808,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -4853,7 +4853,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -4876,10 +4876,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -4921,7 +4921,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -4944,13 +4944,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id;
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
-				'method' => 'DELETE',
+				'method'  => 'DELETE',
 			);
 
 			$response = wp_remote_request( $endpoint, $request_args );
@@ -4991,7 +4991,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5031,13 +5031,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
-				'body' => $encoded_payload,
+				'body'    => $encoded_payload,
 			);
 
 			$response = wp_remote_post( $endpoint, $request_args );
@@ -5078,7 +5078,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5122,10 +5122,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5168,7 +5168,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5193,13 +5193,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/files/' . $file_id;
 
 			$request_args = array(
-				'headers'       => array(
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
+					'Content-Type' => 'application/json',
+					'OpenAI-Beta' => 'assistants=v2',
 				),
 				'timeout' => $timeout,
-				'method' => 'DELETE',
+				'method'  => 'DELETE',
 			);
 
 			$response = wp_remote_request( $endpoint, $request_args );
@@ -5260,7 +5260,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5319,12 +5319,12 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'method' => 'POST',
-				'headers'       => array(
+				'method'  => 'POST',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
-					'Content-Type'  => 'application/json',
+					'Content-Type' => 'application/json',
 				),
-				'body' => wp_json_encode( $payload ),
+				'body'    => wp_json_encode( $payload ),
 				'timeout' => $timeout,
 			);
 
@@ -5419,7 +5419,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5442,8 +5442,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id );
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -5528,7 +5528,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5551,8 +5551,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = self::BATCHES_ENDPOINT . '/' . rawurlencode( $batch_id ) . '/cancel';
 
 			$request_args = array(
-				'method' => 'POST',
-				'headers'       => array(
+				'method'  => 'POST',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -5651,7 +5651,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 400,
-						'actions'                  => array(
+						'actions' => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -5681,8 +5681,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			$request_args = array(
-				'method' => 'GET',
-				'headers'       => array(
+				'method'  => 'GET',
+				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
 				'timeout' => $timeout,
@@ -5921,10 +5921,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						);
 
 						$conversation_messages[] = array(
-							'role' => 'tool',
+							'role'         => 'tool',
 							'tool_call_id' => $tool_call_id,
-							'name' => $function_name,
-							'content' => wp_json_encode( array( 'error' => $error_message ) ),
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
 						);
 
 						WP_MCP_AI_Logger::log_error(
@@ -5956,10 +5956,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$validation_error = $this->validate_tool_arguments( $function_name, $arguments, $tool_definitions );
 						if ( is_wp_error( $validation_error ) ) {
 							$conversation_messages[] = array(
-								'role' => 'tool',
+								'role'         => 'tool',
 								'tool_call_id' => $tool_call_id,
-								'name' => $function_name,
-								'content' => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
+								'name'         => $function_name,
+								'content'      => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
 							);
 
 							WP_MCP_AI_Logger::log_error(
@@ -6008,10 +6008,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$error_message = $e->getMessage();
 
 						$conversation_messages[] = array(
-							'role' => 'tool',
+							'role'         => 'tool',
 							'tool_call_id' => $tool_call_id,
-							'name' => $function_name,
-							'content' => wp_json_encode( array( 'error' => $error_message ) ),
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
 						);
 
 						WP_MCP_AI_Logger::log_error(
