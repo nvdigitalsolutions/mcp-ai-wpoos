@@ -105,9 +105,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 17 services.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
+The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 79 Pro tools (total 230 tool files across base and Pro).
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 519 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
