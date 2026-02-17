@@ -440,6 +440,16 @@ For performance and size optimization, these packages are loaded from jsDelivr C
 
 **Important**: The canvas JavaScript library files in the repo are incomplete without native binaries. PDF OCR will fail with error: "Canvas module not available. PDF OCR requires canvas for rendering." Install canvas when you need PDF OCR functionality.
 
+**Why Native Binaries Cannot Be Pre-packaged:**
+
+Native binaries are:
+- **Platform-specific**: Linux binaries won't work on macOS/Windows
+- **Architecture-specific**: x64 binaries won't work on arm64
+- **Node version-specific**: Node 18 binaries won't work on Node 20/22/24
+- **System library-dependent**: Require matching Cairo/Pango versions
+
+Including pre-compiled binaries would only work for ONE specific configuration (e.g., Ubuntu 22.04 + Node 20 + x64) and fail for all other deployments. The `npm install canvas` approach guarantees compatibility by compiling for your exact environment.
+
 To install system-dependent and CDN packages:
 1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
 2. Enable "Disable CDN Loading" in plugin settings, OR  
