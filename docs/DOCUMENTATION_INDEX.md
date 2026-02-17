@@ -1,12 +1,24 @@
 # NV oOS Documentation Index
 
-**Last Updated:** February 13, 2026  
-**Plugin Version:** 1.1.0  
+**Last Updated:** February 17, 2026  
+**Plugin Version:** 1.1.2  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 563+ files (553+ in docs/ folder, 3 essential files in root, 53+ archived)
+**Total Documentation:** 564+ files (554+ in docs/ folder, 3 essential files in root, 53+ archived)
+
+> **📌 FEBRUARY 17, 2026 UPDATE:** 🧹 **ROOT MARKDOWN FILES CONSOLIDATION** ⭐
+> - **Markdown File Review Complete** - Reviewed and consolidated all root markdown files
+> - **Files Moved to docs/architecture/**: 2 technical analysis documents
+>   - Canvas Packaging Analysis (304 lines) - Pre-packaging size impact analysis
+>   - Pro Plugin Size Optimization (185 lines) - Size reduction from 87MB to 33MB
+> - **Root Directory Cleaned**: Maintains only 3 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md)
+> - **Documentation Updated**: Architecture README updated with new Technical Analyses section
+> - **Naming Standardized**: Converted to lowercase-with-hyphens for consistency
+> - **No Broken Links**: Verified all references, no external links to moved files
+> - **See**: [MARKDOWN_CONSOLIDATION_2026-02.md](MARKDOWN_CONSOLIDATION_2026-02.md)
+> - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
 
 > **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
 > - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 519+ tools for multi-step orchestration
