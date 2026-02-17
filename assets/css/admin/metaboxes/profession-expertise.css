@@ -1,0 +1,42 @@
+/**
+ * Profession Expertise Metabox Styles
+ *
+ * @package WP_MCP_AI
+ */
+
+.profession-tool-item {
+	transition: background-color 0.2s ease;
+}
+
+.profession-tool-item:hover {
+	background-color: #f0f0f0 !important;
+}
+
+#profession-tools-search {
+	padding: 6px 10px;
+	font-size: 14px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	box-shadow: 0 0 0 transparent;
+	transition: border-color .1s ease-in-out, box-shadow .1s linear;
+}
+
+#profession-tools-search:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: 2px solid transparent;
+}
+
+.profession-tools-controls .button {
+	height: 32px;
+	line-height: 30px;
+	padding: 0 12px;
+}
+
+#tools-selected-count {
+	display: inline-block;
+	padding: 4px 8px;
+	background: #f0f0f0;
+	border-radius: 3px;
+	font-size: 13px;
+}

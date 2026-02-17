@@ -18,7 +18,7 @@
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
         "php-stubs/wordpress-stubs": "^6.4",
-        "squizlabs/php_codesniffer": "^3.13",
+        "squizlabs/php_codesniffer": "*",
         "wp-coding-standards/wpcs": "^3.0",
         "phpunit/phpunit": "^9.6",
         "wp-phpunit/wp-phpunit": "^6.9",
@@ -27,7 +27,7 @@
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
-        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
+        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,test-capability-flags-integration.php,tests/helpers .",
         "format": "phpcbf",
         "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
         "test:install": "bash bin/install-wp-tests.sh wordpress_test root '' localhost latest",
@@ -63,6 +63,8 @@
         },
         "platform": {
             "php": "8.1.0"
-        }
+        },
+        "optimize-autoloader": true,
+        "classmap-authoritative": true
     }
 }

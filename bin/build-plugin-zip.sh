@@ -421,15 +421,70 @@ if [ "$BUILD_PRO" = true ]; then
     PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
-    # Copy pro addon files
+    # Copy pro addon files with aggressive exclusions to reduce size
     if [ -d "addons/pro" ]; then
+        echo "Step 3b.1: Copying Pro add-on files (excluding tests, docs, dev files)..."
         rsync -av --quiet addons/pro/ "build/${PRO_SLUG}/" \
             --exclude '.git' \
+            --exclude '.gitignore' \
             --exclude '.vscode' \
             --exclude 'node_modules' \
             --exclude 'tests' \
+            --exclude 'test' \
+            --exclude 'Test' \
+            --exclude 'Tests' \
             --exclude '*.zip' \
-            --exclude 'assets/examples'
+            --exclude 'assets/examples' \
+            --exclude 'composer.lock' \
+            --exclude 'package-lock.json' \
+            --exclude '*.js.map' \
+            --exclude '*.css.map' \
+            --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
+            --exclude 'assets/vendor/canvas/build' \
+            --exclude 'vendor/*/tests' \
+            --exclude 'vendor/*/test' \
+            --exclude 'vendor/*/Test' \
+            --exclude 'vendor/*/Tests' \
+            --exclude 'vendor/*/*/tests' \
+            --exclude 'vendor/*/*/test' \
+            --exclude 'vendor/*/*/Test' \
+            --exclude 'vendor/*/*/Tests' \
+            --exclude 'vendor/*/docs' \
+            --exclude 'vendor/*/doc' \
+            --exclude 'vendor/*/Docs' \
+            --exclude 'vendor/*/examples' \
+            --exclude 'vendor/*/example' \
+            --exclude 'vendor/*/*/docs' \
+            --exclude 'vendor/*/*/doc' \
+            --exclude 'vendor/*/*/Docs' \
+            --exclude 'vendor/*/*/examples' \
+            --exclude 'vendor/*/*/example' \
+            --exclude 'vendor/*/README*' \
+            --exclude 'vendor/*/CHANGELOG*' \
+            --exclude 'vendor/*/CONTRIBUTING*' \
+            --exclude 'vendor/*/LICENSE*' \
+            --exclude 'vendor/*/*/README*' \
+            --exclude 'vendor/*/*/CHANGELOG*' \
+            --exclude 'vendor/*/*/CONTRIBUTING*' \
+            --exclude 'vendor/*/*/LICENSE*' \
+            --exclude 'vendor/*/.travis.yml' \
+            --exclude 'vendor/*/.circleci' \
+            --exclude 'vendor/*/.github' \
+            --exclude 'vendor/*/*/.travis.yml' \
+            --exclude 'vendor/*/*/.circleci' \
+            --exclude 'vendor/*/*/.github' \
+            --exclude 'vendor/*/phpunit.xml*' \
+            --exclude 'vendor/*/phpstan.neon*' \
+            --exclude 'vendor/*/psalm.xml*' \
+            --exclude 'vendor/*/.php-cs-fixer*' \
+            --exclude 'vendor/*/*/phpunit.xml*' \
+            --exclude 'vendor/*/*/phpstan.neon*' \
+            --exclude 'vendor/*/*/psalm.xml*' \
+            --exclude 'vendor/*/*/.php-cs-fixer*' \
+            --exclude 'vendor/*/Makefile' \
+            --exclude 'vendor/*/*/Makefile'
+        
+        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB), Canvas native binaries (~181MB)"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then

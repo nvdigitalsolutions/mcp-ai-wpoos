@@ -1,12 +1,60 @@
 # NV oOS Documentation Index
 
-**Last Updated:** February 6, 2026  
-**Plugin Version:** 1.1.0  
+**Last Updated:** February 17, 2026  
+**Plugin Version:** 1.1.2  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 560+ files (550+ in docs/ folder, 3 essential files in root, 50+ archived)
+**Total Documentation:** 564+ files (554+ in docs/ folder, 3 essential files in root, 53+ archived)
+
+> **📌 FEBRUARY 17, 2026 UPDATE:** 🧹 **ROOT MARKDOWN FILES CONSOLIDATION** ⭐
+> - **Markdown File Review Complete** - Reviewed and consolidated all root markdown files
+> - **Files Moved to docs/architecture/**: 2 technical analysis documents
+>   - Canvas Packaging Analysis (304 lines) - Pre-packaging size impact analysis
+>   - Pro Plugin Size Optimization (185 lines) - Size reduction from 87MB to 33MB
+> - **Root Directory Cleaned**: Maintains only 3 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md)
+> - **Documentation Updated**: Architecture README updated with new Technical Analyses section
+> - **Naming Standardized**: Converted to lowercase-with-hyphens for consistency
+> - **No Broken Links**: Verified all references, no external links to moved files
+> - **See**: [MARKDOWN_CONSOLIDATION_2026-02.md](MARKDOWN_CONSOLIDATION_2026-02.md)
+> - **Architecture Docs**: [Canvas Analysis](architecture/canvas-packaging-analysis.md) | [Size Optimization](architecture/pro-plugin-size-optimization.md)
+
+> **📌 FEBRUARY 13, 2026 UPDATE:** 🎯 **TOOL ENHANCEMENT ANALYSIS** ⭐⭐⭐
+> - **Research Pattern Enhancement Analysis Complete** - Comprehensive review of all 519+ tools for multi-step orchestration
+> - **Pattern: Web Search → Source Collection → AI Synthesis → Report Generation**
+> - **Key Findings:**
+>   - 14 tools already using pattern (research_product, research_post, etc.)
+>   - 15 high-priority candidates identified (content_recommendation_engine, seo_meta_optimizer, suggest_best_model)
+>   - 20+ medium-priority candidates for future enhancement
+>   - 80+ tools not suitable for this pattern (CRUD, calculations, specific APIs)
+> - **Expected Impact:**
+>   - 40% improvement in content recommendation relevance
+>   - Better SERP performance with current keyword trends
+>   - Always up-to-date model recommendations
+>   - Positive ROI within 5 months
+> - **Implementation Plan:**
+>   - Phase 1: 3 critical tools (2 weeks)
+>   - Phase 2: 3 high-value tools (2 weeks)
+>   - Phase 3: Content tools (2 weeks)
+>   - Phase 4: Refinement (2 weeks)
+>   - Total effort: 8 weeks, $23,000 estimated cost
+> - **New Documentation:**
+>   - [RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md](RESEARCH_PATTERN_EXECUTIVE_SUMMARY.md) - Executive summary (12KB)
+>   - [RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md](RESEARCH_PATTERN_ENHANCEMENT_ANALYSIS.md) - Full analysis (32KB)
+>   - [RESEARCH_PATTERN_IMPLEMENTATION_GUIDE.md](guides/RESEARCH_PATTERN_IMPLEMENTATION_GUIDE.md) - Developer guide (29KB)
+> - **Reference Implementation:** `/addons/pro/includes/tools/class-wp-mcp-ai-tool-research-product.php`
+> - **Recommendation:** Proceed with phased implementation
+
+> **📌 FEBRUARY 12, 2026 UPDATE:** 🧹
+> - **Root Directory Organization Complete** - Final cleanup and consolidation
+> - **3 Fix Summaries Archived**: Product Research fixes and Variable Product fix moved to `/archive/2025/fixes/`
+> - **Root Now Contains**: Only 3 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md)
+> - **Archive Updated**: Created comprehensive README for `/archive/2025/fixes/` (22 files total)
+> - **References Updated**: README.md and CHANGELOG.md now point to detailed docs in `/docs/fixes/`
+> - **No Content Lost**: All fix summaries preserved in archive with full cross-references to detailed documentation
+> - **Improved Navigation**: Clear separation between current docs and historical summaries
+> - **See**: [Archive Fixes README](../archive/2025/fixes/README.md)
 
 > **📌 FEBRUARY 6, 2026 UPDATE (LATEST):** ⭐⭐⭐⭐
 > - **🔍 COMPREHENSIVE GAP ANALYSIS COMPLETE** - Full plugin review identifying security, architecture, and quality improvements

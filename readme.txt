@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,6 +62,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
+* **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
 * **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
 * **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
 * **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
@@ -91,7 +92,10 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 NV oOS works perfectly standalone. Optional integrations add enhanced functionality:
 
-* **JetEngine** (paid) - Server-side chat transcript storage, CCT integration
+* **JetEngine** (paid) - Advanced integration with AI-powered features
+  - AI metaboxes for all JetEngine CPTs and taxonomies
+  - Research & Add pages with automatic field mapping
+  - Server-side chat transcript storage via CCT
 * **WooCommerce** (free) - E-commerce automation tools
 * **Elementor** (freemium) - Template management, pre-built widgets
 * **Rank Math SEO** (freemium) - SEO analysis and optimization
@@ -187,7 +191,12 @@ Yes, when you use cloud AI providers, your chat messages are sent to their APIs.
 
 = Can I use this without JetEngine? =
 
-Absolutely! NV oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds server-side chat transcript storage. Without it, chat history is stored in browser localStorage (24 hours).
+Absolutely! NV oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds:
+- AI metaboxes for all JetEngine custom post types and taxonomies
+- Research & Add pages with automatic field mapping for AI-powered content creation
+- Server-side chat transcript storage via CCT
+
+Without it, chat history is stored in browser localStorage (24 hours).
 
 = How do I connect Claude Desktop or LM Studio? =
 

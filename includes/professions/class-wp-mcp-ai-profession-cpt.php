@@ -229,7 +229,7 @@ class WP_MCP_AI_Profession_CPT {
 			'capability_type'    => 'post',
 			'has_archive'        => false,
 			'hierarchical'       => false,
-			'menu_position'      => 57,
+			'menu_position'      => null,
 			'menu_icon'          => 'dashicons-businessperson',
 			'supports'           => array( 'title', 'editor', 'thumbnail' ),
 			'show_in_rest'       => false,

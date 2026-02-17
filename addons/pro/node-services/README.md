@@ -44,9 +44,21 @@ node ffmpeg-service.js metadata '{"video_path":"/path/to/video.mp4"}'
 node ffmpeg-service.js transcode '{"video_path":"/path/to/input.mp4","output_path":"/path/to/output.mp4","options":{"codec":"libx264","size":"1280x720"}}'
 ```
 
+### 4. pdf-extract-service.js
+Provides PDF text extraction using pdf-parse.
+
+**Usage:**
+```bash
+# Extract text from PDF
+node pdf-extract-service.js extract '{"filePath":"/path/to/document.pdf","maxPages":0}'
+
+# Get PDF metadata only
+node pdf-extract-service.js metadata '{"filePath":"/path/to/document.pdf"}'
+```
+
 ## Integration with WordPress
 
-These services are called via WordPress filters. See `NPM_INTEGRATION_GUIDE.md` in the parent directory for complete integration examples.
+These services are called via WordPress filters. See `docs/NPM_INTEGRATION_GUIDE.md` in the parent directory for complete integration examples.
 
 ### Quick Integration Example
 
@@ -127,4 +139,4 @@ chmod +x *.js
 
 ## Support
 
-See the main documentation in `NPM_INTEGRATION_GUIDE.md` for detailed integration examples and troubleshooting.
+See the main documentation in `docs/NPM_INTEGRATION_GUIDE.md` for detailed integration examples and troubleshooting.

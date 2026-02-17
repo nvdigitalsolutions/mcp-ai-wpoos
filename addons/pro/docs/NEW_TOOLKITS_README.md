@@ -77,7 +77,7 @@ This directory contains comprehensive planning documentation for **5 new Pro Too
    - CRUD completeness review
    - Enhancement recommendations
 
-10. **[NPM_PACKAGE_OPPORTUNITIES.md](./NPM_PACKAGE_OPPORTUNITIES.md)** (existing)
+10. **[docs/NPM_PACKAGE_OPPORTUNITIES.md](./docs/NPM_PACKAGE_OPPORTUNITIES.md)** (existing)
     - NPM package research and analysis
     - Integration strategies
     - Implementation status
@@ -85,7 +85,7 @@ This directory contains comprehensive planning documentation for **5 new Pro Too
    - CRUD completeness review
    - Enhancement recommendations
 
-5. **[NPM_PACKAGE_OPPORTUNITIES.md](./NPM_PACKAGE_OPPORTUNITIES.md)** (existing)
+5. **[docs/NPM_PACKAGE_OPPORTUNITIES.md](./docs/NPM_PACKAGE_OPPORTUNITIES.md)** (existing)
    - NPM package research and analysis
    - Integration strategies
    - Implementation status

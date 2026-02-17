@@ -1,0 +1,150 @@
+# Pro Add-on Distribution Exclusions
+# Files/directories to exclude from the Pro plugin ZIP
+
+# Development files
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.npmrc
+node_modules/
+tests/
+test/
+Test/
+Tests/
+
+# Composer dev dependencies
+composer.json
+composer.lock
+package.json
+package-lock.json
+
+# Documentation (keep only essential)
+*.md
+!README.md
+*.txt
+!README.txt
+!LICENSE.txt
+
+# Vendor test directories and files
+vendor/*/Test/
+vendor/*/test/
+vendor/*/Tests/
+vendor/*/tests/
+vendor/*/*/Test/
+vendor/*/*/test/
+vendor/*/*/Tests/
+vendor/*/*/tests/
+vendor/*/*/*/Test/
+vendor/*/*/*/test/
+vendor/*/*/*/Tests/
+vendor/*/*/*/tests/
+
+# Vendor documentation
+vendor/*/docs/
+vendor/*/doc/
+vendor/*/Docs/
+vendor/*/examples/
+vendor/*/example/
+vendor/*/demos/
+vendor/*/demo/
+vendor/*/*/docs/
+vendor/*/*/doc/
+vendor/*/*/Docs/
+vendor/*/*/examples/
+vendor/*/*/example/
+vendor/*/*/demos/
+vendor/*/*/demo/
+
+# Vendor README, CHANGELOG, and similar files
+vendor/*/README*
+vendor/*/CHANGELOG*
+vendor/*/CONTRIBUTING*
+vendor/*/UPGRADE*
+vendor/*/UPGRADING*
+vendor/*/HISTORY*
+vendor/*/LICENSE*
+vendor/*/COPYING*
+vendor/*/AUTHORS*
+vendor/*/INSTALL*
+vendor/*/*/README*
+vendor/*/*/CHANGELOG*
+vendor/*/*/CONTRIBUTING*
+vendor/*/*/UPGRADE*
+vendor/*/*/UPGRADING*
+vendor/*/*/HISTORY*
+vendor/*/*/LICENSE*
+vendor/*/*/COPYING*
+vendor/*/*/AUTHORS*
+vendor/*/*/INSTALL*
+
+# Vendor CI/CD config files
+vendor/*/.travis.yml
+vendor/*/.circleci/
+vendor/*/.github/
+vendor/*/*/.travis.yml
+vendor/*/*/.circleci/
+vendor/*/*/.github/
+
+# Vendor QA tool configs
+vendor/*/phpunit.xml*
+vendor/*/phpstan.neon*
+vendor/*/psalm.xml*
+vendor/*/.php-cs-fixer*
+vendor/*/phpspec.yml*
+vendor/*/*/phpunit.xml*
+vendor/*/*/phpstan.neon*
+vendor/*/*/psalm.xml*
+vendor/*/*/.php-cs-fixer*
+vendor/*/*/phpspec.yml*
+
+# Vendor build/dev files
+vendor/*/Makefile
+vendor/*/makefile
+vendor/*/*/Makefile
+vendor/*/*/makefile
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.log
+*.bak
+*.backup
+*.cache
+*.tmp
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Build artifacts
+build/
+dist/
+
+# JavaScript source maps (development only) - OPTIMIZATION #1
+*.js.map
+*.css.map
+
+# Sample and test PDF files - OPTIMIZATION #2
+vendor/*/*/tests/**/*.pdf
+vendor/*/*/*/tests/**/*.pdf
+
+# Facebook SDK (not used, CDN available if needed) - OPTIMIZATION #4
+assets/vendor/facebook-nodejs-business-sdk/
+
+# Canvas native binaries (platform-specific, requires system installation) - OPTIMIZATION #5
+# Node canvas requires system-level libraries (librsvg, cairo, pango, etc.)
+# These binaries are Linux-specific (~181MB) and won't work on other platforms
+# Users needing PDF OCR should install canvas via npm on their server
+assets/vendor/canvas/build/

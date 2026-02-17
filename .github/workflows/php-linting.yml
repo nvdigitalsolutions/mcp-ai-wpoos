@@ -51,6 +51,7 @@ jobs:
           files_ignore: |
             vendor/**
             node_modules/**
+            addons/pro/vendor/**
             assets/examples/**
 
       - name: Run WPCS on changed files
@@ -186,6 +187,7 @@ jobs:
           files_ignore: |
             vendor/**
             node_modules/**
+            addons/pro/vendor/**
             assets/examples/**
 
       - name: Run PHP Compatibility Check on changed files

@@ -532,8 +532,11 @@ class WP_MCP_AI_Model_Service {
 	 * @return array Array of model_id => model_name pairs.
 	 */
 	protected function get_embedded_models( $settings ) {
-		// Check if embedded provider is enabled.
-		if ( empty( $settings['enable_embedded'] ) ) {
+		// Check if embedded provider is enabled (defaults to true when Pro is active).
+		// Auto-enable when Pro is active to match the field's 'default' => true in Pro Providers section.
+		$embedded_settings = WP_MCP_AI_Admin_Settings::get_embedded_provider_effective_settings( $settings );
+		$enable_embedded   = $embedded_settings['enabled'];
+		if ( empty( $enable_embedded ) ) {
 			return array();
 		}
 

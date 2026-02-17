@@ -160,22 +160,29 @@ class WP_MCP_AI_REST_Authenticator {
 	/**
 	 * Validate a mesh network API key.
 	 *
+	 * Returns null if the provided key doesn't look like a mesh key (allowing other auth methods).
+	 * Returns WP_Error if it looks like a mesh key but validation fails.
+	 * Returns true if validation succeeds.
+	 *
 	 * @param string $key The mesh API key to validate.
-	 * @return true|WP_Error
+	 * @return true|WP_Error|null True if valid, WP_Error if invalid, null if not a mesh key format.
 	 */
 	public function validate_mesh_key( $key ) {
 		if ( empty( $key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_mesh_key',
-				__( 'Mesh API key is missing.', 'mcp-ai-wpoos' ),
-				array( 'status' => 401 )
-			);
+			return null;
+		}
+
+		// Check if this looks like a mesh key (starts with "mesh_").
+		// If not, it's probably an Auth0 token or other bearer token - return null to allow fallthrough.
+		if ( 0 !== strpos( $key, 'mesh_' ) ) {
+			return null;
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		// Check if mesh networking is enabled.
 		if ( empty( $settings['enable_mesh'] ) ) {
+			// Key looks like a mesh key, but mesh is disabled - this is an error.
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
 				__( 'Mesh networking is not enabled on this site.', 'mcp-ai-wpoos' ),
@@ -187,6 +194,7 @@ class WP_MCP_AI_REST_Authenticator {
 		$inbound_key = isset( $settings['mesh_inbound_api_key'] ) ? $settings['mesh_inbound_api_key'] : '';
 
 		if ( empty( $inbound_key ) ) {
+			// Key looks like a mesh key, but mesh is not properly configured - this is an error.
 			return new WP_Error(
 				'wp_mcp_ai_mesh_not_configured',
 				__( 'Mesh networking inbound API key is not configured.', 'mcp-ai-wpoos' ),
@@ -196,6 +204,7 @@ class WP_MCP_AI_REST_Authenticator {
 
 		// Use hash_equals to prevent timing attacks.
 		if ( ! hash_equals( $inbound_key, $key ) ) {
+			// Mesh is properly configured, but the provided key doesn't match.
 			return new WP_Error(
 				'wp_mcp_ai_invalid_mesh_key',
 				__( 'Invalid mesh API key.', 'mcp-ai-wpoos' ),
@@ -657,9 +666,10 @@ class WP_MCP_AI_REST_Authenticator {
 				$this->mark_token_authenticated( 'mesh_key' );
 				return $this->get_auth_context();
 			} elseif ( is_wp_error( $mesh_result ) ) {
-				// Mesh key was present but invalid, don't try other methods.
+				// Mesh is configured but key is invalid - definitive failure.
 				return $mesh_result;
 			}
+			// If $mesh_result is null, mesh auth is not applicable - continue to Auth0.
 
 			// Try Auth0 bearer token.
 			$bearer_result = $this->validate_bearer_token( $token, $request );

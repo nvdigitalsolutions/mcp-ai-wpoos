@@ -65,6 +65,7 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
 				<li><?php esc_html_e( 'PDF Generation: Create PDF documents with PDFKit - custom fonts, images, tables, and styling', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'PDF Text Extraction: Extract text from PDF files with 3-tier fallback (Node.js/pdftotext/PHP)', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Word Documents: Generate .docx files with docx package - headers, footers, tables, images', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Excel Spreadsheets: Create .xlsx files with ExcelJS - formulas, charts, styling, data validation', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'HTML to PDF: Convert HTML content to PDF with custom styling', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -73,11 +74,13 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 				<li><?php esc_html_e( 'Research & Add: AI-assisted document template creation and management', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 
-			<h3><?php esc_html_e( 'NPM Packages Integrated', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<h3><?php esc_html_e( 'Packages Integrated', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
-				<li><strong>pdfkit</strong> (500K/week): Advanced PDF generation with vector graphics</li>
-				<li><strong>docx</strong> (2M/week): Microsoft Word document generation</li>
-				<li><strong>exceljs</strong> (2M/week): Excel spreadsheet creation and manipulation</li>
+				<li><strong>pdfkit</strong> (NPM): Advanced PDF generation with vector graphics</li>
+				<li><strong>docx</strong> (NPM): Microsoft Word document generation</li>
+				<li><strong>exceljs</strong> (NPM): Excel spreadsheet creation and manipulation</li>
+				<li><strong>pdf-parse</strong> (NPM): PDF text extraction via Node.js service</li>
+				<li><strong>smalot/pdfparser</strong> (Composer): PHP fallback for PDF text extraction</li>
 			</ul>
 
 			<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -90,11 +93,63 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 				<li><?php esc_html_e( 'Document template library management', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 
-			<h3><?php esc_html_e( 'Requirements', 'mcp-ai-wpoos-pro' ); ?></h3>
-			<ul>
-				<li><strong><?php esc_html_e( 'Node.js:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available</span>' : '<span style="color: orange;">⚠ Recommended (PHP fallbacks available)</span>'; ?></li>
-				<li><strong><?php esc_html_e( 'NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo $this->check_npm_packages_installed() ? '<span style="color: green;">✓ Installed</span>' : '<span style="color: orange;">⚠ Run: npm install in addons/pro/</span>'; ?></li>
-			</ul>
+			<h3><?php esc_html_e( 'Requirements & Status', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<table class="widefat" style="max-width: 800px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Component', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Notes', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><strong>Node.js</strong></td>
+						<td>Runtime</td>
+						<td><?php echo $this->check_nodejs_available() ? '<span style="color: green;">✓ Available</span>' : '<span style="color: orange;">⚠ Not Detected</span>'; ?></td>
+						<td><?php esc_html_e( 'Optional - PHP fallbacks available', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong>pdf-parse</strong></td>
+						<td>NPM (Bundled)</td>
+						<td><?php echo $this->check_pdf_parse_bundled() ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: red;">✗ Missing</span>'; ?></td>
+						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong>smalot/pdfparser</strong></td>
+						<td>Composer (Bundled)</td>
+						<td><?php echo $this->check_smalot_pdfparser() ? '<span style="color: green;">✓ Installed</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php esc_html_e( 'PHP fallback for PDF extraction', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong>pdfkit</strong></td>
+						<td>NPM (Bundled)</td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong>docx</strong></td>
+						<td>NPM (Bundled)</td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'docx' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+					<tr>
+						<td><strong>exceljs</strong></td>
+						<td>NPM (Bundled)</td>
+						<td><?php echo wp_mcp_ai_is_npm_package_available( 'exceljs' ) ? '<span style="color: green;">✓ Bundled</span>' : '<span style="color: orange;">⚠ Missing</span>'; ?></td>
+						<td><?php esc_html_e( 'Pre-bundled in assets/vendor/', 'mcp-ai-wpoos-pro' ); ?></td>
+					</tr>
+				</tbody>
+			</table>
+			<p style="margin-top: 10px;">
+				<strong><?php esc_html_e( 'Ready to Use:', 'mcp-ai-wpoos-pro' ); ?></strong> 
+				<?php if ( $this->check_all_dependencies() ): ?>
+					<span style="color: green;">✓ All dependencies are bundled and ready. No installation required!</span>
+				<?php else: ?>
+					<span style="color: orange;">⚠ Some dependencies may be missing. The plugin will use available fallbacks.</span>
+				<?php endif; ?>
+			</p>
 
 			<h3><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<p><?php esc_html_e( 'For detailed usage examples and API reference:', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -239,13 +294,59 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	/**
 	 * Check if NPM packages are installed
 	 *
+	 * Checks CDN availability, vendor directory, bundle files, and node_modules.
+	 *
 	 * @return bool
 	 */
 	private function check_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return is_dir( $node_modules . '/pdfkit' ) &&
-				is_dir( $node_modules . '/docx' ) &&
-				is_dir( $node_modules . '/exceljs' );
+		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
+		
+		// Use the centralized helper function for CDN-aware package checking.
+		$has_pdfkit = (
+			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
+		);
+		
+		$has_docx = (
+			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' )
+		);
+		
+		$has_exceljs = (
+			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' )
+		);
+		
+		return $has_pdfkit && $has_docx && $has_exceljs;
+	}
+
+	/**
+	 * Check if pdf-parse is bundled
+	 *
+	 * @return bool
+	 */
+	private function check_pdf_parse_bundled() {
+		return wp_mcp_ai_is_npm_package_available( 'pdf-parse' );
+	}
+
+	/**
+	 * Check if smalot/pdfparser is installed
+	 *
+	 * @return bool
+	 */
+	private function check_smalot_pdfparser() {
+		return class_exists( '\Smalot\PdfParser\Parser' );
+	}
+
+	/**
+	 * Check if all dependencies are available
+	 *
+	 * @return bool
+	 */
+	private function check_all_dependencies() {
+		return $this->check_pdf_parse_bundled() &&
+		       $this->check_smalot_pdfparser() &&
+		       $this->check_npm_packages_installed();
 	}
 }
 

@@ -1346,7 +1346,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'capability_type'   => 'post',
 				'supports'          => array( 'title', 'editor' ),
 				'menu_icon'         => 'dashicons-lightbulb',
-				'menu_position'     => 56,
+				'menu_position'     => null,
 				'has_archive'       => false,
 				'rewrite'           => false,
 				'show_in_nav_menus' => false,

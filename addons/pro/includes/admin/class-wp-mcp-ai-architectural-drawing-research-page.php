@@ -169,6 +169,7 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 							<li><strong><?php esc_html_e( 'Set scale:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use standard scales (1/4" = 1\'-0", 1:100)', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Link project:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Associate drawings with parent project', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Track revisions:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Document changes with revision numbers', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'NCS Reports:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request drawing reports with Sheet Organization, Layer Structure (Discipline-Major-Minor-Status), Scale Standards, and Quality Control Checklist', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -183,6 +184,9 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate building sections with dimensions and annotations">
 								<?php esc_html_e( '"Generate sections with dimensions"', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research CAD layer standards for commercial building and generate an NCS-compliant drawing documentation report. Use comprehensive depth and focus on layer organization and quality control.">
+								<?php esc_html_e( '"Research CAD standards (NCS report)..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -244,7 +248,7 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 							<?php
 							// Render chat interface with drawing-focused tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,create_floor_plan_variations,convert_sketch_to_floor_plan,generate_3d_model,render_architectural_view,create_walkthrough_animation,generate_construction_drawings,generate_detail_drawings,export_architectural_documents,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="generate_floor_plan,create_floor_plan_variations,convert_sketch_to_floor_plan,generate_3d_model,render_architectural_view,create_walkthrough_animation,generate_construction_drawings,generate_detail_drawings,export_architectural_documents,generate_research_report,web_search,search_content"]'
 							);
 							?>
 						</div>

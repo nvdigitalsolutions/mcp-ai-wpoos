@@ -61,6 +61,11 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'items'       => array( 'type' => 'integer' ),
 					'description' => __( 'Array of WordPress attachment IDs for PDF files to merge (in order).', 'mcp-ai-wpoos-pro' ),
 				),
+				'urls'           => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Array of PDF URLs to merge (alternative to attachment_ids, in order).', 'mcp-ai-wpoos-pro' ),
+				),
 				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Title for the merged PDF document.', 'mcp-ai-wpoos-pro' ),
@@ -70,7 +75,7 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'description' => __( 'Output filename (without extension). Defaults to "merged-document".', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'   => array( 'attachment_ids' ),
+			'required'   => array(),
 		);
 	}
 
@@ -99,13 +104,19 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Validate required parameters.
-		if ( empty( $arguments['attachment_ids'] ) || ! is_array( $arguments['attachment_ids'] ) ) {
+		$has_attachment_ids = ! empty( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] );
+		$has_urls           = ! empty( $arguments['urls'] ) && is_array( $arguments['urls'] );
+
+		if ( ! $has_attachment_ids && ! $has_urls ) {
 			return array(
-				'error' => __( 'attachment_ids array is required.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Either attachment_ids or urls array is required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
-		if ( count( $arguments['attachment_ids'] ) < 2 ) {
+		// Determine the count of files.
+		$file_count = $has_attachment_ids ? count( $arguments['attachment_ids'] ) : count( $arguments['urls'] );
+
+		if ( $file_count < 2 ) {
 			return array(
 				'error' => __( 'At least 2 PDF files are required to merge.', 'mcp-ai-wpoos-pro' ),
 			);
@@ -116,7 +127,7 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		try {
 			// Merge PDFs.
-			$result = $this->merge_pdf_files( $arguments['attachment_ids'], $title, $filename );
+			$result = $this->merge_pdf_files( $arguments, $title, $filename );
 
 			if ( is_wp_error( $result ) ) {
 				return array(
@@ -141,48 +152,119 @@ class WP_MCP_AI_Tool_Merge_PDFs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	/**
 	 * Merge PDF files.
 	 *
-	 * @param array  $attachment_ids Array of attachment IDs.
-	 * @param string $title          Document title.
-	 * @param string $filename       Output filename.
+	 * @param array  $arguments Array of arguments containing attachment_ids or urls.
+	 * @param string $title     Document title.
+	 * @param string $filename  Output filename.
 	 * @return array|WP_Error Result array or error.
 	 */
-	protected function merge_pdf_files( $attachment_ids, $title, $filename ) {
-		$file_paths = array();
+	protected function merge_pdf_files( $arguments, $title, $filename ) {
+		$file_paths     = array();
+		$temp_files     = array();
+		$has_attachment = ! empty( $arguments['attachment_ids'] );
 
-		foreach ( $attachment_ids as $attachment_id ) {
-			$file_path = get_attached_file( $attachment_id );
+		// Process attachment IDs or URLs.
+		if ( $has_attachment ) {
+			foreach ( $arguments['attachment_ids'] as $attachment_id ) {
+				$file_path = get_attached_file( $attachment_id );
 
-			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'file_not_found', sprintf(
-					/* translators: %d: attachment ID */
-					__( 'PDF file not found for attachment ID %d.', 'mcp-ai-wpoos-pro' ),
-					$attachment_id
-				) );
+				if ( ! $file_path || ! file_exists( $file_path ) ) {
+					return new WP_Error(
+						'file_not_found',
+						sprintf(
+							/* translators: %d: attachment ID */
+							__( 'PDF file not found for attachment ID %d.', 'mcp-ai-wpoos-pro' ),
+							$attachment_id
+						)
+					);
+				}
+
+				// Validate it's a PDF.
+				$mime_type = mime_content_type( $file_path );
+				if ( 'application/pdf' !== $mime_type ) {
+					return new WP_Error(
+						'invalid_file',
+						sprintf(
+							/* translators: %d: attachment ID */
+							__( 'Attachment ID %d is not a valid PDF.', 'mcp-ai-wpoos-pro' ),
+							$attachment_id
+						)
+					);
+				}
+
+				$file_paths[] = $file_path;
+			}
+		} else {
+			// Process URLs.
+			if ( ! function_exists( 'download_url' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
 			}
 
-			// Validate it's a PDF.
-			$mime_type = mime_content_type( $file_path );
-			if ( 'application/pdf' !== $mime_type ) {
-				return new WP_Error( 'invalid_file', sprintf(
-					/* translators: %d: attachment ID */
-					__( 'Attachment ID %d is not a valid PDF.', 'mcp-ai-wpoos-pro' ),
-					$attachment_id
-				) );
-			}
+			foreach ( $arguments['urls'] as $url ) {
+				$temp_file = download_url( $url );
 
-			$file_paths[] = $file_path;
+				if ( is_wp_error( $temp_file ) ) {
+					// Clean up any previously downloaded files.
+					foreach ( $temp_files as $temp ) {
+						@unlink( $temp );
+					}
+					return new WP_Error(
+						'download_failed',
+						sprintf(
+							/* translators: %s: error message */
+							__( 'Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
+							$temp_file->get_error_message()
+						)
+					);
+				}
+
+				// Validate it's a PDF.
+				$mime_type = mime_content_type( $temp_file );
+				if ( 'application/pdf' !== $mime_type ) {
+					// Clean up temp files.
+					@unlink( $temp_file );
+					foreach ( $temp_files as $temp ) {
+						@unlink( $temp );
+					}
+					return new WP_Error(
+						'invalid_file',
+						sprintf(
+							/* translators: %s: URL */
+							__( 'URL is not a valid PDF: %s', 'mcp-ai-wpoos-pro' ),
+							$url
+						)
+					);
+				}
+
+				$temp_files[] = $temp_file;
+				$file_paths[] = $temp_file;
+			}
 		}
 
 		// Try pdftk command-line tool.
 		$pdftk = shell_exec( 'which pdftk 2>/dev/null' );
 
 		if ( ! empty( $pdftk ) ) {
-			return $this->merge_with_pdftk( $file_paths, $filename );
+			$result = $this->merge_with_pdftk( $file_paths, $filename );
+			// Clean up temp files if we downloaded any.
+			foreach ( $temp_files as $temp ) {
+				@unlink( $temp );
+			}
+			return $result;
 		}
 
 		// Try TCPDF library.
 		if ( class_exists( '\TCPDF' ) ) {
-			return $this->merge_with_tcpdf( $file_paths, $filename );
+			$result = $this->merge_with_tcpdf( $file_paths, $filename );
+			// Clean up temp files if we downloaded any.
+			foreach ( $temp_files as $temp ) {
+				@unlink( $temp );
+			}
+			return $result;
+		}
+
+		// Clean up temp files if we downloaded any.
+		foreach ( $temp_files as $temp ) {
+			@unlink( $temp );
 		}
 
 		// No suitable merging method available.

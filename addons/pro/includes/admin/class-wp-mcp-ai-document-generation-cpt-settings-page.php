@@ -81,6 +81,47 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			$this->option_name,
 			$this->option_name . '_section'
 		);
+
+		// OCR Settings.
+		add_settings_field(
+			'ocr_provider',
+			__( 'OCR Provider', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_provider_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
+
+		add_settings_field(
+			'ocr_fallback_provider',
+			__( 'OCR Fallback Provider', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_fallback_provider_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
+
+		add_settings_field(
+			'ocr_preprocessing',
+			__( 'OCR Preprocessing', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_preprocessing_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
+
+		add_settings_field(
+			'ocr_timeout',
+			__( 'OCR Timeout', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_timeout_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
+
+		add_settings_field(
+			'ocr_max_pages_default',
+			__( 'OCR Max Pages Default', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_ocr_max_pages_default_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
 	}
 
 	/**
@@ -140,8 +181,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 * Render Node.js status field.
 	 */
 	public function render_nodejs_status_field() {
-		$nodejs_available     = $this->check_nodejs_available();
-		$npm_packages         = $this->check_npm_packages_installed();
+		$nodejs_available      = $this->check_nodejs_available();
+		$npm_packages          = $this->check_npm_packages_installed();
 		$optional_npm_packages = $this->check_optional_npm_packages_installed();
 
 		?>
@@ -156,23 +197,23 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		<p>
 			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (pdfkit, docx, exceljs, pdf-lib)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (pdfkit, docx, exceljs, pdf-lib via bundles or vendor)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Installed', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
 				<br>
-				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
+				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install && npm run build</code>
 			<?php endif; ?>
 		</p>
 		<p>
 			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			<?php if ( $optional_npm_packages ) : ?>
-				<span style="color: green;">✓ <?php esc_html_e( 'Installed (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (puppeteer-core for advanced HTML to PDF)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php else : ?>
-				<span style="color: gray;">○ <?php esc_html_e( 'Not Installed (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Available (optional - advanced HTML rendering)', 'mcp-ai-wpoos-pro' ); ?></span>
 			<?php endif; ?>
 		</p>
 		<p class="description">
-			<?php esc_html_e( 'Node.js and NPM packages enable advanced document generation features. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
+			<?php esc_html_e( 'Core packages are pre-bundled in bin/*.bundle.js files or available in the vendor directory. Optional packages enhance functionality when available. PHP fallbacks and command-line tools (pdftk, pdftotext, wkhtmltopdf) are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -194,30 +235,46 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	/**
 	 * Check if NPM packages are installed.
 	 *
+	 * Checks CDN availability, vendor directory, bundle files, and node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		
-		// Check core document generation packages.
-		$core_packages = file_exists( $node_modules . '/pdfkit/package.json' ) &&
-						file_exists( $node_modules . '/docx/package.json' ) &&
-						file_exists( $node_modules . '/exceljs/package.json' );
-		
+		$bin_dir = WP_MCP_AI_PRO_PATH . 'bin';
+
+		// Use the centralized helper function for CDN-aware package checking.
+		$has_pdfkit = (
+			wp_mcp_ai_is_npm_package_available( 'pdfkit' ) ||
+			file_exists( $bin_dir . '/generate-pdf.bundle.js' )
+		);
+
+		$has_docx = (
+			wp_mcp_ai_is_npm_package_available( 'docx' ) ||
+			file_exists( $bin_dir . '/generate-word.bundle.js' )
+		);
+
+		$has_exceljs = (
+			wp_mcp_ai_is_npm_package_available( 'exceljs' ) ||
+			file_exists( $bin_dir . '/generate-excel.bundle.js' )
+		);
+
+		$core_packages = $has_pdfkit && $has_docx && $has_exceljs;
+
 		// Check utility packages (optional).
-		$utility_packages = file_exists( $node_modules . '/pdf-lib/package.json' );
-		
+		$utility_packages = wp_mcp_ai_is_npm_package_available( 'pdf-lib' );
+
 		return $core_packages && $utility_packages;
 	}
 
 	/**
 	 * Check if optional NPM packages are installed.
 	 *
+	 * Checks CDN availability, vendor directory, and node_modules.
+	 *
 	 * @return bool
 	 */
 	protected function check_optional_npm_packages_installed() {
-		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return file_exists( $node_modules . '/puppeteer-core/package.json' );
+		return wp_mcp_ai_is_npm_package_available( 'puppeteer-core' );
 	}
 
 	/**
@@ -240,6 +297,146 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		</label>
 		<p class="description">
 			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create document templates using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR provider field.
+	 */
+	public function render_ocr_provider_field() {
+		$options       = get_option( $this->option_name, array() );
+		$value         = isset( $options['ocr_provider'] ) ? $options['ocr_provider'] : 'auto';
+		$main_settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		?>
+		<select name="<?php echo esc_attr( $this->option_name ); ?>[ocr_provider]" class="regular-text">
+			<option value="auto" <?php selected( $value, 'auto' ); ?>><?php esc_html_e( 'Auto (Detect Best Available)', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="openai" <?php selected( $value, 'openai' ); ?> <?php disabled( empty( $main_settings['openai_api_key'] ) ); ?>>
+				<?php esc_html_e( 'OpenAI GPT-4 Vision', 'mcp-ai-wpoos-pro' ); ?>
+				<?php if ( empty( $main_settings['openai_api_key'] ) ) : ?>
+					<?php esc_html_e( '(API Key Required)', 'mcp-ai-wpoos-pro' ); ?>
+				<?php endif; ?>
+			</option>
+			<option value="gemini" <?php selected( $value, 'gemini' ); ?> <?php disabled( empty( $main_settings['gemini_api_key'] ) ); ?>>
+				<?php esc_html_e( 'Google Gemini Vision', 'mcp-ai-wpoos-pro' ); ?>
+				<?php if ( empty( $main_settings['gemini_api_key'] ) ) : ?>
+					<?php esc_html_e( '(API Key Required)', 'mcp-ai-wpoos-pro' ); ?>
+				<?php endif; ?>
+			</option>
+			<option value="ollama" <?php selected( $value, 'ollama' ); ?> <?php disabled( empty( $main_settings['ollama_endpoint'] ) ); ?>>
+				<?php esc_html_e( 'Ollama Vision Models (Local)', 'mcp-ai-wpoos-pro' ); ?>
+				<?php if ( empty( $main_settings['ollama_endpoint'] ) ) : ?>
+					<?php esc_html_e( '(Endpoint Required)', 'mcp-ai-wpoos-pro' ); ?>
+				<?php endif; ?>
+			</option>
+			<option value="tesseract" <?php selected( $value, 'tesseract' ); ?>>
+				<?php esc_html_e( 'Tesseract OCR (System)', 'mcp-ai-wpoos-pro' ); ?>
+			</option>
+		</select>
+		<p class="description">
+			<?php
+			esc_html_e( 'Select the OCR provider for extracting text from scanned images and PDFs. Auto mode automatically selects the best available provider.', 'mcp-ai-wpoos-pro' );
+			echo '<br>';
+			/* translators: %s: Settings page URL */
+			printf(
+				esc_html__( 'Configure API keys in %s', 'mcp-ai-wpoos-pro' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ) . '">' . esc_html__( 'Provider Settings', 'mcp-ai-wpoos-pro' ) . '</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR fallback provider field.
+	 */
+	public function render_ocr_fallback_provider_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['ocr_fallback_provider'] ) ? $options['ocr_fallback_provider'] : 'auto';
+
+		?>
+		<select name="<?php echo esc_attr( $this->option_name ); ?>[ocr_fallback_provider]" class="regular-text">
+			<option value="auto" <?php selected( $value, 'auto' ); ?>><?php esc_html_e( 'Auto (Try All Available)', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="openai" <?php selected( $value, 'openai' ); ?>><?php esc_html_e( 'OpenAI GPT-4 Vision', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="gemini" <?php selected( $value, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini Vision', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="ollama" <?php selected( $value, 'ollama' ); ?>><?php esc_html_e( 'Ollama Vision Models', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="tesseract" <?php selected( $value, 'tesseract' ); ?>><?php esc_html_e( 'Tesseract OCR', 'mcp-ai-wpoos-pro' ); ?></option>
+			<option value="none" <?php selected( $value, 'none' ); ?>><?php esc_html_e( 'None (No Fallback)', 'mcp-ai-wpoos-pro' ); ?></option>
+		</select>
+		<p class="description">
+			<?php esc_html_e( 'If the primary provider fails, this provider will be used as fallback. Auto mode tries all available providers in order.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR preprocessing field.
+	 */
+	public function render_ocr_preprocessing_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['ocr_preprocessing'] ) ? (bool) $options['ocr_preprocessing'] : true;
+
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( $this->option_name ); ?>[ocr_preprocessing]"
+				value="1"
+				<?php checked( $value, true ); ?>
+			/>
+			<?php esc_html_e( 'Enable image preprocessing (grayscale, contrast, noise reduction)', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Preprocessing improves OCR accuracy for low-quality images. Disable if images are already optimized.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR timeout field.
+	 */
+	public function render_ocr_timeout_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['ocr_timeout'] ) ? absint( $options['ocr_timeout'] ) : 300;
+
+		?>
+		<input
+			type="number"
+			name="<?php echo esc_attr( $this->option_name ); ?>[ocr_timeout]"
+			value="<?php echo esc_attr( $value ); ?>"
+			min="30"
+			max="600"
+			step="30"
+			class="small-text"
+		/>
+		<?php esc_html_e( 'seconds', 'mcp-ai-wpoos-pro' ); ?>
+		<p class="description">
+			<?php esc_html_e( 'Maximum time to wait for OCR processing before timing out. Range: 30-600 seconds.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render OCR max pages default field.
+	 */
+	public function render_ocr_max_pages_default_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['ocr_max_pages_default'] ) ? absint( $options['ocr_max_pages_default'] ) : 10;
+
+		?>
+		<input
+			type="number"
+			name="<?php echo esc_attr( $this->option_name ); ?>[ocr_max_pages_default]"
+			value="<?php echo esc_attr( $value ); ?>"
+			min="0"
+			max="100"
+			step="1"
+			class="small-text"
+		/>
+		<?php esc_html_e( 'pages', 'mcp-ai-wpoos-pro' ); ?>
+		<p class="description">
+			<?php esc_html_e( 'Default maximum number of pages to process with OCR. OCR is resource-intensive; limiting pages prevents timeouts on large documents. Individual tools can override this setting. Set to 0 for unlimited (not recommended).', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}
@@ -362,6 +559,32 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 		} else {
 			// Checkbox not checked.
 			$sanitized['enable_research'] = false;
+		}
+
+		// OCR settings sanitization.
+		if ( isset( $input['ocr_provider'] ) ) {
+			$sanitized['ocr_provider'] = sanitize_text_field( $input['ocr_provider'] );
+		}
+
+		if ( isset( $input['ocr_fallback_provider'] ) ) {
+			$sanitized['ocr_fallback_provider'] = sanitize_text_field( $input['ocr_fallback_provider'] );
+		}
+
+		if ( isset( $input['ocr_preprocessing'] ) ) {
+			$sanitized['ocr_preprocessing'] = (bool) $input['ocr_preprocessing'];
+		} else {
+			// Checkbox not checked.
+			$sanitized['ocr_preprocessing'] = false;
+		}
+
+		if ( isset( $input['ocr_timeout'] ) ) {
+			$sanitized['ocr_timeout'] = absint( $input['ocr_timeout'] );
+		}
+
+		if ( isset( $input['ocr_max_pages_default'] ) ) {
+			$value = absint( $input['ocr_max_pages_default'] );
+			// Enforce min/max bounds.
+			$sanitized['ocr_max_pages_default'] = min( 100, max( 0, $value ) );
 		}
 
 		return $sanitized;

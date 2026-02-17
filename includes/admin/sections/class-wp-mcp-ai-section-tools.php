@@ -347,6 +347,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Activate Google Site Kit integration to access Analytics, Search Console, PageSpeed, and AdSense data through AI assistants. Requires <a href="https://wordpress.org/plugins/google-site-kit/" target="_blank">Google Site Kit plugin</a> to be installed and configured.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'enable_jetengine_cpt_ai'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI Assistant for JetEngine CPTs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI assistant metabox for JetEngine custom post types', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Adds an AI assistant metabox to all JetEngine custom post type edit screens. Users can get AI help with content creation, editing, and optimization. (Pro Feature)', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_jetengine_cpt_research_add'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Research & Add Pages for JetEngine CPTs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Research & Add admin pages for JetEngine custom post types', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Creates dedicated "Research & Add" pages for each JetEngine CPT. These pages provide AI-powered research and data entry interfaces, similar to toolkit Research & Add pages. The pages appear as submenu items under each CPT. (Pro Feature)', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 
 				// Features fields.
 				'enable_quiz_system'                     => array(
@@ -366,9 +380,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_document_generation_toolkit'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation (Pro Version only)', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Enables the Document Generation Toolkit with 3 tools for creating professional documents: pro_pdf (PDF generation), pro_word (Word documents with templates), and pro_excel_document (Excel spreadsheets with formulas). AI generates content from natural language descriptions. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs) installed on the server. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation with OCR support (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Document Generation Toolkit with tools for creating professional documents (PDF, Word, Excel) and extracting text from scanned documents using OCR. Includes: pro_pdf, pro_word, pro_excel_document, extract_pdf_text (with auto-OCR), and ocr_pdf_text. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs, tesseract.js, pdfjs-dist) installed. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
+				),
+				'ocr_default_provider'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default OCR Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select the default OCR provider for extracting text from scanned PDFs and images. "Auto" tries providers in order of best accuracy: OpenAI Vision (highest accuracy, API cost), Gemini Vision (high accuracy, API cost), Ollama (local, privacy-focused), Tesseract (free, local). Individual tools can override this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'auto'      => __( 'Auto (Try best available)', 'mcp-ai-wpoos' ),
+						'openai'    => __( 'OpenAI Vision (Highest accuracy, requires API key)', 'mcp-ai-wpoos' ),
+						'gemini'    => __( 'Google Gemini Vision (High accuracy, requires API key)', 'mcp-ai-wpoos' ),
+						'ollama'    => __( 'Ollama Vision (Local, privacy-focused)', 'mcp-ai-wpoos' ),
+						'tesseract' => __( 'Tesseract OCR (Free, local, good accuracy)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'auto',
+					'pro_badge'   => true,
+				),
+				'ocr_enable_preprocessing'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OCR Image Preprocessing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically enhance images before OCR for better accuracy', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Applies image preprocessing (grayscale, contrast enhancement, sharpening, noise reduction) before OCR to improve text recognition accuracy. Uses Sharp (Node.js) or Imagick (PHP). Recommended for scanned documents.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'pro_badge'      => true,
+				),
+				'ocr_max_pages_default'                  => array(
+					'type'        => 'number',
+					'label'       => __( 'OCR Max Pages Default', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default maximum number of pages to process with OCR. OCR is resource-intensive; limiting pages prevents timeouts on large documents. Individual tools can override this setting. Set to 0 for unlimited (not recommended).', 'mcp-ai-wpoos' ),
+					'default'     => 10,
+					'min'         => 0,
+					'max'         => 100,
+					'pro_badge'   => true,
 				),
 
 				// Excel and Document Generation Settings (Pro).
@@ -808,6 +853,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'fields' => array(
 						'enable_jetengine_cct',
 						'enable_jetengine_tools',
+						'enable_jetengine_cpt_ai',
+						'enable_jetengine_cpt_research_add',
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
 						'enable_sitekit_integration',
