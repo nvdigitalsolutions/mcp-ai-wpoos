@@ -420,18 +420,25 @@ For performance and size optimization, these packages are loaded from jsDelivr C
 - **mathjs** (~17MB) - Advanced mathematics
 - **prettier** (~500KB) - Code formatting
 
-### System-Dependent Packages (ZIP Distribution)
-
-These packages require system-level dependencies:
+### System-Dependent Packages (Requires npm install)
 
 **canvas** - PDF OCR functionality:
-- **Cloned Repo**: Canvas JavaScript library files included (72KB)
-- **ZIP Distribution**: Canvas excluded (users install when needed)  
-- **Usage**: PDF OCR tools require canvas with native binaries compiled for your platform
-- **Installation**: `cd addons/pro && npm install canvas`
-- **System Requirements**: Requires libvips (Linux), Cairo (macOS/Windows) for compilation
+- **Status**: JavaScript lib files included in cloned repo (72KB), excluded from ZIP
+- **Native Binaries**: NOT included (must be compiled for your platform)
+- **OCR Availability**: 
+  - ✅ Image OCR works immediately (uses Tesseract.js)
+  - ❌ PDF OCR requires native binaries compilation
+- **Installation Required**: 
+  ```bash
+  cd addons/pro
+  npm install canvas
+  ```
+- **System Requirements**: 
+  - Linux: `libcairo2-dev`, `libpango1.0-dev`, `libjpeg-dev`, `libgif-dev`, `librsvg2-dev`
+  - macOS: `cairo`, `pango` (via Homebrew)
+  - Windows: Visual Studio Build Tools
 
-The canvas JavaScript library is pre-packaged in cloned repositories (without native binaries). When you need PDF OCR functionality, run `npm install canvas` to compile the native binaries for your platform.
+**Important**: The canvas JavaScript library files in the repo are incomplete without native binaries. PDF OCR will fail with error: "Canvas module not available. PDF OCR requires canvas for rendering." Install canvas when you need PDF OCR functionality.
 
 To install system-dependent and CDN packages:
 1. Set `define( 'WP_MCP_AI_PRO_DISABLE_CDN', true );` in `wp-config.php`, OR
