@@ -235,7 +235,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$error_type       = isset( $decoded['error']['type'] ) ? $decoded['error']['type'] : '';
 
 				// Check for common error patterns and provide helpful guidance.
-				if ( stripos( $message, 'invalid file' ) !== false || stripos( $message, 'unsupported' ) !== false || stripos( $error_type, 'invalid_request' ) !== false ) {
+				$is_invalid_file    = stripos( $message, 'invalid file' ) !== false;
+				$is_unsupported     = stripos( $message, 'unsupported' ) !== false;
+				$is_invalid_request = stripos( $error_type, 'invalid_request' ) !== false;
+
+				if ( $is_invalid_file || $is_unsupported || $is_invalid_request ) {
 					$file_ext = wp_check_filetype( $file_path );
 					if ( in_array( strtolower( $file_ext['ext'] ), array( 'csv', 'xlsx', 'xls', 'pptx', 'ppt' ), true ) ) {
 						$enhanced_message .= ' ' . sprintf(

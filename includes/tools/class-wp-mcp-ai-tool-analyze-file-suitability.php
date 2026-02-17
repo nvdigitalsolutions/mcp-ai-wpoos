@@ -330,7 +330,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * @param array  &$recommendations Recommendations array.
 	 */
 	private function check_text_properties( $file_path, $file_ext, &$warnings, &$recommendations ) {
-		if ( in_array( $file_ext, array( 'txt', 'md', 'json', 'jsonl' ), true ) ) {
+		if ( in_array( $file_ext, array( 'txt', 'md', 'json', 'jsonl', 'html' ), true ) ) {
 			$file_size = filesize( $file_path );
 
 			// Check if file is empty.

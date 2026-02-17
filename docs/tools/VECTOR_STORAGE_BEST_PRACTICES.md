@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides industry-standard best practices for using OpenAI vector stores effectively with the NV oOS plugin. These recommendations are based on 2024 research and real-world RAG (Retrieval-Augmented Generation) implementations.
+This guide provides industry-standard best practices for using OpenAI vector stores effectively with the MCP AI WordPress plugin (mcp-ai-wpoos). These recommendations are based on 2024 research and real-world RAG (Retrieval-Augmented Generation) implementations.
 
 ## Table of Contents
 
@@ -262,7 +262,7 @@ knowledge-base/
 
 ---
 
-## Tools Available in NV oOS
+## Tools Available in MCP AI WordPress Plugin
 
 ### File Preparation
 
