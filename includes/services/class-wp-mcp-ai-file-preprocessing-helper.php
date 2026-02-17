@@ -97,7 +97,7 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 	 * @param string $purpose  Upload purpose (not currently used, reserved for future).
 	 * @return array Result with 'suitable', 'warnings', 'recommendations'.
 	 */
-	private static function check_format_suitability( $file_ext, $purpose ) {
+	private static function check_format_suitability( $file_ext, $purpose ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$reliable_formats   = array( 'pdf', 'txt', 'md', 'json', 'docx', 'html' );
 		$unreliable_formats = array( 'csv', 'xlsx', 'xls', 'pptx', 'ppt' );
 
