@@ -192,6 +192,8 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				);
 				?>
 			</p>
+
+			<?php $this->render_media_packages_status_section(); ?>
 		</div>
 		<?php
 	}
@@ -643,6 +645,202 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		       $this->check_sharp_library_exists() &&
 		       $this->check_sharp_dependencies_exist() &&
 		       $this->check_sharp_platform_binaries();
+	}
+
+	/**
+	 * Render media packages status section
+	 */
+	protected function render_media_packages_status_section() {
+		?>
+		<h3 style="margin-top: 30px;"><?php esc_html_e( 'Pro Packages Status', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<p><?php esc_html_e( 'View the status and availability of Node.js packages used by Media Toolkit features.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+		<?php $this->render_media_packages_table(); ?>
+		<?php
+	}
+
+	/**
+	 * Render media packages status table
+	 */
+	protected function render_media_packages_table() {
+		$packages = $this->get_media_package_definitions();
+
+		?>
+		<h4><?php esc_html_e( 'Media Toolkit Package Availability', 'mcp-ai-wpoos-pro' ); ?></h4>
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th style="width: 25%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 45%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $packages as $package ) : ?>
+					<?php
+					$status = $this->check_media_package_status( $package['name'] );
+					$icon   = $status['available'] ? '✅' : ( $package['required'] ? '❌' : '⚠️' );
+					$color  = $status['available'] ? 'green' : ( $package['required'] ? 'red' : 'orange' );
+					?>
+					<tr>
+						<td>
+							<strong><?php echo esc_html( $package['label'] ); ?></strong>
+							<br>
+							<code style="font-size: 11px;"><?php echo esc_html( $package['name'] ); ?></code>
+						</td>
+						<td>
+							<span style="color: <?php echo esc_attr( $color ); ?>;">
+								<?php echo esc_html( $icon ); ?>
+								<?php echo $status['available'] ? esc_html__( 'Available', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Missing', 'mcp-ai-wpoos-pro' ); ?>
+							</span>
+						</td>
+						<td>
+							<?php if ( $status['available'] ) : ?>
+								<span style="font-size: 11px;">
+									<?php echo esc_html( ucfirst( $status['source'] ) ); ?>
+								</span>
+							<?php else : ?>
+								<span style="color: #666; font-size: 11px;">
+									<?php echo $package['required'] ? esc_html__( 'Required', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Optional', 'mcp-ai-wpoos-pro' ); ?>
+								</span>
+							<?php endif; ?>
+						</td>
+						<td>
+							<?php echo esc_html( $package['description'] ); ?>
+							<?php if ( ! $status['available'] && ! empty( $package['install_hint'] ) ) : ?>
+								<br>
+								<span style="font-size: 11px; color: #666;">
+									<em><?php echo esc_html( $package['install_hint'] ); ?></em>
+								</span>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+			<h4><?php esc_html_e( 'Installation Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+			<p><?php esc_html_e( 'Most packages are pre-packaged in the plugin. To install missing packages:', 'mcp-ai-wpoos-pro' ); ?></p>
+			<ol>
+				<li>
+					<?php esc_html_e( 'Ensure Node.js 18.17.0+ is installed:', 'mcp-ai-wpoos-pro' ); ?>
+					<code>node --version</code>
+				</li>
+				<li>
+					<?php esc_html_e( 'Navigate to the pro addon directory:', 'mcp-ai-wpoos-pro' ); ?>
+					<br><code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?></code>
+				</li>
+				<li>
+					<?php esc_html_e( 'Install dependencies:', 'mcp-ai-wpoos-pro' ); ?>
+					<br><code>npm install --include=optional --legacy-peer-deps</code>
+				</li>
+				<li>
+					<?php esc_html_e( 'Build vendor bundles:', 'mcp-ai-wpoos-pro' ); ?>
+					<br><code>npm run build</code>
+				</li>
+			</ol>
+			<p>
+				<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+				<?php esc_html_e( 'Sharp requires platform-specific binaries and is pre-packaged for Linux x64. Other platforms need to run the install command above.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get media package definitions
+	 *
+	 * @return array
+	 */
+	protected function get_media_package_definitions() {
+		return array(
+			// Image Processing.
+			array(
+				'name'         => 'sharp',
+				'label'        => 'Sharp',
+				'description'  => __( 'High-performance image processing (resize, convert, optimize). Pre-packaged for Linux x64.', 'mcp-ai-wpoos-pro' ),
+				'required'     => true,
+				'install_hint' => __( 'Requires Node.js 18.17.0+. Pre-packaged for Linux x64, other platforms need npm install.', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'name'         => 'canvas',
+				'label'        => 'Canvas',
+				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
+				'required'     => false,
+				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// Data Visualization.
+			array(
+				'name'         => 'chart.js',
+				'label'        => 'Chart.js',
+				'description'  => __( 'Data visualization and chart generation (line, bar, pie, etc.).', 'mcp-ai-wpoos-pro' ),
+				'required'     => false,
+				'install_hint' => __( 'Enhances data visualization capabilities.', 'mcp-ai-wpoos-pro' ),
+			),
+			array(
+				'name'         => 'd3',
+				'label'        => 'D3.js',
+				'description'  => __( 'Advanced data visualization and custom chart generation.', 'mcp-ai-wpoos-pro' ),
+				'required'     => false,
+				'install_hint' => __( 'For complex custom visualizations.', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// OCR & Computer Vision.
+			array(
+				'name'         => 'tesseract.js',
+				'label'        => 'Tesseract.js',
+				'description'  => __( 'Optical Character Recognition (OCR) for extracting text from images.', 'mcp-ai-wpoos-pro' ),
+				'required'     => false,
+				'install_hint' => __( 'For OCR functionality in media tools.', 'mcp-ai-wpoos-pro' ),
+			),
+
+			// Optional Advanced Packages.
+			array(
+				'name'         => 'ffmpeg-static',
+				'label'        => 'FFmpeg Static',
+				'description'  => __( 'Static FFmpeg binary for video processing and conversion.', 'mcp-ai-wpoos-pro' ),
+				'required'     => false,
+				'install_hint' => __( 'Optional - for video processing tools.', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Check media package status
+	 *
+	 * @param string $package_name Package name.
+	 * @return array
+	 */
+	protected function check_media_package_status( $package_name ) {
+		// Use the centralized helper function.
+		if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+			return wp_mcp_ai_get_npm_package_status( $package_name );
+		}
+
+		// Fallback if helper not available.
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package_name;
+		if ( is_dir( $vendor_path ) || file_exists( $vendor_path . '/package.json' ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'vendor',
+			);
+		}
+
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package_name;
+		if ( is_dir( $node_modules_path ) || file_exists( $node_modules_path . '/package.json' ) ) {
+			return array(
+				'available' => true,
+				'source'    => 'node_modules',
+			);
+		}
+
+		return array(
+			'available' => false,
+			'source'    => '',
+		);
 	}
 }
 
