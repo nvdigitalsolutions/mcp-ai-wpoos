@@ -510,8 +510,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$normalised_headers = array();
 			if ( is_array( $headers ) ) {
 				foreach ( $headers as $key => $value ) {
-					$key   = strtolower( (string) $key );
-					$value = is_array( $value ) ? implode( ',', $value ) : (string) $value;
+					$key                        = strtolower( (string) $key );
+					$value                      = is_array( $value ) ? implode( ',', $value ) : (string) $value;
 					$normalised_headers[ $key ] = $value;
 				}
 			}
@@ -768,183 +768,183 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			return is_array( $decoded ) ? $decoded : array();
 		}
 
-	/**
-	* List available models from OpenAI.
-	*
-	* @param array $args Optional arguments (timeout, bypass_cache).
-	* @return array|WP_Error Array containing models list or WP_Error on failure.
-	*/
-	public function list_models( array $args = array() ) {
-		$api_key = $this->get_api_key();
+		/**
+		 * List available models from OpenAI.
+		 *
+		 * @param array $args Optional arguments (timeout, bypass_cache).
+		 * @return array|WP_Error Array containing models list or WP_Error on failure.
+		 */
+		public function list_models( array $args = array() ) {
+			$api_key = $this->get_api_key();
 
-		if ( empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_api_key',
-				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			// Check if caching is enabled.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
+			$bypass_cache = isset( $args['bypass_cache'] ) && $args['bypass_cache'];
+
+			// Allow disabling via constant.
+			if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+				$use_cache = false;
+			}
+
+			/**
+			* Filter whether to cache OpenAI model list requests.
+			*
+			* @param bool  $use_cache Whether to use caching.
+			* @param array $args      Request arguments.
+			*/
+			$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_models', $use_cache, $args );
+
+			if ( $use_cache && ! $bypass_cache ) {
+				$cache_key = 'openai_models_list';
+
+				// Get cache TTL from settings or use default (12 hours).
+				$cache_ttl = isset( $settings['openai_model_list_cache_ttl'] ) ? absint( $settings['openai_model_list_cache_ttl'] ) : 12 * HOUR_IN_SECONDS;
+
+				/**
+				* Filter the cache TTL for OpenAI model list.
+				*
+				* @param int $cache_ttl Cache TTL in seconds.
+				*/
+				$cache_ttl = apply_filters( 'wp_mcp_ai_openai_model_list_ttl', $cache_ttl );
+
+				return WP_MCP_AI_Cache_Helper::remember(
+					$cache_key,
+					function () use ( $api_key, $args ) {
+						return $this->fetch_models_from_api( $api_key, $args );
+					},
+					$cache_ttl
+				);
+			}
+
+			return $this->fetch_models_from_api( $api_key, $args );
+		}
+
+		/**
+		 * Fetch models from OpenAI API (internal method).
+		 *
+		 * @param string $api_key OpenAI API key.
+		 * @param array  $args    Optional arguments.
+		 * @return array|WP_Error Array of models or WP_Error on failure.
+		 */
+		private function fetch_models_from_api( $api_key, $args ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$endpoint = 'https://api.openai.com/v1/models';
+
+			$request_args = array(
+				'method'  => 'GET',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+				),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event( 'openai_list_models', 'Listing models from OpenAI.' );
+
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'OpenAI list models request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_list_models_http_error',
+					__( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list models response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'mcp-ai-wpoos' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI list models returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' );
+
+				return new WP_Error(
+					'wp_mcp_ai_list_models_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_models_listed',
+				'OpenAI models list retrieved successfully.',
 				array(
-					'status'  => 400,
-					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-					),
-				)
-			);
-		}
-
-		// Check if caching is enabled.
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
-		$bypass_cache = isset( $args['bypass_cache'] ) && $args['bypass_cache'];
-
-		// Allow disabling via constant.
-		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
-		$use_cache = false;
-		}
-
-	/**
-	* Filter whether to cache OpenAI model list requests.
-	*
-	* @param bool  $use_cache Whether to use caching.
-	* @param array $args      Request arguments.
-	*/
-		$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_models', $use_cache, $args );
-
-		if ( $use_cache && ! $bypass_cache ) {
-		$cache_key = 'openai_models_list';
-
-		// Get cache TTL from settings or use default (12 hours).
-		$cache_ttl = isset( $settings['openai_model_list_cache_ttl'] ) ? absint( $settings['openai_model_list_cache_ttl'] ) : 12 * HOUR_IN_SECONDS;
-
-	/**
-	* Filter the cache TTL for OpenAI model list.
-	*
-	* @param int $cache_ttl Cache TTL in seconds.
-	*/
-		$cache_ttl = apply_filters( 'wp_mcp_ai_openai_model_list_ttl', $cache_ttl );
-
-		return WP_MCP_AI_Cache_Helper::remember(
-		$cache_key,
-			function () use ( $api_key, $args ) {
-		return $this->fetch_models_from_api( $api_key, $args );
-				},
-		$cache_ttl
-			);
-		}
-
-		return $this->fetch_models_from_api( $api_key, $args );
-	}
-
-	/**
-	* Fetch models from OpenAI API (internal method).
-	*
-	* @param string $api_key OpenAI API key.
-	* @param array  $args    Optional arguments.
-	* @return array|WP_Error Array of models or WP_Error on failure.
-	*/
-	private function fetch_models_from_api( $api_key, $args ) {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
-
-		$endpoint = 'https://api.openai.com/v1/models';
-
-		$request_args = array(
-			'method'  => 'GET',
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $api_key,
-			),
-			'timeout' => $timeout,
-		);
-
-		WP_MCP_AI_Logger::log_event( 'openai_list_models', 'Listing models from OpenAI.' );
-
-		$response = $this->dispatch_http_request( $endpoint, $request_args );
-
-		if ( is_wp_error( $response ) ) {
-		WP_MCP_AI_Logger::log_error( 'OpenAI list models request failed.', array( 'error' => $response->get_error_message() ) );
-
-		return WP_MCP_AI_HTTP::prepare_transport_error(
-		$response,
-			'wp_mcp_ai_list_models_http_error',
-			__( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' ),
-			__( 'OpenAI', 'mcp-ai-wpoos' )
-			);
-		}
-
-		$code    = wp_remote_retrieve_response_code( $response );
-		$body    = wp_remote_retrieve_body( $response );
-		$decoded = json_decode( $body, true );
-
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-		WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list models response.', array( 'body' => $body ) );
-
-		return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'mcp-ai-wpoos' ) );
-		}
-
-		if ( $code < 200 || $code >= 300 ) {
-		WP_MCP_AI_Logger::log_error(
-			'OpenAI list models returned an error.',
-			array(
-			'code' => $code,
-			'body' => $decoded,
+					'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
 				)
 			);
 
-		$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' );
-
-		return new WP_Error(
-			'wp_mcp_ai_list_models_error',
-		$message,
-			array(
-			'status'   => $code,
-			'response' => $decoded,
-				)
-			);
+			return is_array( $decoded ) ? $decoded : array();
 		}
 
-		WP_MCP_AI_Logger::log_event(
-			'openai_models_listed',
-			'OpenAI models list retrieved successfully.',
-			array(
-			'count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
-			)
-		);
 
-		return is_array( $decoded ) ? $decoded : array();
-	}
+		/**
+		 * Retrieve information about a specific model.
+		 *
+		 * @param string $model_id Model identifier (e.g., 'gpt-4').
+		 * @param array  $args     Optional arguments (timeout).
+		 * @return array|WP_Error Array containing model information or WP_Error on failure.
+		 */
+		public function get_model( $model_id, array $args = array() ) {
+			$api_key = $this->get_api_key();
 
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
 
-	/**
-	* Retrieve information about a specific model.
-	*
-	* @param string $model_id Model identifier (e.g., 'gpt-4').
-	* @param array  $args     Optional arguments (timeout).
-	* @return array|WP_Error Array containing model information or WP_Error on failure.
-	*/
-	public function get_model( $model_id, array $args = array() ) {
-		$api_key = $this->get_api_key();
+			$model_id = sanitize_text_field( (string) $model_id );
 
-		if ( empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_api_key',
-				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
-				array(
-					'status'  => 400,
-					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-					),
-				)
-			);
-		}
+			if ( '' === $model_id ) {
+				return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'mcp-ai-wpoos' ) );
+			}
 
-		$model_id = sanitize_text_field( (string) $model_id );
-
-		if ( '' === $model_id ) {
-		return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'mcp-ai-wpoos' ) );
-		}
-
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
 
 			$endpoint = 'https://api.openai.com/v1/models/' . rawurlencode( $model_id );
 
@@ -1028,201 +1028,201 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			return is_array( $decoded ) ? $decoded : array();
 		}
 
-	/**
-	 * Generate embeddings for text input.
-	 *
-	 * @param string|array $input   Text string or array of strings to embed.
-	 * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout, bypass_cache).
-	 * @return array|WP_Error Array containing embeddings or WP_Error on failure.
-	 */
-	public function create_embeddings( $input, array $options = array() ) {
-		$api_key = $this->get_api_key();
+		/**
+		 * Generate embeddings for text input.
+		 *
+		 * @param string|array $input   Text string or array of strings to embed.
+		 * @param array        $options Optional parameters (model, encoding_format, dimensions, user, timeout, bypass_cache).
+		 * @return array|WP_Error Array containing embeddings or WP_Error on failure.
+		 */
+		public function create_embeddings( $input, array $options = array() ) {
+			$api_key = $this->get_api_key();
 
-		if ( empty( $api_key ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_missing_api_key',
-				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
-				array(
-					'status'  => 400,
-					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-					),
-				)
-			);
-		}
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
 
-		if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ) );
-		}
+			if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
+				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ) );
+			}
 
-		// Check if caching is enabled.
-		$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
-		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
+			// Check if caching is enabled.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$use_cache    = ! empty( $settings['enable_openai_api_caching'] );
+			$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
 
-		// Allow disabling via constant.
-		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
-			$use_cache = false;
+			// Allow disabling via constant.
+			if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+				$use_cache = false;
+			}
+
+			/**
+			 * Filter whether to cache OpenAI embeddings requests.
+			 *
+			 * @param bool         $use_cache Whether to use caching.
+			 * @param string|array $input     Input text.
+			 * @param array        $options   Request options.
+			 */
+			$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_embeddings', $use_cache, $input, $options );
+
+			if ( $use_cache && ! $bypass_cache ) {
+				// Build cache key from input and relevant options.
+				$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+				$encoding_format = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : '';
+				$dimensions      = isset( $options['dimensions'] ) && '' !== $options['dimensions'] ? absint( $options['dimensions'] ) : 0;
+
+				$cache_key_data = array(
+					'input'           => $input,
+					'model'           => $model,
+					'encoding_format' => $encoding_format,
+					'dimensions'      => $dimensions,
+				);
+
+				$cache_key = 'openai_embedding_' . md5( wp_json_encode( $cache_key_data ) );
+
+				// Get cache TTL from settings or use default (24 hours).
+				$cache_ttl = isset( $settings['openai_embedding_cache_ttl'] ) ? absint( $settings['openai_embedding_cache_ttl'] ) : 24 * HOUR_IN_SECONDS;
+
+				/**
+				 * Filter the cache TTL for OpenAI embeddings.
+				 *
+				 * @param int   $cache_ttl Cache TTL in seconds.
+				 * @param array $options   Request options.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_openai_embedding_ttl', $cache_ttl, $options );
+
+				return WP_MCP_AI_Cache_Helper::remember(
+					$cache_key,
+					function () use ( $api_key, $input, $options ) {
+						return $this->fetch_embeddings_from_api( $api_key, $input, $options );
+					},
+					$cache_ttl
+				);
+			}
+
+			return $this->fetch_embeddings_from_api( $api_key, $input, $options );
 		}
 
 		/**
-		 * Filter whether to cache OpenAI embeddings requests.
+		 * Fetch embeddings from OpenAI API (internal method).
 		 *
-		 * @param bool         $use_cache Whether to use caching.
-		 * @param string|array $input     Input text.
-		 * @param array        $options   Request options.
+		 * @param string       $api_key OpenAI API key.
+		 * @param string|array $input   Text input.
+		 * @param array        $options Optional parameters.
+		 * @return array|WP_Error Array of embeddings or WP_Error on failure.
 		 */
-		$use_cache = apply_filters( 'wp_mcp_ai_cache_openai_embeddings', $use_cache, $input, $options );
+		private function fetch_embeddings_from_api( $api_key, $input, $options ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
 
-		if ( $use_cache && ! $bypass_cache ) {
-			// Build cache key from input and relevant options.
-			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
-			$encoding_format = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : '';
-			$dimensions      = isset( $options['dimensions'] ) && '' !== $options['dimensions'] ? absint( $options['dimensions'] ) : 0;
+			// Default model.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
 
-			$cache_key_data = array(
-				'input'           => $input,
-				'model'           => $model,
-				'encoding_format' => $encoding_format,
-				'dimensions'      => $dimensions,
+			$payload = array(
+				'model' => $model,
+				'input' => $input,
 			);
 
-			$cache_key = 'openai_embedding_' . md5( wp_json_encode( $cache_key_data ) );
+			// Optional parameters.
+			if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
+				$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
+			}
 
-			// Get cache TTL from settings or use default (24 hours).
-			$cache_ttl = isset( $settings['openai_embedding_cache_ttl'] ) ? absint( $settings['openai_embedding_cache_ttl'] ) : 24 * HOUR_IN_SECONDS;
+			if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
+				$payload['dimensions'] = absint( $options['dimensions'] );
+			}
 
-			/**
-			 * Filter the cache TTL for OpenAI embeddings.
-			 *
-			 * @param int   $cache_ttl Cache TTL in seconds.
-			 * @param array $options   Request options.
-			 */
-			$cache_ttl = apply_filters( 'wp_mcp_ai_openai_embedding_ttl', $cache_ttl, $options );
+			if ( isset( $options['user'] ) && '' !== $options['user'] ) {
+				$payload['user'] = sanitize_text_field( $options['user'] );
+			}
 
-			return WP_MCP_AI_Cache_Helper::remember(
-				$cache_key,
-				function () use ( $api_key, $input, $options ) {
-					return $this->fetch_embeddings_from_api( $api_key, $input, $options );
-				},
-				$cache_ttl
+			$endpoint = 'https://api.openai.com/v1/embeddings';
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
 			);
-		}
 
-		return $this->fetch_embeddings_from_api( $api_key, $input, $options );
-	}
-
-	/**
-	 * Fetch embeddings from OpenAI API (internal method).
-	 *
-	 * @param string       $api_key OpenAI API key.
-	 * @param string|array $input   Text input.
-	 * @param array        $options Optional parameters.
-	 * @return array|WP_Error Array of embeddings or WP_Error on failure.
-	 */
-	private function fetch_embeddings_from_api( $api_key, $input, $options ) {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout  = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-		$timeout  = max( 5, $timeout );
-
-		// Default model.
-		$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
-
-		$payload = array(
-			'model' => $model,
-			'input' => $input,
-		);
-
-		// Optional parameters.
-		if ( isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ) {
-			$payload['encoding_format'] = sanitize_text_field( $options['encoding_format'] );
-		}
-
-		if ( isset( $options['dimensions'] ) && '' !== $options['dimensions'] ) {
-			$payload['dimensions'] = absint( $options['dimensions'] );
-		}
-
-		if ( isset( $options['user'] ) && '' !== $options['user'] ) {
-			$payload['user'] = sanitize_text_field( $options['user'] );
-		}
-
-		$endpoint = 'https://api.openai.com/v1/embeddings';
-
-		$request_args = array(
-			'method'  => 'POST',
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type'  => 'application/json',
-			),
-			'body'    => wp_json_encode( $payload ),
-			'timeout' => $timeout,
-		);
-
-		WP_MCP_AI_Logger::log_event(
-			'openai_create_embeddings',
-			'Creating embeddings with OpenAI.',
-			array(
-				'model'        => $model,
-				'input_type'   => is_array( $input ) ? 'array' : 'string',
-				'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
-			)
-		);
-
-		$response = $this->dispatch_http_request( $endpoint, $request_args );
-
-		if ( is_wp_error( $response ) ) {
-			WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
-
-			return WP_MCP_AI_HTTP::prepare_transport_error(
-				$response,
-				'wp_mcp_ai_embeddings_http_error',
-				__( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' ),
-				__( 'OpenAI', 'mcp-ai-wpoos' )
-			);
-		}
-
-		$code    = wp_remote_retrieve_response_code( $response );
-		$body    = wp_remote_retrieve_body( $response );
-		$decoded = json_decode( $body, true );
-
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-			WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
-
-			return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'mcp-ai-wpoos' ) );
-		}
-
-		if ( $code < 200 || $code >= 300 ) {
-			WP_MCP_AI_Logger::log_error(
-				'OpenAI embeddings returned an error.',
+			WP_MCP_AI_Logger::log_event(
+				'openai_create_embeddings',
+				'Creating embeddings with OpenAI.',
 				array(
-					'code' => $code,
-					'body' => $decoded,
+					'model'        => $model,
+					'input_type'   => is_array( $input ) ? 'array' : 'string',
+					'input_length' => is_array( $input ) ? count( $input ) : strlen( $input ),
 				)
 			);
 
-			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' );
+			$response = $this->dispatch_http_request( $endpoint, $request_args );
 
-			return new WP_Error(
-				'wp_mcp_ai_embeddings_error',
-				$message,
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'OpenAI embeddings request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_embeddings_http_error',
+					__( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'mcp-ai-wpoos' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'OpenAI embeddings returned an error.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' );
+
+				return new WP_Error(
+					'wp_mcp_ai_embeddings_error',
+					$message,
+					array(
+						'status'   => $code,
+						'response' => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_embeddings_created',
+				'OpenAI embeddings created successfully.',
 				array(
-					'status'   => $code,
-					'response' => $decoded,
+					'model'            => $model,
+					'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
 				)
 			);
+
+			return is_array( $decoded ) ? $decoded : array();
 		}
-
-		WP_MCP_AI_Logger::log_event(
-			'openai_embeddings_created',
-			'OpenAI embeddings created successfully.',
-			array(
-				'model'            => $model,
-				'embeddings_count' => isset( $decoded['data'] ) && is_array( $decoded['data'] ) ? count( $decoded['data'] ) : 0,
-			)
-		);
-
-		return is_array( $decoded ) ? $decoded : array();
-	}
 
 
 		/**
@@ -2472,8 +2472,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
-				$speed = floatval( $options['speed'] );
-				$speed = max( 0.25, min( 4, $speed ) );
+				$speed            = floatval( $options['speed'] );
+				$speed            = max( 0.25, min( 4, $speed ) );
 				$payload['speed'] = $speed;
 			} else {
 				$speed = null;
@@ -2642,8 +2642,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
-				$temperature = floatval( $options['temperature'] );
-				$temperature = max( 0, min( 1, $temperature ) );
+				$temperature           = floatval( $options['temperature'] );
+				$temperature           = max( 0, min( 1, $temperature ) );
 				$fields['temperature'] = $temperature;
 			}
 
@@ -2876,7 +2876,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( $should_use_responses_api ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
-				$payload['input'] = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
+				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
 				// When using Chat Completions API, convert input_image segments to image_url format.
 
@@ -2887,7 +2887,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 				// Always run conversion to handle input_image segments from conversation history.
 
-				$chat_messages = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
+				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 
@@ -2907,7 +2907,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['temperature'] ) && null !== $options['temperature'] && '' !== $options['temperature'] ) {
-				$temperature = floatval( $options['temperature'] );
+				$temperature            = floatval( $options['temperature'] );
 				$payload['temperature'] = max( 0, min( 2, $temperature ) );
 			}
 
@@ -3110,7 +3110,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				if ( empty( $segments ) ) {
 					$message['content'] = '';
-					$normalised[] = $message;
+					$normalised[]       = $message;
 					continue;
 				}
 
@@ -3134,7 +3134,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				if ( $all_text ) {
-					$text_parts = array_filter(
+					$text_parts         = array_filter(
 						$text_parts,
 						static function ( $part ) {
 							return '' !== trim( $part );
@@ -3185,7 +3185,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( in_array( $role, array( 'system', 'user' ), true ) ) {
 					$pending_calls           = array();
 					$awaiting_tool_responses = false;
-					$filtered[] = $message;
+					$filtered[]              = $message;
 					continue;
 				}
 
@@ -3245,7 +3245,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$pending_calls           = array();
 				$awaiting_tool_responses = false;
-				$filtered[] = $message;
+				$filtered[]              = $message;
 			}
 
 			return array_values( $filtered );
@@ -3464,9 +3464,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							$type         = isset( $segment['type'] ) ? $segment['type'] : '';
 
 							if ( in_array( $type, array( 'text', 'input_text', 'output_text' ), true ) && isset( $segment['text'] ) ) {
-								$content = (string) $segment['text'];
-								$length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
-								$slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
+								$content              = (string) $segment['text'];
+								$length               = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
+								$slice                = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
 								$segment_copy['text'] = $slice . ( $length > 200 ? '…' : '' );
 							}
 
@@ -3525,9 +3525,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 						$message['content'] = $trimmed_segments;
 					} elseif ( isset( $message['content'] ) ) {
-						$content = (string) $message['content'];
-						$length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
-						$slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
+						$content            = (string) $message['content'];
+						$length             = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
+						$slice              = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
 						$message['content'] = $slice . ( $length > 200 ? '…' : '' );
 					}
 
@@ -3723,7 +3723,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$original_content = isset( $original_messages[ $index ]['content'] ) ? $original_messages[ $index ]['content'] : null;
 
 				if ( isset( $entry['content'] ) && ! is_array( $entry['content'] ) ) {
-					$content_string = (string) $entry['content'];
+					$content_string   = (string) $entry['content'];
 					$entry['content'] = array(
 						array(
 							'type' => 'text',
@@ -3959,7 +3959,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				$segment['file_id'] = $openai_file_id;
-				$file_id = $openai_file_id;
+				$file_id            = $openai_file_id;
 
 				if ( isset( $segment['image'] ) ) {
 					unset( $segment['image'] );
@@ -4051,7 +4051,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
 
 			if ( '' === $file_id && isset( $segment['file']['id'] ) ) {
-				$file_id = (string) $segment['file']['id'];
+				$file_id            = (string) $segment['file']['id'];
 				$segment['file_id'] = $file_id;
 			}
 
@@ -4149,9 +4149,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$content = isset( $choice['content'] ) ? $choice['content'] : array();
 					$role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
 
-					$normalised_choice = $choice;
-					$content_text      = $this->extract_text_from_response_content( $content );
-					$content_fallback  = is_array( $content ) ? array_values( $content ) : $content;
+					$normalised_choice            = $choice;
+					$content_text                 = $this->extract_text_from_response_content( $content );
+					$content_fallback             = is_array( $content ) ? array_values( $content ) : $content;
 					$normalised_choice['message'] = array(
 						'role'    => $role,
 						'content' => '' !== $content_text ? $content_text : $content_fallback,
@@ -4568,7 +4568,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 
 				$message['content'] = $converted_segments;
-				$converted[] = $message;
+				$converted[]        = $message;
 			}
 
 			return $converted;
@@ -5670,8 +5670,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['limit'] ) && '' !== $options['limit'] ) {
-				$limit = absint( $options['limit'] );
-				$limit = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
+				$limit                 = absint( $options['limit'] );
+				$limit                 = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
 				$query_params['limit'] = $limit;
 			}
 
@@ -5855,7 +5855,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Prepare options with tools.
-			$request_options = $options;
+			$request_options          = $options;
 			$request_options['tools'] = $tool_definitions;
 
 			// Execute recursive tool calling loop.
