@@ -38,9 +38,9 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 	 * Add settings submenu page.
 	 */
 	public function add_settings_page() {
-		// Image templates are under upload.php (Media menu).
+		// Image templates have their own CPT menu.
 		add_submenu_page(
-			'upload.php',
+			'edit.php?post_type=mcp_ai_image_tpl',
 			$this->page_title,
 			$this->menu_title,
 			'manage_options',
