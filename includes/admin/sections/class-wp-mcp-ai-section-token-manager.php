@@ -1164,12 +1164,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
-			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_model_table() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in render_model_table() method.
+			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
 			// Output JavaScript for inline editing.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML and JavaScript.
-			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_javascript() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in render_javascript() method.
+			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 
 		/**

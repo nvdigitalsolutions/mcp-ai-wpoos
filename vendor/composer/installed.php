@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-token-manager-models',
-        'version' => 'dev-copilot/update-token-manager-models',
-        'reference' => 'ad3e0a53af49f08565c56fa87df43877177bfa81',
+        'pretty_version' => 'dev-copilot/fix-dropdown-display-issue',
+        'version' => 'dev-copilot/fix-dropdown-display-issue',
+        'reference' => 'c25143651bb13d7effe6189b642a99cc82be7e81',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-token-manager-models',
-            'version' => 'dev-copilot/update-token-manager-models',
-            'reference' => 'ad3e0a53af49f08565c56fa87df43877177bfa81',
+            'pretty_version' => 'dev-copilot/fix-dropdown-display-issue',
+            'version' => 'dev-copilot/fix-dropdown-display-issue',
+            'reference' => 'c25143651bb13d7effe6189b642a99cc82be7e81',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
