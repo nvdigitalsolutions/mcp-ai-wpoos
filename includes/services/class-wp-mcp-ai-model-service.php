@@ -178,8 +178,8 @@ class WP_MCP_AI_Model_Service {
 		}
 
 		// o-series Reasoning Models.
-		$models['o3']     = 'o3 (Reasoning)';
-		$models['o3-pro'] = 'o3 Pro (Advanced Reasoning)';
+		$models['o3']      = 'o3 (Reasoning)';
+		$models['o3-pro']  = 'o3 Pro (Advanced Reasoning)';
 		$models['o4-mini'] = 'o4-mini (Multimodal Reasoning)';
 
 		if ( ! $requires_vision && ! $requires_multimodal ) {
