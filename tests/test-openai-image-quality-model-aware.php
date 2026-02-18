@@ -70,8 +70,8 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $body );
 		$this->assertArrayHasKey( 'quality', $body );
 
-		// Should map 'medium' to 'standard' for the API.
-		$this->assertSame( 'standard', $body['quality'] );
+		// gpt-image-1.5 should send 'medium' directly, not map to 'standard'.
+		$this->assertSame( 'medium', $body['quality'] );
 	}
 
 	/**
@@ -123,8 +123,8 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $body );
 		$this->assertArrayHasKey( 'quality', $body );
 
-		// Should map 'medium' to 'standard' for the API.
-		$this->assertSame( 'standard', $body['quality'] );
+		// gpt-image-1 should send 'medium' directly, not map to 'standard'.
+		$this->assertSame( 'medium', $body['quality'] );
 	}
 
 	/**
@@ -228,8 +228,8 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $body );
 		$this->assertArrayHasKey( 'quality', $body );
 
-		// Should map 'high' to 'hd' for the API.
-		$this->assertSame( 'hd', $body['quality'] );
+		// gpt-image-1.5 should send 'high' directly, not map to 'hd'.
+		$this->assertSame( 'high', $body['quality'] );
 	}
 
 	/**

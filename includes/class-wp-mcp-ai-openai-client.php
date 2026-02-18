@@ -1578,22 +1578,41 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$size    = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
 			$quality = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
 
-			// Translate quality values to OpenAI-compatible values.
-			// OpenAI API only accepts 'standard' and 'hd' for quality parameter.
-			// Map gpt-image quality values (low, medium, high, auto) to DALL-E values.
-			$quality_map = array(
-				'low'    => 'standard',
-				'medium' => 'standard',
-				'auto'   => 'standard',
-				'high'   => 'hd',
-			);
+			// Normalize quality values based on the model being used.
+			// Different OpenAI image models accept different quality parameter values:
+			// - gpt-image-1/1.5 accept: 'low', 'medium', 'high', 'auto'
+			// - DALL-E 2/3 accept: 'standard', 'hd'
+			$model_lower = strtolower( $model );
+			$is_gpt_image_model = ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower );
 
-			// If quality is in the map, translate it. Otherwise, validate it's a valid OpenAI value.
-			if ( isset( $quality_map[ $quality ] ) ) {
-				$quality = $quality_map[ $quality ];
-			} elseif ( ! in_array( $quality, array( 'standard', 'hd' ), true ) ) {
-				// Default to 'standard' if not a valid OpenAI quality value.
-				$quality = 'standard';
+			if ( $is_gpt_image_model ) {
+				// For gpt-image models, validate and use quality values directly.
+				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
+				
+				// If quality is a DALL-E value, map it to gpt-image values.
+				if ( 'standard' === $quality ) {
+					$quality = 'medium';
+				} elseif ( 'hd' === $quality ) {
+					$quality = 'high';
+				} elseif ( ! in_array( $quality, $valid_gpt_qualities, true ) ) {
+					// Default to 'medium' if not a valid gpt-image quality value.
+					$quality = 'medium';
+				}
+			} else {
+				// For DALL-E models, map quality values to 'standard' or 'hd'.
+				$quality_map = array(
+					'low'    => 'standard',
+					'medium' => 'standard',
+					'auto'   => 'standard',
+					'high'   => 'hd',
+				);
+
+				if ( isset( $quality_map[ $quality ] ) ) {
+					$quality = $quality_map[ $quality ];
+				} elseif ( ! in_array( $quality, array( 'standard', 'hd' ), true ) ) {
+					// Default to 'standard' if not a valid DALL-E quality value.
+					$quality = 'standard';
+				}
 			}
 
 			$requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
