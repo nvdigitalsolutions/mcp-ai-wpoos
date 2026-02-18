@@ -169,6 +169,15 @@ class WP_MCP_AI_Model_Config_Renderer {
 				.wp-mcp-ai-model-provider-badge.cloudflare {
 					background-color: #f38020;
 				}
+				.wp-mcp-ai-model-provider-badge.webllm {
+					background-color: #9b59b6;
+				}
+				.wp-mcp-ai-model-provider-badge.google {
+					background-color: #4285f4;
+				}
+				.wp-mcp-ai-save-model-config {
+					max-width: 75px;
+				}
 				.wp-mcp-ai-storage-info {
 					background: #f0f6fc;
 					border-left: 4px solid #0073aa;
@@ -564,6 +573,29 @@ class WP_MCP_AI_Model_Config_Renderer {
 					$row.attr('data-model-id', modelId);
 				}
 			});
+
+			// Sort models by provider on page load.
+			function sortModelsByProvider() {
+				var rows = $modelRows.get();
+				rows.sort(function(a, b) {
+					var providerA = $(a).find('td:eq(1)').text().toLowerCase().trim();
+					var providerB = $(b).find('td:eq(1)').text().toLowerCase().trim();
+					if (providerA < providerB) return -1;
+					if (providerA > providerB) return 1;
+					// If providers are the same, sort by model name.
+					var nameA = $(a).find('td:eq(0) strong').text().toLowerCase().trim();
+					var nameB = $(b).find('td:eq(0) strong').text().toLowerCase().trim();
+					if (nameA < nameB) return -1;
+					if (nameA > nameB) return 1;
+					return 0;
+				});
+				$.each(rows, function(index, row) {
+					$modelTable.append(row);
+				});
+			}
+
+			// Sort on page load.
+			sortModelsByProvider();
 		});
 		</script>
 		<?php
