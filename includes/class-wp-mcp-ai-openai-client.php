@@ -165,16 +165,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$request_headers = array(
 				'Authorization' => 'Bearer ' . $api_key,
-				'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
+				'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
 			);
 
 			$request_body = $this->build_multipart_body(
 				array( 'purpose' => $purpose ),
 				array(
-					'name' => 'file',
-					'filename' => $filename,
+					'name'         => 'file',
+					'filename'     => $filename,
 					'content_type' => $mime_type,
-					'contents' => $file_contents,
+					'contents'     => $file_contents,
 				),
 				$boundary
 			);
@@ -183,15 +183,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_file_upload',
 				'Uploading file to OpenAI.',
 				array(
-					'purpose' => $purpose,
+					'purpose'  => $purpose,
 					'filename' => $filename,
 				)
 			);
 
 			$request_args = array(
-				'method' => 'POST',
+				'method'  => 'POST',
 				'headers' => $request_headers,
-				'body' => $request_body,
+				'body'    => $request_body,
 				'timeout' => $timeout,
 			);
 
@@ -260,8 +260,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'wp_mcp_ai_file_upload_error',
 					$enhanced_message,
 					array(
-						'status' => $code,
-						'response' => $decoded,
+						'status'           => $code,
+						'response'         => $decoded,
 						'original_message' => $message,
 					)
 				);
@@ -271,8 +271,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_file_uploaded',
 				'OpenAI file upload completed.',
 				array(
-					'file_id' => isset( $decoded['id'] ) ? $decoded['id'] : '',
-					'purpose' => $purpose,
+					'file_id'  => isset( $decoded['id'] ) ? $decoded['id'] : '',
+					'purpose'  => $purpose,
 					'filename' => $filename,
 				)
 			);
@@ -321,7 +321,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			$request_args = array(
-				'method' => 'DELETE',
+				'method'  => 'DELETE',
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
@@ -335,7 +335,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'OpenAI file deletion failed.',
 					array(
 						'file_id' => $file_id,
-						'error' => $response->get_error_message(),
+						'error'   => $response->get_error_message(),
 					)
 				);
 
@@ -356,7 +356,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'Failed to decode OpenAI file deletion response.',
 					array(
 						'file_id' => $file_id,
-						'body' => $body,
+						'body'    => $body,
 					)
 				);
 
@@ -368,8 +368,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'OpenAI file deletion returned an error.',
 					array(
 						'file_id' => $file_id,
-						'code' => $code,
-						'body' => $decoded,
+						'code'    => $code,
+						'body'    => $decoded,
 					)
 				);
 
@@ -379,7 +379,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'wp_mcp_ai_file_delete_error',
 					$message,
 					array(
-						'status' => $code,
+						'status'   => $code,
 						'response' => $decoded,
 					)
 				);
@@ -430,7 +430,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content';
 
 			$request_args = array(
-				'method' => 'GET',
+				'method'  => 'GET',
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 				),
@@ -450,7 +450,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'OpenAI file download request failed.',
 					array(
 						'file_id' => $file_id,
-						'error' => $response->get_error_message(),
+						'error'   => $response->get_error_message(),
 					)
 				);
 
