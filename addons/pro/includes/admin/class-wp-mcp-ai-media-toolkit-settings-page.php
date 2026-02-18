@@ -340,6 +340,134 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				</tr>
 			</table>
 
+			<h2><?php esc_html_e( 'OCR & Image Preprocessing Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Configure OCR (Optical Character Recognition) and image preprocessing services for extracting text from images and scanned PDFs.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<table class="form-table">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable OCR Service', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_ocr]" value="1" <?php checked( $options['enable_ocr'] ?? true, 1 ); ?> />
+							<?php esc_html_e( 'Enable OCR text extraction from images and PDFs', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'Uses Tesseract.js (Node.js), OpenAI Vision, or Gemini Vision for OCR processing', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Primary OCR Provider', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="<?php echo esc_attr( $this->option_name ); ?>[ocr_primary_provider]">
+							<option value="tesseract" <?php selected( $options['ocr_primary_provider'] ?? 'tesseract', 'tesseract' ); ?>><?php esc_html_e( 'Tesseract.js (Local/Free)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="openai" <?php selected( $options['ocr_primary_provider'] ?? 'tesseract', 'openai' ); ?>><?php esc_html_e( 'OpenAI GPT-4 Vision (API)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="gemini" <?php selected( $options['ocr_primary_provider'] ?? 'tesseract', 'gemini' ); ?>><?php esc_html_e( 'Google Gemini Vision (API)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="ollama" <?php selected( $options['ocr_primary_provider'] ?? 'tesseract', 'ollama' ); ?>><?php esc_html_e( 'Ollama Vision Models (Local)', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Primary provider for OCR. Will fallback to other providers if primary fails.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Image Preprocessing', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_image_preprocess]" value="1" <?php checked( $options['enable_image_preprocess'] ?? true, 1 ); ?> />
+							<?php esc_html_e( 'Preprocess images before OCR (improves accuracy)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'Applies grayscale, normalization, sharpening, and noise reduction for better OCR results', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'OCR Max Image Dimension', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[ocr_max_dimension]" value="<?php echo esc_attr( $options['ocr_max_dimension'] ?? '2048' ); ?>" min="512" max="4096" class="small-text" />
+						<span><?php esc_html_e( 'pixels', 'mcp-ai-wpoos-pro' ); ?></span>
+						<p class="description">
+							<?php esc_html_e( 'Maximum image width/height for OCR processing. Images will be resized if larger.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+
+			<h2><?php esc_html_e( 'Batch Processing Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Settings for batch image operations and collection processing.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<table class="form-table">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Batch Processing Chunk Size', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[batch_chunk_size]" value="<?php echo esc_attr( $options['batch_chunk_size'] ?? '10' ); ?>" min="1" max="50" class="small-text" />
+						<p class="description">
+							<?php esc_html_e( 'Number of images to process in each batch. Lower values reduce memory usage.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Background Processing', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_background_processing]" value="1" <?php checked( $options['enable_background_processing'] ?? true, 1 ); ?> />
+							<?php esc_html_e( 'Process large batches in the background using WordPress cron', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Batch Operation Timeout', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[batch_timeout]" value="<?php echo esc_attr( $options['batch_timeout'] ?? '300' ); ?>" min="60" max="3600" class="small-text" />
+						<span><?php esc_html_e( 'seconds', 'mcp-ai-wpoos-pro' ); ?></span>
+						<p class="description">
+							<?php esc_html_e( 'Maximum time for batch operations. Increase for large batches.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+
+			<h2><?php esc_html_e( 'Storage & Cleanup Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Configure storage locations and automatic cleanup policies for processed media.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<table class="form-table">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Temporary Files Location', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" name="<?php echo esc_attr( $this->option_name ); ?>[temp_storage_path]" value="<?php echo esc_attr( $options['temp_storage_path'] ?? 'wp-content/uploads/media-temp' ); ?>" class="regular-text" />
+						<p class="description">
+							<?php esc_html_e( 'Relative path from WordPress root for temporary processing files', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Auto-Cleanup Temporary Files', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[auto_cleanup_temp]" value="1" <?php checked( $options['auto_cleanup_temp'] ?? true, 1 ); ?> />
+							<?php esc_html_e( 'Automatically delete temporary files after processing', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Temp Files Retention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="number" name="<?php echo esc_attr( $this->option_name ); ?>[temp_retention_hours]" value="<?php echo esc_attr( $options['temp_retention_hours'] ?? '24' ); ?>" min="1" max="168" class="small-text" />
+						<span><?php esc_html_e( 'hours', 'mcp-ai-wpoos-pro' ); ?></span>
+						<p class="description">
+							<?php esc_html_e( 'How long to keep temporary files before automatic cleanup (1-168 hours)', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				// Toggle microservice settings visibility
