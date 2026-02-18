@@ -615,7 +615,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Generate unique filename.
-		$extension = $this->get_extension_from_mime_type( $image_editor->mime_type );
+		$extension = $this->get_extension_from_mime_type( $image_editor->get_mime_type() );
 		$file_name = sprintf( '%s-%s-%s.%s', sanitize_title( $file_name ), sanitize_title( $operation ), gmdate( 'Ymd-His' ), $extension );
 
 		// Save to uploads directory.
@@ -662,7 +662,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$title = $this->generate_attachment_title( $operation, $arguments );
 
 		$attachment = array(
-			'post_mime_type' => $image_editor->mime_type,
+			'post_mime_type' => $image_editor->get_mime_type(),
 			'post_title'     => $title,
 			'post_content'   => '',
 			'post_status'    => 'inherit',
@@ -696,7 +696,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			'file'          => $final_file_path,
 			'file_name'     => wp_basename( $final_file_path ),
 			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-			'mime_type'     => $image_editor->mime_type,
+			'mime_type'     => $image_editor->get_mime_type(),
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
 			'size'          => $image_editor->get_size(),

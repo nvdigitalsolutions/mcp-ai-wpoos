@@ -10,6 +10,24 @@ The `optimize_image_sharp` tool uses [Sharp](https://sharp.pixelplumbing.com/) -
 - Lossless compression
 - Batch processing capabilities
 
+## Requirements
+
+- **Node.js**: 18.17.0 or higher (18.17.0+, 20.x, 21.x, 22.x+)
+- **Platform**: Pre-packaged for Linux x64 (glibc). Other platforms require manual installation.
+
+### Important Version Notes
+
+Sharp 0.33.5 requires **Node.js 18.17.0 or higher**. If you have Node.js 18.0.0-18.16.x, you must upgrade to at least 18.17.0 for Sharp to work correctly.
+
+**Check Your Node.js Version:**
+```bash
+node --version
+```
+
+If the version is below v18.17.0, please upgrade:
+- Visit [https://nodejs.org/](https://nodejs.org/) for the latest LTS version
+- Or use a version manager like nvm: `nvm install 18.17.0`
+
 ## Why Sharp Requires Special Setup
 
 Unlike pure JavaScript packages, Sharp requires:
