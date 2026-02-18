@@ -174,6 +174,8 @@ const dependencies = [
 		files: [
 			{ src: 'package.json', dest: 'sharp/package.json' },
 		],
+		dependencies: ['detect-libc', 'color', 'semver'], // Sharp's required dependencies
+		platformBinaries: true, // Copy platform-specific native binaries
 	},
 	{
 		name: 'prettier',
@@ -664,9 +666,80 @@ dependencies.forEach(dep => {
 		});
 	}
 	
+	// Copy package dependencies (e.g., Sharp requires detect-libc, color, semver)
+	if (dep.dependencies && Array.isArray(dep.dependencies)) {
+		dep.dependencies.forEach(subDepName => {
+			const subDepPath = path.join(proPath, 'node_modules', subDepName);
+			const subDepDestPath = path.join(vendorPath, dep.name, 'node_modules', subDepName);
+			
+			if (fs.existsSync(subDepPath)) {
+				copyDir(subDepPath, subDepDestPath);
+				const size = getSize(subDepDestPath);
+				depSize += size;
+			} else {
+				console.log(`${colors.yellow}  ⚠️  ${subDepName} (dependency of ${dep.name}) not found${colors.reset}`);
+			}
+		});
+	}
+	
+	// Copy platform-specific binaries (e.g., Sharp's @img/sharp-* packages with libvips)
+	if (dep.platformBinaries) {
+		// Detect current platform
+		const platform = process.platform; // 'linux', 'darwin', 'win32'
+		const arch = process.arch; // 'x64', 'arm64', 'arm', 'ia32'
+		
+		// Determine which platforms to include
+		const includeAllPlatforms = process.env.WP_MCP_AI_BUILD_OFFLINE === 'true' || 
+		                             process.env.WP_MCP_AI_SHARP_ALL_PLATFORMS === 'true' ||
+		                             process.argv.includes('--include-all-platforms');
+		
+		let platformPackages = [];
+		
+		if (includeAllPlatforms) {
+			// Include all common platforms for distribution
+			console.log(`  ${colors.blue}ℹ️  Including platform binaries for ALL common platforms${colors.reset}`);
+			platformPackages = [
+				'@img/sharp-linux-x64',
+				'@img/sharp-libvips-linux-x64',
+				'@img/sharp-darwin-arm64',
+				'@img/sharp-libvips-darwin-arm64',
+				'@img/sharp-darwin-x64',
+				'@img/sharp-libvips-darwin-x64',
+				'@img/sharp-win32-x64',
+			];
+		} else {
+			// Include only current platform + Linux x64 (most common)
+			console.log(`  ${colors.blue}ℹ️  Including platform binaries for Linux x64 (most common) + current platform${colors.reset}`);
+			platformPackages = [
+				// Always include Linux x64 (most common production server)
+				'@img/sharp-linux-x64',
+				'@img/sharp-libvips-linux-x64',
+				// Also include current platform (for development/testing)
+				`@img/sharp-${platform}-${arch}`,
+				`@img/sharp-libvips-${platform}-${arch}`,
+			];
+		}
+		
+		// Deduplicate
+		platformPackages = [...new Set(platformPackages)];
+		
+		platformPackages.forEach(pkgName => {
+			const pkgPath = path.join(proPath, 'node_modules', pkgName);
+			const pkgDestPath = path.join(vendorPath, dep.name, 'node_modules', pkgName);
+			
+			if (fs.existsSync(pkgPath)) {
+				copyDir(pkgPath, pkgDestPath);
+				const size = getSize(pkgDestPath);
+				depSize += size;
+			}
+		});
+	}
+	
 	if (depSize > 0) {
 		const cdnLabel = dep.cdnPackage ? ' (offline fallback)' : '';
-		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${colors.reset} → ${formatSize(depSize)}`);
+		const depsLabel = dep.dependencies ? ` +${dep.dependencies.length} deps` : '';
+		const platformLabel = dep.platformBinaries ? ' +platform binaries' : '';
+		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${depsLabel}${platformLabel}${colors.reset} → ${formatSize(depSize)}`);
 		totalCopied++;
 		totalSize += depSize;
 	}
@@ -681,6 +754,11 @@ if (skippedCdn > 0) {
 	console.log(`${colors.blue}💡 CDN packages will load from jsDelivr with automatic fallback${colors.reset}`);
 	console.log(`${colors.blue}💡 To include CDN packages: WP_MCP_AI_BUILD_OFFLINE=true npm run build${colors.reset}`);
 }
+
+console.log(`\n${colors.blue}ℹ️  Sharp Platform Binaries:${colors.reset}`);
+console.log(`${colors.blue}   By default, only Linux x64 binaries are included (most common)${colors.reset}`);
+console.log(`${colors.blue}   To include ALL platforms: WP_MCP_AI_SHARP_ALL_PLATFORMS=true npm run build${colors.reset}`);
+console.log(`${colors.blue}   Or: WP_MCP_AI_BUILD_OFFLINE=true npm run build (includes everything)${colors.reset}`);
 
 // ============================================================================
 // POST-COPY CLEANUP: Remove unnecessary files to reduce plugin size

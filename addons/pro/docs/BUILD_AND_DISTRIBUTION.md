@@ -92,6 +92,15 @@ Each package configuration in `copy-dependencies.js` specifies:
 - Example files
 - Development dependencies
 
+**Special handling for Sharp:**
+Sharp requires platform-specific native binaries (libvips) and JavaScript dependencies (detect-libc, color, semver).
+The copy script automatically:
+- Copies Sharp's JavaScript library
+- Copies Sharp's dependencies to `sharp/node_modules/`
+- Copies platform-specific binaries for common platforms
+- For current platform only: Use standard `npm run build`
+- For all platforms: Use `WP_MCP_AI_BUILD_OFFLINE=true npm run build`
+
 ---
 
 ## Git Workflow
@@ -106,21 +115,35 @@ Each package configuration in `copy-dependencies.js` specifies:
 
 # TRACKED (included)
 !/addons/pro/assets/vendor/         # Pre-built packages for distribution
+!/addons/pro/assets/vendor/sharp/node_modules/  # Sharp dependencies and platform binaries
 ```
 
 ### Workflow
 
 ```bash
 # 1. Install dependencies (creates node_modules - not tracked)
-npm install
+cd addons/pro
+npm install --include=optional    # Include Sharp platform binaries
 
 # 2. Build vendor directory (creates assets/vendor - tracked)
 npm run build
+# This copies packages from node_modules to assets/vendor, including:
+# - Sharp library, dependencies (detect-libc, color, semver), and platform binaries
+# - All other NPM packages
 
 # 3. Commit the vendor directory
+cd ../..
 git add addons/pro/assets/vendor/
-git commit -m "Update vendor packages"
+git commit -m "Update vendor packages with Sharp dependencies"
 ```
+
+**Note about Sharp:**
+Sharp requires special handling because it needs:
+- JavaScript library files
+- Platform-specific native binaries (libvips)
+- JavaScript dependencies (detect-libc, color, semver)
+
+All these are automatically copied to `assets/vendor/sharp/` and committed to the repository, so users don't need to run `npm install` after cloning.
 
 ---
 
