@@ -134,11 +134,11 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// GPT-5.3 series (flagship - Feb 2026) - 128K context window, advanced agentic coding.
+		// GPT-5.3 series (flagship - Feb 2026) - 400K context window, advanced agentic coding.
 		$models['gpt-5.3-codex']       = 'GPT-5.3 Codex (Agentic Coding - Flagship)';
 		$models['gpt-5.3-codex-spark'] = 'GPT-5.3 Codex Spark (Ultra-Fast)';
 
-		// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
+		// GPT-5.2 series (flagship - Dec 2025) - 128K context window.
 		$models['gpt-5.2']                = 'GPT-5.2 (Flagship)';
 		$models['gpt-5.2-2025-12-11']     = 'GPT-5.2 (Dec 2025)';
 		$models['gpt-5.2-pro']            = 'GPT-5.2 Pro (Advanced Reasoning)';
@@ -146,9 +146,23 @@ class WP_MCP_AI_Model_Service {
 		$models['gpt-5.2-instant']        = 'GPT-5.2 Instant (High Throughput)';
 		$models['gpt-5.2-thinking']       = 'GPT-5.2 Thinking (Deeper Analysis)';
 
+		// GPT-5.2 Codex (coding-optimized).
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$models['gpt-5.2-codex'] = 'GPT-5.2 Codex (Advanced Coding)';
+		}
+
 		// GPT-5.1 series (Nov 2025).
 		$models['gpt-5.1']            = 'GPT-5.1';
 		$models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';
+		$models['gpt-5.1-instant']    = 'GPT-5.1 Instant (Fast Responses)';
+		$models['gpt-5.1-thinking']   = 'GPT-5.1 Thinking (Deep Reasoning)';
+
+		// GPT-5.1 Codex variants (coding-optimized, text-only).
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$models['gpt-5.1-codex']      = 'GPT-5.1 Codex';
+			$models['gpt-5.1-codex-max']  = 'GPT-5.1 Codex Max (Advanced Coding)';
+			$models['gpt-5.1-codex-mini'] = 'GPT-5.1 Codex Mini (Cost-Effective Coding)';
+		}
 
 		// GPT-5 series (Aug 2025).
 		$models['gpt-5']            = 'GPT-5';
@@ -161,6 +175,23 @@ class WP_MCP_AI_Model_Service {
 		if ( ! $requires_vision && ! $requires_multimodal ) {
 			$models['gpt-5-codex']      = 'GPT-5 Codex';
 			$models['gpt-5-codex-mini'] = 'GPT-5 Codex Mini';
+		}
+
+		// o-series Reasoning Models.
+		$models['o3']      = 'o3 (Reasoning)';
+		$models['o3-pro']  = 'o3 Pro (Advanced Reasoning)';
+		$models['o4-mini'] = 'o4-mini (Multimodal Reasoning)';
+
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$models['o3-mini'] = 'o3 Mini (Fast Reasoning)';
+		}
+
+		// o-series Legacy Reasoning Models.
+		$models['o1']     = 'o1 (Legacy Reasoning)';
+		$models['o1-pro'] = 'o1 Pro (Legacy Advanced Reasoning)';
+
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$models['o1-mini'] = 'o1 Mini (Legacy)';
 		}
 
 		// GPT-4.1 series (multimodal - vision capable).
@@ -246,7 +277,8 @@ class WP_MCP_AI_Model_Service {
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
 		// Gemini 3 series (multimodal - latest generation) - Preview.
-		$models['gemini-3-pro-preview'] = 'Gemini 3 Pro (Preview)';
+		$models['gemini-3-pro-preview']   = 'Gemini 3 Pro (Preview)';
+		$models['gemini-3-flash-preview'] = 'Gemini 3 Flash (Preview)';
 
 		// Gemini 2.5 series (multimodal - text, image, video) - Stable.
 		$models['gemini-2.5-pro']                   = 'Gemini 2.5 Pro';

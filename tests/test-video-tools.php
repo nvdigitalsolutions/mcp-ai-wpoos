@@ -276,7 +276,7 @@ class Test_Video_Tools extends WP_UnitTestCase {
 		$video_capable_models = array(
 			// Gemini 3 series (latest - 2025).
 			'gemini-3-pro-preview',
-			'gemini-3-pro',
+			'gemini-3-flash-preview',
 
 			// Gemini 2.5 series (production - 2025).
 			'gemini-2.5-pro',
