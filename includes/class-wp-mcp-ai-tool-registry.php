@@ -270,6 +270,26 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				);
 			}
 
+			// Attempt provider compensation if there's a mismatch.
+			$compensation_result = $this->compensate_for_provider_mismatch( $slug, $arguments, $context );
+			if ( ! is_wp_error( $compensation_result ) && is_array( $compensation_result ) ) {
+				// Provider compensation succeeded - update slug and arguments.
+				$slug = $compensation_result['slug'];
+				$arguments = $compensation_result['arguments'];
+				$tool = $this->get_tool( $slug );
+				
+				if ( ! $tool ) {
+					return new WP_Error(
+						'wp_mcp_ai_tool_not_found',
+						sprintf(
+							/* translators: %s: compensated tool slug */
+							__( 'Compensated tool "%s" not found.', 'mcp-ai-wpoos' ),
+							$slug
+						)
+					);
+				}
+			}
+
 			// Validate tool execution requirements (model, parameters, dependencies).
 			$validation_result = $this->validate_tool_execution( $slug, $arguments, $context );
 			if ( is_wp_error( $validation_result ) ) {
@@ -278,6 +298,262 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
+		}
+
+		/**
+		 * Compensate for provider mismatch by routing to equivalent provider-specific tool.
+		 *
+		 * When a tool is requested that requires a different provider than the current one,
+		 * this method attempts to route to an equivalent tool for the active provider
+		 * and translates parameters as needed.
+		 *
+		 * @param string $slug Tool slug.
+		 * @param array  $arguments Tool arguments.
+		 * @param array  $context Execution context.
+		 * @return array|WP_Error Array with 'slug' and 'arguments' on success, WP_Error or null if no compensation needed.
+		 */
+		protected function compensate_for_provider_mismatch( $slug, $arguments, $context ) {
+			// Extract current provider from context.
+			$current_provider = '';
+			if ( ! empty( $context['assistant_config']['provider'] ) ) {
+				$current_provider = $context['assistant_config']['provider'];
+			} elseif ( ! empty( $context['model'] ) ) {
+				$parts = explode( ':', $context['model'] );
+				$current_provider = count( $parts ) > 1 ? $parts[0] : '';
+			}
+
+			// If no provider context, can't compensate.
+			if ( empty( $current_provider ) ) {
+				return null;
+			}
+
+			// Get tool's required providers.
+			$tool_rules = $this->get_tool_rules( $slug );
+			if ( empty( $tool_rules['model_requirements']['providers'] ) ) {
+				return null;
+			}
+
+			$required_providers = $tool_rules['model_requirements']['providers'];
+
+			// If current provider is acceptable, no compensation needed.
+			if ( in_array( $current_provider, $required_providers, true ) ) {
+				return null;
+			}
+
+			// Define provider-specific tool mappings.
+			$tool_mapping = $this->get_provider_tool_mapping();
+
+			// Check if this tool has a mapping.
+			if ( ! isset( $tool_mapping[ $slug ] ) ) {
+				return null; // No mapping available, will fall through to validation error.
+			}
+
+			$mapping = $tool_mapping[ $slug ];
+
+			// Check if there's a tool for the current provider.
+			if ( ! isset( $mapping[ $current_provider ] ) ) {
+				return null; // No equivalent tool for this provider.
+			}
+
+			$target_slug = $mapping[ $current_provider ];
+
+			// Check if the target tool exists and is enabled.
+			if ( ! $this->is_tool_registered( $target_slug ) || ! $this->is_tool_enabled( $target_slug ) ) {
+				return null;
+			}
+
+			// Translate parameters between providers.
+			$translated_arguments = $this->translate_tool_parameters( $slug, $target_slug, $arguments, $current_provider );
+
+			// Log the provider compensation for debugging.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'provider_compensation',
+					sprintf( 'Provider compensation: routing "%s" to "%s" for provider "%s"', $slug, $target_slug, $current_provider ),
+					array(
+						'original_tool' => $slug,
+						'target_tool' => $target_slug,
+						'provider' => $current_provider,
+						'original_args' => $arguments,
+						'translated_args' => $translated_arguments,
+					)
+				);
+			}
+
+			return array(
+				'slug' => $target_slug,
+				'arguments' => $translated_arguments,
+			);
+		}
+
+		/**
+		 * Get provider-specific tool mappings.
+		 *
+		 * Defines which tools are equivalent across different providers.
+		 *
+		 * @return array Tool mapping structure.
+		 */
+		protected function get_provider_tool_mapping() {
+			$mapping = array(
+				// Image generation tools.
+				'generate_openai_image' => array(
+					'gemini' => 'generate_gemini_image',
+					'anthropic' => 'generate_openai_image', // Anthropic doesn't have image generation (fallback).
+				),
+				'generate_gemini_image' => array(
+					'openai' => 'generate_openai_image',
+					'anthropic' => 'generate_openai_image', // Use OpenAI as fallback.
+				),
+				// Image editing tools.
+				'edit_openai_image' => array(
+					'gemini' => 'edit_gemini_image',
+				),
+				'edit_gemini_image' => array(
+					'openai' => 'edit_openai_image',
+				),
+			);
+
+			/**
+			 * Filter provider tool mapping.
+			 *
+			 * Allows plugins to add or modify provider-specific tool mappings.
+			 *
+			 * @param array $mapping Tool mapping structure.
+			 */
+			return apply_filters( 'wp_mcp_ai_provider_tool_mapping', $mapping );
+		}
+
+		/**
+		 * Translate tool parameters between providers.
+		 *
+		 * Converts provider-specific parameters to equivalent parameters for the target provider.
+		 *
+		 * @param string $source_slug Source tool slug.
+		 * @param string $target_slug Target tool slug.
+		 * @param array  $arguments Original arguments.
+		 * @param string $target_provider Target provider.
+		 * @return array Translated arguments.
+		 */
+		protected function translate_tool_parameters( $source_slug, $target_slug, $arguments, $target_provider ) {
+			$translated = array();
+
+			// Common parameters that don't need translation.
+			$common_params = array( 'prompt', 'file_name', 'timeout', 'output_format' );
+			foreach ( $common_params as $param ) {
+				if ( isset( $arguments[ $param ] ) ) {
+					$translated[ $param ] = $arguments[ $param ];
+				}
+			}
+
+			// Translate OpenAI -> Gemini image parameters.
+			if ( 'generate_openai_image' === $source_slug && 'generate_gemini_image' === $target_slug ) {
+				// Translate size to aspect_ratio.
+				if ( ! empty( $arguments['size'] ) ) {
+					$translated['aspect_ratio'] = $this->convert_size_to_aspect_ratio( $arguments['size'] );
+				}
+
+				// Quality and style are OpenAI-specific, drop them for Gemini.
+				// Gemini uses model selection for quality control.
+
+				// Default mime_type for Gemini.
+				if ( empty( $translated['mime_type'] ) ) {
+					$translated['mime_type'] = 'image/png';
+				}
+			}
+
+			// Translate Gemini -> OpenAI image parameters.
+			if ( 'generate_gemini_image' === $source_slug && 'generate_openai_image' === $target_slug ) {
+				// Translate aspect_ratio to size.
+				if ( ! empty( $arguments['aspect_ratio'] ) ) {
+					$translated['size'] = $this->convert_aspect_ratio_to_size( $arguments['aspect_ratio'] );
+				}
+
+				// Default quality for OpenAI.
+				if ( empty( $translated['quality'] ) ) {
+					$translated['quality'] = 'standard';
+				}
+			}
+
+			/**
+			 * Filter translated tool parameters.
+			 *
+			 * Allows plugins to customize parameter translation.
+			 *
+			 * @param array  $translated Translated arguments.
+			 * @param string $source_slug Source tool slug.
+			 * @param string $target_slug Target tool slug.
+			 * @param array  $arguments Original arguments.
+			 * @param string $target_provider Target provider.
+			 */
+			return apply_filters( 'wp_mcp_ai_translate_tool_parameters', $translated, $source_slug, $target_slug, $arguments, $target_provider );
+		}
+
+		/**
+		 * Convert OpenAI size to Gemini aspect ratio.
+		 *
+		 * @param string $size OpenAI size (e.g., "1024x1024", "1792x1024").
+		 * @return string Gemini aspect ratio (e.g., "1:1", "16:9").
+		 */
+		protected function convert_size_to_aspect_ratio( $size ) {
+			$size_to_aspect = array(
+				'1024x1024' => '1:1',
+				'1792x1024' => '16:9',
+				'1024x1792' => '9:16',
+				'1536x1024' => '3:2',
+				'1024x1536' => '2:3',
+			);
+
+			if ( isset( $size_to_aspect[ $size ] ) ) {
+				return $size_to_aspect[ $size ];
+			}
+
+			// Try to compute aspect ratio from dimensions.
+			if ( preg_match( '/^(\d+)x(\d+)$/', $size, $matches ) ) {
+				$width = (int) $matches[1];
+				$height = (int) $matches[2];
+
+				if ( $width === $height ) {
+					return '1:1';
+				} elseif ( $width > $height ) {
+					$ratio = round( $width / $height, 1 );
+					if ( abs( $ratio - 1.78 ) < 0.1 ) {
+						return '16:9';
+					} elseif ( abs( $ratio - 1.5 ) < 0.1 ) {
+						return '3:2';
+					}
+					return '16:9'; // Default to 16:9 for landscape.
+				} else {
+					return '9:16'; // Default to 9:16 for portrait.
+				}
+			}
+
+			// Default fallback.
+			return '4:3';
+		}
+
+		/**
+		 * Convert Gemini aspect ratio to OpenAI size.
+		 *
+		 * @param string $aspect_ratio Gemini aspect ratio (e.g., "1:1", "16:9").
+		 * @return string OpenAI size (e.g., "1024x1024", "1792x1024").
+		 */
+		protected function convert_aspect_ratio_to_size( $aspect_ratio ) {
+			$aspect_to_size = array(
+				'1:1' => '1024x1024',
+				'16:9' => '1792x1024',
+				'9:16' => '1024x1792',
+				'4:3' => '1024x768',
+				'3:4' => '768x1024',
+				'3:2' => '1536x1024',
+				'2:3' => '1024x1536',
+			);
+
+			if ( isset( $aspect_to_size[ $aspect_ratio ] ) ) {
+				return $aspect_to_size[ $aspect_ratio ];
+			}
+
+			// Default fallback.
+			return '1024x1024';
 		}
 
 				/**
