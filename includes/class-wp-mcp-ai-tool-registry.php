@@ -270,6 +270,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				);
 			}
 
+			// Validate tool execution requirements (model, parameters, dependencies).
+			$validation_result = $this->validate_tool_execution( $slug, $arguments, $context );
+			if ( is_wp_error( $validation_result ) ) {
+				return $validation_result;
+			}
+
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
 		}
@@ -752,17 +758,38 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return true|WP_Error
 		 */
 		protected function validate_model_requirements( $requirements, $arguments, $context ) {
+			// Extract model from arguments, context, or assistant_config.
+			$model = $arguments['model'] ?? $context['model'] ?? '';
+			$from_assistant_config = false;
+			
+			// If model not directly available, check assistant_config.
+			if ( empty( $model ) && ! empty( $context['assistant_config'] ) ) {
+				$assistant_config = $context['assistant_config'];
+				
+				// Extract provider and model from assistant_config.
+				$provider = $assistant_config['provider'] ?? '';
+				$model_name = $assistant_config['model'] ?? '';
+				
+				// Construct model in format "provider:model" if both are present.
+				if ( ! empty( $provider ) && ! empty( $model_name ) ) {
+					$model = $provider . ':' . $model_name;
+					$from_assistant_config = true;
+				}
+			}
+
 			// Check if model is specified when required.
-			if ( ! empty( $requirements['required'] ) && empty( $arguments['model'] ) && empty( $context['model'] ) ) {
+			if ( ! empty( $requirements['required'] ) && empty( $model ) ) {
 				return new WP_Error( 'model_required', 'This tool requires a model to be specified' );
 			}
 
-			$model = $arguments['model'] ?? $context['model'] ?? '';
-
 			// Validate allowed providers.
 			if ( ! empty( $requirements['providers'] ) && ! empty( $model ) ) {
-				$provider = explode( ':', $model )[0] ?? '';
-				if ( ! in_array( $provider, $requirements['providers'], true ) ) {
+				// Extract provider from model string (format: "provider:model" or just "model").
+				$parts = explode( ':', $model );
+				$provider = count( $parts ) > 1 ? $parts[0] : '';
+				
+				// If provider is explicitly specified, validate it.
+				if ( ! empty( $provider ) && ! in_array( $provider, $requirements['providers'], true ) ) {
 					return new WP_Error(
 						'invalid_provider',
 						sprintf( 'Model provider must be one of: %s', implode( ', ', $requirements['providers'] ) )
@@ -770,9 +797,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				}
 			}
 
-			// Validate specific models.
-			if ( ! empty( $requirements['models'] ) && ! empty( $model ) ) {
-				if ( ! in_array( $model, $requirements['models'], true ) ) {
+			// Validate specific models (only if model is explicitly provided, not from assistant_config).
+			// Models from assistant_config are already validated by provider check above.
+			if ( ! empty( $requirements['models'] ) && ! empty( $model ) && ! $from_assistant_config ) {
+				// Extract just the model name without provider prefix.
+				$model_name = strpos( $model, ':' ) !== false ? explode( ':', $model )[1] : $model;
+				
+				if ( ! in_array( $model_name, $requirements['models'], true ) ) {
 					return new WP_Error(
 						'invalid_model',
 						sprintf( 'Model must be one of: %s', implode( ', ', $requirements['models'] ) )
