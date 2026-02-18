@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-vector-storage-tools',
+        'version' => 'dev-copilot/enhance-vector-storage-tools',
+        'reference' => '9bbc199938c79885e672dd0b4d7d1048fd09691e',
         'pretty_version' => 'dev-copilot/investigate-pr-3777-changes',
         'version' => 'dev-copilot/investigate-pr-3777-changes',
         'reference' => 'b7e16a861897d0fb9aba67ce4280854f90556672',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-vector-storage-tools',
+            'version' => 'dev-copilot/enhance-vector-storage-tools',
+            'reference' => '9bbc199938c79885e672dd0b4d7d1048fd09691e',
             'pretty_version' => 'dev-copilot/investigate-pr-3777-changes',
             'version' => 'dev-copilot/investigate-pr-3777-changes',
             'reference' => 'b7e16a861897d0fb9aba67ce4280854f90556672',
