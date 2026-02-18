@@ -161,10 +161,18 @@ class WP_MCP_AI_Company_Research_Page {
 					<h2><?php esc_html_e( 'AI Research Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
 					<div class="wp-mcp-ai-research-chat-container">
 						<?php
-						// Render the AI chat interface.
+						// Get the assigned assistant for CRM research.
+						$assigned_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
+						
+						// Render the AI chat interface with the assigned assistant.
 						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 							$shortcode_instance = new WP_MCP_AI_Shortcode();
-							echo do_shortcode( '[nvoos_chat assistant="default" placeholder="' . esc_attr__( 'Ask me to research companies, industries, or help identify target prospects...', 'mcp-ai-wpoos-pro' ) . '"]' );
+							$shortcode          = sprintf(
+								'[nvoos_chat assistant="%s" placeholder="%s"]',
+								esc_attr( $assigned_assistant ),
+								esc_attr__( 'Ask me to research companies, industries, or help identify target prospects...', 'mcp-ai-wpoos-pro' )
+							);
+							echo do_shortcode( $shortcode );
 						} else {
 							echo '<p>' . esc_html__( 'Chat interface not available. Please ensure the plugin is properly installed.', 'mcp-ai-wpoos-pro' ) . '</p>';
 						}
