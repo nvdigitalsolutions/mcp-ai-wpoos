@@ -1557,8 +1557,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$default_model           = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1.5';
 			$default_size            = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
-			$default_quality         = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'standard';
 			$default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
+
+			// Determine model-specific default quality.
+			// gpt-image-1/1.5 models default to 'medium', DALL-E models default to 'standard'.
+			$model_for_quality = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$model_for_quality = strtolower( $model_for_quality );
+			$default_quality   = ( 'gpt-image-1' === $model_for_quality || 'gpt-image-1.5' === $model_for_quality ) ? 'medium' : 'standard';
+
+			// Allow settings to override if a valid quality is configured.
+			if ( isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ) {
+				$default_quality = sanitize_key( $settings['openai_image_quality'] );
+			}
 
 			if ( ! in_array( $default_response_format, array( 'b64_json', 'url' ), true ) ) {
 				$default_response_format = 'b64_json';
