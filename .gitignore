@@ -144,6 +144,9 @@ composer.phar
 # Include vendor directory (generated from node_modules, included in distribution)
 !/addons/pro/assets/vendor/
 
+# Include Sharp's dependencies and platform binaries (required for Sharp to function)
+!/addons/pro/assets/vendor/sharp/node_modules/
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js

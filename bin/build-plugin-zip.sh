@@ -421,6 +421,11 @@ if [ "$BUILD_PRO" = true ]; then
     PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
+    # Note: All NPM packages (Sharp, etc.) are pre-packaged in assets/vendor/ and committed to git.
+    # The copy-dependencies.js script is only used by maintainers when updating vendor packages.
+    # For building the zip, we just copy the pre-packaged vendor directory.
+    echo "ℹ️  Using pre-packaged NPM dependencies from assets/vendor/ (104 MB, 43 packages)"
+    
     # Copy pro addon files with aggressive exclusions to reduce size
     if [ -d "addons/pro" ]; then
         echo "Step 3b.1: Copying Pro add-on files (excluding tests, docs, dev files)..."

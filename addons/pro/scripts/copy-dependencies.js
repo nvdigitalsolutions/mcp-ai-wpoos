@@ -174,6 +174,9 @@ const dependencies = [
 		files: [
 			{ src: 'package.json', dest: 'sharp/package.json' },
 		],
+		dependencies: ['detect-libc', 'color', 'semver'], // Sharp's required dependencies
+		// Note: Platform binaries (@img/sharp-linux-x64) are pre-packaged in assets/vendor/sharp/node_modules/@img/
+		// and committed to git, so they don't need to be copied during build.
 	},
 	{
 		name: 'prettier',
@@ -664,9 +667,26 @@ dependencies.forEach(dep => {
 		});
 	}
 	
+	// Copy package dependencies (e.g., Sharp requires detect-libc, color, semver)
+	if (dep.dependencies && Array.isArray(dep.dependencies)) {
+		dep.dependencies.forEach(subDepName => {
+			const subDepPath = path.join(proPath, 'node_modules', subDepName);
+			const subDepDestPath = path.join(vendorPath, dep.name, 'node_modules', subDepName);
+			
+			if (fs.existsSync(subDepPath)) {
+				copyDir(subDepPath, subDepDestPath);
+				const size = getSize(subDepDestPath);
+				depSize += size;
+			} else {
+				console.log(`${colors.yellow}  ⚠️  ${subDepName} (dependency of ${dep.name}) not found${colors.reset}`);
+			}
+		});
+	}
+	
 	if (depSize > 0) {
 		const cdnLabel = dep.cdnPackage ? ' (offline fallback)' : '';
-		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${colors.reset} → ${formatSize(depSize)}`);
+		const depsLabel = dep.dependencies ? ` +${dep.dependencies.length} deps` : '';
+		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${depsLabel}${colors.reset} → ${formatSize(depSize)}`);
 		totalCopied++;
 		totalSize += depSize;
 	}
@@ -681,6 +701,11 @@ if (skippedCdn > 0) {
 	console.log(`${colors.blue}💡 CDN packages will load from jsDelivr with automatic fallback${colors.reset}`);
 	console.log(`${colors.blue}💡 To include CDN packages: WP_MCP_AI_BUILD_OFFLINE=true npm run build${colors.reset}`);
 }
+
+console.log(`\n${colors.blue}ℹ️  Sharp Platform Binaries:${colors.reset}`);
+console.log(`${colors.blue}   Linux x64 binaries are pre-packaged in assets/vendor/sharp/node_modules/@img/${colors.reset}`);
+console.log(`${colors.blue}   They are committed to git and don't need to be copied during build.${colors.reset}`);
+console.log(`${colors.blue}   Other platforms: Users run 'npm install sharp --include=optional'${colors.reset}`);
 
 // ============================================================================
 // POST-COPY CLEANUP: Remove unnecessary files to reduce plugin size
