@@ -20,6 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Batch optimization capabilities
  * - Compression without quality loss
  *
+ * Sharp is pre-packaged with Linux x64 binaries in addons/pro/assets/vendor/sharp/
+ * for immediate use on most production servers. Other platforms require running
+ * "npm install sharp --include=optional" in the addons/pro directory.
+ *
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
