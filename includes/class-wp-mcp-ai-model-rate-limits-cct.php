@@ -736,7 +736,15 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	 *
 	 * @return array Array of model configurations.
 	 */
-	protected static function get_default_model_data() {
+	/**
+	 * Get default model data for populating the CCT.
+	 *
+	 * This method is public to allow other components (like Model Config)
+	 * to use it as the single source of truth for model definitions.
+	 *
+	 * @return array Default model data.
+	 */
+	public static function get_default_model_data() {
 		return array(
 			// OpenAI GPT-5 Series - Tier 1 (2026 Flagship Models).
 			array(

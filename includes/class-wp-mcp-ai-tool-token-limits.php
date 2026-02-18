@@ -544,11 +544,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$provider_labels = array(
 				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
+				'google'      => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'webllm'      => __( 'WebLLM (Browser)', 'mcp-ai-wpoos' ),
 			);
 
 			foreach ( $models_by_provider as $provider => $provider_models ) {
