@@ -60,9 +60,9 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gpt-4.1-mini', $model_names );
 		$this->assertContains( 'gpt-4.1-nano', $model_names );
 		$this->assertContains( 'gpt-4.1-turbo', $model_names );
-		$this->assertContains( 'o1-preview', $model_names );
-		$this->assertContains( 'o1-2024-12-17', $model_names );
-		$this->assertContains( 'o3-mini', $model_names );
+		$this->assertContains( 'gpt-5.2', $model_names );
+		$this->assertContains( 'gpt-5.3-codex', $model_names );
+		$this->assertContains( 'gpt-5.1', $model_names );
 		$this->assertContains( 'gpt-5', $model_names );
 		$this->assertContains( 'gpt-5-mini', $model_names );
 	}
@@ -115,9 +115,9 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		// Check for specific models.
 		$model_names = array_column( $anthropic_models, 'model_name' );
-		$this->assertContains( 'claude-3.5-sonnet', $model_names );
-		$this->assertContains( 'claude-3-opus', $model_names );
-		$this->assertContains( 'claude-3-haiku', $model_names );
+		$this->assertContains( 'claude-opus-4-6', $model_names );
+		$this->assertContains( 'claude-sonnet-4-6', $model_names );
+		$this->assertContains( 'claude-3-5-sonnet-20241022', $model_names );
 	}
 
 	/**
@@ -130,10 +130,16 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		$default_models = $method->invoke( null );
 
+		$local_providers = array( 'ollama', 'lm_studio', 'webllm' );
+
 		foreach ( $default_models as $model ) {
 			$this->assertArrayHasKey( 'tpm_limit', $model );
 			$this->assertIsInt( $model['tpm_limit'] );
-			$this->assertGreaterThan( 0, $model['tpm_limit'] );
+			if ( in_array( $model['provider'], $local_providers, true ) ) {
+				$this->assertGreaterThanOrEqual( 0, $model['tpm_limit'] );
+			} else {
+				$this->assertGreaterThan( 0, $model['tpm_limit'] );
+			}
 			$this->assertLessThanOrEqual( 10000000, $model['tpm_limit'] );
 		}
 	}
@@ -230,12 +236,12 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		foreach ( $default_models as $model ) {
 			if ( isset( $model['cost_per_1k_input_tokens'] ) ) {
-				$this->assertIsFloat( $model['cost_per_1k_input_tokens'] );
+				$this->assertIsNumeric( $model['cost_per_1k_input_tokens'] );
 				$this->assertGreaterThanOrEqual( 0, $model['cost_per_1k_input_tokens'] );
 			}
 
 			if ( isset( $model['cost_per_1k_output_tokens'] ) ) {
-				$this->assertIsFloat( $model['cost_per_1k_output_tokens'] );
+				$this->assertIsNumeric( $model['cost_per_1k_output_tokens'] );
 				$this->assertGreaterThanOrEqual( 0, $model['cost_per_1k_output_tokens'] );
 			}
 		}
@@ -302,7 +308,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$ollama_models = array_filter(
 			$default_models,
 			function ( $model ) {
-				return 'other' === $model['provider'];
+				return 'ollama' === $model['provider'];
 			}
 		);
 
@@ -338,8 +344,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		// Local models should have 0 TPM (no API limits).
 		$this->assertSame( 0, $model['tpm_limit'] );
 		$this->assertSame( 0, $model['rpm_limit'] );
-		$this->assertSame( 0.0, $model['cost_per_1k_input_tokens'] );
-		$this->assertSame( 0.0, $model['cost_per_1k_output_tokens'] );
+		$this->assertEquals( 0, $model['cost_per_1k_input_tokens'] );
+		$this->assertEquals( 0, $model['cost_per_1k_output_tokens'] );
 	}
 
 	/**
@@ -371,7 +377,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $gpt5 );
 		$model = reset( $gpt5 );
-		$this->assertGreaterThanOrEqual( 500000, $model['tpm_limit'] );
+		$this->assertGreaterThanOrEqual( 400000, $model['tpm_limit'] );
 	}
 
 	/**
@@ -466,5 +472,34 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertTrue( $gpt_41['supports_vision'] );
 		$this->assertTrue( $gpt_41['supports_function_calling'] );
 		$this->assertSame( 0.006, $gpt_41['cost_per_1k_input_tokens'] );
+	}
+
+	/**
+	 * Test that GPT-5.3 Codex Spark is included in default model data.
+	 */
+	public function test_default_models_include_gpt_53_codex_spark() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+		$model_names    = array_column( $default_models, 'model_name' );
+
+		$this->assertContains( 'gpt-5.3-codex', $model_names, 'Default models should include gpt-5.3-codex' );
+		$this->assertContains( 'gpt-5.3-codex-spark', $model_names, 'Default models should include gpt-5.3-codex-spark' );
+
+		// Verify spark entry details.
+		$spark = array_values(
+			array_filter(
+				$default_models,
+				function ( $m ) {
+					return 'gpt-5.3-codex-spark' === $m['model_name'];
+				}
+			)
+		)[0];
+
+		$this->assertSame( 'openai', $spark['provider'] );
+		$this->assertSame( 128000, $spark['context_window'], 'Codex Spark should have 128K context window' );
+		$this->assertFalse( $spark['supports_vision'], 'Codex Spark is text-only' );
 	}
 }

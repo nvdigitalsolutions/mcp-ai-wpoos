@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/verify-gpt-53-codex-existence',
+        'version' => 'dev-copilot/verify-gpt-53-codex-existence',
+        'reference' => '2c7f682387dad652ad1a196e6a555531c8437bcc',
         'pretty_version' => 'dev-copilot/fix-generate-openai-image-error',
         'version' => 'dev-copilot/fix-generate-openai-image-error',
         'reference' => 'de1316c3a4f528a2077895030f72d12e6476de0a',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/verify-gpt-53-codex-existence',
+            'version' => 'dev-copilot/verify-gpt-53-codex-existence',
+            'reference' => '2c7f682387dad652ad1a196e6a555531c8437bcc',
             'pretty_version' => 'dev-copilot/fix-generate-openai-image-error',
             'version' => 'dev-copilot/fix-generate-openai-image-error',
             'reference' => 'de1316c3a4f528a2077895030f72d12e6476de0a',

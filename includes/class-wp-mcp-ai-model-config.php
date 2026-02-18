@@ -278,10 +278,23 @@ class WP_MCP_AI_Model_Config {
 			// Build display name from model name and notes.
 			$name = $model_id;
 			if ( isset( $model_data['notes'] ) && ! empty( $model_data['notes'] ) ) {
-				// Extract a short display name from notes if available.
-				$notes_parts = explode( '.', $model_data['notes'] );
-				if ( ! empty( $notes_parts[0] ) ) {
-					$name = trim( $notes_parts[0] );
+				// Extract a short display name from notes.
+				// Notes follow the format: "Model Name - Description." or "First sentence. More details."
+				if ( false !== strpos( $model_data['notes'], ' - ' ) ) {
+					// Preferred format: split on " - " separator.
+					$dash_parts = explode( ' - ', $model_data['notes'], 2 );
+					if ( ! empty( $dash_parts[0] ) ) {
+						$name = trim( $dash_parts[0] );
+					}
+				} else {
+					// Fallback: extract first sentence, splitting at a period followed
+					// by a space and a non-digit character to preserve version numbers
+					// like "GPT-5.2" while still splitting at sentence boundaries.
+					if ( preg_match( '/^(.+?)\.\s+[^0-9]/', $model_data['notes'], $matches ) ) {
+						$name = trim( $matches[1] );
+					} else {
+						$name = rtrim( trim( $model_data['notes'] ), '.' );
+					}
 				}
 			}
 
@@ -323,7 +336,7 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 1500,
 				'tpd'            => 15000000,
 				'rpd'            => 75000,
-				'context_window' => 128000,
+				'context_window' => 400000,
 				'fallback_model' => 'gpt-5.2',
 				'cost_per_1k'    => 0.012,
 				'status'         => 'active',
