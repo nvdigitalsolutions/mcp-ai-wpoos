@@ -438,20 +438,6 @@ For performance and size optimization, these packages are loaded from jsDelivr C
   - macOS: `cairo`, `pango` (via Homebrew)
   - Windows: Visual Studio Build Tools
 
-**puppeteer-core** - Browser automation (optional):
-- **Status**: JavaScript lib files included in cloned repo (~8MB), excluded from ZIP
-- **Use Cases**: Advanced PDF generation, web scraping, browser automation
-- **Installation Required**: 
-  ```bash
-  cd addons/pro
-  npm install puppeteer-core
-  ```
-- **Browser Binary**: Puppeteer requires a Chrome/Chromium browser binary
-  - Install Chrome/Chromium separately on your server
-  - Or use `puppeteer` (full package) which includes a bundled Chromium
-- **Note**: Most document generation features use lighter alternatives (pdfkit, docx, etc.)
-  - Puppeteer is only needed for advanced browser-based PDF rendering
-
 **Important**: The canvas JavaScript library files in the repo are incomplete without native binaries. PDF OCR will fail with error: "Canvas module not available. PDF OCR requires canvas for rendering." Install canvas when you need PDF OCR functionality.
 
 **Why Native Binaries Cannot Be Pre-packaged:**

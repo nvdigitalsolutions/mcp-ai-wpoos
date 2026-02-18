@@ -13,14 +13,12 @@ This document provides a detailed breakdown of what's actually included in the d
 > - v1.1.0: 54 MB (source maps, Facebook SDK included)
 > - v1.1.1: 87 MB (regression: canvas native binaries accidentally included)  
 > - **v1.1.2: 33 MB** (fixed: excluded canvas binaries, old pdf.js versions, source maps)
-> - **v1.1.3: 31 MB** (excluded puppeteer-core for size optimization)
 >
-> **Latest Update (v1.1.3)**: Excluded puppeteer-core from distribution:
-> - Puppeteer Core (~8MB uncompressed, ~2MB compressed)
+> **Latest Update (v1.1.2)**: Fixed size regression by excluding:
 > - Canvas native binaries (~181MB uncompressed, ~50MB compressed)
 > - Old pdf.js versions from pdf-parse (~21MB uncompressed, ~6MB compressed)
 > - pdfjs-dist source maps (~8MB uncompressed, ~3MB compressed)
-> - **Total savings: ~218MB uncompressed → ~61MB compressed**
+> - **Total savings: ~210MB uncompressed → ~59MB compressed**
 
 ---
 
@@ -49,13 +47,14 @@ These files are excluded from the distribution to reduce size:
 - ✅ **Source maps** (*.js.map, *.css.map): ~31 MB uncompressed, ~12 MB compressed
 - ✅ **Facebook SDK**: ~28 MB uncompressed, ~5 MB compressed (CDN available if needed)
 - ✅ **Canvas native binaries**: ~181 MB uncompressed, ~50 MB compressed (requires system installation)
-- ✅ **Puppeteer Core**: ~8 MB uncompressed, ~2 MB compressed (optional, install via npm when needed)
 - ✅ **Old pdf.js versions**: ~21 MB uncompressed, ~6 MB compressed (kept only v2.0.550)
 - ✅ **pdfjs-dist source maps**: ~8 MB uncompressed, ~3 MB compressed
 - ✅ **Test PDF samples**: ~1.7 MB uncompressed
 - ✅ **Vendor tests/docs**: ~15 MB uncompressed
 
-**Total excluded**: ~294 MB uncompressed → ~79 MB compressed savings
+**Total excluded**: ~286 MB uncompressed → ~77 MB compressed savings
+
+**Note**: Puppeteer Core (~8 MB uncompressed, ~2 MB compressed) is INCLUDED in the distribution for immediate browser automation functionality.
 
 #### Why Canvas Binaries Are Excluded
 
@@ -70,21 +69,6 @@ The `canvas` npm package includes native binary libraries (~181MB) for Linux:
 1. Install Node.js on their server
 2. Run `npm install canvas` in the plugin directory (installs native binaries for their platform)
 3. Install system dependencies as needed
-
-#### Why Puppeteer Core Is Excluded
-
-The `puppeteer-core` npm package (~8MB uncompressed, ~2MB compressed) is an optional dependency:
-- Used for advanced browser-based PDF rendering and web scraping
-- Most document generation features use lighter alternatives (pdfkit, docx, exceljs)
-- Requires a Chrome/Chromium browser binary to be installed separately
-- Cloned repository includes the JavaScript library files for development
-- Distribution ZIP excludes it to reduce size
-
-**For browser automation features**, users should:
-1. Install Node.js on their server
-2. Run `npm install puppeteer-core` in the plugin directory
-3. Install Chrome/Chromium browser on the server
-4. Or use `puppeteer` (full package) which includes bundled Chromium (~170MB)
 
 #### Why Old pdf.js Versions Are Excluded
 
@@ -345,7 +329,7 @@ These optimizations are NOT YET implemented but could be considered:
    - Most users don't need headless Chrome
    - **Trade-off**: Removes advanced PDF rendering capabilities
    - **Complexity**: Easy - just exclude from copy script
-   - **Status**: ✅ Implemented (v1.1.3)
+   - **Status**: Not implemented (kept in distribution for immediate functionality)
 
 ### Maximum Optimization Potential
 
@@ -355,11 +339,14 @@ These optimizations are NOT YET implemented but could be considered:
 | ✅ Remove source maps | -12 MB | 42 MB | **DONE** |
 | ✅ Remove PDF samples | -2 MB | 40 MB | **DONE** |
 | ✅ Remove Facebook SDK | -5 MB | 35 MB | **DONE** |
-| ✅ Remove Puppeteer Core | -2 MB | 33 MB | **DONE** |
-| **After implemented** | **-21 MB** | **~31 MB** | **CURRENT** |
+| **After implemented** | **-19 MB** | **~33 MB** | **CURRENT** |
 | Keep only latest PDF.js | -2 MB | 31 MB | Not done |
 | Dynamic TCPDF fonts | -4 MB | 27 MB | Not done |
 | Code splitting | -3 MB | 24 MB | Not done |
+| Optional Puppeteer | -2 MB | 22 MB | Not done (kept for functionality) |
+
+**Current size**: ~33 MB (39% reduction from 54 MB)
+**Maximum potential**: ~22 MB (59% reduction from 54 MB) if all optimizations applied
 
 **Current size**: ~37 MB (31% reduction from 54 MB)
 **Maximum potential**: ~24 MB (55% reduction from 54 MB) if all optimizations applied

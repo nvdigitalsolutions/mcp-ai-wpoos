@@ -148,9 +148,3 @@ assets/vendor/facebook-nodejs-business-sdk/
 # These binaries are Linux-specific (~181MB) and won't work on other platforms
 # Users needing PDF OCR should install canvas via npm on their server
 assets/vendor/canvas/build/
-
-# Puppeteer Core (optional dependency, large size) - OPTIMIZATION #6
-# Puppeteer Core is kept in the repository for development but excluded from distribution
-# Users needing browser automation should install puppeteer-core via npm on their server
-# The dependency is optional in package.json and tools gracefully handle its absence
-assets/vendor/puppeteer-core/
