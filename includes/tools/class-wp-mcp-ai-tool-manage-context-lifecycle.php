@@ -550,6 +550,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				$context_index[ $context_id ]['importance'] = isset( $context['data']['importance'] ) ? $context['data']['importance'] : 'medium';
 				$context_index[ $context_id ]['tags']       = isset( $context['data']['tags'] ) ? $context['data']['tags'] : array();
 				set_transient( $index_key, $context_index, $remaining_ttl );
+
+				// Invalidate dashboard memory stats cache to show updated data immediately.
+				delete_transient( 'wp_mcp_ai_agent_memory_stats' );
 			}
 
 			return array(
@@ -613,6 +616,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				// Keep the index with remaining TTL.
 				set_transient( $index_key, $context_index, MONTH_IN_SECONDS );
 			}
+
+			// Invalidate dashboard memory stats cache to show updated data immediately.
+			delete_transient( 'wp_mcp_ai_agent_memory_stats' );
 		}
 
 		if ( $deleted ) {
