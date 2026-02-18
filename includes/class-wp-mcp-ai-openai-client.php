@@ -3631,6 +3631,20 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Check whether a model identifier refers to an OpenAI Codex model.
+		 *
+		 * Codex models (e.g. gpt-5.3-codex, gpt-5.3-codex-spark) require the
+		 * Responses API endpoint; the Chat Completions endpoint is deprecated
+		 * for these models and may return "model does not exist" errors.
+		 *
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		public static function is_codex_model( $model ) {
+			return (bool) preg_match( '/\bcodex\b/', $model );
+		}
+
+		/**
 		 * Determine whether the OpenAI Responses API should be used for the request.
 		 *
 		 * @param array $messages Sanitized chat messages.
@@ -3638,6 +3652,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @return bool
 		 */
 		protected function should_use_responses_api( array $messages, array $options ) {
+			// Codex models require the Responses API — Chat Completions is deprecated for them.
+			if ( ! empty( $options['model'] ) && self::is_codex_model( $options['model'] ) ) {
+				return true;
+			}
+
 			// Don't use Responses API when there are tool calls or tool messages in the conversation.
 			// The Responses API doesn't support the tool_calls/tool_call_id mechanism used by Chat Completions.
 			if ( $this->has_tool_calls_in_messages( $messages ) ) {

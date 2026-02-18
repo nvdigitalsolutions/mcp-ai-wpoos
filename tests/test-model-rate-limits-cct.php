@@ -467,4 +467,33 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertTrue( $gpt_41['supports_function_calling'] );
 		$this->assertSame( 0.006, $gpt_41['cost_per_1k_input_tokens'] );
 	}
+
+	/**
+	 * Test that GPT-5.3 Codex Spark is included in default model data.
+	 */
+	public function test_default_models_include_gpt_53_codex_spark() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+		$model_names    = array_column( $default_models, 'model_name' );
+
+		$this->assertContains( 'gpt-5.3-codex', $model_names, 'Default models should include gpt-5.3-codex' );
+		$this->assertContains( 'gpt-5.3-codex-spark', $model_names, 'Default models should include gpt-5.3-codex-spark' );
+
+		// Verify spark entry details.
+		$spark = array_values(
+			array_filter(
+				$default_models,
+				function ( $m ) {
+					return 'gpt-5.3-codex-spark' === $m['model_name'];
+				}
+			)
+		)[0];
+
+		$this->assertSame( 'openai', $spark['provider'] );
+		$this->assertSame( 128000, $spark['context_window'], 'Codex Spark should have 128K context window' );
+		$this->assertFalse( $spark['supports_vision'], 'Codex Spark is text-only' );
+	}
 }

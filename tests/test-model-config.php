@@ -548,18 +548,18 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Test GPT-5.3 Codex.
 		$this->assertIsArray( $codex_config );
-		$this->assertEquals( 'GPT-5.3 Codex (Agentic Coding)', $codex_config['name'] );
+		$this->assertEquals( 'GPT-5.3 Codex', $codex_config['name'] );
 		$this->assertEquals( 'openai', $codex_config['provider'] );
-		$this->assertEquals( 128000, $codex_config['context_window'], 'GPT-5.3 Codex should have 128K context window' );
-		$this->assertEquals( 150000, $codex_config['tpm'] );
-		$this->assertEquals( 0.012, $codex_config['cost_per_1k'] );
+		$this->assertEquals( 400000, $codex_config['context_window'], 'GPT-5.3 Codex should have 400K context window' );
+		$this->assertEquals( 400000, $codex_config['tpm'] );
+		$this->assertEquals( 0.00175, $codex_config['cost_per_1k'] );
 
 		// Test GPT-5.3 Codex Spark.
 		$this->assertIsArray( $codex_spark_config );
-		$this->assertEquals( 'GPT-5.3 Codex Spark (Ultra-Fast)', $codex_spark_config['name'] );
+		$this->assertEquals( 'GPT-5.3 Codex Spark', $codex_spark_config['name'] );
 		$this->assertEquals( 'openai', $codex_spark_config['provider'] );
 		$this->assertEquals( 128000, $codex_spark_config['context_window'], 'GPT-5.3 Codex Spark should have 128K context window' );
-		$this->assertEquals( 200000, $codex_spark_config['tpm'], 'Codex Spark should have higher TPM for ultra-fast performance' );
-		$this->assertEquals( 0.015, $codex_spark_config['cost_per_1k'] );
+		$this->assertEquals( 500000, $codex_spark_config['tpm'], 'Codex Spark should have higher TPM for ultra-fast performance' );
+		$this->assertEquals( 0.0015, $codex_spark_config['cost_per_1k'] );
 	}
 }
