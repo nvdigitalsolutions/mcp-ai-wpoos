@@ -101,6 +101,8 @@ class WP_MCP_AI_Agent_Context_Manager {
 			'stored_at'    => current_time( 'mysql' ),
 			'expires_at'   => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
 			'ttl'          => $ttl,
+			'access_count' => 0,
+			'last_accessed' => null,
 		);
 
 		// Store context.
@@ -452,6 +454,373 @@ class WP_MCP_AI_Agent_Context_Manager {
 		return array(
 			'success' => true,
 			'deleted' => $deleted_count,
+		);
+	}
+
+	/**
+	 * Update an existing context.
+	 *
+	 * @param int|string $agent_id     Agent identifier.
+	 * @param string     $context_id   Context ID.
+	 * @param array      $updated_data Updated data fields.
+	 * @return array Operation result.
+	 */
+	public function update_context( $agent_id, $context_id, $updated_data ) {
+		$context = $this->retrieve_context( $agent_id, $context_id, false );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Update the context data.
+		foreach ( $updated_data as $key => $value ) {
+			if ( isset( $context['data'][ $key ] ) || in_array( $key, array( 'title', 'content', 'metadata', 'tags', 'importance' ), true ) ) {
+				$context['data'][ $key ] = $value;
+			}
+		}
+
+		// Add update metadata.
+		if ( ! isset( $context['data']['metadata'] ) ) {
+			$context['data']['metadata'] = array();
+		}
+		$context['data']['metadata']['last_updated'] = current_time( 'mysql' );
+
+		// Re-save the context.
+		$remaining_ttl = strtotime( $context['expires_at'] ) - time();
+		if ( $remaining_ttl > 0 ) {
+			$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $context_id );
+			set_transient( $transient_key, $context, $remaining_ttl );
+
+			return array(
+				'success'    => true,
+				'context_id' => $context_id,
+				'updated_at' => $context['data']['metadata']['last_updated'],
+			);
+		}
+
+		return array(
+			'success' => false,
+			'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Delete a specific context.
+	 *
+	 * @param int|string $agent_id   Agent identifier.
+	 * @param string     $context_id Context ID.
+	 * @return array Operation result.
+	 */
+	public function delete_context( $agent_id, $context_id ) {
+		$context = $this->retrieve_context( $agent_id, $context_id, true );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Delete the context.
+		$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $context_id );
+		$deleted       = delete_transient( $transient_key );
+
+		// Update index.
+		$index_key     = self::INDEX_PREFIX . md5( (string) $agent_id );
+		$context_index = get_transient( $index_key );
+
+		if ( is_array( $context_index ) && isset( $context_index[ $context_id ] ) ) {
+			unset( $context_index[ $context_id ] );
+
+			if ( empty( $context_index ) ) {
+				delete_transient( $index_key );
+			} else {
+				set_transient( $index_key, $context_index, MONTH_IN_SECONDS );
+			}
+		}
+
+		return array(
+			'success'    => $deleted,
+			'context_id' => $context_id,
+		);
+	}
+
+	/**
+	 * Track context access for frequency scoring.
+	 *
+	 * Updates access count and last accessed timestamp for a context.
+	 * Implements frequency tracking as per RAG best practices.
+	 *
+	 * @param int|string $agent_id   Agent identifier.
+	 * @param string     $context_id Context ID.
+	 * @return bool Success status.
+	 */
+	public function track_context_access( $agent_id, $context_id ) {
+		$transient_key  = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $context_id );
+		$context_record = get_transient( $transient_key );
+
+		if ( ! $context_record ) {
+			return false;
+		}
+
+		// Update access tracking.
+		if ( ! isset( $context_record['access_count'] ) ) {
+			$context_record['access_count'] = 0;
+		}
+		++$context_record['access_count'];
+		$context_record['last_accessed'] = current_time( 'mysql' );
+
+		// Re-save context with updated tracking.
+		$remaining_ttl = strtotime( $context_record['expires_at'] ) - time();
+		if ( $remaining_ttl > 0 ) {
+			set_transient( $transient_key, $context_record, $remaining_ttl );
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get context with compression applied if needed.
+	 *
+	 * Implements automatic compression based on context age and TTL.
+	 * Follows RAG best practices for memory management.
+	 *
+	 * @param int|string $agent_id         Agent identifier.
+	 * @param string     $context_id       Context ID.
+	 * @param bool       $apply_compression Whether to apply compression.
+	 * @return array|null Context record or null if not found.
+	 */
+	public function retrieve_context_compressed( $agent_id, $context_id, $apply_compression = true ) {
+		$context = $this->retrieve_context( $agent_id, $context_id, false );
+
+		if ( null === $context ) {
+			return null;
+		}
+
+		// Track access.
+		$this->track_context_access( $agent_id, $context_id );
+
+		// Apply compression if enabled and service available.
+		if ( $apply_compression && class_exists( 'WP_MCP_AI_Context_Compression_Service' ) ) {
+			$compression_service = WP_MCP_AI_Context_Compression_Service::get_instance();
+			$context             = $compression_service->apply_compression_policy( $context );
+		}
+
+		return $context;
+	}
+
+	/**
+	 * Calculate enhanced context score with decay and frequency.
+	 *
+	 * Implements RAG best practices for context scoring:
+	 * - Recency with exponential decay
+	 * - Frequency of access
+	 * - Importance level
+	 * - TTL awareness
+	 *
+	 * @param array $context Context record.
+	 * @param array $weights Scoring weights.
+	 * @return float Enhanced score (0-1).
+	 */
+	public function calculate_enhanced_score( $context, $weights = array() ) {
+		$defaults = array(
+			'recency'    => 0.3,
+			'frequency'  => 0.2,
+			'importance' => 0.4,
+			'ttl'        => 0.1,
+		);
+
+		$weights = wp_parse_args( $weights, $defaults );
+
+		// Recency score with exponential decay.
+		$recency_score = $this->calculate_recency_decay( $context );
+
+		// Frequency score.
+		$access_count    = isset( $context['access_count'] ) ? $context['access_count'] : 0;
+		$frequency_score = min( 1.0, $access_count / 10 ); // Normalize to 0-1 (10+ accesses = max).
+
+		// Importance score.
+		$importance       = isset( $context['data']['importance'] ) ? $context['data']['importance'] : 'medium';
+		$importance_map   = array(
+			'critical' => 1.0,
+			'high'     => 0.75,
+			'medium'   => 0.5,
+			'low'      => 0.25,
+		);
+		$importance_score = isset( $importance_map[ $importance ] ) ? $importance_map[ $importance ] : 0.5;
+
+		// TTL score (higher for contexts with more time remaining).
+		$ttl_score = $this->calculate_ttl_score( $context );
+
+		// Calculate weighted score.
+		$total_score = (
+			( $recency_score * $weights['recency'] ) +
+			( $frequency_score * $weights['frequency'] ) +
+			( $importance_score * $weights['importance'] ) +
+			( $ttl_score * $weights['ttl'] )
+		);
+
+		return min( 1.0, max( 0.0, $total_score ) );
+	}
+
+	/**
+	 * Calculate recency score with exponential decay.
+	 *
+	 * Implements RAG best practice for time-based scoring.
+	 *
+	 * @param array $context Context record.
+	 * @return float Recency score (0-1).
+	 */
+	private function calculate_recency_decay( $context ) {
+		if ( ! isset( $context['stored_at'] ) ) {
+			return 0.5;
+		}
+
+		$stored_timestamp = strtotime( $context['stored_at'] );
+		if ( ! $stored_timestamp ) {
+			return 0.5;
+		}
+
+		$age_seconds = time() - $stored_timestamp;
+		$age_days    = $age_seconds / DAY_IN_SECONDS;
+
+		// Exponential decay: score = e^(-age_days / decay_factor).
+		// Perfect score for items < 1 day old.
+		// 0.5 score at ~7 days.
+		// 0.25 score at ~14 days.
+		if ( $age_days < 1 ) {
+			return 1.0;
+		}
+
+		$decay_factor = 10; // Adjust for desired decay rate.
+		$score        = exp( -$age_days / $decay_factor );
+
+		return max( 0.0, min( 1.0, $score ) );
+	}
+
+	/**
+	 * Calculate TTL-based score.
+	 *
+	 * Higher score for contexts with more time remaining.
+	 *
+	 * @param array $context Context record.
+	 * @return float TTL score (0-1).
+	 */
+	private function calculate_ttl_score( $context ) {
+		if ( ! isset( $context['stored_at'] ) || ! isset( $context['expires_at'] ) ) {
+			return 0.5;
+		}
+
+		$stored_time  = strtotime( $context['stored_at'] );
+		$expires_time = strtotime( $context['expires_at'] );
+		$current_time = time();
+
+		if ( ! $stored_time || ! $expires_time ) {
+			return 0.5;
+		}
+
+		$total_lifetime     = $expires_time - $stored_time;
+		$remaining_lifetime = $expires_time - $current_time;
+
+		if ( $total_lifetime <= 0 ) {
+			return 0.0;
+		}
+
+		$ttl_ratio = $remaining_lifetime / $total_lifetime;
+		return max( 0.0, min( 1.0, $ttl_ratio ) );
+	}
+
+	/**
+	 * Get context health metrics.
+	 *
+	 * Provides insights into context quality and usage patterns.
+	 *
+	 * @param int|string $agent_id Agent identifier.
+	 * @return array Health metrics.
+	 */
+	public function get_context_health_metrics( $agent_id ) {
+		$index_key     = self::INDEX_PREFIX . md5( (string) $agent_id );
+		$context_index = get_transient( $index_key );
+
+		if ( ! is_array( $context_index ) || empty( $context_index ) ) {
+			return array(
+				'health_score' => 0,
+				'total_count'  => 0,
+				'metrics'      => array(),
+			);
+		}
+
+		$metrics = array(
+			'total_contexts'      => count( $context_index ),
+			'active_contexts'     => 0,
+			'expiring_soon'       => 0,
+			'frequently_accessed' => 0,
+			'never_accessed'      => 0,
+			'avg_age_days'        => 0,
+			'avg_access_count'    => 0,
+		);
+
+		$current_time      = time();
+		$total_age         = 0;
+		$total_access      = 0;
+		$expiring_threshold = 7 * DAY_IN_SECONDS; // 7 days.
+
+		foreach ( $context_index as $ctx_id => $entry ) {
+			// Get full context.
+			$context = $this->retrieve_context( $agent_id, $ctx_id, false );
+			if ( ! $context ) {
+				continue;
+			}
+
+			// Active contexts (not expired).
+			$expires_time = strtotime( $context['expires_at'] );
+			if ( $expires_time && $current_time < $expires_time ) {
+				++$metrics['active_contexts'];
+
+				// Expiring soon?
+				if ( ( $expires_time - $current_time ) < $expiring_threshold ) {
+					++$metrics['expiring_soon'];
+				}
+			}
+
+			// Access patterns.
+			$access_count = isset( $context['access_count'] ) ? $context['access_count'] : 0;
+			$total_access += $access_count;
+
+			if ( $access_count >= 5 ) {
+				++$metrics['frequently_accessed'];
+			} elseif ( 0 === $access_count ) {
+				++$metrics['never_accessed'];
+			}
+
+			// Age tracking.
+			$stored_time = strtotime( $context['stored_at'] );
+			if ( $stored_time ) {
+				$age_days   = ( $current_time - $stored_time ) / DAY_IN_SECONDS;
+				$total_age += $age_days;
+			}
+		}
+
+		// Calculate averages.
+		if ( $metrics['total_contexts'] > 0 ) {
+			$metrics['avg_age_days']     = round( $total_age / $metrics['total_contexts'], 1 );
+			$metrics['avg_access_count'] = round( $total_access / $metrics['total_contexts'], 1 );
+		}
+
+		// Health score (0-100).
+		// Based on: active ratio, access ratio, expiration management.
+		$active_ratio  = $metrics['total_contexts'] > 0 ? $metrics['active_contexts'] / $metrics['total_contexts'] : 0;
+		$access_ratio  = $metrics['total_contexts'] > 0 ? ( $metrics['total_contexts'] - $metrics['never_accessed'] ) / $metrics['total_contexts'] : 0;
+		$health_score  = ( $active_ratio * 0.5 + $access_ratio * 0.5 ) * 100;
+
+		return array(
+			'health_score' => round( $health_score, 1 ),
+			'total_count'  => $metrics['total_contexts'],
+			'metrics'      => $metrics,
 		);
 	}
 }
