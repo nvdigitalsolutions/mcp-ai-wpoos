@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-agent-memory-management-again',
-        'version' => 'dev-copilot/enhance-agent-memory-management-again',
-        'reference' => '841b1e42e1c52249d366f5e81a9a5c440108d11d',
+        'pretty_version' => 'dev-copilot/investigate-pr-3777-changes',
+        'version' => 'dev-copilot/investigate-pr-3777-changes',
+        'reference' => 'b7e16a861897d0fb9aba67ce4280854f90556672',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-agent-memory-management-again',
-            'version' => 'dev-copilot/enhance-agent-memory-management-again',
-            'reference' => '841b1e42e1c52249d366f5e81a9a5c440108d11d',
+            'pretty_version' => 'dev-copilot/investigate-pr-3777-changes',
+            'version' => 'dev-copilot/investigate-pr-3777-changes',
+            'reference' => 'b7e16a861897d0fb9aba67ce4280854f90556672',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

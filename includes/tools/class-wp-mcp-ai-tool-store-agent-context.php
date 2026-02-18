@@ -206,6 +206,9 @@ class WP_MCP_AI_Tool_Store_Agent_Context implements WP_MCP_AI_Tool_Interface, WP
 		// Store index with same TTL.
 		set_transient( $index_key, $context_index, $ttl );
 
+		// Invalidate dashboard memory stats cache to show updated data immediately.
+		delete_transient( 'wp_mcp_ai_agent_memory_stats' );
+
 		return array(
 			'success'     => true,
 			'message'     => __( 'Context stored successfully.', 'mcp-ai-wpoos' ),

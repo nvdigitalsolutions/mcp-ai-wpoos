@@ -31,6 +31,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_action( 'wp_ajax_wp_mcp_ai_get_recent_workflows', array( $this, 'ajax_get_recent_workflows' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_workflow', array( $this, 'ajax_execute_workflow' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_restart_workflow', array( $this, 'ajax_restart_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_refresh_memory_stats', array( $this, 'ajax_refresh_memory_stats' ) );
 	}
 
 	/**
@@ -1132,6 +1133,35 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * AJAX handler: Refresh agent memory statistics.
+	 *
+	 * Clears the cache and returns fresh memory stats.
+	 *
+	 * @return void
+	 * @since 1.1.0
+	 */
+	public function ajax_refresh_memory_stats() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Clear the cache to force fresh data retrieval.
+		delete_transient( 'wp_mcp_ai_agent_memory_stats' );
+
+		// Get fresh stats (will be recalculated and cached).
+		$stats = $this->get_agent_memory_stats();
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Memory stats refreshed successfully.', 'mcp-ai-wpoos' ),
+				'stats'   => $stats,
+			)
+		);
+	}
+
+	/**
 	 * AJAX handler: Restart workflow.
 	 *
 	 * @return void
@@ -1226,6 +1256,68 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Get agent memory statistics.
+	 *
+	 * Retrieves stats from cache or calculates them fresh.
+	 *
+	 * @return array Array containing total_contexts, total_agents, and contexts_by_type.
+	 * @since 1.1.0
+	 */
+	protected function get_agent_memory_stats() {
+		// Try to get stats from cache first (5 minute cache for dashboard performance).
+		$cache_key = 'wp_mcp_ai_agent_memory_stats';
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		global $wpdb;
+
+		// Count total stored contexts.
+		$total_contexts = 0;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} 
+				WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+			)
+		);
+
+		$contexts_by_type = array();
+		$total_agents     = 0;
+
+		foreach ( $transients as $transient ) {
+			$index = maybe_unserialize( $transient->option_value );
+			if ( is_array( $index ) && ! empty( $index ) ) {
+				++$total_agents;
+				$total_contexts += count( $index );
+
+				// Count by type.
+				foreach ( $index as $context_id => $context_meta ) {
+					$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
+					if ( ! isset( $contexts_by_type[ $type ] ) ) {
+						$contexts_by_type[ $type ] = 0;
+					}
+					++$contexts_by_type[ $type ];
+				}
+			}
+		}
+
+		$stats = array(
+			'total_contexts'   => $total_contexts,
+			'total_agents'     => $total_agents,
+			'contexts_by_type' => $contexts_by_type,
+		);
+
+		// Cache the results for 5 minutes.
+		set_transient( $cache_key, $stats, 5 * MINUTE_IN_SECONDS );
+
+		return $stats;
+	}
+
+	/**
 	 * Render agent memory statistics widget.
 	 *
 	 * Shows usage statistics for the new agent memory tools (Phase 4/5).
@@ -1234,62 +1326,20 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @since 1.1.0
 	 */
 	protected function render_agent_memory_stats() {
-		// Try to get stats from cache first (5 minute cache for dashboard performance).
-		$cache_key = 'wp_mcp_ai_agent_memory_stats';
-		$cached    = get_transient( $cache_key );
+		$stats = $this->get_agent_memory_stats();
 
-		if ( false !== $cached ) {
-			$total_contexts   = $cached['total_contexts'];
-			$total_agents     = $cached['total_agents'];
-			$contexts_by_type = $cached['contexts_by_type'];
-		} else {
-			global $wpdb;
-
-			// Count total stored contexts.
-			$total_contexts = 0;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
-			$transients = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT option_name, option_value FROM {$wpdb->options} 
-					WHERE option_name LIKE %s",
-					$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
-				)
-			);
-
-			$contexts_by_type = array();
-			$total_agents     = 0;
-
-			foreach ( $transients as $transient ) {
-				$index = maybe_unserialize( $transient->option_value );
-				if ( is_array( $index ) && ! empty( $index ) ) {
-					++$total_agents;
-					$total_contexts += count( $index );
-
-					// Count by type.
-					foreach ( $index as $context_id => $context_meta ) {
-						$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
-						if ( ! isset( $contexts_by_type[ $type ] ) ) {
-							$contexts_by_type[ $type ] = 0;
-						}
-						++$contexts_by_type[ $type ];
-					}
-				}
-			}
-
-			// Cache the results for 5 minutes.
-			set_transient(
-				$cache_key,
-				array(
-					'total_contexts'   => $total_contexts,
-					'total_agents'     => $total_agents,
-					'contexts_by_type' => $contexts_by_type,
-				),
-				5 * MINUTE_IN_SECONDS
-			);
-		}
+		$total_contexts   = $stats['total_contexts'];
+		$total_agents     = $stats['total_agents'];
+		$contexts_by_type = $stats['contexts_by_type'];
 
 		?>
 		<div class="agent-memory-stats-widget">
+			<div class="memory-stats-header">
+				<button type="button" class="button button-secondary refresh-memory-stats" title="<?php esc_attr_e( 'Refresh memory statistics', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
 			<div class="memory-stats-grid">
 				<div class="memory-stat-card">
 					<div class="stat-icon">💾</div>
