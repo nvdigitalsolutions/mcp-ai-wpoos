@@ -175,7 +175,8 @@ const dependencies = [
 			{ src: 'package.json', dest: 'sharp/package.json' },
 		],
 		dependencies: ['detect-libc', 'color', 'semver'], // Sharp's required dependencies
-		platformBinaries: true, // Copy platform-specific native binaries
+		// Note: Platform binaries (@img/sharp-linux-x64) are pre-packaged in assets/vendor/sharp/node_modules/@img/
+		// and committed to git, so they don't need to be copied during build.
 	},
 	{
 		name: 'prettier',
@@ -682,64 +683,10 @@ dependencies.forEach(dep => {
 		});
 	}
 	
-	// Copy platform-specific binaries (e.g., Sharp's @img/sharp-* packages with libvips)
-	if (dep.platformBinaries) {
-		// Detect current platform
-		const platform = process.platform; // 'linux', 'darwin', 'win32'
-		const arch = process.arch; // 'x64', 'arm64', 'arm', 'ia32'
-		
-		// Determine which platforms to include
-		const includeAllPlatforms = process.env.WP_MCP_AI_BUILD_OFFLINE === 'true' || 
-		                             process.env.WP_MCP_AI_SHARP_ALL_PLATFORMS === 'true' ||
-		                             process.argv.includes('--include-all-platforms');
-		
-		let platformPackages = [];
-		
-		if (includeAllPlatforms) {
-			// Include all common platforms for distribution
-			console.log(`  ${colors.blue}ℹ️  Including platform binaries for ALL common platforms${colors.reset}`);
-			platformPackages = [
-				'@img/sharp-linux-x64',
-				'@img/sharp-libvips-linux-x64',
-				'@img/sharp-darwin-arm64',
-				'@img/sharp-libvips-darwin-arm64',
-				'@img/sharp-darwin-x64',
-				'@img/sharp-libvips-darwin-x64',
-				'@img/sharp-win32-x64',
-			];
-		} else {
-			// Include only current platform + Linux x64 (most common)
-			console.log(`  ${colors.blue}ℹ️  Including platform binaries for Linux x64 (most common) + current platform${colors.reset}`);
-			platformPackages = [
-				// Always include Linux x64 (most common production server)
-				'@img/sharp-linux-x64',
-				'@img/sharp-libvips-linux-x64',
-				// Also include current platform (for development/testing)
-				`@img/sharp-${platform}-${arch}`,
-				`@img/sharp-libvips-${platform}-${arch}`,
-			];
-		}
-		
-		// Deduplicate
-		platformPackages = [...new Set(platformPackages)];
-		
-		platformPackages.forEach(pkgName => {
-			const pkgPath = path.join(proPath, 'node_modules', pkgName);
-			const pkgDestPath = path.join(vendorPath, dep.name, 'node_modules', pkgName);
-			
-			if (fs.existsSync(pkgPath)) {
-				copyDir(pkgPath, pkgDestPath);
-				const size = getSize(pkgDestPath);
-				depSize += size;
-			}
-		});
-	}
-	
 	if (depSize > 0) {
 		const cdnLabel = dep.cdnPackage ? ' (offline fallback)' : '';
 		const depsLabel = dep.dependencies ? ` +${dep.dependencies.length} deps` : '';
-		const platformLabel = dep.platformBinaries ? ' +platform binaries' : '';
-		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${depsLabel}${platformLabel}${colors.reset} → ${formatSize(depSize)}`);
+		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${depsLabel}${colors.reset} → ${formatSize(depSize)}`);
 		totalCopied++;
 		totalSize += depSize;
 	}
@@ -756,9 +703,9 @@ if (skippedCdn > 0) {
 }
 
 console.log(`\n${colors.blue}ℹ️  Sharp Platform Binaries:${colors.reset}`);
-console.log(`${colors.blue}   By default, only Linux x64 binaries are included (most common)${colors.reset}`);
-console.log(`${colors.blue}   To include ALL platforms: WP_MCP_AI_SHARP_ALL_PLATFORMS=true npm run build${colors.reset}`);
-console.log(`${colors.blue}   Or: WP_MCP_AI_BUILD_OFFLINE=true npm run build (includes everything)${colors.reset}`);
+console.log(`${colors.blue}   Linux x64 binaries are pre-packaged in assets/vendor/sharp/node_modules/@img/${colors.reset}`);
+console.log(`${colors.blue}   They are committed to git and don't need to be copied during build.${colors.reset}`);
+console.log(`${colors.blue}   Other platforms: Users run 'npm install sharp --include=optional'${colors.reset}`);
 
 // ============================================================================
 // POST-COPY CLEANUP: Remove unnecessary files to reduce plugin size

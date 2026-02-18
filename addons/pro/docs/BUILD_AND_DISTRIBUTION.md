@@ -93,13 +93,15 @@ Each package configuration in `copy-dependencies.js` specifies:
 - Development dependencies
 
 **Special handling for Sharp:**
-Sharp requires platform-specific native binaries (libvips) and JavaScript dependencies (detect-libc, color, semver).
-The copy script automatically:
-- Copies Sharp's JavaScript library
-- Copies Sharp's dependencies to `sharp/node_modules/`
-- Copies platform-specific binaries for common platforms
-- For current platform only: Use standard `npm run build`
-- For all platforms: Use `WP_MCP_AI_BUILD_OFFLINE=true npm run build`
+Sharp with Linux x64 binaries is pre-packaged in `assets/vendor/sharp/node_modules/`:
+- Sharp JavaScript library
+- Dependencies (detect-libc, color, semver)
+- Linux x64 platform binaries (@img/sharp-linux-x64, @img/sharp-libvips-linux-x64)
+
+These are committed to git and cloned with the repository. The copy script only copies Sharp's library and dependencies if they're missing, but NOT the platform binaries (they're already there).
+
+**For other platforms:**
+Users need to run `npm install sharp --include=optional` to get their platform's binaries.
 
 ---
 
@@ -115,35 +117,44 @@ The copy script automatically:
 
 # TRACKED (included)
 !/addons/pro/assets/vendor/         # Pre-built packages for distribution
-!/addons/pro/assets/vendor/sharp/node_modules/  # Sharp dependencies and platform binaries
+!/addons/pro/assets/vendor/sharp/node_modules/  # Sharp dependencies and platform binaries (pre-packaged)
 ```
 
 ### Workflow
 
 ```bash
-# 1. Install dependencies (creates node_modules - not tracked)
+# Sharp is already pre-packaged with Linux x64 binaries!
+# No npm install needed for Linux x64 users.
+
+# For maintainers updating other packages:
 cd addons/pro
-npm install --include=optional    # Include Sharp platform binaries
+npm install  # Install other dependencies (not Sharp)
+npm run build  # Copy to vendor directory
 
-# 2. Build vendor directory (creates assets/vendor - tracked)
-npm run build
-# This copies packages from node_modules to assets/vendor, including:
-# - Sharp library, dependencies (detect-libc, color, semver), and platform binaries
-# - All other NPM packages
-
-# 3. Commit the vendor directory
+# Commit vendor changes
 cd ../..
 git add addons/pro/assets/vendor/
-git commit -m "Update vendor packages with Sharp dependencies"
+git commit -m "Update vendor packages"
 ```
 
 **Note about Sharp:**
-Sharp requires special handling because it needs:
-- JavaScript library files
-- Platform-specific native binaries (libvips)
-- JavaScript dependencies (detect-libc, color, semver)
+Sharp with Linux x64 binaries is already in `assets/vendor/sharp/node_modules/` and committed to git.
+- Linux x64 users: Works immediately ✅
+- Other platforms: Run `npm install sharp --include=optional`
 
-All these are automatically copied to `assets/vendor/sharp/` and committed to the repository, so users don't need to run `npm install` after cloning.
+**To update Sharp version** (maintainers only):
+```bash
+cd addons/pro
+mkdir temp-sharp && cd temp-sharp
+npm install sharp@NEW_VERSION --include=optional
+cd ..
+cp -r temp-sharp/node_modules/sharp/* assets/vendor/sharp/
+cp -r temp-sharp/node_modules/{detect-libc,color,semver} assets/vendor/sharp/node_modules/
+cp -r temp-sharp/node_modules/@img assets/vendor/sharp/node_modules/
+rm -rf temp-sharp
+git add assets/vendor/sharp/
+git commit -m "Update Sharp to NEW_VERSION"
+```
 
 ---
 
