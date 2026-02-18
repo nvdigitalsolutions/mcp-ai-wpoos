@@ -1358,7 +1358,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<ul>
 					<?php
 					// Get agent memory tools from registry dynamically.
-					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search' );
+					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search', 'manage_context_lifecycle' );
 					$registry          = WP_MCP_AI_Tool_Registry::get_instance();
 
 					if ( $registry ) {
@@ -1398,6 +1398,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 							<strong>semantic_context_search:</strong>
 							<?php esc_html_e( 'Search contexts using vector embeddings for superior semantic understanding', 'mcp-ai-wpoos' ); ?>
 						</li>
+						<li>
+							<strong>manage_context_lifecycle:</strong>
+							<?php esc_html_e( 'Advanced lifecycle management: refresh TTL, compress, merge contexts, and prune unused', 'mcp-ai-wpoos' ); ?>
+						</li>
 						<?php
 					}
 					?>
@@ -1411,6 +1415,152 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					</a>
 				</p>
 			</div>
+
+			<!-- RAG Architecture Features -->
+			<div class="rag-architecture-info">
+				<h4><?php esc_html_e( 'RAG Architecture Enhancements', 'mcp-ai-wpoos' ); ?></h4>
+				<p><?php esc_html_e( 'The memory management system implements industry-standard RAG (Retrieval-Augmented Generation) best practices:', 'mcp-ai-wpoos' ); ?></p>
+				
+				<div class="rag-features-grid">
+					<div class="rag-feature-card">
+						<div class="feature-icon">🧩</div>
+						<h5><?php esc_html_e( 'Semantic Chunking', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Optimal 150-1000 token chunks with 10-20% overlap for context preservation', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🗜️</div>
+						<h5><?php esc_html_e( 'Context Compression', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Automatic summarization based on context age with TTL-aware policies', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">📊</div>
+						<h5><?php esc_html_e( 'Enhanced Scoring', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Multi-factor scoring: recency decay, frequency tracking, importance, TTL', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🔍</div>
+						<h5><?php esc_html_e( 'Hybrid Retrieval', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Combines semantic (vector) and keyword search for optimal relevance', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">⏱️</div>
+						<h5><?php esc_html_e( 'Exponential Decay', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Time-based relevance decay ensures recent contexts are prioritized', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🎯</div>
+						<h5><?php esc_html_e( 'Token Budget Management', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Intelligent context selection within LLM token constraints', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Context Health Metrics -->
+			<?php
+			// Display health metrics for memory system.
+			$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+			
+			// Get a sample agent ID or aggregate metrics.
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sample_agent_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} 
+					WHERE option_name LIKE %s 
+					LIMIT 1",
+					$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+				)
+			);
+
+			if ( $sample_agent_id ) {
+				$sample_agent_id = str_replace( '_transient_mcp_ai_ctx_index_', '', $sample_agent_id );
+				// This is the md5 hash, but we can use it to get one agent's metrics.
+				$health_metrics = $context_manager->get_context_health_metrics( $sample_agent_id );
+
+				if ( $health_metrics['total_count'] > 0 ) :
+					?>
+					<div class="memory-health-metrics">
+						<h4><?php esc_html_e( 'Memory Health Metrics', 'mcp-ai-wpoos' ); ?></h4>
+						
+						<div class="health-score-display">
+							<div class="health-score-circle <?php echo $health_metrics['health_score'] >= 70 ? 'good' : ( $health_metrics['health_score'] >= 40 ? 'fair' : 'poor' ); ?>">
+								<span class="score-value"><?php echo esc_html( $health_metrics['health_score'] ); ?></span>
+								<span class="score-label"><?php esc_html_e( 'Health Score', 'mcp-ai-wpoos' ); ?></span>
+							</div>
+							
+							<div class="health-metrics-grid">
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( number_format_i18n( $health_metrics['metrics']['active_contexts'] ) ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Active Contexts', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( $health_metrics['metrics']['avg_age_days'] ); ?>d</span>
+									<span class="metric-label"><?php esc_html_e( 'Avg Age', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( $health_metrics['metrics']['avg_access_count'] ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Avg Accesses', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item <?php echo $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : ''; ?>">
+									<span class="metric-value"><?php echo esc_html( number_format_i18n( $health_metrics['metrics']['expiring_soon'] ) ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Expiring Soon', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+							</div>
+						</div>
+
+						<div class="health-insights">
+							<h5><?php esc_html_e( 'Health Insights', 'mcp-ai-wpoos' ); ?></h5>
+							<ul>
+								<?php if ( $health_metrics['metrics']['never_accessed'] > 0 ) : ?>
+									<li class="info">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts have never been accessed. Consider reviewing their relevance.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['never_accessed'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+								
+								<?php if ( $health_metrics['metrics']['frequently_accessed'] > 0 ) : ?>
+									<li class="success">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts are frequently accessed (5+ times). These are high-value memories.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['frequently_accessed'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+								
+								<?php if ( $health_metrics['metrics']['expiring_soon'] > 0 ) : ?>
+									<li class="warning">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts expiring within 7 days. Consider extending TTL for important memories.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['expiring_soon'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+							</ul>
+						</div>
+					</div>
+					<?php
+				endif;
+			}
+			?>
 		</div>
 		<?php
 	}
