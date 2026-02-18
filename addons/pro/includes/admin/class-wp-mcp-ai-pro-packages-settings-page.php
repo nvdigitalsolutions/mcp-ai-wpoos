@@ -402,6 +402,17 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	}
 
 	/**
+	 * Get list of tools for this toolkit
+	 *
+	 * @return array Array of tool slugs and names.
+	 */
+	protected function get_tools_list() {
+		// Pro Packages is a status/diagnostics page with no specific tools.
+		// It manages npm packages that support other toolkits.
+		return array();
+	}
+
+	/**
 	 * Render configuration tab (not used for this page)
 	 */
 	protected function render_configuration_tab() {
