@@ -103,7 +103,7 @@
 	"author": "NV Digital Solutions",
 	"license": "SEE LICENSE IN LICENSE",
 	"engines": {
-		"node": ">=18.0.0 <=20.x",
+		"node": ">=18.17.0",
 		"npm": ">=9.0.0"
 	}
 }
