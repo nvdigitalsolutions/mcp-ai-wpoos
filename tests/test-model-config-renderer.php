@@ -180,4 +180,98 @@ class Test_Model_Config_Renderer extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
 		$this->assertStringContainsString( 'jQuery', $output );
 	}
+
+	/**
+	 * Test that render_model_table outputs style tags.
+	 */
+	public function test_render_model_table_outputs_style() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		$this->assertIsString( $output );
+		$this->assertStringContainsString( '<style', $output );
+		$this->assertStringContainsString( '</style>', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
+	}
+
+	/**
+	 * Test that render_javascript is not stripped by wp_kses_post.
+	 *
+	 * This test ensures that script tags remain intact when the output
+	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 */
+	public function test_render_javascript_not_stripped() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+
+		// Verify script tags exist before wp_kses_post.
+		$this->assertStringContainsString( '<script', $output );
+		$this->assertStringContainsString( '</script>', $output );
+
+		// Verify script functionality is present.
+		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
+		$this->assertStringContainsString( 'searchModels', $output );
+
+		// Note: If wp_kses_post() were applied, these script tags would be stripped.
+		// This test verifies the renderer outputs script tags that should NOT be passed through wp_kses_post.
+	}
+
+	/**
+	 * Test that render_model_table styles are not stripped.
+	 *
+	 * This test ensures that style tags remain intact when the output
+	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 */
+	public function test_render_model_table_styles_not_stripped() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify style tags exist.
+		$this->assertStringContainsString( '<style', $output );
+		$this->assertStringContainsString( '</style>', $output );
+
+		// Verify critical CSS rules are present.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
+		$this->assertStringContainsString( 'background: #fff', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
+
+		// Note: If wp_kses_post() were applied, these style tags would be stripped.
+		// This test verifies the renderer outputs style tags that should NOT be passed through wp_kses_post.
+	}
+
+	/**
+	 * Test that WEBLLM and GOOGLE provider badges have color styles.
+	 */
+	public function test_webllm_and_google_provider_badges_have_colors() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify WEBLLM provider badge style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.webllm', $output );
+		$this->assertStringContainsString( '#9b59b6', $output );
+
+		// Verify GOOGLE provider badge style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.google', $output );
+		$this->assertStringContainsString( '#4285f4', $output );
+	}
+
+	/**
+	 * Test that save button has max-width style.
+	 */
+	public function test_save_button_has_max_width() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify save button max-width style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-save-model-config', $output );
+		$this->assertStringContainsString( 'max-width: 75px', $output );
+	}
+
+	/**
+	 * Test that JavaScript includes sorting functionality.
+	 */
+	public function test_javascript_includes_sorting() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+
+		// Verify sorting function exists.
+		$this->assertStringContainsString( 'sortModelsByProvider', $output );
+		$this->assertStringContainsString( 'Sort models by provider on page load', $output );
+		$this->assertStringContainsString( '$modelTable.append(row)', $output );
+	}
 }
