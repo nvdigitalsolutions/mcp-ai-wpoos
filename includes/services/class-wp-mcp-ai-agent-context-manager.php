@@ -458,41 +458,6 @@ class WP_MCP_AI_Agent_Context_Manager {
 	}
 
 	/**
-	 * Clear all contexts for an agent.
-	 *
-	 * @param int|string $agent_id Agent identifier.
-	 * @return array Operation result.
-	 */
-	public function clear_agent_contexts( $agent_id ) {
-		$index_key     = self::INDEX_PREFIX . md5( (string) $agent_id );
-		$context_index = get_transient( $index_key );
-
-		if ( ! is_array( $context_index ) ) {
-			return array(
-				'success' => true,
-				'deleted' => 0,
-			);
-		}
-
-		$deleted_count = 0;
-
-		// Delete each context.
-		foreach ( $context_index as $ctx_id => $entry ) {
-			$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $ctx_id );
-			delete_transient( $transient_key );
-			++$deleted_count;
-		}
-
-		// Delete the index.
-		delete_transient( $index_key );
-
-		return array(
-			'success' => true,
-			'deleted' => $deleted_count,
-		);
-	}
-
-	/**
 	 * Update an existing context.
 	 *
 	 * @param int|string $agent_id     Agent identifier.
