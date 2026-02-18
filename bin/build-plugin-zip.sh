@@ -446,6 +446,7 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
             --exclude 'assets/vendor/canvas' \
+            --exclude 'assets/vendor/puppeteer-core' \
             --exclude 'assets/vendor/chart.js' \
             --exclude 'assets/vendor/katex' \
             --exclude 'assets/vendor/d3' \
@@ -496,11 +497,11 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/*/Makefile'
         
         echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB)"
-        echo "✓ Excluded packages requiring system dependencies: canvas (requires libvips/Cairo for PDF OCR)"
+        echo "✓ Excluded optional packages requiring system dependencies or large size: canvas, puppeteer-core"
         echo "✓ Excluded CDN packages: chart.js (~420KB), katex (~3.1MB), d3 (~864KB), axios (~1.6MB), mathjs (~17MB), prettier (~500KB)"
         echo "ℹ️  Note: Excluded packages are kept in git repo but not in ZIP distribution"
         echo "ℹ️  Note: CDN packages load from jsDelivr with automatic fallback"
-        echo "ℹ️  Note: Canvas and system packages are installed via npm install when needed"
+        echo "ℹ️  Note: Optional packages (canvas, puppeteer-core) are installed via npm when needed"
         echo "ℹ️  Note: Other vendor packages (~35+ NPM packages) are included for immediate functionality after installation"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
