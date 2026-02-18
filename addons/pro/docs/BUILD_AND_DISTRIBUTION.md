@@ -120,29 +120,41 @@ Users need to run `npm install sharp --include=optional` to get their platform's
 !/addons/pro/assets/vendor/sharp/node_modules/  # Sharp dependencies and platform binaries (pre-packaged)
 ```
 
-### Workflow
+### Workflow for End Users (Building Zips)
 
 ```bash
-# Sharp is already pre-packaged with Linux x64 binaries!
-# No npm install needed for Linux x64 users.
+# All vendor packages are pre-packaged in assets/vendor/ and committed to git.
+# No npm install needed! Just build the zip:
 
-# For maintainers updating other packages:
-cd addons/pro
-npm install  # Install other dependencies (not Sharp)
-npm run build  # Copy to vendor directory
+# From repository root
+./bin/build-plugin-zip.sh --pro
 
-# Commit vendor changes
-cd ../..
-git add addons/pro/assets/vendor/
-git commit -m "Update vendor packages"
+# Or build everything:
+./bin/build-plugin-zip.sh --all
 ```
 
-**Note about Sharp:**
-Sharp with Linux x64 binaries is already in `assets/vendor/sharp/node_modules/` and committed to git.
-- Linux x64 users: Works immediately ✅
-- Other platforms: Run `npm install sharp --include=optional`
+**What happens:**
+1. Script copies pre-packaged files from `addons/pro/` to `build/` directory
+2. Vendor directory (104 MB, 43 packages) is already there
+3. Creates zip file
+4. Done! ✅
 
-**To update Sharp version** (maintainers only):
+**No npm install required** because all vendor files are committed to git.
+
+### Workflow for Maintainers (Updating Packages)
+
+Only needed when updating NPM package versions:
+
+```bash
+# Update specific package
+cd addons/pro
+npm install package-name@new-version
+npm run build  # Copies from node_modules to assets/vendor/
+git add assets/vendor/
+git commit -m "Update package-name to new-version"
+```
+
+**For Sharp specifically:**
 ```bash
 cd addons/pro
 mkdir temp-sharp && cd temp-sharp
@@ -162,24 +174,33 @@ git commit -m "Update Sharp to NEW_VERSION"
 
 ### Plugin Zip Creation
 
-When creating a distribution zip:
+**All vendor files (104 MB, 43 packages) are pre-packaged and committed to git.**
+
+Building the zip is simple:
 
 ```bash
 # From repository root
-bin/build-plugin-zip.sh
+./bin/build-plugin-zip.sh --pro
+
+# Or build all versions:
+./bin/build-plugin-zip.sh --all
 ```
 
 **What's included:**
 - ✅ All PHP files
-- ✅ `addons/pro/assets/vendor/` (pre-built packages)
+- ✅ Pre-packaged vendor directory (104 MB, 43 NPM packages)
+- ✅ Sharp with Linux x64 binaries (works immediately on 90% of servers)
+- ✅ All other NPM packages (turf, cheerio, canvas, etc.)
 - ✅ `readme.txt`, `LICENSE`, etc.
 
-**What's excluded** (see `.distignore`):
-- ❌ `node_modules/` (development only)
-- ❌ `package.json`, `package-lock.json`
-- ❌ `scripts/` directory
-- ❌ Test files
-- ❌ Documentation (except README.md)
+**What's excluded** (see build script):
+- ❌ `node_modules/` (development only - not needed, vendor has everything)
+- ❌ `package.json`, `package-lock.json` (not needed by end users)
+- ❌ `scripts/copy-dependencies.js` (maintainer tool only)
+- ❌ Test files, documentation
+- ❌ CDN packages (chart.js, katex, etc. - loaded from CDN)
+
+**No npm install or build step needed** - everything is already in git!
 
 ### WordPress.org Deployment
 

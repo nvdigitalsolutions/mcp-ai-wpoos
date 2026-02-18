@@ -421,26 +421,10 @@ if [ "$BUILD_PRO" = true ]; then
     PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
-    # Build Pro addon NPM dependencies (Sharp, etc.)
-    if [ -d "addons/pro" ]; then
-        echo "Step 3b.0: Building Pro add-on NPM dependencies..."
-        
-        # Check if node_modules exists in Pro addon
-        if [ ! -d "addons/pro/node_modules" ]; then
-            echo "⚠️  Pro addon node_modules not found, running npm install..."
-            echo "ℹ️  This will install Sharp and other NPM packages with platform binaries"
-            cd addons/pro
-            npm install --include=optional --silent 2>/dev/null || npm install --include=optional
-            cd ../..
-        fi
-        
-        # Run copy-dependencies script to prepare vendor directory
-        echo "ℹ️  Copying NPM dependencies (including Sharp with platform binaries) to vendor directory..."
-        cd addons/pro
-        npm run build 2>/dev/null || node scripts/copy-dependencies.js
-        cd ../..
-        echo "✅ Pro addon NPM dependencies prepared"
-    fi
+    # Note: All NPM packages (Sharp, etc.) are pre-packaged in assets/vendor/ and committed to git.
+    # The copy-dependencies.js script is only used by maintainers when updating vendor packages.
+    # For building the zip, we just copy the pre-packaged vendor directory.
+    echo "ℹ️  Using pre-packaged NPM dependencies from assets/vendor/ (104 MB, 43 packages)"
     
     # Copy pro addon files with aggressive exclusions to reduce size
     if [ -d "addons/pro" ]; then
