@@ -418,6 +418,32 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	protected function render_configuration_tab() {
 		echo '<p>' . esc_html__( 'No configuration needed. This page shows package status only.', 'mcp-ai-wpoos-pro' ) . '</p>';
 	}
+
+	/**
+	 * Override render_tabs to exclude tools and configuration tabs
+	 *
+	 * @param string $active_tab Active tab slug.
+	 */
+	protected function render_tabs( $active_tab ) {
+		// Pro Packages page only needs Overview and Help tabs.
+		$tabs = array(
+			'overview' => __( 'Overview', 'mcp-ai-wpoos-pro' ),
+			'help'     => __( 'Help & Documentation', 'mcp-ai-wpoos-pro' ),
+		);
+
+		?>
+		<nav class="toolkit-settings-nav nav-tab-wrapper">
+			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
+				<a
+					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+				>
+					<?php echo esc_html( $tab_title ); ?>
+				</a>
+			<?php endforeach; ?>
+		</nav>
+		<?php
+	}
 }
 
 // Instantiate the settings page.
