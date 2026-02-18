@@ -64,13 +64,17 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
+				<li><?php esc_html_e( 'Company Management: Create and manage companies with AI-powered research and target identification', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Contact Management: Create, import, export, and manage CRM contacts with validation', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Email Campaigns: Create and send responsive email campaigns with MJML templates', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Lead Tracking: Score leads, track conversions, and manage sales pipeline', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Web Search Integration: AI-powered company research with industry analysis and best practices', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Research & Add Pages: Dedicated pages for researching companies, contacts, and campaigns before adding', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Email Validation: RFC 5322 compliance, MX record checking, disposable email detection', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'CSV Import/Export: Bulk contact operations with auto-field mapping', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'SMTP Integration: Advanced email sending with nodemailer (OAuth2, attachments)', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Phone Validation: International phone number validation and formatting', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Newsletter Plugin Integration: Works seamlessly with Newsletter and WP Mail SMTP plugins', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Calendar Integration: Generate .ics calendar files for campaign events', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 
@@ -115,6 +119,25 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<td>
 						<input type="number" name="default_lead_score" value="0" min="0" max="100" class="small-text" />
 						<p class="description"><?php esc_html_e( 'Initial lead score for new contacts (0-100)', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Research & Add Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$current_assistant = get_option( 'wp_mcp_ai_crm_research_assistant', 'default' );
+						$assistants        = $this->get_available_assistants();
+						?>
+						<select name="wp_mcp_ai_crm_research_assistant" id="crm_research_assistant">
+							<?php foreach ( $assistants as $assistant_id => $assistant_name ) : ?>
+								<option value="<?php echo esc_attr( $assistant_id ); ?>" <?php selected( $current_assistant, $assistant_id ); ?>>
+									<?php echo esc_html( $assistant_name ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Select which AI assistant to use for company research on the Research & Add pages. This assistant will help with web search, industry analysis, and target company identification.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 				<tr>
@@ -184,6 +207,9 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
+			'create_company'           => __( 'Create Company', 'mcp-ai-wpoos-pro' ),
+			'get_companies'            => __( 'Get Companies', 'mcp-ai-wpoos-pro' ),
+			'research_company'         => __( 'Research Company (Web Search)', 'mcp-ai-wpoos-pro' ),
 			'manage_crm_contact'       => __( 'Manage CRM Contact', 'mcp-ai-wpoos-pro' ),
 			'import_contacts_csv'      => __( 'Import Contacts from CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
 			'export_contacts_csv'      => __( 'Export Contacts to CSV (Coming Soon)', 'mcp-ai-wpoos-pro' ),
@@ -197,6 +223,38 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 			'track_email_engagement'   => __( 'Track Email Engagement (Coming Soon)', 'mcp-ai-wpoos-pro' ),
 			'generate_calendar_invite' => __( 'Generate Calendar Invite (Service)', 'mcp-ai-wpoos-pro' ),
 		);
+	}
+
+	/**
+	 * Get available assistants for selection
+	 *
+	 * @return array List of assistant_id => name
+	 */
+	private function get_available_assistants() {
+		$assistants = array(
+			'default' => __( 'Default Assistant', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// Get all published assistants.
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$assistants[ get_the_ID() ] = get_the_title();
+			}
+			wp_reset_postdata();
+		}
+
+		return $assistants;
 	}
 
 	/**
