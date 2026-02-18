@@ -180,4 +180,60 @@ class Test_Model_Config_Renderer extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
 		$this->assertStringContainsString( 'jQuery', $output );
 	}
+
+	/**
+	 * Test that render_model_table outputs style tags.
+	 */
+	public function test_render_model_table_outputs_style() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		$this->assertIsString( $output );
+		$this->assertStringContainsString( '<style', $output );
+		$this->assertStringContainsString( '</style>', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
+	}
+
+	/**
+	 * Test that render_javascript is not stripped by wp_kses_post.
+	 *
+	 * This test ensures that script tags remain intact when the output
+	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 */
+	public function test_render_javascript_not_stripped() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+
+		// Verify script tags exist before wp_kses_post.
+		$this->assertStringContainsString( '<script', $output );
+		$this->assertStringContainsString( '</script>', $output );
+
+		// Verify script functionality is present.
+		$this->assertStringContainsString( 'wp-mcp-ai-save-model-config', $output );
+		$this->assertStringContainsString( 'searchModels', $output );
+
+		// Note: If wp_kses_post() were applied, these script tags would be stripped.
+		// This test verifies the renderer outputs script tags that should NOT be passed through wp_kses_post.
+	}
+
+	/**
+	 * Test that render_model_table styles are not stripped.
+	 *
+	 * This test ensures that style tags remain intact when the output
+	 * is used without wp_kses_post() wrapper, as required by the fix.
+	 */
+	public function test_render_model_table_styles_not_stripped() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify style tags exist.
+		$this->assertStringContainsString( '<style', $output );
+		$this->assertStringContainsString( '</style>', $output );
+
+		// Verify critical CSS rules are present.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-config-table-wrapper', $output );
+		$this->assertStringContainsString( 'background: #fff', $output );
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge', $output );
+
+		// Note: If wp_kses_post() were applied, these style tags would be stripped.
+		// This test verifies the renderer outputs style tags that should NOT be passed through wp_kses_post.
+	}
 }
