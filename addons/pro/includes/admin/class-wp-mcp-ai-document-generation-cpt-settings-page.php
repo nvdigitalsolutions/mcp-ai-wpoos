@@ -508,6 +508,10 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			'add_watermark_to_pdf' => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
 			'extract_pdf_text'     => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
 
+			// OCR Tools.
+			'ocr_pdf_text'         => __( 'OCR PDF Text Extraction', 'mcp-ai-wpoos-pro' ),
+			'pro_document_ocr'     => __( 'Pro Document OCR', 'mcp-ai-wpoos-pro' ),
+
 			// Data Import/Export Tools.
 			'excel_data_import'    => __( 'Excel Data Import', 'mcp-ai-wpoos-pro' ),
 			'excel_data_export'    => __( 'Excel Data Export', 'mcp-ai-wpoos-pro' ),
