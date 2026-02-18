@@ -44,7 +44,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Advanced context lifecycle management: refresh TTL, apply compression, merge related contexts, and manage retention policies. Implements RAG best practices for memory lifecycle.', 'mcp-ai-wpoos' );
+		return __( 'Advanced context lifecycle management: refresh TTL, apply compression, merge related contexts, update memory content, delete specific contexts, and manage retention policies. Implements RAG best practices for memory lifecycle.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -57,7 +57,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				'action'     => array(
 					'type'        => 'string',
 					'description' => __( 'Lifecycle action to perform', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'refresh', 'compress', 'merge', 'analyze', 'prune' ),
+					'enum'        => array( 'refresh', 'compress', 'merge', 'analyze', 'prune', 'update', 'delete' ),
 				),
 				'agent_id'   => array(
 					'type'        => array( 'integer', 'string' ),
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 				),
 				'context_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Context ID for single-context actions (refresh, compress)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Context ID for single-context actions (refresh, compress, update, delete)', 'mcp-ai-wpoos' ),
 				),
 				'context_ids' => array(
 					'type'        => 'array',
@@ -97,6 +97,34 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 							'type'        => 'integer',
 							'description' => __( 'Days threshold for pruning unused contexts', 'mcp-ai-wpoos' ),
 							'default'     => 30,
+						),
+						'update_data'     => array(
+							'type'        => 'object',
+							'description' => __( 'Updated context data for update action', 'mcp-ai-wpoos' ),
+							'properties'  => array(
+								'title'      => array(
+									'type'        => 'string',
+									'description' => __( 'Updated title', 'mcp-ai-wpoos' ),
+								),
+								'content'    => array(
+									'type'        => 'string',
+									'description' => __( 'Updated content', 'mcp-ai-wpoos' ),
+								),
+								'metadata'   => array(
+									'type'        => 'object',
+									'description' => __( 'Updated metadata', 'mcp-ai-wpoos' ),
+								),
+								'tags'       => array(
+									'type'        => 'array',
+									'description' => __( 'Updated tags', 'mcp-ai-wpoos' ),
+									'items'       => array( 'type' => 'string' ),
+								),
+								'importance' => array(
+									'type'        => 'string',
+									'description' => __( 'Updated importance level', 'mcp-ai-wpoos' ),
+									'enum'        => array( 'low', 'medium', 'high', 'critical' ),
+								),
+							),
 						),
 					),
 				),
@@ -150,6 +178,12 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 
 			case 'prune':
 				return $this->prune_unused_contexts( $agent_id, $options );
+
+			case 'update':
+				return $this->update_context( $agent_id, $arguments, $options );
+
+			case 'delete':
+				return $this->delete_context( $agent_id, $arguments );
 
 			default:
 				return array(
@@ -414,6 +448,187 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			),
 			'pruned_count'  => $pruned_count,
 			'threshold_days' => $threshold_days,
+		);
+	}
+
+	/**
+	 * Update context data.
+	 *
+	 * @param int|string $agent_id   Agent ID.
+	 * @param array      $arguments  Arguments.
+	 * @param array      $options    Options.
+	 * @return array Result.
+	 */
+	private function update_context( $agent_id, $arguments, $options ) {
+		if ( empty( $arguments['context_id'] ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context ID is required for update action.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		if ( empty( $options['update_data'] ) || ! is_array( $options['update_data'] ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Update data is required for update action.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$context_id  = sanitize_text_field( $arguments['context_id'] );
+		$update_data = $options['update_data'];
+
+		// Get existing context.
+		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$context         = $context_manager->retrieve_context( $agent_id, $context_id, false );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Update fields if provided.
+		$updated_fields = array();
+
+		if ( isset( $update_data['title'] ) ) {
+			$context['data']['title'] = sanitize_text_field( $update_data['title'] );
+			$updated_fields[]         = 'title';
+		}
+
+		if ( isset( $update_data['content'] ) ) {
+			$context['data']['content'] = wp_kses_post( $update_data['content'] );
+			$updated_fields[]           = 'content';
+		}
+
+		if ( isset( $update_data['metadata'] ) && is_array( $update_data['metadata'] ) ) {
+			// Merge new metadata with existing.
+			$existing_metadata          = isset( $context['data']['metadata'] ) ? $context['data']['metadata'] : array();
+			$context['data']['metadata'] = array_merge( $existing_metadata, $update_data['metadata'] );
+			$updated_fields[]           = 'metadata';
+		}
+
+		if ( isset( $update_data['tags'] ) && is_array( $update_data['tags'] ) ) {
+			$context['data']['tags'] = array_map( 'sanitize_text_field', $update_data['tags'] );
+			$updated_fields[]        = 'tags';
+		}
+
+		if ( isset( $update_data['importance'] ) ) {
+			$valid_importance = array( 'low', 'medium', 'high', 'critical' );
+			if ( in_array( $update_data['importance'], $valid_importance, true ) ) {
+				$context['data']['importance'] = $update_data['importance'];
+				$updated_fields[]              = 'importance';
+			}
+		}
+
+		if ( empty( $updated_fields ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'No valid fields provided for update.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Add update metadata.
+		if ( ! isset( $context['data']['metadata'] ) ) {
+			$context['data']['metadata'] = array();
+		}
+		$context['data']['metadata']['last_updated']    = current_time( 'mysql' );
+		$context['data']['metadata']['updated_fields']  = $updated_fields;
+		$context['data']['metadata']['update_count']    = isset( $context['data']['metadata']['update_count'] ) ? $context['data']['metadata']['update_count'] + 1 : 1;
+
+		// Re-store updated context.
+		$remaining_ttl = strtotime( $context['expires_at'] ) - time();
+		if ( $remaining_ttl > 0 ) {
+			$transient_key = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
+			set_transient( $transient_key, $context, $remaining_ttl );
+
+			// Update index.
+			$index_key     = 'mcp_ai_ctx_index_' . md5( (string) $agent_id );
+			$context_index = get_transient( $index_key );
+			if ( is_array( $context_index ) && isset( $context_index[ $context_id ] ) ) {
+				$context_index[ $context_id ]['title']      = $context['data']['title'];
+				$context_index[ $context_id ]['importance'] = isset( $context['data']['importance'] ) ? $context['data']['importance'] : 'medium';
+				$context_index[ $context_id ]['tags']       = isset( $context['data']['tags'] ) ? $context['data']['tags'] : array();
+				set_transient( $index_key, $context_index, $remaining_ttl );
+			}
+
+			return array(
+				'success'        => true,
+				'message'        => __( 'Context updated successfully.', 'mcp-ai-wpoos' ),
+				'context_id'     => $context_id,
+				'updated_fields' => $updated_fields,
+				'updated_at'     => $context['data']['metadata']['last_updated'],
+				'update_count'   => $context['data']['metadata']['update_count'],
+			);
+		}
+
+		return array(
+			'success' => false,
+			'message' => __( 'Context has expired and cannot be updated.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Delete a specific context.
+	 *
+	 * @param int|string $agent_id   Agent ID.
+	 * @param array      $arguments  Arguments.
+	 * @return array Result.
+	 */
+	private function delete_context( $agent_id, $arguments ) {
+		if ( empty( $arguments['context_id'] ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context ID is required for delete action.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$context_id = sanitize_text_field( $arguments['context_id'] );
+
+		// Verify context exists before deletion.
+		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$context         = $context_manager->retrieve_context( $agent_id, $context_id, true );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Delete context transient.
+		$transient_key = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
+		$deleted       = delete_transient( $transient_key );
+
+		// Update index to remove this context.
+		$index_key     = 'mcp_ai_ctx_index_' . md5( (string) $agent_id );
+		$context_index = get_transient( $index_key );
+
+		if ( is_array( $context_index ) && isset( $context_index[ $context_id ] ) ) {
+			unset( $context_index[ $context_id ] );
+
+			if ( empty( $context_index ) ) {
+				delete_transient( $index_key );
+			} else {
+				// Keep the index with remaining TTL.
+				set_transient( $index_key, $context_index, MONTH_IN_SECONDS );
+			}
+		}
+
+		if ( $deleted ) {
+			return array(
+				'success'     => true,
+				'message'     => __( 'Context deleted successfully.', 'mcp-ai-wpoos' ),
+				'context_id'  => $context_id,
+				'deleted_at'  => current_time( 'mysql' ),
+				'context_type' => $context['context_type'],
+				'title'       => isset( $context['data']['title'] ) ? $context['data']['title'] : '',
+			);
+		}
+
+		return array(
+			'success' => false,
+			'message' => __( 'Failed to delete context. It may have already been removed.', 'mcp-ai-wpoos' ),
 		);
 	}
 
