@@ -162,9 +162,9 @@ Discovery results with:
       "research": { /* researched config if auto_research=true */ }
     },
     {
-      "model_id": "gemini-3-pro",
+      "model_id": "gemini-3-pro-preview",
       "provider": "gemini",
-      "name": "Gemini 3 Pro"
+      "name": "Gemini 3 Pro (Preview)"
     }
   ],
   "already_exists": [
