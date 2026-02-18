@@ -388,6 +388,37 @@
 	padding: 10px 0;
 }
 
+.memory-stats-header {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 15px;
+}
+
+.memory-stats-header .refresh-memory-stats {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.memory-stats-header .refresh-memory-stats .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.wp-mcp-ai-spin {
+	animation: wp-mcp-ai-spin-animation 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin-animation {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 .memory-stats-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
