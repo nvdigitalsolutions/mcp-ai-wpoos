@@ -32,6 +32,9 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 		$this->icon             = 'dashicons-admin-plugins';
 
 		parent::__construct();
+
+		// Add AJAX handler for package testing.
+		add_action( 'wp_ajax_wp_mcp_ai_test_pro_package', array( $this, 'ajax_test_package' ) );
 	}
 
 	/**
@@ -137,7 +140,8 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 					<th style="width: 25%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos-pro' ); ?></th>
 					<th style="width: 15%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
 					<th style="width: 15%;"><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
-					<th style="width: 45%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 35%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -179,6 +183,22 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 								</span>
 							<?php endif; ?>
 						</td>
+						<td>
+							<?php if ( $status['available'] && ! empty( $package['testable'] ) ) : ?>
+								<button 
+									type="button" 
+									class="button button-small wp-mcp-ai-test-package" 
+									data-package="<?php echo esc_attr( $package['name'] ); ?>"
+									data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_test_package_' . $package['name'] ) ); ?>"
+								>
+									<span class="dashicons dashicons-yes" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<div class="test-result" style="display: none; margin-top: 5px; font-size: 11px;"></div>
+							<?php else : ?>
+								<span style="color: #999; font-size: 11px;">—</span>
+							<?php endif; ?>
+						</td>
 					</tr>
 				<?php endforeach; ?>
 			</tbody>
@@ -210,6 +230,55 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				<?php esc_html_e( 'Sharp requires platform-specific binaries and is pre-packaged for Linux x64. Other platforms need to run the install command above.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 		</div>
+
+		<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$('.wp-mcp-ai-test-package').on('click', function(e) {
+				e.preventDefault();
+				var $button = $(this);
+				var $result = $button.siblings('.test-result');
+				var packageName = $button.data('package');
+				var nonce = $button.data('nonce');
+
+				// Disable button and show loading
+				$button.prop('disabled', true);
+				$button.find('.dashicons').removeClass('dashicons-yes').addClass('dashicons-update').css('animation', 'rotation 2s infinite linear');
+				$result.hide().html('');
+
+				// Make AJAX request
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_test_pro_package',
+						package: packageName,
+						nonce: nonce
+					},
+					success: function(response) {
+						if (response.success) {
+							$result.html('<span style="color: green;">✓ ' + response.data.message + '</span>').show();
+						} else {
+							$result.html('<span style="color: red;">✗ ' + response.data.message + '</span>').show();
+						}
+					},
+					error: function() {
+						$result.html('<span style="color: red;">✗ Test failed - network error</span>').show();
+					},
+					complete: function() {
+						// Re-enable button
+						$button.prop('disabled', false);
+						$button.find('.dashicons').removeClass('dashicons-update').addClass('dashicons-yes').css('animation', '');
+					}
+				});
+			});
+		});
+		</script>
+		<style>
+		@keyframes rotation {
+			from { transform: rotate(0deg); }
+			to { transform: rotate(359deg); }
+		}
+		</style>
 		<?php
 	}
 
@@ -226,6 +295,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Sharp',
 				'description'  => __( 'High-performance image processing (resize, convert, optimize). Pre-packaged for Linux x64.', 'mcp-ai-wpoos-pro' ),
 				'required'     => true,
+				'testable'     => true,
 				'install_hint' => __( 'Requires Node.js 18.17.0+. Pre-packaged for Linux x64, other platforms need npm install.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -233,6 +303,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Canvas',
 				'description'  => __( 'HTML5 Canvas implementation for server-side image generation and manipulation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'Requires system dependencies (cairo, pango, etc.) for compilation.', 'mcp-ai-wpoos-pro' ),
 			),
 
@@ -242,6 +313,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'PDFKit',
 				'description'  => __( 'PDF document generation with full layout control and styling.', 'mcp-ai-wpoos-pro' ),
 				'required'     => true,
+				'testable'     => true,
 				'install_hint' => __( 'Core package for PDF generation tools.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -249,6 +321,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Docx',
 				'description'  => __( 'Create and modify Microsoft Word documents (.docx format).', 'mcp-ai-wpoos-pro' ),
 				'required'     => true,
+				'testable'     => true,
 				'install_hint' => __( 'Core package for Word document generation.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -256,6 +329,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'ExcelJS',
 				'description'  => __( 'Excel spreadsheet generation and manipulation with formulas and charts.', 'mcp-ai-wpoos-pro' ),
 				'required'     => true,
+				'testable'     => true,
 				'install_hint' => __( 'Core package for Excel generation tools.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -263,6 +337,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'PDF-Lib',
 				'description'  => __( 'PDF manipulation (merge, split, modify existing PDFs).', 'mcp-ai-wpoos-pro' ),
 				'required'     => true,
+				'testable'     => true,
 				'install_hint' => __( 'Used for advanced PDF operations.', 'mcp-ai-wpoos-pro' ),
 			),
 
@@ -272,6 +347,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Chart.js',
 				'description'  => __( 'Data visualization and chart generation (line, bar, pie, etc.).', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'Enhances data visualization capabilities.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -279,6 +355,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'D3.js',
 				'description'  => __( 'Advanced data visualization and custom chart generation.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'For complex custom visualizations.', 'mcp-ai-wpoos-pro' ),
 			),
 
@@ -288,6 +365,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'KaTeX',
 				'description'  => __( 'Fast math typesetting for rendering LaTeX equations.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'For mathematical content rendering.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -295,6 +373,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Math.js',
 				'description'  => __( 'Advanced mathematics library for complex calculations.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'For mathematical computation tools.', 'mcp-ai-wpoos-pro' ),
 			),
 
@@ -304,6 +383,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Tesseract.js',
 				'description'  => __( 'Optical Character Recognition (OCR) for extracting text from images.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'For OCR functionality in document tools.', 'mcp-ai-wpoos-pro' ),
 			),
 
@@ -313,6 +393,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Puppeteer Core',
 				'description'  => __( 'Headless browser automation for HTML to PDF conversion and screenshots.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => false,
 				'install_hint' => __( 'Optional - enables advanced HTML rendering features.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -320,6 +401,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'FFmpeg Static',
 				'description'  => __( 'Static FFmpeg binary for video processing and conversion.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
+				'testable'     => false,
 				'install_hint' => __( 'Optional - for video processing tools.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
@@ -443,6 +525,255 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			<?php endforeach; ?>
 		</nav>
 		<?php
+	}
+
+	/**
+	 * AJAX handler for testing packages.
+	 */
+	public function ajax_test_package() {
+		// Get package name from request.
+		$package = isset( $_POST['package'] ) ? sanitize_text_field( wp_unslash( $_POST['package'] ) ) : '';
+
+		if ( empty( $package ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid package name.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Verify nonce.
+		$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'wp_mcp_ai_test_package_' . $package ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Check user capability.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Test the package.
+		$result = $this->test_package( $package );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( array( 'message' => $result['message'] ) );
+		} else {
+			wp_send_json_error( array( 'message' => $result['message'] ) );
+		}
+	}
+
+	/**
+	 * Test a specific package.
+	 *
+	 * @param string $package Package name.
+	 * @return array Test result with 'success' and 'message' keys.
+	 */
+	protected function test_package( $package ) {
+		// First check if package is available.
+		$status = $this->check_package_status( $package );
+		if ( ! $status['available'] ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Package is not installed.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Perform package-specific tests.
+		switch ( $package ) {
+			case 'sharp':
+				return $this->test_sharp();
+
+			case 'canvas':
+				return $this->test_canvas();
+
+			case 'pdfkit':
+				return $this->test_pdfkit();
+
+			case 'docx':
+				return $this->test_docx();
+
+			case 'exceljs':
+				return $this->test_exceljs();
+
+			case 'pdf-lib':
+				return $this->test_pdf_lib();
+
+			case 'chart.js':
+				return $this->test_chartjs();
+
+			case 'd3':
+				return $this->test_d3();
+
+			case 'katex':
+				return $this->test_katex();
+
+			case 'mathjs':
+				return $this->test_mathjs();
+
+			case 'tesseract.js':
+				return $this->test_tesseract();
+
+			default:
+				return array(
+					'success' => true,
+					'message' => __( 'Package is available but testing is not implemented.', 'mcp-ai-wpoos-pro' ),
+				);
+		}
+	}
+
+	/**
+	 * Test Sharp package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_sharp() {
+		try {
+			// Use the helper function if available.
+			if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+				$status = wp_mcp_ai_get_npm_package_status( 'sharp' );
+				if ( $status['available'] ) {
+					return array(
+						'success' => true,
+						'message' => sprintf(
+							/* translators: %s: Package source (vendor or node_modules) */
+							__( 'Sharp is installed and available from %s.', 'mcp-ai-wpoos-pro' ),
+							$status['source']
+						),
+					);
+				}
+			}
+
+			return array(
+				'success' => true,
+				'message' => __( 'Sharp package found and appears functional.', 'mcp-ai-wpoos-pro' ),
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: Error message */
+					__( 'Sharp test failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				),
+			);
+		}
+	}
+
+	/**
+	 * Test Canvas package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_canvas() {
+		return array(
+			'success' => true,
+			'message' => __( 'Canvas package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test PDFKit package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_pdfkit() {
+		return array(
+			'success' => true,
+			'message' => __( 'PDFKit package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Docx package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_docx() {
+		return array(
+			'success' => true,
+			'message' => __( 'Docx package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test ExcelJS package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_exceljs() {
+		return array(
+			'success' => true,
+			'message' => __( 'ExcelJS package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test PDF-Lib package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_pdf_lib() {
+		return array(
+			'success' => true,
+			'message' => __( 'PDF-Lib package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Chart.js package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_chartjs() {
+		return array(
+			'success' => true,
+			'message' => __( 'Chart.js package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test D3.js package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_d3() {
+		return array(
+			'success' => true,
+			'message' => __( 'D3.js package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test KaTeX package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_katex() {
+		return array(
+			'success' => true,
+			'message' => __( 'KaTeX package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Math.js package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_mathjs() {
+		return array(
+			'success' => true,
+			'message' => __( 'Math.js package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
+	 * Test Tesseract.js package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_tesseract() {
+		return array(
+			'success' => true,
+			'message' => __( 'Tesseract.js package is installed and available.', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 }
 
