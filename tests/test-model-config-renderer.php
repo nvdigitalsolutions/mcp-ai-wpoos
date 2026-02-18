@@ -236,4 +236,42 @@ class Test_Model_Config_Renderer extends WP_UnitTestCase {
 		// Note: If wp_kses_post() were applied, these style tags would be stripped.
 		// This test verifies the renderer outputs style tags that should NOT be passed through wp_kses_post.
 	}
+
+	/**
+	 * Test that WEBLLM and GOOGLE provider badges have color styles.
+	 */
+	public function test_webllm_and_google_provider_badges_have_colors() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify WEBLLM provider badge style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.webllm', $output );
+		$this->assertStringContainsString( '#9b59b6', $output );
+
+		// Verify GOOGLE provider badge style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-model-provider-badge.google', $output );
+		$this->assertStringContainsString( '#4285f4', $output );
+	}
+
+	/**
+	 * Test that save button has max-width style.
+	 */
+	public function test_save_button_has_max_width() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_model_table();
+
+		// Verify save button max-width style exists.
+		$this->assertStringContainsString( '.wp-mcp-ai-save-model-config', $output );
+		$this->assertStringContainsString( 'max-width: 75px', $output );
+	}
+
+	/**
+	 * Test that JavaScript includes sorting functionality.
+	 */
+	public function test_javascript_includes_sorting() {
+		$output = WP_MCP_AI_Model_Config_Renderer::render_javascript();
+
+		// Verify sorting function exists.
+		$this->assertStringContainsString( 'sortModelsByProvider', $output );
+		$this->assertStringContainsString( 'Sort models by provider on page load', $output );
+		$this->assertStringContainsString( '$modelTable.append(row)', $output );
+	}
 }
