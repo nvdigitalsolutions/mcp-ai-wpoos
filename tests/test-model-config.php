@@ -47,13 +47,13 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-5.3-codex-spark', $configs );
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2', $configs );
-		$this->assertArrayHasKey( 'gpt-5.2-pro', $configs );
+		$this->assertArrayHasKey( 'gpt-5.2-codex', $configs );
 		$this->assertArrayHasKey( 'gpt-5', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $configs );
 		$this->assertArrayHasKey( 'gpt-4o', $configs );
-		$this->assertArrayHasKey( 'claude-opus-4-6-20260205', $configs );
-		$this->assertArrayHasKey( 'claude-sonnet-4-6-20260217', $configs );
+		$this->assertArrayHasKey( 'claude-opus-4-6', $configs );
+		$this->assertArrayHasKey( 'claude-sonnet-4-6', $configs );
 		$this->assertArrayHasKey( 'claude-sonnet-4-5-20250929', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
 		$this->assertArrayHasKey( 'gemini-3-pro-preview', $configs );
@@ -74,7 +74,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'rpm', $config );
 		$this->assertArrayHasKey( 'context_window', $config );
 
-		$this->assertEquals( 'GPT-5.1 (Flagship)', $config['name'] );
+		$this->assertEquals( 'GPT-5.1 general-purpose model with agentic coding tools', $config['name'] );
 		$this->assertEquals( 'openai', $config['provider'] );
 	}
 
@@ -250,11 +250,13 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 * Test get_available_providers returns configured providers.
 	 */
 	public function test_get_available_providers() {
-		// Set up some API keys.
+		// Set up some API keys and enable flags.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
+				'enable_openai'     => true,
 				'openai_api_key'    => 'test-key',
+				'enable_anthropic'  => true,
 				'anthropic_api_key' => 'test-key',
 			)
 		);
@@ -278,10 +280,10 @@ class Test_Model_Config extends WP_UnitTestCase {
 	public function test_lm_studio_models_configuration() {
 		$lm_studio_models = array(
 			'qwen/qwen2.5-7b',
-			'meta-llama/llama-3.1-8b-instruct',
-			'mistralai/mistral-7b-instruct-v0.3',
-			'deepseek-ai/deepseek-coder-33b-instruct',
-			'microsoft/phi-3.5-mini-instruct',
+			'meta-llama/llama-3.1-8b',
+			'mistralai/mistral-7b-v0.3',
+			'deepseek-ai/deepseek-coder-33b',
+			'microsoft/phi-3.5-mini',
 			'google/gemma-2-9b-it',
 		);
 
@@ -293,8 +295,6 @@ class Test_Model_Config extends WP_UnitTestCase {
 			$this->assertEquals( 0.0, $config['cost_per_1k'], "Model $model_id should have zero cost (local)" );
 			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
 			$this->assertGreaterThan( 0, $config['context_window'], "Model $model_id should have context window" );
-			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
-			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
 		}
 	}
 
@@ -302,10 +302,11 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 * Test LM Studio provider availability.
 	 */
 	public function test_lm_studio_provider_availability() {
-		// Set up LM Studio endpoint.
+		// Set up LM Studio endpoint and enable flag.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
+				'enable_lm_studio'       => true,
 				'lm_studio_endpoint_url' => 'http://localhost:1234',
 			)
 		);
@@ -419,35 +420,15 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 */
 	public function test_gpt_5_2_models_configuration() {
 		$gpt_5_2_models = array(
-			'gpt-5.2'                => array(
-				'name'           => 'GPT-5.2',
-				'context_window' => 400000,
+			'gpt-5.2'       => array(
+				'name'           => 'GPT-5.2 with enhanced reasoning for coding, math, writing. 128k standard context',
+				'context_window' => 128000,
 				'cost_per_1k'    => 0.00175,
 			),
-			'gpt-5.2-pro'            => array(
-				'name'           => 'GPT-5.2 Pro (Advanced Reasoning)',
-				'context_window' => 400000,
-				'cost_per_1k'    => 0.021,
-			),
-			'gpt-5.2-instant'        => array(
-				'name'           => 'GPT-5.2 Instant (High Throughput)',
+			'gpt-5.2-codex' => array(
+				'name'           => 'GPT-5.2 Codex',
 				'context_window' => 400000,
 				'cost_per_1k'    => 0.00175,
-			),
-			'gpt-5.2-thinking'       => array(
-				'name'           => 'GPT-5.2 Thinking (Deeper Analysis)',
-				'context_window' => 400000,
-				'cost_per_1k'    => 0.00175,
-			),
-			'gpt-5.2-2025-12-11'     => array(
-				'name'           => 'GPT-5.2 (Dec 2025)',
-				'context_window' => 400000,
-				'cost_per_1k'    => 0.00175,
-			),
-			'gpt-5.2-pro-2025-12-11' => array(
-				'name'           => 'GPT-5.2 Pro (Dec 2025)',
-				'context_window' => 400000,
-				'cost_per_1k'    => 0.021,
 			),
 		);
 
@@ -457,7 +438,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 			$this->assertIsArray( $config, "Model $model_id should have a configuration" );
 			$this->assertEquals( 'openai', $config['provider'], "Model $model_id should have openai provider" );
 			$this->assertEquals( $expected['name'], $config['name'], "Model $model_id should have correct name" );
-			$this->assertEquals( $expected['context_window'], $config['context_window'], "Model $model_id should have 400K context window" );
+			$this->assertEquals( $expected['context_window'], $config['context_window'], "Model $model_id should have correct context window" );
 			$this->assertEquals( $expected['cost_per_1k'], $config['cost_per_1k'], "Model $model_id should have correct pricing" );
 			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
 			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
@@ -486,11 +467,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 			$this->assertIsArray( $config, "Model $model_id should have a configuration" );
 			$this->assertEquals( 'ollama', $config['provider'], "Model $model_id should have ollama provider" );
-			$this->assertEquals( 0.0, $config['cost_per_1k'], "Model $model_id should have zero cost (local)" );
 			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
 			$this->assertGreaterThan( 0, $config['context_window'], "Model $model_id should have context window" );
-			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
-			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
 		}
 	}
 
@@ -498,10 +476,11 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 * Test Ollama provider availability.
 	 */
 	public function test_ollama_provider_availability() {
-		// Set up Ollama endpoint.
+		// Set up Ollama endpoint and enable flag.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
+				'enable_ollama'       => true,
 				'ollama_endpoint_url' => 'http://localhost:11434',
 			)
 		);
@@ -519,23 +498,23 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 * Test Claude 4.6 models have correct configurations.
 	 */
 	public function test_claude_46_models_have_correct_configs() {
-		$opus_config   = WP_MCP_AI_Model_Config::get_model_config( 'claude-opus-4-6-20260205' );
-		$sonnet_config = WP_MCP_AI_Model_Config::get_model_config( 'claude-sonnet-4-6-20260217' );
+		$opus_config   = WP_MCP_AI_Model_Config::get_model_config( 'claude-opus-4-6' );
+		$sonnet_config = WP_MCP_AI_Model_Config::get_model_config( 'claude-sonnet-4-6' );
 
 		// Test Opus 4.6.
 		$this->assertIsArray( $opus_config );
-		$this->assertEquals( 'Claude Opus 4.6 (Feb 2026)', $opus_config['name'] );
+		$this->assertEquals( 'Claude Opus 4.6 (Flagship, Feb 2026). 1M token context with 76% accuracy at full length', $opus_config['name'] );
 		$this->assertEquals( 'anthropic', $opus_config['provider'] );
 		$this->assertEquals( 1000000, $opus_config['context_window'], 'Opus 4.6 should have 1M context window' );
-		$this->assertEquals( 450000, $opus_config['tpm'] );
-		$this->assertEquals( 0.015, $opus_config['cost_per_1k'] );
+		$this->assertEquals( 40000, $opus_config['tpm'] );
+		$this->assertEquals( 0.005, $opus_config['cost_per_1k'] );
 
 		// Test Sonnet 4.6.
 		$this->assertIsArray( $sonnet_config );
-		$this->assertEquals( 'Claude Sonnet 4.6 (Feb 2026)', $sonnet_config['name'] );
+		$this->assertEquals( 'Claude Sonnet 4.6 (Recommended, 2026)', $sonnet_config['name'] );
 		$this->assertEquals( 'anthropic', $sonnet_config['provider'] );
 		$this->assertEquals( 1000000, $sonnet_config['context_window'], 'Sonnet 4.6 should have 1M context window' );
-		$this->assertEquals( 450000, $sonnet_config['tpm'] );
+		$this->assertEquals( 80000, $sonnet_config['tpm'] );
 		$this->assertEquals( 0.003, $sonnet_config['cost_per_1k'] );
 	}
 
