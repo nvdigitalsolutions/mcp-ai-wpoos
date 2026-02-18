@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-model-list-assistant',
-        'version' => 'dev-copilot/update-model-list-assistant',
-        'reference' => 'eff22819cbeac3790c491ef5e6e40fef2313d54d',
+        'pretty_version' => 'dev-copilot/enhance-agent-memory-management-again',
+        'version' => 'dev-copilot/enhance-agent-memory-management-again',
+        'reference' => '841b1e42e1c52249d366f5e81a9a5c440108d11d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-model-list-assistant',
-            'version' => 'dev-copilot/update-model-list-assistant',
-            'reference' => 'eff22819cbeac3790c491ef5e6e40fef2313d54d',
+            'pretty_version' => 'dev-copilot/enhance-agent-memory-management-again',
+            'version' => 'dev-copilot/enhance-agent-memory-management-again',
+            'reference' => '841b1e42e1c52249d366f5e81a9a5c440108d11d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

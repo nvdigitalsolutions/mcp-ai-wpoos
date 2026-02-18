@@ -458,6 +458,97 @@ class WP_MCP_AI_Agent_Context_Manager {
 	}
 
 	/**
+	 * Update an existing context.
+	 *
+	 * @param int|string $agent_id     Agent identifier.
+	 * @param string     $context_id   Context ID.
+	 * @param array      $updated_data Updated data fields.
+	 * @return array Operation result.
+	 */
+	public function update_context( $agent_id, $context_id, $updated_data ) {
+		$context = $this->retrieve_context( $agent_id, $context_id, false );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found or has expired.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Update the context data.
+		foreach ( $updated_data as $key => $value ) {
+			if ( isset( $context['data'][ $key ] ) || in_array( $key, array( 'title', 'content', 'metadata', 'tags', 'importance' ), true ) ) {
+				$context['data'][ $key ] = $value;
+			}
+		}
+
+		// Add update metadata.
+		if ( ! isset( $context['data']['metadata'] ) ) {
+			$context['data']['metadata'] = array();
+		}
+		$context['data']['metadata']['last_updated'] = current_time( 'mysql' );
+
+		// Re-save the context.
+		$remaining_ttl = strtotime( $context['expires_at'] ) - time();
+		if ( $remaining_ttl > 0 ) {
+			$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $context_id );
+			set_transient( $transient_key, $context, $remaining_ttl );
+
+			return array(
+				'success'    => true,
+				'context_id' => $context_id,
+				'updated_at' => $context['data']['metadata']['last_updated'],
+			);
+		}
+
+		return array(
+			'success' => false,
+			'message' => __( 'Context has expired.', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Delete a specific context.
+	 *
+	 * @param int|string $agent_id   Agent identifier.
+	 * @param string     $context_id Context ID.
+	 * @return array Operation result.
+	 */
+	public function delete_context( $agent_id, $context_id ) {
+		$context = $this->retrieve_context( $agent_id, $context_id, true );
+
+		if ( ! $context ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Context not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Delete the context.
+		$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $context_id );
+		$deleted       = delete_transient( $transient_key );
+
+		// Update index.
+		$index_key     = self::INDEX_PREFIX . md5( (string) $agent_id );
+		$context_index = get_transient( $index_key );
+
+		if ( is_array( $context_index ) && isset( $context_index[ $context_id ] ) ) {
+			unset( $context_index[ $context_id ] );
+
+			if ( empty( $context_index ) ) {
+				delete_transient( $index_key );
+			} else {
+				set_transient( $index_key, $context_index, MONTH_IN_SECONDS );
+			}
+		}
+
+		return array(
+			'success'    => $deleted,
+			'context_id' => $context_id,
+		);
+	}
+
+	/**
 	 * Track context access for frequency scoring.
 	 *
 	 * Updates access count and last accessed timestamp for a context.
