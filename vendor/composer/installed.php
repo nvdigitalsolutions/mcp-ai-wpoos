@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-build-process-packages',
-        'version' => 'dev-copilot/update-build-process-packages',
-        'reference' => '16c915113254d2d8f3cefaf71c294b64e407f38a',
+        'pretty_version' => 'dev-copilot/update-token-manager-models',
+        'version' => 'dev-copilot/update-token-manager-models',
+        'reference' => 'ad3e0a53af49f08565c56fa87df43877177bfa81',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-build-process-packages',
-            'version' => 'dev-copilot/update-build-process-packages',
-            'reference' => '16c915113254d2d8f3cefaf71c294b64e407f38a',
+            'pretty_version' => 'dev-copilot/update-token-manager-models',
+            'version' => 'dev-copilot/update-token-manager-models',
+            'reference' => 'ad3e0a53af49f08565c56fa87df43877177bfa81',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

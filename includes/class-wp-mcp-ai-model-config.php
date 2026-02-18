@@ -249,10 +249,71 @@ class WP_MCP_AI_Model_Config {
 	/**
 	 * Get default configurations for known models.
 	 *
+	 * Pulls from WP_MCP_AI_Model_Rate_Limits_CCT to ensure single source of truth.
+	 *
 	 * @return array Default model configurations.
 	 */
 	protected static function get_default_configs() {
-		return array(
+		// Use Model Rate Limits CCT as the single source of truth for model data.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			return array();
+		}
+
+		// Get default model data from CCT.
+		$cct_models = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+
+		if ( empty( $cct_models ) || ! is_array( $cct_models ) ) {
+			return array();
+		}
+
+		// Convert CCT format to Model Config format.
+		$configs = array();
+		foreach ( $cct_models as $model_data ) {
+			if ( ! isset( $model_data['model_name'] ) ) {
+				continue;
+			}
+
+			$model_id = $model_data['model_name'];
+
+			// Build display name from model name and notes.
+			$name = $model_id;
+			if ( isset( $model_data['notes'] ) && ! empty( $model_data['notes'] ) ) {
+				// Extract a short display name from notes if available.
+				$notes_parts = explode( '.', $model_data['notes'] );
+				if ( ! empty( $notes_parts[0] ) ) {
+					$name = trim( $notes_parts[0] );
+				}
+			}
+
+			// Convert CCT model data to config format.
+			$configs[ $model_id ] = array(
+				'name'                  => $name,
+				'provider'              => isset( $model_data['provider'] ) ? $model_data['provider'] : '',
+				'tpm'                   => isset( $model_data['tpm_limit'] ) ? absint( $model_data['tpm_limit'] ) : 0,
+				'rpm'                   => isset( $model_data['rpm_limit'] ) ? absint( $model_data['rpm_limit'] ) : 0,
+				'tpd'                   => 0, // Not in CCT, calculate from TPM if needed.
+				'rpd'                   => 0, // Not in CCT, calculate from RPM if needed.
+				'context_window'        => isset( $model_data['context_window'] ) ? absint( $model_data['context_window'] ) : 0,
+				'max_completion_tokens' => isset( $model_data['max_output_tokens'] ) ? absint( $model_data['max_output_tokens'] ) : 0,
+				'fallback_model'        => isset( $model_data['fallback_model'] ) ? sanitize_text_field( $model_data['fallback_model'] ) : '',
+				'cost_per_1k'           => isset( $model_data['cost_per_1k_input_tokens'] ) ? floatval( $model_data['cost_per_1k_input_tokens'] ) : 0.0,
+				'status'                => 'active',
+			);
+
+			// Calculate TPD and RPD from TPM and RPM (rough estimate: 24 hours * 60 minutes).
+			if ( isset( $model_data['tpm_limit'] ) && $model_data['tpm_limit'] > 0 ) {
+				$configs[ $model_id ]['tpd'] = absint( $model_data['tpm_limit'] ) * 60 * 24;
+			}
+			if ( isset( $model_data['rpm_limit'] ) && $model_data['rpm_limit'] > 0 ) {
+				$configs[ $model_id ]['rpd'] = absint( $model_data['rpm_limit'] ) * 60 * 24;
+			}
+		}
+
+		return $configs;
+	}
+
+	/**
+	 * Merge user configs with defaults.
 			// OpenAI Models (November 2025).
 			// GPT-5 series: Flagship models (multimodal - vision capable) - 2025.
 			'gpt-5.1'                                      => array(
