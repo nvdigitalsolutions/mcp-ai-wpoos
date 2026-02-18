@@ -1358,7 +1358,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<ul>
 					<?php
 					// Get agent memory tools from registry dynamically.
-					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search' );
+					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search', 'manage_context_lifecycle' );
 					$registry          = WP_MCP_AI_Tool_Registry::get_instance();
 
 					if ( $registry ) {
@@ -1397,6 +1397,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 						<li>
 							<strong>semantic_context_search:</strong>
 							<?php esc_html_e( 'Search contexts using vector embeddings for superior semantic understanding', 'mcp-ai-wpoos' ); ?>
+						</li>
+						<li>
+							<strong>manage_context_lifecycle:</strong>
+							<?php esc_html_e( 'Advanced lifecycle management: refresh TTL, compress, merge contexts, and prune unused', 'mcp-ai-wpoos' ); ?>
 						</li>
 						<?php
 					}
