@@ -195,10 +195,14 @@ class WP_MCP_AI_Model_Service {
 		// The models are static and don't require API access to list.
 		$models = array();
 
-		// Claude 4.5 series (multimodal - vision capable) - Latest (2025).
-		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025) - Recommended';
+		// Claude 4.6 series (multimodal - vision capable) - Latest (Feb 2026).
+		$models['claude-opus-4-6-20260205']   = 'Claude Opus 4.6 (Feb 2026) - Flagship';
+		$models['claude-sonnet-4-6-20260217'] = 'Claude Sonnet 4.6 (Feb 2026) - Recommended';
+
+		// Claude 4.5 series (multimodal - vision capable) - Recent (2025).
+		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
 		$models['claude-haiku-4-5-20251001']  = 'Claude Haiku 4.5 (Oct 2025) - Fastest';
-		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025) - Flagship';
+		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025)';
 
 		// Claude 4.1 series (multimodal - vision capable).
 		$models['claude-opus-4-1-20250805'] = 'Claude Opus 4.1 (Aug 2025)';

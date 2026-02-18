@@ -937,11 +937,63 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'deprecated',
 			),
 
-			// Anthropic Models (January 2026).
-			// Claude 4.5 series (multimodal - vision capable) - Latest.
+			// Anthropic Models (February 2026).
+			// Claude 4.6 series (multimodal - vision capable) - Latest.
+			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
+			// Context window: 1M tokens (beta) for 4.6 models.
+			'claude-opus-4-6'                              => array(
+				'name'           => 'Claude Opus 4.6 (Flagship)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-sonnet-4-6',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			'claude-opus-4-6-20260205'                     => array(
+				'name'           => 'Claude Opus 4.6 (Feb 2026)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-opus-4-6',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			'claude-sonnet-4-6'                            => array(
+				'name'           => 'Claude Sonnet 4.6 (Recommended)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-haiku-4-5',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+			'claude-sonnet-4-6-20260217'                   => array(
+				'name'           => 'Claude Sonnet 4.6 (Feb 2026)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-sonnet-4-6',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+
+			// Claude 4.5 series (multimodal - vision capable) - Recent.
 			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
 			'claude-sonnet-4-5'                            => array(
-				'name'           => 'Claude Sonnet 4.5 (Recommended)',
+				'name'           => 'Claude Sonnet 4.5 (Sep 2025)',
 				'provider'       => 'anthropic',
 				'tpm'            => 450000,
 				'rpm'            => 1000,
@@ -965,14 +1017,14 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			'claude-opus-4-5'                              => array(
-				'name'           => 'Claude Opus 4.5 (Flagship)',
+				'name'           => 'Claude Opus 4.5 (Nov 2025)',
 				'provider'       => 'anthropic',
 				'tpm'            => 450000,
 				'rpm'            => 1000,
 				'tpd'            => 25000000,
 				'rpd'            => 50000,
 				'context_window' => 200000,
-				'fallback_model' => 'claude-sonnet-4-5',
+				'fallback_model' => 'claude-sonnet-4-6',
 				'cost_per_1k'    => 0.015,
 				'status'         => 'active',
 			),
