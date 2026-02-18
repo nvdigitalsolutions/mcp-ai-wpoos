@@ -43,6 +43,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertNotEmpty( $configs );
 
 		// Check for known 2025-2026 models.
+		$this->assertArrayHasKey( 'gpt-5.3-codex', $configs );
+		$this->assertArrayHasKey( 'gpt-5.3-codex-spark', $configs );
 		$this->assertArrayHasKey( 'gpt-5.1', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2', $configs );
 		$this->assertArrayHasKey( 'gpt-5.2-pro', $configs );
@@ -535,5 +537,29 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertEquals( 1000000, $sonnet_config['context_window'], 'Sonnet 4.6 should have 1M context window' );
 		$this->assertEquals( 450000, $sonnet_config['tpm'] );
 		$this->assertEquals( 0.003, $sonnet_config['cost_per_1k'] );
+	}
+
+	/**
+	 * Test GPT-5.3 Codex models have correct configurations.
+	 */
+	public function test_gpt_53_codex_models_have_correct_configs() {
+		$codex_config       = WP_MCP_AI_Model_Config::get_model_config( 'gpt-5.3-codex' );
+		$codex_spark_config = WP_MCP_AI_Model_Config::get_model_config( 'gpt-5.3-codex-spark' );
+
+		// Test GPT-5.3 Codex.
+		$this->assertIsArray( $codex_config );
+		$this->assertEquals( 'GPT-5.3 Codex (Agentic Coding)', $codex_config['name'] );
+		$this->assertEquals( 'openai', $codex_config['provider'] );
+		$this->assertEquals( 128000, $codex_config['context_window'], 'GPT-5.3 Codex should have 128K context window' );
+		$this->assertEquals( 150000, $codex_config['tpm'] );
+		$this->assertEquals( 0.012, $codex_config['cost_per_1k'] );
+
+		// Test GPT-5.3 Codex Spark.
+		$this->assertIsArray( $codex_spark_config );
+		$this->assertEquals( 'GPT-5.3 Codex Spark (Ultra-Fast)', $codex_spark_config['name'] );
+		$this->assertEquals( 'openai', $codex_spark_config['provider'] );
+		$this->assertEquals( 128000, $codex_spark_config['context_window'], 'GPT-5.3 Codex Spark should have 128K context window' );
+		$this->assertEquals( 200000, $codex_spark_config['tpm'], 'Codex Spark should have higher TPM for ultra-fast performance' );
+		$this->assertEquals( 0.015, $codex_spark_config['cost_per_1k'] );
 	}
 }

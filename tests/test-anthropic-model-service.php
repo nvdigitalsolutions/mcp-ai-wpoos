@@ -100,15 +100,22 @@ class Test_Anthropic_Model_Service extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that model service returns empty array when API key is not set.
+	 * Test that model service returns models even when API key is not set.
+	 *
+	 * Models are static and don't require API access to list.
 	 */
-	public function test_anthropic_models_empty_without_api_key() {
+	public function test_anthropic_models_available_without_api_key() {
 		// Remove API key.
 		delete_option( 'wp_mcp_ai_settings' );
 
 		$models = $this->model_service->get_models_for_provider( 'anthropic' );
 
+		// Anthropic models should still be available for browsing.
 		$this->assertIsArray( $models );
-		$this->assertEmpty( $models );
+		$this->assertNotEmpty( $models, 'Anthropic models should be available even without API key for browsing' );
+		
+		// Check that Claude 4.6 models are still present.
+		$this->assertArrayHasKey( 'claude-opus-4-6-20260205', $models );
+		$this->assertArrayHasKey( 'claude-sonnet-4-6-20260217', $models );
 	}
 }

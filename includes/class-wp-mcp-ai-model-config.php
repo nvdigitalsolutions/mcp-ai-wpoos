@@ -314,7 +314,33 @@ class WP_MCP_AI_Model_Config {
 
 	/**
 	 * Merge user configs with defaults.
-			// OpenAI Models (November 2025).
+			// OpenAI Models (February 2026).
+			// GPT-5.3 series: Latest flagship agentic coding models - Feb 2026.
+			'gpt-5.3-codex'                                => array(
+				'name'           => 'GPT-5.3 Codex (Agentic Coding)',
+				'provider'       => 'openai',
+				'tpm'            => 150000,
+				'rpm'            => 1500,
+				'tpd'            => 15000000,
+				'rpd'            => 75000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-5.2',
+				'cost_per_1k'    => 0.012,
+				'status'         => 'active',
+			),
+			'gpt-5.3-codex-spark'                          => array(
+				'name'           => 'GPT-5.3 Codex Spark (Ultra-Fast)',
+				'provider'       => 'openai',
+				'tpm'            => 200000,
+				'rpm'            => 2000,
+				'tpd'            => 20000000,
+				'rpd'            => 100000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-5.3-codex',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+
 			// GPT-5 series: Flagship models (multimodal - vision capable) - 2025.
 			'gpt-5.1'                                      => array(
 				'name'           => 'GPT-5.1 (Flagship)',
