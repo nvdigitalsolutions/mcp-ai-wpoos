@@ -56,6 +56,10 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model_names = array_column( $openai_models, 'model_name' );
 		$this->assertContains( 'gpt-4o', $model_names );
 		$this->assertContains( 'gpt-4o-mini', $model_names );
+		$this->assertContains( 'gpt-4.1', $model_names );
+		$this->assertContains( 'gpt-4.1-mini', $model_names );
+		$this->assertContains( 'gpt-4.1-nano', $model_names );
+		$this->assertContains( 'gpt-4.1-turbo', $model_names );
 		$this->assertContains( 'o1-preview', $model_names );
 		$this->assertContains( 'o1-2024-12-17', $model_names );
 		$this->assertContains( 'o3-mini', $model_names );
@@ -419,5 +423,48 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertFalse( $model['supports_function_calling'], 'Image models should not support function calling' );
 		$this->assertTrue( $model['supports_vision'], 'Image models should support vision' );
 		$this->assertSame( 0.03, $model['cost_per_1k_output_tokens'], 'Output token cost should be $0.03 per 1K' );
+	}
+
+	/**
+	 * Test GPT-4.1 models are included with correct specifications.
+	 */
+	public function test_gpt_41_models_included() {
+		$default_models = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+
+		// Filter for GPT-4.1 models.
+		$gpt_41_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return isset( $model['model_name'] ) && strpos( $model['model_name'], 'gpt-4.1' ) === 0;
+			}
+		);
+
+		// Should have exactly 5 GPT-4.1 variants.
+		$this->assertCount( 5, $gpt_41_models, 'Should have 5 GPT-4.1 model variants' );
+
+		$model_names = array_column( $gpt_41_models, 'model_name' );
+		$this->assertContains( 'gpt-4.1', $model_names );
+		$this->assertContains( 'gpt-4.1-mini', $model_names );
+		$this->assertContains( 'gpt-4.1-nano', $model_names );
+		$this->assertContains( 'gpt-4.1-turbo', $model_names );
+		$this->assertContains( 'gpt-4.1-2025-04-14', $model_names );
+
+		// Verify GPT-4.1 base model properties.
+		$gpt_41 = array_values(
+			array_filter(
+				$gpt_41_models,
+				function ( $model ) {
+					return 'gpt-4.1' === $model['model_name'];
+				}
+			)
+		)[0];
+
+		$this->assertSame( 'openai', $gpt_41['provider'] );
+		$this->assertSame( 80000, $gpt_41['tpm_limit'] );
+		$this->assertSame( 800, $gpt_41['rpm_limit'] );
+		$this->assertSame( 128000, $gpt_41['context_window'] );
+		$this->assertTrue( $gpt_41['supports_vision'] );
+		$this->assertTrue( $gpt_41['supports_function_calling'] );
+		$this->assertSame( 0.006, $gpt_41['cost_per_1k_input_tokens'] );
 	}
 }

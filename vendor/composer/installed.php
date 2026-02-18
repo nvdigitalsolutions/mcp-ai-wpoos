@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-dropdown-display-issue',
-        'version' => 'dev-copilot/fix-dropdown-display-issue',
-        'reference' => 'c25143651bb13d7effe6189b642a99cc82be7e81',
+        'pretty_version' => 'dev-copilot/update-model-list-assistant',
+        'version' => 'dev-copilot/update-model-list-assistant',
+        'reference' => 'eff22819cbeac3790c491ef5e6e40fef2313d54d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-dropdown-display-issue',
-            'version' => 'dev-copilot/fix-dropdown-display-issue',
-            'reference' => 'c25143651bb13d7effe6189b642a99cc82be7e81',
+            'pretty_version' => 'dev-copilot/update-model-list-assistant',
+            'version' => 'dev-copilot/update-model-list-assistant',
+            'reference' => 'eff22819cbeac3790c491ef5e6e40fef2313d54d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
