@@ -1865,11 +1865,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 			</table>
 
-			<p class="submit">
+				<p class="submit">
 				<input type="submit" name="wp_mcp_ai_pro_save_connection" class="button button-primary" value="<?php echo $is_edit ? esc_attr__( 'Update Connection', 'mcp-ai-wpoos-pro' ) : esc_attr__( 'Add Connection', 'mcp-ai-wpoos-pro' ); ?>">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button">
 					<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
+				<?php if ( $is_edit && $editing ) : ?>
+					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $editing ), 'test_connection_' . $editing ) ); ?>" class="button">
+						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				<?php endif; ?>
 			</p>
 		</form>
 
