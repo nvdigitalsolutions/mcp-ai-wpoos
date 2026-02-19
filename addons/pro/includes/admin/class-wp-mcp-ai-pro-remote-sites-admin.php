@@ -30,6 +30,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_whatsapp_token', array( $this, 'ajax_generate_whatsapp_token' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 	}
 
 	/**
@@ -1589,7 +1590,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Enter your App ID and App Secret, then click "Generate App Access Token" to auto-populate the Access Token', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Enter your Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create a secure Verify Token (random string)', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" below', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" to verify your credentials instantly', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Configure webhook in Meta dashboard using the Webhook URL and Verify Token', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin: 0; font-size: 13px;">
@@ -1896,11 +1897,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 				<?php if ( $is_edit && $editing ) : ?>
-					<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $editing ), 'test_connection_' . $editing ) ); ?>" class="button">
+					<button type="button" id="wp_mcp_ai_test_connection_btn" class="button"
+						data-connection-id="<?php echo esc_attr( $editing ); ?>"
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'test_connection_ajax' ) ); ?>">
 						<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?>
-					</a>
+					</button>
+					<span id="wp_mcp_ai_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
 				<?php endif; ?>
 			</p>
+			<?php if ( $is_edit && $editing ) : ?>
+				<div id="wp_mcp_ai_test_result" style="display: none; margin-top: 10px;"></div>
+			<?php endif; ?>
 		</form>
 
 		<script type="text/javascript">
@@ -2224,6 +2231,69 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							generateTokenBtn.disabled = false;
 							statusEl.style.color = '#d63638';
 							statusEl.textContent = <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?>;
+						});
+				});
+			}
+
+			// 1-click connection test button.
+			var testBtn = document.getElementById('wp_mcp_ai_test_connection_btn');
+			if (testBtn) {
+				testBtn.addEventListener('click', function() {
+					var connectionId = testBtn.getAttribute('data-connection-id');
+					var nonce        = testBtn.getAttribute('data-nonce');
+					var spinner      = document.getElementById('wp_mcp_ai_test_spinner');
+					var resultDiv    = document.getElementById('wp_mcp_ai_test_result');
+
+					testBtn.disabled = true;
+					if (spinner) { spinner.style.display = 'inline-block'; }
+					if (resultDiv) { resultDiv.style.display = 'none'; resultDiv.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_remote_connection');
+					data.append('nonce', nonce);
+					data.append('connection_id', connectionId);
+
+					fetch(ajaxurl, { method: 'POST', body: data })
+						.then(function(response) { return response.json(); })
+						.then(function(result) {
+							testBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (!resultDiv) { return; }
+							resultDiv.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.phone_number)   { items.push(<?php echo wp_json_encode( __( 'Phone Number:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.phone_number); }
+									if (d.verified_name)  { items.push(<?php echo wp_json_encode( __( 'Verified Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.verified_name); }
+									if (d.quality_rating) {
+										var qColor = d.quality_rating.toUpperCase() === 'GREEN' ? '#00a32a' : (d.quality_rating.toUpperCase() === 'YELLOW' ? '#f0b849' : '#d63638');
+										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + d.quality_rating.toUpperCase() + '</span>');
+									}
+									if (d.business_name)  { items.push(<?php echo wp_json_encode( __( 'Business Profile:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.business_name); }
+									if (d.site_name)      { items.push(<?php echo wp_json_encode( __( 'Site:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.site_name); }
+									if (d.message && !d.phone_number && !d.site_name) { items.push(d.message); }
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.warning) { html += '<p style="color:#d63638;"><strong><?php echo esc_js( __( 'Warning:', 'mcp-ai-wpoos-pro' ) ); ?></strong> ' + d.warning + '</p>'; }
+								}
+								html += '</div>';
+								resultDiv.innerHTML = html;
+							} else {
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							testBtn.disabled = false;
+							if (spinner) { spinner.style.display = 'none'; }
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
 						});
 				});
 			}
@@ -2694,6 +2764,39 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
 		exit;
+	}
+
+	/**
+	 * AJAX handler: test a saved remote connection.
+	 *
+	 * Accepts: connection_id, nonce (POST).
+	 * Returns JSON with test results on success, or error message on failure.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_connection() {
+		check_ajax_referer( 'test_connection_ajax', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( $result->get_error_message() );
+			return;
+		}
+
+		wp_send_json_success( $result );
 	}
 
 	/**
