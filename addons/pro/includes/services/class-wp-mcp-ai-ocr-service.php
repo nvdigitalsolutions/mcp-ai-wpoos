@@ -103,14 +103,19 @@ class WP_MCP_AI_OCR_Service {
 			return $validation;
 		}
 
-		// Get defaults from settings.
-		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
-		$defaults     = array(
+		// Get defaults from settings - check image production settings first, then fall back to document generation.
+		$image_settings = get_option( 'wp_mcp_ai_image_production_settings', array() );
+		$doc_settings   = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		
+		// Merge settings with image production taking priority.
+		$ocr_settings = array_merge( $doc_settings, array_filter( $image_settings ) );
+		
+		$defaults = array(
 			'provider'   => 'auto', // auto, openai, gemini, ollama, tesseract.
-			'preprocess' => isset( $doc_settings['ocr_preprocessing'] ) ? (bool) $doc_settings['ocr_preprocessing'] : true,
+			'preprocess' => isset( $ocr_settings['ocr_preprocessing'] ) ? (bool) $ocr_settings['ocr_preprocessing'] : true,
 			'language'   => 'eng',  // OCR language.
 			'enhance'    => true,   // Enhance image quality.
-			'timeout'    => isset( $doc_settings['ocr_timeout'] ) ? absint( $doc_settings['ocr_timeout'] ) : self::DEFAULT_TIMEOUT,
+			'timeout'    => isset( $ocr_settings['ocr_timeout'] ) ? absint( $ocr_settings['ocr_timeout'] ) : self::DEFAULT_TIMEOUT,
 		);
 		$options      = wp_parse_args( $options, $defaults );
 
@@ -859,13 +864,19 @@ class WP_MCP_AI_OCR_Service {
 	/**
 	 * Determine the best OCR provider based on availability.
 	 *
-	 * Checks document generation settings first, then falls back to
-	 * detecting available providers from main settings.
+	 * Checks image production settings first, then document generation settings,
+	 * then falls back to detecting available providers from main settings.
 	 *
 	 * @return string Provider name.
 	 */
 	protected function determine_best_provider() {
-		// Check document generation settings first.
+		// Check image production settings first.
+		$image_settings = get_option( 'wp_mcp_ai_image_production_settings', array() );
+		if ( ! empty( $image_settings['ocr_provider'] ) && 'auto' !== $image_settings['ocr_provider'] ) {
+			return $image_settings['ocr_provider'];
+		}
+
+		// Check document generation settings.
 		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
 		if ( ! empty( $doc_settings['ocr_provider'] ) && 'auto' !== $doc_settings['ocr_provider'] ) {
 			return $doc_settings['ocr_provider'];
@@ -906,11 +917,19 @@ class WP_MCP_AI_OCR_Service {
 	 * @return array Fallback providers in order.
 	 */
 	protected function get_fallback_providers( $primary ) {
-		// Check if a specific fallback is configured.
-		$doc_settings = get_option( 'wp_mcp_ai_document_generation_settings', array() );
-		if ( ! empty( $doc_settings['ocr_fallback_provider'] ) ) {
+		// Check if a specific fallback is configured - check image production settings first.
+		$image_settings = get_option( 'wp_mcp_ai_image_production_settings', array() );
+		$doc_settings   = get_option( 'wp_mcp_ai_document_generation_settings', array() );
+		
+		// Image production settings take priority.
+		$fallback = null;
+		if ( ! empty( $image_settings['ocr_fallback_provider'] ) ) {
+			$fallback = $image_settings['ocr_fallback_provider'];
+		} elseif ( ! empty( $doc_settings['ocr_fallback_provider'] ) ) {
 			$fallback = $doc_settings['ocr_fallback_provider'];
-			
+		}
+		
+		if ( ! empty( $fallback ) ) {
 			// No fallback configured - return empty array.
 			if ( 'none' === $fallback ) {
 				return array();
