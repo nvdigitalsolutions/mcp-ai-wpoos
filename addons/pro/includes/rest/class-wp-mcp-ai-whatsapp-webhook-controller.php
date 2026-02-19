@@ -53,6 +53,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 */
 	public function register_routes() {
 		// Webhook verification endpoint (GET).
+		// Note: WordPress converts dots to underscores in query parameters,
+		// so hub.mode becomes hub_mode, hub.verify_token becomes hub_verify_token, etc.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -61,17 +63,17 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'verify_webhook' ),
 				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
 				'args'                => array(
-					'hub.mode'         => array(
+					'hub_mode'         => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'hub.verify_token' => array(
+					'hub_verify_token' => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'hub.challenge'    => array(
+					'hub_challenge'    => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
@@ -96,7 +98,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * Verify webhook subscription.
 	 *
 	 * Handles GET requests from Meta to verify webhook endpoint.
-	 * Returns the hub.challenge value if verification token matches.
+	 * Returns the hub_challenge value if verification token matches.
+	 * Note: WordPress converts dots to underscores in query parameters.
 	 *
 	 * @since 1.0.0
 	 *
@@ -104,9 +107,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
 	public function verify_webhook( $request ) {
-		$mode          = $request->get_param( 'hub.mode' );
-		$verify_token  = $request->get_param( 'hub.verify_token' );
-		$challenge     = $request->get_param( 'hub.challenge' );
+		$mode         = $request->get_param( 'hub_mode' );
+		$verify_token = $request->get_param( 'hub_verify_token' );
+		$challenge    = $request->get_param( 'hub_challenge' );
 
 		WP_MCP_AI_Logger::log_event(
 			'whatsapp_webhook_verification_attempt',
@@ -140,8 +143,11 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'WhatsApp webhook successfully verified.'
 			);
 
-			// Return challenge to complete verification.
-			return rest_ensure_response( $challenge );
+			// Return challenge as plain text (not JSON) to complete verification.
+			// Meta requires the exact challenge string without any wrapping.
+			$response = new WP_REST_Response( $challenge, 200 );
+			$response->header( 'Content-Type', 'text/plain; charset=utf-8' );
+			return $response;
 		}
 
 		WP_MCP_AI_Logger::log_error(
@@ -247,7 +253,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			'whatsapp_webhook_received',
 			'WhatsApp webhook event received.',
 			array(
-				'object' => isset( $payload['object'] ) ? $payload['object'] : 'unknown',
+				'object'      => isset( $payload['object'] ) ? $payload['object'] : 'unknown',
 				'entry_count' => isset( $payload['entry'] ) && is_array( $payload['entry'] ) ? count( $payload['entry'] ) : 0,
 			)
 		);
@@ -605,7 +611,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$connections = $this->get_whatsapp_connections();
 
 		foreach ( $connections as $connection ) {
-			// The verify token is stored in the 'verify_token' field
+			// The verify token is stored in the 'verify_token' field.
 			if ( isset( $connection['verify_token'] ) && ! empty( $connection['verify_token'] ) ) {
 				return $connection['verify_token'];
 			}
@@ -630,9 +636,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		foreach ( $connections as $connection ) {
 			// Try to get dedicated app secret field first.
-			// WhatsApp app secret is stored in 'api_secret' field
+			// WhatsApp app secret is stored in 'api_secret' field.
 			if ( isset( $connection['api_secret'] ) && ! empty( $connection['api_secret'] ) ) {
-				// Decrypt if needed
+				// Decrypt if needed.
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
 				}
@@ -641,9 +647,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 			// Fallback: Use access token for signature validation if app secret not set.
 			// Note: This is not ideal. App secret should be configured separately.
-			// WhatsApp access token is stored in 'api_key' field
+			// WhatsApp access token is stored in 'api_key' field.
 			if ( isset( $connection['api_key'] ) && ! empty( $connection['api_key'] ) ) {
-				// Decrypt if needed
+				// Decrypt if needed.
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
 				}
@@ -666,7 +672,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
 
-		$all_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		$all_connections      = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 		$whatsapp_connections = array();
 
 		foreach ( $all_connections as $connection ) {

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
-        'version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
-        'reference' => 'afd93d9eccc6d903061a3da944616321ad7c6798',
+        'pretty_version' => 'dev-copilot/fix-whatsapp-webhook-validation',
+        'version' => 'dev-copilot/fix-whatsapp-webhook-validation',
+        'reference' => 'ac383adfba5ad8548106d7ae7d8e6e7cc2cbc2ea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
-            'version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
-            'reference' => 'afd93d9eccc6d903061a3da944616321ad7c6798',
+            'pretty_version' => 'dev-copilot/fix-whatsapp-webhook-validation',
+            'version' => 'dev-copilot/fix-whatsapp-webhook-validation',
+            'reference' => 'ac383adfba5ad8548106d7ae7d8e6e7cc2cbc2ea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
