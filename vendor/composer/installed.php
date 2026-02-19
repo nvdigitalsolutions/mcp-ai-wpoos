@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-media-toolkit-available-tools',
-        'version' => 'dev-copilot/fix-media-toolkit-available-tools',
-        'reference' => 'c502076e6f23e7351fab9d37ddf598b13583dcc3',
+        'pretty_version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
+        'version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
+        'reference' => 'afd93d9eccc6d903061a3da944616321ad7c6798',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-media-toolkit-available-tools',
-            'version' => 'dev-copilot/fix-media-toolkit-available-tools',
-            'reference' => 'c502076e6f23e7351fab9d37ddf598b13583dcc3',
+            'pretty_version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
+            'version' => 'dev-copilot/update-cloned-plugin-with-puppeteer-core',
+            'reference' => 'afd93d9eccc6d903061a3da944616321ad7c6798',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -500,8 +500,8 @@ if [ "$BUILD_PRO" = true ]; then
         echo "✓ Excluded CDN packages: chart.js (~420KB), katex (~3.1MB), d3 (~864KB), axios (~1.6MB), mathjs (~17MB), prettier (~500KB)"
         echo "ℹ️  Note: Excluded packages are kept in git repo but not in ZIP distribution"
         echo "ℹ️  Note: CDN packages load from jsDelivr with automatic fallback"
-        echo "ℹ️  Note: Canvas and system packages are installed via npm install when needed"
-        echo "ℹ️  Note: Other vendor packages (~35+ NPM packages) are included for immediate functionality after installation"
+        echo "ℹ️  Note: Canvas requires system-level installation for PDF OCR; install via npm when needed"
+        echo "ℹ️  Note: Other vendor packages (~40+ NPM packages including puppeteer-core) are included for immediate functionality"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then
