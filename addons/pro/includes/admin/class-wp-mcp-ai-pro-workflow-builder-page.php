@@ -383,6 +383,6 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
  *
  * @since 2.0.0
  */
-if ( is_admin() && ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
+if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 	new WP_MCP_AI_Pro_Workflow_Builder_Page();
 }
