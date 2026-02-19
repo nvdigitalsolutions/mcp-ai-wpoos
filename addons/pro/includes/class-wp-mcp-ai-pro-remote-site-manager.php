@@ -168,6 +168,68 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['user_email'] = $existing_connection['user_email'];
 			}
 
+			// Preserve existing folder_id (Google Drive) if not provided.
+			if ( empty( $connection_data['folder_id'] ) && ! empty( $existing_connection['folder_id'] ) ) {
+				$connection_data['folder_id'] = $existing_connection['folder_id'];
+			}
+
+			// Preserve existing bot_username (Telegram) if not provided.
+			if ( empty( $connection_data['bot_username'] ) && ! empty( $existing_connection['bot_username'] ) ) {
+				$connection_data['bot_username'] = $existing_connection['bot_username'];
+			}
+
+			// Preserve existing WhatsApp-specific fields if not provided.
+			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
+				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
+			}
+
+			if ( empty( $connection_data['business_account_id'] ) && ! empty( $existing_connection['business_account_id'] ) ) {
+				$connection_data['business_account_id'] = $existing_connection['business_account_id'];
+			}
+
+			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] ) ) {
+				$connection_data['verify_token'] = $existing_connection['verify_token'];
+			}
+
+			// Preserve existing workspace_id (Slack) if not provided.
+			if ( empty( $connection_data['workspace_id'] ) && ! empty( $existing_connection['workspace_id'] ) ) {
+				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
+			}
+
+			// Preserve existing Discord-specific fields if not provided.
+			if ( empty( $connection_data['application_id'] ) && ! empty( $existing_connection['application_id'] ) ) {
+				$connection_data['application_id'] = $existing_connection['application_id'];
+			}
+
+			if ( empty( $connection_data['guild_id'] ) && ! empty( $existing_connection['guild_id'] ) ) {
+				$connection_data['guild_id'] = $existing_connection['guild_id'];
+			}
+
+			// Preserve existing tenant_id (Microsoft Teams) if not provided.
+			if ( empty( $connection_data['tenant_id'] ) && ! empty( $existing_connection['tenant_id'] ) ) {
+				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
+			}
+
+			// Preserve existing page_id (Facebook Messenger) if not provided.
+			if ( empty( $connection_data['page_id'] ) && ! empty( $existing_connection['page_id'] ) ) {
+				$connection_data['page_id'] = $existing_connection['page_id'];
+			}
+
+			// Preserve existing p2p_connection_id (WebChat) if not provided.
+			if ( empty( $connection_data['p2p_connection_id'] ) && ! empty( $existing_connection['p2p_connection_id'] ) ) {
+				$connection_data['p2p_connection_id'] = $existing_connection['p2p_connection_id'];
+			}
+
+			// Preserve existing test_endpoint if not provided.
+			if ( empty( $connection_data['test_endpoint'] ) && ! empty( $existing_connection['test_endpoint'] ) ) {
+				$connection_data['test_endpoint'] = $existing_connection['test_endpoint'];
+			}
+
+			// Preserve existing cache_ttl if not provided.
+			if ( ! isset( $connection_data['cache_ttl'] ) && isset( $existing_connection['cache_ttl'] ) ) {
+				$connection_data['cache_ttl'] = $existing_connection['cache_ttl'];
+			}
+
 			// Preserve existing location_id if not provided.
 			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
 				$connection_data['location_id'] = $existing_connection['location_id'];
@@ -223,6 +285,29 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Gmail-specific fields.
 			'refresh_token'   => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
 			'user_email'      => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
+			// Google Drive-specific fields.
+			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
+			// Telegram-specific fields.
+			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			// WhatsApp-specific fields.
+			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
+			'business_account_id' => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
+			'verify_token'        => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
+			// Slack-specific fields.
+			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			// Discord-specific fields.
+			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
+			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
+			// Microsoft Teams-specific fields.
+			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// Facebook Messenger-specific fields.
+			'page_id'         => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
+			// WebChat P2P-specific fields.
+			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
+			// Generic API test endpoint.
+			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
+			// Cache TTL.
+			'cache_ttl'       => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).

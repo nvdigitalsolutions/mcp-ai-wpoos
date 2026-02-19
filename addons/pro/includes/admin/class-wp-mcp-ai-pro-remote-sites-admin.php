@@ -179,7 +179,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			// Get connection type first to determine which fields to use.
-			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
+			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress';
 
 			// Map connection-type-specific fields to generic field names.
 			$api_key       = '';
@@ -803,10 +803,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<?php
-						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
 						?>
 						<select name="connection_type" id="connection_type" class="regular-text" required>
-							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
+							<option value="wordpress" <?php selected( $connection_type, 'wordpress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="mesh_peer" <?php selected( $connection_type, 'mesh_peer' ); ?>>
@@ -1983,14 +1983,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			// Show/hide auth_type field based on connection type
 			// Only show for WordPress and Generic API connections
-			if (connectionType === 'WordPress' || connectionType === 'generic') {
+			if (connectionType === 'wordpress' || connectionType === 'generic') {
 				authTypeRow.style.display = 'table-row';
 			} else {
 				authTypeRow.style.display = 'none';
 			}
 
 			// Show fields for selected connection type
-			if (connectionType === 'WordPress') {
+			if (connectionType === 'wordpress') {
 				wordpressFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
