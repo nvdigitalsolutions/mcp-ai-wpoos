@@ -17,29 +17,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Image Template CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-image-template-cpt.php';
 
-// Check if Image Production toolkit is enabled.
+// Load Image Production admin pages (always load so menu items appear).
+if ( is_admin() ) {
+	// Load CPT-based settings page.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php';
+	new WP_MCP_AI_Image_Production_Settings_Page();
+
+	// Load and initialize Research & Add page for image templates.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-template-research-page.php';
+	WP_MCP_AI_Image_Template_Research_Page::init();
+}
+
+// Check if Image Production toolkit is enabled for advanced features.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_image_production_toolkit'] );
 $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 
-// Only load if enabled and not in base version.
+// Only load advanced features if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
-
-	// Load Image Production admin pages.
-	if ( is_admin() ) {
-		// Load new CPT-based settings page (under Media menu).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-cpt-settings-page.php';
-		
-		// Load Research & Add page for AI-assisted template creation.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-template-research-page.php';
-	}
-
 	// Load Research & Add for CCT/CPT integration.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-image-production-research-add.php';
 	new WP_MCP_AI_Image_Production_Research_Add();
 
-	// Tools are loaded via the standard tool loading mechanism.
-	// Location: addons/pro/includes/tools/image-production/.
+	// Register tools will be loaded automatically via the tools directory structure.
+	// Tools are located in: addons/pro/includes/tools/image-production/.
 }
 
 // Initialize Image Template CPT.
