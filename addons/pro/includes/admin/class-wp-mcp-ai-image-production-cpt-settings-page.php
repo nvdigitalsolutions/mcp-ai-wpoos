@@ -219,4 +219,5 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 	}
 }
 
-// Note: WP_MCP_AI_Image_Production_Settings_Page instantiates itself at the bottom of its own file.
+// Initialize.
+new WP_MCP_AI_Image_Production_Settings_Page();

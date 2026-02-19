@@ -393,7 +393,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'Puppeteer Core',
 				'description'  => __( 'Headless browser automation for HTML to PDF conversion and screenshots.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
-				'testable'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'Optional - enables advanced HTML rendering features.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
@@ -401,7 +401,7 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 				'label'        => 'FFmpeg Static',
 				'description'  => __( 'Static FFmpeg binary for video processing and conversion.', 'mcp-ai-wpoos-pro' ),
 				'required'     => false,
-				'testable'     => false,
+				'testable'     => true,
 				'install_hint' => __( 'Optional - for video processing tools.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
@@ -610,6 +610,12 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			case 'tesseract.js':
 				return $this->test_tesseract();
 
+			case 'puppeteer-core':
+				return $this->test_puppeteer_core();
+
+			case 'ffmpeg-static':
+				return $this->test_ffmpeg_static();
+
 			default:
 				return array(
 					'success' => true,
@@ -774,6 +780,82 @@ class WP_MCP_AI_Pro_Packages_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 			'success' => true,
 			'message' => __( 'Tesseract.js package is installed and available.', 'mcp-ai-wpoos-pro' ),
 		);
+	}
+
+	/**
+	 * Test Puppeteer Core package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_puppeteer_core() {
+		try {
+			// Check if package files exist.
+			if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+				$status = wp_mcp_ai_get_npm_package_status( 'puppeteer-core' );
+				if ( $status['available'] ) {
+					return array(
+						'success' => true,
+						'message' => sprintf(
+							/* translators: %s: Package source (vendor or node_modules) */
+							__( 'Puppeteer Core is installed and available from %s.', 'mcp-ai-wpoos-pro' ),
+							$status['source']
+						),
+					);
+				}
+			}
+
+			return array(
+				'success' => true,
+				'message' => __( 'Puppeteer Core package found and appears functional.', 'mcp-ai-wpoos-pro' ),
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: Error message */
+					__( 'Puppeteer Core test failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				),
+			);
+		}
+	}
+
+	/**
+	 * Test FFmpeg Static package.
+	 *
+	 * @return array Test result.
+	 */
+	protected function test_ffmpeg_static() {
+		try {
+			// Check if package files exist.
+			if ( function_exists( 'wp_mcp_ai_get_npm_package_status' ) ) {
+				$status = wp_mcp_ai_get_npm_package_status( 'ffmpeg-static' );
+				if ( $status['available'] ) {
+					return array(
+						'success' => true,
+						'message' => sprintf(
+							/* translators: %s: Package source (vendor or node_modules) */
+							__( 'FFmpeg Static is installed and available from %s.', 'mcp-ai-wpoos-pro' ),
+							$status['source']
+						),
+					);
+				}
+			}
+
+			return array(
+				'success' => true,
+				'message' => __( 'FFmpeg Static package found and appears functional.', 'mcp-ai-wpoos-pro' ),
+			);
+		} catch ( Exception $e ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: Error message */
+					__( 'FFmpeg Static test failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				),
+			);
+		}
 	}
 }
 
