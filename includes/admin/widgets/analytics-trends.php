@@ -91,7 +91,7 @@ if ( $has_analytics ) {
 		<?php
 		wp_enqueue_script(
 			'wp-mcp-ai-analytics-trends',
-			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/analytics-trends.js',
+			WP_MCP_AI_URL . 'assets/js/admin/widgets/analytics-trends.js',
 			array( 'jquery' ),
 			WP_MCP_AI_VERSION,
 			true

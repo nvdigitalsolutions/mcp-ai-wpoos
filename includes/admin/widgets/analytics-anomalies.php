@@ -119,7 +119,7 @@ $severity_colors = array(
 		<?php
 		wp_enqueue_script(
 			'wp-mcp-ai-analytics-anomalies',
-			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/analytics-anomalies.js',
+			WP_MCP_AI_URL . 'assets/js/admin/widgets/analytics-anomalies.js',
 			array( 'jquery' ),
 			WP_MCP_AI_VERSION,
 			true
