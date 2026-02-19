@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-install-no-dev',
-        'version' => 'dev-copilot/run-composer-install-no-dev',
-        'reference' => 'e8a74ddedc0c16d0c701a407ff55aec69e064f41',
+        'pretty_version' => 'dev-copilot/fix-whatsapp-api-permission-error',
+        'version' => 'dev-copilot/fix-whatsapp-api-permission-error',
+        'reference' => '3bd8705ba976714437a31d29f7853683b6b55d45',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-install-no-dev',
-            'version' => 'dev-copilot/run-composer-install-no-dev',
-            'reference' => 'e8a74ddedc0c16d0c701a407ff55aec69e064f41',
+            'pretty_version' => 'dev-copilot/fix-whatsapp-api-permission-error',
+            'version' => 'dev-copilot/fix-whatsapp-api-permission-error',
+            'reference' => '3bd8705ba976714437a31d29f7853683b6b55d45',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

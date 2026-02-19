@@ -53,8 +53,12 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 */
 	public function register_routes() {
 		// Webhook verification endpoint (GET).
-		// Note: WordPress converts dots to underscores in query parameters,
-		// so hub.mode becomes hub_mode, hub.verify_token becomes hub_verify_token, etc.
+		// Note: Meta sends hub.mode, hub.verify_token, hub.challenge (with dots).
+		// PHP converts dots to underscores in $_GET, so they arrive as hub_mode, etc.
+		// We do NOT mark these as required so that server configurations that don't
+		// perform the dot-to-underscore conversion receive a clean 403 instead of a
+		// WordPress-level rest_missing_callback_param 400, and to let the callback
+		// handle validation and return the plain-text challenge Meta expects.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -64,17 +68,17 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
 				'args'                => array(
 					'hub_mode'         => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 					'hub_verify_token' => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 					'hub_challenge'    => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
@@ -98,8 +102,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * Verify webhook subscription.
 	 *
 	 * Handles GET requests from Meta to verify webhook endpoint.
-	 * Returns the hub_challenge value if verification token matches.
-	 * Note: WordPress converts dots to underscores in query parameters.
+	 * Returns the hub_challenge value as plain text to complete verification.
+	 *
+	 * Meta sends hub.mode, hub.verify_token, hub.challenge (dot notation).
+	 * PHP converts those dots to underscores in $_GET, so WordPress receives
+	 * hub_mode, hub_verify_token, hub_challenge.
+	 *
+	 * IMPORTANT: Meta requires the challenge echoed as a plain text string (no
+	 * JSON encoding). We hook into rest_pre_serve_request to output the body
+	 * directly and bypass WordPress's wp_json_encode wrapper.
 	 *
 	 * @since 1.0.0
 	 *
@@ -110,6 +121,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$mode         = $request->get_param( 'hub_mode' );
 		$verify_token = $request->get_param( 'hub_verify_token' );
 		$challenge    = $request->get_param( 'hub_challenge' );
+
+		// Handle missing required parameters - return 403 so Meta shows a clear error.
+		if ( empty( $mode ) || empty( $verify_token ) || empty( $challenge ) ) {
+			return new WP_Error(
+				'whatsapp_verification_failed',
+				__( 'WhatsApp webhook verification failed.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'whatsapp_webhook_verification_attempt',
@@ -143,11 +163,25 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'WhatsApp webhook successfully verified.'
 			);
 
-			// Return challenge as plain text (not JSON) to complete verification.
-			// Meta requires the exact challenge string without any wrapping.
-			$response = new WP_REST_Response( $challenge, 200 );
-			$response->header( 'Content-Type', 'text/plain; charset=utf-8' );
-			return $response;
+			// Meta requires the challenge returned as a plain text string without any
+			// JSON encoding or wrapping. WordPress REST API always runs wp_json_encode
+			// on the response body, so we hook into rest_pre_serve_request to output
+			// the raw challenge ourselves and signal WordPress to skip its normal output.
+			add_filter(
+				'rest_pre_serve_request',
+				static function ( $served ) use ( $challenge ) {
+					if ( $served ) {
+						return $served;
+					}
+					status_header( 200 );
+					header( 'Content-Type: text/plain; charset=utf-8' );
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $challenge;
+					return true;
+				}
+			);
+
+			return new WP_REST_Response( $challenge, 200 );
 		}
 
 		WP_MCP_AI_Logger::log_error(

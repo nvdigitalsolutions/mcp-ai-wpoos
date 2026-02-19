@@ -255,20 +255,43 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
 		$response   = $controller->verify_webhook( $request );
 
-		// Verify the response.
+		// Verify the response: status 200 and raw challenge as the data so that
+		// the rest_pre_serve_request filter can echo it as plain text to Meta.
 		$this->assertInstanceOf( 'WP_REST_Response', $response, 'Response should be a WP_REST_Response object' );
 		$this->assertEquals( 200, $response->get_status(), 'Status should be 200' );
-		$this->assertEquals( 'test_challenge_12345', $response->get_data(), 'Response should contain the challenge' );
-		
-		// Verify Content-Type header is set to text/plain.
-		$headers = $response->get_headers();
-		$this->assertArrayHasKey( 'Content-Type', $headers, 'Content-Type header should be set' );
-		$this->assertEquals( 'text/plain; charset=utf-8', $headers['Content-Type'], 'Content-Type should be text/plain' );
+		$this->assertEquals( 'test_challenge_12345', $response->get_data(), 'Response data should be the raw challenge string' );
 	}
 
 	/**
-	 * Test webhook verification fails with incorrect verify token.
+	 * Test webhook verification returns 403 when required parameters are absent.
+	 *
+	 * Meta sends hub.mode, hub.verify_token, hub.challenge (dot notation).
+	 * PHP normally converts dots to underscores in $_GET, but we no longer rely
+	 * on WordPress's required-arg pre-validation (which returns a 400) so that
+	 * server configurations that skip the conversion get a clean 403 error.
 	 */
+	public function test_webhook_verification_fails_without_params() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Send a GET request with no hub.* parameters at all.
+		$request    = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp' );
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$response   = $controller->verify_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $response, 'Response should be a WP_Error object' );
+		$this->assertEquals( 'whatsapp_verification_failed', $response->get_error_code(), 'Error code should be whatsapp_verification_failed' );
+		$this->assertEquals( 403, $response->get_error_data()['status'], 'Status should be 403' );
+	}
+
+
 	public function test_webhook_verification_fails_with_incorrect_token() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
