@@ -220,7 +220,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key   = isset( $_POST['telegram_bot_token'] ) ? wp_unslash( $_POST['telegram_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'whatsapp':
-					$api_key   = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key    = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['whatsapp_app_secret'] ) ? wp_unslash( $_POST['whatsapp_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1439,6 +1440,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_app_secret"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="whatsapp_app_secret" id="whatsapp_app_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your WhatsApp App Secret from Meta Developer Dashboard (required for webhook signature validation).', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
