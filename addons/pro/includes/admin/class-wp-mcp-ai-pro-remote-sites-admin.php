@@ -30,6 +30,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_whatsapp_token', array( $this, 'ajax_generate_whatsapp_token' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_live', array( $this, 'ajax_test_whatsapp_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 	}
 
@@ -1509,7 +1510,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token. Shown once — copy and store it securely, then click Hide.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token. Meta app access tokens include the App ID in the format {app_id}|{token} — this is correct and expected. Shown once — copy and store it securely, then click Hide.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -1546,6 +1547,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="whatsapp_phone_number_id" id="whatsapp_phone_number_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['phone_number_id'] ) ? esc_attr( $connection['phone_number_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'Your WhatsApp Business phone number ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="whatsapp_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test WhatsApp Connection', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="whatsapp_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Enter your Access Token and Phone Number ID above, then click to verify your credentials with the Meta API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="whatsapp_test_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -2232,8 +2245,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('app_id', appId);
 					data.append('app_secret', appSecret);
 
-					fetch(ajaxurl, { method: 'POST', body: data })
-						.then(function(response) { return response.json(); })
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
 						.then(function(result) {
 							generateTokenBtn.disabled = false;
 							if (result.success) {
@@ -2259,7 +2275,85 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
-			// 1-click connection test button.
+			// WhatsApp: inline Test Connection button (works before saving).
+			var waTestBtn     = document.getElementById('whatsapp_test_connection_btn');
+			var waTestSpinner = document.getElementById('whatsapp_test_spinner');
+			var waTestResult  = document.getElementById('whatsapp_test_result');
+			if (waTestBtn) {
+				waTestBtn.addEventListener('click', function() {
+					var accessToken    = document.getElementById('whatsapp_access_token').value.trim();
+					var phoneNumberId  = document.getElementById('whatsapp_phone_number_id').value.trim();
+
+					if (!accessToken) {
+						if (waTestResult) {
+							waTestResult.style.display = 'block';
+							waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+					if (!phoneNumberId) {
+						if (waTestResult) {
+							waTestResult.style.display = 'block';
+							waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Phone Number ID first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					waTestBtn.disabled = true;
+					if (waTestSpinner) { waTestSpinner.style.display = 'inline-block'; }
+					if (waTestResult)  { waTestResult.style.display = 'none'; waTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_whatsapp_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' ) ); ?>);
+					data.append('access_token', accessToken);
+					data.append('phone_number_id', phoneNumberId);
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							waTestBtn.disabled = false;
+							if (waTestSpinner) { waTestSpinner.style.display = 'none'; }
+							if (!waTestResult) { return; }
+							waTestResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.phone_number)   { items.push(<?php echo wp_json_encode( __( 'Phone Number:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.phone_number); }
+									if (d.verified_name)  { items.push(<?php echo wp_json_encode( __( 'Verified Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.verified_name); }
+									if (d.quality_rating) {
+										var qColor = d.quality_rating.toUpperCase() === 'GREEN' ? '#00a32a' : (d.quality_rating.toUpperCase() === 'YELLOW' ? '#f0b849' : '#d63638');
+										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + d.quality_rating.toUpperCase() + '</span>');
+									}
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+								}
+								html += '</div>';
+								waTestResult.innerHTML = html;
+							} else {
+								waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							waTestBtn.disabled = false;
+							if (waTestSpinner) { waTestSpinner.style.display = 'none'; }
+							if (waTestResult) {
+								waTestResult.style.display = 'block';
+								waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// 1-click connection test button (edit page, saved connections).
 			var testBtn = document.getElementById('wp_mcp_ai_test_connection_btn');
 			if (testBtn) {
 				testBtn.addEventListener('click', function() {
@@ -2277,8 +2371,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', nonce);
 					data.append('connection_id', connectionId);
 
-					fetch(ajaxurl, { method: 'POST', body: data })
-						.then(function(response) { return response.json(); })
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
 						.then(function(result) {
 							testBtn.disabled = false;
 							if (spinner) { spinner.style.display = 'none'; }
@@ -2819,6 +2916,91 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			wp_send_json_error( $result->get_error_message() );
 			return;
 		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: test a WhatsApp connection using credentials posted directly from the form.
+	 *
+	 * Accepts: access_token, phone_number_id, nonce (POST).
+	 * Returns JSON with connection details on success, or error message on failure.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_whatsapp_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_whatsapp_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$access_token    = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token    = trim( (string) $access_token );
+		$phone_number_id = isset( $_POST['phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_number_id'] ) ) : '';
+
+		if ( empty( $access_token ) ) {
+			wp_send_json_error( __( 'Access Token is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $phone_number_id ) ) {
+			wp_send_json_error( __( 'Phone Number ID is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$phone_endpoint = sprintf(
+			'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name,quality_rating',
+			rawurlencode( $phone_number_id )
+		);
+
+		$phone_response = wp_remote_get(
+			$phone_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $phone_response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to WhatsApp API: %s', 'mcp-ai-wpoos-pro' ),
+					$phone_response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$phone_code = wp_remote_retrieve_response_code( $phone_response );
+		$phone_data = json_decode( wp_remote_retrieve_body( $phone_response ), true );
+
+		if ( 200 !== (int) $phone_code ) {
+			$error_message = __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+			if ( isset( $phone_data['error']['message'] ) ) {
+				$error_message = $phone_data['error']['message'];
+			}
+			wp_send_json_error(
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+					$phone_code,
+					$error_message
+				)
+			);
+			return;
+		}
+
+		$result = array(
+			'phone_number'  => isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '',
+			'verified_name' => isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '',
+			'quality_rating' => isset( $phone_data['quality_rating'] ) ? $phone_data['quality_rating'] : 'unknown',
+			'message'       => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
+		);
 
 		wp_send_json_success( $result );
 	}
