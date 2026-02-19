@@ -699,7 +699,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Test 1: Get phone number info.
-		$phone_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s', rawurlencode( $phone_number_id ) );
+		// Explicitly request only fields accessible with whatsapp_business_messaging permission to avoid 403 errors.
+		$phone_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name,quality_rating', rawurlencode( $phone_number_id ) );
 
 		$phone_response = wp_remote_get(
 			$phone_endpoint,
