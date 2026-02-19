@@ -27,7 +27,39 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that WhatsApp phone_number_id persists when saving connection.
+	 * Test that WhatsApp app_id persists when saving connection.
+	 */
+	public function test_whatsapp_app_id_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'                => 'Test WhatsApp Connection With App ID',
+			'url'                 => 'https://graph.facebook.com/v18.0',
+			'connection_type'     => 'whatsapp',
+			'auth_type'           => 'none',
+			'enabled'             => true,
+			'api_key'             => 'test_access_token',
+			'api_secret'          => 'test_app_secret',
+			'app_id'              => '123456789012345',
+			'phone_number_id'     => '987654321012345',
+			'verify_token'        => 'test_verify_token',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return error' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertNotNull( $saved_connection, 'Saved connection should be retrievable' );
+		$this->assertEquals( '123456789012345', $saved_connection['app_id'], 'App ID should persist' );
+	}
+
+	/**
+	 * Test that WhatsApp app_id persists when saving connection.
 	 */
 	public function test_whatsapp_phone_number_id_persists() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
