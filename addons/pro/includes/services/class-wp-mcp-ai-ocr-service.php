@@ -958,6 +958,18 @@ class WP_MCP_AI_OCR_Service {
 	 * @return string|WP_Error Extracted text or error.
 	 */
 	protected function extract_with_node_ocr( $image_path, $options = array() ) {
+		// Check if tesseract.js package is available.
+		if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'tesseract.js' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_package_not_available',
+				__( 'Tesseract.js package is not available. Please ensure Node.js and Tesseract.js are properly installed. Visit the Pro Packages settings page for installation instructions.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'package'      => 'tesseract.js',
+					'settings_url' => admin_url( 'admin.php?page=wp-mcp-ai-pro-packages-settings' ),
+				)
+			);
+		}
+
 		// Check if Node.js OCR service exists.
 		$service_path = WP_MCP_AI_PRO_PATH . 'node-services/ocr-service.js';
 		if ( ! file_exists( $service_path ) ) {
