@@ -219,5 +219,4 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 	}
 }
 
-// Initialize.
-new WP_MCP_AI_Image_Production_Settings_Page();
+// Initialize - instantiated in image-production-toolkit-init.php.
