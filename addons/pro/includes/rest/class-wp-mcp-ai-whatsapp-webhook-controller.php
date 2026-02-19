@@ -53,6 +53,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 */
 	public function register_routes() {
 		// Webhook verification endpoint (GET).
+		// Note: WordPress converts dots to underscores in query parameters,
+		// so hub.mode becomes hub_mode, hub.verify_token becomes hub_verify_token, etc.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -61,17 +63,17 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'verify_webhook' ),
 				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
 				'args'                => array(
-					'hub.mode'         => array(
+					'hub_mode'         => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'hub.verify_token' => array(
+					'hub_verify_token' => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'hub.challenge'    => array(
+					'hub_challenge'    => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
@@ -96,7 +98,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * Verify webhook subscription.
 	 *
 	 * Handles GET requests from Meta to verify webhook endpoint.
-	 * Returns the hub.challenge value if verification token matches.
+	 * Returns the hub_challenge value if verification token matches.
+	 * Note: WordPress converts dots to underscores in query parameters.
 	 *
 	 * @since 1.0.0
 	 *
@@ -104,9 +107,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
 	public function verify_webhook( $request ) {
-		$mode          = $request->get_param( 'hub.mode' );
-		$verify_token  = $request->get_param( 'hub.verify_token' );
-		$challenge     = $request->get_param( 'hub.challenge' );
+		$mode          = $request->get_param( 'hub_mode' );
+		$verify_token  = $request->get_param( 'hub_verify_token' );
+		$challenge     = $request->get_param( 'hub_challenge' );
 
 		WP_MCP_AI_Logger::log_event(
 			'whatsapp_webhook_verification_attempt',
@@ -140,8 +143,11 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'WhatsApp webhook successfully verified.'
 			);
 
-			// Return challenge to complete verification.
-			return rest_ensure_response( $challenge );
+			// Return challenge as plain text (not JSON) to complete verification.
+			// Meta requires the exact challenge string without any wrapping.
+			$response = new WP_REST_Response( $challenge, 200 );
+			$response->header( 'Content-Type', 'text/plain; charset=utf-8' );
+			return $response;
 		}
 
 		WP_MCP_AI_Logger::log_error(

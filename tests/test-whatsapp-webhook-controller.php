@@ -209,4 +209,196 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$this->assertEquals( '', $verify_token, 'Should return empty string when no connection exists' );
 		$this->assertEquals( '', $app_secret, 'Should return empty string when no connection exists' );
 	}
+
+	/**
+	 * Test webhook verification with correct parameters (underscores).
+	 */
+	public function test_webhook_verification_with_correct_parameters() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create a WhatsApp connection with verify token.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Connection',
+			'url'             => 'https://graph.facebook.com/v18.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_12345',
+			'api_secret'      => 'test_app_secret_67890',
+			'phone_number_id' => '123456789012345',
+			'verify_token'    => 'test_verify_token_abc123',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Create a REST request with correct parameters (underscores not dots).
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_param( 'hub_mode', 'subscribe' );
+		$request->set_param( 'hub_verify_token', 'test_verify_token_abc123' );
+		$request->set_param( 'hub_challenge', 'test_challenge_12345' );
+
+		// Create controller and verify webhook.
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$response   = $controller->verify_webhook( $request );
+
+		// Verify the response.
+		$this->assertInstanceOf( 'WP_REST_Response', $response, 'Response should be a WP_REST_Response object' );
+		$this->assertEquals( 200, $response->get_status(), 'Status should be 200' );
+		$this->assertEquals( 'test_challenge_12345', $response->get_data(), 'Response should contain the challenge' );
+		
+		// Verify Content-Type header is set to text/plain.
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers, 'Content-Type header should be set' );
+		$this->assertEquals( 'text/plain; charset=utf-8', $headers['Content-Type'], 'Content-Type should be text/plain' );
+	}
+
+	/**
+	 * Test webhook verification fails with incorrect verify token.
+	 */
+	public function test_webhook_verification_fails_with_incorrect_token() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create a WhatsApp connection with verify token.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Connection',
+			'url'             => 'https://graph.facebook.com/v18.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_12345',
+			'api_secret'      => 'test_app_secret_67890',
+			'phone_number_id' => '123456789012345',
+			'verify_token'    => 'correct_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Create a REST request with INCORRECT verify token.
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_param( 'hub_mode', 'subscribe' );
+		$request->set_param( 'hub_verify_token', 'wrong_token' );
+		$request->set_param( 'hub_challenge', 'test_challenge_12345' );
+
+		// Create controller and verify webhook.
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$response   = $controller->verify_webhook( $request );
+
+		// Verify the response is an error.
+		$this->assertInstanceOf( 'WP_Error', $response, 'Response should be a WP_Error object' );
+		$this->assertEquals( 'whatsapp_verification_failed', $response->get_error_code(), 'Error code should be whatsapp_verification_failed' );
+	}
+
+	/**
+	 * Test webhook verification fails with incorrect mode.
+	 */
+	public function test_webhook_verification_fails_with_incorrect_mode() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create a WhatsApp connection with verify token.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Connection',
+			'url'             => 'https://graph.facebook.com/v18.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_12345',
+			'api_secret'      => 'test_app_secret_67890',
+			'phone_number_id' => '123456789012345',
+			'verify_token'    => 'test_verify_token_abc123',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Create a REST request with INCORRECT mode (not 'subscribe').
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_param( 'hub_mode', 'unsubscribe' );
+		$request->set_param( 'hub_verify_token', 'test_verify_token_abc123' );
+		$request->set_param( 'hub_challenge', 'test_challenge_12345' );
+
+		// Create controller and verify webhook.
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$response   = $controller->verify_webhook( $request );
+
+		// Verify the response is an error.
+		$this->assertInstanceOf( 'WP_Error', $response, 'Response should be a WP_Error object' );
+		$this->assertEquals( 'whatsapp_verification_failed', $response->get_error_code(), 'Error code should be whatsapp_verification_failed' );
+	}
+
+	/**
+	 * Test webhook verification fails when no verify token is configured.
+	 */
+	public function test_webhook_verification_fails_without_configured_token() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Don't create any connection - test should fail without configured token.
+
+		// Create a REST request.
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_param( 'hub_mode', 'subscribe' );
+		$request->set_param( 'hub_verify_token', 'any_token' );
+		$request->set_param( 'hub_challenge', 'test_challenge_12345' );
+
+		// Create controller and verify webhook.
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$response   = $controller->verify_webhook( $request );
+
+		// Verify the response is an error.
+		$this->assertInstanceOf( 'WP_Error', $response, 'Response should be a WP_Error object' );
+		$this->assertEquals( 'whatsapp_no_verify_token', $response->get_error_code(), 'Error code should be whatsapp_no_verify_token' );
+	}
 }
