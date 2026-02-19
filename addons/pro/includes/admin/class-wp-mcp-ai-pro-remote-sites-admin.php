@@ -645,10 +645,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>">
 									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection_id ), 'test_connection_' . $connection_id ) ); ?>">
+								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'test', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'test_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>">
 									<?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection_id ), 'delete_connection_' . $connection_id ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'mcp-ai-wpoos-pro' ); ?>');" style="color: #b32d2e;">
+								<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'delete', 'connection_id' => $connection_id, '_wpnonce' => wp_create_nonce( 'delete_connection_' . $connection_id ) ), admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'mcp-ai-wpoos-pro' ); ?>');" style="color: #b32d2e;">
 									<?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>
 								</a>
 							</td>
@@ -1504,11 +1504,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="whatsapp_access_token"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="whatsapp_access_token" id="whatsapp_access_token" class="regular-text" value="" autocomplete="new-password">
+						<input type="text" name="whatsapp_access_token" id="whatsapp_access_token" class="regular-text" value="" autocomplete="new-password">
+						<button type="button" id="whatsapp_access_token_toggle" class="button button-small" style="margin-left: 5px; vertical-align: middle;" aria-label="<?php esc_attr_e( 'Hide access token', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Hide', 'mcp-ai-wpoos-pro' ); ?></button>
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token. Shown once — copy and store it securely, then click Hide.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -2182,6 +2183,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				toggleConnectionTypeFields(this.value);
 			});
 
+			// WhatsApp: Access Token show/hide toggle button.
+			var tokenToggleBtn = document.getElementById('whatsapp_access_token_toggle');
+			if (tokenToggleBtn) {
+				tokenToggleBtn.addEventListener('click', function() {
+					var tokenInput = document.getElementById('whatsapp_access_token');
+					if (tokenInput.type === 'password') {
+						tokenInput.type = 'text';
+						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					} else {
+						tokenInput.type = 'password';
+						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
+						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					}
+				});
+			}
+
 			// WhatsApp: Generate App Access Token button
 			var generateTokenBtn = document.getElementById('whatsapp_generate_token_btn');
 			if (generateTokenBtn) {
@@ -2219,7 +2237,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						.then(function(result) {
 							generateTokenBtn.disabled = false;
 							if (result.success) {
-								document.getElementById('whatsapp_access_token').value = result.data.access_token;
+								var tokenInput = document.getElementById('whatsapp_access_token');
+								tokenInput.value = result.data.access_token;
+								tokenInput.type = 'text';
+								if (tokenToggleBtn) {
+									tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+									tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+								}
 								statusEl.style.color = '#00a32a';
 								statusEl.textContent = <?php echo wp_json_encode( __( '✓ Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
 							} else {
