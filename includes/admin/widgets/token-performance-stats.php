@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Enqueue widget styles.
 wp_enqueue_style(
 	'wp-mcp-ai-token-performance-stats',
-	plugin_dir_url( __DIR__ . '/../' ) . 'assets/css/admin/widgets/token-performance-stats.css',
+	WP_MCP_AI_URL . 'assets/css/admin/widgets/token-performance-stats.css',
 	array(),
 	WP_MCP_AI_VERSION
 );
