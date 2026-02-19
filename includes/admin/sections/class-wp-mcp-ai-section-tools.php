@@ -1107,7 +1107,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 					<script>
 					jQuery(document).ready(function($) {
-						var toolkitMemory = <?php echo ( wp_json_encode( $this->get_toolkit_memory_requirements() ) ? wp_json_encode( $this->get_toolkit_memory_requirements() ) : '{}' ); ?>;
+						<?php
+						// Store the result once to avoid redundant function calls.
+						$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
+						?>
+						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
