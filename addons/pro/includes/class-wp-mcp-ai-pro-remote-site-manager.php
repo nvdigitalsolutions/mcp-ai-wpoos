@@ -354,6 +354,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_mesh_peer_connection( $connection );
 		}
 
+		// Handle WhatsApp connections separately.
+		if ( 'whatsapp' === $connection_type ) {
+			return self::test_whatsapp_connection( $connection );
+		}
+
 		// Handle Flowhub connections separately.
 		if ( 'flowhub' === $connection_type ) {
 			return self::test_flowhub_connection( $connection );
@@ -566,6 +571,142 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				/* translators: %d: number of items retrieved */
 				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'mcp-ai-wpoos-pro' ), $item_count );
 			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test WhatsApp Business API connection.
+	 *
+	 * Tests WhatsApp connection by verifying phone number and attempting to retrieve business profile.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_whatsapp_connection( $connection ) {
+		// Validate required fields.
+		$access_token    = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+		$phone_number_id = isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
+		$app_secret      = isset( $connection['api_secret'] ) ? self::decrypt_value( $connection['api_secret'] ) : '';
+
+		if ( empty( $access_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_missing_token',
+				__( 'WhatsApp access token is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $phone_number_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_missing_phone_id',
+				__( 'WhatsApp phone number ID is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $app_secret ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_missing_secret',
+				__( 'WhatsApp app secret is required for webhook signature validation.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Test 1: Get phone number info.
+		$phone_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s', rawurlencode( $phone_number_id ) );
+
+		$phone_response = wp_remote_get(
+			$phone_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $phone_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to WhatsApp API: %s', 'mcp-ai-wpoos-pro' ),
+					$phone_response->get_error_message()
+				)
+			);
+		}
+
+		$phone_code = wp_remote_retrieve_response_code( $phone_response );
+		$phone_body = wp_remote_retrieve_body( $phone_response );
+		$phone_data = json_decode( $phone_body, true );
+
+		if ( 200 !== $phone_code ) {
+			$error_message = __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+
+			if ( isset( $phone_data['error']['message'] ) ) {
+				$error_message = $phone_data['error']['message'];
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_api_error',
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+					$phone_code,
+					$error_message
+				)
+			);
+		}
+
+		// Extract phone number details.
+		$display_phone = isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '';
+		$verified      = isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '';
+		$quality       = isset( $phone_data['quality_rating'] ) ? $phone_data['quality_rating'] : 'unknown';
+
+		// Test 2: Try to get business profile (optional, may not have permissions).
+		$profile_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s/whatsapp_business_profile', rawurlencode( $phone_number_id ) );
+
+		$profile_response = wp_remote_get(
+			$profile_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		$business_name = '';
+		if ( ! is_wp_error( $profile_response ) && 200 === wp_remote_retrieve_response_code( $profile_response ) ) {
+			$profile_body = wp_remote_retrieve_body( $profile_response );
+			$profile_data = json_decode( $profile_body, true );
+
+			if ( isset( $profile_data['data'][0]['about'] ) ) {
+				$business_name = $profile_data['data'][0]['about'];
+			}
+		}
+
+		// Build success response.
+		$results = array(
+			'success'         => true,
+			'whatsapp'        => true,
+			'phone_number'    => $display_phone,
+			'verified_name'   => $verified,
+			'quality_rating'  => $quality,
+			'business_name'   => $business_name,
+			'webhook_url'     => home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ),
+			'has_app_secret'  => ! empty( $app_secret ),
+			'message'         => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// Add quality rating warning if not green.
+		if ( 'GREEN' !== strtoupper( $quality ) && 'unknown' !== $quality ) {
+			$results['warning'] = sprintf(
+				/* translators: %s: quality rating */
+				__( 'Note: Phone number quality rating is %s. Monitor your messaging quality to maintain good standing.', 'mcp-ai-wpoos-pro' ),
+				strtoupper( $quality )
+			);
 		}
 
 		return $results;

@@ -128,7 +128,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
-			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . $connection_id );
+			// Store test results in transient for detailed display.
+			if ( ! is_wp_error( $result ) ) {
+				set_transient( 'wp_mcp_ai_test_result_' . $connection_id, $result, 60 );
+			}
+
+			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id );
 
 			if ( is_wp_error( $result ) ) {
 				$redirect_url = add_query_arg( 'test_error', rawurlencode( $result->get_error_message() ), $redirect_url );
@@ -414,8 +419,58 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<?php endif; ?>
 
 			<?php if ( isset( $_GET['test_success'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php
+				$editing      = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : '';
+				$test_results = $editing ? get_transient( 'wp_mcp_ai_test_result_' . $editing ) : false;
+				?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Connection test successful!', 'mcp-ai-wpoos-pro' ); ?></p>
+					<p><strong><?php esc_html_e( 'Connection test successful!', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<?php if ( $test_results && is_array( $test_results ) ) : ?>
+						<ul style="margin: 10px 0; padding-left: 20px;">
+							<?php if ( isset( $test_results['whatsapp'] ) && $test_results['whatsapp'] ) : ?>
+								<?php if ( ! empty( $test_results['phone_number'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Phone Number: %s', 'mcp-ai-wpoos-pro' ), $test_results['phone_number'] ) ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['verified_name'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Verified Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['verified_name'] ) ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['quality_rating'] ) ) : ?>
+									<li>
+										<?php
+										$quality_color = 'GREEN' === strtoupper( $test_results['quality_rating'] ) ? '#00a32a' : ( 'YELLOW' === strtoupper( $test_results['quality_rating'] ) ? '#f0b849' : '#d63638' );
+										echo wp_kses_post( sprintf( __( 'Quality Rating: <span style="color: %1$s; font-weight: bold;">%2$s</span>', 'mcp-ai-wpoos-pro' ), $quality_color, strtoupper( $test_results['quality_rating'] ) ) );
+										?>
+									</li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['business_name'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Business Profile: %s', 'mcp-ai-wpoos-pro' ), $test_results['business_name'] ) ); ?></li>
+								<?php endif; ?>
+								<?php if ( isset( $test_results['has_app_secret'] ) && $test_results['has_app_secret'] ) : ?>
+									<li style="color: #00a32a;">✓ <?php esc_html_e( 'App Secret configured (webhook signatures will be validated)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['webhook_url'] ) ) : ?>
+									<li>
+										<?php esc_html_e( 'Webhook URL:', 'mcp-ai-wpoos-pro' ); ?>
+										<code style="background: #f0f0f0; padding: 2px 6px; font-size: 12px;"><?php echo esc_html( $test_results['webhook_url'] ); ?></code>
+									</li>
+								<?php endif; ?>
+							<?php elseif ( isset( $test_results['site_name'] ) ) : ?>
+								<li><?php echo esc_html( sprintf( __( 'Site: %s', 'mcp-ai-wpoos-pro' ), $test_results['site_name'] ) ); ?></li>
+								<?php if ( isset( $test_results['woocommerce'] ) && $test_results['woocommerce'] ) : ?>
+									<li style="color: #00a32a;">✓ <?php esc_html_e( 'WooCommerce detected', 'mcp-ai-wpoos-pro' ); ?></li>
+								<?php endif; ?>
+							<?php endif; ?>
+						</ul>
+						<?php if ( isset( $test_results['warning'] ) && ! empty( $test_results['warning'] ) ) : ?>
+							<p style="color: #d63638;"><strong><?php esc_html_e( 'Warning:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $test_results['warning'] ); ?></p>
+						<?php endif; ?>
+						<?php
+						// Clean up transient after displaying.
+						if ( $editing ) {
+							delete_transient( 'wp_mcp_ai_test_result_' . $editing );
+						}
+						?>
+					<?php endif; ?>
 				</div>
 			<?php endif; ?>
 
@@ -1495,6 +1550,39 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description"><?php esc_html_e( 'Configure this in your WhatsApp Business settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #25d366; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Get credentials from Meta Developer Dashboard (developers.facebook.com)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter Access Token, App Secret, and Phone Number ID above', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Create a secure Verify Token (random string)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" below', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Configure webhook in Meta dashboard using the Webhook URL and Verify Token', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0; font-size: 13px;">
+								<strong><?php esc_html_e( 'Need help?', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php
+								$docs_path = WP_MCP_AI_PRO_PATH . 'docs/WHATSAPP_SETUP_GUIDE.md';
+								if ( file_exists( $docs_path ) ) {
+									echo wp_kses_post( sprintf(
+										/* translators: %s: link to setup guide */
+										__( 'See our <a href="%s" target="_blank">complete WhatsApp setup guide</a> for detailed instructions.', 'mcp-ai-wpoos-pro' ),
+										esc_url( WP_MCP_AI_PRO_URL . 'docs/WHATSAPP_SETUP_GUIDE.md' )
+									) );
+								} else {
+									esc_html_e( 'See the complete setup guide in the plugin documentation.', 'mcp-ai-wpoos-pro' );
+								}
+								?>
+							</p>
+						</div>
 					</td>
 				</tr>
 
