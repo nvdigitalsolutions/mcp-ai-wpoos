@@ -208,6 +208,98 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Integrations' ) ) {
 		}
 
 		/**
+		 * Render section wrapper with subtab navigation.
+		 */
+		public function render_wrapper() {
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
+			$subtab_groups     = $this->get_subtab_groups();
+			$active_subtab     = $this->get_active_subtab();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+				<?php if ( $description ) : ?>
+					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
+				<?php endif; ?>
+
+				<div class="wp-mcp-ai-provider-subtabs">
+					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Pro integrations sub-tabs', 'mcp-ai-wpoos' ); ?>">
+						<?php foreach ( $subtab_groups as $group ) : ?>
+							<?php
+							$subtab_url = add_query_arg(
+								array(
+									'page'   => 'wp-mcp-ai-dashboard',
+									'tab'    => 'tools',
+									'subtab' => $group['id'],
+								),
+								admin_url( 'admin.php' )
+							);
+							$is_active  = ( $group['id'] === $active_subtab );
+							?>
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
+								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
+								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
+								<?php echo esc_html( $group['label'] ); ?>
+							</a>
+						<?php endforeach; ?>
+					</nav>
+
+					<!-- Hidden field to preserve subtab during form submission -->
+					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+
+					<div class="wp-mcp-ai-subtab-content">
+						<table class="form-table" role="presentation">
+							<?php $this->render(); ?>
+						</table>
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Get active sub-tab.
+		 *
+		 * @return string
+		 */
+		protected function get_active_subtab() {
+			$subtab_groups = $this->get_subtab_groups();
+			$subtab        = '';
+
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// Use section-specific field name to avoid conflicts with other sections.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
+			$subtab_field_name = 'subtab_' . $this->get_id();
+			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+			} elseif ( isset( $_POST['subtab'] ) ) {
+				// Fallback to legacy field name for backward compatibility.
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+
+			// Default to 'mailjet' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
+				$subtab = 'mailjet';
+			}
+
+			return $subtab;
+		}
+
+		/**
 		 * Render the section content.
 		 */
 		public function render() {
