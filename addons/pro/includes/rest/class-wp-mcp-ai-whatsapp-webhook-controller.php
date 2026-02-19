@@ -136,8 +136,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
-		// Verify mode and token.
-		if ( 'subscribe' === $mode && $verify_token === $stored_token ) {
+		// Verify mode and token using timing-safe comparison.
+		if ( 'subscribe' === $mode && hash_equals( $stored_token, $verify_token ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'whatsapp_webhook_verified',
 				'WhatsApp webhook successfully verified.'
@@ -154,7 +154,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			'WhatsApp webhook verification failed: Invalid token or mode.',
 			array(
 				'mode'          => $mode,
-				'token_matches' => $verify_token === $stored_token,
+				'token_matches' => hash_equals( $stored_token, $verify_token ),
 			)
 		);
 

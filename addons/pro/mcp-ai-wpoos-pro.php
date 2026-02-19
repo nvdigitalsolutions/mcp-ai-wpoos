@@ -485,9 +485,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	// Load Chat Channels Integration Toolkit if enabled (Pro feature).
 	if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
-		
+
 		// Load WhatsApp Webhook Controller for real-time message handling.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+
+		// Load Messenger Webhook Controller for Meta Messenger Platform events.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php';
 	}
 
 	// ========================================================================
