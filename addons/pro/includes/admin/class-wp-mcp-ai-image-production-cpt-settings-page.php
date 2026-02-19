@@ -80,6 +80,14 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 			$this->option_name,
 			$this->option_name . '_section'
 		);
+
+		add_settings_field(
+			'nodejs_available',
+			__( 'Node.js Status', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_nodejs_status_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
 	}
 
 	/**
@@ -131,6 +139,90 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 		<span>px</span>
 		<p class="description"><?php esc_html_e( 'Maximum dimensions for generated images', 'mcp-ai-wpoos-pro' ); ?></p>
 		<?php
+	}
+
+	/**
+	 * Render Node.js status field.
+	 */
+	public function render_nodejs_status_field() {
+		$nodejs_available      = $this->check_nodejs_available();
+		$npm_packages          = $this->check_npm_packages_installed();
+		$optional_npm_packages = $this->check_optional_npm_packages_installed();
+
+		?>
+		<p>
+			<strong><?php esc_html_e( 'Node.js:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<?php if ( $nodejs_available ) : ?>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php else : ?>
+				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Available (PHP fallbacks will be used)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php endif; ?>
+		</p>
+		<p>
+			<strong><?php esc_html_e( 'Core NPM Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<?php if ( $npm_packages ) : ?>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (sharp, canvas, qrcode via vendor or node_modules)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php else : ?>
+				<span style="color: orange;">⚠ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos-pro' ); ?></span>
+				<br>
+				<code>cd <?php echo esc_html( WP_MCP_AI_PRO_PATH ); ?> && npm install</code>
+			<?php endif; ?>
+		</p>
+		<p>
+			<strong><?php esc_html_e( 'Optional Packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+			<?php if ( $optional_npm_packages ) : ?>
+				<span style="color: green;">✓ <?php esc_html_e( 'Available (gif-encoder for GIF creation)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php else : ?>
+				<span style="color: gray;">○ <?php esc_html_e( 'Not Available (optional - GIF generation)', 'mcp-ai-wpoos-pro' ); ?></span>
+			<?php endif; ?>
+		</p>
+		<p class="description">
+			<?php esc_html_e( 'Core packages enable advanced image processing features. Optional packages enhance functionality when available. PHP GD library and ImageMagick are used when Node.js packages are unavailable.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Check if Node.js is available.
+	 *
+	 * @return bool
+	 */
+	protected function check_nodejs_available() {
+		// Simple check - try to run node --version.
+		$output = array();
+		$return = null;
+		@exec( 'node --version 2>&1', $output, $return ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+
+		return 0 === $return && ! empty( $output );
+	}
+
+	/**
+	 * Check if NPM packages are installed.
+	 *
+	 * Checks CDN availability, vendor directory, and node_modules.
+	 *
+	 * @return bool
+	 */
+	protected function check_npm_packages_installed() {
+		// Use the centralized helper function for CDN-aware package checking.
+		$has_sharp = wp_mcp_ai_is_npm_package_available( 'sharp' );
+
+		$has_canvas = wp_mcp_ai_is_npm_package_available( 'canvas' );
+
+		$has_qrcode = wp_mcp_ai_is_npm_package_available( 'qrcode' );
+
+		return $has_sharp && $has_canvas && $has_qrcode;
+	}
+
+	/**
+	 * Check if optional NPM packages are installed.
+	 *
+	 * Checks CDN availability, vendor directory, and node_modules.
+	 *
+	 * @return bool
+	 */
+	protected function check_optional_npm_packages_installed() {
+		return wp_mcp_ai_is_npm_package_available( 'gif-encoder' );
 	}
 
 	/**
