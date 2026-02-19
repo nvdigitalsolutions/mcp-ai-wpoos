@@ -605,8 +605,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$connections = $this->get_whatsapp_connections();
 
 		foreach ( $connections as $connection ) {
-			if ( isset( $connection['whatsapp_verify_token'] ) && ! empty( $connection['whatsapp_verify_token'] ) ) {
-				return $connection['whatsapp_verify_token'];
+			// The verify token is stored in the 'verify_token' field
+			if ( isset( $connection['verify_token'] ) && ! empty( $connection['verify_token'] ) ) {
+				return $connection['verify_token'];
 			}
 		}
 
@@ -629,14 +630,24 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		foreach ( $connections as $connection ) {
 			// Try to get dedicated app secret field first.
-			if ( isset( $connection['whatsapp_app_secret'] ) && ! empty( $connection['whatsapp_app_secret'] ) ) {
-				return $connection['whatsapp_app_secret'];
+			// WhatsApp app secret is stored in 'api_secret' field
+			if ( isset( $connection['api_secret'] ) && ! empty( $connection['api_secret'] ) ) {
+				// Decrypt if needed
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+				}
+				return $connection['api_secret'];
 			}
 
 			// Fallback: Use access token for signature validation if app secret not set.
 			// Note: This is not ideal. App secret should be configured separately.
-			if ( isset( $connection['whatsapp_access_token'] ) && ! empty( $connection['whatsapp_access_token'] ) ) {
-				return $connection['whatsapp_access_token'];
+			// WhatsApp access token is stored in 'api_key' field
+			if ( isset( $connection['api_key'] ) && ! empty( $connection['api_key'] ) ) {
+				// Decrypt if needed
+				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+				}
+				return $connection['api_key'];
 			}
 		}
 
