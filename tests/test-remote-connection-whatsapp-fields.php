@@ -36,16 +36,16 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'                => 'Test WhatsApp Connection With App ID',
-			'url'                 => 'https://graph.facebook.com/v18.0',
-			'connection_type'     => 'whatsapp',
-			'auth_type'           => 'none',
-			'enabled'             => true,
-			'api_key'             => 'test_access_token',
-			'api_secret'          => 'test_app_secret',
-			'app_id'              => '123456789012345',
-			'phone_number_id'     => '987654321012345',
-			'verify_token'        => 'test_verify_token',
+			'name'            => 'Test WhatsApp Connection With App ID',
+			'url'             => 'https://graph.facebook.com/v18.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'api_secret'      => 'test_app_secret',
+			'app_id'          => '123456789012345',
+			'phone_number_id' => '987654321012345',
+			'verify_token'    => 'test_verify_token',
 		);
 
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -415,10 +415,10 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		$phone_url            = '';
 		$phone_number_in_path = rawurlencode( $connection_data['phone_number_id'] );
 		foreach ( $captured_urls as $url ) {
-			$has_phone_id          = false !== strpos( $url, $phone_number_in_path );
-			$has_display_phone     = false !== strpos( $url, 'display_phone_number' );
-			$has_quality_rating    = false !== strpos( $url, 'quality_rating' );
-			$has_business_profile  = false !== strpos( $url, 'whatsapp_business_profile' );
+			$has_phone_id         = false !== strpos( $url, $phone_number_in_path );
+			$has_display_phone    = false !== strpos( $url, 'display_phone_number' );
+			$has_quality_rating   = false !== strpos( $url, 'quality_rating' );
+			$has_business_profile = false !== strpos( $url, 'whatsapp_business_profile' );
 
 			if ( $has_phone_id && $has_display_phone && ! $has_quality_rating && ! $has_business_profile ) {
 				$phone_url = $url;
@@ -470,14 +470,14 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'               => 'Test WhatsApp v21 Connection',
-			'url'                => 'https://graph.facebook.com/v21.0',
-			'connection_type'    => 'whatsapp',
-			'auth_type'          => 'none',
-			'enabled'            => true,
-			'api_key'            => 'test_access_token',
-			'phone_number_id'    => '123456789',
-			'graph_api_version'  => 'v21.0',
+			'name'              => 'Test WhatsApp v21 Connection',
+			'url'               => 'https://graph.facebook.com/v21.0',
+			'connection_type'   => 'whatsapp',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'test_access_token',
+			'phone_number_id'   => '123456789',
+			'graph_api_version' => 'v21.0',
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -558,5 +558,107 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 
 		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$this->assertEquals( 'v21.0', $updated['graph_api_version'], 'Graph API version should be preserved on update' );
+	}
+
+	/**
+	 * Test that assigned_assistant_ids persist for WhatsApp connections.
+	 */
+	public function test_whatsapp_assigned_assistant_ids_persist() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'                   => 'Test WhatsApp With Assistants',
+			'url'                    => 'https://graph.facebook.com/v21.0',
+			'connection_type'        => 'whatsapp',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'test_access_token',
+			'phone_number_id'        => '123456789012345',
+			'verify_token'           => 'test_verify_token',
+			'assigned_assistant_ids' => array( 10, 20, 30 ),
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertIsArray( $saved['assigned_assistant_ids'], 'assigned_assistant_ids should be an array' );
+		$this->assertEquals( array( 10, 20, 30 ), $saved['assigned_assistant_ids'], 'Assigned assistant IDs should persist' );
+	}
+
+	/**
+	 * Test that assigned_assistant_ids are preserved on update when not provided.
+	 */
+	public function test_whatsapp_assigned_assistant_ids_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with assigned assistants.
+		$connection_data = array(
+			'name'                   => 'Test WhatsApp Preserve Assistants',
+			'url'                    => 'https://graph.facebook.com/v21.0',
+			'connection_type'        => 'whatsapp',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'test_access_token',
+			'phone_number_id'        => '111222333444555',
+			'verify_token'           => 'test_verify_token',
+			'assigned_assistant_ids' => array( 5, 15 ),
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update without providing assigned_assistant_ids.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WhatsApp Preserve Assistants',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $updated, 'Updated connection should be retrievable' );
+		$this->assertEquals( array( 5, 15 ), $updated['assigned_assistant_ids'], 'Assigned assistant IDs should be preserved on update' );
+	}
+
+	/**
+	 * Test that assigned_assistant_ids defaults to empty array when not set.
+	 */
+	public function test_whatsapp_assigned_assistant_ids_defaults_to_empty_array() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp No Assistants',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '999888777666555',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertIsArray( $saved['assigned_assistant_ids'], 'assigned_assistant_ids should be an array even when not set' );
+		$this->assertEmpty( $saved['assigned_assistant_ids'], 'assigned_assistant_ids should be empty when not provided' );
 	}
 }

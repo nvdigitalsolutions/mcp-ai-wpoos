@@ -197,7 +197,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
 
 		// Use reflection to access protected methods.
-		$reflection        = new ReflectionClass( $controller );
+		$reflection          = new ReflectionClass( $controller );
 		$verify_token_method = $reflection->getMethod( 'get_verify_token' );
 		$verify_token_method->setAccessible( true );
 		$app_secret_method = $reflection->getMethod( 'get_app_secret' );
@@ -423,5 +423,85 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		// Verify the response is an error.
 		$this->assertInstanceOf( 'WP_Error', $response, 'Response should be a WP_Error object' );
 		$this->assertEquals( 'whatsapp_no_verify_token', $response->get_error_code(), 'Error code should be whatsapp_no_verify_token' );
+	}
+
+	/**
+	 * Test that get_connection_by_phone_number_id returns the correct connection.
+	 */
+	public function test_get_connection_by_phone_number_id_returns_match() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$connection_data = array(
+			'name'                   => 'Channel A',
+			'url'                    => 'https://graph.facebook.com/v21.0',
+			'connection_type'        => 'whatsapp',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'token_a',
+			'api_secret'             => 'secret_a',
+			'phone_number_id'        => '111000111000111',
+			'verify_token'           => 'verify_a',
+			'assigned_assistant_ids' => array( 42 ),
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$method = $reflection->getMethod( 'get_connection_by_phone_number_id' );
+		$method->setAccessible( true );
+
+		$found = $method->invoke( $controller, '111000111000111' );
+		$this->assertNotNull( $found, 'Should find connection matching phone_number_id' );
+		$this->assertEquals( '111000111000111', $found['phone_number_id'] );
+
+		$not_found = $method->invoke( $controller, '000000000000000' );
+		$this->assertNull( $not_found, 'Should return null for unrecognised phone_number_id' );
+	}
+
+	/**
+	 * Test that get_assigned_assistant_ids returns IDs from a connection.
+	 */
+	public function test_get_assigned_assistant_ids_returns_ids() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$method = $reflection->getMethod( 'get_assigned_assistant_ids' );
+		$method->setAccessible( true );
+
+		// Connection with assigned assistants.
+		$connection_with = array( 'assigned_assistant_ids' => array( 7, 13, 99 ) );
+		$ids             = $method->invoke( $controller, $connection_with );
+		$this->assertEquals( array( 7, 13, 99 ), $ids, 'Should return assigned assistant IDs' );
+
+		// Connection without assigned assistants.
+		$connection_without = array();
+		$empty_ids          = $method->invoke( $controller, $connection_without );
+		$this->assertIsArray( $empty_ids, 'Should return array even when no assistants assigned' );
+		$this->assertEmpty( $empty_ids, 'Should return empty array when no assistants assigned' );
 	}
 }
