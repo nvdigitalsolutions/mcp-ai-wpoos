@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/check-access-token-structure',
-        'version' => 'dev-copilot/check-access-token-structure',
-        'reference' => 'bbd368996126e54c0a5e87d6799bd0b3dd044136',
+        'pretty_version' => 'dev-copilot/enhance-api-version-selection',
+        'version' => 'dev-copilot/enhance-api-version-selection',
+        'reference' => 'a4d9b84fba9ca96166f3a156c3f5549c25d569fa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/check-access-token-structure',
-            'version' => 'dev-copilot/check-access-token-structure',
-            'reference' => 'bbd368996126e54c0a5e87d6799bd0b3dd044136',
+            'pretty_version' => 'dev-copilot/enhance-api-version-selection',
+            'version' => 'dev-copilot/enhance-api-version-selection',
+            'reference' => 'a4d9b84fba9ca96166f3a156c3f5549c25d569fa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

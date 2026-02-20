@@ -459,4 +459,104 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		$this->assertEquals( 600, $saved_connection['cache_ttl'], 'Cache TTL should persist' );
 		$this->assertEquals( '/api/health', $saved_connection['test_endpoint'], 'Test endpoint should persist' );
 	}
+
+	/**
+	 * Test that graph_api_version persists for WhatsApp connections.
+	 */
+	public function test_whatsapp_graph_api_version_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'               => 'Test WhatsApp v21 Connection',
+			'url'                => 'https://graph.facebook.com/v21.0',
+			'connection_type'    => 'whatsapp',
+			'auth_type'          => 'none',
+			'enabled'            => true,
+			'api_key'            => 'test_access_token',
+			'phone_number_id'    => '123456789',
+			'graph_api_version'  => 'v21.0',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertEquals( 'v21.0', $saved['graph_api_version'], 'Graph API version should persist' );
+	}
+
+	/**
+	 * Test that graph_api_version persists for Facebook Messenger connections.
+	 */
+	public function test_messenger_graph_api_version_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'              => 'Test Messenger v22 Connection',
+			'url'               => 'https://graph.facebook.com/v22.0',
+			'connection_type'   => 'facebook_messenger',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'test_page_access_token',
+			'api_secret'        => 'test_app_secret',
+			'app_id'            => '987654321',
+			'page_id'           => '112233445566',
+			'verify_token'      => 'test_verify_token',
+			'graph_api_version' => 'v22.0',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertEquals( 'v22.0', $saved['graph_api_version'], 'Graph API version should persist for Messenger' );
+		$this->assertEquals( '987654321', $saved['app_id'], 'App ID should persist for Messenger' );
+		$this->assertEquals( '112233445566', $saved['page_id'], 'Page ID should persist for Messenger' );
+	}
+
+	/**
+	 * Test that graph_api_version is preserved on update when not provided.
+	 */
+	public function test_graph_api_version_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'              => 'Test Messenger Update',
+			'url'               => 'https://graph.facebook.com/v21.0',
+			'connection_type'   => 'facebook_messenger',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'test_token',
+			'graph_api_version' => 'v21.0',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update without providing graph_api_version.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated Messenger Connection',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'facebook_messenger',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertEquals( 'v21.0', $updated['graph_api_version'], 'Graph API version should be preserved on update' );
+	}
 }
