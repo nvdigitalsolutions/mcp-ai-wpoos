@@ -1230,7 +1230,20 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 
-			// Google Gemini Models (November 2025).
+			// Google Gemini Models (February 2026).
+			// Gemini 3.1 series (multimodal - latest flagship) - Preview.
+			'gemini-3.1-pro-preview'                       => array(
+				'name'           => 'Gemini 3.1 Pro (Preview)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 360,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 1000000,
+				'fallback_model' => 'gemini-2.5-pro',
+				'cost_per_1k'    => 0.002,
+				'status'         => 'active',
+			),
 			// Gemini 3 series (multimodal - latest generation) - Preview.
 			'gemini-3-pro-preview'                         => array(
 				'name'           => 'Gemini 3 Pro (Preview)',
@@ -1239,7 +1252,7 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 360,
 				'tpd'            => 50000000,
 				'rpd'            => 1500,
-				'context_window' => 2000000,
+				'context_window' => 1000000,
 				'fallback_model' => 'gemini-2.5-pro',
 				'cost_per_1k'    => 0.001,
 				'status'         => 'active',
@@ -1264,9 +1277,9 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 360,
 				'tpd'            => 50000000,
 				'rpd'            => 1500,
-				'context_window' => 2000000,
+				'context_window' => 1000000,
 				'fallback_model' => 'gemini-2.5-flash',
-				'cost_per_1k'    => 0.003,
+				'cost_per_1k'    => 0.00125,
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash'                             => array(
@@ -1278,7 +1291,7 @@ class WP_MCP_AI_Model_Config {
 				'rpd'            => 1500,
 				'context_window' => 1000000,
 				'fallback_model' => null,
-				'cost_per_1k'    => 0.0001,
+				'cost_per_1k'    => 0.0003,
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash-lite'                        => array(

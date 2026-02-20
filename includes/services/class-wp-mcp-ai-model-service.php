@@ -276,6 +276,9 @@ class WP_MCP_AI_Model_Service {
 		$models             = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
+		// Gemini 3.1 series (February 2026 - latest flagship).
+		$models['gemini-3.1-pro-preview'] = 'Gemini 3.1 Pro (Preview)';
+
 		// Gemini 3 series (multimodal - latest generation) - Preview.
 		$models['gemini-3-pro-preview']   = 'Gemini 3 Pro (Preview)';
 		$models['gemini-3-flash-preview'] = 'Gemini 3 Flash (Preview)';

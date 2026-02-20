@@ -56,7 +56,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'model_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Model identifier (e.g., gpt-5.2, claude-opus-4-6, gemini-3-pro-preview).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model identifier (e.g., gpt-5.2, claude-opus-4-6, gemini-3.1-pro-preview).', 'mcp-ai-wpoos' ),
 				),
 				'provider'       => array(
 					'type'        => 'string',
