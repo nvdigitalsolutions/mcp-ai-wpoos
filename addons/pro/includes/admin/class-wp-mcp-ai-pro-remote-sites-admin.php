@@ -3342,8 +3342,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and causes a 403 with App Access Tokens.
-		$phone_endpoint = sprintf(
-			'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name',
+		$graph_api_version = 'v19.0';
+		$phone_endpoint    = sprintf(
+			'https://graph.facebook.com/%s/%s?fields=display_phone_number,verified_name',
+			$graph_api_version,
 			rawurlencode( $phone_number_id )
 		);
 
@@ -3371,27 +3373,63 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$phone_code = wp_remote_retrieve_response_code( $phone_response );
 		$phone_data = json_decode( wp_remote_retrieve_body( $phone_response ), true );
 
+		$limited_field_access = false;
 		if ( 200 !== (int) $phone_code ) {
-			$error_message = __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
-			if ( isset( $phone_data['error']['message'] ) ) {
-				$error_message = $phone_data['error']['message'];
+			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
+			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+
+			// When the token lacks field-level access (Facebook error code 200 = permission
+			// error on a specific field), fall back to the base endpoint which returns only
+			// the phone number ID.  This lets tokens with whatsapp_business_messaging scope
+			// for sending but without phone-number field read permissions still pass.
+			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
+				$fallback_endpoint = sprintf(
+					'https://graph.facebook.com/%s/%s',
+					$graph_api_version,
+					rawurlencode( $phone_number_id )
+				);
+				$fallback_response = wp_remote_get(
+					$fallback_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $fallback_response ) && 200 === (int) wp_remote_retrieve_response_code( $fallback_response ) ) {
+					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
+					$limited_field_access = true;
+				} else {
+					wp_send_json_error(
+						sprintf(
+							/* translators: 1: status code, 2: error message */
+							__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+							$phone_code,
+							$error_message
+						)
+					);
+					return;
+				}
+			} else {
+				wp_send_json_error(
+					sprintf(
+						/* translators: 1: status code, 2: error message */
+						__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+						$phone_code,
+						$error_message
+					)
+				);
+				return;
 			}
-			wp_send_json_error(
-				sprintf(
-					/* translators: 1: status code, 2: error message */
-					__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
-					$phone_code,
-					$error_message
-				)
-			);
-			return;
 		}
 
 		// Optionally fetch quality_rating as a separate request — requires whatsapp_business_management permission.
 		// Treat a 403 response as advisory only (the field is not available with App Access Tokens).
 		$quality         = 'unknown';
 		$quality_endpoint = sprintf(
-			'https://graph.facebook.com/v19.0/%s?fields=quality_rating',
+			'https://graph.facebook.com/%s/%s?fields=quality_rating',
+			$graph_api_version,
 			rawurlencode( $phone_number_id )
 		);
 		$quality_response = wp_remote_get(
@@ -3416,6 +3454,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'quality_rating' => $quality,
 			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Note when the token lacks permission to read phone-number details.
+		if ( $limited_field_access ) {
+			$result['warning'] = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'mcp-ai-wpoos-pro' );
+		}
 
 		wp_send_json_success( $result );
 	}

@@ -434,6 +434,151 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a 403 with Facebook error code 200 on the primary phone-number request
+	 * triggers a fallback to the base endpoint and still reports success.
+	 *
+	 * Some access tokens have the whatsapp_business_messaging scope for sending
+	 * but lack the field-level permission to read display_phone_number or verified_name.
+	 * The connection test must not fail in this case; it should succeed with a warning.
+	 */
+	public function test_whatsapp_connection_succeeds_when_primary_fields_request_returns_403() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Limited Permissions',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_limited',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '444555666777888',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 403 with FB error code 200.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => '(#200) You do not have permission to access this field.',
+								'type'    => 'OAuthException',
+								'code'    => 200,
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 403,
+						'message' => 'Forbidden',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds and returns just the ID.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '444555666777888' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must succeed despite the 403 on the fields request.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail when fields request returns 403 with FB error code 200' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success' );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $result, 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $result['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
+	 * Test that a 403 with a non-200 Facebook error code (e.g. invalid token) still fails.
+	 *
+	 * Error code 190 means the token is invalid/expired and must not trigger the fallback.
+	 */
+	public function test_whatsapp_connection_fails_on_invalid_token_403() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Invalid Token',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'invalid_token',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			// Simulate an invalid/expired token error (FB error code 190).
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'error' => array(
+							'message' => 'Invalid OAuth access token.',
+							'type'    => 'OAuthException',
+							'code'    => 190,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 401,
+					'message' => 'Unauthorized',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// An invalid token must still return an error.
+		$this->assertInstanceOf( 'WP_Error', $result, 'Connection test should fail for an invalid token' );
+	}
+
+	/**
 	 * Test that cache_ttl and test_endpoint persist.
 	 */
 	public function test_cache_ttl_and_test_endpoint_persist() {
