@@ -224,6 +224,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['p2p_connection_id'] = $existing_connection['p2p_connection_id'];
 			}
 
+			// Preserve existing assigned_assistant_ids (WhatsApp channel routing) if not provided.
+			if ( ! isset( $connection_data['assigned_assistant_ids'] ) && ! empty( $existing_connection['assigned_assistant_ids'] ) ) {
+				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
+			}
+
 			// Preserve existing test_endpoint if not provided.
 			if ( empty( $connection_data['test_endpoint'] ) && ! empty( $existing_connection['test_endpoint'] ) ) {
 				$connection_data['test_endpoint'] = $existing_connection['test_endpoint'];
@@ -310,6 +315,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'graph_api_version' => isset( $connection_data['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection_data['graph_api_version'] ) ? $connection_data['graph_api_version'] : '',
 			// WebChat P2P-specific fields.
 			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
+			// WhatsApp channel routing: assistant IDs listening on this channel.
+			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
+				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
+				: array(),
 			// Generic API test endpoint.
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.

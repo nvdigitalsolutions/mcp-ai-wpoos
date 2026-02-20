@@ -562,6 +562,11 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @param array $context Full webhook context.
 	 */
 	protected function maybe_auto_reply( $message_data, $context ) {
+		// Determine which connection received this message based on phone_number_id.
+		$phone_number_id     = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
+		$connection          = ! empty( $phone_number_id ) ? $this->get_connection_by_phone_number_id( $phone_number_id ) : null;
+		$assigned_assistant_ids = $connection ? $this->get_assigned_assistant_ids( $connection ) : array();
+
 		/**
 		 * Filter whether to auto-reply to WhatsApp messages.
 		 *
@@ -578,7 +583,43 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Auto-reply logic will be implemented by extensions.
-		do_action( 'wp_mcp_ai_whatsapp_auto_reply', $message_data, $context );
+		do_action( 'wp_mcp_ai_whatsapp_auto_reply', $message_data, $context, $assigned_assistant_ids );
+	}
+
+	/**
+	 * Find a WhatsApp connection matching the given phone_number_id.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $phone_number_id The phone number ID from the webhook payload.
+	 * @return array|null Connection data array or null if not found.
+	 */
+	protected function get_connection_by_phone_number_id( $phone_number_id ) {
+		$connections = $this->get_whatsapp_connections();
+
+		foreach ( $connections as $connection ) {
+			if ( isset( $connection['phone_number_id'] ) && $connection['phone_number_id'] === $phone_number_id ) {
+				return $connection;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the assistant IDs assigned to a WhatsApp connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return int[] Array of assistant post IDs.
+	 */
+	protected function get_assigned_assistant_ids( $connection ) {
+		if ( ! isset( $connection['assigned_assistant_ids'] ) || ! is_array( $connection['assigned_assistant_ids'] ) ) {
+			return array();
+		}
+
+		return array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) );
 	}
 
 	/**

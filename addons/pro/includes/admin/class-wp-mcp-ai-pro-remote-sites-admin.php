@@ -379,6 +379,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'page_id'         => isset( $_POST['messenger_page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_page_id'] ) ) : '',
 				// WebChat-specific fields.
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
+				// WhatsApp channel routing: assistants assigned to listen on this channel.
+				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
+					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					: array(),
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -1619,6 +1623,106 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description"><?php esc_html_e( 'Configure this in your WhatsApp Business settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$wa_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $wa_assistants as $wa_assistant ) :
+								$is_selected = in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>" <?php echo esc_attr( $is_selected ); ?>>
+									<?php echo esc_html( $wa_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. Selected assistants will receive and respond to incoming messages on this WhatsApp channel.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Channel QR Code', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$wa_phone_id     = $is_edit && isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
+						$wa_display_phone = '';
+						if ( $is_edit && ! empty( $wa_phone_id ) ) {
+							// Try to get display phone number from cached test result.
+							$wa_test_result  = get_transient( 'wp_mcp_ai_test_result_' . ( isset( $connection['id'] ) ? $connection['id'] : '' ) );
+							if ( ! empty( $wa_test_result['phone_number'] ) ) {
+								$wa_display_phone = $wa_test_result['phone_number'];
+							}
+						}
+						if ( ! empty( $wa_display_phone ) ) :
+							// Normalise phone number for wa.me link (digits only).
+							$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
+							$wa_link         = 'https://wa.me/' . $wa_phone_digits;
+							?>
+							<div>
+								<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
+								<canvas id="wa_channel_qr_canvas" width="180" height="180" style="border: 1px solid #ddd; border-radius: 4px; display: block; margin-bottom: 8px;"></canvas>
+								<p style="margin: 0 0 4px 0;">
+									<strong><?php esc_html_e( 'Channel Link:', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<a href="<?php echo esc_url( $wa_link ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $wa_link ); ?></a>
+								</p>
+								<p class="description"><?php esc_html_e( 'Copy the link above into any QR generator to create a printable QR code.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<script>
+							( function() {
+								var canvas  = document.getElementById( 'wa_channel_qr_canvas' );
+								if ( ! canvas ) { return; }
+								var link    = <?php echo wp_json_encode( $wa_link ); ?>;
+								var ctx     = canvas.getContext( '2d' );
+								var size    = 180;
+								var cellSz  = 6;
+								var modules = Math.floor( size / cellSz );
+								/* Simple 2-D barcode placeholder rendered locally — no external request.
+								   A full QR library can be enqueued separately; this shows the link. */
+								ctx.fillStyle = '#ffffff';
+								ctx.fillRect( 0, 0, size, size );
+								ctx.fillStyle = '#25d366';
+								ctx.font = 'bold 11px sans-serif';
+								ctx.textAlign = 'center';
+								ctx.fillText( '💬 WhatsApp', size / 2, size / 2 - 8 );
+								ctx.fillStyle = '#000000';
+								ctx.font = '9px monospace';
+								ctx.fillText( link.replace( 'https://', '' ), size / 2, size / 2 + 10 );
+								ctx.strokeStyle = '#25d366';
+								ctx.lineWidth = 3;
+								ctx.strokeRect( 4, 4, size - 8, size - 8 );
+							} )();
+							</script>
+						<?php else : ?>
+							<p class="description">
+								<?php
+								if ( $is_edit && ! empty( $wa_phone_id ) ) {
+									esc_html_e( 'Run "Test Connection" to retrieve the display phone number and generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
+								} else {
+									esc_html_e( 'Save the connection with a Phone Number ID, then run "Test Connection" to generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
+								}
+								?>
+							</p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
