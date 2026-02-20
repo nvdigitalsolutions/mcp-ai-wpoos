@@ -691,16 +691,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		if ( empty( $app_secret ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_whatsapp_missing_secret',
-				__( 'WhatsApp app secret is required for webhook signature validation.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
 		// Test 1: Get phone number info.
-		// Explicitly request only fields accessible with whatsapp_business_messaging permission to avoid 403 errors.
-		$phone_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name,quality_rating', rawurlencode( $phone_number_id ) );
+		// Only request fields accessible with whatsapp_business_messaging permission.
+		// quality_rating requires whatsapp_business_management and will cause a 403 with App Access Tokens.
+		$phone_endpoint = sprintf( 'https://graph.facebook.com/v21.0/%s?fields=display_phone_number,verified_name', rawurlencode( $phone_number_id ) );
 
 		$phone_response = wp_remote_get(
 			$phone_endpoint,
@@ -748,10 +742,30 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Extract phone number details.
 		$display_phone = isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '';
 		$verified      = isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '';
-		$quality       = isset( $phone_data['quality_rating'] ) ? $phone_data['quality_rating'] : 'unknown';
+
+		// Optionally get quality rating — requires whatsapp_business_management permission.
+		// This is not available with App Access Tokens, so treat it as advisory only.
+		$quality               = 'unknown';
+		$quality_endpoint      = sprintf( 'https://graph.facebook.com/v21.0/%s?fields=quality_rating', rawurlencode( $phone_number_id ) );
+		$quality_response      = wp_remote_get(
+			$quality_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+		if ( ! is_wp_error( $quality_response ) && 200 === wp_remote_retrieve_response_code( $quality_response ) ) {
+			$quality_body = wp_remote_retrieve_body( $quality_response );
+			$quality_data = json_decode( $quality_body, true );
+			if ( isset( $quality_data['quality_rating'] ) ) {
+				$quality = $quality_data['quality_rating'];
+			}
+		}
 
 		// Test 2: Try to get business profile (optional, may not have permissions).
-		$profile_endpoint = sprintf( 'https://graph.facebook.com/v19.0/%s/whatsapp_business_profile', rawurlencode( $phone_number_id ) );
+		$profile_endpoint = sprintf( 'https://graph.facebook.com/v21.0/%s/whatsapp_business_profile', rawurlencode( $phone_number_id ) );
 
 		$profile_response = wp_remote_get(
 			$profile_endpoint,
@@ -786,13 +800,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'message'         => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// Add quality rating warning if not green.
+		// Warn if app secret is missing (needed for webhook signature validation).
+		if ( empty( $app_secret ) ) {
+			$results['warning'] = __( 'App secret is not configured. Webhook signature validation will be disabled. Add your app secret to enable it.', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Add quality rating note if not green (only overrides when quality is actually known).
 		if ( 'GREEN' !== strtoupper( $quality ) && 'unknown' !== $quality ) {
-			$results['warning'] = sprintf(
+			$quality_warning = sprintf(
 				/* translators: %s: quality rating */
 				__( 'Note: Phone number quality rating is %s. Monitor your messaging quality to maintain good standing.', 'mcp-ai-wpoos-pro' ),
 				strtoupper( $quality )
 			);
+			$results['warning'] = isset( $results['warning'] )
+				? $results['warning'] . ' ' . $quality_warning
+				: $quality_warning;
 		}
 
 		return $results;

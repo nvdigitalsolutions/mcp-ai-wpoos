@@ -257,6 +257,183 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a missing app secret no longer blocks the connection test.
+	 *
+	 * Previously, test_whatsapp_connection returned a WP_Error when api_secret was
+	 * absent. The app secret is only required for webhook signature validation, so the
+	 * connection test should succeed and include a warning instead.
+	 */
+	public function test_whatsapp_connection_succeeds_without_app_secret() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a WhatsApp connection without an app secret.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp No Secret',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_no_secret',
+			// api_secret intentionally omitted.
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Stub the WhatsApp API call so no real HTTP request is made.
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false !== strpos( $url, 'graph.facebook.com' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'display_phone_number' => '+1 555-000-0000',
+							'verified_name'        => 'Test Business',
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must NOT return a WP_Error just because api_secret is absent.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test should not fail when app secret is missing' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success' );
+
+		// A warning about the missing app secret should be included.
+		$this->assertArrayHasKey( 'warning', $result, 'Result should contain a warning about the missing app secret' );
+		$this->assertStringContainsString( 'secret', strtolower( $result['warning'] ), 'Warning should mention app secret' );
+	}
+
+	/**
+	 * Test that the phone-number endpoint does NOT include quality_rating in its fields.
+	 *
+	 * quality_rating requires whatsapp_business_management permission which App Access
+	 * Tokens lack.  It must be fetched as a separate optional request so that a 403
+	 * response from that field does not fail the whole connection test.
+	 */
+	public function test_whatsapp_connection_phone_endpoint_excludes_quality_rating() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Quality Rating',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_quality',
+			'api_secret'      => 'test_app_secret_quality',
+			'phone_number_id' => '999888777666555',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$captured_urls = array();
+
+		// Stub all Graph API requests; return 200 for the phone-number lookup and
+		// 403 for the quality_rating and business-profile endpoints.
+		$filter_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_urls ) {
+			if ( false !== strpos( $url, 'graph.facebook.com' ) ) {
+				$captured_urls[] = $url;
+
+				// Simulate 403 when quality_rating is the only requested field.
+				if ( false !== strpos( $url, 'fields=quality_rating' ) ) {
+					return array(
+						'headers'  => array( 'content-type' => 'application/json' ),
+						'body'     => wp_json_encode(
+							array(
+								'error' => array(
+									'message' => '(#200) You do not have permission to access this field.',
+									'type'    => 'OAuthException',
+									'code'    => 200,
+								),
+							)
+						),
+						'response' => array(
+							'code'    => 403,
+							'message' => 'Forbidden',
+						),
+						'cookies'  => array(),
+						'filename' => null,
+					);
+				}
+
+				// Return success for all other requests.
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'display_phone_number' => '+1 555-000-1111',
+							'verified_name'        => 'Quality Test Business',
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The overall test should succeed even though the quality_rating request returned 403.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail due to a 403 on quality_rating' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should succeed' );
+
+		// Verify the primary phone-number URL does not contain quality_rating.
+		// The primary request contains display_phone_number but NOT quality_rating or whatsapp_business_profile.
+		$phone_url            = '';
+		$phone_number_in_path = rawurlencode( $connection_data['phone_number_id'] );
+		foreach ( $captured_urls as $url ) {
+			$has_phone_id          = false !== strpos( $url, $phone_number_in_path );
+			$has_display_phone     = false !== strpos( $url, 'display_phone_number' );
+			$has_quality_rating    = false !== strpos( $url, 'quality_rating' );
+			$has_business_profile  = false !== strpos( $url, 'whatsapp_business_profile' );
+
+			if ( $has_phone_id && $has_display_phone && ! $has_quality_rating && ! $has_business_profile ) {
+				$phone_url = $url;
+				break;
+			}
+		}
+
+		$this->assertNotEmpty( $phone_url, 'Could not identify the primary phone-number endpoint in captured URLs' );
+		$this->assertStringNotContainsString( 'quality_rating', $phone_url, 'Primary phone-number endpoint must not request quality_rating' );
+
+		// quality_rating should remain 'unknown' when the optional request returns 403.
+		$this->assertEquals( 'unknown', $result['quality_rating'], 'quality_rating should be unknown when the optional request fails' );
+	}
+
+	/**
 	 * Test that cache_ttl and test_endpoint persist.
 	 */
 	public function test_cache_ttl_and_test_endpoint_persist() {
