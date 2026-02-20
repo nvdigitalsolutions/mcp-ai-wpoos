@@ -1134,6 +1134,108 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that ajax_test_whatsapp_live does not include quality_rating in the primary request.
+	 *
+	 * quality_rating requires whatsapp_business_management permission and causes a 403
+	 * with App Access Tokens. The primary request must only ask for
+	 * display_phone_number and verified_name; quality_rating is fetched separately
+	 * and a 403 on that request must not fail the overall test.
+	 */
+	public function test_ajax_test_whatsapp_live_excludes_quality_rating_from_primary_request() {
+		$captured_urls = array();
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_urls ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			$captured_urls[] = $url;
+
+			// Simulate 403 when quality_rating is the only requested field.
+			if ( false !== strpos( $url, 'fields=quality_rating' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => '(#200) You do not have permission to access this field.',
+								'type'    => 'OAuthException',
+								'code'    => 200,
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 403,
+						'message' => 'Forbidden',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// Return success for the primary phone-number request.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'display_phone_number' => '+1 555-000-0000',
+						'verified_name'        => 'Test Business',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = 'test_access_token';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		// Capture JSON output via output buffering.
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		// Clean up POST.
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 403 on quality_rating.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// Verify the primary phone-number URL does not contain quality_rating.
+		$phone_url = '';
+		foreach ( $captured_urls as $url ) {
+			if ( false !== strpos( $url, 'display_phone_number' ) && false === strpos( $url, 'quality_rating' ) ) {
+				$phone_url = $url;
+				break;
+			}
+		}
+		$this->assertNotEmpty( $phone_url, 'Primary phone-number request must have been made without quality_rating' );
+		$this->assertStringNotContainsString( 'quality_rating', $phone_url, 'Primary request must not include quality_rating' );
+
+		// quality_rating should be unknown since the optional request returned 403.
+		$this->assertEquals( 'unknown', $data['data']['quality_rating'], 'quality_rating should be unknown when optional request fails with 403' );
+	}
+
+	/**
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.

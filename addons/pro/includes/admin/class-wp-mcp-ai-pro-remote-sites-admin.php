@@ -3340,8 +3340,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		// Only request fields accessible with whatsapp_business_messaging permission.
+		// quality_rating requires whatsapp_business_management and causes a 403 with App Access Tokens.
 		$phone_endpoint = sprintf(
-			'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name,quality_rating',
+			'https://graph.facebook.com/v19.0/%s?fields=display_phone_number,verified_name',
 			rawurlencode( $phone_number_id )
 		);
 
@@ -3385,11 +3387,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		// Optionally fetch quality_rating as a separate request — requires whatsapp_business_management permission.
+		// Treat a 403 response as advisory only (the field is not available with App Access Tokens).
+		$quality         = 'unknown';
+		$quality_endpoint = sprintf(
+			'https://graph.facebook.com/v19.0/%s?fields=quality_rating',
+			rawurlencode( $phone_number_id )
+		);
+		$quality_response = wp_remote_get(
+			$quality_endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+		if ( ! is_wp_error( $quality_response ) && 200 === (int) wp_remote_retrieve_response_code( $quality_response ) ) {
+			$quality_data = json_decode( wp_remote_retrieve_body( $quality_response ), true );
+			if ( isset( $quality_data['quality_rating'] ) ) {
+				$quality = $quality_data['quality_rating'];
+			}
+		}
+
 		$result = array(
-			'phone_number'  => isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '',
-			'verified_name' => isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '',
-			'quality_rating' => isset( $phone_data['quality_rating'] ) ? $phone_data['quality_rating'] : 'unknown',
-			'message'       => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
+			'phone_number'   => isset( $phone_data['display_phone_number'] ) ? $phone_data['display_phone_number'] : '',
+			'verified_name'  => isset( $phone_data['verified_name'] ) ? $phone_data['verified_name'] : '',
+			'quality_rating' => $quality,
+			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		wp_send_json_success( $result );

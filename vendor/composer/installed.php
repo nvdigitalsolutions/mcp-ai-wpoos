@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-api-version-selection',
-        'version' => 'dev-copilot/enhance-api-version-selection',
-        'reference' => 'a4d9b84fba9ca96166f3a156c3f5549c25d569fa',
+        'pretty_version' => 'dev-copilot/fix-whatsapp-api-error',
+        'version' => 'dev-copilot/fix-whatsapp-api-error',
+        'reference' => '0b3d6cb06a50df4aaddefaf20430be8d24a84673',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-api-version-selection',
-            'version' => 'dev-copilot/enhance-api-version-selection',
-            'reference' => 'a4d9b84fba9ca96166f3a156c3f5549c25d569fa',
+            'pretty_version' => 'dev-copilot/fix-whatsapp-api-error',
+            'version' => 'dev-copilot/fix-whatsapp-api-error',
+            'reference' => '0b3d6cb06a50df4aaddefaf20430be8d24a84673',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
