@@ -1121,6 +1121,23 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'notes'                     => 'Fast and cost-effective for simpler tasks (Legacy).',
 			),
 
+			// Google Gemini 3.1 Series - Preview (February 2026 flagship).
+			array(
+				'model_name'                => 'gemini-3.1-pro-preview',
+				'provider'                  => 'google',
+				'tpm_limit'                 => 1000000,
+				'rpm_limit'                 => 360,
+				'context_window'            => 1000000,
+				'max_output_tokens'         => 64000,
+				'tier'                      => 'tier-2',
+				'supports_streaming'        => true,
+				'supports_function_calling' => true,
+				'supports_vision'           => true,
+				'cost_per_1k_input_tokens'  => 0.002,
+				'cost_per_1k_output_tokens' => 0.012,
+				'notes'                     => 'Gemini 3.1 Pro (Preview) - Latest flagship with 1M token context and 64K output. Advanced agentic reasoning and multimodal understanding. $2/$12 per 1M tokens.',
+			),
+
 			// Google Gemini 3.0 Series - Preview (Latest Generation).
 			array(
 				'model_name'                => 'gemini-3-pro-preview',
