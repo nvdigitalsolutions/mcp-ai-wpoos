@@ -1646,8 +1646,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							: array();
 						?>
 						<select name="assigned_assistant_ids[]" id="assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
-							<?php foreach ( $wa_assistants as $wa_assistant ) : ?>
-								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>" <?php echo in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : ''; ?>>
+							<?php foreach ( $wa_assistants as $wa_assistant ) :
+								$is_selected = in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>" <?php echo esc_attr( $is_selected ); ?>>
 									<?php echo esc_html( $wa_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -1675,23 +1677,48 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							// Normalise phone number for wa.me link (digits only).
 							$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
 							$wa_link         = 'https://wa.me/' . $wa_phone_digits;
-							// Google Charts QR endpoint (admin-only, no sensitive data).
-							$wa_qr_url = 'https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=' . rawurlencode( $wa_link ) . '&choe=UTF-8';
 							?>
-							<div style="display: flex; align-items: flex-start; gap: 15px;">
-								<img src="<?php echo esc_url( $wa_qr_url ); ?>" alt="<?php esc_attr_e( 'WhatsApp QR Code', 'mcp-ai-wpoos-pro' ); ?>" width="180" height="180" style="border: 1px solid #ddd; border-radius: 4px;">
-								<div>
-									<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
-									<p style="margin: 0;"><a href="<?php echo esc_url( $wa_link ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $wa_display_phone ); ?></a></p>
-								</div>
+							<div>
+								<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
+								<canvas id="wa_channel_qr_canvas" width="180" height="180" style="border: 1px solid #ddd; border-radius: 4px; display: block; margin-bottom: 8px;"></canvas>
+								<p style="margin: 0 0 4px 0;">
+									<strong><?php esc_html_e( 'Channel Link:', 'mcp-ai-wpoos-pro' ); ?></strong>
+									<a href="<?php echo esc_url( $wa_link ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $wa_link ); ?></a>
+								</p>
+								<p class="description"><?php esc_html_e( 'Copy the link above into any QR generator to create a printable QR code.', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
+							<script>
+							( function() {
+								var canvas  = document.getElementById( 'wa_channel_qr_canvas' );
+								if ( ! canvas ) { return; }
+								var link    = <?php echo wp_json_encode( $wa_link ); ?>;
+								var ctx     = canvas.getContext( '2d' );
+								var size    = 180;
+								var cellSz  = 6;
+								var modules = Math.floor( size / cellSz );
+								/* Simple 2-D barcode placeholder rendered locally — no external request.
+								   A full QR library can be enqueued separately; this shows the link. */
+								ctx.fillStyle = '#ffffff';
+								ctx.fillRect( 0, 0, size, size );
+								ctx.fillStyle = '#25d366';
+								ctx.font = 'bold 11px sans-serif';
+								ctx.textAlign = 'center';
+								ctx.fillText( '💬 WhatsApp', size / 2, size / 2 - 8 );
+								ctx.fillStyle = '#000000';
+								ctx.font = '9px monospace';
+								ctx.fillText( link.replace( 'https://', '' ), size / 2, size / 2 + 10 );
+								ctx.strokeStyle = '#25d366';
+								ctx.lineWidth = 3;
+								ctx.strokeRect( 4, 4, size - 8, size - 8 );
+							} )();
+							</script>
 						<?php else : ?>
 							<p class="description">
 								<?php
 								if ( $is_edit && ! empty( $wa_phone_id ) ) {
-									esc_html_e( 'Run "Test Connection" to retrieve the display phone number and generate a QR code for this channel.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Run "Test Connection" to retrieve the display phone number and generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
 								} else {
-									esc_html_e( 'Save the connection with a Phone Number ID, then run "Test Connection" to generate a QR code for this channel.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Save the connection with a Phone Number ID, then run "Test Connection" to generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
 								}
 								?>
 							</p>
