@@ -31,6 +31,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_whatsapp_token', array( $this, 'ajax_generate_whatsapp_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_live', array( $this, 'ajax_test_whatsapp_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 	}
 
@@ -247,6 +249,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'facebook_messenger':
 					$api_key    = isset( $_POST['messenger_page_access_token'] ) ? wp_unslash( $_POST['messenger_page_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['messenger_app_secret'] ) ? wp_unslash( $_POST['messenger_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$app_id     = isset( $_POST['messenger_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_app_id'] ) ) : '';
 					break;
 				case 'webchat':
 					// WebChat uses connection_id (handled separately as p2p_connection_id below)
@@ -287,7 +290,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			if ( 'whatsapp' === $connection_type ) {
-				$url       = 'https://graph.facebook.com/v18.0';
+				$graph_api_version = isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : 'v21.0';
+				if ( ! preg_match( '/^v\d+\.\d+$/', $graph_api_version ) ) {
+					$graph_api_version = 'v21.0';
+				}
+				$url       = 'https://graph.facebook.com/' . $graph_api_version;
 				$auth_type = 'none';
 			}
 
@@ -307,7 +314,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			if ( 'facebook_messenger' === $connection_type ) {
-				$url       = 'https://graph.facebook.com/v18.0';
+				$graph_api_version = isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : 'v21.0';
+				if ( ! preg_match( '/^v\d+\.\d+$/', $graph_api_version ) ) {
+					$graph_api_version = 'v21.0';
+				}
+				$url       = 'https://graph.facebook.com/' . $graph_api_version;
 				$auth_type = 'none';
 			}
 
@@ -356,6 +367,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'phone_number_id' => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'business_account_id' => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
+				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
 				'workspace_id'    => isset( $_POST['slack_workspace_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_workspace_id'] ) ) : '',
 				// Discord-specific fields.
@@ -1502,6 +1514,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
+						<label for="whatsapp_graph_api_version"><?php esc_html_e( 'Graph API Version', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_wa_version = $is_edit && isset( $connection['graph_api_version'] ) && $connection['graph_api_version'] ? $connection['graph_api_version'] : 'v21.0';
+						$wa_versions      = array( 'v22.0', 'v21.0', 'v20.0', 'v19.0', 'v18.0' );
+						?>
+						<select name="whatsapp_graph_api_version" id="whatsapp_graph_api_version" class="regular-text">
+							<?php foreach ( $wa_versions as $ver ) : ?>
+								<option value="<?php echo esc_attr( $ver ); ?>" <?php selected( $saved_wa_version, $ver ); ?>><?php echo esc_html( $ver ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Meta Graph API version for WhatsApp Business API requests. Select the latest version supported by your Meta app.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
 						<label for="whatsapp_access_token"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
@@ -1768,14 +1798,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Facebook Messenger -->
 				<tr class="facebook_messenger-only-field" style="display: none;">
 					<th scope="row">
+						<label for="messenger_app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="messenger_app_id" id="messenger_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your App ID from the Meta Developer Dashboard. Required to generate an App Access Token.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row">
 						<label for="messenger_page_access_token"><?php esc_html_e( 'Page Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="messenger_page_access_token" id="messenger_page_access_token" class="regular-text" value="" autocomplete="new-password">
+						<input type="text" name="messenger_page_access_token" id="messenger_page_access_token" class="regular-text" value="" autocomplete="new-password">
+						<button type="button" id="messenger_access_token_toggle" class="button button-small" style="margin-left: 5px; vertical-align: middle;" aria-label="<?php esc_attr_e( 'Hide access token', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Hide', 'mcp-ai-wpoos-pro' ); ?></button>
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing page access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Facebook Page access token.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Facebook Page Access Token. Use "Generate App Access Token" below, or obtain a long-lived Page Access Token from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -1789,8 +1830,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Facebook app secret for signature verification.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Facebook app secret from Meta Developer Dashboard (required for webhook signature validation).', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="messenger_generate_token_btn" class="button button-secondary">
+							<?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="messenger_token_status" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Enter your App ID and App Secret above, then click to generate an App Access Token. For full Page messaging, obtain a long-lived Page Access Token from Meta Business Suite.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1800,7 +1852,37 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="messenger_page_id" id="messenger_page_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['page_id'] ) ? esc_attr( $connection['page_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Optional: Facebook page ID for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: Facebook Page ID. Used to verify connection and display page details during test.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="messenger_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Messenger Connection', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="messenger_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Enter your Page Access Token above, then click to verify credentials with the Meta API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="messenger_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row">
+						<label for="messenger_graph_api_version"><?php esc_html_e( 'Graph API Version', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_msng_version = $is_edit && isset( $connection['graph_api_version'] ) && $connection['graph_api_version'] ? $connection['graph_api_version'] : 'v21.0';
+						$msng_versions      = array( 'v22.0', 'v21.0', 'v20.0', 'v19.0', 'v18.0' );
+						?>
+						<select name="messenger_graph_api_version" id="messenger_graph_api_version" class="regular-text">
+							<?php foreach ( $msng_versions as $ver ) : ?>
+								<option value="<?php echo esc_attr( $ver ); ?>" <?php selected( $saved_msng_version, $ver ); ?>><?php echo esc_html( $ver ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Meta Graph API version for Messenger API requests. Select the latest version supported by your Meta app.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1821,6 +1903,30 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/messenger' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description"><?php esc_html_e( 'Configure as Callback URL in Messenger settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #1877f2; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Get your App ID and App Secret from Meta Developer Dashboard (developers.facebook.com)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter your App ID and App Secret, then click "Generate App Access Token" for a server-level token', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'For full Page messaging, obtain a long-lived Page Access Token: go to Graph API Explorer → select your app → generate token with pages_messaging permission → exchange for long-lived token', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter your Page ID (optional, for reference)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Create a secure Verify Token (any random string)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" to verify your credentials', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Configure webhook in Meta dashboard using the Webhook URL, Verify Token, and subscribe to: messages, messaging_postbacks, messaging_optins', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0; font-size: 13px;">
+								<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+							</p>
+						</div>
 					</td>
 				</tr>
 
@@ -2115,8 +2221,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				whatsappFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
-				// WhatsApp uses Business API
-				urlField.value = 'https://graph.facebook.com/v18.0';
+				// WhatsApp uses Business API — version is driven by the Graph API Version dropdown
+				var waVersionSelect = document.getElementById('whatsapp_graph_api_version');
+				var waVersion = waVersionSelect ? waVersionSelect.value : 'v21.0';
+				urlField.value = 'https://graph.facebook.com/' + waVersion;
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
@@ -2155,8 +2263,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				messengerFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
-				// Facebook Messenger uses Graph API
-				urlField.value = 'https://graph.facebook.com/v18.0';
+				// Facebook Messenger uses Graph API — version is driven by the Graph API Version dropdown
+				var msngVersionSelect = document.getElementById('messenger_graph_api_version');
+				var msngVersion = msngVersionSelect ? msngVersionSelect.value : 'v21.0';
+				urlField.value = 'https://graph.facebook.com/' + msngVersion;
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
@@ -2195,6 +2305,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			document.getElementById('connection_type').addEventListener('change', function() {
 				toggleConnectionTypeFields(this.value);
 			});
+
+			// WhatsApp API version change: update the URL field accordingly
+			var waVersionSelect = document.getElementById('whatsapp_graph_api_version');
+			if (waVersionSelect) {
+				waVersionSelect.addEventListener('change', function() {
+					var urlField = document.getElementById('url');
+					if (urlField && urlField.readOnly) {
+						urlField.value = 'https://graph.facebook.com/' + this.value;
+					}
+				});
+			}
+
+			// Facebook Messenger API version change: update the URL field accordingly
+			var msngVersionSelect = document.getElementById('messenger_graph_api_version');
+			if (msngVersionSelect) {
+				msngVersionSelect.addEventListener('change', function() {
+					var urlField = document.getElementById('url');
+					if (urlField && urlField.readOnly) {
+						urlField.value = 'https://graph.facebook.com/' + this.value;
+					}
+				});
+			}
 
 			// WhatsApp: Access Token show/hide toggle button.
 			var tokenToggleBtn = document.getElementById('whatsapp_access_token_toggle');
@@ -2348,6 +2480,160 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (waTestResult) {
 								waTestResult.style.display = 'block';
 								waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+
+
+			// Messenger: Access Token show/hide toggle button.
+			var msngTokenToggleBtn = document.getElementById('messenger_access_token_toggle');
+			if (msngTokenToggleBtn) {
+				msngTokenToggleBtn.addEventListener('click', function() {
+					var tokenInput = document.getElementById('messenger_page_access_token');
+					if (tokenInput.type === 'password') {
+						tokenInput.type = 'text';
+						msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+						msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					} else {
+						tokenInput.type = 'password';
+						msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
+						msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					}
+				});
+			}
+
+			// Messenger: Generate App Access Token button.
+			var msngGenerateTokenBtn = document.getElementById('messenger_generate_token_btn');
+			if (msngGenerateTokenBtn) {
+				msngGenerateTokenBtn.addEventListener('click', function() {
+					var appId     = document.getElementById('messenger_app_id').value.trim();
+					var appSecret = document.getElementById('messenger_app_secret').value.trim();
+					var statusEl  = document.getElementById('messenger_token_status');
+
+					if (!appId) {
+						statusEl.style.display = 'inline';
+						statusEl.style.color = '#d63638';
+						statusEl.textContent = <?php echo wp_json_encode( __( 'Please enter your App ID first.', 'mcp-ai-wpoos-pro' ) ); ?>;
+						return;
+					}
+					if (!appSecret) {
+						statusEl.style.display = 'inline';
+						statusEl.style.color = '#d63638';
+						statusEl.textContent = <?php echo wp_json_encode( __( 'Please enter your App Secret first.', 'mcp-ai-wpoos-pro' ) ); ?>;
+						return;
+					}
+
+					msngGenerateTokenBtn.disabled = true;
+					statusEl.style.display = 'inline';
+					statusEl.style.color = '#646970';
+					statusEl.textContent = <?php echo wp_json_encode( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ); ?>;
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_generate_messenger_token');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' ) ); ?>);
+					data.append('app_id', appId);
+					data.append('app_secret', appSecret);
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							msngGenerateTokenBtn.disabled = false;
+							if (result.success) {
+								var tokenInput = document.getElementById('messenger_page_access_token');
+								tokenInput.value = result.data.access_token;
+								tokenInput.type = 'text';
+								if (msngTokenToggleBtn) {
+									msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+									msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+								}
+								statusEl.style.color = '#00a32a';
+								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
+							} else {
+								statusEl.style.color = '#d63638';
+								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
+							}
+						})
+						.catch(function() {
+							msngGenerateTokenBtn.disabled = false;
+							statusEl.style.color = '#d63638';
+							statusEl.textContent = <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?>;
+						});
+				});
+			}
+
+			// Messenger: inline Test Connection button (works before saving).
+			var msngTestBtn     = document.getElementById('messenger_test_connection_btn');
+			var msngTestSpinner = document.getElementById('messenger_test_spinner');
+			var msngTestResult  = document.getElementById('messenger_test_result');
+			if (msngTestBtn) {
+				msngTestBtn.addEventListener('click', function() {
+					var accessToken = document.getElementById('messenger_page_access_token').value.trim();
+					var pageId      = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
+					var apiVersion  = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
+
+					if (!accessToken) {
+						if (msngTestResult) {
+							msngTestResult.style.display = 'block';
+							msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Page Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					msngTestBtn.disabled = true;
+					if (msngTestSpinner) { msngTestSpinner.style.display = 'inline-block'; }
+					if (msngTestResult)  { msngTestResult.style.display = 'none'; msngTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_messenger_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_live' ) ); ?>);
+					data.append('access_token', accessToken);
+					data.append('page_id', pageId);
+					data.append('api_version', apiVersion);
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							msngTestBtn.disabled = false;
+							if (msngTestSpinner) { msngTestSpinner.style.display = 'none'; }
+							if (!msngTestResult) { return; }
+							msngTestResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.page_name)                         { items.push(<?php echo wp_json_encode( __( 'Page Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.page_name); }
+									if (d.page_id)                           { items.push(<?php echo wp_json_encode( __( 'Page ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.page_id); }
+									if (d.category)                          { items.push(<?php echo wp_json_encode( __( 'Category:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.category); }
+									if (d.fan_count !== undefined && d.fan_count !== '') { items.push(<?php echo wp_json_encode( __( 'Followers:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.fan_count); }
+									if (d.token_type)                        { items.push(<?php echo wp_json_encode( __( 'Token Type:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.token_type); }
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.warning) { html += '<p style="color:#d63638;"><strong><?php echo esc_js( __( 'Warning:', 'mcp-ai-wpoos-pro' ) ); ?></strong> ' + d.warning + '</p>'; }
+								}
+								html += '</div>';
+								msngTestResult.innerHTML = html;
+							} else {
+								msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							msngTestBtn.disabled = false;
+							if (msngTestSpinner) { msngTestSpinner.style.display = 'none'; }
+							if (msngTestResult) {
+								msngTestResult.style.display = 'block';
+								msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -3061,6 +3347,167 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( array( 'access_token' => sanitize_text_field( $body['access_token'] ) ) );
+	}
+
+	/**
+	 * AJAX handler: generate a Facebook Messenger App Access Token from Meta's API.
+	 *
+	 * Uses the client_credentials grant to obtain an App Access Token.
+	 * For full Page-level Messenger messaging a long-lived Page Access Token
+	 * should be obtained from the Meta Graph API Explorer or Meta Business Suite.
+	 *
+	 * Accepts: app_id, app_secret, nonce (POST).
+	 * Returns JSON with access_token on success, or error message on failure.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_generate_messenger_token() {
+		check_ajax_referer( 'wp_mcp_ai_generate_messenger_token', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$app_id     = isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '';
+		$app_secret = isset( $_POST['app_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['app_secret'] ) ) : '';
+
+		if ( empty( $app_id ) || empty( $app_secret ) ) {
+			wp_send_json_error( __( 'App ID and App Secret are required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_get(
+			add_query_arg(
+				array(
+					'client_id'     => $app_id,
+					'client_secret' => $app_secret,
+					'grant_type'    => 'client_credentials',
+				),
+				'https://graph.facebook.com/oauth/access_token'
+			),
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( __( 'Could not connect to Meta API. Please check your credentials and try again.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== (int) $status_code || empty( $body['access_token'] ) ) {
+			$error_message = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Failed to retrieve token from Meta API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( $error_message );
+			return;
+		}
+
+		wp_send_json_success( array( 'access_token' => sanitize_text_field( $body['access_token'] ) ) );
+	}
+
+	/**
+	 * AJAX handler: test a Facebook Messenger connection using credentials posted directly from the form.
+	 *
+	 * Verifies the access token by calling GET /me or GET /{page-id} on the Meta Graph API
+	 * and returns page name, category, and follower count on success.
+	 *
+	 * Accepts: access_token, page_id (optional), api_version, nonce (POST).
+	 * Returns JSON with page details on success, or error message on failure.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_messenger_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_messenger_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token = trim( (string) $access_token );
+		$page_id      = isset( $_POST['page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
+		$api_version  = isset( $_POST['api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['api_version'] ) ) : 'v21.0';
+
+		// Validate API version format.
+		if ( ! preg_match( '/^v\d+\.\d+$/', $api_version ) ) {
+			$api_version = 'v21.0';
+		}
+
+		if ( empty( $access_token ) ) {
+			wp_send_json_error( __( 'Access Token is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// If a page ID is provided, query that page directly; otherwise query /me (app token).
+		$target  = ! empty( $page_id ) ? rawurlencode( $page_id ) : 'me';
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s?fields=id,name,category,fan_count',
+			$api_version,
+			$target
+		);
+
+		$response = wp_remote_get(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Messenger API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== (int) $status_code ) {
+			$error_message = __( 'Invalid response from Messenger API.', 'mcp-ai-wpoos-pro' );
+			if ( isset( $body['error']['message'] ) ) {
+				$error_message = $body['error']['message'];
+			}
+			wp_send_json_error(
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'Messenger API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$error_message
+				)
+			);
+			return;
+		}
+
+		$result = array(
+			'page_name'  => isset( $body['name'] ) ? $body['name'] : '',
+			'page_id'    => isset( $body['id'] ) ? $body['id'] : '',
+			'category'   => isset( $body['category'] ) ? $body['category'] : '',
+			'fan_count'  => isset( $body['fan_count'] ) ? (int) $body['fan_count'] : '',
+			'token_type' => ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' ),
+			'message'    => __( 'Messenger connection successful! Credentials are valid.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// Warn when an App Access Token is used — it can verify identity but cannot send messages.
+		if ( empty( $page_id ) ) {
+			$result['warning'] = __( 'App Access Token detected. To send messages via Messenger, obtain a Page Access Token with pages_messaging permission from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' );
+		}
+
+		wp_send_json_success( $result );
 	}
 }
 

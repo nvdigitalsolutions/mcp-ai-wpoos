@@ -191,6 +191,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['verify_token'] = $existing_connection['verify_token'];
 			}
 
+			if ( empty( $connection_data['graph_api_version'] ) && ! empty( $existing_connection['graph_api_version'] ) ) {
+				$connection_data['graph_api_version'] = $existing_connection['graph_api_version'];
+			}
+
 			// Preserve existing workspace_id (Slack) if not provided.
 			if ( empty( $connection_data['workspace_id'] ) && ! empty( $existing_connection['workspace_id'] ) ) {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
@@ -302,6 +306,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
 			// Facebook Messenger-specific fields.
 			'page_id'         => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
+			// Graph API version (WhatsApp and Facebook Messenger).
+			'graph_api_version' => isset( $connection_data['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection_data['graph_api_version'] ) ? $connection_data['graph_api_version'] : '',
 			// WebChat P2P-specific fields.
 			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
 			// Generic API test endpoint.
@@ -691,10 +697,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Extract the Graph API version from the connection URL, falling back to v21.0.
+		$graph_api_version = 'v21.0';
+		if ( isset( $connection['url'] ) && preg_match( '#graph\.facebook\.com/(v\d+\.\d+)#', $connection['url'], $version_matches ) ) {
+			$graph_api_version = $version_matches[1];
+		} elseif ( isset( $connection['graph_api_version'] ) && preg_match( '/^v\d+\.\d+$/', $connection['graph_api_version'] ) ) {
+			$graph_api_version = $connection['graph_api_version'];
+		}
+
 		// Test 1: Get phone number info.
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and will cause a 403 with App Access Tokens.
-		$phone_endpoint = sprintf( 'https://graph.facebook.com/v21.0/%s?fields=display_phone_number,verified_name', rawurlencode( $phone_number_id ) );
+		$phone_endpoint = sprintf( 'https://graph.facebook.com/%s/%s?fields=display_phone_number,verified_name', $graph_api_version, rawurlencode( $phone_number_id ) );
 
 		$phone_response = wp_remote_get(
 			$phone_endpoint,
@@ -746,7 +760,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Optionally get quality rating — requires whatsapp_business_management permission.
 		// This is not available with App Access Tokens, so treat it as advisory only.
 		$quality               = 'unknown';
-		$quality_endpoint      = sprintf( 'https://graph.facebook.com/v21.0/%s?fields=quality_rating', rawurlencode( $phone_number_id ) );
+		$quality_endpoint      = sprintf( 'https://graph.facebook.com/%s/%s?fields=quality_rating', $graph_api_version, rawurlencode( $phone_number_id ) );
 		$quality_response      = wp_remote_get(
 			$quality_endpoint,
 			array(
