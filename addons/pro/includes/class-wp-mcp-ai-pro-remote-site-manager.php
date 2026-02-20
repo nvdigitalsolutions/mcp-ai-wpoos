@@ -744,22 +744,51 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$phone_body = wp_remote_retrieve_body( $phone_response );
 		$phone_data = json_decode( $phone_body, true );
 
+		$limited_field_access = false;
 		if ( 200 !== $phone_code ) {
-			$error_message = __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
+			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
 
-			if ( isset( $phone_data['error']['message'] ) ) {
-				$error_message = $phone_data['error']['message'];
+			// When the token lacks field-level access (Facebook error code 200 = permission
+			// error on a specific field), fall back to the base endpoint which returns only
+			// the phone number ID.  This lets tokens that have whatsapp_business_messaging
+			// for sending but cannot read phone-number fields still pass the connection test.
+			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
+				$fallback_endpoint = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_response = wp_remote_get(
+					$fallback_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $fallback_response ) && 200 === (int) wp_remote_retrieve_response_code( $fallback_response ) ) {
+					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
+					$limited_field_access = true;
+				} else {
+					return new WP_Error(
+						'wp_mcp_ai_pro_whatsapp_api_error',
+						sprintf(
+							/* translators: 1: status code, 2: error message */
+							__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+							$phone_code,
+							$error_message
+						)
+					);
+				}
+			} else {
+				return new WP_Error(
+					'wp_mcp_ai_pro_whatsapp_api_error',
+					sprintf(
+						/* translators: 1: status code, 2: error message */
+						__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+						$phone_code,
+						$error_message
+					)
+				);
 			}
-
-			return new WP_Error(
-				'wp_mcp_ai_pro_whatsapp_api_error',
-				sprintf(
-					/* translators: 1: status code, 2: error message */
-					__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
-					$phone_code,
-					$error_message
-				)
-			);
 		}
 
 		// Extract phone number details.
@@ -838,6 +867,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$results['warning'] = isset( $results['warning'] )
 				? $results['warning'] . ' ' . $quality_warning
 				: $quality_warning;
+		}
+
+		// Note when the token lacks permission to read phone-number details.
+		if ( $limited_field_access ) {
+			$field_note = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'mcp-ai-wpoos-pro' );
+			$results['warning'] = isset( $results['warning'] )
+				? $results['warning'] . ' ' . $field_note
+				: $field_note;
 		}
 
 		return $results;

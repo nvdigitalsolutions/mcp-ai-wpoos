@@ -1236,6 +1236,87 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that ajax_test_whatsapp_live succeeds when the fields request returns a 403
+	 * with Facebook error code 200 (field-level permission error).
+	 *
+	 * In this scenario the token can send messages (whatsapp_business_messaging) but
+	 * lacks the permission to read display_phone_number / verified_name.  The handler
+	 * must fall back to the base endpoint, report success, and include a warning.
+	 */
+	public function test_ajax_test_whatsapp_live_succeeds_on_fields_403_with_fallback() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 403 with FB error code 200.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => '(#200) You do not have permission to access this field.',
+								'type'    => 'OAuthException',
+								'code'    => 200,
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 403,
+						'message' => 'Forbidden',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '111222333444555' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = 'test_limited_access_token';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 403 on the fields request.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $data['data']['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.
