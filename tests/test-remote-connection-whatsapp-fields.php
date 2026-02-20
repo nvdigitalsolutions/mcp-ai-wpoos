@@ -518,6 +518,75 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a 403 with FB code 200 on BOTH primary and fallback endpoints still passes.
+	 *
+	 * Some access tokens return 403 + FB code 200 on the base phone number node as well as on
+	 * the specific fields request. The token is still valid (we receive a proper Facebook
+	 * permission error, not an authentication failure), so the connection test must succeed.
+	 */
+	public function test_whatsapp_connection_succeeds_when_both_endpoints_return_403_with_field_permission_error() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Ultra Limited Permissions',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_ultra_limited',
+			'api_secret'      => 'test_app_secret',
+			'phone_number_id' => '555666777888999',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// Both the fields endpoint and the base endpoint return 403 with FB error code 200.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'error' => array(
+							'message' => '(#200) You do not have permission to access this field.',
+							'type'    => 'OAuthException',
+							'code'    => 200,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 403,
+					'message' => 'Forbidden',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must succeed even when both endpoints return 403 with FB code 200.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail when both endpoints return 403 with FB error code 200' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success' );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $result, 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $result['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
 	 * Test that a 403 with a non-200 Facebook error code (e.g. invalid token) still fails.
 	 *
 	 * Error code 190 means the token is invalid/expired and must not trigger the fallback.

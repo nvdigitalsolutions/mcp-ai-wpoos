@@ -3401,15 +3401,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
 					$limited_field_access = true;
 				} else {
-					wp_send_json_error(
-						sprintf(
-							/* translators: 1: status code, 2: error message */
-							__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
-							$phone_code,
-							$error_message
-						)
-					);
-					return;
+					// Check if the fallback also returned a field-permission error (FB code 200).
+					// This means the token is valid but lacks permission to read any phone number fields.
+					// Messaging will still work if the token has whatsapp_business_messaging scope.
+					$fallback_http_code  = ! is_wp_error( $fallback_response ) ? (int) wp_remote_retrieve_response_code( $fallback_response ) : 0;
+					$fallback_body       = ! is_wp_error( $fallback_response ) ? json_decode( wp_remote_retrieve_body( $fallback_response ), true ) : array();
+					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
+
+					if ( 403 === $fallback_http_code && 200 === $fallback_error_code ) {
+						$phone_data           = array();
+						$limited_field_access = true;
+					} else {
+						wp_send_json_error(
+							sprintf(
+								/* translators: 1: status code, 2: error message */
+								__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+								$phone_code,
+								$error_message
+							)
+						);
+						return;
+					}
 				}
 			} else {
 				wp_send_json_error(
