@@ -72,12 +72,17 @@ This plugin provides comprehensive WhatsApp Business API integration through:
 
 3. **Enter Credentials**
    ```
-   Access Token: [Your WhatsApp Access Token]
-   App Secret: [Your WhatsApp App Secret]
+   Access Token: [Your WhatsApp System User Access Token]
+   App Secret:   [Your Meta App Secret — found in Meta App Dashboard → Settings → Basic]
    Phone Number ID: [Your 15-digit Phone Number ID]
    Business Account ID: [Optional]
    Verify Token: [Your random verify token]
    ```
+
+   > **App Secret note:** The App Secret field is optional when the Meta App Dashboard setting
+   > "Require App Secret Proof for Server API calls" (App Dashboard → Settings → Advanced) is **off**.
+   > It is **required** when that setting is **on**, and is always used to validate incoming
+   > webhook signatures.  Get it from **Meta App Dashboard → Settings → Basic → App Secret**.
 
 4. **Copy Webhook URL**
    - The webhook URL will be displayed:
@@ -297,6 +302,7 @@ Monitor your tier status in Meta Business Manager.
 
 | Code | Error | Solution |
 |------|-------|----------|
+| 1 (HTTP 400) | Invalid appsecret_proof | The App Secret in the connection settings does not match the Meta App Secret, or the Meta app has "Require App Secret Proof" enabled but no App Secret was saved. Open the connection, enter the correct App Secret (Meta App Dashboard → Settings → Basic), and save. |
 | 100 | Invalid parameter | Check parameter format and values |
 | 131000 | Access token invalid | Generate new token or check permissions |
 | 131009 | User phone number not on WhatsApp | Verify recipient has WhatsApp |

@@ -817,6 +817,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					);
 				}
 
+			// When no appsecret_proof was sent but Meta still returns 400 "Invalid appsecret_proof",
+			// the app has "Require App Secret Proof" enabled.  Guide the user to enter the App Secret.
+			} elseif ( 400 === (int) $phone_code && ! $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_whatsapp_appsecret_required',
+					__( 'The Meta app requires App Secret Proof for API calls. Please enter your Meta App Secret in the App Secret field of this connection and try again.', 'mcp-ai-wpoos-pro' )
+				);
+
 			// When the token lacks field-level access (Facebook error code 200 = permission
 			// error on a specific field), fall back to the base endpoint which returns only
 			// the phone number ID.  This lets tokens that have whatsapp_business_messaging
