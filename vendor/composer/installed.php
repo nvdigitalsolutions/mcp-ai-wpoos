@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-whatsapp-channel-connection',
-        'version' => 'dev-copilot/fix-whatsapp-channel-connection',
-        'reference' => '39d92f2bd31b7ce55858cf3ebba7a44ffdbf48b3',
+        'pretty_version' => 'dev-copilot/add-whatsapp-messaging-support',
+        'version' => 'dev-copilot/add-whatsapp-messaging-support',
+        'reference' => '765bf1c4d266a2f3d85e20876adfaeb7881b0a3d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-whatsapp-channel-connection',
-            'version' => 'dev-copilot/fix-whatsapp-channel-connection',
-            'reference' => '39d92f2bd31b7ce55858cf3ebba7a44ffdbf48b3',
+            'pretty_version' => 'dev-copilot/add-whatsapp-messaging-support',
+            'version' => 'dev-copilot/add-whatsapp-messaging-support',
+            'reference' => '765bf1c4d266a2f3d85e20876adfaeb7881b0a3d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
