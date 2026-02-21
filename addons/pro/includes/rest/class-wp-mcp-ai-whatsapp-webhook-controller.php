@@ -821,7 +821,6 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// Call the internal chat REST endpoint to generate the AI response.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'assistant_id' => $assistant_id,
@@ -835,15 +834,50 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// The cron job runs without a logged-in user (user ID 0). To pass the
+		// permission check on the /mcp-ai/v1/chat endpoint, temporarily switch to
+		// an administrator context and create a matching nonce.
+		$original_user_id = get_current_user_id();
+		$admin_users      = get_users(
+			array(
+				'role'   => 'administrator',
+				'number' => 1,
+				'fields' => 'ID',
+			)
+		);
+		if ( ! empty( $admin_users ) ) {
+			wp_set_current_user( $admin_users[0] );
+			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		} else {
+			// No admin user found. The request will succeed only if the assigned
+			// assistant has a public capability; otherwise the permission check
+			// will reject it. Log a warning to aid debugging.
+			WP_MCP_AI_Logger::log_error(
+				'WhatsApp AI reply: no administrator user found; internal chat request may fail for non-public assistants.',
+				array( 'assistant_id' => $assistant_id )
+			);
+		}
+
 		$response = rest_do_request( $request );
 
+		// Restore the original user regardless of the response result.
+		wp_set_current_user( $original_user_id );
+
 		if ( $response->is_error() ) {
-			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: chat request failed.', array( 'assistant_id' => $assistant_id ) );
+			$error_data = $response->get_data();
+			WP_MCP_AI_Logger::log_error(
+				'WhatsApp AI reply: chat request failed.',
+				array(
+					'assistant_id' => $assistant_id,
+					'error_code'   => is_array( $error_data ) && isset( $error_data['code'] ) ? sanitize_text_field( (string) $error_data['code'] ) : '',
+				)
+			);
 			return;
 		}
 
-		$data    = $response->get_data();
-		$content = isset( $data['content'] ) && is_string( $data['content'] ) ? $data['content'] : '';
+		// The /mcp-ai/v1/chat endpoint wraps the OpenAI-format LLM response in a
+		// 'data' key. Extract the assistant reply from the first choice's message.
+		$content = $this->extract_content_from_chat_response( $response->get_data() );
 
 		if ( '' === $content ) {
 			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: empty content from assistant.', array( 'assistant_id' => $assistant_id ) );
@@ -1869,6 +1903,38 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return $whatsapp_connections;
+	}
+
+	/**
+	 * Extract the assistant reply text from a /mcp-ai/v1/chat REST response payload.
+	 *
+	 * The chat endpoint returns the raw OpenAI-format LLM response wrapped inside
+	 * a 'data' key:
+	 *   { assistant_id: ..., data: { choices: [{ message: { content: '...' } }] } }
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $response_data Data returned by WP_REST_Response::get_data().
+	 * @return string Assistant reply text, or empty string if not found.
+	 */
+	protected function extract_content_from_chat_response( $response_data ) {
+		if ( ! is_array( $response_data ) ) {
+			return '';
+		}
+
+		$llm_data = isset( $response_data['data'] ) && is_array( $response_data['data'] ) ? $response_data['data'] : array();
+		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+
+		if ( empty( $choices ) ) {
+			return '';
+		}
+
+		$first_choice = reset( $choices );
+		if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+			return $first_choice['message']['content'];
+		}
+
+		return '';
 	}
 }
 

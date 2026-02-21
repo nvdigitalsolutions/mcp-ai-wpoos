@@ -728,4 +728,91 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		// If we get here without exceptions the early-return guards are working.
 		$this->assertTrue( true );
 	}
+
+	/**
+	 * Test that extract_content_from_chat_response returns the assistant reply
+	 * from the correct location in the /mcp-ai/v1/chat response structure.
+	 */
+	public function test_extract_content_from_chat_response_returns_correct_content() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		// Simulate the payload returned by the /mcp-ai/v1/chat endpoint.
+		// Format: { assistant_id, data: { choices: [{ message: { content } }] } }.
+		$response_data = array(
+			'assistant_id' => 42,
+			'data'         => array(
+				'id'      => 'chatcmpl-abc123',
+				'object'  => 'chat.completion',
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Hello from the assistant!',
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$content = $method->invoke( $controller, $response_data );
+
+		$this->assertEquals( 'Hello from the assistant!', $content, 'Should extract content from choices[0].message.content' );
+	}
+
+	/**
+	 * Test that extract_content_from_chat_response returns empty string for
+	 * invalid or missing response structures.
+	 */
+	public function test_extract_content_from_chat_response_returns_empty_for_invalid_data() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		// Non-array input.
+		$this->assertEquals( '', $method->invoke( $controller, null ), 'Should return empty for null' );
+		$this->assertEquals( '', $method->invoke( $controller, 'string' ), 'Should return empty for string' );
+
+		// Empty array.
+		$this->assertEquals( '', $method->invoke( $controller, array() ), 'Should return empty for empty array' );
+
+		// Missing 'data' key.
+		$this->assertEquals( '', $method->invoke( $controller, array( 'assistant_id' => 1 ) ), 'Should return empty when data key is missing' );
+
+		// Missing choices.
+		$this->assertEquals(
+			'',
+			$method->invoke( $controller, array( 'data' => array( 'choices' => array() ) ) ),
+			'Should return empty when choices array is empty'
+		);
+
+		// Flat 'content' key at top level (old incorrect structure) — must NOT be returned.
+		$wrong_structure = array( 'content' => 'wrong location' );
+		$this->assertEquals( '', $method->invoke( $controller, $wrong_structure ), 'Should not read from top-level content key' );
+	}
 }
