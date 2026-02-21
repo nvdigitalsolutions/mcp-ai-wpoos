@@ -784,11 +784,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
 			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
 
+			// When appsecret_proof is invalid (HTTP 400), the stored app secret does not
+			// match the app or the app does not require it.  Clear appsecret_proof and retry
+			// without it so the connection test can still succeed with a valid access token.
+			if ( 400 === (int) $phone_code && $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				$appsecret_proof  = '';
+				$retry_query_args = array( 'fields' => 'display_phone_number,verified_name' );
+				$retry_endpoint   = add_query_arg(
+					$retry_query_args,
+					sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+				);
+				$retry_response = wp_remote_get(
+					$retry_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $retry_response ) && 200 === (int) wp_remote_retrieve_response_code( $retry_response ) ) {
+					$phone_data = json_decode( wp_remote_retrieve_body( $retry_response ), true );
+				} else {
+					return new WP_Error(
+						'wp_mcp_ai_pro_whatsapp_api_error',
+						sprintf(
+							/* translators: 1: status code, 2: error message */
+							__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+							$phone_code,
+							$error_message
+						)
+					);
+				}
+
 			// When the token lacks field-level access (Facebook error code 200 = permission
 			// error on a specific field), fall back to the base endpoint which returns only
 			// the phone number ID.  This lets tokens that have whatsapp_business_messaging
 			// for sending but cannot read phone-number fields still pass the connection test.
-			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
+			} elseif ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
 				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
 				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
 				$fallback_response = wp_remote_get(

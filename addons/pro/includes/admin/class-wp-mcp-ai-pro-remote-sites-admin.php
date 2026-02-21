@@ -231,7 +231,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					break;
 				case 'whatsapp':
 					$api_key = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1518,16 +1517,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<!-- Type-specific fields for WhatsApp -->
-				<tr class="whatsapp-only-field" style="display: none;">
-					<th scope="row">
-						<label for="whatsapp_app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
-					</th>
-					<td>
-						<input type="text" name="whatsapp_app_id" id="whatsapp_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your App ID from the Meta Developer Dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
 						<label for="whatsapp_system_user_id"><?php esc_html_e( 'System User ID', 'mcp-ai-wpoos-pro' ); ?></label>
@@ -3389,11 +3378,44 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
 			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
 
+			// When appsecret_proof is invalid (HTTP 400), the stored app secret does not
+			// match the app or the app does not require it.  Clear appsecret_proof and retry
+			// without it so the connection test can still succeed with a valid access token.
+			if ( 400 === (int) $phone_code && $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				$appsecret_proof  = '';
+				$retry_query_args = array( 'fields' => 'display_phone_number,verified_name' );
+				$retry_endpoint   = add_query_arg(
+					$retry_query_args,
+					sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+				);
+				$retry_response = wp_remote_get(
+					$retry_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $retry_response ) && 200 === (int) wp_remote_retrieve_response_code( $retry_response ) ) {
+					$phone_data = json_decode( wp_remote_retrieve_body( $retry_response ), true );
+				} else {
+					wp_send_json_error(
+						sprintf(
+							/* translators: 1: status code, 2: error message */
+							__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+							$phone_code,
+							$error_message
+						)
+					);
+					return;
+				}
+
 			// When the token lacks field-level access (Facebook error code 200 = permission
 			// error on a specific field), fall back to the base endpoint which returns only
 			// the phone number ID.  This lets tokens with whatsapp_business_messaging scope
 			// for sending but without phone-number field read permissions still pass.
-			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
+			} elseif ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
 				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
 				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
 				$fallback_response = wp_remote_get(

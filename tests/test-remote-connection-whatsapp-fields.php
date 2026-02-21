@@ -1031,4 +1031,91 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'system_user_id', $saved, 'system_user_id key should exist' );
 		$this->assertEquals( '', $saved['system_user_id'], 'system_user_id should be empty string when not provided' );
 	}
+
+	/**
+	 * Test that a 400 "Invalid appsecret_proof" response causes a retry without appsecret_proof.
+	 *
+	 * When the stored app secret is incorrect the Meta API returns HTTP 400 with an
+	 * "Invalid appsecret_proof" error message.  The connection test must detect this,
+	 * clear the proof, retry without it, and succeed if the access token itself is valid.
+	 */
+	public function test_whatsapp_connection_retries_without_appsecret_proof_on_400() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Bad App Secret',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_valid_access_token',
+			'api_secret'      => 'wrong_app_secret',
+			'phone_number_id' => '123456789000001',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The first request (with appsecret_proof) returns HTTP 400.
+			if ( false !== strpos( $url, 'appsecret_proof' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message'    => 'Invalid appsecret_proof provided in the API argument',
+								'type'       => 'OAuthException',
+								'code'       => 1,
+								'fbtrace_id' => 'abc123',
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 400,
+						'message' => 'Bad Request',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The retry without appsecret_proof succeeds.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'display_phone_number' => '+1 555-000-9999',
+						'verified_name'        => 'Test Business Retry',
+						'id'                   => '123456789000001',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must succeed after retrying without appsecret_proof.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail when retrying without appsecret_proof' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success after retry' );
+		$this->assertEquals( '+1 555-000-9999', $result['phone_number'], 'Phone number from retry response should be returned' );
+	}
 }
