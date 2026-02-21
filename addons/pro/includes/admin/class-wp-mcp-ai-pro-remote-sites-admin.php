@@ -29,7 +29,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_generate_whatsapp_token', array( $this, 'ajax_generate_whatsapp_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_live', array( $this, 'ajax_test_whatsapp_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
@@ -231,8 +230,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key   = isset( $_POST['telegram_bot_token'] ) ? wp_unslash( $_POST['telegram_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'whatsapp':
-					$api_key    = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$api_secret = isset( $_POST['whatsapp_app_secret'] ) ? wp_unslash( $_POST['whatsapp_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
 				case 'slack':
@@ -1526,7 +1524,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="whatsapp_app_id" id="whatsapp_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your App ID from the Meta Developer Dashboard. Required to generate an App Access Token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Your App ID from the Meta Developer Dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1570,34 +1568,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your WhatsApp Cloud API System User Access Token. This must be a System User Access Token (from Meta Business Suite → Business Settings → System Users) or a User Access Token with the whatsapp_business_messaging permission — NOT an App Access Token. App Access Tokens (format: {app_id}|{hash}) cannot send or receive WhatsApp messages.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
-					</td>
-				</tr>
-
-				<tr class="whatsapp-only-field" style="display: none;">
-					<th scope="row">
-						<label for="whatsapp_app_secret"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
-					</th>
-					<td>
-						<input type="password" name="whatsapp_app_secret" id="whatsapp_app_secret" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app secret.', 'mcp-ai-wpoos-pro' ); ?></p>
-						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your App Secret from the Meta Developer Dashboard. Required for validating incoming webhook signatures (HMAC-SHA256). Do not confuse this with the access token.', 'mcp-ai-wpoos-pro' ); ?></p>
-						<?php endif; ?>
-					</td>
-				</tr>
-
-				<tr class="whatsapp-only-field" style="display: none;">
-					<th scope="row"><?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<button type="button" id="whatsapp_generate_token_btn" class="button button-secondary">
-							<?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?>
-						</button>
-						<span id="whatsapp_token_status" style="margin-left: 10px; display: none;"></span>
-						<p class="description">
-							<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
-							<?php esc_html_e( 'This generates a Meta App Access Token (format: {app_id}|{hash}) which is NOT suitable for sending or receiving WhatsApp messages via the Cloud API. For messaging, use a System User Access Token from Meta Business Suite (Business Settings → System Users).', 'mcp-ai-wpoos-pro' ); ?>
-						</p>
 					</td>
 				</tr>
 
@@ -1779,7 +1749,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</p>
 							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Get credentials from Meta Developer Dashboard (developers.facebook.com)', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Enter your App ID and App Secret, then click "Generate App Access Token" to auto-populate the Access Token', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Get your System User Access Token from Meta Business Suite (Business Settings → System Users)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Enter your Phone Number ID and Display Phone Number (e.g. +1 555 000 1234)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Assign one or more AI Assistants — they will respond to members who message via the QR code or channel link', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create a secure Verify Token (random string)', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -2498,68 +2468,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
-			// WhatsApp: Generate App Access Token button
-			var generateTokenBtn = document.getElementById('whatsapp_generate_token_btn');
-			if (generateTokenBtn) {
-				generateTokenBtn.addEventListener('click', function() {
-					var appId = document.getElementById('whatsapp_app_id').value.trim();
-					var appSecret = document.getElementById('whatsapp_app_secret').value.trim();
-					var statusEl = document.getElementById('whatsapp_token_status');
-
-					if (!appId) {
-						statusEl.style.display = 'inline';
-						statusEl.style.color = '#d63638';
-						statusEl.textContent = <?php echo wp_json_encode( __( 'Please enter your App ID first.', 'mcp-ai-wpoos-pro' ) ); ?>;
-						return;
-					}
-					if (!appSecret) {
-						statusEl.style.display = 'inline';
-						statusEl.style.color = '#d63638';
-						statusEl.textContent = <?php echo wp_json_encode( __( 'Please enter your App Secret first.', 'mcp-ai-wpoos-pro' ) ); ?>;
-						return;
-					}
-
-					generateTokenBtn.disabled = true;
-					statusEl.style.display = 'inline';
-					statusEl.style.color = '#646970';
-					statusEl.textContent = <?php echo wp_json_encode( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ); ?>;
-
-					var data = new FormData();
-					data.append('action', 'wp_mcp_ai_generate_whatsapp_token');
-					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_generate_whatsapp_token' ) ); ?>);
-					data.append('app_id', appId);
-					data.append('app_secret', appSecret);
-
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
-						.then(function(response) {
-							if (!response.ok) { throw new Error('HTTP ' + response.status); }
-							return response.json();
-						})
-						.then(function(result) {
-							generateTokenBtn.disabled = false;
-							if (result.success) {
-								var tokenInput = document.getElementById('whatsapp_access_token');
-								tokenInput.value = result.data.access_token;
-								tokenInput.type = 'text';
-								if (tokenToggleBtn) {
-									tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-									tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-								}
-								statusEl.style.color = '#00a32a';
-								statusEl.textContent = <?php echo wp_json_encode( __( '✓ Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
-							} else {
-								statusEl.style.color = '#d63638';
-								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
-							}
-						})
-						.catch(function() {
-							generateTokenBtn.disabled = false;
-							statusEl.style.color = '#d63638';
-							statusEl.textContent = <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?>;
-						});
-				});
-			}
-
 			// WhatsApp: inline Test Connection button (works before saving).
 			var waTestBtn     = document.getElementById('whatsapp_test_connection_btn');
 			var waTestSpinner = document.getElementById('whatsapp_test_spinner');
@@ -2593,9 +2501,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' ) ); ?>);
 					data.append('access_token', accessToken);
 					data.append('phone_number_id', phoneNumberId);
-					var appSecretEl = document.getElementById('whatsapp_app_secret');
 					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
-					if (appSecretEl) { data.append('app_secret', appSecretEl.value.trim()); }
 					if (connectionIdEl) { data.append('connection_id', connectionIdEl.value.trim()); }
 
 					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
@@ -3587,64 +3493,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
-	}
-
-	/**
-	 * AJAX handler: generate a WhatsApp App Access Token from Meta's API.
-	 *
-	 * Accepts: app_id, app_secret, nonce (POST).
-	 * Returns JSON with access_token on success, or error message on failure.
-	 *
-	 * @since 1.0.0
-	 */
-	public function ajax_generate_whatsapp_token() {
-		check_ajax_referer( 'wp_mcp_ai_generate_whatsapp_token', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
-			return;
-		}
-
-		$app_id     = isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '';
-		$app_secret = isset( $_POST['app_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['app_secret'] ) ) : '';
-
-		if ( empty( $app_id ) || empty( $app_secret ) ) {
-			wp_send_json_error( __( 'App ID and App Secret are required.', 'mcp-ai-wpoos-pro' ) );
-			return;
-		}
-
-		$response = wp_remote_get(
-			add_query_arg(
-				array(
-					'client_id'     => $app_id,
-					'client_secret' => $app_secret,
-					'grant_type'    => 'client_credentials',
-				),
-				'https://graph.facebook.com/oauth/access_token'
-			),
-			array(
-				'timeout' => 15,
-				'headers' => array(
-					'Accept' => 'application/json',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( __( 'Could not connect to Meta API. Please check your credentials and try again.', 'mcp-ai-wpoos-pro' ) );
-			return;
-		}
-
-		$status_code = wp_remote_retrieve_response_code( $response );
-		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		if ( 200 !== (int) $status_code || empty( $body['access_token'] ) ) {
-			$error_message = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Failed to retrieve token from Meta API.', 'mcp-ai-wpoos-pro' );
-			wp_send_json_error( $error_message );
-			return;
-		}
-
-		wp_send_json_success( array( 'access_token' => sanitize_text_field( $body['access_token'] ) ) );
 	}
 
 	/**
