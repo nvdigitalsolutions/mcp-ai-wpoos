@@ -30,6 +30,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_live', array( $this, 'ajax_test_whatsapp_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_auto_reply', array( $this, 'ajax_test_whatsapp_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
@@ -1610,6 +1611,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="whatsapp_test_auto_reply_to" class="regular-text" placeholder="<?php esc_attr_e( '+1 555 000 1234 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'To number (optional — if provided, the AI reply will be sent via WhatsApp)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="whatsapp_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="whatsapp_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="whatsapp_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="whatsapp_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
 						<label for="whatsapp_business_account_id"><?php esc_html_e( 'Business Account ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2571,6 +2595,76 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
+
+			// WhatsApp: Test Auto-Reply button.
+			var waAutoReplyBtn     = document.getElementById('whatsapp_test_auto_reply_btn');
+			var waAutoReplySpinner = document.getElementById('whatsapp_test_auto_reply_spinner');
+			var waAutoReplyResult  = document.getElementById('whatsapp_test_auto_reply_result');
+			if (waAutoReplyBtn) {
+				waAutoReplyBtn.addEventListener('click', function() {
+					var msgEl = document.getElementById('whatsapp_test_auto_reply_msg');
+					var toEl  = document.getElementById('whatsapp_test_auto_reply_to');
+					var msg   = msgEl ? msgEl.value.trim() : '';
+					var to    = toEl  ? toEl.value.trim()  : '';
+
+					if (!msg) {
+						if (waAutoReplyResult) {
+							waAutoReplyResult.style.display = 'block';
+							waAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					waAutoReplyBtn.disabled = true;
+					if (waAutoReplySpinner) { waAutoReplySpinner.style.display = 'inline-block'; }
+					if (waAutoReplyResult)  { waAutoReplyResult.style.display = 'none'; waAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_whatsapp_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (to) { data.append('test_to', to); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							waAutoReplyBtn.disabled = false;
+							if (waAutoReplySpinner) { waAutoReplySpinner.style.display = 'none'; }
+							if (!waAutoReplyResult) { return; }
+							waAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #25d366;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test number via WhatsApp.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+								} else if (to && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via WhatsApp failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+								}
+								html += '</div>';
+								waAutoReplyResult.innerHTML = html;
+							} else {
+								waAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							waAutoReplyBtn.disabled = false;
+							if (waAutoReplySpinner) { waAutoReplySpinner.style.display = 'none'; }
+							if (waAutoReplyResult) {
+								waAutoReplyResult.style.display = 'block';
+								waAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
 
 
 			// Messenger: Access Token show/hide toggle button.
@@ -3543,7 +3637,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Optionally fetch quality_rating as a separate request — requires whatsapp_business_management permission.
 		// Treat a 403 response as advisory only (quality_rating requires
 		// whatsapp_business_management, not whatsapp_business_messaging).
-		$quality = 'UNKNOWN';
+		$quality                  = 'UNKNOWN';
+		$quality_permission_denied = false;
 
 		$quality_query_args = array( 'fields' => 'quality_rating' );
 		if ( $appsecret_proof ) {
@@ -3567,6 +3662,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( isset( $quality_data['quality_rating'] ) ) {
 				$quality = strtoupper( $quality_data['quality_rating'] );
 			}
+		} else {
+			// Non-200 response or WP error means the token lacks whatsapp_business_management permission.
+			$quality_permission_denied = true;
 		}
 
 		$result = array(
@@ -3578,12 +3676,181 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// When quality is UNKNOWN, add an explanatory note (not a warning — messaging is unaffected).
 		if ( 'UNKNOWN' === $quality ) {
-			$result['quality_note'] = __( 'Quality Rating is UNKNOWN because it requires the whatsapp_business_management permission. This does not affect messaging. If you have whatsapp_business_messaging access (enabled via Meta Advanced Access / email approval), your bot will send and receive messages normally.', 'mcp-ai-wpoos-pro' );
+			if ( $quality_permission_denied ) {
+				// The quality API call failed — the token likely lacks whatsapp_business_management.
+				$result['quality_note'] = __( 'Quality Rating is UNKNOWN because it requires the whatsapp_business_management permission. This does not affect messaging. If you have whatsapp_business_messaging access (enabled via Meta Advanced Access / email approval), your bot will send and receive messages normally.', 'mcp-ai-wpoos-pro' );
+			} else {
+				// The API call succeeded but Meta has not yet assigned a quality rating to this number
+				// (e.g. new number or insufficient messaging volume). This is normal for new accounts.
+				$result['quality_note'] = __( 'Quality Rating is UNKNOWN — Meta has not yet assigned a rating to this phone number. This is normal for new numbers or those with low messaging volume and does not affect messaging.', 'mcp-ai-wpoos-pro' );
+			}
 		}
 
 		// Note when the token lacks permission to read phone-number details.
 		if ( $limited_field_access ) {
 			$result['warning'] = __( 'Note: Phone number display details are unavailable (requires whatsapp_business_management permission). If your access token has the whatsapp_business_messaging scope — enabled via Meta Advanced Access (email approval) — messaging will work normally. Enter your display phone number manually in the "Display Phone Number" field to generate the channel QR code and link.', 'mcp-ai-wpoos-pro' );
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: test the WhatsApp auto-reply flow.
+	 *
+	 * Simulates an incoming WhatsApp message by calling the internal chat endpoint
+	 * with the first assigned assistant for the connection. If a recipient phone
+	 * number is provided the AI reply is also sent via the WhatsApp Cloud API so
+	 * the end-to-end flow (webhook → AI → send) can be verified from the admin UI.
+	 *
+	 * Accepts (POST): connection_id, test_message, test_to (optional), nonce.
+	 * Returns JSON success with ai_reply and sent (bool), or an error string.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_whatsapp_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_whatsapp_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_to       = isset( $_POST['test_to'] ) ? sanitize_text_field( wp_unslash( $_POST['test_to'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		// Call the internal chat REST endpoint using an admin user context.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		// The current user is already an admin (capability check above), but we
+		// need to set the nonce so the chat endpoint accepts the internal request.
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		// Extract the assistant reply text from the chat endpoint response.
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a recipient number was provided, send the reply via the WhatsApp Cloud API.
+		if ( ! empty( $test_to ) && ! empty( $connection['api_key'] ) && ! empty( $connection['phone_number_id'] ) ) {
+			$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+			if ( '' !== $access_token ) {
+				$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+					? sanitize_text_field( $connection['graph_api_version'] )
+					: 'v19.0';
+				$phone_number_id   = sanitize_text_field( $connection['phone_number_id'] );
+				$sanitized_to      = preg_replace( '/[^0-9+]/', '', $test_to );
+
+				$endpoint = sprintf(
+					'https://graph.facebook.com/%s/%s/messages',
+					rawurlencode( $graph_api_version ),
+					rawurlencode( $phone_number_id )
+				);
+
+				$payload = array(
+					'messaging_product' => 'whatsapp',
+					'to'                => $sanitized_to,
+					'type'              => 'text',
+					'text'              => array( 'body' => $ai_reply ),
+				);
+
+				$body = wp_json_encode( $payload );
+				if ( false !== $body ) {
+					$send_result = wp_remote_post(
+						$endpoint,
+						array(
+							'headers' => array(
+								'Content-Type'  => 'application/json',
+								'Authorization' => 'Bearer ' . $access_token,
+							),
+							'timeout' => 20,
+							'body'    => $body,
+						)
+					);
+
+					if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+						$result['sent'] = true;
+					} else {
+						$result['send_error'] = is_wp_error( $send_result )
+							? $send_result->get_error_message()
+							: wp_remote_retrieve_body( $send_result );
+					}
+				}
+			}
 		}
 
 		wp_send_json_success( $result );
