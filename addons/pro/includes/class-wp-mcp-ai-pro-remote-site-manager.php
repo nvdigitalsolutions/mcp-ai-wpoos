@@ -195,6 +195,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['graph_api_version'] = $existing_connection['graph_api_version'];
 			}
 
+			if ( empty( $connection_data['display_phone_number'] ) && ! empty( $existing_connection['display_phone_number'] ) ) {
+				$connection_data['display_phone_number'] = $existing_connection['display_phone_number'];
+			}
+
 			// Preserve existing workspace_id (Slack) if not provided.
 			if ( empty( $connection_data['workspace_id'] ) && ! empty( $existing_connection['workspace_id'] ) ) {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
@@ -300,6 +304,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
+			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
 			'business_account_id' => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
 			'verify_token'        => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
 			// Slack-specific fields.
