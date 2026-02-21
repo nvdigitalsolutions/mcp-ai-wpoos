@@ -40,10 +40,21 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	protected $rest_base = 'webhooks/whatsapp';
 
 	/**
+	 * Cron hook for dispatching AI replies to incoming WhatsApp messages.
+	 */
+	const REPLY_CRON_HOOK = 'wp_mcp_ai_whatsapp_send_ai_reply';
+
+	/**
+	 * Default WhatsApp Cloud API Graph version used when none is stored on the connection.
+	 */
+	const DEFAULT_GRAPH_API_VERSION = 'v19.0';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_whatsapp_reply_job' ) );
 	}
 
 	/**
@@ -689,27 +700,201 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function maybe_auto_reply( $message_data, $context ) {
 		// Determine which connection received this message based on phone_number_id.
-		$phone_number_id     = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
-		$connection          = ! empty( $phone_number_id ) ? $this->get_connection_by_phone_number_id( $phone_number_id ) : null;
+		$phone_number_id        = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
+		$connection             = ! empty( $phone_number_id ) ? $this->get_connection_by_phone_number_id( $phone_number_id ) : null;
 		$assigned_assistant_ids = $connection ? $this->get_assigned_assistant_ids( $connection ) : array();
 
 		/**
 		 * Filter whether to auto-reply to WhatsApp messages.
 		 *
+		 * Defaults to true when the connection has one or more assigned AI assistants,
+		 * so that connections configured for chat channel routing reply automatically.
+		 *
 		 * @since 1.0.0
 		 *
-		 * @param bool  $auto_reply  Whether to auto-reply. Default false.
+		 * @param bool  $auto_reply  Whether to auto-reply. Defaults to true when assistant IDs are assigned.
 		 * @param array $message_data Parsed message data.
 		 * @param array $context Full webhook context.
 		 */
-		$should_reply = apply_filters( 'wp_mcp_ai_whatsapp_should_auto_reply', false, $message_data, $context );
+		$should_reply = apply_filters( 'wp_mcp_ai_whatsapp_should_auto_reply', ! empty( $assigned_assistant_ids ), $message_data, $context );
 
 		if ( ! $should_reply ) {
 			return;
 		}
 
-		// Auto-reply logic will be implemented by extensions.
 		do_action( 'wp_mcp_ai_whatsapp_auto_reply', $message_data, $context, $assigned_assistant_ids );
+
+		// Dispatch an AI-generated reply when a connection and assigned assistants are available.
+		if ( $connection && ! empty( $assigned_assistant_ids ) ) {
+			$this->dispatch_whatsapp_ai_reply( $message_data, $connection, $assigned_assistant_ids );
+		}
+	}
+
+	/**
+	 * Schedule an asynchronous cron job to generate and send an AI reply.
+	 *
+	 * Only text messages are processed; other types (media, location, etc.) are
+	 * silently skipped so the webhook can still return 200 quickly.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $message_data           Parsed message data from the incoming webhook.
+	 * @param array $connection             WhatsApp connection configuration array.
+	 * @param int[] $assigned_assistant_ids Assistant post IDs assigned to this connection.
+	 */
+	protected function dispatch_whatsapp_ai_reply( $message_data, $connection, $assigned_assistant_ids ) {
+		// Only process text messages.
+		if ( 'text' !== $message_data['type'] || empty( $message_data['content'] ) ) {
+			return;
+		}
+
+		$to              = isset( $message_data['from'] ) ? $message_data['from'] : '';
+		$phone_number_id = isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
+		$connection_id   = isset( $connection['id'] ) ? $connection['id'] : '';
+
+		if ( '' === $to || '' === $phone_number_id || '' === $connection_id ) {
+			return;
+		}
+
+		$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+			? $connection['graph_api_version']
+			: self::DEFAULT_GRAPH_API_VERSION;
+
+		$job_args = array(
+			array(
+				// Use the first assigned assistant as the primary routing assistant for this channel.
+				'assistant_id'      => $assigned_assistant_ids[0],
+				'message_text'      => $message_data['content'],
+				'to'                => $to,
+				'connection_id'     => $connection_id,
+				'phone_number_id'   => $phone_number_id,
+				'graph_api_version' => $graph_api_version,
+			),
+		);
+
+		// Schedule slightly in the future so the current request can complete first.
+		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+		spawn_cron();
+	}
+
+	/**
+	 * Cron callback: generate an AI reply via the chat endpoint and send it over WhatsApp.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by dispatch_whatsapp_ai_reply().
+	 */
+	public function handle_whatsapp_reply_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$assistant_id      = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$message_text      = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$to                = isset( $args['to'] ) ? (string) $args['to'] : '';
+		$connection_id     = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$phone_number_id   = isset( $args['phone_number_id'] ) ? (string) $args['phone_number_id'] : '';
+		$graph_api_version = isset( $args['graph_api_version'] ) ? sanitize_text_field( $args['graph_api_version'] ) : self::DEFAULT_GRAPH_API_VERSION;
+
+		if ( ! $assistant_id || '' === $message_text || '' === $to || '' === $connection_id || '' === $phone_number_id ) {
+			return;
+		}
+
+		// Retrieve and decrypt the access token at runtime so it is not stored in cron args.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: connection not found or access token missing.', array( 'connection_id' => $connection_id ) );
+			return;
+		}
+
+		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $access_token ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: access token decryption returned empty string.', array( 'connection_id' => $connection_id ) );
+			return;
+		}
+
+		// Call the internal chat REST endpoint to generate the AI response.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $message_text,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$response = rest_do_request( $request );
+
+		if ( $response->is_error() ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: chat request failed.', array( 'assistant_id' => $assistant_id ) );
+			return;
+		}
+
+		$data    = $response->get_data();
+		$content = isset( $data['content'] ) && is_string( $data['content'] ) ? $data['content'] : '';
+
+		if ( '' === $content ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: empty content from assistant.', array( 'assistant_id' => $assistant_id ) );
+			return;
+		}
+
+		// Send reply via WhatsApp Cloud API.
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s/messages',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $phone_number_id )
+		);
+
+		$payload = array(
+			'messaging_product' => 'whatsapp',
+			'to'                => $to,
+			'type'              => 'text',
+			'text'              => array( 'body' => $content ),
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: failed to JSON-encode payload.', array() );
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: HTTP request failed.', array( 'error' => $result->get_error_message() ) );
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_ai_reply_sent',
+			'WhatsApp AI reply dispatched successfully.',
+			array(
+				'assistant_id'    => $assistant_id,
+				'http_code'       => wp_remote_retrieve_response_code( $result ),
+				'phone_number_id' => substr( $phone_number_id, 0, 4 ) . '***',
+				'to'              => substr( $to, 0, 4 ) . '***',
+			)
+		);
 	}
 
 	/**

@@ -504,4 +504,221 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$this->assertIsArray( $empty_ids, 'Should return array even when no assistants assigned' );
 		$this->assertEmpty( $empty_ids, 'Should return empty array when no assistants assigned' );
 	}
+
+	/**
+	 * Test that maybe_auto_reply does not schedule a job when no assistants are assigned.
+	 */
+	public function test_maybe_auto_reply_skips_without_assigned_assistants() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Connection with no assigned assistants.
+		$connection_data = array(
+			'name'            => 'No Assistant Connection',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_token',
+			'phone_number_id' => '999888777666555',
+			'verify_token'    => 'vt_no_asst',
+		);
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$before_crons = _get_cron_array();
+
+		$message_data = array(
+			'id'        => 'msg_1',
+			'from'      => '447700900000',
+			'type'      => 'text',
+			'timestamp' => time(),
+			'content'   => 'Hello',
+			'context'   => null,
+		);
+		$context = array(
+			'metadata' => array( 'phone_number_id' => '999888777666555' ),
+		);
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_auto_reply' );
+		$method->setAccessible( true );
+		$method->invoke( $controller, $message_data, $context );
+
+		// No cron events should have been scheduled because there are no assigned assistants.
+		$after_crons = _get_cron_array();
+		$this->assertEquals(
+			$before_crons,
+			$after_crons,
+			'No cron event should be scheduled when no assistants are assigned'
+		);
+	}
+
+	/**
+	 * Test that dispatch_whatsapp_ai_reply schedules a cron job for text messages.
+	 */
+	public function test_dispatch_whatsapp_ai_reply_schedules_cron_for_text_messages() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$connection_data = array(
+			'name'                   => 'Reply Test Connection',
+			'url'                    => 'https://graph.facebook.com/v21.0',
+			'connection_type'        => 'whatsapp',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'reply_access_token',
+			'phone_number_id'        => '112233445566778',
+			'verify_token'           => 'vt_reply',
+			'graph_api_version'      => 'v21.0',
+			'assigned_assistant_ids' => array( 55 ),
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$message_data = array(
+			'id'        => 'msg_text_1',
+			'from'      => '447700900001',
+			'type'      => 'text',
+			'timestamp' => time(),
+			'content'   => 'Hi there!',
+			'context'   => null,
+		);
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
+		$method->setAccessible( true );
+		$method->invoke( $controller, $message_data, $connection, array( 55 ) );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_WhatsApp_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$found = false;
+		foreach ( $crons as $timestamp => $events ) {
+			if ( isset( $events[ $hook ] ) ) {
+				$found = true;
+				break;
+			}
+		}
+
+		$this->assertTrue( $found, 'Cron job should be scheduled for an incoming text message' );
+
+		// Clean up.
+		wp_clear_scheduled_hook( $hook );
+	}
+
+	/**
+	 * Test that dispatch_whatsapp_ai_reply does not schedule a cron job for non-text messages.
+	 */
+	public function test_dispatch_whatsapp_ai_reply_skips_non_text_messages() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$connection = array(
+			'id'                => 'fake_conn',
+			'phone_number_id'   => '998877665544332',
+			'api_key'           => 'test_access_token',
+			'graph_api_version' => 'v21.0',
+		);
+
+		$message_data = array(
+			'id'        => 'msg_img_1',
+			'from'      => '447700900002',
+			'type'      => 'image',
+			'timestamp' => time(),
+			'content'   => array( 'id' => 'image_id_abc' ),
+			'context'   => null,
+		);
+
+		$before_crons = _get_cron_array();
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
+		$method->setAccessible( true );
+		$method->invoke( $controller, $message_data, $connection, array( 55 ) );
+
+		$after_crons = _get_cron_array();
+		$this->assertEquals(
+			$before_crons,
+			$after_crons,
+			'No cron event should be scheduled for non-text message types'
+		);
+	}
+
+	/**
+	 * Test that handle_whatsapp_reply_job returns early when args are incomplete.
+	 */
+	public function test_handle_whatsapp_reply_job_returns_early_for_invalid_args() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_whatsapp_reply_job' );
+		$method->setAccessible( true );
+
+		// Pass a non-array — should return early without error.
+		$method->invoke( $controller, 'not-an-array' );
+
+		// Pass an empty array — should return early without error.
+		$method->invoke( $controller, array() );
+
+		// Pass args with zero assistant_id — should return early without error.
+		$method->invoke(
+			$controller,
+			array(
+				'assistant_id'    => 0,
+				'message_text'    => 'Hello',
+				'to'              => '447700900003',
+				'connection_id'   => 'fake_id',
+				'phone_number_id' => '112233445566778',
+			)
+		);
+
+		// If we get here without exceptions the early-return guards are working.
+		$this->assertTrue( true );
+	}
 }
