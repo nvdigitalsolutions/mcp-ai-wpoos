@@ -148,6 +148,89 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that WhatsApp display_phone_number persists when saving connection.
+	 */
+	public function test_whatsapp_display_phone_number_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'                 => 'Test WhatsApp Display Phone Connection',
+			'url'                  => 'https://graph.facebook.com/v18.0',
+			'connection_type'      => 'whatsapp',
+			'auth_type'            => 'none',
+			'enabled'              => true,
+			'api_key'              => 'test_access_token',
+			'api_secret'           => 'test_app_secret',
+			'phone_number_id'      => '123456789012345',
+			'display_phone_number' => '+1 555 000 1234',
+			'business_account_id'  => '987654321098765',
+			'verify_token'         => 'test_verify_token_12345',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return error' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertNotNull( $saved_connection, 'Saved connection should be retrievable' );
+		$this->assertEquals( '+1 555 000 1234', $saved_connection['display_phone_number'], 'Display phone number should persist' );
+	}
+
+	/**
+	 * Test that WhatsApp display_phone_number is preserved during update when not provided.
+	 */
+	public function test_whatsapp_display_phone_number_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with display_phone_number set.
+		$connection_data = array(
+			'name'                 => 'Test WhatsApp Display Phone Connection',
+			'url'                  => 'https://graph.facebook.com/v18.0',
+			'connection_type'      => 'whatsapp',
+			'auth_type'            => 'none',
+			'enabled'              => true,
+			'api_key'              => 'test_access_token',
+			'api_secret'           => 'test_app_secret',
+			'phone_number_id'      => '123456789012345',
+			'display_phone_number' => '+1 555 000 1234',
+			'business_account_id'  => '987654321098765',
+			'verify_token'         => 'test_verify_token_12345',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update connection WITHOUT providing display_phone_number (simulating form submission where the field is empty).
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WhatsApp Display Phone Connection',
+			'url'             => 'https://graph.facebook.com/v18.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			// Note: display_phone_number is intentionally omitted.
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		// Retrieve the updated connection.
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $updated_connection, 'Updated connection should be retrievable' );
+		$this->assertEquals( 'Updated WhatsApp Display Phone Connection', $updated_connection['name'], 'Connection name should be updated' );
+		// display_phone_number should be preserved from the original connection.
+		$this->assertEquals( '+1 555 000 1234', $updated_connection['display_phone_number'], 'Display phone number should be preserved on update' );
+	}
+
+	/**
 	 * Test that Telegram bot_username persists.
 	 */
 	public function test_telegram_bot_username_persists() {

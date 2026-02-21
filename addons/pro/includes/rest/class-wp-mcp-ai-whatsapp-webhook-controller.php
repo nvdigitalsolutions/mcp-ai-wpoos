@@ -369,6 +369,132 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				$this->process_account_update( $value );
 				break;
 
+			case 'phone_number_name_update':
+				$this->process_phone_number_name_update( $value );
+				break;
+
+			case 'phone_number_quality_update':
+				$this->process_phone_number_quality_update( $value );
+				break;
+
+			// Account-level fields.
+			case 'account_alerts':
+				$this->process_account_alerts( $value );
+				break;
+
+			case 'account_review_update':
+				$this->process_account_review_update( $value );
+				break;
+
+			case 'account_settings_update':
+				$this->process_account_settings_update( $value );
+				break;
+
+			// Business-level fields.
+			case 'business_capability_update':
+				$this->process_business_capability_update( $value );
+				break;
+
+			case 'business_status_update':
+				$this->process_business_status_update( $value );
+				break;
+
+			// Automation and tracking fields.
+			case 'automatic_events':
+				$this->process_automatic_events( $value );
+				break;
+
+			case 'tracking_events':
+				$this->process_tracking_events( $value );
+				break;
+
+			// Calls field.
+			case 'calls':
+				$this->process_calls( $value );
+				break;
+
+			// WhatsApp Flows field.
+			case 'flows':
+				$this->process_flows( $value );
+				break;
+
+			// Group management fields.
+			case 'group_lifecycle_update':
+				$this->process_group_lifecycle_update( $value );
+				break;
+
+			case 'group_participants_update':
+				$this->process_group_participants_update( $value );
+				break;
+
+			case 'group_settings_update':
+				$this->process_group_settings_update( $value );
+				break;
+
+			case 'group_status_update':
+				$this->process_group_status_update( $value );
+				break;
+
+			// Message history sync field.
+			case 'history':
+				$this->process_history( $value );
+				break;
+
+			// Message echo fields.
+			case 'message_echoes':
+				$this->process_message_echoes( $value );
+				break;
+
+			case 'smb_message_echoes':
+				$this->process_smb_message_echoes( $value );
+				break;
+
+			// Messaging handover protocol field.
+			case 'messaging_handovers':
+				$this->process_messaging_handovers( $value );
+				break;
+
+			// Template management fields.
+			case 'message_template_components_update':
+				$this->process_template_components_update( $value );
+				break;
+
+			case 'message_template_quality_update':
+				$this->process_template_quality_update( $value );
+				break;
+
+			case 'template_category_update':
+				$this->process_template_category_update( $value );
+				break;
+
+			case 'template_correct_category_detection':
+				$this->process_template_correct_category_detection( $value );
+				break;
+
+			// Partner and payment fields.
+			case 'partner_solutions':
+				$this->process_partner_solutions( $value );
+				break;
+
+			case 'payment_configuration_update':
+				$this->process_payment_configuration_update( $value );
+				break;
+
+			// Security field.
+			case 'security':
+				$this->process_security( $value );
+				break;
+
+			// SMB-specific fields.
+			case 'smb_app_state_sync':
+				$this->process_smb_app_state_sync( $value );
+				break;
+
+			// User preferences field.
+			case 'user_preferences':
+				$this->process_user_preferences( $value );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'whatsapp_webhook_unknown_field',
@@ -672,6 +798,815 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		 * @param array $value Account update data.
 		 */
 		do_action( 'wp_mcp_ai_whatsapp_account_update', $value );
+	}
+
+	/**
+	 * Process phone number name update.
+	 *
+	 * Fires when the display name or phone number associated with the WhatsApp
+	 * Business account changes. Updates the stored display_phone_number in the
+	 * matching connection if a new value is provided.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Phone number name update data.
+	 */
+	protected function process_phone_number_name_update( $value ) {
+		$display_phone = isset( $value['display_phone_number'] ) ? sanitize_text_field( $value['display_phone_number'] ) : '';
+		$phone_number_id = isset( $value['phone_number_id'] ) ? sanitize_text_field( $value['phone_number_id'] ) : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_phone_number_name_update',
+			'Phone number name update received.',
+			array(
+				'display_phone_number' => $display_phone,
+			)
+		);
+
+		// Auto-update the stored display_phone_number for the matching connection.
+		if ( ! empty( $display_phone ) && ! empty( $phone_number_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = $this->get_connection_by_phone_number_id( $phone_number_id );
+
+			if ( $connection && isset( $connection['id'] ) ) {
+				$connection['display_phone_number'] = $display_phone;
+				$save_result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection );
+
+				if ( is_wp_error( $save_result ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'whatsapp_phone_number_name_update_save_failed',
+						'Failed to update display_phone_number in connection.',
+						array( 'error' => $save_result->get_error_message() )
+					);
+				}
+			} else {
+				WP_MCP_AI_Logger::log_event(
+					'whatsapp_phone_number_name_update_no_connection',
+					'No matching connection found for phone_number_id.',
+					array()
+				);
+			}
+		}
+
+		/**
+		 * Fires when a WhatsApp phone number name is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Phone number name update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_phone_number_name_update', $value );
+	}
+
+	/**
+	 * Process phone number quality update.
+	 *
+	 * Fires when the quality rating of the WhatsApp Business phone number changes
+	 * (e.g. HIGH, MEDIUM, LOW).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Phone number quality update data.
+	 */
+	protected function process_phone_number_quality_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_phone_number_quality_update',
+			'Phone number quality update received.',
+			array(
+				'quality' => isset( $value['quality'] ) ? sanitize_text_field( $value['quality'] ) : 'unknown',
+				'event'   => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp phone number quality rating is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Phone number quality update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_phone_number_quality_update', $value );
+	}
+
+	/**
+	 * Process account alerts.
+	 *
+	 * Fires when Meta sends an account-level alert (e.g. policy violations,
+	 * unusual activity flags).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Account alert data.
+	 */
+	protected function process_account_alerts( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_account_alerts',
+			'Account alert received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp account alert is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Account alert data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_account_alerts', $value );
+	}
+
+	/**
+	 * Process account review update.
+	 *
+	 * Fires when the WhatsApp Business account review status changes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Account review update data.
+	 */
+	protected function process_account_review_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_account_review_update',
+			'Account review update received.',
+			array(
+				'decision' => isset( $value['decision'] ) ? sanitize_text_field( $value['decision'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp account review status is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Account review update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_account_review_update', $value );
+	}
+
+	/**
+	 * Process account settings update.
+	 *
+	 * Fires when the WhatsApp Business account settings change.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Account settings update data.
+	 */
+	protected function process_account_settings_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_account_settings_update',
+			'Account settings update received.',
+			array()
+		);
+
+		/**
+		 * Fires when WhatsApp Business account settings are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Account settings update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_account_settings_update', $value );
+	}
+
+	/**
+	 * Process business capability update.
+	 *
+	 * Fires when the capabilities available to the WhatsApp Business account change.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Business capability update data.
+	 */
+	protected function process_business_capability_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_business_capability_update',
+			'Business capability update received.',
+			array()
+		);
+
+		/**
+		 * Fires when WhatsApp Business capabilities are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Business capability update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_business_capability_update', $value );
+	}
+
+	/**
+	 * Process business status update.
+	 *
+	 * Fires when the WhatsApp Business account status changes (e.g. FLAGGED, RESTRICTED).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Business status update data.
+	 */
+	protected function process_business_status_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_business_status_update',
+			'Business status update received.',
+			array(
+				'status' => isset( $value['status'] ) ? sanitize_text_field( $value['status'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when the WhatsApp Business account status is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Business status update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_business_status_update', $value );
+	}
+
+	/**
+	 * Process automatic events.
+	 *
+	 * Fires when Meta triggers an automatic event on the account.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Automatic event data.
+	 */
+	protected function process_automatic_events( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_automatic_events',
+			'Automatic event received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp automatic event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Automatic event data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_automatic_events', $value );
+	}
+
+	/**
+	 * Process tracking events.
+	 *
+	 * Fires when WhatsApp sends tracking/analytics event notifications.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Tracking event data.
+	 */
+	protected function process_tracking_events( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_tracking_events',
+			'Tracking event received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp tracking event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Tracking event data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_tracking_events', $value );
+	}
+
+	/**
+	 * Process calls.
+	 *
+	 * Fires when a WhatsApp voice/video call event is received.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Call event data.
+	 */
+	protected function process_calls( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_calls',
+			'Call event received.',
+			array(
+				'status' => isset( $value['status'] ) ? sanitize_text_field( $value['status'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp call event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Call event data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_calls', $value );
+	}
+
+	/**
+	 * Process WhatsApp Flows events.
+	 *
+	 * Fires when a WhatsApp Flows status change or interaction event is received.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Flows event data.
+	 */
+	protected function process_flows( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_flows',
+			'Flows event received.',
+			array(
+				'flow_id' => isset( $value['flow_id'] ) ? sanitize_text_field( $value['flow_id'] ) : 'unknown',
+				'event'   => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp Flows event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Flows event data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_flows', $value );
+	}
+
+	/**
+	 * Process group lifecycle update.
+	 *
+	 * Fires when a WhatsApp group is created, deleted, or its lifecycle state changes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Group lifecycle update data.
+	 */
+	protected function process_group_lifecycle_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_group_lifecycle_update',
+			'Group lifecycle update received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp group lifecycle event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Group lifecycle update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_group_lifecycle_update', $value );
+	}
+
+	/**
+	 * Process group participants update.
+	 *
+	 * Fires when participants are added or removed from a WhatsApp group.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Group participants update data.
+	 */
+	protected function process_group_participants_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_group_participants_update',
+			'Group participants update received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when WhatsApp group participants are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Group participants update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_group_participants_update', $value );
+	}
+
+	/**
+	 * Process group settings update.
+	 *
+	 * Fires when a WhatsApp group's settings (e.g. subject, description) change.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Group settings update data.
+	 */
+	protected function process_group_settings_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_group_settings_update',
+			'Group settings update received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when WhatsApp group settings are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Group settings update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_group_settings_update', $value );
+	}
+
+	/**
+	 * Process group status update.
+	 *
+	 * Fires when a WhatsApp group's status changes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Group status update data.
+	 */
+	protected function process_group_status_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_group_status_update',
+			'Group status update received.',
+			array(
+				'status' => isset( $value['status'] ) ? sanitize_text_field( $value['status'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp group status is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Group status update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_group_status_update', $value );
+	}
+
+	/**
+	 * Process message history sync.
+	 *
+	 * Fires when WhatsApp sends a batch of historical messages for sync.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value History sync data.
+	 */
+	protected function process_history( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_history',
+			'Message history sync received.',
+			array()
+		);
+
+		/**
+		 * Fires when a WhatsApp message history sync payload is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value History sync data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_history', $value );
+	}
+
+	/**
+	 * Process message echoes.
+	 *
+	 * Fires when a copy (echo) of a message sent from the business is received.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Message echo data.
+	 */
+	protected function process_message_echoes( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_message_echoes',
+			'Message echo received.',
+			array()
+		);
+
+		/**
+		 * Fires when a WhatsApp message echo is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Message echo data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_message_echoes', $value );
+	}
+
+	/**
+	 * Process SMB message echoes.
+	 *
+	 * Fires when an SMB echo of a sent message is received.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value SMB message echo data.
+	 */
+	protected function process_smb_message_echoes( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_smb_message_echoes',
+			'SMB message echo received.',
+			array()
+		);
+
+		/**
+		 * Fires when a WhatsApp SMB message echo is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value SMB message echo data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_smb_message_echoes', $value );
+	}
+
+	/**
+	 * Process messaging handovers.
+	 *
+	 * Fires during handover protocol events when control of a conversation
+	 * is passed between apps.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Messaging handover data.
+	 */
+	protected function process_messaging_handovers( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_messaging_handovers',
+			'Messaging handover event received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp messaging handover event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Messaging handover data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_messaging_handovers', $value );
+	}
+
+	/**
+	 * Process template components update.
+	 *
+	 * Fires when the components of a message template are updated.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Template components update data.
+	 */
+	protected function process_template_components_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_template_components_update',
+			'Template components update received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when WhatsApp message template components are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Template components update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_template_components_update', $value );
+	}
+
+	/**
+	 * Process template quality update.
+	 *
+	 * Fires when the quality rating of a message template changes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Template quality update data.
+	 */
+	protected function process_template_quality_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_template_quality_update',
+			'Template quality update received.',
+			array(
+				'quality' => isset( $value['quality'] ) ? sanitize_text_field( $value['quality'] ) : 'unknown',
+				'event'   => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp message template quality rating is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Template quality update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_template_quality_update', $value );
+	}
+
+	/**
+	 * Process template category update.
+	 *
+	 * Fires when Meta reclassifies a message template into a different category.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Template category update data.
+	 */
+	protected function process_template_category_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_template_category_update',
+			'Template category update received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp message template category is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Template category update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_template_category_update', $value );
+	}
+
+	/**
+	 * Process template correct category detection.
+	 *
+	 * Fires when Meta detects that a template has been submitted in the wrong
+	 * category and suggests the correct one.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Template correct category detection data.
+	 */
+	protected function process_template_correct_category_detection( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_template_correct_category_detection',
+			'Template correct category detection received.',
+			array(
+				'event' => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when WhatsApp detects a template in an incorrect category.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Template correct category detection data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_template_correct_category_detection', $value );
+	}
+
+	/**
+	 * Process partner solutions.
+	 *
+	 * Fires when a partner solution event notification is received.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Partner solutions data.
+	 */
+	protected function process_partner_solutions( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_partner_solutions',
+			'Partner solutions event received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp partner solutions event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Partner solutions data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_partner_solutions', $value );
+	}
+
+	/**
+	 * Process payment configuration update.
+	 *
+	 * Fires when the WhatsApp Pay / payment configuration for the account changes.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Payment configuration update data.
+	 */
+	protected function process_payment_configuration_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_payment_configuration_update',
+			'Payment configuration update received.',
+			array()
+		);
+
+		/**
+		 * Fires when a WhatsApp payment configuration is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Payment configuration update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_payment_configuration_update', $value );
+	}
+
+	/**
+	 * Process security events.
+	 *
+	 * Fires when Meta sends a security-related notification, such as a
+	 * passkey enrollment or two-step verification update.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Security event data.
+	 */
+	protected function process_security( $value ) {
+		// Log only the event type; never log security credential details.
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_security',
+			'Security event received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp security event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Security event data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_security', $value );
+	}
+
+	/**
+	 * Process SMB app state sync.
+	 *
+	 * Fires when a Small and Medium Business (SMB) app state sync event occurs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value SMB app state sync data.
+	 */
+	protected function process_smb_app_state_sync( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_smb_app_state_sync',
+			'SMB app state sync received.',
+			array()
+		);
+
+		/**
+		 * Fires when a WhatsApp SMB app state sync event is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value SMB app state sync data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_smb_app_state_sync', $value );
+	}
+
+	/**
+	 * Process user preferences.
+	 *
+	 * Fires when a user updates their WhatsApp messaging preferences
+	 * (e.g. opt-in / opt-out updates).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value User preferences data.
+	 */
+	protected function process_user_preferences( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_user_preferences',
+			'User preferences update received.',
+			array(
+				'type' => isset( $value['type'] ) ? sanitize_text_field( $value['type'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when WhatsApp user preferences are updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value User preferences data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_user_preferences', $value );
 	}
 
 	/**
