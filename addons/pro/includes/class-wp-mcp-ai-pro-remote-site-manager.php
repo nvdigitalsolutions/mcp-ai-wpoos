@@ -711,6 +711,19 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		// Reject App Access Tokens — they have the format "{numeric_app_id}|{hash}" and cannot
+		// send or receive messages via the WhatsApp Cloud API. Users must supply a
+		// System User Access Token from Meta Business Suite or a User Access Token
+		// with the whatsapp_business_messaging permission.
+		// Meta App Access Tokens always begin with the numeric App ID followed by a pipe,
+		// so a leading-digits-pipe pattern is a reliable and specific heuristic.
+		if ( 1 === preg_match( '/^\d+\|/', $access_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_whatsapp_app_token',
+				__( 'The access token appears to be a Meta App Access Token (format: {app_id}|{hash}). App Access Tokens cannot send or receive WhatsApp messages via the Cloud API. Please use a System User Access Token from Meta Business Suite (Business Settings → System Users) or a User Access Token with the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		// Extract the Graph API version from the connection URL, falling back to v21.0.
 		$graph_api_version = 'v21.0';
 		if ( isset( $connection['url'] ) && preg_match( '#graph\.facebook\.com/(v\d+\.\d+)#', $connection['url'], $version_matches ) ) {

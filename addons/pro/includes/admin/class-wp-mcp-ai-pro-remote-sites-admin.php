@@ -1557,7 +1557,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token. Meta app access tokens include the App ID in the format {app_id}|{token} — this is correct and expected. Shown once — copy and store it securely, then click Hide.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your WhatsApp Cloud API System User Access Token. This must be a System User Access Token (from Meta Business Suite → Business Settings → System Users) or a User Access Token with the whatsapp_business_messaging permission — NOT an App Access Token. App Access Tokens (format: {app_id}|{hash}) cannot send or receive WhatsApp messages.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -1571,19 +1571,22 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your WhatsApp App Secret from Meta Developer Dashboard (required for webhook signature validation).', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your App Secret from the Meta Developer Dashboard. Required for validating incoming webhook signatures (HMAC-SHA256). Do not confuse this with the access token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
-					<th scope="row"><?php esc_html_e( 'Generate Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="whatsapp_generate_token_btn" class="button button-secondary">
 							<?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
 						<span id="whatsapp_token_status" style="margin-left: 10px; display: none;"></span>
-						<p class="description"><?php esc_html_e( 'Enter your App ID and App Secret above, then click to automatically generate and populate the Access Token using the Meta API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'This generates a Meta App Access Token (format: {app_id}|{hash}) which is NOT suitable for sending or receiving WhatsApp messages via the Cloud API. For messaging, use a System User Access Token from Meta Business Suite (Business Settings → System Users).', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -3391,6 +3394,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		// Reject App Access Tokens — they have the format "{numeric_app_id}|{hash}" and cannot
+		// send or receive WhatsApp Cloud API messages. Users must supply a System User
+		// Access Token (obtained from Meta Business Suite → System Users) or a User
+		// Access Token with the whatsapp_business_messaging permission.
+		// Meta App Access Tokens always start with the numeric App ID followed by a pipe,
+		// so a leading-digits-pipe pattern is a reliable and specific heuristic.
+		if ( 1 === preg_match( '/^\d+\|/', $access_token ) ) {
+			wp_send_json_error(
+				__( 'The token you entered appears to be a Meta App Access Token (format: {app_id}|{hash}). App Access Tokens cannot send or receive WhatsApp messages via the Cloud API. Please enter a System User Access Token from Meta Business Suite (Business Settings → System Users) or a User Access Token with the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' )
+			);
+			return;
+		}
+
+		// Verify the token against the WhatsApp Cloud API phone number endpoint.
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and causes a 403 with App Access Tokens.
 		$graph_api_version = 'v19.0';
