@@ -1531,7 +1531,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
-						<label for="whatsapp_graph_api_version"><?php esc_html_e( 'Graph API Version', 'mcp-ai-wpoos-pro' ); ?></label>
+						<label for="whatsapp_graph_api_version"><?php esc_html_e( 'Cloud API Version', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<?php
@@ -1543,7 +1543,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<option value="<?php echo esc_attr( $ver ); ?>" <?php selected( $saved_wa_version, $ver ); ?>><?php echo esc_html( $ver ); ?></option>
 							<?php endforeach; ?>
 						</select>
-						<p class="description"><?php esc_html_e( 'Meta Graph API version for WhatsApp Business API requests. Select the latest version supported by your Meta app.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'WhatsApp Cloud API version for API requests. Select the latest version supported by your Meta app.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2363,7 +2363,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				whatsappFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
-				// WhatsApp uses Business API — version is driven by the Graph API Version dropdown
+				// WhatsApp uses Cloud API — version is driven by the Cloud API Version dropdown
 				var waVersionSelect = document.getElementById('whatsapp_graph_api_version');
 				var waVersion = waVersionSelect ? waVersionSelect.value : 'v21.0';
 				urlField.value = 'https://graph.facebook.com/' + waVersion;
@@ -2448,7 +2448,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				toggleConnectionTypeFields(this.value);
 			});
 
-			// WhatsApp API version change: update the URL field accordingly
+			// WhatsApp Cloud API version change: update the URL field accordingly
 			var waVersionSelect = document.getElementById('whatsapp_graph_api_version');
 			if (waVersionSelect) {
 				waVersionSelect.addEventListener('change', function() {
