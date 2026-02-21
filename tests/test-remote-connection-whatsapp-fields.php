@@ -931,22 +931,95 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that assigned_assistant_ids defaults to empty array when not set.
+	 * Test that system_user_id persists for WhatsApp connections.
 	 */
-	public function test_whatsapp_assigned_assistant_ids_defaults_to_empty_array() {
+	public function test_whatsapp_system_user_id_persists() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
 			return;
 		}
 
 		$connection_data = array(
-			'name'            => 'Test WhatsApp No Assistants',
+			'name'            => 'Test WhatsApp System User',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_system_user_access_token',
+			'api_secret'      => 'test_app_secret',
+			'app_id'          => '894182303344052',
+			'system_user_id'  => '123456789012345',
+			'phone_number_id' => '987654321098765',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should not return error' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertEquals( '123456789012345', $saved['system_user_id'], 'System User ID should persist' );
+	}
+
+	/**
+	 * Test that system_user_id is preserved on update when not provided.
+	 */
+	public function test_whatsapp_system_user_id_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp System User Update',
 			'url'             => 'https://graph.facebook.com/v21.0',
 			'connection_type' => 'whatsapp',
 			'auth_type'       => 'none',
 			'enabled'         => true,
 			'api_key'         => 'test_access_token',
-			'phone_number_id' => '999888777666555',
+			'system_user_id'  => '999888777666555',
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update without providing system_user_id.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WhatsApp Connection',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'phone_number_id' => '111222333444555',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertEquals( '999888777666555', $updated['system_user_id'], 'System User ID should be preserved on update' );
+	}
+
+	/**
+	 * Test that system_user_id defaults to empty string when not set.
+	 */
+	public function test_whatsapp_system_user_id_defaults_to_empty() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp No System User',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '555444333222111',
 			'verify_token'    => 'test_verify_token',
 		);
 
@@ -955,7 +1028,7 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 
 		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
-		$this->assertIsArray( $saved['assigned_assistant_ids'], 'assigned_assistant_ids should be an array even when not set' );
-		$this->assertEmpty( $saved['assigned_assistant_ids'], 'assigned_assistant_ids should be empty when not provided' );
+		$this->assertArrayHasKey( 'system_user_id', $saved, 'system_user_id key should exist' );
+		$this->assertEquals( '', $saved['system_user_id'], 'system_user_id should be empty string when not provided' );
 	}
 }

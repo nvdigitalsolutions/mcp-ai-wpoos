@@ -187,6 +187,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['business_account_id'] = $existing_connection['business_account_id'];
 			}
 
+			if ( empty( $connection_data['system_user_id'] ) && ! empty( $existing_connection['system_user_id'] ) ) {
+				$connection_data['system_user_id'] = $existing_connection['system_user_id'];
+			}
+
 			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] ) ) {
 				$connection_data['verify_token'] = $existing_connection['verify_token'];
 			}
@@ -306,6 +310,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
 			'business_account_id' => isset( $connection_data['business_account_id'] ) ? sanitize_text_field( $connection_data['business_account_id'] ) : '',
+			'system_user_id'      => isset( $connection_data['system_user_id'] ) ? sanitize_text_field( $connection_data['system_user_id'] ) : '',
 			'verify_token'        => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
 			// Slack-specific fields.
 			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
@@ -732,10 +737,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$graph_api_version = $connection['graph_api_version'];
 		}
 
+		// Compute appsecret_proof (HMAC-SHA256 of the access token keyed with the app secret).
+		// Required when the Meta app has "Require App Secret Proof for Server API calls" enabled
+		// in App Dashboard → Settings → Advanced.
+		$appsecret_proof = ! empty( $app_secret ) ? hash_hmac( 'sha256', $access_token, $app_secret ) : '';
+
 		// Test 1: Get phone number info.
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and will cause a 403 with App Access Tokens.
-		$phone_endpoint = sprintf( 'https://graph.facebook.com/%s/%s?fields=display_phone_number,verified_name', $graph_api_version, rawurlencode( $phone_number_id ) );
+		$phone_query_args = array( 'fields' => 'display_phone_number,verified_name' );
+		if ( $appsecret_proof ) {
+			$phone_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$phone_endpoint = add_query_arg(
+			$phone_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+		);
 
 		$phone_response = wp_remote_get(
 			$phone_endpoint,
@@ -772,7 +789,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// the phone number ID.  This lets tokens that have whatsapp_business_messaging
 			// for sending but cannot read phone-number fields still pass the connection test.
 			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
-				$fallback_endpoint = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
 				$fallback_response = wp_remote_get(
 					$fallback_endpoint,
 					array(
@@ -827,8 +845,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Optionally get quality rating — requires whatsapp_business_management permission.
 		// This is not available with App Access Tokens, so treat it as advisory only.
-		$quality               = 'unknown';
-		$quality_endpoint      = sprintf( 'https://graph.facebook.com/%s/%s?fields=quality_rating', $graph_api_version, rawurlencode( $phone_number_id ) );
+		$quality              = 'unknown';
+		$quality_query_args   = array( 'fields' => 'quality_rating' );
+		if ( $appsecret_proof ) {
+			$quality_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$quality_endpoint = add_query_arg(
+			$quality_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
+		);
 		$quality_response      = wp_remote_get(
 			$quality_endpoint,
 			array(
@@ -847,7 +872,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Test 2: Try to get business profile (optional, may not have permissions).
-		$profile_endpoint = sprintf( 'https://graph.facebook.com/v21.0/%s/whatsapp_business_profile', rawurlencode( $phone_number_id ) );
+		$profile_base     = sprintf( 'https://graph.facebook.com/%s/%s/whatsapp_business_profile', $graph_api_version, rawurlencode( $phone_number_id ) );
+		$profile_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $profile_base ) : $profile_base;
 
 		$profile_response = wp_remote_get(
 			$profile_endpoint,
