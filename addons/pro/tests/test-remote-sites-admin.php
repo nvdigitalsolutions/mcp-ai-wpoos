@@ -1399,6 +1399,104 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that ajax_test_whatsapp_live uses stored credentials when access_token is blank.
+	 *
+	 * When the access token field is left empty (e.g. on page reload), the handler must fall
+	 * back to the encrypted token stored in the connection record so the test can succeed
+	 * without the user having to re-enter sensitive credentials.
+	 */
+	public function test_ajax_test_whatsapp_live_uses_stored_token_when_field_is_blank() {
+		// Save a WhatsApp connection with an encrypted access token.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'stored_system_user_token',
+			'api_secret'      => '',
+			'phone_number_id' => '111222333444555',
+			'enabled'         => true,
+			'cache_ttl'       => 300,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertIsString( $connection_id, 'Connection should be saved successfully' );
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'display_phone_number' => '+1 555-000-0000',
+						'verified_name'        => 'Test Business',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		// Submit with blank access_token but valid connection_id.
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = '';
+		$_POST['phone_number_id'] = '111222333444555';
+		$_POST['connection_id']   = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Should succeed using stored token; got: ' . wp_json_encode( $data ) );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_live returns an error when both access_token and connection_id are blank.
+	 */
+	public function test_ajax_test_whatsapp_live_errors_when_no_token_and_no_connection_id() {
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = '';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( isset( $data['success'] ) && $data['success'], 'Should fail when no token and no connection_id' );
+	}
+
+	/**
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.
