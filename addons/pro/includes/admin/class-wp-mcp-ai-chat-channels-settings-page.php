@@ -29,6 +29,75 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$this->icon             = 'dashicons-format-chat';
 
 		parent::__construct();
+
+		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
+	}
+
+	/**
+	 * AJAX handler: Fetch WhatsApp phone numbers from the Facebook Graph API.
+	 *
+	 * Calls https://graph.facebook.com/v22.0/{waba_id}/phone_numbers using the
+	 * provided system user access token and returns the list of phone numbers.
+	 */
+	public function ajax_fetch_whatsapp_phone_numbers() {
+		check_ajax_referer( 'wp_mcp_ai_fetch_whatsapp_phone_numbers', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$business_account_id = isset( $_POST['business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['business_account_id'] ) ) : '';
+		$access_token        = isset( $_POST['access_token'] ) ? sanitize_text_field( wp_unslash( $_POST['access_token'] ) ) : '';
+
+		if ( empty( $business_account_id ) || empty( $access_token ) ) {
+			wp_send_json_error( array( 'message' => __( 'Business Account ID and Access Token are required.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$api_url = 'https://graph.facebook.com/v22.0/' . rawurlencode( $business_account_id ) . '/phone_numbers';
+
+		$response = wp_remote_get(
+			$api_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( array( 'message' => __( 'Connection to the Facebook Graph API failed. Please check your network and try again.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( empty( $data ) || isset( $data['error'] ) ) {
+			$error_message = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Failed to retrieve phone numbers.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $error_message ) );
+			return;
+		}
+
+		$phone_numbers = array();
+		if ( ! empty( $data['data'] ) && is_array( $data['data'] ) ) {
+			foreach ( $data['data'] as $phone ) {
+				$phone_numbers[] = array(
+					'id'            => isset( $phone['id'] ) ? sanitize_text_field( $phone['id'] ) : '',
+					'display_name'  => isset( $phone['display_phone_number'] ) ? sanitize_text_field( $phone['display_phone_number'] ) : '',
+					'verified_name' => isset( $phone['verified_name'] ) ? sanitize_text_field( $phone['verified_name'] ) : '',
+				);
+			}
+		}
+
+		if ( empty( $phone_numbers ) ) {
+			wp_send_json_error( array( 'message' => __( 'No phone numbers found for this Business Account ID.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'phone_numbers' => $phone_numbers ) );
 	}
 
 	/**
@@ -294,6 +363,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render WhatsApp configuration section
 	 */
 	protected function render_whatsapp_config() {
+		$nonce = wp_create_nonce( 'wp_mcp_ai_fetch_whatsapp_phone_numbers' );
 		?>
 		<div class="platform-config">
 			<div class="platform-config-header">
@@ -306,23 +376,37 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<ol>
 					<li><?php esc_html_e( 'Sign up for WhatsApp Business API through an approved provider', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Complete business verification process', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Obtain your API credentials (Phone Number ID and Access Token)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter your WhatsApp Business Account ID and System User Access Token below', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Retrieve Phone Numbers" to automatically fetch your Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Configure webhook for receiving messages', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
 				<table class="form-table">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Business Account ID', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<input type="text" name="whatsapp_phone_number_id" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your WhatsApp Business phone number ID', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" id="whatsapp_business_account_id" name="whatsapp_business_account_id" class="regular-text" placeholder="123456789012345" />
+							<p class="description"><?php esc_html_e( 'Your WhatsApp Business Account (WABA) ID from Meta Business Manager', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<input type="password" name="whatsapp_access_token" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your WhatsApp Business API access token', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="password" id="whatsapp_access_token" name="whatsapp_access_token" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your system user access token from Meta Business Manager', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+								<input type="text" id="whatsapp_phone_number_id" name="whatsapp_phone_number_id" class="regular-text" />
+								<button type="button" id="wp-mcp-ai-fetch-whatsapp-phones" class="button button-secondary">
+									<?php esc_html_e( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
+							<div id="wp-mcp-ai-whatsapp-phone-result" style="margin-top:8px;"></div>
+							<p class="description"><?php esc_html_e( 'Enter your Phone Number ID manually, or click "Retrieve Phone Numbers" to fetch it automatically using the Business Account ID and Access Token above.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
@@ -348,6 +432,79 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				</ul>
 			</div>
 		</div>
+
+		<script>
+		( function() {
+			var btn = document.getElementById( 'wp-mcp-ai-fetch-whatsapp-phones' );
+			if ( ! btn ) {
+				return;
+			}
+			btn.addEventListener( 'click', function() {
+				var wabaId      = document.getElementById( 'whatsapp_business_account_id' ).value.trim();
+				var accessToken = document.getElementById( 'whatsapp_access_token' ).value.trim();
+				var resultDiv   = document.getElementById( 'wp-mcp-ai-whatsapp-phone-result' );
+
+				if ( ! wabaId || ! accessToken ) {
+					resultDiv.innerHTML = '<span style="color:#d63638;"><?php echo esc_js( __( 'Please enter both a Business Account ID and an Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?></span>';
+					return;
+				}
+
+				btn.disabled    = true;
+				btn.textContent = '<?php echo esc_js( __( 'Retrieving\u2026', 'mcp-ai-wpoos-pro' ) ); ?>';
+				resultDiv.innerHTML = '';
+
+				var data = new FormData();
+				data.append( 'action', 'wp_mcp_ai_fetch_whatsapp_phone_numbers' );
+				data.append( 'nonce', '<?php echo esc_js( $nonce ); ?>' );
+				data.append( 'business_account_id', wabaId );
+				data.append( 'access_token', accessToken );
+
+				fetch( ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' } )
+					.then( function( r ) {
+						if ( ! r.ok ) {
+							throw new Error( r.status );
+						}
+						return r.json();
+					} )
+					.then( function( json ) {
+						btn.disabled    = false;
+						btn.textContent = '<?php echo esc_js( __( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ) ); ?>';
+
+						if ( ! json.success ) {
+							resultDiv.innerHTML = '<span style="color:#d63638;">' + json.data.message + '</span>';
+							return;
+						}
+
+						var phones = json.data.phone_numbers;
+						if ( phones.length === 1 ) {
+							document.getElementById( 'whatsapp_phone_number_id' ).value = phones[0].id;
+							resultDiv.innerHTML = '<span style="color:#00a32a;"><?php echo esc_js( __( 'Phone number ID set automatically.', 'mcp-ai-wpoos-pro' ) ); ?> ' + phones[0].display_name + ' (' + phones[0].id + ')</span>';
+						} else {
+							var select = '<select id="wp-mcp-ai-whatsapp-phone-select" style="max-width:350px;">';
+							select += '<option value=""><?php echo esc_js( __( '-- Select a phone number --', 'mcp-ai-wpoos-pro' ) ); ?></option>';
+							phones.forEach( function( p ) {
+								select += '<option value="' + p.id + '">' + p.display_name + ( p.verified_name ? ' \u2013 ' + p.verified_name : '' ) + ' (' + p.id + ')</option>';
+							} );
+							select += '</select> <button type="button" id="wp-mcp-ai-whatsapp-phone-apply" class="button"><?php echo esc_js( __( 'Use Selected', 'mcp-ai-wpoos-pro' ) ); ?></button>';
+							resultDiv.innerHTML = select;
+
+							document.getElementById( 'wp-mcp-ai-whatsapp-phone-apply' ).addEventListener( 'click', function() {
+								var sel = document.getElementById( 'wp-mcp-ai-whatsapp-phone-select' );
+								if ( sel.value ) {
+									document.getElementById( 'whatsapp_phone_number_id' ).value = sel.value;
+									resultDiv.innerHTML = '<span style="color:#00a32a;"><?php echo esc_js( __( 'Phone Number ID applied.', 'mcp-ai-wpoos-pro' ) ); ?></span>';
+								}
+							} );
+						}
+					} )
+					.catch( function( err ) {
+						btn.disabled    = false;
+						btn.textContent = '<?php echo esc_js( __( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ) ); ?>';
+						resultDiv.innerHTML = '<span style="color:#d63638;"><?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?></span>';
+					} );
+			} );
+		} )();
+		</script>
 		<?php
 	}
 
