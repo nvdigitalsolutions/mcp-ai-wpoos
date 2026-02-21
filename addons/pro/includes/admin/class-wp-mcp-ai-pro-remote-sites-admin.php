@@ -2510,6 +2510,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (appSecret) { data.append('app_secret', appSecret); }
 					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connectionIdEl) { data.append('connection_id', connectionIdEl.value.trim()); }
+					var apiVersionEl = document.getElementById('whatsapp_graph_api_version');
+					if (apiVersionEl) { data.append('graph_api_version', apiVersionEl.value.trim()); }
 
 					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
@@ -3314,21 +3316,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$app_secret      = isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized as sanitize_text_field() can truncate valid characters.
 		$app_secret      = trim( (string) $app_secret );
 
-		// If app_secret was not submitted (password field is blank on edit), fall back to the
-		// stored and encrypted value so appsecret_proof can still be computed.
-		if ( empty( $app_secret ) ) {
-			$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
-			if ( $connection_id ) {
-				$stored = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-				if ( $stored && ! empty( $stored['api_secret'] ) ) {
-					$app_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored['api_secret'] );
-				}
-			}
-		}
-
-		// Compute appsecret_proof (HMAC-SHA256 of the access token keyed with the app secret).
-		// Required when the Meta app has "Require App Secret Proof for Server API calls" enabled
-		// in App Dashboard → Settings → Advanced.
+		// Compute appsecret_proof only when the user explicitly provides the App Secret in the
+		// test form. appsecret_proof is only required when the Meta app has "Require App Secret
+		// Proof for Server API calls" enabled in App Dashboard → Settings → Advanced.
+		// We do NOT auto-pull the stored secret here — the test should succeed without it.
 		$appsecret_proof = ! empty( $app_secret ) ? hash_hmac( 'sha256', $access_token, $app_secret ) : '';
 
 		if ( empty( $access_token ) ) {
@@ -3357,7 +3348,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Verify the token against the WhatsApp Cloud API phone number endpoint.
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and causes a 403 with App Access Tokens.
-		$graph_api_version = 'v19.0';
+		$raw_version       = isset( $_POST['graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['graph_api_version'] ) ) : '';
+		$graph_api_version = ( preg_match( '/^v\d+\.\d+$/', $raw_version ) ) ? $raw_version : 'v22.0';
 		$phone_query_args  = array( 'fields' => 'display_phone_number,verified_name' );
 		if ( $appsecret_proof ) {
 			$phone_query_args['appsecret_proof'] = $appsecret_proof;
@@ -3467,6 +3459,46 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
 
 					if ( 403 === $fallback_http_code && 200 === $fallback_error_code ) {
+						$phone_data           = array();
+						$limited_field_access = true;
+					} else {
+						wp_send_json_error(
+							sprintf(
+								/* translators: 1: status code, 2: error message */
+								__( 'WhatsApp API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+								$phone_code,
+								$error_message
+							)
+						);
+						return;
+					}
+				}
+
+			// When the API returns HTTP 400 with FB error code 100 ("Tried accessing nonexisting
+			// field"), the token cannot read display_phone_number or verified_name as explicit
+			// field parameters. Fall back to the base phone number endpoint which returns default
+			// fields for tokens with sufficient permissions, or just the ID for messaging-only tokens.
+			} elseif ( 400 === (int) $phone_code && 100 === $fb_error_code ) {
+				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
+				$fallback_response = wp_remote_get(
+					$fallback_endpoint,
+					array(
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+						),
+						'timeout' => 15,
+					)
+				);
+				if ( ! is_wp_error( $fallback_response ) && 200 === (int) wp_remote_retrieve_response_code( $fallback_response ) ) {
+					$phone_data           = json_decode( wp_remote_retrieve_body( $fallback_response ), true );
+					$limited_field_access = true;
+				} else {
+					$fallback_http_code  = ! is_wp_error( $fallback_response ) ? (int) wp_remote_retrieve_response_code( $fallback_response ) : 0;
+					$fallback_body       = ! is_wp_error( $fallback_response ) ? json_decode( wp_remote_retrieve_body( $fallback_response ), true ) : array();
+					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
+
+					if ( ( 403 === $fallback_http_code && 200 === $fallback_error_code ) || ( 400 === $fallback_http_code && 100 === $fallback_error_code ) ) {
 						$phone_data           = array();
 						$limited_field_access = true;
 					} else {

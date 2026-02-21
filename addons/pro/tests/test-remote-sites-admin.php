@@ -1317,6 +1317,88 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that ajax_test_whatsapp_live succeeds when the fields request returns HTTP 400
+	 * with Facebook error code 100 ("Tried accessing nonexisting field (display_phone_number)").
+	 *
+	 * The handler must fall back to the base phone number endpoint and report success with
+	 * a warning rather than surfacing the raw API error to the user.
+	 */
+	public function test_ajax_test_whatsapp_live_succeeds_on_fields_400_code_100_with_fallback() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 400 with FB error code 100.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message'    => '(#100) Tried accessing nonexisting field (display_phone_number)',
+								'type'       => 'OAuthException',
+								'code'       => 100,
+								'fbtrace_id' => 'xyz100',
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 400,
+						'message' => 'Bad Request',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '333444555666777' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']              = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']               = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']        = 'test_token_400_code_100';
+		$_POST['phone_number_id']     = '333444555666777';
+		$_POST['graph_api_version']   = 'v22.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'], $_POST['graph_api_version'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 400 + code 100 on the fields request.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $data['data']['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.

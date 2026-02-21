@@ -1186,4 +1186,157 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when appsecret_proof is required but not configured' );
 		$this->assertStringContainsString( 'App Secret', $result->get_error_message(), 'Error message should mention App Secret' );
 	}
+
+	/**
+	 * Test that test_connection() succeeds when the fields request returns HTTP 400 with
+	 * Facebook error code 100 ("Tried accessing nonexisting field (display_phone_number)").
+	 *
+	 * Some System User tokens cannot access display_phone_number/verified_name as explicit
+	 * ?fields= parameters and Meta returns 400 + #100. The handler must fall back to the
+	 * base endpoint and report success with a warning, not surface the raw API error.
+	 */
+	public function test_whatsapp_connection_succeeds_when_primary_fields_request_returns_400_code_100() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp 400 Code 100',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_400_code_100',
+			'api_secret'      => '',
+			'phone_number_id' => '777888999000111',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 400 with FB error code 100.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message'    => '(#100) Tried accessing nonexisting field (display_phone_number)',
+								'type'       => 'OAuthException',
+								'code'       => 100,
+								'fbtrace_id' => 'abc100',
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 400,
+						'message' => 'Bad Request',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds and returns just the ID.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '777888999000111' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must succeed despite the 400 + code 100 on the fields request.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail when fields request returns 400 with FB error code 100; got: ' . ( is_wp_error( $result ) ? $result->get_error_message() : '' ) );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success' );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $result, 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $result['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
+	 * Test that test_connection() succeeds when BOTH the fields request and the fallback
+	 * base endpoint return HTTP 400 with Facebook error code 100.
+	 *
+	 * The connection must still report success with limited field access in this case.
+	 */
+	public function test_whatsapp_connection_succeeds_when_both_endpoints_return_400_code_100() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Both 400 Code 100',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token_both_400_code_100',
+			'api_secret'      => '',
+			'phone_number_id' => '888999000111222',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Both endpoints return 400 with FB error code 100.
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'error' => array(
+							'message'    => '(#100) Tried accessing nonexisting field (display_phone_number)',
+							'type'       => 'OAuthException',
+							'code'       => 100,
+							'fbtrace_id' => 'abc100both',
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 400,
+					'message' => 'Bad Request',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// The test must succeed even when both endpoints return 400 + code 100.
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection test must not fail when both endpoints return 400 with FB error code 100' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success' );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $result, 'Result should include a warning about limited field access' );
+	}
 }
