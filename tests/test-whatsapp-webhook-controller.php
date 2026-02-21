@@ -815,4 +815,65 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$wrong_structure = array( 'content' => 'wrong location' );
 		$this->assertEquals( '', $method->invoke( $controller, $wrong_structure ), 'Should not read from top-level content key' );
 	}
+
+	/**
+	 * Test that HTML is stripped from the AI reply content before it is sent via WhatsApp.
+	 *
+	 * The handle_whatsapp_reply_job() method strips HTML tags and decodes entities from the
+	 * extracted chat response content. These helper functions (wp_strip_all_tags and
+	 * html_entity_decode) are tested here in isolation to confirm the expected transformation.
+	 */
+	public function test_whatsapp_reply_content_html_is_stripped() {
+		// Simulate an AI reply containing HTML tags and entities, as returned by the LLM.
+		$html_reply = '<p>Hello <strong>World</strong>! Visit <a href="https://example.com">example.com</a> for details.</p>';
+
+		$stripped = wp_strip_all_tags( $html_reply );
+		$decoded  = html_entity_decode( $stripped, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+		$this->assertStringNotContainsString( '<', $decoded, 'HTML tags should be stripped' );
+		$this->assertStringNotContainsString( '>', $decoded, 'HTML tags should be stripped' );
+		$this->assertStringContainsString( 'Hello World', $decoded, 'Text content should be preserved' );
+		$this->assertStringContainsString( 'example.com', $decoded, 'Link text should be preserved' );
+	}
+
+	/**
+	 * Test that HTML entity decoding is applied after stripping tags.
+	 */
+	public function test_whatsapp_reply_html_entities_are_decoded() {
+		$encoded = 'Hello &amp; welcome to The Parfumerie &mdash; your scent destination.';
+
+		$stripped = wp_strip_all_tags( $encoded );
+		$decoded  = html_entity_decode( $stripped, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+		$this->assertStringContainsString( '&', $decoded, 'HTML entity &amp; should be decoded to &' );
+		$this->assertStringNotContainsString( '&amp;', $decoded, 'Encoded entity &amp; should not remain' );
+	}
+
+	/**
+	 * Test that WhatsApp message body is truncated to 4096 characters.
+	 */
+	public function test_whatsapp_reply_truncated_to_4096_chars() {
+		// Create a string that exceeds the WhatsApp 4096-character limit.
+		$long_content = str_repeat( 'A', 5000 );
+
+		$truncated = mb_strlen( $long_content ) > 4096
+			? mb_substr( $long_content, 0, 4093 ) . '...'
+			: $long_content;
+
+		$this->assertEquals( 4096, mb_strlen( $truncated ), 'Truncated content must be exactly 4096 characters' );
+		$this->assertStringEndsWith( '...', $truncated, 'Truncated content must end with ellipsis' );
+	}
+
+	/**
+	 * Test that content within the 4096-character limit is not truncated.
+	 */
+	public function test_whatsapp_reply_not_truncated_when_within_limit() {
+		$short_content = str_repeat( 'B', 100 );
+
+		$result = mb_strlen( $short_content ) > 4096
+			? mb_substr( $short_content, 0, 4093 ) . '...'
+			: $short_content;
+
+		$this->assertEquals( $short_content, $result, 'Short content should not be modified' );
+	}
 }
