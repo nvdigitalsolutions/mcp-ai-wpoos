@@ -364,8 +364,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Telegram-specific fields.
 				'bot_username'    => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				// WhatsApp-specific fields.
-				'phone_number_id' => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
-				'business_account_id' => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
+				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
+				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
+				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
@@ -458,8 +459,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php if ( ! empty( $test_results['quality_rating'] ) ) : ?>
 									<li>
 										<?php
-										$quality_color = 'GREEN' === strtoupper( $test_results['quality_rating'] ) ? '#00a32a' : ( 'YELLOW' === strtoupper( $test_results['quality_rating'] ) ? '#f0b849' : '#d63638' );
-										echo wp_kses_post( sprintf( __( 'Quality Rating: <span style="color: %1$s; font-weight: bold;">%2$s</span>', 'mcp-ai-wpoos-pro' ), $quality_color, strtoupper( $test_results['quality_rating'] ) ) );
+										$quality_upper = strtoupper( $test_results['quality_rating'] );
+										if ( 'GREEN' === $quality_upper ) {
+											$quality_color = '#00a32a';
+										} elseif ( 'YELLOW' === $quality_upper ) {
+											$quality_color = '#f0b849';
+										} elseif ( 'UNKNOWN' === $quality_upper ) {
+											$quality_color = '#777777';
+										} else {
+											$quality_color = '#d63638';
+										}
+										echo wp_kses_post( sprintf( __( 'Quality Rating: <span style="color: %1$s; font-weight: bold;">%2$s</span>', 'mcp-ai-wpoos-pro' ), $quality_color, $quality_upper ) );
 										?>
 									</li>
 								<?php endif; ?>
@@ -483,7 +493,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endif; ?>
 						</ul>
 						<?php if ( isset( $test_results['warning'] ) && ! empty( $test_results['warning'] ) ) : ?>
-							<p style="color: #d63638;"><strong><?php esc_html_e( 'Warning:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $test_results['warning'] ); ?></p>
+							<p style="color: #b45309; font-size: 13px;">⚠ <?php echo esc_html( $test_results['warning'] ); ?></p>
+						<?php endif; ?>
+						<?php if ( isset( $test_results['quality_note'] ) && ! empty( $test_results['quality_note'] ) ) : ?>
+							<p style="color: #2271b1; font-size: 13px;">ℹ <?php echo esc_html( $test_results['quality_note'] ); ?></p>
 						<?php endif; ?>
 						<?php
 						// Clean up transient after displaying.
@@ -1585,6 +1598,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_display_phone_number"><?php esc_html_e( 'Display Phone Number', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="whatsapp_display_phone_number" id="whatsapp_display_phone_number" class="regular-text" value="<?php echo $is_edit && isset( $connection['display_phone_number'] ) ? esc_attr( $connection['display_phone_number'] ) : ''; ?>" placeholder="<?php esc_attr_e( 'e.g. +1 555 000 1234', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Optional. Enter your WhatsApp display phone number (e.g. +1 555 000 1234) to generate a QR code and channel link for members. This is auto-populated when you run "Test Connection" and the token has sufficient permissions.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="whatsapp_test_connection_btn" class="button button-secondary">
@@ -1655,7 +1680,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endforeach; ?>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. Selected assistants will receive and respond to incoming messages on this WhatsApp channel.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. Selected assistants will automatically respond to members who message this WhatsApp number via the QR code or channel link below.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -1666,11 +1691,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php
 						$wa_phone_id     = $is_edit && isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
 						$wa_display_phone = '';
-						if ( $is_edit && ! empty( $wa_phone_id ) ) {
-							// Try to get display phone number from cached test result.
-							$wa_test_result  = get_transient( 'wp_mcp_ai_test_result_' . ( isset( $connection['id'] ) ? $connection['id'] : '' ) );
-							if ( ! empty( $wa_test_result['phone_number'] ) ) {
-								$wa_display_phone = $wa_test_result['phone_number'];
+						if ( $is_edit ) {
+							// Prefer the manually saved display phone number.
+							if ( ! empty( $connection['display_phone_number'] ) ) {
+								$wa_display_phone = $connection['display_phone_number'];
+							} elseif ( ! empty( $wa_phone_id ) ) {
+								// Fall back to a cached test result if available.
+								$wa_test_result = get_transient( 'wp_mcp_ai_test_result_' . ( isset( $connection['id'] ) ? $connection['id'] : '' ) );
+								if ( ! empty( $wa_test_result['phone_number'] ) ) {
+									$wa_display_phone = $wa_test_result['phone_number'];
+								}
 							}
 						}
 						if ( ! empty( $wa_display_phone ) ) :
@@ -1716,9 +1746,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p class="description">
 								<?php
 								if ( $is_edit && ! empty( $wa_phone_id ) ) {
-									esc_html_e( 'Run "Test Connection" to retrieve the display phone number and generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Enter your display phone number in the "Display Phone Number" field above, or run "Test Connection" to retrieve it automatically. Members can then use the generated QR code or link to start a conversation, and the assigned assistant will respond.', 'mcp-ai-wpoos-pro' );
 								} else {
-									esc_html_e( 'Save the connection with a Phone Number ID, then run "Test Connection" to generate a channel link for this WhatsApp number.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Save the connection with a Phone Number ID and optional Display Phone Number to generate a QR code and channel link. Members can scan the QR or use the link to message your WhatsApp number, and the assigned assistant will respond automatically.', 'mcp-ai-wpoos-pro' );
 								}
 								?>
 							</p>
@@ -1736,11 +1766,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Get credentials from Meta Developer Dashboard (developers.facebook.com)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Enter your App ID and App Secret, then click "Generate App Access Token" to auto-populate the Access Token', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Enter your Phone Number ID', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter your Phone Number ID and Display Phone Number (e.g. +1 555 000 1234)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign one or more AI Assistants — they will respond to members who message via the QR code or channel link', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create a secure Verify Token (random string)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" to verify your credentials instantly', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Configure webhook in Meta dashboard using the Webhook URL and Verify Token', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
+							<p style="margin: 0 0 6px 0; font-size: 13px; color: #2271b1;">
+								ℹ <strong><?php esc_html_e( 'Advanced Access:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'The whatsapp_business_messaging permission is required for sending and receiving messages. Apply for Advanced Access via email in the Meta App Review portal. Quality Rating and phone display fields require the separate whatsapp_business_management permission.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 							<p style="margin: 0; font-size: 13px;">
 								<strong><?php esc_html_e( 'Need help?', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<?php
@@ -2563,13 +2598,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									if (d.phone_number)   { items.push(<?php echo wp_json_encode( __( 'Phone Number:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.phone_number); }
 									if (d.verified_name)  { items.push(<?php echo wp_json_encode( __( 'Verified Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.verified_name); }
 									if (d.quality_rating) {
-										var qColor = d.quality_rating.toUpperCase() === 'GREEN' ? '#00a32a' : (d.quality_rating.toUpperCase() === 'YELLOW' ? '#f0b849' : '#d63638');
-										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + d.quality_rating.toUpperCase() + '</span>');
+										var qRating = d.quality_rating.toUpperCase();
+										var qColor = qRating === 'GREEN' ? '#00a32a' : (qRating === 'YELLOW' ? '#f0b849' : (qRating === 'UNKNOWN' ? '#777777' : '#d63638'));
+										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + qRating + '</span>');
 									}
 									if (items.length) {
 										html += '<ul style="margin:8px 0;padding-left:20px;">';
 										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
 										html += '</ul>';
+									}
+									if (d.warning) {
+										html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>';
+									}
+									if (d.quality_note) {
+										html += '<p style="margin:6px 0 0;color:#2271b1;font-size:13px;">ℹ ' + d.quality_note + '</p>';
+									}
+									if (d.phone_number) {
+										var dispInput = document.getElementById('whatsapp_display_phone_number');
+										if (dispInput && !dispInput.value) {
+											dispInput.value = d.phone_number;
+										}
 									}
 								}
 								html += '</div>';
@@ -2724,7 +2772,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
 										html += '</ul>';
 									}
-									if (d.warning) { html += '<p style="color:#d63638;"><strong><?php echo esc_js( __( 'Warning:', 'mcp-ai-wpoos-pro' ) ); ?></strong> ' + d.warning + '</p>'; }
+									if (d.warning) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>'; }
+									if (d.quality_note) { html += '<p style="margin:6px 0 0;color:#2271b1;font-size:13px;">ℹ ' + d.quality_note + '</p>'; }
 								}
 								html += '</div>';
 								msngTestResult.innerHTML = html;
@@ -2779,8 +2828,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									if (d.phone_number)   { items.push(<?php echo wp_json_encode( __( 'Phone Number:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.phone_number); }
 									if (d.verified_name)  { items.push(<?php echo wp_json_encode( __( 'Verified Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.verified_name); }
 									if (d.quality_rating) {
-										var qColor = d.quality_rating.toUpperCase() === 'GREEN' ? '#00a32a' : (d.quality_rating.toUpperCase() === 'YELLOW' ? '#f0b849' : '#d63638');
-										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + d.quality_rating.toUpperCase() + '</span>');
+										var qRating = d.quality_rating.toUpperCase();
+										var qColor = qRating === 'GREEN' ? '#00a32a' : (qRating === 'YELLOW' ? '#f0b849' : (qRating === 'UNKNOWN' ? '#777777' : '#d63638'));
+										items.push(<?php echo wp_json_encode( __( 'Quality Rating:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <span style="color:' + qColor + ';font-weight:bold;">' + qRating + '</span>');
 									}
 									if (d.business_name)  { items.push(<?php echo wp_json_encode( __( 'Business Profile:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.business_name); }
 									if (d.site_name)      { items.push(<?php echo wp_json_encode( __( 'Site:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.site_name); }
@@ -2790,7 +2840,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
 										html += '</ul>';
 									}
-									if (d.warning) { html += '<p style="color:#d63638;"><strong><?php echo esc_js( __( 'Warning:', 'mcp-ai-wpoos-pro' ) ); ?></strong> ' + d.warning + '</p>'; }
+									if (d.warning) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>'; }
+									if (d.quality_note) { html += '<p style="margin:6px 0 0;color:#2271b1;font-size:13px;">ℹ ' + d.quality_note + '</p>'; }
 								}
 								html += '</div>';
 								resultDiv.innerHTML = html;
@@ -3402,8 +3453,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$limited_field_access = true;
 				} else {
 					// Check if the fallback also returned a field-permission error (FB code 200).
-					// This means the token is valid but lacks permission to read any phone number fields.
-					// Messaging will still work if the token has whatsapp_business_messaging scope.
+					// This means the token is valid but lacks whatsapp_business_management permission
+					// to read phone number display fields. Tokens with whatsapp_business_messaging
+					// scope (granted via Meta Advanced Access / email approval) can still send and
+					// receive messages — only cosmetic display fields are unavailable.
 					$fallback_http_code  = ! is_wp_error( $fallback_response ) ? (int) wp_remote_retrieve_response_code( $fallback_response ) : 0;
 					$fallback_body       = ! is_wp_error( $fallback_response ) ? json_decode( wp_remote_retrieve_body( $fallback_response ), true ) : array();
 					$fallback_error_code = isset( $fallback_body['error']['code'] ) ? (int) $fallback_body['error']['code'] : 0;
@@ -3437,8 +3490,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		// Optionally fetch quality_rating as a separate request — requires whatsapp_business_management permission.
-		// Treat a 403 response as advisory only (the field is not available with App Access Tokens).
-		$quality         = 'unknown';
+		// Treat a 403 response as advisory only (quality_rating requires
+		// whatsapp_business_management, not whatsapp_business_messaging).
+		$quality         = 'UNKNOWN';
 		$quality_endpoint = sprintf(
 			'https://graph.facebook.com/%s/%s?fields=quality_rating',
 			$graph_api_version,
@@ -3456,7 +3510,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		if ( ! is_wp_error( $quality_response ) && 200 === (int) wp_remote_retrieve_response_code( $quality_response ) ) {
 			$quality_data = json_decode( wp_remote_retrieve_body( $quality_response ), true );
 			if ( isset( $quality_data['quality_rating'] ) ) {
-				$quality = $quality_data['quality_rating'];
+				$quality = strtoupper( $quality_data['quality_rating'] );
 			}
 		}
 
@@ -3467,9 +3521,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
+		// When quality is UNKNOWN, add an explanatory note (not a warning — messaging is unaffected).
+		if ( 'UNKNOWN' === $quality ) {
+			$result['quality_note'] = __( 'Quality Rating is UNKNOWN because it requires the whatsapp_business_management permission. This does not affect messaging. If you have whatsapp_business_messaging access (enabled via Meta Advanced Access / email approval), your bot will send and receive messages normally.', 'mcp-ai-wpoos-pro' );
+		}
+
 		// Note when the token lacks permission to read phone-number details.
 		if ( $limited_field_access ) {
-			$result['warning'] = __( 'Note: Phone number details are unavailable because the access token lacks permission to read phone number fields. Messaging will still work if the token has the whatsapp_business_messaging scope.', 'mcp-ai-wpoos-pro' );
+			$result['warning'] = __( 'Note: Phone number display details are unavailable (requires whatsapp_business_management permission). If your access token has the whatsapp_business_messaging scope — enabled via Meta Advanced Access (email approval) — messaging will work normally. Enter your display phone number manually in the "Display Phone Number" field to generate the channel QR code and link.', 'mcp-ai-wpoos-pro' );
 		}
 
 		wp_send_json_success( $result );
