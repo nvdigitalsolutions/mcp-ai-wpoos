@@ -230,7 +230,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key   = isset( $_POST['telegram_bot_token'] ) ? wp_unslash( $_POST['telegram_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'whatsapp':
-					$api_key = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key    = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['whatsapp_app_secret'] ) ? wp_unslash( $_POST['whatsapp_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized.
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1562,6 +1563,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
+						<label for="whatsapp_app_secret"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="whatsapp_app_secret" id="whatsapp_app_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App Secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Meta App Secret (found in Meta App Dashboard → Settings → Basic). Required if your app has "Require App Secret Proof" enabled. Also used to validate incoming webhook signatures.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
 						<label for="whatsapp_phone_number_id"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
@@ -2490,6 +2505,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' ) ); ?>);
 					data.append('access_token', accessToken);
 					data.append('phone_number_id', phoneNumberId);
+					var appSecretEl = document.getElementById('whatsapp_app_secret');
+					var appSecret = appSecretEl ? appSecretEl.value.trim() : '';
+					if (appSecret) { data.append('app_secret', appSecret); }
 					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connectionIdEl) { data.append('connection_id', connectionIdEl.value.trim()); }
 
@@ -3410,6 +3428,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					);
 					return;
 				}
+
+			// When no appsecret_proof was sent but Meta still returns 400 "Invalid appsecret_proof",
+			// the app has "Require App Secret Proof" enabled.  Guide the user to enter the App Secret.
+			} elseif ( 400 === (int) $phone_code && ! $appsecret_proof && false !== stripos( $error_message, 'appsecret_proof' ) ) {
+				wp_send_json_error(
+					__( 'The Meta app requires App Secret Proof for API calls. Please enter your Meta App Secret in the App Secret field and try again.', 'mcp-ai-wpoos-pro' )
+				);
+				return;
 
 			// When the token lacks field-level access (Facebook error code 200 = permission
 			// error on a specific field), fall back to the base endpoint which returns only

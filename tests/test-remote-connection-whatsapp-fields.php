@@ -1118,4 +1118,72 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Connection test should report success after retry' );
 		$this->assertEquals( '+1 555-000-9999', $result['phone_number'], 'Phone number from retry response should be returned' );
 	}
+
+	/**
+	 * Test that a 400 "Invalid appsecret_proof" with no app secret configured returns a helpful WP_Error.
+	 *
+	 * When the Meta app has "Require App Secret Proof" enabled and no app secret is stored,
+	 * appsecret_proof is never sent.  Meta still returns HTTP 400 with the same error message.
+	 * The connection test must detect this and return a clear WP_Error guiding the user to
+	 * enter their App Secret instead of surfacing the raw Meta error.
+	 */
+	public function test_whatsapp_connection_returns_helpful_error_when_appsecret_required_but_not_configured() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Connection with NO app secret (api_secret is empty).
+		$connection_data = array(
+			'name'            => 'Test WhatsApp No App Secret',
+			'url'             => 'https://graph.facebook.com/v21.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_valid_access_token_no_secret',
+			'api_secret'      => '',
+			'phone_number_id' => '123456789000002',
+			'verify_token'    => 'test_verify_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Meta always returns 400 "Invalid appsecret_proof" (app requires it but none was sent).
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'error' => array(
+							'message'    => 'Invalid appsecret_proof provided in the API argument',
+							'type'       => 'OAuthException',
+							'code'       => 1,
+							'fbtrace_id' => 'def456',
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 400,
+					'message' => 'Bad Request',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $saved_connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Must return a WP_Error with a helpful message pointing to the App Secret field.
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when appsecret_proof is required but not configured' );
+		$this->assertStringContainsString( 'App Secret', $result->get_error_message(), 'Error message should mention App Secret' );
+	}
 }
