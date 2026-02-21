@@ -934,12 +934,33 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		$http_code    = (int) wp_remote_retrieve_response_code( $result );
+		$send_body    = wp_remote_retrieve_body( $result );
+		$decoded_body = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+		$api_error    = is_array( $decoded_body ) && isset( $decoded_body['error'] ) ? $decoded_body['error'] : array();
+
+		if ( 200 !== $http_code || ! empty( $api_error ) ) {
+			$log_context = array(
+				'assistant_id'    => $assistant_id,
+				'http_code'       => $http_code,
+				'phone_number_id' => substr( $phone_number_id, 0, 4 ) . '***',
+			);
+
+			if ( is_array( $api_error ) && isset( $api_error['code'] ) && isset( $api_error['error_subcode'] )
+				&& 100 === (int) $api_error['code'] && 33 === (int) $api_error['error_subcode'] ) {
+				$log_context['hint'] = 'Phone Number ID not found. Verify that the Phone Number ID in the connection settings matches the Phone Number ID in Meta Developer Dashboard (app → WhatsApp → API Setup), not the WhatsApp Business Account ID (WABA ID).';
+			}
+
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: send request returned an error.', $log_context );
+			return;
+		}
+
 		WP_MCP_AI_Logger::log_event(
 			'whatsapp_ai_reply_sent',
 			'WhatsApp AI reply dispatched successfully.',
 			array(
 				'assistant_id'    => $assistant_id,
-				'http_code'       => wp_remote_retrieve_response_code( $result ),
+				'http_code'       => $http_code,
 				'phone_number_id' => substr( $phone_number_id, 0, 4 ) . '***',
 				'to'              => substr( $to, 0, 4 ) . '***',
 			)

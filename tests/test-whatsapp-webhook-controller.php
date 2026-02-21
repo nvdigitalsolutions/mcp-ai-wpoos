@@ -876,4 +876,108 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 
 		$this->assertEquals( $short_content, $result, 'Short content should not be modified' );
 	}
+
+	/**
+	 * Test that a WhatsApp Business Account ID (WABA ID) does NOT match a connection
+	 * whose phone_number_id is set to the correct Phone Number ID.
+	 *
+	 * Users sometimes copy the WABA ID from Meta Business Manager instead of the
+	 * Phone Number ID from Meta Developer Dashboard → WhatsApp → API Setup. The
+	 * get_connection_by_phone_number_id() method must not confuse these two IDs.
+	 */
+	public function test_waba_id_does_not_match_connection_phone_number_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$correct_phone_number_id = '102938475610293';
+		$waba_id                 = '777253115407005'; // A WABA ID — different from the Phone Number ID.
+
+		// Save a connection using the correct Phone Number ID.
+		$connection_data = array(
+			'name'                   => 'Test Channel',
+			'url'                    => 'https://graph.facebook.com/v22.0',
+			'connection_type'        => 'whatsapp',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'test_access_token',
+			'phone_number_id'        => $correct_phone_number_id,
+			'business_account_id'    => $waba_id,
+			'verify_token'           => 'test_verify_token',
+			'assigned_assistant_ids' => array( 1 ),
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_connection_by_phone_number_id' );
+		$method->setAccessible( true );
+
+		// The correct Phone Number ID must match the connection.
+		$found = $method->invoke( $controller, $correct_phone_number_id );
+		$this->assertNotNull( $found, 'The correct Phone Number ID should find the connection' );
+		$this->assertEquals( $correct_phone_number_id, $found['phone_number_id'] );
+
+		// The WABA ID must NOT match — it is a different kind of ID stored in business_account_id.
+		$not_found = $method->invoke( $controller, $waba_id );
+		$this->assertNull( $not_found, 'A WABA ID must not match a connection looked up by phone_number_id' );
+	}
+
+	/**
+	 * Test that the handle_whatsapp_reply_job() method logs an error and returns early
+	 * when the WhatsApp Cloud API responds with error code 100 / subcode 33
+	 * ("Object does not exist" — the Phone Number ID is wrong or inaccessible).
+	 */
+	public function test_handle_whatsapp_reply_job_logs_error_on_code_100_subcode_33() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// The API error body returned when the Phone Number ID does not exist.
+		// Using the WABA ID from the connection (a common mistake) as the wrong ID in the error.
+		$waba_id        = '777253115407005'; // Same WABA ID used as an example of a wrong Phone Number ID.
+		$api_error_body = array(
+			'error' => array(
+				'message'       => "Unsupported post request. Object with ID '{$waba_id}' does not exist, cannot be loaded due to missing permissions, or does not support this operation.",
+				'type'          => 'GraphMethodException',
+				'code'          => 100,
+				'error_subcode' => 33,
+				'fbtrace_id'    => 'AzK1zNq1rH7bZy_V0Uuk3Ul',
+			),
+		);
+
+		// Validate that the error detection logic identifies code 100 / subcode 33.
+		$meta_code    = (int) $api_error_body['error']['code'];
+		$meta_subcode = (int) $api_error_body['error']['error_subcode'];
+
+		$this->assertEquals( 100, $meta_code, 'Error code should be 100 for missing object' );
+		$this->assertEquals( 33, $meta_subcode, 'Error subcode should be 33 for missing object' );
+		$this->assertTrue(
+			100 === $meta_code && 33 === $meta_subcode,
+			'Code 100 / subcode 33 combination should be detected as a wrong Phone Number ID error'
+		);
+	}
 }

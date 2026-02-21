@@ -1582,7 +1582,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="text" name="whatsapp_phone_number_id" id="whatsapp_phone_number_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['phone_number_id'] ) ? esc_attr( $connection['phone_number_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your WhatsApp Business phone number ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description">
+							<?php esc_html_e( 'The numeric Phone Number ID assigned to your WhatsApp phone number. Find it in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID" (not the WhatsApp Business Account ID). This is different from the ID shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -3496,8 +3498,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$limited_field_access = false;
 		if ( 200 !== (int) $phone_code ) {
-			$fb_error_code = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
-			$error_message = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+			$fb_error_code    = isset( $phone_data['error']['code'] ) ? (int) $phone_data['error']['code'] : 0;
+			$fb_error_subcode = isset( $phone_data['error']['error_subcode'] ) ? (int) $phone_data['error']['error_subcode'] : 0;
+			$error_message    = isset( $phone_data['error']['message'] ) ? $phone_data['error']['message'] : __( 'Invalid response from WhatsApp API.', 'mcp-ai-wpoos-pro' );
+
+			// Error code 100 with subcode 33 means the object (phone number) does not exist
+			// or the token lacks permissions. The most common cause is entering the WhatsApp
+			// Business Account ID (WABA ID) instead of the Phone Number ID. Fail immediately
+			// with an actionable message instead of silently falling back to "limited access".
+			if ( 100 === $fb_error_code && 33 === $fb_error_subcode ) {
+				wp_send_json_error(
+					__( 'Phone Number ID not found. The ID you entered does not match any WhatsApp phone number accessible with your access token. Make sure you are entering the Phone Number ID from the Meta Developer Dashboard (select your app → WhatsApp → API Setup → "Phone Number ID") — not the WhatsApp Business Account ID (WABA ID) visible in Meta Business Manager or Facebook Business pages. These are different numbers.', 'mcp-ai-wpoos-pro' )
+				);
+				return;
+			}
 
 			// When appsecret_proof is invalid (HTTP 400), the stored app secret does not
 			// match the app or the app does not require it.  Clear appsecret_proof and retry
@@ -3867,7 +3881,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							$meta_code    = (int) $error_data['error']['code'];
 							$meta_subcode = isset( $error_data['error']['error_subcode'] ) ? (int) $error_data['error']['error_subcode'] : 0;
 							if ( 100 === $meta_code && 33 === $meta_subcode ) {
-								$result['send_error_hint'] = __( 'Phone Number ID not found or missing permissions. Please verify your Phone Number ID and ensure your access token has the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' );
+								$result['send_error_hint'] = __( 'Phone Number ID not found. The ID configured for this connection does not match any WhatsApp phone number accessible with your access token. Find the correct Phone Number ID in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID". This is different from the WhatsApp Business Account ID (WABA ID) shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' );
 							}
 						}
 					}
