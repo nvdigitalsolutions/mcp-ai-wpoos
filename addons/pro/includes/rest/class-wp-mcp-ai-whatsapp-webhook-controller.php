@@ -369,6 +369,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				$this->process_account_update( $value );
 				break;
 
+			case 'phone_number_name_update':
+				$this->process_phone_number_name_update( $value );
+				break;
+
+			case 'phone_number_quality_update':
+				$this->process_phone_number_quality_update( $value );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'whatsapp_webhook_unknown_field',
@@ -672,6 +680,93 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		 * @param array $value Account update data.
 		 */
 		do_action( 'wp_mcp_ai_whatsapp_account_update', $value );
+	}
+
+	/**
+	 * Process phone number name update.
+	 *
+	 * Fires when the display name or phone number associated with the WhatsApp
+	 * Business account changes. Updates the stored display_phone_number in the
+	 * matching connection if a new value is provided.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Phone number name update data.
+	 */
+	protected function process_phone_number_name_update( $value ) {
+		$display_phone = isset( $value['display_phone_number'] ) ? sanitize_text_field( $value['display_phone_number'] ) : '';
+		$phone_number_id = isset( $value['phone_number_id'] ) ? sanitize_text_field( $value['phone_number_id'] ) : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_phone_number_name_update',
+			'Phone number name update received.',
+			array(
+				'display_phone_number' => $display_phone,
+			)
+		);
+
+		// Auto-update the stored display_phone_number for the matching connection.
+		if ( ! empty( $display_phone ) && ! empty( $phone_number_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = $this->get_connection_by_phone_number_id( $phone_number_id );
+
+			if ( $connection && isset( $connection['id'] ) ) {
+				$connection['display_phone_number'] = $display_phone;
+				$save_result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection );
+
+				if ( is_wp_error( $save_result ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'whatsapp_phone_number_name_update_save_failed',
+						'Failed to update display_phone_number in connection.',
+						array( 'error' => $save_result->get_error_message() )
+					);
+				}
+			} else {
+				WP_MCP_AI_Logger::log_event(
+					'whatsapp_phone_number_name_update_no_connection',
+					'No matching connection found for phone_number_id.',
+					array()
+				);
+			}
+		}
+
+		/**
+		 * Fires when a WhatsApp phone number name is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Phone number name update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_phone_number_name_update', $value );
+	}
+
+	/**
+	 * Process phone number quality update.
+	 *
+	 * Fires when the quality rating of the WhatsApp Business phone number changes
+	 * (e.g. HIGH, MEDIUM, LOW).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $value Phone number quality update data.
+	 */
+	protected function process_phone_number_quality_update( $value ) {
+		WP_MCP_AI_Logger::log_event(
+			'whatsapp_phone_number_quality_update',
+			'Phone number quality update received.',
+			array(
+				'quality' => isset( $value['quality'] ) ? sanitize_text_field( $value['quality'] ) : 'unknown',
+				'event'   => isset( $value['event'] ) ? sanitize_text_field( $value['event'] ) : 'unknown',
+			)
+		);
+
+		/**
+		 * Fires when a WhatsApp phone number quality rating is updated.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $value Phone number quality update data.
+		 */
+		do_action( 'wp_mcp_ai_whatsapp_phone_number_quality_update', $value );
 	}
 
 	/**
