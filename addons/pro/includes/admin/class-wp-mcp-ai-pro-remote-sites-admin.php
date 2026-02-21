@@ -2480,8 +2480,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				waTestBtn.addEventListener('click', function() {
 					var accessToken    = document.getElementById('whatsapp_access_token').value.trim();
 					var phoneNumberId  = document.getElementById('whatsapp_phone_number_id').value.trim();
+					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId   = connectionIdEl ? connectionIdEl.value.trim() : '';
 
-					if (!accessToken) {
+					if (!accessToken && !connectionId) {
 						if (waTestResult) {
 							waTestResult.style.display = 'block';
 							waTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
@@ -2508,8 +2510,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var appSecretEl = document.getElementById('whatsapp_app_secret');
 					var appSecret = appSecretEl ? appSecretEl.value.trim() : '';
 					if (appSecret) { data.append('app_secret', appSecret); }
-					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
-					if (connectionIdEl) { data.append('connection_id', connectionIdEl.value.trim()); }
+					if (connectionId) { data.append('connection_id', connectionId); }
 					var apiVersionEl = document.getElementById('whatsapp_graph_api_version');
 					if (apiVersionEl) { data.append('graph_api_version', apiVersionEl.value.trim()); }
 
@@ -3316,10 +3317,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$app_secret      = isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized as sanitize_text_field() can truncate valid characters.
 		$app_secret      = trim( (string) $app_secret );
 
+		// When the access token field is left blank (e.g. on page reload), fall back to the
+		// stored credentials for the connection being edited so the test can proceed without
+		// the user having to re-enter sensitive credentials.
+		if ( empty( $access_token ) ) {
+			$connection_id      = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection  = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+			if ( empty( $app_secret ) && ! empty( $stored_connection['api_secret'] ) ) {
+				$app_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_secret'] );
+			}
+		}
+
 		// Compute appsecret_proof only when the user explicitly provides the App Secret in the
 		// test form. appsecret_proof is only required when the Meta app has "Require App Secret
 		// Proof for Server API calls" enabled in App Dashboard → Settings → Advanced.
-		// We do NOT auto-pull the stored secret here — the test should succeed without it.
 		$appsecret_proof = ! empty( $app_secret ) ? hash_hmac( 'sha256', $access_token, $app_secret ) : '';
 
 		if ( empty( $access_token ) ) {
