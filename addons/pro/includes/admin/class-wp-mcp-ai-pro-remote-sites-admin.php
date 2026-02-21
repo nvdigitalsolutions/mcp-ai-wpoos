@@ -2648,6 +2648,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								} else if (to && d && !d.sent) {
 									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
 									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via WhatsApp failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+									if (d.send_error_hint) {
+										html += '<p style="margin:2px 0 0;color:#d63638;font-size:12px;font-style:italic;">' + d.send_error_hint.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+									}
 								}
 								html += '</div>';
 								waAutoReplyResult.innerHTML = html;
@@ -3815,6 +3818,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$phone_number_id   = sanitize_text_field( $connection['phone_number_id'] );
 				$sanitized_to      = preg_replace( '/[^0-9+]/', '', $test_to );
 
+				// WhatsApp does not render HTML. Strip tags and decode HTML entities so the
+				// message body contains plain text only, and enforce the 4096-character limit.
+				$whatsapp_body = wp_strip_all_tags( $ai_reply );
+				$whatsapp_body = html_entity_decode( $whatsapp_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				if ( mb_strlen( $whatsapp_body ) > 4096 ) {
+					$whatsapp_body = mb_substr( $whatsapp_body, 0, 4093 ) . '...';
+				}
+
 				$endpoint = sprintf(
 					'https://graph.facebook.com/%s/%s/messages',
 					rawurlencode( $graph_api_version ),
@@ -3825,7 +3836,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					'messaging_product' => 'whatsapp',
 					'to'                => $sanitized_to,
 					'type'              => 'text',
-					'text'              => array( 'body' => $ai_reply ),
+					'text'              => array( 'body' => $whatsapp_body ),
 				);
 
 				$body = wp_json_encode( $payload );
@@ -3845,9 +3856,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
 						$result['sent'] = true;
 					} else {
+						$send_body            = is_wp_error( $send_result ) ? '' : wp_remote_retrieve_body( $send_result );
 						$result['send_error'] = is_wp_error( $send_result )
 							? $send_result->get_error_message()
-							: wp_remote_retrieve_body( $send_result );
+							: $send_body;
+
+						// Surface a user-friendly hint for the most common Meta API errors.
+						$error_data = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+						if ( is_array( $error_data ) && isset( $error_data['error'] ) && is_array( $error_data['error'] ) && isset( $error_data['error']['code'] ) ) {
+							$meta_code    = (int) $error_data['error']['code'];
+							$meta_subcode = isset( $error_data['error']['error_subcode'] ) ? (int) $error_data['error']['error_subcode'] : 0;
+							if ( 100 === $meta_code && 33 === $meta_subcode ) {
+								$result['send_error_hint'] = __( 'Phone Number ID not found or missing permissions. Please verify your Phone Number ID and ensure your access token has the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' );
+							}
+						}
 					}
 				}
 			}

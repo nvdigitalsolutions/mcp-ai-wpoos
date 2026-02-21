@@ -884,6 +884,19 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// WhatsApp does not render HTML. Strip tags and decode HTML entities so the
+		// outgoing message contains plain text, and enforce the 4096-character limit.
+		$content = wp_strip_all_tags( $content );
+		$content = html_entity_decode( $content, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( mb_strlen( $content ) > 4096 ) {
+			$content = mb_substr( $content, 0, 4093 ) . '...';
+		}
+
+		if ( '' === $content ) {
+			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: content empty after HTML stripping.', array( 'assistant_id' => $assistant_id ) );
+			return;
+		}
+
 		// Send reply via WhatsApp Cloud API.
 		$endpoint = sprintf(
 			'https://graph.facebook.com/%s/%s/messages',
