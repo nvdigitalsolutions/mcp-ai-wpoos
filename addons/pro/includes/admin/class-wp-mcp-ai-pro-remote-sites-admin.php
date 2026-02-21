@@ -367,6 +367,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
+				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
 				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
@@ -1531,6 +1532,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
+						<label for="whatsapp_system_user_id"><?php esc_html_e( 'System User ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="whatsapp_system_user_id" id="whatsapp_system_user_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['system_user_id'] ) ? esc_attr( $connection['system_user_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Meta Business System User ID. Found in Meta Business Suite → Business Settings → System Users. Required for server-to-server Cloud API calls and used to validate the System User Access Token.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
 						<label for="whatsapp_graph_api_version"><?php esc_html_e( 'Cloud API Version', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
@@ -2582,6 +2593,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' ) ); ?>);
 					data.append('access_token', accessToken);
 					data.append('phone_number_id', phoneNumberId);
+					var appSecretEl = document.getElementById('whatsapp_app_secret');
+					var connectionIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (appSecretEl) { data.append('app_secret', appSecretEl.value.trim()); }
+					if (connectionIdEl) { data.append('connection_id', connectionIdEl.value.trim()); }
 
 					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
@@ -3383,6 +3398,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$access_token    = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
 		$access_token    = trim( (string) $access_token );
 		$phone_number_id = isset( $_POST['phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_number_id'] ) ) : '';
+		$app_secret      = isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized as sanitize_text_field() can truncate valid characters.
+		$app_secret      = trim( (string) $app_secret );
+
+		// If app_secret was not submitted (password field is blank on edit), fall back to the
+		// stored and encrypted value so appsecret_proof can still be computed.
+		if ( empty( $app_secret ) ) {
+			$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			if ( $connection_id ) {
+				$stored = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $stored && ! empty( $stored['api_secret'] ) ) {
+					$app_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored['api_secret'] );
+				}
+			}
+		}
+
+		// Compute appsecret_proof (HMAC-SHA256 of the access token keyed with the app secret).
+		// Required when the Meta app has "Require App Secret Proof for Server API calls" enabled
+		// in App Dashboard → Settings → Advanced.
+		$appsecret_proof = ! empty( $app_secret ) ? hash_hmac( 'sha256', $access_token, $app_secret ) : '';
 
 		if ( empty( $access_token ) ) {
 			wp_send_json_error( __( 'Access Token is required.', 'mcp-ai-wpoos-pro' ) );
@@ -3411,10 +3445,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Only request fields accessible with whatsapp_business_messaging permission.
 		// quality_rating requires whatsapp_business_management and causes a 403 with App Access Tokens.
 		$graph_api_version = 'v19.0';
-		$phone_endpoint    = sprintf(
-			'https://graph.facebook.com/%s/%s?fields=display_phone_number,verified_name',
-			$graph_api_version,
-			rawurlencode( $phone_number_id )
+		$phone_query_args  = array( 'fields' => 'display_phone_number,verified_name' );
+		if ( $appsecret_proof ) {
+			$phone_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$phone_endpoint = add_query_arg(
+			$phone_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
 		);
 
 		$phone_response = wp_remote_get(
@@ -3451,11 +3488,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// the phone number ID.  This lets tokens with whatsapp_business_messaging scope
 			// for sending but without phone-number field read permissions still pass.
 			if ( 403 === (int) $phone_code && 200 === $fb_error_code ) {
-				$fallback_endpoint = sprintf(
-					'https://graph.facebook.com/%s/%s',
-					$graph_api_version,
-					rawurlencode( $phone_number_id )
-				);
+				$fallback_base     = sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) );
+				$fallback_endpoint = $appsecret_proof ? add_query_arg( 'appsecret_proof', $appsecret_proof, $fallback_base ) : $fallback_base;
 				$fallback_response = wp_remote_get(
 					$fallback_endpoint,
 					array(
@@ -3509,11 +3543,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		// Optionally fetch quality_rating as a separate request — requires whatsapp_business_management permission.
 		// Treat a 403 response as advisory only (quality_rating requires
 		// whatsapp_business_management, not whatsapp_business_messaging).
-		$quality         = 'UNKNOWN';
-		$quality_endpoint = sprintf(
-			'https://graph.facebook.com/%s/%s?fields=quality_rating',
-			$graph_api_version,
-			rawurlencode( $phone_number_id )
+		$quality = 'UNKNOWN';
+
+		$quality_query_args = array( 'fields' => 'quality_rating' );
+		if ( $appsecret_proof ) {
+			$quality_query_args['appsecret_proof'] = $appsecret_proof;
+		}
+		$quality_endpoint = add_query_arg(
+			$quality_query_args,
+			sprintf( 'https://graph.facebook.com/%s/%s', $graph_api_version, rawurlencode( $phone_number_id ) )
 		);
 		$quality_response = wp_remote_get(
 			$quality_endpoint,
