@@ -124,9 +124,14 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that webhook controller falls back to access token if app secret is not set.
+	 * Test that webhook controller returns empty string when app secret is not set
+	 * (and does NOT fall back to the access token).
+	 *
+	 * The HMAC-SHA256 webhook signature MUST be validated with the App Secret.
+	 * Using the access token as a fallback would be incorrect and potentially
+	 * allow forged webhooks to pass validation.
 	 */
-	public function test_webhook_controller_fallback_to_access_token() {
+	public function test_webhook_controller_returns_empty_when_no_app_secret() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$this->markTestSkipped( 'Pro addon not available' );
 			return;
@@ -150,7 +155,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'auth_type'       => 'none',
 			'enabled'         => true,
 			'api_key'         => 'test_access_token_12345',
-			// No api_secret provided
+			// No api_secret provided.
 			'phone_number_id' => '123456789012345',
 			'verify_token'    => 'my_verify_token_xyz',
 		);
@@ -168,8 +173,10 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 
 		$app_secret = $method->invoke( $controller );
 
-		// Should fall back to access token.
-		$this->assertEquals( 'test_access_token_12345', $app_secret, 'Should fall back to access token when app secret is not set' );
+		// Must return empty string — NOT fall back to the access token.
+		// Returning the access token would cause incorrect webhook HMAC validation.
+		$this->assertEquals( '', $app_secret, 'Should return empty string (not the access token) when app secret is not set' );
+		$this->assertNotEquals( 'test_access_token_12345', $app_secret, 'Must not fall back to the access token for webhook HMAC validation' );
 	}
 
 	/**
