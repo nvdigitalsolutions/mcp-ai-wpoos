@@ -554,7 +554,7 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'content'   => 'Hello',
 			'context'   => null,
 		);
-		$context = array(
+		$context      = array(
 			'metadata' => array( 'phone_number_id' => '999888777666555' ),
 		);
 
@@ -1248,5 +1248,164 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'https://graph.facebook.com/v19.0/123456789012345/register',
 			$endpoint
 		);
+	}
+
+	// -------------------------------------------------------------------------
+	// Conversation history tests.
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Helper: load the controller class if not already loaded.
+	 */
+	private function load_controller() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			}
+		}
+	}
+
+	/**
+	 * Test that get_conversation_history_key returns a deterministic, non-empty string.
+	 */
+	public function test_get_conversation_history_key_is_deterministic() {
+		$this->load_controller();
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, '1234567890', '9876543210' );
+		$key2 = $method->invoke( $controller, '1234567890', '9876543210' );
+		$key3 = $method->invoke( $controller, '0000000000', '9876543210' );
+
+		$this->assertIsString( $key1, 'Key should be a string' );
+		$this->assertNotEmpty( $key1, 'Key should not be empty' );
+		$this->assertSame( $key1, $key2, 'Same inputs should produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender should produce different key' );
+
+		// Verify it starts with the expected prefix.
+		$this->assertStringStartsWith( 'wp_mcp_ai_wa_conv_', $key1 );
+
+		// Verify key length is within WordPress transient key limits (172 chars).
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ) );
+	}
+
+	/**
+	 * Test that get_conversation_history_key differs when phone_number_id differs.
+	 */
+	public function test_get_conversation_history_key_differs_by_phone_number_id() {
+		$this->load_controller();
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key_a = $method->invoke( $controller, '1234567890', 'phone_id_A' );
+		$key_b = $method->invoke( $controller, '1234567890', 'phone_id_B' );
+
+		$this->assertNotSame( $key_a, $key_b, 'Keys should differ when phone_number_id differs' );
+	}
+
+	/**
+	 * Test that CONVERSATION_HISTORY_TTL constant equals 86400 seconds (24 hours).
+	 */
+	public function test_conversation_history_ttl_constant() {
+		$this->load_controller();
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_WhatsApp_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test that history is correctly trimmed when it exceeds max_history.
+	 *
+	 * This exercises the trimming logic in isolation using the same algorithm
+	 * used by handle_whatsapp_reply_job().
+	 */
+	public function test_history_trimmed_before_new_message() {
+		$max_history = 8; // Keep at most 8 messages total.
+
+		// Simulate history that exceeds max_history (user/assistant pairs).
+		$history = array();
+		for ( $i = 0; $i < $max_history; $i++ ) {
+			$history[] = array(
+				'role'    => 'user',
+				'content' => "msg $i",
+			);
+			$history[] = array(
+				'role'    => 'assistant',
+				'content' => "reply $i",
+			);
+		}
+
+		// Trim to leave room for one new user message (matches production logic).
+		if ( count( $history ) >= $max_history ) {
+			$history = array_slice( $history, -( $max_history - 1 ) );
+		}
+
+		$this->assertLessThanOrEqual(
+			$max_history - 1,
+			count( $history ),
+			'History should be trimmed to max_history - 1 before appending new user message'
+		);
+	}
+
+	/**
+	 * Test that the final history saved after a reply does not exceed max_history.
+	 */
+	public function test_history_saved_does_not_exceed_max_history() {
+		$history      = array(
+			array(
+				'role'    => 'user',
+				'content' => 'first',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'first reply',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'second',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'second reply',
+			),
+		);
+		$max_history  = 4;
+		$message_text = 'third';
+		$content      = 'third reply';
+
+		// Simulate append logic from handle_whatsapp_reply_job().
+		$history[] = array(
+			'role'    => 'user',
+			'content' => $message_text,
+		);
+		$history[] = array(
+			'role'    => 'assistant',
+			'content' => $content,
+		);
+		if ( count( $history ) > $max_history ) {
+			$history = array_slice( $history, -$max_history );
+		}
+
+		$this->assertLessThanOrEqual( $max_history, count( $history ) );
+		// Most recent assistant turn should be last.
+		$last = end( $history );
+		$this->assertSame( 'assistant', $last['role'] );
+		$this->assertSame( $content, $last['content'] );
 	}
 }
