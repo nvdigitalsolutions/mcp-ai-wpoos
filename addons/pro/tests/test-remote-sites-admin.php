@@ -1521,4 +1521,282 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			),
 		);
 	}
+
+	/**
+	 * Test that generate Messenger token succeeds when Meta API returns a valid token.
+	 */
+	public function test_ajax_generate_messenger_token_success() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'access_token' => 'app_access_token_abc123', 'token_type' => 'bearer' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = '123456789';
+		$_POST['app_secret'] = 'test_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed when Meta API returns a token' );
+		$this->assertSame( 'app_access_token_abc123', $data['data']['access_token'], 'Should return the access token' );
+	}
+
+	/**
+	 * Test that generate Messenger token fails when App ID is missing.
+	 */
+	public function test_ajax_generate_messenger_token_fails_without_app_id() {
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = '';
+		$_POST['app_secret'] = 'test_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when App ID is missing' );
+	}
+
+	/**
+	 * Test that generate Messenger token fails when Meta API returns an error.
+	 */
+	public function test_ajax_generate_messenger_token_handles_api_error() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Invalid App ID', 'type' => 'OAuthException', 'code' => 101 ) ) ),
+				'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = 'bad_app_id';
+		$_POST['app_secret'] = 'bad_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when Meta API returns an error' );
+	}
+
+	/**
+	 * Test that test Messenger live connection succeeds with valid page access token.
+	 */
+	public function test_ajax_test_messenger_live_success_with_page_token() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'id'        => '987654321',
+						'name'      => 'Test Business Page',
+						'category'  => 'Software',
+						'fan_count' => 1500,
+					)
+				),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = 'EAAtest_page_access_token';
+		$_POST['page_id']      = '987654321';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed with valid page access token' );
+		$this->assertSame( 'Test Business Page', $data['data']['page_name'], 'Should return the page name' );
+		$this->assertSame( '987654321', $data['data']['page_id'], 'Should return the page ID' );
+		$this->assertSame( 'Software', $data['data']['category'], 'Should return the page category' );
+	}
+
+	/**
+	 * Test that test Messenger live returns a warning when using an app token (no page_id).
+	 */
+	public function test_ajax_test_messenger_live_warns_on_app_token() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '123|hash', 'name' => 'My App' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = '123456789|app_access_token_hash';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed with a valid app access token' );
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Should include a warning for app access tokens' );
+	}
+
+	/**
+	 * Test that test Messenger live fails when no access token is provided.
+	 */
+	public function test_ajax_test_messenger_live_fails_without_access_token() {
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = '';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when access token is missing' );
+	}
+
+	/**
+	 * Test that test Messenger live sanitizes and validates the api_version parameter.
+	 */
+	public function test_ajax_test_messenger_live_sanitizes_api_version() {
+		$captured_url = '';
+		$mock_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
+			if ( false !== strpos( $url, 'graph.facebook.com' ) ) {
+				$captured_url = $url;
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'id' => '1', 'name' => 'Page' ) ),
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = 'EAAtest_token';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'not-a-valid-version';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$this->assertStringContainsString( 'v21.0', $captured_url, 'Should fall back to v21.0 for invalid api_version' );
+	}
 }

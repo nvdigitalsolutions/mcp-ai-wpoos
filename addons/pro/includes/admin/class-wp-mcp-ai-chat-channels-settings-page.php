@@ -701,63 +701,284 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render Facebook Messenger configuration section
 	 */
 	protected function render_messenger_config() {
+		$nonce_generate = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$nonce_test     = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$msng_versions  = array( 'v22.0', 'v21.0', 'v20.0', 'v19.0', 'v18.0' );
 		?>
 		<div class="platform-config">
 			<div class="platform-config-header">
 				<h3>📘 <?php esc_html_e( 'Facebook Messenger Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
 			</div>
 			<div class="platform-config-content">
-				<p><?php esc_html_e( 'Facebook Messenger integration enables page messaging with quick replies and persistent menus.', 'mcp-ai-wpoos-pro' ); ?></p>
-				
+				<p><?php esc_html_e( 'Facebook Messenger integration enables page messaging with quick replies, persistent menus, and AI-powered automated responses.', 'mcp-ai-wpoos-pro' ); ?></p>
+
 				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ol>
-					<li><?php esc_html_e( 'Go to Facebook Developers and create a new app', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Add Messenger product to your app', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Generate a Page Access Token', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Subscribe to webhook events', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Go to Meta Developer Dashboard (developers.facebook.com) and create a new app of type "Business"', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the Messenger product to your app', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Copy your App ID and App Secret from the App Settings → Basic page', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter your App ID and App Secret below, then click "Generate App Access Token" for a server-level token', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'For full Page messaging, obtain a long-lived Page Access Token from Meta Business Suite or Graph API Explorer with the pages_messaging permission', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter an optional Page ID to scope the connection to a specific Facebook Page', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Test Connection" to verify your credentials with the Meta API', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Create a secure Verify Token (any random string) and save it below', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Configure the Webhook URL and Verify Token in the Meta Developer Dashboard, then subscribe to the required events', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
 				<table class="form-table">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Page Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-app-id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
 						<td>
-							<input type="password" name="messenger_page_access_token" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Facebook Page access token', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" id="wp-mcp-ai-messenger-app-id" name="messenger_app_id" class="regular-text" autocomplete="off" />
+							<p class="description"><?php esc_html_e( 'Your App ID from the Meta Developer Dashboard. Required to generate an App Access Token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-page-access-token"><?php esc_html_e( 'Page Access Token', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
 						<td>
-							<input type="password" name="messenger_app_secret" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Facebook app secret for signature verification', 'mcp-ai-wpoos-pro' ); ?></p>
+							<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+								<input type="password" id="wp-mcp-ai-messenger-page-access-token" name="messenger_page_access_token" class="regular-text" autocomplete="new-password" />
+								<button type="button" id="wp-mcp-ai-messenger-token-toggle" class="button button-small" aria-label="<?php esc_attr_e( 'Show access token', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Show', 'mcp-ai-wpoos-pro' ); ?></button>
+							</div>
+							<p class="description"><?php esc_html_e( 'Your Facebook Page Access Token. Use "Generate App Access Token" below, or obtain a long-lived Page Access Token from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-app-secret"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
 						<td>
-							<input type="text" name="messenger_verify_token" class="regular-text" placeholder="<?php esc_attr_e( 'Generate a secure token', 'mcp-ai-wpoos-pro' ); ?>" />
-							<p class="description"><?php esc_html_e( 'Use this when setting up webhook subscription', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="password" id="wp-mcp-ai-messenger-app-secret" name="messenger_app_secret" class="regular-text" autocomplete="new-password" />
+							<p class="description"><?php esc_html_e( 'Your App Secret from the Meta Developer Dashboard. Required for webhook signature validation (X-Hub-Signature-256).', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<button type="button" id="wp-mcp-ai-messenger-generate-token-btn" class="button button-secondary">
+								<?php esc_html_e( 'Generate App Access Token', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="wp-mcp-ai-messenger-token-status" style="margin-left:10px; display:none;"></span>
+							<p class="description"><?php esc_html_e( 'Enter your App ID and App Secret above, then click to generate an App Access Token. For full Page messaging, obtain a long-lived Page Access Token from Meta Business Suite.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-page-id"><?php esc_html_e( 'Page ID', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<input type="text" id="wp-mcp-ai-messenger-page-id" name="messenger_page_id" class="regular-text" autocomplete="off" />
+							<p class="description"><?php esc_html_e( 'Optional: Your Facebook Page ID. Used to scope the connection to a specific page and verify credentials during test.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<button type="button" id="wp-mcp-ai-messenger-test-btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Messenger Connection', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="wp-mcp-ai-messenger-test-spinner" class="spinner" style="float:none; vertical-align:middle; display:none;"></span>
+							<div id="wp-mcp-ai-messenger-test-result" style="display:none; margin-top:8px;"></div>
+							<p class="description"><?php esc_html_e( 'Enter your Page Access Token above, then click to verify credentials with the Meta API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-graph-api-version"><?php esc_html_e( 'Graph API Version', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<select id="wp-mcp-ai-messenger-graph-api-version" name="messenger_graph_api_version" class="regular-text">
+								<?php foreach ( $msng_versions as $ver ) : ?>
+									<option value="<?php echo esc_attr( $ver ); ?>"><?php echo esc_html( $ver ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'Meta Graph API version for Messenger API requests. Select the latest version supported by your Meta app.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="wp-mcp-ai-messenger-verify-token"><?php esc_html_e( 'Verify Token', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<input type="text" id="wp-mcp-ai-messenger-verify-token" name="messenger_verify_token" class="regular-text" placeholder="<?php esc_attr_e( 'Generate a secure token', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off" />
+							<p class="description"><?php esc_html_e( 'Use this token when setting up webhook subscription in the Meta Developer Dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/messenger' ) ); ?></code>
-							<p class="description"><?php esc_html_e( 'Configure as Callback URL in Messenger settings', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/messenger' ) ); ?>" class="large-text code" onclick="this.select();" onfocus="this.select();" style="background-color:#f0f0f0;" />
+							<p class="description"><?php esc_html_e( 'Configure this as the Callback URL in the Meta Developer Dashboard webhook settings. Click the field to select the URL.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 				</table>
 
-				<h4><?php esc_html_e( 'Required Webhook Events', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<div class="code-snippet">messages, messaging_postbacks, messaging_optins, message_deliveries, message_reads</div>
+				<h4><?php esc_html_e( 'Required Webhook Subscriptions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<div class="code-snippet">messages, messaging_postbacks, messaging_optins, message_deliveries, message_reads, messaging_referrals, message_reactions</div>
+				<p style="margin-top:8px; font-size:13px;">
+					<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+				</p>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://developers.facebook.com/docs/messenger-platform" target="_blank"><?php esc_html_e( 'Messenger Platform Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://developers.facebook.com/docs/messenger-platform/send-messages" target="_blank"><?php esc_html_e( 'Send API Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.facebook.com/docs/messenger-platform/webhooks" target="_blank"><?php esc_html_e( 'Webhook Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.facebook.com/tools/explorer/" target="_blank"><?php esc_html_e( 'Graph API Explorer', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://business.facebook.com/settings/system-users" target="_blank"><?php esc_html_e( 'Meta Business Suite – System Users', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
+
+		<script>
+		( function() {
+			// Show/Hide Page Access Token toggle.
+			var tokenToggleBtn = document.getElementById( 'wp-mcp-ai-messenger-token-toggle' );
+			if ( tokenToggleBtn ) {
+				tokenToggleBtn.addEventListener( 'click', function() {
+					var tokenInput = document.getElementById( 'wp-mcp-ai-messenger-page-access-token' );
+					if ( 'password' === tokenInput.type ) {
+						tokenInput.type = 'text';
+						tokenToggleBtn.textContent = '<?php echo esc_js( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>';
+						tokenToggleBtn.setAttribute( 'aria-label', '<?php echo esc_js( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>' );
+					} else {
+						tokenInput.type = 'password';
+						tokenToggleBtn.textContent = '<?php echo esc_js( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>';
+						tokenToggleBtn.setAttribute( 'aria-label', '<?php echo esc_js( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>' );
+					}
+				} );
+			}
+
+			// Generate App Access Token button.
+			var generateBtn = document.getElementById( 'wp-mcp-ai-messenger-generate-token-btn' );
+			if ( generateBtn ) {
+				generateBtn.addEventListener( 'click', function() {
+					var appId     = document.getElementById( 'wp-mcp-ai-messenger-app-id' ).value.trim();
+					var appSecret = document.getElementById( 'wp-mcp-ai-messenger-app-secret' ).value.trim();
+					var statusEl  = document.getElementById( 'wp-mcp-ai-messenger-token-status' );
+
+					if ( ! appId ) {
+						statusEl.style.display = 'inline';
+						statusEl.style.color   = '#d63638';
+						statusEl.textContent   = '<?php echo esc_js( __( 'Please enter your App ID first.', 'mcp-ai-wpoos-pro' ) ); ?>';
+						return;
+					}
+					if ( ! appSecret ) {
+						statusEl.style.display = 'inline';
+						statusEl.style.color   = '#d63638';
+						statusEl.textContent   = '<?php echo esc_js( __( 'Please enter your App Secret first.', 'mcp-ai-wpoos-pro' ) ); ?>';
+						return;
+					}
+
+					generateBtn.disabled  = true;
+					statusEl.style.display = 'inline';
+					statusEl.style.color   = '#646970';
+					statusEl.textContent   = '<?php echo esc_js( __( 'Generating\u2026', 'mcp-ai-wpoos-pro' ) ); ?>';
+
+					var data = new FormData();
+					data.append( 'action',     'wp_mcp_ai_generate_messenger_token' );
+					data.append( 'nonce',      '<?php echo esc_js( $nonce_generate ); ?>' );
+					data.append( 'app_id',     appId );
+					data.append( 'app_secret', appSecret );
+
+					fetch( ajaxurl, { method: 'POST', credentials: 'same-origin', body: data } )
+						.then( function( response ) {
+							if ( ! response.ok ) { throw new Error( 'HTTP ' + response.status ); }
+							return response.json();
+						} )
+						.then( function( result ) {
+							generateBtn.disabled = false;
+							if ( result.success ) {
+								var tokenInput = document.getElementById( 'wp-mcp-ai-messenger-page-access-token' );
+								tokenInput.value = result.data.access_token;
+								tokenInput.type  = 'text';
+								if ( tokenToggleBtn ) {
+									tokenToggleBtn.textContent = '<?php echo esc_js( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>';
+									tokenToggleBtn.setAttribute( 'aria-label', '<?php echo esc_js( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>' );
+								}
+								statusEl.style.color = '#00a32a';
+								statusEl.textContent = '<?php echo esc_js( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>';
+							} else {
+								statusEl.style.color = '#d63638';
+								statusEl.textContent = result.data || '<?php echo esc_js( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>';
+							}
+						} )
+						.catch( function() {
+							generateBtn.disabled = false;
+							statusEl.style.color = '#d63638';
+							statusEl.textContent = '<?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?>';
+						} );
+				} );
+			}
+
+			// Test Connection button.
+			var testBtn     = document.getElementById( 'wp-mcp-ai-messenger-test-btn' );
+			var testSpinner = document.getElementById( 'wp-mcp-ai-messenger-test-spinner' );
+			var testResult  = document.getElementById( 'wp-mcp-ai-messenger-test-result' );
+			if ( testBtn ) {
+				testBtn.addEventListener( 'click', function() {
+					var accessToken = document.getElementById( 'wp-mcp-ai-messenger-page-access-token' ).value.trim();
+					var pageId      = document.getElementById( 'wp-mcp-ai-messenger-page-id' ).value.trim();
+					var apiVersion  = document.getElementById( 'wp-mcp-ai-messenger-graph-api-version' ).value;
+
+					if ( ! accessToken ) {
+						testResult.style.display = 'block';
+						testResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Please enter your Page Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+						return;
+					}
+
+					testBtn.disabled = true;
+					if ( testSpinner ) { testSpinner.style.display = 'inline-block'; }
+					testResult.style.display = 'none';
+					testResult.innerHTML     = '';
+
+					var data = new FormData();
+					data.append( 'action',       'wp_mcp_ai_test_messenger_live' );
+					data.append( 'nonce',        '<?php echo esc_js( $nonce_test ); ?>' );
+					data.append( 'access_token', accessToken );
+					data.append( 'page_id',      pageId );
+					data.append( 'api_version',  apiVersion );
+
+					fetch( ajaxurl, { method: 'POST', credentials: 'same-origin', body: data } )
+						.then( function( response ) {
+							if ( ! response.ok ) { throw new Error( 'HTTP ' + response.status ); }
+							return response.json();
+						} )
+						.then( function( result ) {
+							testBtn.disabled = false;
+							if ( testSpinner ) { testSpinner.style.display = 'none'; }
+							testResult.style.display = 'block';
+							if ( result.success ) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + '<?php echo esc_js( __( 'Connection successful!', 'mcp-ai-wpoos-pro' ) ); ?>' + '</strong></p>';
+								if ( d.page_name ) { html += '<p><?php echo esc_js( __( 'Page Name:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.page_name + '</p>'; }
+								if ( d.page_id )   { html += '<p><?php echo esc_js( __( 'Page ID:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.page_id + '</p>'; }
+								if ( d.category )  { html += '<p><?php echo esc_js( __( 'Category:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.category + '</p>'; }
+								if ( d.token_type ) { html += '<p><?php echo esc_js( __( 'Token Type:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.token_type + '</p>'; }
+								html += '</div>';
+								if ( d.warning ) {
+									html += '<div class="notice notice-warning inline" style="margin:8px 0 0;"><p>' + d.warning + '</p></div>';
+								}
+								testResult.innerHTML = html;
+							} else {
+								testResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + ( result.data || '<?php echo esc_js( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>' ) + '</p></div>';
+							}
+						} )
+						.catch( function() {
+							testBtn.disabled = false;
+							if ( testSpinner ) { testSpinner.style.display = 'none'; }
+							testResult.style.display = 'block';
+							testResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+						} );
+				} );
+			}
+		} )();
+		</script>
 		<?php
 	}
 
