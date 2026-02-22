@@ -72,6 +72,14 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Text content of the message to be sent.', 'mcp-ai-wpoos-pro' ),
 				),
+				'thread_key'   => array(
+					'type'        => 'string',
+					'description' => __( 'Optional thread key to reply in an existing thread or start a new named thread within the space.', 'mcp-ai-wpoos-pro' ),
+				),
+				'thread_name'  => array(
+					'type'        => 'string',
+					'description' => __( 'Optional thread resource name (e.g., spaces/SPACE_ID/threads/THREAD_ID) to reply in an existing thread.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'access_token', 'space', 'text' ),
 			'additionalProperties' => false,
@@ -126,6 +134,18 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 		$payload = array(
 			'text' => $text,
 		);
+
+		// Support threaded messages within spaces.
+		$thread_key  = isset( $arguments['thread_key'] ) ? sanitize_text_field( $arguments['thread_key'] ) : '';
+		$thread_name = isset( $arguments['thread_name'] ) ? sanitize_text_field( $arguments['thread_name'] ) : '';
+
+		if ( '' !== $thread_name && preg_match( '/^spaces\/[a-zA-Z0-9_-]+\/threads\/[a-zA-Z0-9_-]+$/', $thread_name ) ) {
+			$payload['thread'] = array( 'name' => $thread_name );
+			$endpoint          = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+		} elseif ( '' !== $thread_key ) {
+			$payload['thread'] = array( 'threadKey' => $thread_key );
+			$endpoint          = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+		}
 
 		$body = wp_json_encode( $payload );
 

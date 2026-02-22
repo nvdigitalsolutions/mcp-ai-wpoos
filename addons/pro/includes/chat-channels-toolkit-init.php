@@ -65,7 +65,7 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_ad
 /**
  * Load and register Chat Channels Toolkit tools.
  *
- * Registers chat channel tools including WebChat message handling.
+ * Registers chat channel tools including WebChat and Google Chat tools.
  *
  * @since 1.0.0
  */
@@ -90,6 +90,36 @@ function wp_mcp_ai_load_chat_channels_tools() {
 				$should_register = true;
 
 				// Check if tool declares an availability check.
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
+
+	// Google Chat space tools.
+	$google_chat_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$google_chat_tools     = array(
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'          => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+		'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+		'WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members'  => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-list-google-chat-space-members.php',
+		'WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member'    => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-add-google-chat-space-member.php',
+		'WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member' => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-remove-google-chat-space-member.php',
+	);
+
+	foreach ( $google_chat_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
 				if ( method_exists( $class, 'is_available' ) ) {
 					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
 				}

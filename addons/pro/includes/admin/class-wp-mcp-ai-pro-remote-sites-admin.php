@@ -402,6 +402,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'page_id'         => isset( $_POST['messenger_page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_page_id'] ) ) : '',
 				// WebChat-specific fields.
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
+				// Google Chat-specific fields.
+				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -2260,6 +2262,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
+						<label for="google_chat_space"><?php esc_html_e( 'Google Chat Space (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_chat_space" id="google_chat_space" class="regular-text" value="<?php echo $is_edit && isset( $connection['google_chat_space'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['google_chat_space'] ) : ''; ?>" placeholder="spaces/AAAAxxxxxx" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Enter the Google Chat space resource name (e.g., spaces/AAAAxxxxxx) to route messages from this specific space to this connection\'s assigned assistants. Leave blank to handle messages from all spaces using this connection as the default.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
 						<label for="google_chat_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
@@ -2305,6 +2317,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Generate an OAuth 2.0 access token from the service account and enter it in the Service Account Access Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( '(Optional) Enter a specific Google Chat Space resource name (e.g., spaces/AAAAxxxxxx) to route messages from that space to this connection\'s assistants. Leave blank to handle all spaces with this connection.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Assign one or more AI Assistants — the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save the connection and enable it to start receiving and auto-replying to Google Chat messages.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>

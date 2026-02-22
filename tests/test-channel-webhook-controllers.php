@@ -681,6 +681,109 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// Google Chat – per-space assistant routing enhancements.
+	// =========================================================================
+
+	/**
+	 * Test get_active_google_chat_connection returns space-specific connection when available.
+	 */
+	public function test_google_chat_space_specific_connection_preferred_over_generic() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$connections = array(
+			array(
+				'id'                     => 'generic_conn',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'dummy_token',
+			),
+			array(
+				'id'                     => 'space_conn',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 2 ),
+				'api_key'                => 'dummy_token',
+				'google_chat_space'      => 'spaces/AAABBB',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'spaces/AAABBB' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'space_conn', $result['id'], 'Space-specific connection should be preferred' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test get_active_google_chat_connection falls back to generic when no space match.
+	 */
+	public function test_google_chat_falls_back_to_generic_when_no_space_match() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$connections = array(
+			array(
+				'id'                     => 'generic_conn',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'dummy_token',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'spaces/UNKNOWN' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'generic_conn', $result['id'], 'Should fall back to generic connection' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test handle_welcome_message_job returns early when space_name is empty.
+	 */
+	public function test_google_chat_welcome_message_job_returns_early_on_empty_space() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// This should not throw an exception even with invalid args.
+		$controller->handle_welcome_message_job(
+			array(
+				'space_name'    => '',
+				'message_text'  => 'Hello!',
+				'connection_id' => 'conn_abc',
+			)
+		);
+
+		// If we reach here without exception, the early-return guard works.
+		$this->assertTrue( true );
+	}
+
+	// =========================================================================
 	// Shared conversation history trimming logic (platform-agnostic).
 	// =========================================================================
 

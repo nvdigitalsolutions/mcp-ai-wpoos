@@ -68,6 +68,17 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 					'type'        => 'string',
 					'description' => __( 'Optional filter for spaces (e.g., spaceType = "SPACE").', 'mcp-ai-wpoos-pro' ),
 				),
+				'page_size'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of spaces to return per page (1–1000, default 100).', 'mcp-ai-wpoos-pro' ),
+					'default'     => 100,
+					'minimum'     => 1,
+					'maximum'     => 1000,
+				),
+				'page_token'   => array(
+					'type'        => 'string',
+					'description' => __( 'Page token from a previous response to retrieve the next page of spaces.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'access_token' ),
 			'additionalProperties' => false,
@@ -103,9 +114,22 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 
 		$endpoint = 'https://chat.googleapis.com/v1/spaces';
 
+		$query_args = array();
+
 		if ( ! empty( $arguments['filter'] ) ) {
-			$filter = sanitize_text_field( $arguments['filter'] );
-			$endpoint = add_query_arg( 'filter', $filter, $endpoint );
+			$query_args['filter'] = sanitize_text_field( $arguments['filter'] );
+		}
+
+		$page_size = isset( $arguments['page_size'] ) ? absint( $arguments['page_size'] ) : 100;
+		$page_size = max( 1, min( 1000, $page_size ) );
+		$query_args['pageSize'] = $page_size;
+
+		if ( ! empty( $arguments['page_token'] ) ) {
+			$query_args['pageToken'] = sanitize_text_field( $arguments['page_token'] );
+		}
+
+		if ( ! empty( $query_args ) ) {
+			$endpoint = add_query_arg( $query_args, $endpoint );
 		}
 
 		WP_MCP_AI_Logger::log_event(
