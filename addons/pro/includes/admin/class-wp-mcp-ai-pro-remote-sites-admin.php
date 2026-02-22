@@ -237,6 +237,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_secret = isset( $_POST['whatsapp_app_secret'] ) ? wp_unslash( $_POST['whatsapp_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized.
 					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
+				case 'google_chat':
+					$api_key = isset( $_POST['google_chat_access_token'] ) ? wp_unslash( $_POST['google_chat_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['slack_signing_secret'] ) ? wp_unslash( $_POST['slack_signing_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -329,9 +332,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$auth_type = 'none';
 			}
 
+			if ( 'google_chat' === $connection_type ) {
+				$url       = 'https://chat.googleapis.com/v1';
+				$auth_type = 'none';
+			}
+
 			// For mesh peer connections, use custom_header auth with mesh API key
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
+			}
+
+			// Resolve the shared verify_token field (used by WhatsApp, Messenger, and Google Chat).
+			$verify_token = '';
+			if ( isset( $_POST['whatsapp_verify_token'] ) ) {
+				$verify_token = sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) );
+			} elseif ( isset( $_POST['messenger_verify_token'] ) ) {
+				$verify_token = sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) );
+			} elseif ( isset( $_POST['google_chat_audience'] ) ) {
+				$verify_token = sanitize_text_field( wp_unslash( $_POST['google_chat_audience'] ) );
 			}
 
 			$connection_data = array(
@@ -370,7 +388,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
-				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
+				'verify_token'    => $verify_token,
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
 				'workspace_id'    => isset( $_POST['slack_workspace_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_workspace_id'] ) ) : '',
@@ -615,6 +633,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'microsoft_teams'    => __( 'MS Teams', 'mcp-ai-wpoos-pro' ),
 									'facebook_messenger' => __( 'Messenger', 'mcp-ai-wpoos-pro' ),
 									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
+									'google_chat'        => __( 'Google Chat', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
@@ -635,6 +654,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'microsoft_teams'    => '#6264a7', // Teams purple
 									'facebook_messenger' => '#0084ff', // Messenger blue
 									'webchat'            => '#ff6b6b', // WebChat coral red
+									'google_chat'        => '#1a73e8', // Google Chat blue
 								);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -899,6 +919,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="webchat" <?php selected( $connection_type, 'webchat' ); ?>>
 								<?php esc_html_e( 'WebChat P2P (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="google_chat" <?php selected( $connection_type, 'google_chat' ); ?>>
+								<?php esc_html_e( 'Google Chat (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -2163,6 +2186,99 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Google Chat -->
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_access_token"><?php esc_html_e( 'Service Account Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_chat_access_token" id="google_chat_access_token" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 access token from a Google service account with the Chat API scope (https://www.googleapis.com/auth/chat.bot). Used to post AI replies to Google Chat spaces.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_audience"><?php esc_html_e( 'Audience URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_chat_audience" id="google_chat_audience" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" placeholder="<?php echo esc_attr( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The audience URL used to validate the Google OIDC token sent by Google Chat. Set this to your webhook URL (shown below). Leave blank to skip audience verification (less secure).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description"><?php esc_html_e( 'Configure this URL in the Google Cloud Console as your bot\'s endpoint URL. Also use it as the Audience URL above.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$gc_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$gc_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="google_chat_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $gc_assistants as $gc_assistant ) :
+								$gc_is_selected = in_array( $gc_assistant->ID, $gc_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>" <?php echo esc_attr( $gc_is_selected ); ?>>
+									<?php echo esc_html( $gc_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to your Google Chat bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Open Google Cloud Console (console.cloud.google.com) and enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Create a service account under IAM & Admin → Service Accounts; grant it the Chat API scope (https://www.googleapis.com/auth/chat.bot).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Generate an OAuth 2.0 access token from the service account and enter it in the Service Account Access Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign one or more AI Assistants — the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save the connection and enable it to start receiving and auto-replying to Google Chat messages.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0; font-size: 13px; color: #2271b1;">
+								ℹ <strong><?php esc_html_e( 'Required scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<code>https://www.googleapis.com/auth/chat.bot</code>
+							</p>
+						</div>
+					</td>
+				</tr>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -2271,6 +2387,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var messengerFields = document.querySelectorAll('.facebook_messenger-only-field');
 			var webchatFields = document.querySelectorAll('.webchat-only-field');
 			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
+			var googleChatFields = document.querySelectorAll('.google_chat-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -2327,6 +2444,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			meshPeerFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleChatFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -2488,6 +2608,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// URL field should remain editable for mesh peers
 				urlField.readOnly = false;
 				urlField.style.backgroundColor = '';
+			} else if (connectionType === 'google_chat') {
+				googleChatFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Chat uses the Chat API
+				urlField.value = 'https://chat.googleapis.com/v1';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
 			}
 		}
 

@@ -402,6 +402,285 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// Google Chat Webhook Controller
+	// =========================================================================
+
+	/**
+	 * Test CONVERSATION_HISTORY_TTL constant equals 86400 (24 hours).
+	 */
+	public function test_google_chat_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Google_Chat_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Google Chat CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test DEDUP_TRANSIENT_TTL constant equals 60.
+	 */
+	public function test_google_chat_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Google_Chat_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Google Chat DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/**
+	 * Test CHAT_API_BASE constant is the correct Google Chat API URL.
+	 */
+	public function test_google_chat_api_base_constant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$this->assertSame(
+			'https://chat.googleapis.com/v1',
+			WP_MCP_AI_Google_Chat_Webhook_Controller::CHAT_API_BASE
+		);
+	}
+
+	/**
+	 * Test get_conversation_history_key returns a deterministic, scoped, non-empty string.
+	 */
+	public function test_google_chat_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'users/123', 'spaces/AAA', 'conn_abc' );
+		$key2 = $method->invoke( $controller, 'users/123', 'spaces/AAA', 'conn_abc' );
+		$key3 = $method->invoke( $controller, 'users/456', 'spaces/AAA', 'conn_abc' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_gc_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/**
+	 * Test that different connection IDs produce different keys for the same sender/space.
+	 */
+	public function test_google_chat_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'users/123', 'spaces/AAA', 'conn_1' );
+		$key2 = $method->invoke( $controller, 'users/123', 'spaces/AAA', 'conn_2' );
+
+		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
+	}
+
+	/**
+	 * Test extract_message_text prefers argumentText (bot mention stripped) over raw text.
+	 */
+	public function test_google_chat_extract_message_text_prefers_argument_text() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_message_text' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'message' => array(
+				'text'         => '@MyBot What is the weather?',
+				'argumentText' => 'What is the weather?',
+			),
+		);
+
+		$this->assertSame( 'What is the weather?', $method->invoke( $controller, $payload ) );
+	}
+
+	/**
+	 * Test extract_message_text falls back to text when argumentText is absent.
+	 */
+	public function test_google_chat_extract_message_text_falls_back_to_text() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_message_text' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'message' => array(
+				'text' => 'Hello from DM',
+			),
+		);
+
+		$this->assertSame( 'Hello from DM', $method->invoke( $controller, $payload ) );
+	}
+
+	/**
+	 * Test extract_message_text returns empty string when no text is present.
+	 */
+	public function test_google_chat_extract_message_text_empty_for_no_text() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_message_text' );
+		$method->setAccessible( true );
+
+		$this->assertSame( '', $method->invoke( $controller, array( 'message' => array() ) ) );
+		$this->assertSame( '', $method->invoke( $controller, array() ) );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects requests with no Authorization header.
+	 */
+	public function test_google_chat_validation_rejects_missing_auth_header() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must reject requests without an Authorization header' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects requests with a non-Bearer Authorization header.
+	 */
+	public function test_google_chat_validation_rejects_non_bearer_auth() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Basic dXNlcjpwYXNz' );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must reject non-Bearer Authorization schemes' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token allows through when Bearer token is present
+	 * but no audience is configured (no-audience mode).
+	 */
+	public function test_google_chat_validation_passes_without_audience_configured() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no google_chat connection is stored so audience defaults to empty.
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.valid.looking.token' );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'Validation should pass when no audience is configured and Bearer token is present' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects an expired JWT when audience is configured.
+	 */
+	public function test_google_chat_validation_rejects_expired_jwt() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		// Store a google_chat connection with an audience URL.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'verify_token'           => $webhook_url,
+				'assigned_assistant_ids' => array( 1 ),
+			)
+		);
+
+		// Build a JWT with a past expiry and matching audience.
+		$header  = rtrim( strtr( base64_encode( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$payload = rtrim( strtr( base64_encode( wp_json_encode( array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			'iss' => 'accounts.google.com',
+			'aud' => $webhook_url,
+			'exp' => time() - 3600,
+		) ) ), '+/', '-_' ), '=' );
+		$token   = $header . '.' . $payload . '.fakesig';
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must reject expired OIDC tokens' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a JWT with mismatched audience.
+	 */
+	public function test_google_chat_validation_rejects_wrong_audience() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'verify_token'           => $webhook_url,
+				'assigned_assistant_ids' => array( 1 ),
+			)
+		);
+
+		// Build a JWT with a different (wrong) audience.
+		$header  = rtrim( strtr( base64_encode( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$payload = rtrim( strtr( base64_encode( wp_json_encode( array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			'iss' => 'accounts.google.com',
+			'aud' => 'https://example.com/wrong-endpoint',
+			'exp' => time() + 3600,
+		) ) ), '+/', '-_' ), '=' );
+		$token   = $header . '.' . $payload . '.fakesig';
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must reject tokens with audience mismatch' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
 	// Shared conversation history trimming logic (platform-agnostic).
 	// =========================================================================
 
