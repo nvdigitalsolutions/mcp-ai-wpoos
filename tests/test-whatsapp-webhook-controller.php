@@ -1364,48 +1364,258 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the final history saved after a reply does not exceed max_history.
+	 * Test that get_verify_token() returns the correct token for a specific connection_id.
 	 */
-	public function test_history_saved_does_not_exceed_max_history() {
-		$history      = array(
-			array(
-				'role'    => 'user',
-				'content' => 'first',
-			),
-			array(
-				'role'    => 'assistant',
-				'content' => 'first reply',
-			),
-			array(
-				'role'    => 'user',
-				'content' => 'second',
-			),
-			array(
-				'role'    => 'assistant',
-				'content' => 'second reply',
-			),
-		);
-		$max_history  = 4;
-		$message_text = 'third';
-		$content      = 'third reply';
-
-		// Simulate append logic from handle_whatsapp_reply_job().
-		$history[] = array(
-			'role'    => 'user',
-			'content' => $message_text,
-		);
-		$history[] = array(
-			'role'    => 'assistant',
-			'content' => $content,
-		);
-		if ( count( $history ) > $max_history ) {
-			$history = array_slice( $history, -$max_history );
+	public function test_get_verify_token_by_connection_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
 		}
 
-		$this->assertLessThanOrEqual( $max_history, count( $history ) );
-		// Most recent assistant turn should be last.
-		$last = end( $history );
-		$this->assertSame( 'assistant', $last['role'] );
-		$this->assertSame( $content, $last['content'] );
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create two WhatsApp connections each with a distinct verify token.
+		$conn_a_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'WhatsApp Channel A',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_a',
+				'phone_number_id' => '111111111111111',
+				'verify_token'    => 'verify_token_channel_a',
+			)
+		);
+
+		$conn_b_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'WhatsApp Channel B',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_b',
+				'phone_number_id' => '222222222222222',
+				'verify_token'    => 'verify_token_channel_b',
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $conn_a_id, 'Channel A save should succeed' );
+		$this->assertNotInstanceOf( 'WP_Error', $conn_b_id, 'Channel B save should succeed' );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_verify_token' );
+		$method->setAccessible( true );
+
+		// Channel-specific lookup should return the correct token.
+		$this->assertEquals(
+			'verify_token_channel_a',
+			$method->invoke( $controller, $conn_a_id ),
+			'Should return Channel A verify token when queried by its connection_id'
+		);
+		$this->assertEquals(
+			'verify_token_channel_b',
+			$method->invoke( $controller, $conn_b_id ),
+			'Should return Channel B verify token when queried by its connection_id'
+		);
+
+		// Generic lookup (no connection_id) should still return one of the tokens.
+		$generic_token = $method->invoke( $controller );
+		$this->assertNotEmpty( $generic_token, 'Generic lookup should return a non-empty token' );
 	}
+
+	/**
+	 * Test that get_verify_token() returns empty string for an unknown connection_id.
+	 */
+	public function test_get_verify_token_returns_empty_for_unknown_connection_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create one connection.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'WhatsApp Channel',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_x',
+				'phone_number_id' => '333333333333333',
+				'verify_token'    => 'verify_token_x',
+			)
+		);
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_verify_token' );
+		$method->setAccessible( true );
+
+		$this->assertEquals(
+			'',
+			$method->invoke( $controller, 'nonexistent_connection_id' ),
+			'Should return empty string for an unknown connection_id'
+		);
+	}
+
+	/**
+	 * Test channel-specific webhook verification uses the correct connection's verify token.
+	 */
+	public function test_channel_specific_webhook_verification() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Create two channels with different verify tokens.
+		$conn_a_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Support Channel',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_support',
+				'phone_number_id' => '444444444444444',
+				'verify_token'    => 'support_verify_token',
+			)
+		);
+
+		$conn_b_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Sales Channel',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_sales',
+				'phone_number_id' => '555555555555555',
+				'verify_token'    => 'sales_verify_token',
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $conn_a_id );
+		$this->assertNotInstanceOf( 'WP_Error', $conn_b_id );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		// Verify Channel A with its own token via the channel-specific URL.
+		$request_a = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp/' . $conn_a_id );
+		$request_a->set_param( 'connection_id', $conn_a_id );
+		$request_a->set_param( 'hub_mode', 'subscribe' );
+		$request_a->set_param( 'hub_verify_token', 'support_verify_token' );
+		$request_a->set_param( 'hub_challenge', 'challenge_for_channel_a' );
+
+		$response_a = $controller->verify_webhook( $request_a );
+		$this->assertInstanceOf( 'WP_REST_Response', $response_a, 'Channel A verification should succeed with correct token' );
+		$this->assertEquals( 200, $response_a->get_status() );
+		$this->assertEquals( 'challenge_for_channel_a', $response_a->get_data() );
+
+		// Verify Channel B with its own token.
+		$request_b = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp/' . $conn_b_id );
+		$request_b->set_param( 'connection_id', $conn_b_id );
+		$request_b->set_param( 'hub_mode', 'subscribe' );
+		$request_b->set_param( 'hub_verify_token', 'sales_verify_token' );
+		$request_b->set_param( 'hub_challenge', 'challenge_for_channel_b' );
+
+		$response_b = $controller->verify_webhook( $request_b );
+		$this->assertInstanceOf( 'WP_REST_Response', $response_b, 'Channel B verification should succeed with correct token' );
+		$this->assertEquals( 200, $response_b->get_status() );
+		$this->assertEquals( 'challenge_for_channel_b', $response_b->get_data() );
+	}
+
+	/**
+	 * Test that channel-specific webhook verification rejects wrong token for another channel.
+	 */
+	public function test_channel_specific_webhook_rejects_wrong_token() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$conn_a_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Channel A',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_a',
+				'phone_number_id' => '666666666666666',
+				'verify_token'    => 'token_for_a',
+			)
+		);
+
+		$conn_b_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Channel B',
+				'url'             => 'https://graph.facebook.com/v21.0',
+				'connection_type' => 'whatsapp',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'token_b',
+				'phone_number_id' => '777777777777777',
+				'verify_token'    => 'token_for_b',
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $conn_a_id );
+		$this->assertNotInstanceOf( 'WP_Error', $conn_b_id );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		// Try to verify Channel A using Channel B's token — should fail.
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/whatsapp/' . $conn_a_id );
+		$request->set_param( 'connection_id', $conn_a_id );
+		$request->set_param( 'hub_mode', 'subscribe' );
+		$request->set_param( 'hub_verify_token', 'token_for_b' ); // Wrong token.
+		$request->set_param( 'hub_challenge', 'some_challenge' );
+
+		$response = $controller->verify_webhook( $request );
+		$this->assertInstanceOf( 'WP_Error', $response, 'Verification should fail when using the wrong channel token' );
+		$this->assertEquals( 'whatsapp_verification_failed', $response->get_error_code() );
+	}
+
 }
+
