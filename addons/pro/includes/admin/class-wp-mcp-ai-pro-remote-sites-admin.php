@@ -4293,6 +4293,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								$result['send_error_hint'] = __( 'Phone Number ID not found. The ID configured for this connection does not match any WhatsApp phone number accessible with your access token. Find the correct Phone Number ID in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID". This is different from the WhatsApp Business Account ID (WABA ID) shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' );
 							} elseif ( 133010 === $meta_code ) {
 								$result['send_error_hint'] = __( 'Your WhatsApp Business phone number is not yet registered with the Cloud API. Use the Register Phone Number button in this connection\'s settings to complete registration. Before registering, ensure the number is not active on the WhatsApp or WhatsApp Business app (delete the account from the app first), and if it was previously on the on-premises API, deregister it there first. See the official Meta documentation: https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration', 'mcp-ai-wpoos-pro' );
+							} elseif ( 190 === $meta_code ) {
+								if ( 463 === $meta_subcode ) {
+									$result['send_error_hint'] = __( 'Your WhatsApp access token has expired. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions, then update the Access Token in this connection\'s settings.', 'mcp-ai-wpoos-pro' );
+								} else {
+									$result['send_error_hint'] = __( 'Your WhatsApp access token is invalid or expired. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions, then update the Access Token in this connection\'s settings.', 'mcp-ai-wpoos-pro' );
+								}
 							}
 						}
 					}
