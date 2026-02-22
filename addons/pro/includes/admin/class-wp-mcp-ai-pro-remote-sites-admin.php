@@ -670,16 +670,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</td>
 								<td>
 								<?php
-								// For WhatsApp channels, show phone number and channel description instead of API URL.
+								// For WhatsApp channels, show phone number link, channel description, and unique channel link.
 								if ( 'whatsapp' === $connection_type ) {
 									$wa_display = array();
 									if ( ! empty( $connection['display_phone_number'] ) ) {
-										$wa_display[] = esc_html( $connection['display_phone_number'] );
+										$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
+										if ( ! empty( $wa_phone_digits ) ) {
+											$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
+											$wa_display[]  = '<a href="' . esc_url( $wa_phone_link ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['display_phone_number'] ) . '</a>';
+										} else {
+											$wa_display[] = esc_html( $connection['display_phone_number'] );
+										}
 									} elseif ( ! empty( $connection['phone_number_id'] ) ) {
 										$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
 									}
 									if ( ! empty( $connection['channel_description'] ) ) {
 										$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
+									}
+									if ( ! empty( $connection_id ) ) {
+										$channel_webhook = home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection_id );
+										$wa_display[]    = '<small><a href="' . esc_url( $channel_webhook ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Channel Webhook', 'mcp-ai-wpoos-pro' ) . '</a></small>';
 									}
 									echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 								} else {
