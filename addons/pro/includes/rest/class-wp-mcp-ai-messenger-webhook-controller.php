@@ -41,10 +41,26 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	protected $rest_base = 'webhooks/messenger';
 
 	/**
+	 * Cron hook for dispatching AI replies to incoming Messenger messages.
+	 */
+	const REPLY_CRON_HOOK = 'wp_mcp_ai_messenger_send_ai_reply';
+
+	/**
+	 * Default Messenger Graph API version used when none is stored on the connection.
+	 */
+	const DEFAULT_GRAPH_API_VERSION = 'v21.0';
+
+	/**
+	 * TTL in seconds for the deduplication transient.
+	 */
+	const DEDUP_TRANSIENT_TTL = 60;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_messenger_reply_job' ) );
 	}
 
 	/**
@@ -380,6 +396,21 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	protected function process_incoming_message( $event, $sender_id, $recipient_id, $timestamp, $page_id ) {
 		$message    = $event['message'];
 		$message_id = isset( $message['mid'] ) ? sanitize_text_field( $message['mid'] ) : '';
+
+		// Deduplicate: skip if we already started processing this message mid within
+		// DEDUP_TRANSIENT_TTL seconds (Meta can retry webhook deliveries).
+		if ( ! empty( $message_id ) ) {
+			$dedup_key = 'wp_mcp_ai_msng_msg_' . md5( $message_id );
+			if ( false !== get_transient( $dedup_key ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'messenger_incoming_message_duplicate',
+					'Duplicate Messenger message skipped.',
+					array( 'message_id' => $message_id )
+				);
+				return;
+			}
+			set_transient( $dedup_key, 1, self::DEDUP_TRANSIENT_TTL );
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'messenger_incoming_message',
@@ -772,6 +803,9 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Maybe auto-reply to incoming message.
 	 *
+	 * Looks up the Messenger connection that matches the page and dispatches an
+	 * AI-generated reply via a cron job when assigned assistants are configured.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array  $message_data Parsed message data.
@@ -779,24 +813,301 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	 * @param string $page_id      Page ID.
 	 */
 	protected function maybe_auto_reply( $message_data, $event, $page_id ) {
+		// Only reply to plain text messages — skip attachments, quick-replies without text, etc.
+		$text = isset( $message_data['text'] ) ? trim( $message_data['text'] ) : '';
+
+		// A quick_reply tap also carries the button payload text; use it when the
+		// message text is empty (e.g. the user tapped a quick-reply button).
+		if ( '' === $text && isset( $message_data['quick_reply'] ) && is_array( $message_data['quick_reply'] ) && ! empty( $message_data['quick_reply']['payload'] ) ) {
+			$text = sanitize_text_field( $message_data['quick_reply']['payload'] );
+		}
+
+		if ( '' === $text ) {
+			return;
+		}
+
+		// Find the Messenger connection that serves the page that received the message.
+		$connection             = $this->get_connection_by_page_id( $page_id );
+		$assigned_assistant_ids = $connection ? $this->get_assigned_assistant_ids( $connection ) : array();
+
 		/**
 		 * Filter whether to auto-reply to Messenger messages.
 		 *
+		 * Defaults to true when the connection has one or more assigned AI assistants.
+		 *
 		 * @since 1.0.0
 		 *
-		 * @param bool   $auto_reply   Whether to auto-reply. Default false.
+		 * @param bool   $auto_reply   Whether to auto-reply.
 		 * @param array  $message_data Parsed message data.
 		 * @param array  $event        Raw messaging event from webhook.
 		 * @param string $page_id      Page ID.
 		 */
-		$should_reply = apply_filters( 'wp_mcp_ai_messenger_should_auto_reply', false, $message_data, $event, $page_id );
+		$should_reply = apply_filters( 'wp_mcp_ai_messenger_should_auto_reply', ! empty( $assigned_assistant_ids ), $message_data, $event, $page_id );
 
 		if ( ! $should_reply ) {
 			return;
 		}
 
-		// Auto-reply logic will be implemented by extensions.
 		do_action( 'wp_mcp_ai_messenger_auto_reply', $message_data, $event, $page_id );
+
+		if ( $connection && ! empty( $assigned_assistant_ids ) ) {
+			$this->dispatch_messenger_ai_reply( $message_data, $text, $connection, $assigned_assistant_ids );
+		}
+	}
+
+	/**
+	 * Schedule an asynchronous cron job to generate and send a Messenger AI reply.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $message_data           Parsed message data.
+	 * @param string $text                   Plain text to send to the AI.
+	 * @param array  $connection             Messenger connection configuration.
+	 * @param int[]  $assigned_assistant_ids Assistant post IDs assigned to this connection.
+	 */
+	protected function dispatch_messenger_ai_reply( $message_data, $text, $connection, $assigned_assistant_ids ) {
+		$sender_id     = isset( $message_data['sender_id'] ) ? $message_data['sender_id'] : '';
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+
+		if ( '' === $sender_id || '' === $connection_id ) {
+			return;
+		}
+
+		$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+			? $connection['graph_api_version']
+			: self::DEFAULT_GRAPH_API_VERSION;
+
+		$job_args = array(
+			array(
+				'assistant_id'      => $assigned_assistant_ids[0],
+				'message_text'      => $text,
+				'sender_id'         => $sender_id,
+				'connection_id'     => $connection_id,
+				'graph_api_version' => $graph_api_version,
+			),
+		);
+
+		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+		spawn_cron();
+	}
+
+	/**
+	 * Cron callback: generate an AI reply via the chat endpoint and send it via Messenger.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by dispatch_messenger_ai_reply().
+	 */
+	public function handle_messenger_reply_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$assistant_id      = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+		$message_text      = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$sender_id         = isset( $args['sender_id'] ) ? (string) $args['sender_id'] : '';
+		$connection_id     = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$graph_api_version = isset( $args['graph_api_version'] ) ? sanitize_text_field( $args['graph_api_version'] ) : self::DEFAULT_GRAPH_API_VERSION;
+
+		if ( ! $assistant_id || '' === $message_text || '' === $sender_id || '' === $connection_id ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: connection not found or access token missing.', array( 'connection_id' => $connection_id ) );
+			return;
+		}
+
+		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $access_token ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: access token decryption returned empty string.', array( 'connection_id' => $connection_id ) );
+			return;
+		}
+
+		// Generate AI response via internal chat endpoint.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $message_text,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$admin_users      = get_users(
+			array(
+				'role'   => 'administrator',
+				'number' => 1,
+				'fields' => 'ID',
+			)
+		);
+		if ( ! empty( $admin_users ) ) {
+			wp_set_current_user( $admin_users[0] );
+			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		} else {
+			WP_MCP_AI_Logger::log_error(
+				'Messenger AI reply: no administrator user found; internal chat request may fail for non-public assistants.',
+				array( 'assistant_id' => $assistant_id )
+			);
+		}
+
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			WP_MCP_AI_Logger::log_error(
+				'Messenger AI reply: chat request failed.',
+				array(
+					'assistant_id' => $assistant_id,
+					'error_code'   => is_array( $error_data ) && isset( $error_data['code'] ) ? sanitize_text_field( (string) $error_data['code'] ) : '',
+				)
+			);
+			return;
+		}
+
+		// Extract text reply from chat endpoint response.
+		$data     = $response->get_data();
+		$llm_data = is_array( $data ) && isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+		$content  = '';
+		if ( ! empty( $choices ) ) {
+			$first = reset( $choices );
+			if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
+				$content = $first['message']['content'];
+			}
+		}
+
+		if ( '' === $content ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: empty content from assistant.', array( 'assistant_id' => $assistant_id ) );
+			return;
+		}
+
+		// Messenger does not render HTML; strip tags and cap at 2000 characters.
+		$content = wp_strip_all_tags( $content );
+		$content = html_entity_decode( $content, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( mb_strlen( $content ) > 2000 ) {
+			$content = mb_substr( $content, 0, 1997 ) . '...';
+		}
+
+		if ( '' === $content ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: content empty after HTML stripping.', array( 'assistant_id' => $assistant_id ) );
+			return;
+		}
+
+		// Send reply via Messenger Send API.
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/me/messages',
+			rawurlencode( $graph_api_version )
+		);
+
+		$payload = array(
+			'recipient' => array( 'id' => $sender_id ),
+			'message'   => array( 'text' => $content ),
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: failed to JSON-encode payload.', array() );
+			return;
+		}
+
+		$result = wp_remote_post(
+			add_query_arg( 'access_token', $access_token, $endpoint ),
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error( 'Messenger AI reply: HTTP request failed.', array( 'error' => $result->get_error_message() ) );
+			return;
+		}
+
+		$http_code    = (int) wp_remote_retrieve_response_code( $result );
+		$send_body    = wp_remote_retrieve_body( $result );
+		$decoded_body = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+		$api_error    = is_array( $decoded_body ) && isset( $decoded_body['error'] ) ? $decoded_body['error'] : array();
+
+		if ( 200 !== $http_code || ! empty( $api_error ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Messenger AI reply: send request returned an error.',
+				array(
+					'assistant_id' => $assistant_id,
+					'http_code'    => $http_code,
+					'api_error'    => $api_error,
+				)
+			);
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'messenger_ai_reply_sent',
+			'Messenger AI reply dispatched successfully.',
+			array(
+				'assistant_id' => $assistant_id,
+				'http_code'    => $http_code,
+				'sender_id'    => substr( $sender_id, 0, 4 ) . '***',
+			)
+		);
+	}
+
+	/**
+	 * Find a Messenger connection matching the given page ID.
+	 *
+	 * The page ID in the Messenger webhook corresponds to the `recipient.id`
+	 * field (the Facebook Page that received the message). Connections that
+	 * store a `page_id` are matched first; if none match, the first enabled
+	 * Messenger connection is returned as a fallback for single-page setups.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $page_id Facebook Page ID from the webhook entry.
+	 * @return array|null Connection data array or null if not found.
+	 */
+	protected function get_connection_by_page_id( $page_id ) {
+		$connections = $this->get_messenger_connections();
+		$fallback    = null;
+
+		foreach ( $connections as $connection ) {
+			if ( isset( $connection['page_id'] ) && $connection['page_id'] === $page_id ) {
+				return $connection;
+			}
+			if ( null === $fallback && ! empty( $connection['api_key'] ) ) {
+				$fallback = $connection;
+			}
+		}
+
+		return $fallback;
+	}
+
+	/**
+	 * Get the assistant IDs assigned to a Messenger connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return int[] Array of assistant post IDs.
+	 */
+	protected function get_assigned_assistant_ids( $connection ) {
+		if ( ! isset( $connection['assigned_assistant_ids'] ) || ! is_array( $connection['assigned_assistant_ids'] ) ) {
+			return array();
+		}
+
+		return array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) );
 	}
 
 	/**
