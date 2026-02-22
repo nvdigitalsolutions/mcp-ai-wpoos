@@ -1769,38 +1769,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							?>
 							<div>
 								<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
-								<canvas id="wa_channel_qr_canvas" width="180" height="180" style="border: 1px solid #ddd; border-radius: 4px; display: block; margin-bottom: 8px;"></canvas>
+								<?php
+								$qr_result = wp_mcp_ai_generate_qr_code( $wa_link, 'data-url' );
+								if ( ! is_wp_error( $qr_result ) ) :
+									?>
+									<img src="<?php echo esc_attr( $qr_result ); ?>" alt="<?php esc_attr_e( 'WhatsApp Channel QR Code', 'mcp-ai-wpoos-pro' ); ?>" style="width: 180px; height: 180px; border: 1px solid #ddd; border-radius: 4px; display: block; margin-bottom: 8px;">
+								<?php else : ?>
+									<p class="description" style="margin-bottom: 8px;"><?php esc_html_e( 'QR code generation requires Node.js on your server. Use the channel link below with an external QR generator.', 'mcp-ai-wpoos-pro' ); ?></p>
+								<?php endif; ?>
 								<p style="margin: 0 0 4px 0;">
 									<strong><?php esc_html_e( 'Channel Link:', 'mcp-ai-wpoos-pro' ); ?></strong>
 									<a href="<?php echo esc_url( $wa_link ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $wa_link ); ?></a>
 								</p>
-								<p class="description"><?php esc_html_e( 'Copy the link above into any QR generator to create a printable QR code.', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
-							<script>
-							( function() {
-								var canvas  = document.getElementById( 'wa_channel_qr_canvas' );
-								if ( ! canvas ) { return; }
-								var link    = <?php echo wp_json_encode( $wa_link ); ?>;
-								var ctx     = canvas.getContext( '2d' );
-								var size    = 180;
-								var cellSz  = 6;
-								var modules = Math.floor( size / cellSz );
-								/* Simple 2-D barcode placeholder rendered locally — no external request.
-								   A full QR library can be enqueued separately; this shows the link. */
-								ctx.fillStyle = '#ffffff';
-								ctx.fillRect( 0, 0, size, size );
-								ctx.fillStyle = '#25d366';
-								ctx.font = 'bold 11px sans-serif';
-								ctx.textAlign = 'center';
-								ctx.fillText( '💬 WhatsApp', size / 2, size / 2 - 8 );
-								ctx.fillStyle = '#000000';
-								ctx.font = '9px monospace';
-								ctx.fillText( link.replace( 'https://', '' ), size / 2, size / 2 + 10 );
-								ctx.strokeStyle = '#25d366';
-								ctx.lineWidth = 3;
-								ctx.strokeRect( 4, 4, size - 8, size - 8 );
-							} )();
-							</script>
 						<?php else : ?>
 							<p class="description">
 								<?php
