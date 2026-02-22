@@ -391,7 +391,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( is_wp_error( $result ) ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
 			} else {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
+				// Redirect back to the edit page so the user can verify the saved data.
+				$saved_connection_id = is_string( $result ) ? $result : ( isset( $connection_data['id'] ) ? $connection_data['id'] : '' );
+				if ( $saved_connection_id ) {
+					wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . rawurlencode( $saved_connection_id ) . '&saved=1' ) );
+				} else {
+					wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
+				}
 			}
 			exit;
 		}
@@ -1581,9 +1587,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="whatsapp_phone_number_id"><?php esc_html_e( 'Phone Number ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="whatsapp_phone_number_id" id="whatsapp_phone_number_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['phone_number_id'] ) ? esc_attr( $connection['phone_number_id'] ) : ''; ?>" autocomplete="off">
+						<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+							<input type="text" name="whatsapp_phone_number_id" id="whatsapp_phone_number_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['phone_number_id'] ) ? esc_attr( $connection['phone_number_id'] ) : ''; ?>" autocomplete="off">
+							<button type="button" id="wp-mcp-ai-wa-lookup-phone-btn" class="button button-secondary">
+								<?php esc_html_e( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+						</div>
+						<div id="wp-mcp-ai-wa-lookup-phone-result" style="margin-top:8px;"></div>
 						<p class="description">
-							<?php esc_html_e( 'The numeric Phone Number ID assigned to your WhatsApp phone number. Find it in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID" (not the WhatsApp Business Account ID). This is different from the ID shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Enter your Phone Number ID manually, or click "Retrieve Phone Numbers" to fetch it automatically using the Business Account ID and Access Token above. Find it in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID" (not the WABA ID shown in Meta Business Manager).', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -2671,6 +2683,77 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
+			// WhatsApp: Retrieve Phone Numbers lookup button.
+			var waLookupBtn    = document.getElementById('wp-mcp-ai-wa-lookup-phone-btn');
+			var waLookupResult = document.getElementById('wp-mcp-ai-wa-lookup-phone-result');
+			if (waLookupBtn) {
+				waLookupBtn.addEventListener('click', function() {
+					var wabaIdEl    = document.getElementById('whatsapp_business_account_id');
+					var wabaId      = wabaIdEl ? wabaIdEl.value.trim() : '';
+					var tokenEl     = document.getElementById('whatsapp_access_token');
+					var accessToken = tokenEl ? tokenEl.value.trim() : '';
+
+					if (!wabaId || !accessToken) {
+						if (waLookupResult) {
+							waLookupResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Please enter both a Business Account ID and an Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+						}
+						return;
+					}
+
+					waLookupBtn.disabled    = true;
+					waLookupBtn.textContent = <?php echo wp_json_encode( __( 'Retrieving…', 'mcp-ai-wpoos-pro' ) ); ?>;
+					if (waLookupResult) { waLookupResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_fetch_whatsapp_phone_numbers');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_fetch_whatsapp_phone_numbers' ) ); ?>);
+					data.append('business_account_id', wabaId);
+					data.append('access_token', accessToken);
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(r) {
+							if (!r.ok) { throw new Error(r.status); }
+							return r.json();
+						})
+						.then(function(json) {
+							waLookupBtn.disabled    = false;
+							waLookupBtn.textContent = <?php echo wp_json_encode( __( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ) ); ?>;
+							if (!waLookupResult) { return; }
+							if (!json.success) {
+								waLookupResult.innerHTML = '<span style="color:#d63638;">' + (json.data && json.data.message ? json.data.message : <?php echo wp_json_encode( __( 'Failed to retrieve phone numbers.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</span>';
+								return;
+							}
+							var phones = json.data.phone_numbers;
+							if (phones.length === 1) {
+								document.getElementById('whatsapp_phone_number_id').value = phones[0].id;
+								waLookupResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Phone number ID set automatically.', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + phones[0].display_name + ' (' + phones[0].id + ')</span>';
+							} else {
+								var sel = '<select id="wp-mcp-ai-wa-phone-select" style="max-width:350px;">';
+								sel += '<option value="">' + <?php echo wp_json_encode( __( '-- Select a phone number --', 'mcp-ai-wpoos-pro' ) ); ?> + '</option>';
+								phones.forEach(function(p) {
+									sel += '<option value="' + p.id + '">' + p.display_name + (p.verified_name ? ' – ' + p.verified_name : '') + ' (' + p.id + ')</option>';
+								});
+								sel += '</select> <button type="button" id="wp-mcp-ai-wa-phone-apply" class="button">' + <?php echo wp_json_encode( __( 'Use Selected', 'mcp-ai-wpoos-pro' ) ); ?> + '</button>';
+								waLookupResult.innerHTML = sel;
+								document.getElementById('wp-mcp-ai-wa-phone-apply').addEventListener('click', function() {
+									var selEl = document.getElementById('wp-mcp-ai-wa-phone-select');
+									if (selEl && selEl.value) {
+										document.getElementById('whatsapp_phone_number_id').value = selEl.value;
+										waLookupResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Phone Number ID applied.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+									}
+								});
+							}
+						})
+						.catch(function() {
+							waLookupBtn.disabled    = false;
+							waLookupBtn.textContent = <?php echo wp_json_encode( __( 'Retrieve Phone Numbers', 'mcp-ai-wpoos-pro' ) ); ?>;
+							if (waLookupResult) {
+								waLookupResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+							}
+						});
+				});
+			}
+
 
 			// Messenger: Access Token show/hide toggle button.
 			var msngTokenToggleBtn = document.getElementById('messenger_access_token_toggle');
@@ -3690,6 +3773,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'quality_rating' => $quality,
 			'message'        => __( 'WhatsApp connection successful! Phone number verified and API credentials valid.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Detect when a WhatsApp Business Account (WABA) ID was entered instead of a
+		// Phone Number ID. The Meta Graph API returns HTTP 200 for WABA IDs, but the
+		// response contains no phone-number-specific fields (display_phone_number or
+		// verified_name). When field access is not limited by token permissions, the
+		// absence of these fields reliably indicates a WABA ID was entered.
+		if ( ! $limited_field_access && '' === $result['phone_number'] && '' === $result['verified_name'] ) {
+			wp_send_json_error(
+				__( 'The ID you entered does not appear to be a WhatsApp Phone Number ID — the Meta API returned no phone-number details. This usually means the WhatsApp Business Account (WABA) ID was entered instead of the Phone Number ID. To find your Phone Number ID: go to the Meta Developer Dashboard → select your app → WhatsApp → API Setup → copy the "Phone Number ID" field (it is different from the WABA ID shown in Meta Business Manager).', 'mcp-ai-wpoos-pro' )
+			);
+			return;
+		}
 
 		// When quality is UNKNOWN, add an explanatory note (not a warning — messaging is unaffected).
 		if ( 'UNKNOWN' === $quality ) {
