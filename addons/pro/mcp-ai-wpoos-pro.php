@@ -503,6 +503,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Teams Webhook Controller for Microsoft Teams outgoing webhooks.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php';
+
+		// Load Google Chat Webhook Controller for Google Chat bot events.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
 	}
 
 	// ========================================================================
