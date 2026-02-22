@@ -820,9 +820,80 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 add_action( 'admin_notices', 'wp_mcp_ai_npm_integration_admin_notice' );
 
 /**
+ * Generate QR code via external API service.
+ *
+ * Falls back to api.qrserver.com when Node.js is unavailable.
+ *
+ * @since 1.3.1
+ *
+ * @param string $data    Data to encode.
+ * @param string $format  Output format: 'base64', 'svg', or 'data-url'.
+ * @param array  $options QR code options (width).
+ * @return string|WP_Error QR code string or WP_Error on failure.
+ */
+function wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options ) {
+	$width = isset( $options['width'] ) ? absint( $options['width'] ) : 200;
+	$size  = $width . 'x' . $width;
+
+	$query_args = array(
+		'size' => $size,
+		'data' => $data,
+	);
+
+	if ( 'svg' === $format ) {
+		$query_args['format'] = 'svg';
+	}
+
+	$url = add_query_arg( $query_args, 'https://api.qrserver.com/v1/create-qr-code/' );
+
+	$response = wp_remote_get(
+		$url,
+		array(
+			'timeout'    => 10,
+			'user-agent' => 'WordPress/' . get_bloginfo( 'version' ),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
+
+	$code = wp_remote_retrieve_response_code( $response );
+	if ( 200 !== (int) $code ) {
+		return new WP_Error(
+			'qr_api_error',
+			sprintf(
+				/* translators: %d: HTTP response code */
+				__( 'External QR code API returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+				$code
+			)
+		);
+	}
+
+	$body = wp_remote_retrieve_body( $response );
+	if ( empty( $body ) ) {
+		return new WP_Error(
+			'qr_api_empty',
+			__( 'External QR code API returned an empty response.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	switch ( $format ) {
+		case 'base64':
+			return base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		case 'svg':
+			return $body;
+		case 'data-url':
+		default:
+			return 'data:image/png;base64,' . base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+	}
+}
+
+/**
  * Generate QR code for TOTP authentication
  *
  * Uses qrcode NPM package to generate QR codes for authenticator apps.
+ * Falls back to an external API service when Node.js is not available.
  *
  * @since 1.3.0
  *
@@ -832,12 +903,9 @@ add_action( 'admin_notices', 'wp_mcp_ai_npm_integration_admin_notice' );
  * @return string|WP_Error QR code string or WP_Error on failure.
  */
 function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = array() ) {
-	// Check if Node.js is available.
+	// Check if Node.js is available; fall back to external API if not.
 	if ( ! wp_mcp_ai_is_nodejs_available() ) {
-		return new WP_Error(
-			'nodejs_not_available',
-			__( 'Node.js is required for QR code generation. Please install Node.js on your server.', 'mcp-ai-wpoos-pro' )
-		);
+		return wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options );
 	}
 
 	// Default options.
@@ -956,17 +1024,16 @@ JAVASCRIPT;
 	$result = wp_mcp_ai_exec_node_service( $service_file, 'generate', $params, 10 );
 
 	if ( is_wp_error( $result ) ) {
-		return $result;
+		// Node.js is available but execution failed (e.g. qrcode package not installed); use API fallback.
+		return wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options );
 	}
 
 	// Parse JSON result.
 	$result_data = json_decode( $result, true );
 
 	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
-		return new WP_Error(
-			'qr_generation_failed',
-			$result_data['error'] ?? __( 'Failed to generate QR code.', 'mcp-ai-wpoos-pro' )
-		);
+		// Parse failed or qrcode script error; use API fallback.
+		return wp_mcp_ai_generate_qr_code_via_api( $data, $format, $options );
 	}
 
 	return $result_data['result'];
