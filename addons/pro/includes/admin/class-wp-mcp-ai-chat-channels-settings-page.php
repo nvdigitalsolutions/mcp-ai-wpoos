@@ -48,14 +48,18 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		}
 
 		$business_account_id = isset( $_POST['business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['business_account_id'] ) ) : '';
-		$access_token        = isset( $_POST['access_token'] ) ? sanitize_text_field( wp_unslash( $_POST['access_token'] ) ) : '';
+		$access_token        = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token        = trim( (string) $access_token );
 
 		if ( empty( $business_account_id ) || empty( $access_token ) ) {
 			wp_send_json_error( array( 'message' => __( 'Business Account ID and Access Token are required.', 'mcp-ai-wpoos-pro' ) ) );
 			return;
 		}
 
-		$api_url = 'https://graph.facebook.com/v22.0/' . rawurlencode( $business_account_id ) . '/phone_numbers';
+		$api_url = add_query_arg(
+			array( 'fields' => 'id,display_phone_number,verified_name' ),
+			'https://graph.facebook.com/v22.0/' . rawurlencode( $business_account_id ) . '/phone_numbers'
+		);
 
 		$response = wp_remote_get(
 			$api_url,
