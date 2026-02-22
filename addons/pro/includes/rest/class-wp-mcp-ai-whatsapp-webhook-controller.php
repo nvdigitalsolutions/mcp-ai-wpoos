@@ -50,6 +50,12 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	const DEFAULT_GRAPH_API_VERSION = 'v19.0';
 
 	/**
+	 * TTL in seconds for the deduplication transient used to prevent double-processing
+	 * of the same message when Meta retries a webhook delivery.
+	 */
+	const DEDUP_TRANSIENT_TTL = 60;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -585,6 +591,22 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$message_type = isset( $message['type'] ) ? sanitize_text_field( $message['type'] ) : '';
 		$timestamp    = isset( $message['timestamp'] ) ? absint( $message['timestamp'] ) : time();
 
+		// Deduplicate: skip messages we have already started processing within the last
+		// DEDUP_TRANSIENT_TTL seconds. Meta can retry webhook deliveries and we must not
+		// send duplicate AI replies to the same incoming message.
+		if ( ! empty( $message_id ) ) {
+			$dedup_key = 'wp_mcp_ai_wa_msg_' . md5( $message_id );
+			if ( false !== get_transient( $dedup_key ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'whatsapp_incoming_message_duplicate',
+					'Duplicate WhatsApp message skipped.',
+					array( 'message_id' => $message_id )
+				);
+				return;
+			}
+			set_transient( $dedup_key, 1, self::DEDUP_TRANSIENT_TTL );
+		}
+
 		WP_MCP_AI_Logger::log_event(
 			'whatsapp_incoming_message',
 			'Incoming WhatsApp message received.',
@@ -605,6 +627,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			'content'   => $this->extract_message_content( $message ),
 			'context'   => isset( $message['context'] ) ? $message['context'] : null,
 		);
+
+		// Mark the incoming message as read so the sender sees the read receipt.
+		// This is best practice for a business number and improves perceived responsiveness.
+		if ( ! empty( $message_id ) && ! empty( $from ) ) {
+			$phone_number_id = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
+			if ( ! empty( $phone_number_id ) ) {
+				$this->mark_message_as_read( $message_id, $phone_number_id );
+			}
+		}
 
 		/**
 		 * Fires when a WhatsApp message is received.
@@ -745,8 +776,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @param int[] $assigned_assistant_ids Assistant post IDs assigned to this connection.
 	 */
 	protected function dispatch_whatsapp_ai_reply( $message_data, $connection, $assigned_assistant_ids ) {
-		// Only process text messages.
-		if ( 'text' !== $message_data['type'] || empty( $message_data['content'] ) ) {
+		// Resolve the text to send to the AI from the message type.
+		// Supported: plain text, interactive button/list replies, and quick replies.
+		$message_text = $this->extract_text_for_ai( $message_data );
+		if ( '' === $message_text ) {
 			return;
 		}
 
@@ -766,7 +799,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			array(
 				// Use the first assigned assistant as the primary routing assistant for this channel.
 				'assistant_id'      => $assigned_assistant_ids[0],
-				'message_text'      => $message_data['content'],
+				'message_text'      => $message_text,
 				'to'                => $to,
 				'connection_id'     => $connection_id,
 				'phone_number_id'   => $phone_number_id,
@@ -967,6 +1000,110 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'to'              => substr( $to, 0, 4 ) . '***',
 			)
 		);
+	}
+
+	/**
+	 * Extract plain text from a message for passing to the AI assistant.
+	 *
+	 * Handles text, interactive button/list replies, and button quick-replies so
+	 * that users who tap buttons get AI responses just like typed messages.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $message_data Parsed message data (as built in process_incoming_message).
+	 * @return string Plain-text representation, or empty string if unsupported type.
+	 */
+	protected function extract_text_for_ai( $message_data ) {
+		$type    = isset( $message_data['type'] ) ? $message_data['type'] : '';
+		$content = isset( $message_data['content'] ) ? $message_data['content'] : '';
+
+		switch ( $type ) {
+			case 'text':
+				return is_string( $content ) ? trim( $content ) : '';
+
+			case 'interactive':
+				// button_reply: { id, title }  |  list_reply: { id, title, description }
+				if ( is_array( $content ) ) {
+					$title       = isset( $content['title'] ) ? trim( (string) $content['title'] ) : '';
+					$description = isset( $content['description'] ) ? trim( (string) $content['description'] ) : '';
+					return $description ? $title . "\n" . $description : $title;
+				}
+				return '';
+
+			case 'button':
+				// Quick-reply button tap: content is the button array { payload, text }
+				if ( is_array( $content ) ) {
+					return isset( $content['text'] ) ? trim( (string) $content['text'] ) : '';
+				}
+				return '';
+
+			default:
+				return '';
+		}
+	}
+
+	/**
+	 * Mark an incoming WhatsApp message as read via the Cloud API.
+	 *
+	 * Sends a read receipt so the customer sees the double-blue-tick indicator,
+	 * signalling that their message has been received by the business. Failures
+	 * are logged but do not block the auto-reply flow.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_id      The wamid of the message to mark as read.
+	 * @param string $phone_number_id The Phone Number ID of the receiving business number.
+	 */
+	protected function mark_message_as_read( $message_id, $phone_number_id ) {
+		$connection = $this->get_connection_by_phone_number_id( $phone_number_id );
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $access_token ) {
+			return;
+		}
+
+		$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+			? $connection['graph_api_version']
+			: self::DEFAULT_GRAPH_API_VERSION;
+
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s/messages',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $phone_number_id )
+		);
+
+		$payload = array(
+			'messaging_product' => 'whatsapp',
+			'status'            => 'read',
+			'message_id'        => $message_id,
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 5,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'WhatsApp mark-as-read failed.',
+				array( 'error' => $result->get_error_message() )
+			);
+		}
 	}
 
 	/**
