@@ -491,6 +491,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 		// Load Messenger Webhook Controller for Meta Messenger Platform events.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php';
+
+		// Load Telegram Webhook Controller for Telegram Bot API events.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+
+		// Load Slack Event Controller for Slack Events API payloads.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
+
+		// Load Discord Interaction Controller for Discord Interactions Endpoint.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php';
+
+		// Load Teams Webhook Controller for Microsoft Teams outgoing webhooks.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php';
 	}
 
 	// ========================================================================
