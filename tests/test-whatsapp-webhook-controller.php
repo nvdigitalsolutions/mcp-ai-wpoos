@@ -1014,6 +1014,205 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that validate_webhook_signature returns true (allows the webhook) when the
+	 * App Secret is not configured.
+	 *
+	 * This is the key fix for the bug where real WhatsApp messages did not trigger
+	 * an AI response: the permission callback was returning false (rejecting the
+	 * webhook with 401/403) whenever the App Secret was absent, even though the
+	 * admin test auto-reply worked fine because it bypasses the webhook entirely.
+	 *
+	 * When App Secret is not set we skip HMAC validation rather than blocking
+	 * all incoming messages, while logging a security warning.
+	 */
+	public function test_validate_webhook_signature_allows_when_no_app_secret() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Save a connection WITHOUT an App Secret so get_app_secret() returns ''.
+		$connection_data = array(
+			'name'            => 'No App Secret Connection',
+			'url'             => 'https://graph.facebook.com/v19.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			// Intentionally omitting api_secret.
+			'phone_number_id' => '111222333444555',
+			'verify_token'    => 'vt_no_secret',
+		);
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		// Build a simulated incoming webhook POST request (no signature header).
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_body( '{"object":"whatsapp_business_account","entry":[]}' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		// Without App Secret the permission callback must return true so that
+		// incoming messages are processed rather than rejected.
+		$result = $controller->validate_webhook_signature( $request );
+		$this->assertTrue( $result, 'validate_webhook_signature should return true when App Secret is not configured' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects the request when App Secret IS
+	 * configured but the signature header is absent.
+	 */
+	public function test_validate_webhook_signature_rejects_when_app_secret_set_and_header_missing() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		// Save a connection WITH an App Secret.
+		$app_secret      = 'my_real_app_secret_abc123';
+		$connection_data = array(
+			'name'            => 'App Secret Connection',
+			'url'             => 'https://graph.facebook.com/v19.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'api_secret'      => $app_secret,
+			'phone_number_id' => '222333444555666',
+			'verify_token'    => 'vt_with_secret',
+		);
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		// Build a request WITHOUT the X-Hub-Signature-256 header.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_body( '{"object":"whatsapp_business_account","entry":[]}' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		// Intentionally omit the X-Hub-Signature-256 header.
+
+		$result = $controller->validate_webhook_signature( $request );
+		$this->assertFalse( $result, 'validate_webhook_signature should return false when App Secret is set but signature header is missing' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature accepts a request with a valid HMAC-SHA256
+	 * signature when the App Secret is configured.
+	 */
+	public function test_validate_webhook_signature_accepts_valid_signature() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$app_secret = 'my_real_app_secret_abc123';
+		$body       = '{"object":"whatsapp_business_account","entry":[]}';
+
+		// Compute the expected HMAC signature as Meta would.
+		$expected_signature = 'sha256=' . hash_hmac( 'sha256', $body, $app_secret );
+
+		$connection_data = array(
+			'name'            => 'Valid Sig Connection',
+			'url'             => 'https://graph.facebook.com/v19.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'api_secret'      => $app_secret,
+			'phone_number_id' => '333444555666777',
+			'verify_token'    => 'vt_valid_sig',
+		);
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_body( $body );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-Hub-Signature-256', $expected_signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+		$this->assertTrue( $result, 'validate_webhook_signature should return true when HMAC signature is valid' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects a request with an invalid signature
+	 * when the App Secret is configured.
+	 */
+	public function test_validate_webhook_signature_rejects_invalid_signature() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$app_secret = 'my_real_app_secret_abc123';
+		$body       = '{"object":"whatsapp_business_account","entry":[]}';
+
+		$connection_data = array(
+			'name'            => 'Invalid Sig Connection',
+			'url'             => 'https://graph.facebook.com/v19.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'api_secret'      => $app_secret,
+			'phone_number_id' => '444555666777888',
+			'verify_token'    => 'vt_invalid_sig',
+		);
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/whatsapp' );
+		$request->set_body( $body );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_header( 'X-Hub-Signature-256', 'sha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' );
+
+		$result = $controller->validate_webhook_signature( $request );
+		$this->assertFalse( $result, 'validate_webhook_signature should return false when HMAC signature does not match' );
+	}
+
+	/**
 	 * Test that the register phone number AJAX handler validates the 6-digit PIN correctly.
 	 */
 	public function test_register_whatsapp_phone_number_pin_validation() {

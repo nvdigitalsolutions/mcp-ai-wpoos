@@ -762,6 +762,31 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test validate_webhook_signature returns true when App Secret is not configured.
+	 *
+	 * This mirrors the fix for WhatsApp: when no App Secret is stored, we skip
+	 * HMAC validation and allow the webhook through rather than rejecting it with
+	 * 401/403 (which would cause Meta to retry endlessly and never deliver messages).
+	 */
+	public function test_validate_signature_allows_when_no_app_secret_configured() {
+		if ( ! $this->load_controller() ) {
+			return;
+		}
+
+		// Create a connection WITHOUT an App Secret.
+		$this->create_messenger_connection( array( 'api_secret' => '' ) );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/messenger' );
+		$request->set_body( '{"object":"page","entry":[]}' );
+		// Intentionally omit the X-Hub-Signature-256 header.
+
+		$controller = new WP_MCP_AI_Messenger_Webhook_Controller();
+		$result     = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Should allow webhook through when App Secret is not configured (skip validation)' );
+	}
+
+	/**
 	 * Test validate_webhook_signature returns false when signature header is missing.
 	 */
 	public function test_validate_signature_fails_without_header() {
