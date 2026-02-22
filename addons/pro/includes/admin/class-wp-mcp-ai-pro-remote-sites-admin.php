@@ -4061,6 +4061,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							$meta_subcode = isset( $error_data['error']['error_subcode'] ) ? (int) $error_data['error']['error_subcode'] : 0;
 							if ( 100 === $meta_code && 33 === $meta_subcode ) {
 								$result['send_error_hint'] = __( 'Phone Number ID not found. The ID configured for this connection does not match any WhatsApp phone number accessible with your access token. Find the correct Phone Number ID in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID". This is different from the WhatsApp Business Account ID (WABA ID) shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' );
+							} elseif ( 133010 === $meta_code ) {
+								$result['send_error_hint'] = __( 'Business phone number not registered with the WhatsApp Cloud API. You must register your phone number before sending messages. Send a POST request to https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/register with your access token and your two-step verification PIN. Before registering: (1) delete any existing WhatsApp or WhatsApp Business app account on that number, and (2) if the number was previously on the on-premises API, deregister it there first. See the official Meta documentation for full steps: https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration', 'mcp-ai-wpoos-pro' );
 							}
 						}
 					}

@@ -949,6 +949,8 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			if ( is_array( $api_error ) && isset( $api_error['code'] ) && isset( $api_error['error_subcode'] )
 				&& 100 === (int) $api_error['code'] && 33 === (int) $api_error['error_subcode'] ) {
 				$log_context['hint'] = 'Phone Number ID not found. Verify that the Phone Number ID in the connection settings matches the Phone Number ID in Meta Developer Dashboard (app → WhatsApp → API Setup), not the WhatsApp Business Account ID (WABA ID).';
+			} elseif ( is_array( $api_error ) && isset( $api_error['code'] ) && 133010 === (int) $api_error['code'] ) {
+				$log_context['hint'] = 'Account not registered. This usually means your WhatsApp Business phone number is not yet fully registered with the WhatsApp Cloud API, or the recipient phone number is not a WhatsApp user. If using a test/sandbox setup, ensure the recipient number has been added to the approved test numbers list in the Meta Developer Dashboard (App → WhatsApp → API Setup → Test Phone Numbers).';
 			}
 
 			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: send request returned an error.', $log_context );

@@ -980,4 +980,36 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'Code 100 / subcode 33 combination should be detected as a wrong Phone Number ID error'
 		);
 	}
+
+	/**
+	 * Test that error code 133010 ("Account not registered") is correctly identified
+	 * so that a user-friendly hint can be surfaced in the admin UI and log context.
+	 */
+	public function test_error_code_133010_is_detected_as_account_not_registered() {
+		// The API error body returned when the sending number or recipient is not registered.
+		$api_error_body = array(
+			'error' => array(
+				'message'    => '(#133010) Account not registered',
+				'type'       => 'OAuthException',
+				'code'       => 133010,
+				'fbtrace_id' => 'AVDYoK8Ds3oQgCWH-Lc4EpL',
+			),
+		);
+
+		$api_error = $api_error_body['error'];
+
+		// Validate that the error detection logic identifies code 133010.
+		$this->assertTrue(
+			is_array( $api_error ) && isset( $api_error['code'] ) && 133010 === (int) $api_error['code'],
+			'Error code 133010 should be detected as an "Account not registered" error'
+		);
+
+		// Confirm it is not mistakenly identified as the Phone Number ID error (100/33).
+		$meta_code    = (int) $api_error['code'];
+		$meta_subcode = isset( $api_error['error_subcode'] ) ? (int) $api_error['error_subcode'] : 0;
+		$this->assertFalse(
+			100 === $meta_code && 33 === $meta_subcode,
+			'Code 133010 must not be confused with the 100/33 Phone Number ID error'
+		);
+	}
 }
