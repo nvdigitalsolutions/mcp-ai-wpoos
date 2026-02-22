@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool that retrieves Google Chat spaces.
+ * Tool that removes a member from a Google Chat space.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -13,9 +13,9 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
- * Provides a tool for listing Google Chat spaces via the Google Chat API.
+ * Provides a tool for removing a member from a Google Chat space via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -36,21 +36,21 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'get_google_chat_spaces';
+		return 'remove_google_chat_space_member';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Google Chat Spaces', 'mcp-ai-wpoos-pro' );
+		return __( 'Remove Google Chat Space Member', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves a list of Google Chat spaces using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+		return __( 'Removes a member from a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -60,27 +60,16 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'access_token' => array(
+				'access_token'  => array(
 					'type'        => 'string',
 					'description' => __( 'OAuth 2.0 access token for authentication.', 'mcp-ai-wpoos-pro' ),
 				),
-				'filter'       => array(
+				'membership'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional filter for spaces (e.g., spaceType = "SPACE").', 'mcp-ai-wpoos-pro' ),
-				),
-				'page_size'    => array(
-					'type'        => 'integer',
-					'description' => __( 'Maximum number of spaces to return per page (1–1000, default 100).', 'mcp-ai-wpoos-pro' ),
-					'default'     => 100,
-					'minimum'     => 1,
-					'maximum'     => 1000,
-				),
-				'page_token'   => array(
-					'type'        => 'string',
-					'description' => __( 'Page token from a previous response to retrieve the next page of spaces.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Membership resource name to remove (e.g., spaces/SPACE_ID/members/MEMBER_ID).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'access_token' ),
+			'required'             => array( 'access_token', 'membership' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -96,10 +85,10 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		$default_capability  = 'manage_options';
-		$required_capability = apply_filters( 'wp_mcp_ai_get_google_chat_spaces_capability', $default_capability, $context, $arguments, $this );
+		$required_capability = apply_filters( 'wp_mcp_ai_remove_google_chat_space_member_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retrieve Google Chat spaces.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to remove Google Chat space members.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
@@ -112,46 +101,41 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'A valid OAuth 2.0 access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$endpoint = 'https://chat.googleapis.com/v1/spaces';
+		$membership = isset( $arguments['membership'] ) ? sanitize_text_field( $arguments['membership'] ) : '';
 
-		$query_args = array();
-
-		if ( ! empty( $arguments['filter'] ) ) {
-			$query_args['filter'] = sanitize_text_field( $arguments['filter'] );
+		if ( '' === $membership ) {
+			return new WP_Error( 'wp_mcp_ai_missing_membership', __( 'A membership resource name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$page_size = isset( $arguments['page_size'] ) ? absint( $arguments['page_size'] ) : 100;
-		$page_size = max( 1, min( 1000, $page_size ) );
-		$query_args['pageSize'] = $page_size;
-
-		if ( ! empty( $arguments['page_token'] ) ) {
-			$query_args['pageToken'] = sanitize_text_field( $arguments['page_token'] );
+		// Validate membership resource name format.
+		if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+\/members\/[a-zA-Z0-9_-]+$/', $membership ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_membership', __( 'Invalid membership format. Expected format: spaces/SPACE_ID/members/MEMBER_ID', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( ! empty( $query_args ) ) {
-			$endpoint = add_query_arg( $query_args, $endpoint );
-		}
+		$endpoint = 'https://chat.googleapis.com/v1/' . $membership;
 
 		WP_MCP_AI_Logger::log_event(
-			'google_chat_get_spaces_request',
-			'Retrieving Google Chat spaces.',
+			'google_chat_remove_space_member_request',
+			'Removing member from Google Chat space.',
 			array(
-				'endpoint' => $endpoint,
+				'endpoint'   => $endpoint,
+				'membership' => $membership,
 			)
 		);
 
-		$response = wp_remote_get(
+		$response = wp_remote_request(
 			$endpoint,
 			array(
+				'method'  => 'DELETE',
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $access_token,
 				),
-				'timeout' => apply_filters( 'wp_mcp_ai_get_google_chat_spaces_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
+				'timeout' => apply_filters( 'wp_mcp_ai_remove_google_chat_space_member_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
 			)
 		);
 
 		if ( is_wp_error( $response ) ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat spaces request failed.', array( 'error' => $response->get_error_message() ) );
+			WP_MCP_AI_Logger::log_error( 'Google Chat remove member request failed.', array( 'error' => $response->get_error_message() ) );
 
 			return new WP_Error(
 				'wp_mcp_ai_google_chat_http_error',
@@ -172,10 +156,11 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Google Chat API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			WP_MCP_AI_Logger::log_error(
-				'Google Chat spaces request was not successful.',
+				'Google Chat remove member request was not successful.',
 				array(
-					'http_code' => $code,
-					'error'     => $message,
+					'http_code'  => $code,
+					'membership' => $membership,
+					'error'      => $message,
 				)
 			);
 
@@ -188,6 +173,12 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 				)
 			);
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_remove_space_member_success',
+			'Google Chat space member removed successfully.',
+			array( 'membership' => $membership )
+		);
 
 		return $decoded;
 	}
@@ -218,7 +209,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces implements WP_MCP_AI_Tool_Interf
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.
-			'read-only',            // Retrieves Google Chat spaces.
+			'write',                // Removes a member from a Google Chat space.
 			'external-api',         // Calls Google Chat API.
 			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.

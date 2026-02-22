@@ -83,6 +83,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_google_chat_reply_job' ) );
+		add_action( 'wp_mcp_ai_google_chat_send_welcome_message', array( $this, 'handle_welcome_message_job' ) );
 	}
 
 	/**
@@ -244,7 +245,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			)
 		);
 
-		// Only process MESSAGE events (not ADDED_TO_SPACE, REMOVED_FROM_SPACE, CARD_CLICKED).
+		// Handle ADDED_TO_SPACE: send a welcome message via cron.
+		if ( 'ADDED_TO_SPACE' === $event_type ) {
+			return $this->handle_added_to_space( $payload );
+		}
+
+		// Only process MESSAGE events (not REMOVED_FROM_SPACE, CARD_CLICKED, etc.).
 		if ( 'MESSAGE' !== $event_type ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
@@ -279,8 +285,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		// Resolve connection with assigned assistants.
-		$connection = $this->get_active_google_chat_connection();
+		// Resolve connection with assigned assistants, preferring space-specific connections.
+		$connection = $this->get_active_google_chat_connection( $space_name );
 
 		if ( ! $connection ) {
 			WP_MCP_AI_Logger::log_error(
@@ -318,6 +324,83 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Return empty response — Google Chat accepts 200 with an empty JSON body
 		// or a message payload to reply synchronously. Using async cron avoids timeouts.
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Handle an ADDED_TO_SPACE event by sending a welcome message.
+	 *
+	 * When a bot is added to a space, Google Chat sends an ADDED_TO_SPACE event.
+	 * This method schedules an async welcome message reply via cron.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Google Chat event payload.
+	 * @return WP_REST_Response Empty acknowledgement response.
+	 */
+	protected function handle_added_to_space( array $payload ) {
+		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type  = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
+		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
+
+		if ( '' === $space_name ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection = $this->get_active_google_chat_connection( $space_name );
+
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		/**
+		 * Filters the welcome message sent when the bot is added to a Google Chat space.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message     Default welcome message.
+		 * @param string $space_name  Space resource name.
+		 * @param string $space_type  Space type (SPACE, GROUP_CHAT, DIRECT_MESSAGE).
+		 * @param string $sender_name Resource name of the user who added the bot.
+		 */
+		$welcome_message = apply_filters(
+			'wp_mcp_ai_google_chat_welcome_message',
+			__( 'Hello! I\'m your AI assistant. How can I help you today?', 'mcp-ai-wpoos-pro' ),
+			$space_name,
+			$space_type,
+			$sender_name
+		);
+
+		if ( '' === $welcome_message ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$job_args = array(
+			array(
+				'space_name'    => $space_name,
+				'message_text'  => $welcome_message,
+				'connection_id' => $connection_id,
+			),
+		);
+
+		wp_schedule_single_event( time() + 1, 'wp_mcp_ai_google_chat_send_welcome_message', $job_args );
+		spawn_cron();
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_added_to_space',
+			'Bot added to Google Chat space; welcome message scheduled.',
+			array(
+				'space_name' => $space_name,
+				'space_type' => $space_type,
+			)
+		);
+
 		return rest_ensure_response( $this->empty_response() );
 	}
 
@@ -536,6 +619,102 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Cron callback: send a welcome message when the bot is added to a space.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $args Job arguments set by handle_added_to_space().
+	 */
+	public function handle_welcome_message_job( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		$space_name    = isset( $args['space_name'] ) ? sanitize_text_field( (string) $args['space_name'] ) : '';
+		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
+		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+
+		if ( '' === $space_name || '' === $message_text || '' === $connection_id ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: connection not found or access token missing.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+
+		if ( '' === $access_token ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: access token decryption returned empty string.',
+				array( 'connection_id' => $connection_id )
+			);
+			return;
+		}
+
+		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+
+		$payload = array(
+			'text' => $message_text,
+		);
+
+		$body = wp_json_encode( $payload );
+
+		if ( false === $body ) {
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: HTTP request to Chat API failed.',
+				array( 'error' => $result->get_error_message() )
+			);
+			return;
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $result );
+
+		if ( 200 !== $http_code ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: Chat API returned non-200 status.',
+				array(
+					'http_code'  => $http_code,
+					'space_name' => $space_name,
+				)
+			);
+			return;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_welcome_message_sent',
+			'Google Chat welcome message sent successfully.',
+			array( 'space_name' => $space_name )
+		);
+	}
+
+	/**
 	 * Return the transient key for a Google Chat sender/space conversation history.
 	 *
 	 * The key is hashed to avoid PII in option names and to remain within
@@ -591,13 +770,19 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Find the first active Google Chat connection with assigned assistants.
+	 * Find the best active Google Chat connection for the given space.
+	 *
+	 * When a space-specific connection is available (i.e. the connection's
+	 * `google_chat_space` field matches $space_name) it is preferred over a
+	 * generic connection. Falls back to the first enabled connection with
+	 * assigned assistants when no space-specific match is found.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $space_name Optional Google Chat space resource name for per-space routing.
 	 * @return array|null Connection array or null if none found.
 	 */
-	protected function get_active_google_chat_connection() {
+	protected function get_active_google_chat_connection( $space_name = '' ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
@@ -607,6 +792,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		if ( ! is_array( $connections ) ) {
 			return null;
 		}
+
+		$fallback = null;
 
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'google_chat' !== $connection['connection_type'] ) {
@@ -621,10 +808,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				continue;
 			}
 
-			return $connection;
+			// Check for a space-specific match first.
+			if ( '' !== $space_name && ! empty( $connection['google_chat_space'] ) ) {
+				$conn_space = sanitize_text_field( $connection['google_chat_space'] );
+				if ( $conn_space === $space_name ) {
+					return $connection;
+				}
+			}
+
+			// Keep the first generic connection as fallback.
+			if ( null === $fallback ) {
+				$fallback = $connection;
+			}
 		}
 
-		return null;
+		return $fallback;
 	}
 
 	/**

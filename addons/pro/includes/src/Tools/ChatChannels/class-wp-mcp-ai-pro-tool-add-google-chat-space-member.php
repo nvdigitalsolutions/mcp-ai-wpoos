@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool that sends a Google Chat message.
+ * Tool that adds a member to a Google Chat space.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -13,9 +13,9 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
- * Provides a tool for sending Google Chat messages via the Google Chat API.
+ * Provides a tool for adding a member to a Google Chat space via the Google Chat API.
  */
-class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for Google Chat requests.
 	 */
@@ -36,21 +36,21 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'send_google_chat_message';
+		return 'add_google_chat_space_member';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send Google Chat Message', 'mcp-ai-wpoos-pro' );
+		return __( 'Add Google Chat Space Member', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends a text message to a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
+		return __( 'Adds a user or app as a member of a Google Chat space using the Google Chat API v1.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -68,20 +68,18 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 					'type'        => 'string',
 					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx).', 'mcp-ai-wpoos-pro' ),
 				),
-				'text'         => array(
+				'member_name'  => array(
 					'type'        => 'string',
-					'description' => __( 'Text content of the message to be sent.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Resource name of the user to add (e.g., users/123456789 or users/user@example.com).', 'mcp-ai-wpoos-pro' ),
 				),
-				'thread_key'   => array(
+				'role'         => array(
 					'type'        => 'string',
-					'description' => __( 'Optional thread key to reply in an existing thread or start a new named thread within the space.', 'mcp-ai-wpoos-pro' ),
-				),
-				'thread_name'  => array(
-					'type'        => 'string',
-					'description' => __( 'Optional thread resource name (e.g., spaces/SPACE_ID/threads/THREAD_ID) to reply in an existing thread.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Role of the member in the space. ROLE_MEMBER (default) or ROLE_MANAGER.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'ROLE_MEMBER', 'ROLE_MANAGER' ),
+					'default'     => 'ROLE_MEMBER',
 				),
 			),
-			'required'             => array( 'access_token', 'space', 'text' ),
+			'required'             => array( 'access_token', 'space', 'member_name' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -97,10 +95,10 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		$default_capability  = 'manage_options';
-		$required_capability = apply_filters( 'wp_mcp_ai_send_google_chat_message_capability', $default_capability, $context, $arguments, $this );
+		$required_capability = apply_filters( 'wp_mcp_ai_add_google_chat_space_member_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Google Chat messages.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to add Google Chat space members.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
@@ -123,29 +121,37 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 			return new WP_Error( 'wp_mcp_ai_invalid_space', __( 'Invalid space format. Expected format: spaces/SPACE_ID', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$text = isset( $arguments['text'] ) ? $this->sanitize_message_text( $arguments['text'] ) : '';
+		$member_name = isset( $arguments['member_name'] ) ? sanitize_text_field( $arguments['member_name'] ) : '';
 
-		if ( '' === $text ) {
-			return new WP_Error( 'wp_mcp_ai_missing_message_text', __( 'Message text must be provided.', 'mcp-ai-wpoos-pro' ) );
+		if ( '' === $member_name ) {
+			return new WP_Error( 'wp_mcp_ai_missing_member_name', __( 'A member name is required (e.g., users/USER_ID).', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$endpoint = 'https://chat.googleapis.com/v1/' . $space . '/messages';
+		// Validate member_name: must start with "users/" or "groups/".
+		if ( ! preg_match( '/^(users|groups)\/[a-zA-Z0-9@._-]+$/', $member_name ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_member_name', __( 'Invalid member name format. Expected format: users/USER_ID or groups/GROUP_ID.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$allowed_roles = array( 'ROLE_MEMBER', 'ROLE_MANAGER' );
+		$role          = isset( $arguments['role'] ) ? sanitize_text_field( $arguments['role'] ) : 'ROLE_MEMBER';
+
+		if ( ! in_array( $role, $allowed_roles, true ) ) {
+			$role = 'ROLE_MEMBER';
+		}
+
+		$endpoint = 'https://chat.googleapis.com/v1/' . $space . '/members';
+
+		// Infer member type from the resource name prefix.
+		// users/ indicates a human user; groups/ indicates a Google Group (treated as BOT).
+		$member_type = ( 0 === strncmp( $member_name, 'groups/', 7 ) ) ? 'BOT' : 'HUMAN';
 
 		$payload = array(
-			'text' => $text,
+			'member' => array(
+				'name' => $member_name,
+				'type' => $member_type,
+			),
+			'role'   => $role,
 		);
-
-		// Support threaded messages within spaces.
-		$thread_key  = isset( $arguments['thread_key'] ) ? sanitize_text_field( $arguments['thread_key'] ) : '';
-		$thread_name = isset( $arguments['thread_name'] ) ? sanitize_text_field( $arguments['thread_name'] ) : '';
-
-		if ( '' !== $thread_name && preg_match( '/^spaces\/[a-zA-Z0-9_-]+\/threads\/[a-zA-Z0-9_-]+$/', $thread_name ) ) {
-			$payload['thread'] = array( 'name' => $thread_name );
-			$endpoint          = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
-		} elseif ( '' !== $thread_key ) {
-			$payload['thread'] = array( 'threadKey' => $thread_key );
-			$endpoint          = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
-		}
 
 		$body = wp_json_encode( $payload );
 
@@ -154,11 +160,13 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 		}
 
 		WP_MCP_AI_Logger::log_event(
-			'google_chat_send_message_request',
-			'Sending Google Chat message request.',
+			'google_chat_add_space_member_request',
+			'Adding member to Google Chat space.',
 			array(
-				'endpoint' => $endpoint,
-				'space'    => $space,
+				'endpoint'    => $endpoint,
+				'space'       => $space,
+				'member_name' => $member_name,
+				'role'        => $role,
 			)
 		);
 
@@ -169,13 +177,13 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $access_token,
 				),
-				'timeout' => apply_filters( 'wp_mcp_ai_send_google_chat_message_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
+				'timeout' => apply_filters( 'wp_mcp_ai_add_google_chat_space_member_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
 				'body'    => $body,
 			)
 		);
 
 		if ( is_wp_error( $response ) ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat message request failed.', array( 'error' => $response->get_error_message() ) );
+			WP_MCP_AI_Logger::log_error( 'Google Chat add member request failed.', array( 'error' => $response->get_error_message() ) );
 
 			return new WP_Error(
 				'wp_mcp_ai_google_chat_http_error',
@@ -192,15 +200,16 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 			$decoded = array();
 		}
 
-		if ( 200 !== $code ) {
+		if ( 200 !== $code && 201 !== $code ) {
 			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Google Chat API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			WP_MCP_AI_Logger::log_error(
-				'Google Chat message request was not successful.',
+				'Google Chat add member request was not successful.',
 				array(
-					'http_code' => $code,
-					'space'     => $space,
-					'error'     => $message,
+					'http_code'   => $code,
+					'space'       => $space,
+					'member_name' => $member_name,
+					'error'       => $message,
 				)
 			);
 
@@ -238,32 +247,12 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
-	 * Sanitize Google Chat message text.
-	 *
-	 * @param string $text Raw text input.
-	 * @return string
-	 */
-	protected function sanitize_message_text( $text ) {
-		if ( ! is_string( $text ) ) {
-			return '';
-		}
-
-		$text = trim( $text );
-
-		if ( '' === $text ) {
-			return '';
-		}
-
-		return $text;
-	}
-
-	/**
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.
-			'write',                // Sends Google Chat messages.
+			'write',                // Adds a member to a Google Chat space.
 			'external-api',         // Calls Google Chat API.
 			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.

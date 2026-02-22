@@ -75,6 +75,20 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
+				'page_token'   => array(
+					'type'        => 'string',
+					'description' => __( 'Page token from a previous response to retrieve the next page of messages.', 'mcp-ai-wpoos-pro' ),
+				),
+				'order_by'     => array(
+					'type'        => 'string',
+					'description' => __( 'Sort order for messages. Use "createTime asc" or "createTime desc" (default: createTime asc).', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'createTime asc', 'createTime desc' ),
+					'default'     => 'createTime asc',
+				),
+				'filter'       => array(
+					'type'        => 'string',
+					'description' => __( 'Optional filter for messages (e.g., createTime > "2023-01-01T00:00:00Z" or thread.name = "spaces/SPACE/threads/THREAD").', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'access_token', 'space' ),
 			'additionalProperties' => false,
@@ -122,7 +136,24 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 		$page_size = max( 1, min( 100, $page_size ) );
 
 		$endpoint = 'https://chat.googleapis.com/v1/' . $space . '/messages';
-		$endpoint = add_query_arg( 'pageSize', $page_size, $endpoint );
+
+		$query_args = array( 'pageSize' => $page_size );
+
+		if ( ! empty( $arguments['page_token'] ) ) {
+			$query_args['pageToken'] = sanitize_text_field( $arguments['page_token'] );
+		}
+
+		$allowed_order = array( 'createTime asc', 'createTime desc' );
+		$order_by      = isset( $arguments['order_by'] ) ? sanitize_text_field( $arguments['order_by'] ) : 'createTime asc';
+		if ( in_array( $order_by, $allowed_order, true ) ) {
+			$query_args['orderBy'] = $order_by;
+		}
+
+		if ( ! empty( $arguments['filter'] ) ) {
+			$query_args['filter'] = sanitize_text_field( $arguments['filter'] );
+		}
+
+		$endpoint = add_query_arg( $query_args, $endpoint );
 
 		WP_MCP_AI_Logger::log_event(
 			'google_chat_get_messages_request',
@@ -131,6 +162,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 				'endpoint'  => $endpoint,
 				'space'     => $space,
 				'page_size' => $page_size,
+				'order_by'  => isset( $query_args['orderBy'] ) ? $query_args['orderBy'] : 'createTime asc',
 			)
 		);
 
