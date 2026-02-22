@@ -74,6 +74,24 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
+		$hub_args = array(
+			'hub_mode'         => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'hub_verify_token' => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'hub_challenge'    => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+
 		// Webhook verification endpoint (GET).
 		// Note: Meta sends hub.mode, hub.verify_token, hub.challenge (with dots).
 		// PHP converts dots to underscores in $_GET, so they arrive as hub_mode, etc.
@@ -88,23 +106,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'verify_webhook' ),
 				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
-				'args'                => array(
-					'hub_mode'         => array(
-						'required'          => false,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'hub_verify_token' => array(
-						'required'          => false,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'hub_challenge'    => array(
-						'required'          => false,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
+				'args'                => $hub_args,
 			)
 		);
 
@@ -112,6 +114,40 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_webhook' ),
+				'permission_callback' => array( $this, 'validate_webhook_signature' ),
+			)
+		);
+
+		// Channel-specific webhook verification endpoint (GET).
+		// Allows each WhatsApp channel (connection) to have its own dedicated URL,
+		// enabling multiple Meta Apps to send webhooks to separate endpoints.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'verify_webhook' ),
+				'permission_callback' => '__return_true',
+				'args'                => array_merge(
+					$hub_args,
+					array(
+						'connection_id' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_key',
+						),
+					)
+				),
+			)
+		);
+
+		// Channel-specific webhook event receiver endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_webhook' ),
@@ -140,9 +176,10 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
 	public function verify_webhook( $request ) {
-		$mode         = $request->get_param( 'hub_mode' );
-		$verify_token = $request->get_param( 'hub_verify_token' );
-		$challenge    = $request->get_param( 'hub_challenge' );
+		$mode          = $request->get_param( 'hub_mode' );
+		$verify_token  = $request->get_param( 'hub_verify_token' );
+		$challenge     = $request->get_param( 'hub_challenge' );
+		$connection_id = $request->get_param( 'connection_id' );
 
 		// Handle missing required parameters - return 403 so Meta shows a clear error.
 		if ( empty( $mode ) || empty( $verify_token ) || empty( $challenge ) ) {
@@ -157,13 +194,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			'whatsapp_webhook_verification_attempt',
 			'WhatsApp webhook verification request received.',
 			array(
-				'mode'         => $mode,
-				'verify_token' => substr( $verify_token, 0, 4 ) . '***', // Masked for security.
+				'mode'          => $mode,
+				'verify_token'  => substr( $verify_token, 0, 4 ) . '***', // Masked for security.
+				'connection_id' => $connection_id ? sanitize_key( $connection_id ) : 'generic',
 			)
 		);
 
 		// Get stored verify token from connection settings.
-		$stored_token = $this->get_verify_token();
+		// When a connection_id is present (channel-specific URL), use only that connection's token.
+		$stored_token = $this->get_verify_token( $connection_id ? sanitize_key( $connection_id ) : '' );
 
 		if ( empty( $stored_token ) ) {
 			WP_MCP_AI_Logger::log_error(
@@ -241,7 +280,9 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		// Get app secret from connection settings.
 		// The HMAC signature MUST be validated with the App Secret from the
 		// Meta Developer Dashboard — never the access token.
-		$app_secret = $this->get_app_secret();
+		// When a connection_id is present in the URL, use only that connection's secret.
+		$connection_id = $request->get_param( 'connection_id' );
+		$app_secret    = $this->get_app_secret( $connection_id ? sanitize_key( $connection_id ) : '' );
 
 		// When the App Secret is not configured, skip signature validation and
 		// allow the webhook to be processed. Log a security warning so the site
@@ -2118,12 +2159,27 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Get verify token from connection settings.
 	 *
+	 * When a connection_id is supplied, returns the verify token for that specific
+	 * connection only — enabling per-channel webhook verification for sites with
+	 * multiple WhatsApp numbers connected to separate Meta Apps.  When no
+	 * connection_id is provided the method falls back to the first non-empty
+	 * verify token found (legacy / generic endpoint behaviour).
+	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $connection_id Optional connection ID to look up. Leave empty for generic lookup.
 	 * @return string Verify token or empty string.
 	 */
-	protected function get_verify_token() {
-		// Get WhatsApp connection from remote site manager.
+	protected function get_verify_token( $connection_id = '' ) {
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $connection && isset( $connection['connection_type'] ) && 'whatsapp' === $connection['connection_type'] ) {
+				return isset( $connection['verify_token'] ) ? $connection['verify_token'] : '';
+			}
+			return '';
+		}
+
+		// Generic lookup: return the first non-empty verify token found.
 		$connections = $this->get_whatsapp_connections();
 
 		foreach ( $connections as $connection ) {
@@ -2144,12 +2200,27 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * as a substitute — doing so would produce an incorrect signature and
 	 * potentially allow forged webhooks to pass validation.
 	 *
+	 * When a connection_id is supplied, returns the app secret for that specific
+	 * connection only — enabling per-channel signature validation for sites with
+	 * multiple WhatsApp numbers connected to separate Meta Apps.
+	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $connection_id Optional connection ID to look up. Leave empty for generic lookup.
 	 * @return string App secret or empty string if not configured.
 	 */
-	protected function get_app_secret() {
-		// Get WhatsApp connection from remote site manager.
+	protected function get_app_secret( $connection_id = '' ) {
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( $connection && isset( $connection['connection_type'] ) && 'whatsapp' === $connection['connection_type'] ) {
+				if ( ! empty( $connection['api_secret'] ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+				}
+			}
+			return '';
+		}
+
+		// Generic lookup: return the first non-empty app secret found.
 		$connections = $this->get_whatsapp_connections();
 
 		foreach ( $connections as $connection ) {

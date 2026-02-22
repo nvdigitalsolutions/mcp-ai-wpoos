@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-whatsapp-auto-reply-error',
-        'version' => 'dev-copilot/fix-whatsapp-auto-reply-error',
-        'reference' => 'e6ebfa5d50dc1df9ee84c3154fda03b18eccef42',
+        'pretty_version' => 'dev-copilot/extend-whatsapp-channel-connector',
+        'version' => 'dev-copilot/extend-whatsapp-channel-connector',
+        'reference' => '484e98ea0137d59be2f7ecc19dd6d21622224231',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-whatsapp-auto-reply-error',
-            'version' => 'dev-copilot/fix-whatsapp-auto-reply-error',
-            'reference' => 'e6ebfa5d50dc1df9ee84c3154fda03b18eccef42',
+            'pretty_version' => 'dev-copilot/extend-whatsapp-channel-connector',
+            'version' => 'dev-copilot/extend-whatsapp-channel-connector',
+            'reference' => '484e98ea0137d59be2f7ecc19dd6d21622224231',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
