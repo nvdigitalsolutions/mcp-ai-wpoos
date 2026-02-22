@@ -235,6 +235,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'whatsapp':
 					$api_key    = isset( $_POST['whatsapp_access_token'] ) ? wp_unslash( $_POST['whatsapp_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['whatsapp_app_secret'] ) ? wp_unslash( $_POST['whatsapp_app_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- app secrets must not be sanitized.
+					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -1581,6 +1582,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your Meta App Secret (found in Meta App Dashboard → Settings → Basic). Required if your app has "Require App Secret Proof" enabled. Also used to validate incoming webhook signatures.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="whatsapp_app_id" id="whatsapp_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Meta App ID (found in Meta App Dashboard → Settings → Basic). Together with the App Secret above, this enables automatic access token renewal when the token expires.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -4293,6 +4304,44 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								$result['send_error_hint'] = __( 'Phone Number ID not found. The ID configured for this connection does not match any WhatsApp phone number accessible with your access token. Find the correct Phone Number ID in the Meta Developer Dashboard: select your app → WhatsApp → API Setup → "Phone Number ID". This is different from the WhatsApp Business Account ID (WABA ID) shown in Meta Business Manager or Facebook Business pages.', 'mcp-ai-wpoos-pro' );
 							} elseif ( 133010 === $meta_code ) {
 								$result['send_error_hint'] = __( 'Your WhatsApp Business phone number is not yet registered with the Cloud API. Use the Register Phone Number button in this connection\'s settings to complete registration. Before registering, ensure the number is not active on the WhatsApp or WhatsApp Business app (delete the account from the app first), and if it was previously on the on-premises API, deregister it there first. See the official Meta documentation: https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration', 'mcp-ai-wpoos-pro' );
+							} elseif ( 190 === $meta_code ) {
+								// Token is invalid or expired — attempt automatic refresh then retry.
+								$refreshed_token = WP_MCP_AI_Pro_Remote_Site_Manager::refresh_whatsapp_token(
+									$connection,
+									$connection_id,
+									$access_token,
+									$graph_api_version
+								);
+
+								if ( false !== $refreshed_token ) {
+									$retry_payload = wp_json_encode( $payload );
+									if ( false !== $retry_payload ) {
+										$retry_result = wp_remote_post(
+											$endpoint,
+											array(
+												'headers' => array(
+													'Content-Type'  => 'application/json',
+													'Authorization' => 'Bearer ' . $refreshed_token,
+												),
+												'timeout' => 20,
+												'body'    => $retry_payload,
+											)
+										);
+
+										if ( ! is_wp_error( $retry_result ) && 200 === (int) wp_remote_retrieve_response_code( $retry_result ) ) {
+											$result['sent'] = true;
+											unset( $result['send_error'] );
+										}
+									}
+								}
+
+								if ( ! $result['sent'] ) {
+									if ( 463 === $meta_subcode ) {
+										$result['send_error_hint'] = __( 'Your WhatsApp access token has expired. Automatic refresh was attempted but failed. To enable automatic refresh, add your Meta App ID to this connection\'s settings and ensure the App has admin access to the System User. Alternatively, generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions.', 'mcp-ai-wpoos-pro' );
+									} else {
+										$result['send_error_hint'] = __( 'Your WhatsApp access token is invalid or expired. Automatic refresh was attempted but failed. To enable automatic refresh, add your Meta App ID to this connection\'s settings and ensure the App has admin access to the System User. Alternatively, generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions.', 'mcp-ai-wpoos-pro' );
+									}
+								}
 							}
 						}
 					}
