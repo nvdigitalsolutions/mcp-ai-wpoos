@@ -402,6 +402,201 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Update the encrypted API key (access token) stored for a connection.
+	 *
+	 * This is a lightweight alternative to calling the full save_connection()
+	 * when only the access token needs to change (e.g. after an automatic
+	 * token refresh).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id  Connection ID.
+	 * @param string $new_token      Plain-text new access token.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function update_api_key( $connection_id, $new_token ) {
+		$connections   = self::get_all_connections();
+		$connection_id = sanitize_key( $connection_id );
+
+		if ( ! isset( $connections[ $connection_id ] ) || '' === (string) $new_token ) {
+			return false;
+		}
+
+		$connections[ $connection_id ]['api_key'] = self::encrypt_value( $new_token );
+
+		return (bool) update_option( self::OPTION_NAME, $connections );
+	}
+
+	/**
+	 * Attempt to automatically refresh a WhatsApp access token using stored Meta app credentials.
+	 *
+	 * Two strategies are tried in order:
+	 *
+	 * 1. **fb_exchange_token** — exchanges the current access token for a new long-lived
+	 *    User Access Token (~60 days). Works when the existing token is still valid or
+	 *    only mildly expired.
+	 *
+	 * 2. **System User token generation** — obtains an App Access Token via the
+	 *    `client_credentials` grant and then calls `POST /{system_user_id}/access_tokens`
+	 *    to mint a new never-expiring System User token. This works even when the previous
+	 *    token has fully expired, provided the app has admin access to the system user.
+	 *
+	 * When a new token is obtained it is automatically persisted via {@see update_api_key()}.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection        Full connection data array (encrypted secrets are decrypted internally).
+	 * @param string $connection_id     Connection ID used to persist the refreshed token.
+	 * @param string $current_token     Current (possibly expired) plain-text access token.
+	 * @param string $graph_api_version Graph API version string (e.g. 'v21.0').
+	 * @return string|false New plain-text access token on success, false when refresh is not possible.
+	 */
+	public static function refresh_whatsapp_token( array $connection, $connection_id, $current_token, $graph_api_version ) {
+		$app_id     = isset( $connection['app_id'] ) ? trim( (string) $connection['app_id'] ) : '';
+		$app_secret = isset( $connection['api_secret'] ) ? trim( (string) self::decrypt_value( $connection['api_secret'] ) ) : '';
+
+		if ( '' === $app_id || '' === $app_secret ) {
+			return false;
+		}
+
+		// --- Strategy 1: fb_exchange_token ----------------------------------------.
+		$exchange_url = add_query_arg(
+			array(
+				'grant_type'        => 'fb_exchange_token',
+				'client_id'         => $app_id,
+				'client_secret'     => $app_secret,
+				'fb_exchange_token' => $current_token,
+			),
+			sprintf( 'https://graph.facebook.com/%s/oauth/access_token', rawurlencode( $graph_api_version ) )
+		);
+
+		$exchange_response = wp_remote_get(
+			$exchange_url,
+			array(
+				'timeout' => 15,
+				'headers' => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( ! is_wp_error( $exchange_response ) && 200 === (int) wp_remote_retrieve_response_code( $exchange_response ) ) {
+			$exchange_body = json_decode( wp_remote_retrieve_body( $exchange_response ), true );
+			if ( is_array( $exchange_body ) && ! empty( $exchange_body['access_token'] ) ) {
+				$new_token = trim( (string) $exchange_body['access_token'] );
+				if ( '' !== $new_token ) {
+					if ( $new_token !== $current_token ) {
+						// A new token was returned — save and return it.
+						self::update_api_key( $connection_id, $new_token );
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'whatsapp_token_refreshed',
+								'WhatsApp access token refreshed via fb_exchange_token.',
+								array( 'connection_id' => $connection_id )
+							);
+						}
+						return $new_token;
+					}
+					// Same token returned — it is still valid; return it as-is
+					// without persisting (nothing changed) and skip Strategy 2.
+					return $new_token;
+				}
+			}
+		}
+
+		// --- Strategy 2: System User token generation ------------------------------.
+		$system_user_id = isset( $connection['system_user_id'] ) ? trim( (string) $connection['system_user_id'] ) : '';
+		if ( '' === $system_user_id ) {
+			return false;
+		}
+
+		// Step 2a: obtain an App Access Token.
+		$app_token_url = add_query_arg(
+			array(
+				'client_id'     => $app_id,
+				'client_secret' => $app_secret,
+				'grant_type'    => 'client_credentials',
+			),
+			sprintf( 'https://graph.facebook.com/%s/oauth/access_token', rawurlencode( $graph_api_version ) )
+		);
+
+		$app_token_response = wp_remote_get(
+			$app_token_url,
+			array(
+				'timeout' => 15,
+				'headers' => array( 'Accept' => 'application/json' ),
+			)
+		);
+
+		if ( is_wp_error( $app_token_response ) || 200 !== (int) wp_remote_retrieve_response_code( $app_token_response ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'WhatsApp token refresh: failed to obtain App Access Token.',
+					array( 'connection_id' => $connection_id )
+				);
+			}
+			return false;
+		}
+
+		$app_token_body = json_decode( wp_remote_retrieve_body( $app_token_response ), true );
+		$app_token      = is_array( $app_token_body ) && ! empty( $app_token_body['access_token'] ) ? trim( (string) $app_token_body['access_token'] ) : '';
+		if ( '' === $app_token ) {
+			return false;
+		}
+
+		// Step 2b: generate a new System User Access Token.
+		$sys_token_url = sprintf(
+			'https://graph.facebook.com/%s/%s/access_tokens',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $system_user_id )
+		);
+
+		$sys_token_response = wp_remote_post(
+			$sys_token_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $app_token,
+					'Content-Type'  => 'application/x-www-form-urlencoded',
+				),
+				'body'    => http_build_query(
+					array(
+						'business_app' => $app_id,
+						'scope'        => 'whatsapp_business_messaging,whatsapp_business_management',
+					)
+				),
+			)
+		);
+
+		if ( is_wp_error( $sys_token_response ) || 200 !== (int) wp_remote_retrieve_response_code( $sys_token_response ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'WhatsApp token refresh: System User token generation failed.',
+					array(
+						'connection_id'  => $connection_id,
+						'system_user_id' => substr( $system_user_id, 0, 4 ) . '***',
+					)
+				);
+			}
+			return false;
+		}
+
+		$sys_token_body = json_decode( wp_remote_retrieve_body( $sys_token_response ), true );
+		$new_token      = is_array( $sys_token_body ) && ! empty( $sys_token_body['access_token'] ) ? trim( (string) $sys_token_body['access_token'] ) : '';
+		if ( '' === $new_token ) {
+			return false;
+		}
+
+		self::update_api_key( $connection_id, $new_token );
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'whatsapp_token_refreshed',
+				'WhatsApp access token refreshed via System User token generation.',
+				array( 'connection_id' => $connection_id )
+			);
+		}
+		return $new_token;
+	}
+
+	/**
 	 * Delete a remote site connection.
 	 *
 	 * @since 1.0.0

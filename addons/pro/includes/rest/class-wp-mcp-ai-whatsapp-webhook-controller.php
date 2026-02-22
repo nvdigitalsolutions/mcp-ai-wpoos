@@ -995,10 +995,42 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			} elseif ( is_array( $api_error ) && isset( $api_error['code'] ) && 133010 === (int) $api_error['code'] ) {
 				$log_context['hint'] = 'Business phone number not registered with the WhatsApp Cloud API. Use the Register Phone Number button in the connection settings (or POST to https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/register) to register the number. Before registering, ensure the number is not active on WhatsApp or WhatsApp Business app, and deregister it from the on-premises API if it was previously used there. See: https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration';
 			} elseif ( is_array( $api_error ) && isset( $api_error['code'] ) && 190 === (int) $api_error['code'] ) {
+				// Token is invalid or expired — attempt automatic refresh.
+				$refreshed_token = $this->try_refresh_access_token( $connection, $connection_id, $access_token, $graph_api_version );
+				if ( false !== $refreshed_token ) {
+					// Retry the send with the new token.
+					$retry_result = wp_remote_post(
+						$endpoint,
+						array(
+							'headers' => array(
+								'Content-Type'  => 'application/json',
+								'Authorization' => 'Bearer ' . $refreshed_token,
+							),
+							'timeout' => 20,
+							'body'    => $body,
+						)
+					);
+
+					if ( ! is_wp_error( $retry_result ) && 200 === (int) wp_remote_retrieve_response_code( $retry_result ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'whatsapp_ai_reply_sent',
+							'WhatsApp AI reply dispatched successfully after token refresh.',
+							array(
+								'assistant_id'    => $assistant_id,
+								'phone_number_id' => substr( $phone_number_id, 0, 4 ) . '***',
+								'to'              => substr( $to, 0, 4 ) . '***',
+							)
+						);
+						return;
+					} else {
+						$log_context['retry_http_code'] = is_wp_error( $retry_result ) ? 0 : (int) wp_remote_retrieve_response_code( $retry_result );
+					}
+				}
+
 				$subcode             = isset( $api_error['error_subcode'] ) ? (int) $api_error['error_subcode'] : 0;
 				$log_context['hint'] = 463 === $subcode
-					? 'Access token has expired. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions, then update the Access Token in the connection settings.'
-					: 'Access token is invalid or expired. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions, then update the Access Token in the connection settings.';
+					? 'Access token has expired and automatic refresh failed. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions and store your App ID + App Secret in the connection settings to enable automatic refresh.'
+					: 'Access token is invalid or expired and automatic refresh failed. Generate a new permanent System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_messaging and whatsapp_business_management permissions and store your App ID + App Secret in the connection settings to enable automatic refresh.';
 			}
 
 			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: send request returned an error.', $log_context );
@@ -2123,6 +2155,27 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Attempt to obtain a fresh WhatsApp access token using stored Meta app credentials.
+	 *
+	 * Delegates to {@see WP_MCP_AI_Pro_Remote_Site_Manager::refresh_whatsapp_token()},
+	 * which tries two strategies: fb_exchange_token first, then System User token
+	 * generation if a System User ID is stored on the connection.
+	 *
+	 * @param array  $connection        Full connection data array.
+	 * @param string $connection_id     Connection ID used to persist the refreshed token.
+	 * @param string $current_token     Current (possibly expired) plain-text access token.
+	 * @param string $graph_api_version Graph API version string (e.g. 'v21.0').
+	 * @return string|false New access token on success, false when refresh is not possible.
+	 */
+	protected function try_refresh_access_token( array $connection, $connection_id, $current_token, $graph_api_version ) {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		return WP_MCP_AI_Pro_Remote_Site_Manager::refresh_whatsapp_token( $connection, $connection_id, $current_token, $graph_api_version );
 	}
 }
 
