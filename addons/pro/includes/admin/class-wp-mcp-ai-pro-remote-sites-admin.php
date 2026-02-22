@@ -201,6 +201,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'mesh_peer':
 					$api_key = isset( $_POST['mesh_inbound_api_key'] ) ? wp_unslash( $_POST['mesh_inbound_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'twitter':
+					$api_key       = isset( $_POST['twitter_api_key'] ) ? wp_unslash( $_POST['twitter_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret    = isset( $_POST['twitter_api_secret'] ) ? wp_unslash( $_POST['twitter_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$client_id     = isset( $_POST['twitter_access_token'] ) ? wp_unslash( $_POST['twitter_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$client_secret = isset( $_POST['twitter_access_token_secret'] ) ? wp_unslash( $_POST['twitter_access_token_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 				case 'isams':
 					$api_key    = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -337,6 +343,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$auth_type = 'none';
 			}
 
+			if ( 'twitter' === $connection_type ) {
+				$url       = 'https://api.twitter.com/2';
+				$auth_type = 'none';
+			}
+
 			// For mesh peer connections, use custom_header auth with mesh API key
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
@@ -404,6 +415,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
 				// Google Chat-specific fields.
 				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
+				// Twitter/X-specific fields.
+				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -637,6 +650,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'facebook_messenger' => __( 'Messenger', 'mcp-ai-wpoos-pro' ),
 									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 									'google_chat'        => __( 'Google Chat', 'mcp-ai-wpoos-pro' ),
+									'twitter'            => __( 'Twitter / X', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
@@ -658,6 +672,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'facebook_messenger' => '#0084ff', // Messenger blue
 									'webchat'            => '#ff6b6b', // WebChat coral red
 									'google_chat'        => '#1a73e8', // Google Chat blue
+									'twitter'            => '#000000', // X (formerly Twitter) black
 								);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -953,6 +968,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="google_chat" <?php selected( $connection_type, 'google_chat' ); ?>>
 								<?php esc_html_e( 'Google Chat (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="twitter" <?php selected( $connection_type, 'twitter' ); ?>>
+								<?php esc_html_e( 'Twitter / X (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -2329,6 +2347,151 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Twitter / X -->
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_api_key"><?php esc_html_e( 'API Key (Consumer Key)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="twitter_api_key" id="twitter_api_key" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Twitter/X app API Key (Consumer Key) from the Developer Portal. Used for OAuth 1.0a request signing and webhook HMAC-SHA256 signature validation.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_api_secret"><?php esc_html_e( 'API Secret Key (Consumer Secret)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="twitter_api_secret" id="twitter_api_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API Secret Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Twitter/X app API Secret Key (Consumer Secret) from the Developer Portal. This is used to sign OAuth 1.0a requests and to validate incoming webhook event signatures (HMAC-SHA256 in the X-Twitter-Webhooks-Signature header).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_access_token"><?php esc_html_e( 'Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="twitter_access_token" id="twitter_access_token" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing Access Token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 1.0a Access Token for the app owner user. Used together with the Access Token Secret to send Direct Messages on behalf of the authenticated user. Generate in the Developer Portal under your app → Keys and Tokens.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_access_token_secret"><?php esc_html_e( 'Access Token Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="twitter_access_token_secret" id="twitter_access_token_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing Access Token Secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 1.0a Access Token Secret paired with the Access Token above. Both are required to sign DM send requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_user_id"><?php esc_html_e( 'App Owner Twitter User ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="twitter_user_id" id="twitter_user_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['twitter_user_id'] ) && 'twitter' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['twitter_user_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Twitter/X numeric user ID (e.g. 123456789). When set, the webhook controller uses this to avoid replying to messages sent by the bot itself, preventing reply loops. Find it via twidentity.com or the v2 /users/by/username/:username endpoint.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Channel-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/twitter/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;"><?php esc_html_e( 'Register this URL in the Twitter Developer Portal under your app → Edit → App details → Website URL / Callback URLs, and in the Account Activity API environment settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all connections):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/twitter' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use the channel-specific URL above when possible so each Twitter app routes to its own connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/twitter' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for use in the Twitter Developer Portal.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row">
+						<label for="twitter_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tw_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$tw_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'twitter' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="twitter_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $tw_assistants as $tw_assistant ) :
+								$tw_is_selected = in_array( $tw_assistant->ID, $tw_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>" <?php echo esc_attr( $tw_is_selected ); ?>>
+									<?php echo esc_html( $tw_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first assigned assistant will automatically reply to incoming Twitter/X Direct Messages via the Account Activity API.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="twitter-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #000000; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Go to developer.twitter.com and create a new app (or use an existing one) under a Project.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Under app → Settings → User authentication settings, enable OAuth 1.0a and set permissions to Read and Write and Direct Messages.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'From app → Keys and Tokens, generate your API Key, API Secret Key, Access Token, and Access Token Secret and enter them above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Apply for Account Activity API access (Free tier supports 1 environment). Create a dev environment in the Developer Portal.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection to get a channel-specific Webhook URL, then register it via the Account Activity API or using the "Manage Twitter Webhook" AI tool.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'After registration Twitter will send a CRC challenge (GET request with ?crc_token=…) to verify the URL — this is handled automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Subscribe the user to account events using the "Manage Twitter Webhook" AI tool (action: subscribe) or via the Twitter API directly.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants above, then save and enable — incoming DMs will be answered automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0; font-size: 13px; color: #2271b1;">
+								ℹ <strong><?php esc_html_e( 'Signature validation:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'Twitter signs each POST event with HMAC-SHA256 (base64-encoded) using your Consumer Secret in the X-Twitter-Webhooks-Signature header. The API Secret Key above enables automatic signature verification on every incoming event.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</div>
+					</td>
+				</tr>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -2438,6 +2601,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var webchatFields = document.querySelectorAll('.webchat-only-field');
 			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
 			var googleChatFields = document.querySelectorAll('.google_chat-only-field');
+			var twitterFields = document.querySelectorAll('.twitter-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -2497,6 +2661,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			googleChatFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			twitterFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -2664,6 +2831,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 				// Google Chat uses the Chat API
 				urlField.value = 'https://chat.googleapis.com/v1';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'twitter') {
+				twitterFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Twitter/X uses API v2
+				urlField.value = 'https://api.twitter.com/2';
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';

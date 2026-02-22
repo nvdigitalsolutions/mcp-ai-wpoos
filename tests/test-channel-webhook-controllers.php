@@ -862,4 +862,242 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertSame( 'assistant', $last['role'] );
 		$this->assertSame( $content, $last['content'] );
 	}
+
+	// =========================================================================
+	// Twitter/X Webhook Controller
+	// =========================================================================
+
+	/**
+	 * Test CONVERSATION_HISTORY_TTL constant equals 86400 (24 hours).
+	 */
+	public function test_twitter_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Twitter_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Twitter CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test DEDUP_TRANSIENT_TTL constant equals 60.
+	 */
+	public function test_twitter_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Twitter_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Twitter DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/**
+	 * Test MAX_DM_LENGTH constant equals 10000 (Twitter API v2 DM limit).
+	 */
+	public function test_twitter_max_dm_length_constant() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$this->assertSame(
+			10000,
+			WP_MCP_AI_Twitter_Webhook_Controller::MAX_DM_LENGTH,
+			'Twitter MAX_DM_LENGTH should be 10000 characters'
+		);
+	}
+
+	/**
+	 * Test get_conversation_history_key returns a deterministic non-empty string.
+	 */
+	public function test_twitter_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, '123456789', 'conn_tw_abc' );
+		$key2 = $method->invoke( $controller, '123456789', 'conn_tw_abc' );
+		$key3 = $method->invoke( $controller, '987654321', 'conn_tw_abc' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_tw_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/**
+	 * Test that different connection IDs produce different keys for the same sender.
+	 */
+	public function test_twitter_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key_a = $method->invoke( $controller, '123456789', 'conn_A' );
+		$key_b = $method->invoke( $controller, '123456789', 'conn_B' );
+
+		$this->assertNotSame( $key_a, $key_b );
+	}
+
+	/**
+	 * Test validate_webhook_signature passes when no consumer secret is configured
+	 * (soft-fail behaviour matching WhatsApp/Slack pattern).
+	 */
+	public function test_twitter_validation_passes_without_consumer_secret() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		// No connections stored — get_consumer_secret() returns empty string.
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/twitter' );
+		$request->set_body( '{"direct_message_events":[]}' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Validation should pass when no consumer secret is configured' );
+	}
+
+	/**
+	 * Test validate_webhook_signature rejects requests with a wrong signature
+	 * when the consumer secret IS configured.
+	 */
+	public function test_twitter_validation_fails_with_wrong_signature() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		// Subclass that stubs get_consumer_secret() to return a known value.
+		$controller = new class() extends WP_MCP_AI_Twitter_Webhook_Controller {
+			protected function get_consumer_secret( $connection_id = '' ) {
+				return 'test_consumer_secret';
+			}
+		};
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/twitter' );
+		$request->set_body( '{"direct_message_events":[]}' );
+		// Provide a deliberately incorrect signature.
+		$request->set_header( 'x-twitter-webhooks-signature', 'sha256=INVALIDSIGNATURE' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertFalse( $result, 'Validation should fail with an invalid signature' );
+	}
+
+	/**
+	 * Test validate_webhook_signature accepts requests with the correct HMAC-SHA256 signature.
+	 */
+	public function test_twitter_validation_passes_with_correct_signature() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$secret  = 'my_consumer_secret';
+		$payload = '{"direct_message_events":[{"type":"message_create","id":"1"}]}';
+
+		// Build the expected signature (matches the controller's algorithm).
+		$expected_signature = 'sha256=' . base64_encode( hash_hmac( 'sha256', $payload, $secret, true ) );
+
+		$controller = new class( $secret ) extends WP_MCP_AI_Twitter_Webhook_Controller {
+			private $test_secret;
+			public function __construct( $secret ) {
+				$this->test_secret = $secret;
+			}
+			protected function get_consumer_secret( $connection_id = '' ) {
+				return $this->test_secret;
+			}
+		};
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/twitter' );
+		$request->set_body( $payload );
+		$request->set_header( 'x-twitter-webhooks-signature', $expected_signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Validation should pass with the correct HMAC-SHA256 signature' );
+	}
+
+	/**
+	 * Test CRC challenge returns 400 when crc_token is missing.
+	 */
+	public function test_twitter_crc_challenge_returns_error_when_token_missing() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/webhooks/twitter' );
+		// No crc_token param set.
+
+		$response = $controller->handle_crc_challenge( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $response );
+		$this->assertSame( 'twitter_crc_missing_token', $response->get_error_code() );
+	}
+
+	/**
+	 * Test handle_webhook returns ok:true for an empty payload.
+	 */
+	public function test_twitter_handle_webhook_returns_ok_for_empty_payload() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/twitter' );
+		$request->set_body( '' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertTrue( $data['ok'] );
+	}
+
+	/**
+	 * Test extract_content_from_chat_response returns the assistant message.
+	 */
+	public function test_twitter_extract_content_from_chat_response() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Hello from Twitter AI!',
+						),
+					),
+				),
+			),
+		);
+
+		$content = $method->invoke( $controller, $response_data );
+
+		$this->assertSame( 'Hello from Twitter AI!', $content );
+	}
+
+	/**
+	 * Test extract_content_from_chat_response returns empty string when choices are absent.
+	 */
+	public function test_twitter_extract_content_returns_empty_when_no_choices() {
+		$this->load_controller( 'WP_MCP_AI_Twitter_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-twitter-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Twitter_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$this->assertSame( '', $method->invoke( $controller, array() ) );
+		$this->assertSame( '', $method->invoke( $controller, 'not_an_array' ) );
+		$this->assertSame( '', $method->invoke( $controller, array( 'data' => array( 'choices' => array() ) ) ) );
+	}
 }
