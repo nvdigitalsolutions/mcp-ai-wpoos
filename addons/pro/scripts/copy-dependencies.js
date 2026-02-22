@@ -511,10 +511,17 @@ const dependencies = [
 	},
 	{
 		name: 'qrcode',
+		// Copy the Node.js lib/ so node-services/qrcode-service.js can load it
+		// via an explicit path without requiring npm install on the server.
+		dirs: [
+			{ src: 'lib', dest: 'qrcode/lib' },
+		],
 		files: [
-			{ src: 'build/qrcode.min.js', dest: 'qrcode/qrcode.min.js' },
 			{ src: 'package.json', dest: 'qrcode/package.json' },
 		],
+		// Runtime deps needed by qrcode/lib at server side (pngjs for PNG/data-url,
+		// dijkstrajs for the QR matrix algorithm).
+		dependencies: [ 'dijkstrajs', 'pngjs' ],
 	},
 	{
 		name: 'turndown',
