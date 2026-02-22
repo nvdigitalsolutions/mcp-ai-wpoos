@@ -34,6 +34,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 	}
 
 	/**
@@ -2544,6 +2545,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('action', 'wp_mcp_ai_test_whatsapp_live');
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' ) ); ?>);
 					data.append('access_token', accessToken);
+					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
+					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 					data.append('phone_number_id', phoneNumberId);
 					var appSecretEl = document.getElementById('whatsapp_app_secret');
 					var appSecret = appSecretEl ? appSecretEl.value.trim() : '';
@@ -2709,6 +2712,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_fetch_whatsapp_phone_numbers' ) ); ?>);
 					data.append('business_account_id', wabaId);
 					data.append('access_token', accessToken);
+					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
+					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 
 					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(r) {
@@ -2860,6 +2865,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('action', 'wp_mcp_ai_test_messenger_live');
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_live' ) ); ?>);
 					data.append('access_token', accessToken);
+					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
+					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 					data.append('page_id', pageId);
 					data.append('api_version', apiVersion);
 
@@ -3475,6 +3482,83 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Fetch WhatsApp phone numbers from the Facebook Graph API.
+	 *
+	 * Calls https://graph.facebook.com/{version}/{waba_id}/phone_numbers using the
+	 * provided system user access token and returns the list of phone numbers.
+	 * The API version defaults to v22.0 but respects the graph_api_version POST parameter.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_fetch_whatsapp_phone_numbers() {
+		check_ajax_referer( 'wp_mcp_ai_fetch_whatsapp_phone_numbers', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$business_account_id = isset( $_POST['business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['business_account_id'] ) ) : '';
+		$access_token        = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token        = trim( (string) $access_token );
+
+		if ( empty( $business_account_id ) || empty( $access_token ) ) {
+			wp_send_json_error( array( 'message' => __( 'Business Account ID and Access Token are required.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$raw_version       = isset( $_POST['graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['graph_api_version'] ) ) : '';
+		$graph_api_version = ( preg_match( '/^v\d+\.\d+$/', $raw_version ) ) ? $raw_version : 'v22.0';
+
+		$api_url = add_query_arg(
+			array( 'fields' => 'id,display_phone_number,verified_name' ),
+			sprintf( 'https://graph.facebook.com/%s/%s/phone_numbers', $graph_api_version, rawurlencode( $business_account_id ) )
+		);
+
+		$response = wp_remote_get(
+			$api_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( array( 'message' => __( 'Connection to the Facebook Graph API failed. Please check your network and try again.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( empty( $data ) || isset( $data['error'] ) ) {
+			$error_message = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Failed to retrieve phone numbers.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error( array( 'message' => $error_message ) );
+			return;
+		}
+
+		$phone_numbers = array();
+		if ( ! empty( $data['data'] ) && is_array( $data['data'] ) ) {
+			foreach ( $data['data'] as $phone ) {
+				$phone_numbers[] = array(
+					'id'            => isset( $phone['id'] ) ? sanitize_text_field( $phone['id'] ) : '',
+					'display_name'  => isset( $phone['display_phone_number'] ) ? sanitize_text_field( $phone['display_phone_number'] ) : '',
+					'verified_name' => isset( $phone['verified_name'] ) ? sanitize_text_field( $phone['verified_name'] ) : '',
+				);
+			}
+		}
+
+		if ( empty( $phone_numbers ) ) {
+			wp_send_json_error( array( 'message' => __( 'No phone numbers found for this Business Account ID.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'phone_numbers' => $phone_numbers ) );
 	}
 
 	/**
