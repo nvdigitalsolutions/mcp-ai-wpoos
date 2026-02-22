@@ -130,4 +130,30 @@ function wp_mcp_ai_load_chat_channels_tools() {
 			}
 		}
 	}
+
+	// Twitter/X DM tools.
+	$twitter_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$twitter_tools     = array(
+		'WP_MCP_AI_Pro_Tool_Send_Twitter_DM'        => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-send-twitter-dm.php',
+		'WP_MCP_AI_Pro_Tool_Get_Twitter_DMs'        => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-get-twitter-dms.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook' => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-manage-twitter-webhook.php',
+	);
+
+	foreach ( $twitter_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
 }

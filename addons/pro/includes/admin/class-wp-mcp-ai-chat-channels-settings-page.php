@@ -201,6 +201,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_discord_config(); ?>
 			<?php $this->render_teams_config(); ?>
 			<?php $this->render_messenger_config(); ?>
+			<?php $this->render_twitter_config(); ?>
 
 			<h2 style="margin-top: 40px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<table class="form-table">
@@ -979,6 +980,52 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			}
 		} )();
 		</script>
+		<?php
+	}
+
+	/**
+	 * Render Twitter/X configuration section.
+	 */
+	protected function render_twitter_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>🐦 <?php esc_html_e( 'Twitter / X Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'Twitter/X Account Activity API enables real-time Direct Message handling and account event streaming via webhook.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Go to developer.twitter.com and create a Project and App.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Under App Settings → User Authentication, enable OAuth 1.0a with Read, Write & Direct Messages permissions.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'From Keys and Tokens, generate API Key, API Secret Key, Access Token, and Access Token Secret.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Apply for Account Activity API access and create a dev environment in the Developer Portal.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add a Twitter connection in the Remote Site Manager — the channel-specific webhook URL will be generated after saving.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Register the webhook URL using the "Manage Twitter Webhook" AI tool (action: register) or via the Twitter API directly.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Subscribe the user using the "Manage Twitter Webhook" AI tool (action: subscribe) to start receiving account events.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/twitter' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Register this URL (or the channel-specific URL from the Remote Site Manager) in the Twitter Developer Portal and as the Account Activity API webhook endpoint.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'Security', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'Every incoming POST event is validated using HMAC-SHA256 (base64-encoded) with your API Secret Key against the X-Twitter-Webhooks-Signature header. CRC challenge requests (GET with crc_token) are answered automatically using the same key.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://developer.twitter.com/en/docs/twitter-api/direct-messages" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Twitter API v2 Direct Messages', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developer.twitter.com/en/docs/twitter-api/enterprise/account-activity-api/guides/securing-webhooks" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Securing Account Activity Webhooks', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
 		<?php
 	}
 
