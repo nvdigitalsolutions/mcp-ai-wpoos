@@ -222,30 +222,40 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * Implements Meta's signature validation best practice.
 	 * Signature is sent in X-Hub-Signature-256 header.
 	 *
+	 * When the App Secret is not configured, the webhook is allowed through
+	 * with a security warning so that incoming messages can still be processed.
+	 * Configure the App Secret from the Meta Developer Dashboard to enable
+	 * full HMAC-SHA256 signature validation.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if signature is valid, false otherwise.
+	 * @return bool True if signature is valid or App Secret is not configured, false otherwise.
 	 */
 	public function validate_webhook_signature( $request ) {
-		// Get signature from header.
-		$signature_header = $request->get_header( 'x-hub-signature-256' );
-
-		if ( empty( $signature_header ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'WhatsApp webhook rejected: Missing signature header.'
-			);
-			return false;
-		}
-
 		// Get app secret from connection settings.
 		// The HMAC signature MUST be validated with the App Secret from the
 		// Meta Developer Dashboard — never the access token.
 		$app_secret = $this->get_app_secret();
 
+		// When the App Secret is not configured, skip signature validation and
+		// allow the webhook to be processed. Log a security warning so the site
+		// owner knows to configure the App Secret for hardened security.
 		if ( empty( $app_secret ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'whatsapp_webhook_no_app_secret',
+				'WhatsApp webhook received without App Secret configured. Signature validation skipped. Configure your App Secret in the connection settings for enhanced security.',
+				array()
+			);
+			return true;
+		}
+
+		// App Secret is configured — the signature header is required.
+		$signature_header = $request->get_header( 'x-hub-signature-256' );
+
+		if ( empty( $signature_header ) ) {
 			WP_MCP_AI_Logger::log_error(
-				'WhatsApp webhook rejected: App Secret not configured. Configure the App Secret from your Meta Developer Dashboard to enable webhook signature validation.'
+				'WhatsApp webhook rejected: Missing signature header.'
 			);
 			return false;
 		}

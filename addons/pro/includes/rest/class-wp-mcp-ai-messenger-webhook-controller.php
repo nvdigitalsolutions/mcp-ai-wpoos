@@ -196,22 +196,27 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	 * @return bool True if signature is valid, false otherwise.
 	 */
 	public function validate_webhook_signature( $request ) {
-		// Get signature from header.
+		// Get app secret from connection settings.
+		$app_secret = $this->get_app_secret();
+
+		// When the App Secret is not configured, skip signature validation and
+		// allow the webhook to be processed. Log a security warning so the site
+		// owner knows to configure the App Secret for hardened security.
+		if ( empty( $app_secret ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'messenger_webhook_no_app_secret',
+				'Messenger webhook received without App Secret configured. Signature validation skipped. Configure your App Secret in the connection settings for enhanced security.',
+				array()
+			);
+			return true;
+		}
+
+		// App Secret is configured — the signature header is required.
 		$signature_header = $request->get_header( 'x-hub-signature-256' );
 
 		if ( empty( $signature_header ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Messenger webhook rejected: Missing X-Hub-Signature-256 header.'
-			);
-			return false;
-		}
-
-		// Get app secret from connection settings.
-		$app_secret = $this->get_app_secret();
-
-		if ( empty( $app_secret ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Messenger webhook rejected: App secret not configured.'
 			);
 			return false;
 		}
