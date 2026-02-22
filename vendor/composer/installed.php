@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/extend-whatsapp-channel-connector',
+        'version' => 'dev-copilot/extend-whatsapp-channel-connector',
+        'reference' => '484e98ea0137d59be2f7ecc19dd6d21622224231',
         'pretty_version' => 'dev-copilot/review-communication-channels',
         'version' => 'dev-copilot/review-communication-channels',
         'reference' => '00179a3bf2aa384757d0b81179cea3bf44452b69',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/extend-whatsapp-channel-connector',
+            'version' => 'dev-copilot/extend-whatsapp-channel-connector',
+            'reference' => '484e98ea0137d59be2f7ecc19dd6d21622224231',
             'pretty_version' => 'dev-copilot/review-communication-channels',
             'version' => 'dev-copilot/review-communication-channels',
             'reference' => '00179a3bf2aa384757d0b81179cea3bf44452b69',

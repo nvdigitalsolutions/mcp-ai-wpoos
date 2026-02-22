@@ -370,6 +370,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
+				'channel_description'  => isset( $_POST['whatsapp_channel_description'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_channel_description'] ) ) : '',
 				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
@@ -647,7 +648,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
 								<?php endif; ?>
 							</td>
-							<td><?php echo esc_html( $connection['url'] ); ?></td>
+								<td>
+								<?php
+								// For WhatsApp channels, show phone number and channel description instead of API URL.
+								if ( 'whatsapp' === $connection_type ) {
+									$wa_display = array();
+									if ( ! empty( $connection['display_phone_number'] ) ) {
+										$wa_display[] = esc_html( $connection['display_phone_number'] );
+									} elseif ( ! empty( $connection['phone_number_id'] ) ) {
+										$wa_display[] = esc_html__( 'Phone ID:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( substr( $connection['phone_number_id'], 0, 8 ) . '…' );
+									}
+									if ( ! empty( $connection['channel_description'] ) ) {
+										$wa_display[] = '<em>' . esc_html( $connection['channel_description'] ) . '</em>';
+									}
+									echo ! empty( $wa_display ) ? implode( '<br>', $wa_display ) : esc_html( $connection['url'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								} else {
+									echo esc_html( $connection['url'] );
+								}
+								?>
+							</td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
 							<td>
 								<?php
@@ -1530,6 +1549,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for WhatsApp -->
 				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row">
+						<label for="whatsapp_channel_description"><?php esc_html_e( 'Channel Description', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="whatsapp_channel_description" id="whatsapp_channel_description" class="regular-text" value="<?php echo $is_edit && isset( $connection['channel_description'] ) ? esc_attr( $connection['channel_description'] ) : ''; ?>" placeholder="<?php esc_attr_e( 'e.g. Customer Support, Sales Enquiries', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Optional label to identify this WhatsApp channel. Useful when managing multiple channels connected to different phone numbers.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
 						<label for="whatsapp_system_user_id"><?php esc_html_e( 'System User ID', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
@@ -1705,8 +1734,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Configure this in your WhatsApp Business settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Channel-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;">
+								<?php esc_html_e( 'Use this URL in the Meta Developer Dashboard for this channel. Each WhatsApp channel has its own dedicated endpoint so that separate Meta Apps can send webhooks independently.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all channels):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use this generic URL only if all channels share the same Meta App. The channel-specific URL above is preferred.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/whatsapp' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for use in the Meta Developer Dashboard.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -1826,11 +1866,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Get credentials from Meta Developer Dashboard (developers.facebook.com)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Get your System User Access Token from Meta Business Suite (Business Settings → System Users)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Enter your Phone Number ID and Display Phone Number (e.g. +1 555 000 1234)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Add an optional Channel Description to label this number (e.g. "Customer Support", "Sales Enquiries")', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Assign one or more AI Assistants — they will respond to members who message via the QR code or channel link', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create a secure Verify Token (random string)', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save this connection, then click "Test Connection" to verify your credentials instantly', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Configure webhook in Meta dashboard using the Webhook URL and Verify Token', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the channel-specific Webhook URL shown above and configure it in your Meta Developer Dashboard along with the Verify Token', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'To add more WhatsApp numbers, click "Add New Connection" and repeat — each channel gets its own dedicated webhook URL', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
+							<p style="margin: 0 0 6px 0; font-size: 13px; color: #2271b1;">
+								ℹ <strong><?php esc_html_e( 'Multiple Channels:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'You can connect multiple WhatsApp numbers by creating a separate connection for each one. Every connection receives its own channel-specific webhook URL (shown in the Webhook URL field after saving), so separate Meta Apps route to their respective channels independently.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 							<p style="margin: 0 0 6px 0; font-size: 13px; color: #2271b1;">
 								ℹ <strong><?php esc_html_e( 'Advanced Access:', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<?php esc_html_e( 'The whatsapp_business_messaging permission is required for sending and receiving messages. Apply for Advanced Access via email in the Meta App Review portal. Quality Rating and phone display fields require the separate whatsapp_business_management permission.', 'mcp-ai-wpoos-pro' ); ?>
