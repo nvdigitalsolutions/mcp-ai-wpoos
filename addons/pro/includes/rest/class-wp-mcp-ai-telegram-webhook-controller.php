@@ -220,6 +220,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// When the connection requires an @slug mention, only reply if the message
+		// explicitly addresses an assigned assistant by its WordPress post slug.
+		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+			return;
+		}
+
 		$job_args = array(
 			array(
 				'assistant_id'  => $assigned_assistant_ids[0],
@@ -563,6 +569,31 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Check whether any assigned assistant is mentioned by @slug in the message text.
+	 *
+	 * Used when a connection has require_mention enabled so the bot only replies
+	 * when a user explicitly addresses it with @assistant-slug in a group chat.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text  The incoming message text.
+	 * @param int[]  $assistant_ids Array of assigned assistant post IDs.
+	 * @return bool True if any assistant slug is found as @slug in the text.
+	 */
+	protected function message_mentions_assistant( $message_text, array $assistant_ids ) {
+		if ( '' === $message_text ) {
+			return false;
+		}
+		foreach ( $assistant_ids as $assistant_id ) {
+			$slug = get_post_field( 'post_name', absint( $assistant_id ) );
+			if ( is_string( $slug ) && '' !== $slug && preg_match( '/@' . preg_quote( $slug, '/' ) . '(?:[^a-zA-Z0-9-]|$)/i', $message_text ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
 
