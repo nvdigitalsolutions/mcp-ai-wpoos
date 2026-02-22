@@ -56,6 +56,11 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	const DEDUP_TRANSIENT_TTL = 60;
 
 	/**
+	 * TTL in seconds for per-user conversation history transients (24 hours).
+	 */
+	const CONVERSATION_HISTORY_TTL = 86400;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -862,17 +867,51 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Load per-user conversation history and determine the message count limit.
+		$history_key = $this->get_conversation_history_key( $to, $phone_number_id );
+		$history     = get_transient( $history_key );
+		$history     = is_array( $history ) ? $history : array();
+
+		// Respect the global "max history messages" setting from the chat client behaviour.
+		// The default of 8 mirrors the default defined in WP_MCP_AI_Admin_Settings (see render_max_history_messages_field).
+		$max_history = 8;
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings    = WP_MCP_AI_Admin_Settings::get_settings();
+			$max_history = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : $max_history;
+		}
+		/**
+		 * Filters the maximum number of messages kept in a WhatsApp conversation history.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int   $max_history Maximum message count.
+		 * @param array $args        Current job arguments.
+		 */
+		$max_history = (int) apply_filters( 'wp_mcp_ai_whatsapp_max_history_messages', $max_history, $args );
+		$max_history = max( 1, $max_history );
+
+		// Trim stored history to leave room for the new user message being added now.
+		if ( count( $history ) >= $max_history ) {
+			$history = array_slice( $history, -( $max_history - 1 ) );
+		}
+
+		// Build the full messages array: prior conversation + current user turn.
+		$messages = array_merge(
+			$history,
+			array(
+				array(
+					'role'    => 'user',
+					'content' => $message_text,
+				),
+			)
+		);
+
 		// Call the internal chat REST endpoint to generate the AI response.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_body_params(
 			array(
 				'assistant_id' => $assistant_id,
-				'messages'     => array(
-					array(
-						'role'    => 'user',
-						'content' => $message_text,
-					),
-				),
+				'messages'     => $messages,
 				'stream'       => false,
 			)
 		);
@@ -1010,6 +1049,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'to'              => substr( $to, 0, 4 ) . '***',
 			)
 		);
+
+		// Persist the updated conversation history so subsequent messages from
+		// this sender include the context built up in this exchange.
+		$history[] = array( 'role' => 'user', 'content' => $message_text );
+		$history[] = array( 'role' => 'assistant', 'content' => $content );
+		if ( count( $history ) > $max_history ) {
+			$history = array_slice( $history, -$max_history );
+		}
+		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 	}
 
 	/**
@@ -1134,6 +1182,23 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Return the transient key used to store the conversation history for a
+	 * specific sender on a specific business phone number.
+	 *
+	 * The key is intentionally hashed so that it contains no PII and stays
+	 * within WordPress's 172-character transient key limit.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $from            Sender's WhatsApp phone number.
+	 * @param string $phone_number_id Business phone number ID.
+	 * @return string Transient key.
+	 */
+	protected function get_conversation_history_key( $from, $phone_number_id ) {
+		return 'wp_mcp_ai_wa_conv_' . md5( $from . '_' . $phone_number_id );
 	}
 
 	/**
