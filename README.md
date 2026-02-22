@@ -24,8 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (February 2026)](#-latest-updates--february-2026-)
-- [🆕 Latest Updates (January 2026)](#-latest-updates--january-2026-)
+- [🆕 Latest Updates (January & February 2026)](#-latest-updates-january-february-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
