@@ -36,6 +36,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_create_whatsapp_group', array( $this, 'ajax_create_whatsapp_group' ) );
 	}
 
 	/**
@@ -386,6 +387,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
+				'channel_url'          => isset( $_POST['whatsapp_channel_url'] ) ? esc_url_raw( wp_unslash( $_POST['whatsapp_channel_url'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
 				'channel_description'  => isset( $_POST['whatsapp_channel_description'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_channel_description'] ) ) : '',
@@ -675,7 +677,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								// For WhatsApp channels, show phone number link, channel description, and unique channel link.
 								if ( 'whatsapp' === $connection_type ) {
 									$wa_display = array();
-									if ( ! empty( $connection['display_phone_number'] ) ) {
+									if ( ! empty( $connection['channel_url'] ) ) {
+										// Prefer a custom channel URL (e.g. WhatsApp Group invite link) when set.
+										$wa_display[] = '<a href="' . esc_url( $connection['channel_url'] ) . '" target="_blank" rel="noopener noreferrer">' . esc_html( $connection['channel_url'] ) . '</a>';
+									} elseif ( ! empty( $connection['display_phone_number'] ) ) {
 										$wa_phone_digits = preg_replace( '/[^0-9]/', '', $connection['display_phone_number'] );
 										if ( ! empty( $wa_phone_digits ) ) {
 											$wa_phone_link = 'https://wa.me/' . $wa_phone_digits;
@@ -1690,6 +1695,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_channel_url"><?php esc_html_e( 'Channel URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="whatsapp_channel_url" id="whatsapp_channel_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['channel_url'] ) ? esc_url( $connection['channel_url'] ) : ''; ?>" placeholder="<?php esc_attr_e( 'e.g. https://chat.whatsapp.com/…', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Optional. Enter a custom channel URL (e.g. a WhatsApp Group invite link from the Groups Management API) to use instead of the auto-generated phone number link. When provided, this URL will be shown as the Channel Link and used for the QR code.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="whatsapp_test_connection_btn" class="button button-secondary">
@@ -1837,10 +1854,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								}
 							}
 						}
-						if ( ! empty( $wa_display_phone ) ) :
-							// Normalise phone number for wa.me link (digits only).
-							$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
-							$wa_link         = 'https://wa.me/' . $wa_phone_digits;
+						// Prefer a custom channel URL over the auto-generated phone-number link.
+						$wa_custom_url = $is_edit && ! empty( $connection['channel_url'] ) ? $connection['channel_url'] : '';
+						if ( ! empty( $wa_custom_url ) || ! empty( $wa_display_phone ) ) :
+							if ( ! empty( $wa_custom_url ) ) {
+								$wa_link = $wa_custom_url;
+							} else {
+								// Normalise phone number for wa.me link (digits only).
+								$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
+								$wa_link         = 'https://wa.me/' . $wa_phone_digits;
+							}
 							?>
 							<div>
 								<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -1861,9 +1884,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p class="description">
 								<?php
 								if ( $is_edit && ! empty( $wa_phone_id ) ) {
-									esc_html_e( 'Enter your display phone number in the "Display Phone Number" field above, or run "Test Connection" to retrieve it automatically. Members can then use the generated QR code or link to start a conversation, and the assigned assistant will respond.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Enter a Channel URL or your display phone number in the fields above, or run "Test Connection" to retrieve the phone number automatically. Members can then use the generated QR code or link to start a conversation, and the assigned assistant will respond.', 'mcp-ai-wpoos-pro' );
 								} else {
-									esc_html_e( 'Save the connection with a Phone Number ID and optional Display Phone Number to generate a QR code and channel link. Members can scan the QR or use the link to message your WhatsApp number, and the assigned assistant will respond automatically.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Save the connection with a Phone Number ID and optionally a Channel URL or Display Phone Number to generate a QR code and channel link. Members can scan the QR or use the link to message your WhatsApp number, and the assigned assistant will respond automatically.', 'mcp-ai-wpoos-pro' );
 								}
 								?>
 							</p>
@@ -2897,6 +2920,93 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (waRegisterResult) {
 								waRegisterResult.style.display = 'block';
 								waRegisterResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// WhatsApp: Create Group button (Groups Management API).
+			var waCreateGroupBtn     = document.getElementById('whatsapp_create_group_btn');
+			var waCreateGroupSpinner = document.getElementById('whatsapp_create_group_spinner');
+			var waCreateGroupResult  = document.getElementById('whatsapp_create_group_result');
+			if (waCreateGroupBtn) {
+				waCreateGroupBtn.addEventListener('click', function() {
+					var subject       = (document.getElementById('whatsapp_group_subject') || {}).value || '';
+					var description   = (document.getElementById('whatsapp_group_description') || {}).value || '';
+					var accessToken   = (document.getElementById('whatsapp_access_token') || {}).value || '';
+					var phoneNumberId = (document.getElementById('whatsapp_phone_number_id') || {}).value || '';
+					var connIdEl      = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId  = connIdEl ? connIdEl.value.trim() : '';
+					var versionEl     = document.getElementById('whatsapp_graph_api_version');
+					var apiVersion    = versionEl ? versionEl.value.trim() : '';
+
+					if (!subject.trim()) {
+						if (waCreateGroupResult) {
+							waCreateGroupResult.style.display = 'block';
+							waCreateGroupResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a Group Name (Subject).', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+					if (!connectionId && (!accessToken || !phoneNumberId)) {
+						if (waCreateGroupResult) {
+							waCreateGroupResult.style.display = 'block';
+							waCreateGroupResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please save the connection first, or enter your Access Token and Phone Number ID.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					waCreateGroupBtn.disabled = true;
+					if (waCreateGroupSpinner) { waCreateGroupSpinner.style.display = 'inline-block'; }
+					if (waCreateGroupResult)  { waCreateGroupResult.style.display = 'none'; waCreateGroupResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_create_whatsapp_group');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_create_whatsapp_group' ) ); ?>);
+					data.append('subject', subject.trim());
+					if (description.trim()) { data.append('description', description.trim()); }
+					if (connectionId)  { data.append('connection_id', connectionId); }
+					if (accessToken)   { data.append('access_token', accessToken); }
+					if (phoneNumberId) { data.append('phone_number_id', phoneNumberId); }
+					if (apiVersion)    { data.append('graph_api_version', apiVersion); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							waCreateGroupBtn.disabled = false;
+							if (waCreateGroupSpinner) { waCreateGroupSpinner.style.display = 'none'; }
+							if (!waCreateGroupResult) { return; }
+							waCreateGroupResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var inviteLink = d && d.invite_link ? d.invite_link : '';
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Group created successfully!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.group_id) { html += '<p>' + <?php echo wp_json_encode( __( 'Group ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.group_id + '</code></p>'; }
+								if (inviteLink) {
+									html += '<p>' + <?php echo wp_json_encode( __( 'Invite Link:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <a href="' + inviteLink + '" target="_blank" rel="noopener noreferrer">' + inviteLink + '</a></p>';
+									// Auto-populate the Channel URL field.
+									var channelUrlField = document.getElementById('whatsapp_channel_url');
+									if (channelUrlField) {
+										channelUrlField.value = inviteLink;
+										html += '<p style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Channel URL field has been populated with the invite link. Save the connection to persist it.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+									}
+								}
+								html += '</div>';
+								waCreateGroupResult.innerHTML = html;
+							} else {
+								var errMsg = (result.data && result.data.message) ? result.data.message : (result.data || <?php echo wp_json_encode( __( 'Failed to create group.', 'mcp-ai-wpoos-pro' ) ); ?>);
+								var hint   = (result.data && result.data.hint) ? '<br><em>' + result.data.hint + '</em>' : '';
+								waCreateGroupResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + errMsg + hint + '</p></div>';
+							}
+						})
+						.catch(function() {
+							waCreateGroupBtn.disabled = false;
+							if (waCreateGroupSpinner) { waCreateGroupSpinner.style.display = 'none'; }
+							if (waCreateGroupResult) {
+								waCreateGroupResult.style.display = 'block';
+								waCreateGroupResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -4691,6 +4801,173 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: create a WhatsApp group via the Groups Management API.
+	 *
+	 * Calls POST /{phone-number-id}/groups on the Meta Graph API and returns
+	 * the new group ID and invite link.
+	 *
+	 * Accepts (POST): subject, description (optional), access_token,
+	 *   phone_number_id, connection_id, graph_api_version, nonce.
+	 * Returns JSON with group_id and invite_link on success.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_create_whatsapp_group() {
+		check_ajax_referer( 'wp_mcp_ai_create_whatsapp_group', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+		if ( empty( $subject ) ) {
+			wp_send_json_error( array( 'message' => __( 'Group name (subject) is required.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$description = isset( $_POST['description'] ) ? sanitize_text_field( wp_unslash( $_POST['description'] ) ) : '';
+
+		// Resolve credentials: prefer live form values, fall back to stored connection.
+		$access_token    = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized.
+		$access_token    = trim( (string) $access_token );
+		$phone_number_id = isset( $_POST['phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_number_id'] ) ) : '';
+
+		if ( empty( $access_token ) || empty( $phone_number_id ) ) {
+			$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			if ( ! empty( $connection_id ) ) {
+				$stored = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( empty( $access_token ) && ! empty( $stored['api_key'] ) ) {
+					$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored['api_key'] );
+				}
+				if ( empty( $phone_number_id ) && ! empty( $stored['phone_number_id'] ) ) {
+					$phone_number_id = sanitize_text_field( $stored['phone_number_id'] );
+				}
+			}
+		}
+
+		if ( empty( $access_token ) ) {
+			wp_send_json_error( array( 'message' => __( 'Access Token is required. Save the connection first or enter it in the form.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		if ( empty( $phone_number_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Phone Number ID is required. Save the connection first or enter it in the form.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$raw_version       = isset( $_POST['graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['graph_api_version'] ) ) : '';
+		$graph_api_version = ( preg_match( '/^v\d+\.\d+$/', $raw_version ) ) ? $raw_version : 'v22.0';
+
+		// Build the Groups Management API endpoint.
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s/groups',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $phone_number_id )
+		);
+
+		$payload = array(
+			'messaging_product' => 'whatsapp',
+			'subject'           => $subject,
+		);
+		if ( ! empty( $description ) ) {
+			$payload['description'] = $description;
+		}
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to encode the group creation request.', 'mcp-ai-wpoos-pro' ) ) );
+			return;
+		}
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to connect to WhatsApp API: %s', 'mcp-ai-wpoos-pro' ),
+						$response->get_error_message()
+					),
+				)
+			);
+			return;
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $response );
+		$decoded   = json_decode( wp_remote_retrieve_body( $response ), true );
+		$api_error = is_array( $decoded ) && isset( $decoded['error'] ) ? $decoded['error'] : array();
+
+		if ( $http_code < 200 || $http_code >= 300 || ! empty( $api_error ) ) {
+			$error_message = is_array( $api_error ) && isset( $api_error['message'] ) && is_string( $api_error['message'] )
+				? $api_error['message']
+				: __( 'Group creation failed.', 'mcp-ai-wpoos-pro' );
+
+			$hint = '';
+			if ( is_array( $api_error ) && isset( $api_error['code'] ) ) {
+				$meta_code = (int) $api_error['code'];
+				if ( 190 === $meta_code || 368 === $meta_code ) {
+					$hint = __( 'Invalid or expired access token. Generate a new System User Access Token with the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' );
+				} elseif ( 10 === $meta_code || 200 === $meta_code ) {
+					$hint = __( 'Insufficient permissions. Ensure your access token has the whatsapp_business_messaging permission with Advanced Access.', 'mcp-ai-wpoos-pro' );
+				}
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => esc_html( $error_message ),
+					'hint'    => $hint,
+				)
+			);
+			return;
+		}
+
+		// The API returns the new group ID. Fetch the invite link from the group.
+		$group_id   = isset( $decoded['id'] ) ? sanitize_text_field( $decoded['id'] ) : '';
+		$invite_link = '';
+
+		if ( ! empty( $group_id ) ) {
+			$invite_url = add_query_arg(
+				array( 'fields' => 'invite_link' ),
+				sprintf( 'https://graph.facebook.com/%s/%s', rawurlencode( $graph_api_version ), rawurlencode( $group_id ) )
+			);
+
+			$invite_response = wp_remote_get(
+				$invite_url,
+				array(
+					'headers' => array( 'Authorization' => 'Bearer ' . $access_token ),
+					'timeout' => 15,
+				)
+			);
+
+			if ( ! is_wp_error( $invite_response ) ) {
+				$invite_data = json_decode( wp_remote_retrieve_body( $invite_response ), true );
+				if ( is_array( $invite_data ) && ! empty( $invite_data['invite_link'] ) ) {
+					$invite_link = esc_url_raw( $invite_data['invite_link'] );
+				}
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'group_id'    => $group_id,
+				'invite_link' => $invite_link,
+			)
+		);
 	}
 }
 
