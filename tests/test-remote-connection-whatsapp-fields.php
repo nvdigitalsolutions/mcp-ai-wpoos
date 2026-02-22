@@ -231,6 +231,81 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that WhatsApp channel_url persists when saving a connection.
+	 */
+	public function test_whatsapp_channel_url_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'             => 'Test WhatsApp Channel URL Connection',
+			'url'              => 'https://graph.facebook.com/v22.0',
+			'connection_type'  => 'whatsapp',
+			'auth_type'        => 'none',
+			'enabled'          => true,
+			'api_key'          => 'test_access_token',
+			'phone_number_id'  => '123456789012345',
+			'channel_url'      => 'https://chat.whatsapp.com/TestInviteCode12345',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return an error' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertNotNull( $saved_connection, 'Saved connection should be retrievable' );
+		$this->assertEquals( 'https://chat.whatsapp.com/TestInviteCode12345', $saved_connection['channel_url'], 'Channel URL should persist' );
+	}
+
+	/**
+	 * Test that WhatsApp channel_url is preserved on update when not provided.
+	 */
+	public function test_whatsapp_channel_url_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with channel_url set.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Channel URL Preserve',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '123456789012345',
+			'channel_url'     => 'https://chat.whatsapp.com/OriginalInviteCode',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update WITHOUT providing channel_url.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WhatsApp Channel URL Preserve',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			// channel_url intentionally omitted.
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $updated_connection, 'Updated connection should be retrievable' );
+		$this->assertEquals( 'Updated WhatsApp Channel URL Preserve', $updated_connection['name'], 'Connection name should be updated' );
+		$this->assertEquals( 'https://chat.whatsapp.com/OriginalInviteCode', $updated_connection['channel_url'], 'Channel URL should be preserved on update' );
+	}
+
+	/**
 	 * Test that Telegram bot_username persists.
 	 */
 	public function test_telegram_bot_username_persists() {

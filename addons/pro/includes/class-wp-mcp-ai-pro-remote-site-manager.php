@@ -207,6 +207,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['channel_description'] = $existing_connection['channel_description'];
 			}
 
+			if ( empty( $connection_data['channel_url'] ) && ! empty( $existing_connection['channel_url'] ) ) {
+				$connection_data['channel_url'] = $existing_connection['channel_url'];
+			}
+
 			// Preserve existing workspace_id (Slack) if not provided.
 			if ( empty( $connection_data['workspace_id'] ) && ! empty( $existing_connection['workspace_id'] ) ) {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
@@ -333,6 +337,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'system_user_id'      => isset( $connection_data['system_user_id'] ) ? sanitize_text_field( $connection_data['system_user_id'] ) : '',
 			'verify_token'        => isset( $connection_data['verify_token'] ) ? sanitize_text_field( $connection_data['verify_token'] ) : '',
 			'channel_description' => isset( $connection_data['channel_description'] ) ? sanitize_text_field( $connection_data['channel_description'] ) : '',
+			'channel_url'         => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
 			// Slack-specific fields.
 			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
 			// Discord-specific fields.
