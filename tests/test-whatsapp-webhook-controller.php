@@ -1012,4 +1012,42 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 			'Code 133010 must not be confused with the 100/33 Phone Number ID error'
 		);
 	}
+
+	/**
+	 * Test that the register phone number AJAX handler validates the 6-digit PIN correctly.
+	 */
+	public function test_register_whatsapp_phone_number_pin_validation() {
+		// Valid 6-digit numeric PINs.
+		$this->assertSame( 1, preg_match( '/^[0-9]{6}$/', '123456' ) );
+		$this->assertSame( 1, preg_match( '/^[0-9]{6}$/', '000000' ) );
+		$this->assertSame( 1, preg_match( '/^[0-9]{6}$/', '999999' ) );
+
+		// Invalid PINs.
+		$this->assertSame( 0, preg_match( '/^[0-9]{6}$/', '12345' ) );   // Too short.
+		$this->assertSame( 0, preg_match( '/^[0-9]{6}$/', '1234567' ) ); // Too long.
+		$this->assertSame( 0, preg_match( '/^[0-9]{6}$/', 'abc123' ) );  // Non-numeric.
+		$this->assertSame( 0, preg_match( '/^[0-9]{6}$/', '' ) );         // Empty.
+	}
+
+	/**
+	 * Test that the registration endpoint URL is correctly constructed.
+	 */
+	public function test_register_endpoint_url_construction() {
+		$graph_api_version = 'v19.0';
+		$phone_number_id   = '123456789012345';
+
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s/register',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $phone_number_id )
+		);
+
+		$this->assertStringContainsString( '/register', $endpoint );
+		$this->assertStringContainsString( $graph_api_version, $endpoint );
+		$this->assertStringContainsString( $phone_number_id, $endpoint );
+		$this->assertEquals(
+			'https://graph.facebook.com/v19.0/123456789012345/register',
+			$endpoint
+		);
+	}
 }

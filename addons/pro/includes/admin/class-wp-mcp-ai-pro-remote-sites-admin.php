@@ -35,6 +35,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
 	}
 
 	/**
@@ -1626,6 +1627,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Register Phone Number', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
+							<div>
+								<label for="whatsapp_register_pin" style="display: block; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Two-Step Verification PIN', 'mcp-ai-wpoos-pro' ); ?></label>
+								<input type="password" id="whatsapp_register_pin" class="regular-text" maxlength="6" pattern="[0-9]{6}" placeholder="<?php esc_attr_e( '6-digit PIN', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="new-password" style="width: 140px; letter-spacing: 0.15em;">
+							</div>
+							<div>
+								<button type="button" id="whatsapp_register_phone_btn" class="button button-primary">
+									<?php esc_html_e( 'Register Phone Number', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+								<span id="whatsapp_register_phone_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+							</div>
+						</div>
+						<p class="description"><?php esc_html_e( 'If you receive error #133010 (Account not registered), click here to register your WhatsApp Business phone number with the Cloud API. Enter the 6-digit two-step verification PIN for this number, then click Register. Your Access Token and Phone Number ID must be saved first.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="whatsapp_register_phone_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
@@ -2612,6 +2633,83 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
+
+			// WhatsApp: Register Phone Number button.
+			var waRegisterBtn     = document.getElementById('whatsapp_register_phone_btn');
+			var waRegisterSpinner = document.getElementById('whatsapp_register_phone_spinner');
+			var waRegisterResult  = document.getElementById('whatsapp_register_phone_result');
+			if (waRegisterBtn) {
+				waRegisterBtn.addEventListener('click', function() {
+					var pinEl         = document.getElementById('whatsapp_register_pin');
+					var pin           = pinEl ? pinEl.value.trim() : '';
+					var connIdEl      = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId  = connIdEl ? connIdEl.value.trim() : '';
+					var accessToken   = document.getElementById('whatsapp_access_token') ? document.getElementById('whatsapp_access_token').value.trim() : '';
+					var phoneNumberId = document.getElementById('whatsapp_phone_number_id') ? document.getElementById('whatsapp_phone_number_id').value.trim() : '';
+					var versionEl     = document.getElementById('whatsapp_graph_api_version');
+					var apiVersion    = versionEl ? versionEl.value.trim() : '';
+
+					if (!/^[0-9]{6}$/.test(pin)) {
+						if (waRegisterResult) {
+							waRegisterResult.style.display = 'block';
+							waRegisterResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your 6-digit two-step verification PIN.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					if (!connectionId && (!accessToken || !phoneNumberId)) {
+						if (waRegisterResult) {
+							waRegisterResult.style.display = 'block';
+							waRegisterResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please save the connection first, or enter your Access Token and Phone Number ID.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					waRegisterBtn.disabled = true;
+					if (waRegisterSpinner) { waRegisterSpinner.style.display = 'inline-block'; }
+					if (waRegisterResult)  { waRegisterResult.style.display = 'none'; waRegisterResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_register_whatsapp_phone_number');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_register_whatsapp_phone_number' ) ); ?>);
+					data.append('pin', pin);
+					if (connectionId)  { data.append('connection_id', connectionId); }
+					if (accessToken)   { data.append('access_token', accessToken); }
+					if (phoneNumberId) { data.append('phone_number_id', phoneNumberId); }
+					if (apiVersion)    { data.append('graph_api_version', apiVersion); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							waRegisterBtn.disabled = false;
+							if (waRegisterSpinner) { waRegisterSpinner.style.display = 'none'; }
+							if (!waRegisterResult) { return; }
+							waRegisterResult.style.display = 'block';
+							if (result.success) {
+								waRegisterResult.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Phone number registered successfully! You can now use auto-reply.', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p></div>';
+								if (pinEl) { pinEl.value = ''; }
+							} else {
+								var errMsg = (result.data && result.data.message) ? result.data.message : (result.data || <?php echo wp_json_encode( __( 'Registration failed. Please check your PIN and credentials.', 'mcp-ai-wpoos-pro' ) ); ?>);
+								var hint   = (result.data && result.data.hint) ? result.data.hint : '';
+								var html   = '<div class="notice notice-error inline" style="margin:0;"><p>' + errMsg + '</p>';
+								if (hint) { html += '<p style="margin:4px 0 0;font-style:italic;font-size:12px;">' + hint.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'; }
+								html += '</div>';
+								waRegisterResult.innerHTML = html;
+							}
+						})
+						.catch(function() {
+							waRegisterBtn.disabled = false;
+							if (waRegisterSpinner) { waRegisterSpinner.style.display = 'none'; }
+							if (waRegisterResult) {
+								waRegisterResult.style.display = 'block';
+								waRegisterResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
 
 			// WhatsApp: Test Auto-Reply button.
 			var waAutoReplyBtn     = document.getElementById('whatsapp_test_auto_reply_btn');
@@ -3903,6 +4001,138 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 *
 	 * @since 1.0.0
 	 */
+	/**
+	 * AJAX handler: register a WhatsApp Business phone number with the Cloud API.
+	 *
+	 * Calls POST /{PHONE_NUMBER_ID}/register on the Meta Graph API so that the
+	 * phone number can send and receive messages, resolving error #133010
+	 * "Account not registered".
+	 *
+	 * Accepts: pin, connection_id (or access_token + phone_number_id), graph_api_version, nonce (POST).
+	 * Returns JSON success or error.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_register_whatsapp_phone_number() {
+		check_ajax_referer( 'wp_mcp_ai_register_whatsapp_phone_number', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Validate the 6-digit numeric PIN.
+		$pin = isset( $_POST['pin'] ) ? sanitize_text_field( wp_unslash( $_POST['pin'] ) ) : '';
+		if ( ! preg_match( '/^[0-9]{6}$/', $pin ) ) {
+			wp_send_json_error( __( 'A valid 6-digit two-step verification PIN is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Resolve the access token: prefer the live field value; fall back to stored connection.
+		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token = trim( (string) $access_token );
+
+		$phone_number_id = isset( $_POST['phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['phone_number_id'] ) ) : '';
+
+		if ( empty( $access_token ) || empty( $phone_number_id ) ) {
+			$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			if ( ! empty( $connection_id ) ) {
+				$stored = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( empty( $access_token ) && ! empty( $stored['api_key'] ) ) {
+					$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored['api_key'] );
+				}
+				if ( empty( $phone_number_id ) && ! empty( $stored['phone_number_id'] ) ) {
+					$phone_number_id = sanitize_text_field( $stored['phone_number_id'] );
+				}
+			}
+		}
+
+		if ( empty( $access_token ) ) {
+			wp_send_json_error( __( 'Access Token is required. Save the connection first or enter your Access Token in the form.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $phone_number_id ) ) {
+			wp_send_json_error( __( 'Phone Number ID is required. Save the connection first or enter your Phone Number ID in the form.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$raw_version       = isset( $_POST['graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['graph_api_version'] ) ) : '';
+		$graph_api_version = ( preg_match( '/^v\d+\.\d+$/', $raw_version ) ) ? $raw_version : 'v19.0';
+
+		$endpoint = sprintf(
+			'https://graph.facebook.com/%s/%s/register',
+			rawurlencode( $graph_api_version ),
+			rawurlencode( $phone_number_id )
+		);
+
+		$payload = array(
+			'messaging_product' => 'whatsapp',
+			'pin'               => $pin,
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			wp_send_json_error( __( 'Failed to encode the registration request.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to WhatsApp API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$http_code    = (int) wp_remote_retrieve_response_code( $response );
+		$decoded      = json_decode( wp_remote_retrieve_body( $response ), true );
+		$api_error    = is_array( $decoded ) && isset( $decoded['error'] ) ? $decoded['error'] : array();
+
+		if ( 200 !== $http_code || ! empty( $api_error ) ) {
+			$error_message = is_array( $api_error ) && isset( $api_error['message'] ) && is_string( $api_error['message'] )
+				? $api_error['message']
+				: __( 'Registration request failed.', 'mcp-ai-wpoos-pro' );
+
+			$hint = '';
+			if ( is_array( $api_error ) && isset( $api_error['code'] ) ) {
+				$meta_code = (int) $api_error['code'];
+				if ( 100 === $meta_code && isset( $api_error['error_subcode'] ) && 33 === (int) $api_error['error_subcode'] ) {
+					$hint = __( 'Phone Number ID not found. Verify the Phone Number ID in Meta Developer Dashboard (App → WhatsApp → API Setup). This is different from the WhatsApp Business Account ID (WABA ID).', 'mcp-ai-wpoos-pro' );
+				} elseif ( 368 === $meta_code || 190 === $meta_code ) {
+					$hint = __( 'Invalid or expired access token. Generate a new System User Access Token from Meta Business Suite (Business Settings → System Users) with the whatsapp_business_management permission.', 'mcp-ai-wpoos-pro' );
+				} elseif ( 135000 === $meta_code ) {
+					$hint = __( 'Incorrect PIN. Please verify your two-step verification PIN and try again. If you have not set a PIN yet, enable two-step verification in the Meta Developer Dashboard for this phone number first.', 'mcp-ai-wpoos-pro' );
+				}
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => esc_html( $error_message ),
+					'hint'    => $hint,
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success();
+	}
+
 	public function ajax_test_whatsapp_auto_reply() {
 		check_ajax_referer( 'wp_mcp_ai_test_whatsapp_auto_reply', 'nonce' );
 
