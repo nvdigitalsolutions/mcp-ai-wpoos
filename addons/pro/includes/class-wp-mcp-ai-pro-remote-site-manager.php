@@ -217,9 +217,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['guild_id'] = $existing_connection['guild_id'];
 			}
 
+			if ( empty( $connection_data['public_key'] ) && ! empty( $existing_connection['public_key'] ) ) {
+				$connection_data['public_key'] = $existing_connection['public_key'];
+			}
+
 			// Preserve existing tenant_id (Microsoft Teams) if not provided.
 			if ( empty( $connection_data['tenant_id'] ) && ! empty( $existing_connection['tenant_id'] ) ) {
 				$connection_data['tenant_id'] = $existing_connection['tenant_id'];
+			}
+
+			// Preserve existing signing_secret (Slack / Teams outgoing webhook) if not provided.
+			if ( empty( $connection_data['signing_secret'] ) && ! empty( $existing_connection['signing_secret'] ) ) {
+				$connection_data['signing_secret']            = $existing_connection['signing_secret'];
+				$connection_data['_signing_secret_encrypted'] = true;
+			}
+
+			// Preserve existing secret_token (Telegram webhook) if not provided.
+			if ( empty( $connection_data['secret_token'] ) && ! empty( $existing_connection['secret_token'] ) ) {
+				$connection_data['secret_token']            = $existing_connection['secret_token'];
+				$connection_data['_secret_token_encrypted'] = true;
 			}
 
 			// Preserve existing page_id (Facebook Messenger) if not provided.
@@ -317,8 +333,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Discord-specific fields.
 			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
 			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
+			// Discord Ed25519 public key for interaction signature verification.
+			'public_key'      => isset( $connection_data['public_key'] ) ? sanitize_text_field( $connection_data['public_key'] ) : '',
 			// Microsoft Teams-specific fields.
 			'tenant_id'       => isset( $connection_data['tenant_id'] ) ? sanitize_text_field( $connection_data['tenant_id'] ) : '',
+			// HMAC-SHA256 signing secret (Slack Events API / Teams outgoing webhooks).
+			'signing_secret'  => isset( $connection_data['signing_secret'] ) ? $connection_data['signing_secret'] : '',
+			// Telegram webhook secret token (X-Telegram-Bot-Api-Secret-Token).
+			'secret_token'    => isset( $connection_data['secret_token'] ) ? $connection_data['secret_token'] : '',
 			// Facebook Messenger-specific fields.
 			'page_id'         => isset( $connection_data['page_id'] ) ? sanitize_text_field( $connection_data['page_id'] ) : '',
 			// Graph API version (WhatsApp and Facebook Messenger).
@@ -370,6 +392,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['refresh_token'] ) && empty( $connection_data['_refresh_token_encrypted'] ) ) {
 			$connection['refresh_token'] = self::encrypt_value( $connection['refresh_token'] );
+		}
+
+		if ( ! empty( $connection['signing_secret'] ) && empty( $connection_data['_signing_secret_encrypted'] ) ) {
+			$connection['signing_secret'] = self::encrypt_value( $connection['signing_secret'] );
+		}
+
+		if ( ! empty( $connection['secret_token'] ) && empty( $connection_data['_secret_token_encrypted'] ) ) {
+			$connection['secret_token'] = self::encrypt_value( $connection['secret_token'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
