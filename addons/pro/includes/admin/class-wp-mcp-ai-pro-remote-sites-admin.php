@@ -386,6 +386,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
+				'channel_url'          => isset( $_POST['whatsapp_channel_url'] ) ? esc_url_raw( wp_unslash( $_POST['whatsapp_channel_url'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
 				'channel_description'  => isset( $_POST['whatsapp_channel_description'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_channel_description'] ) ) : '',
@@ -1688,6 +1689,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_channel_url"><?php esc_html_e( 'Channel URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="whatsapp_channel_url" id="whatsapp_channel_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['channel_url'] ) ? esc_url( $connection['channel_url'] ) : ''; ?>" placeholder="<?php esc_attr_e( 'e.g. https://whatsapp.com/channel/…', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Optional. Enter a custom channel URL (e.g. a WhatsApp Channel invite link) to use instead of the auto-generated phone number link. When provided, this URL will be shown as the Channel Link and used for the QR code.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="whatsapp_test_connection_btn" class="button button-secondary">
@@ -1835,10 +1848,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								}
 							}
 						}
-						if ( ! empty( $wa_display_phone ) ) :
-							// Normalise phone number for wa.me link (digits only).
-							$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
-							$wa_link         = 'https://wa.me/' . $wa_phone_digits;
+						// Prefer a custom channel URL over the auto-generated phone-number link.
+						$wa_custom_url = $is_edit && ! empty( $connection['channel_url'] ) ? $connection['channel_url'] : '';
+						if ( ! empty( $wa_custom_url ) || ! empty( $wa_display_phone ) ) :
+							if ( ! empty( $wa_custom_url ) ) {
+								$wa_link = $wa_custom_url;
+							} else {
+								// Normalise phone number for wa.me link (digits only).
+								$wa_phone_digits = preg_replace( '/[^0-9]/', '', $wa_display_phone );
+								$wa_link         = 'https://wa.me/' . $wa_phone_digits;
+							}
 							?>
 							<div>
 								<p style="margin: 0 0 8px 0;"><?php esc_html_e( 'Users can scan this QR code to start a WhatsApp conversation with your business number.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -1859,9 +1878,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p class="description">
 								<?php
 								if ( $is_edit && ! empty( $wa_phone_id ) ) {
-									esc_html_e( 'Enter your display phone number in the "Display Phone Number" field above, or run "Test Connection" to retrieve it automatically. Members can then use the generated QR code or link to start a conversation, and the assigned assistant will respond.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Enter a Channel URL or your display phone number in the fields above, or run "Test Connection" to retrieve the phone number automatically. Members can then use the generated QR code or link to start a conversation, and the assigned assistant will respond.', 'mcp-ai-wpoos-pro' );
 								} else {
-									esc_html_e( 'Save the connection with a Phone Number ID and optional Display Phone Number to generate a QR code and channel link. Members can scan the QR or use the link to message your WhatsApp number, and the assigned assistant will respond automatically.', 'mcp-ai-wpoos-pro' );
+									esc_html_e( 'Save the connection with a Phone Number ID and optionally a Channel URL or Display Phone Number to generate a QR code and channel link. Members can scan the QR or use the link to message your WhatsApp number, and the assigned assistant will respond automatically.', 'mcp-ai-wpoos-pro' );
 								}
 								?>
 							</p>
