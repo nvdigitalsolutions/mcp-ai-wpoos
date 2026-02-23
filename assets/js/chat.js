@@ -12026,8 +12026,34 @@
         // constructor. This avoids sending raw HTML entities (e.g. &amp; from wp_kses_post()) to the
         // model, which would corrupt the system instructions.
         // This ensures embedded providers receive the same system instructions as server-side providers.
-        if (embeddedClient.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = embeddedClient.systemPrompt;
+        //
+        // Fall back to state.config values when embeddedClient.systemPrompt is null.
+        // This handles cases where the embedded client was created before the system prompt was
+        // available in state.config (e.g. if config values change after client initialization).
+        var effectiveSystemPrompt = embeddedClient.systemPrompt;
+        if (!effectiveSystemPrompt && (state.config.systemPrompt || state.config.professionalPrompt)) {
+            var rawFallbackPrompt = '';
+            if (state.config.professionalPrompt) {
+                rawFallbackPrompt = state.config.professionalPrompt;
+                if (state.config.systemPrompt) {
+                    rawFallbackPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
+                }
+            } else {
+                rawFallbackPrompt = state.config.systemPrompt;
+            }
+            // Decode HTML entities from wp_kses_post() sanitization (mirrors embedded client constructor).
+            var decodeEl = document.createElement('textarea');
+            decodeEl.innerHTML = rawFallbackPrompt;
+            effectiveSystemPrompt = decodeEl.value || null;
+            if (effectiveSystemPrompt) {
+                console.log('[NV oOS] System prompt recovered from state.config fallback:', {
+                    systemPromptLength: effectiveSystemPrompt.length,
+                    assistantId: state.config.assistantId
+                });
+            }
+        }
+        if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = effectiveSystemPrompt;
 
             // Enhance system prompt with base knowledge context if available.
             // This ensures embedded WebLLM has access to the same knowledge as server-side providers.
