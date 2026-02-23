@@ -175,6 +175,17 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test Z-score with float zero std dev (as returned by calculate_statistics).
+	 *
+	 * When all values in the dataset are identical, calculate_statistics returns
+	 * std_dev as float 0.0 (via round()). This must not cause a DivisionByZeroError.
+	 */
+	public function test_calculate_z_score_float_zero_std_dev() {
+		$z_score = WP_MCP_AI_Analytics_Engine::calculate_z_score( 100, 100, 0.0 );
+		$this->assertEquals( 0, $z_score );
+	}
+
+	/**
 	 * Test pattern detection with mock data.
 	 */
 	public function test_detect_patterns() {
