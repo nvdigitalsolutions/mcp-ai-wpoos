@@ -972,14 +972,23 @@ class WP_MCP_AI_Shortcode {
 					$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 					foreach ( $tool_slugs_to_include as $tool_slug ) {
-						$tool = $registry->get_tool( $tool_slug );
-						if ( $tool && method_exists( $tool, 'get_definition' ) ) {
-							$definition = $tool->get_definition();
-							if ( $definition && is_array( $definition ) ) {
-								// Ensure tool definition is in OpenAI-compatible format.
-								// Most tools already return this format.
-								$tool_definitions[] = $definition;
-							}
+						// Use registry's get_tool_definition() which relies on the required tool
+						// interface methods (get_slug, get_description, get_parameters_schema).
+						// This works for ALL registered tools, unlike get_definition() which is
+						// an optional method not part of WP_MCP_AI_Tool_Interface.
+						$tool_definition = $registry->get_tool_definition( $tool_slug );
+						if ( $tool_definition && is_array( $tool_definition ) ) {
+							// Wrap in OpenAI function-calling format expected by the embedded LLM client.
+							// get_tool_definition() always returns name, description, and parameters
+							// via the required WP_MCP_AI_Tool_Interface methods.
+							$tool_definitions[] = array(
+								'type'     => 'function',
+								'function' => array(
+									'name'        => $tool_definition['name'],
+									'description' => $tool_definition['description'],
+									'parameters'  => $tool_definition['parameters'],
+								),
+							);
 						}
 					}
 				}
