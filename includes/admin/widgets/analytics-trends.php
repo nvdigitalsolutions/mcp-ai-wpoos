@@ -92,7 +92,7 @@ if ( $has_analytics ) {
 		wp_enqueue_script(
 			'wp-mcp-ai-analytics-trends',
 			WP_MCP_AI_URL . 'assets/js/admin/widgets/analytics-trends.js',
-			array( 'jquery' ),
+			array( 'jquery', 'chartjs' ),
 			WP_MCP_AI_VERSION,
 			true
 		);

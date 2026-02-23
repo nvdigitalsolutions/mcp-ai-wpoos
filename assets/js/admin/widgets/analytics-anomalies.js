@@ -24,6 +24,8 @@
 			return;
 		}
 
+		try {
+
 		// Prepare scatter plot data.
 		const scatterData = anomalyData.anomalies.map(function(anomaly, index) {
 			return {
@@ -121,6 +123,12 @@
 				}
 			}
 		});
+		} catch (e) {
+			// Chart initialization failed; log error but prevent disruption of other scripts.
+			if (window.console && console.error) {
+				console.error('WP MCP AI: Analytics anomalies chart initialization failed:', e);
+			}
+		}
 	}
 
 	$(document).ready(initializeAnomalyChart);
