@@ -99,7 +99,13 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 				),
 				'to'                => array(
 					'type'        => 'string',
-					'description' => __( 'E.164 formatted phone number of the message recipient.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Recipient: E.164 phone number for individual messages (e.g. +1234567890) or a group ID for group messages (e.g. 120363…@g.us).', 'mcp-ai-wpoos-pro' ),
+				),
+				'recipient_type'    => array(
+					'type'        => 'string',
+					'description' => __( 'Recipient type: "individual" (default) to send to a phone number, or "group" to send to a WhatsApp group.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'individual', 'group' ),
+					'default'     => 'individual',
 				),
 				'type'              => array(
 					'type'        => 'string',
@@ -234,7 +240,11 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 			return new WP_Error( 'wp_mcp_ai_missing_whatsapp_phone_number_id', __( 'A valid WhatsApp phone number ID must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$recipient = isset( $arguments['to'] ) ? $this->sanitize_phone_number( $arguments['to'] ) : '';
+		$recipient_type = isset( $arguments['recipient_type'] ) && 'group' === $arguments['recipient_type'] ? 'group' : 'individual';
+
+		$recipient = isset( $arguments['to'] )
+			? ( 'group' === $recipient_type ? $this->sanitize_group_or_phone( $arguments['to'] ) : $this->sanitize_phone_number( $arguments['to'] ) )
+			: '';
 		if ( '' === $recipient ) {
 			return new WP_Error( 'wp_mcp_ai_missing_whatsapp_recipient', __( 'A valid WhatsApp recipient phone number must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -260,7 +270,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 
 		$payload = array(
 			'messaging_product' => 'whatsapp',
-			'recipient_type'    => 'individual',
+			'recipient_type'    => $recipient_type,
 			'to'                => $recipient,
 			'type'              => 'interactive',
 			'interactive'       => $interactive,
@@ -619,7 +629,29 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive implements WP_MCP_AI_Tool_Int
 	}
 
 	/**
-	 * Sanitize message text for WhatsApp.
+	 * Sanitize a recipient that may be a phone number or a WhatsApp group JID.
+	 *
+	 * Group JIDs have the form "{numeric_id}@g.us". Phone numbers are E.164.
+	 *
+	 * @param mixed $value Raw recipient value.
+	 * @return string Sanitised recipient or empty string.
+	 */
+	protected function sanitize_group_or_phone( $value ) {
+		if ( ! is_string( $value ) && ! is_numeric( $value ) ) {
+			return '';
+		}
+
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return '';
+		}
+
+		// Allow group JIDs: digits, letters, hyphens, dots, underscores, @, and +.
+		return preg_replace( '/[^0-9a-zA-Z@._\-+]/', '', $value );
+	}
+
+	/**
+	 * Sanitise message text for WhatsApp.
 	 *
 	 * @param mixed $text Raw text input.
 	 * @return string

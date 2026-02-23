@@ -306,6 +306,81 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that WhatsApp group_id persists when saving a connection.
+	 */
+	public function test_whatsapp_group_id_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Group ID Connection',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '123456789012345',
+			'group_id'        => '120363111222333444@g.us',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return an error' );
+
+		$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertNotNull( $saved_connection, 'Saved connection should be retrievable' );
+		$this->assertEquals( '120363111222333444@g.us', $saved_connection['group_id'], 'Group ID should persist' );
+	}
+
+	/**
+	 * Test that WhatsApp group_id is preserved on update when not provided.
+	 */
+	public function test_whatsapp_group_id_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with group_id set.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp Group ID Preserve',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '123456789012345',
+			'group_id'        => '120363111222333444@g.us',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Initial save should succeed' );
+
+		// Update WITHOUT providing group_id.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WhatsApp Group ID Preserve',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			// group_id intentionally omitted.
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Update should succeed' );
+
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $updated_connection, 'Updated connection should be retrievable' );
+		$this->assertEquals( 'Updated WhatsApp Group ID Preserve', $updated_connection['name'], 'Connection name should be updated' );
+		$this->assertEquals( '120363111222333444@g.us', $updated_connection['group_id'], 'Group ID should be preserved on update' );
+	}
+
+	/**
 	 * Test that Telegram bot_username persists.
 	 */
 	public function test_telegram_bot_username_persists() {
