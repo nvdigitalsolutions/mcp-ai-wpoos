@@ -36,6 +36,17 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	const CAPABILITY = 'manage_options';
 
 	/**
+	 * Actual WordPress hook names returned by add_submenu_page().
+	 *
+	 * Stored during register_menus() so enqueue_assets() and
+	 * current_page_slug() can compare against the real hooks
+	 * (which use sanitize_title(menu_title) as prefix, not the raw MENU_SLUG).
+	 *
+	 * @var array<string,string> Map of page-key => hook-suffix.
+	 */
+	protected $registered_hooks = array();
+
+	/**
 	 * Constructor – hooks into WordPress admin.
 	 */
 	public function __construct() {
@@ -59,7 +70,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		);
 
 		// Dashboard (default top-level).
-		add_submenu_page(
+		$this->registered_hooks['dashboard'] = add_submenu_page(
 			self::MENU_SLUG,
 			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
 			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
@@ -69,7 +80,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		);
 
 		// Inbox – unified multi-channel conversation view.
-		add_submenu_page(
+		$this->registered_hooks['inbox'] = add_submenu_page(
 			self::MENU_SLUG,
 			__( 'Inbox', 'mcp-ai-wpoos-pro' ),
 			__( 'Inbox', 'mcp-ai-wpoos-pro' ),
@@ -79,7 +90,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		);
 
 		// Contacts / CRM.
-		add_submenu_page(
+		$this->registered_hooks['contacts'] = add_submenu_page(
 			self::MENU_SLUG,
 			__( 'Contacts', 'mcp-ai-wpoos-pro' ),
 			__( 'Contacts', 'mcp-ai-wpoos-pro' ),
@@ -89,7 +100,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		);
 
 		// Automation rules.
-		add_submenu_page(
+		$this->registered_hooks['automation'] = add_submenu_page(
 			self::MENU_SLUG,
 			__( 'Automation', 'mcp-ai-wpoos-pro' ),
 			__( 'Automation', 'mcp-ai-wpoos-pro' ),
@@ -115,12 +126,19 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	 * @return array
 	 */
 	protected function get_page_hooks() {
-		return array(
-			'toplevel_page_' . self::MENU_SLUG,                                       // Dashboard.
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-inbox',                  // Inbox.
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-contacts',               // Contacts.
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-automation',             // Automation.
-		);
+		$hooks = array( 'toplevel_page_' . self::MENU_SLUG );
+
+		// Use the actual hook names WordPress registered (based on sanitize_title of
+		// the menu title, which differs from the raw MENU_SLUG).
+		if ( ! empty( $this->registered_hooks ) ) {
+			foreach ( $this->registered_hooks as $hook ) {
+				if ( $hook && ! in_array( $hook, $hooks, true ) ) {
+					$hooks[] = $hook;
+				}
+			}
+		}
+
+		return $hooks;
 	}
 
 	/**
@@ -209,12 +227,16 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	 * @return string
 	 */
 	protected function current_page_slug( $hook ) {
+		// Map stored hook names (from add_submenu_page return values) to JS page slugs.
 		$map = array(
-			'toplevel_page_' . self::MENU_SLUG                             => 'dashboard',
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-inbox'       => 'inbox',
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-contacts'    => 'contacts',
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-automation'  => 'automation',
+			'toplevel_page_' . self::MENU_SLUG => 'dashboard',
 		);
+
+		foreach ( array( 'inbox', 'contacts', 'automation' ) as $key ) {
+			if ( isset( $this->registered_hooks[ $key ] ) && $this->registered_hooks[ $key ] ) {
+				$map[ $this->registered_hooks[ $key ] ] = $key;
+			}
+		}
 
 		return isset( $map[ $hook ] ) ? $map[ $hook ] : '';
 	}

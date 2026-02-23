@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-commands',
-        'version' => 'dev-copilot/run-composer-commands',
-        'reference' => '53bef1ce0ba3ec1bfc1b3c802fb848ecd54731a2',
+        'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue-again',
+        'version' => 'dev-copilot/fix-js-css-rendering-issue-again',
+        'reference' => 'd66e6ee54811d9f12025fefd53c786c1c7f10747',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-commands',
-            'version' => 'dev-copilot/run-composer-commands',
-            'reference' => '53bef1ce0ba3ec1bfc1b3c802fb848ecd54731a2',
+            'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue-again',
+            'version' => 'dev-copilot/fix-js-css-rendering-issue-again',
+            'reference' => 'd66e6ee54811d9f12025fefd53c786c1c7f10747',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
