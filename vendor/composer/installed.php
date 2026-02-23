@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-google-chat-connection',
-        'version' => 'dev-copilot/enhance-google-chat-connection',
-        'reference' => '1deb3090bb399ade3c568432c687808d48018ff4',
+        'pretty_version' => 'dev-copilot/add-chat-channels-section',
+        'version' => 'dev-copilot/add-chat-channels-section',
+        'reference' => '30c159f6affb1dd733d7a6b99ac3d8c2a36e3105',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-google-chat-connection',
-            'version' => 'dev-copilot/enhance-google-chat-connection',
-            'reference' => '1deb3090bb399ade3c568432c687808d48018ff4',
+            'pretty_version' => 'dev-copilot/add-chat-channels-section',
+            'version' => 'dev-copilot/add-chat-channels-section',
+            'reference' => '30c159f6affb1dd733d7a6b99ac3d8c2a36e3105',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
