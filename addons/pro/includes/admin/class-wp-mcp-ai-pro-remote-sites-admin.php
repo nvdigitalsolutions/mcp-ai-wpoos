@@ -6276,6 +6276,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$hint = __( 'Invalid or expired access token. Generate a new System User Access Token with the whatsapp_business_messaging permission.', 'mcp-ai-wpoos-pro' );
 				} elseif ( 10 === $meta_code || 200 === $meta_code ) {
 					$hint = __( 'Insufficient permissions. Ensure your access token has the whatsapp_business_messaging permission with Advanced Access.', 'mcp-ai-wpoos-pro' );
+				} elseif ( 131215 === $meta_code ) {
+					$hint = __( 'This phone number is not eligible to access the WhatsApp Groups API. The Groups Management API is a restricted feature that requires separate approval from Meta. Apply for access via the Meta Business Help Center or your Meta Business Manager.', 'mcp-ai-wpoos-pro' );
 				}
 			}
 
