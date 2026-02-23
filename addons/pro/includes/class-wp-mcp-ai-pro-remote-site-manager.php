@@ -704,6 +704,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_mesh_peer_connection( $connection );
 		}
 
+		// Handle Telegram connections separately.
+		if ( 'telegram' === $connection_type ) {
+			return self::test_telegram_connection( $connection );
+		}
+
 		// Handle WhatsApp connections separately.
 		if ( 'whatsapp' === $connection_type ) {
 			return self::test_whatsapp_connection( $connection );
@@ -920,6 +925,145 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( $item_count > 0 ) {
 				/* translators: %d: number of items retrieved */
 				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'mcp-ai-wpoos-pro' ), $item_count );
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Validate a Telegram bot token format.
+	 *
+	 * Telegram bot tokens follow the format: {numeric_id}:{alphanumeric_string_≥30_chars}
+	 *
+	 * @param string $bot_token The bot token to validate.
+	 * @return bool True when the token format is valid, false otherwise.
+	 */
+	public static function is_valid_telegram_bot_token( $bot_token ) {
+		return 1 === preg_match( '/^\d+:[A-Za-z0-9_-]{30,}$/', (string) $bot_token );
+	}
+
+	/**
+	 * Validate a Telegram webhook secret token format.
+	 *
+	 * Per the Telegram Bot API, secret tokens may only contain A–Z, a–z, 0–9, underscores
+	 * and hyphens (1–256 characters).
+	 *
+	 * @param string $secret_token The secret token to validate.
+	 * @return bool True when the secret token format is valid, false otherwise.
+	 */
+	public static function is_valid_telegram_secret_token( $secret_token ) {
+		return 1 === preg_match( '/^[A-Za-z0-9_-]{1,256}$/', (string) $secret_token );
+	}
+
+	/**
+	 * Test Telegram Bot API connection.
+	 *
+	 * Tests Telegram connection by calling getMe and getWebhookInfo on the Bot API.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_telegram_connection( $connection ) {
+		$bot_token = isset( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( empty( $bot_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_missing_token',
+				__( 'Telegram bot token is required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Validate token format: numeric_id:alphanum_string (at least 30 chars total).
+		if ( ! self::is_valid_telegram_bot_token( $bot_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_invalid_token',
+				__( 'The token format is invalid. A Telegram bot token looks like: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz. Obtain your token from @BotFather on Telegram.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$api_base = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+
+		// Call getMe to verify the bot token and retrieve bot identity.
+		$get_me_response = wp_remote_get(
+			$api_base . '/getMe',
+			array( 'timeout' => 15 )
+		);
+
+		if ( is_wp_error( $get_me_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$get_me_response->get_error_message()
+				)
+			);
+		}
+
+		$get_me_code = wp_remote_retrieve_response_code( $get_me_response );
+		$get_me_data = json_decode( wp_remote_retrieve_body( $get_me_response ), true );
+
+		if ( 200 !== (int) $get_me_code || empty( $get_me_data['ok'] ) ) {
+			$tg_description = isset( $get_me_data['description'] ) ? $get_me_data['description'] : __( 'Invalid response from Telegram API.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_telegram_api_error',
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$tg_description
+				)
+			);
+		}
+
+		$bot = isset( $get_me_data['result'] ) ? $get_me_data['result'] : array();
+
+		$results = array(
+			'success'      => true,
+			'telegram'     => true,
+			'bot_id'       => isset( $bot['id'] ) ? $bot['id'] : '',
+			'bot_username' => isset( $bot['username'] ) ? $bot['username'] : '',
+			'bot_name'     => isset( $bot['first_name'] ) ? $bot['first_name'] : '',
+			'can_join_groups'        => ! empty( $bot['can_join_groups'] ),
+			'can_read_all_messages'  => ! empty( $bot['can_read_all_group_messages'] ),
+			'supports_inline_queries' => ! empty( $bot['supports_inline_queries'] ),
+			'webhook_url'  => '',
+			'pending_updates' => 0,
+			'message'      => __( 'Telegram bot token verified successfully.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		// Call getWebhookInfo to retrieve the current webhook configuration.
+		$webhook_response = wp_remote_get(
+			$api_base . '/getWebhookInfo',
+			array( 'timeout' => 15 )
+		);
+
+		if ( ! is_wp_error( $webhook_response ) && 200 === (int) wp_remote_retrieve_response_code( $webhook_response ) ) {
+			$webhook_data = json_decode( wp_remote_retrieve_body( $webhook_response ), true );
+			if ( ! empty( $webhook_data['ok'] ) && isset( $webhook_data['result'] ) ) {
+				$wh = $webhook_data['result'];
+				$results['webhook_url']     = isset( $wh['url'] ) ? $wh['url'] : '';
+				$results['pending_updates'] = isset( $wh['pending_update_count'] ) ? (int) $wh['pending_update_count'] : 0;
+				if ( ! empty( $wh['last_error_message'] ) ) {
+					$results['webhook_last_error'] = $wh['last_error_message'];
+				}
+				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				if ( empty( $results['webhook_url'] ) ) {
+					$results['warning'] = sprintf(
+						/* translators: %s: expected webhook URL */
+						__( 'No webhook is set. Use the Set Webhook button or set it manually to: %s', 'mcp-ai-wpoos-pro' ),
+						$expected_url
+					);
+				} elseif ( false === strpos( $results['webhook_url'], home_url( '/' ) ) ) {
+					$results['warning'] = sprintf(
+						/* translators: 1: current webhook URL, 2: expected URL */
+						__( 'Webhook is set to a different site (%1$s). Expected: %2$s', 'mcp-ai-wpoos-pro' ),
+						$results['webhook_url'],
+						$expected_url
+					);
+				}
 			}
 		}
 
