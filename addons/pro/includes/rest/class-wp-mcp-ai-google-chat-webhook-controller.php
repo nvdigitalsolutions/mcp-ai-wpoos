@@ -900,8 +900,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Retrieve an OAuth 2.0 access token from a connection's stored credentials.
 	 *
-	 * Supports both Service Account JSON keys (preferred, automatically exchanges for
-	 * a fresh access token) and legacy raw access tokens stored in api_key.
+	 * Supports Service Account JSON keys (automatically exchanges for a fresh access
+	 * token), OAuth 2.0 refresh tokens (exchanges for a new access token using the
+	 * stored client_id and client_secret), and legacy raw access tokens in api_key.
 	 *
 	 * @param array  $connection    Connection configuration array.
 	 * @param string $connection_id Connection ID (used for log context).
@@ -909,11 +910,23 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * @return string Access token, or empty string on failure.
 	 */
 	protected function get_connection_access_token( array $connection, $connection_id, $log_context ) {
+		// Try OAuth refresh token flow first if client_id, client_secret, and refresh_token are all present.
+		$client_id         = isset( $connection['client_id'] ) ? (string) $connection['client_id'] : '';
+		$raw_client_secret = isset( $connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] ) : '';
+		$raw_refresh_token = isset( $connection['refresh_token'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['refresh_token'] ) : '';
+
+		if ( '' !== $client_id && '' !== $raw_client_secret && '' !== $raw_refresh_token ) {
+			$token = $this->get_access_token_from_refresh_token( $client_id, $raw_client_secret, $raw_refresh_token, $connection_id, $log_context );
+			if ( '' !== $token ) {
+				return $token;
+			}
+		}
+
 		$raw_key = isset( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
 
 		if ( '' === $raw_key ) {
 			WP_MCP_AI_Logger::log_error(
-				$log_context . ': service account key decryption returned empty string.',
+				$log_context . ': no valid credentials found (no OAuth refresh token or service account key).',
 				array( 'connection_id' => $connection_id )
 			);
 			return '';
@@ -939,6 +952,83 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Legacy: raw access token stored directly.
 		return $raw_key;
+	}
+
+	/**
+	 * Exchange an OAuth 2.0 refresh token for a fresh access token.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $client_id     OAuth client ID.
+	 * @param string $client_secret OAuth client secret (decrypted).
+	 * @param string $refresh_token OAuth refresh token (decrypted).
+	 * @param string $connection_id Connection ID (used for log context).
+	 * @param string $log_context   Human-readable context string for log messages.
+	 * @return string Fresh access token, or empty string on failure.
+	 */
+	protected function get_access_token_from_refresh_token( $client_id, $client_secret, $refresh_token, $connection_id, $log_context ) {
+		$cache_key    = 'wp_mcp_ai_gc_oauth_token_' . md5( $client_id . '|' . $refresh_token );
+		$cached_token = get_transient( $cache_key );
+
+		if ( is_string( $cached_token ) && '' !== $cached_token ) {
+			return $cached_token;
+		}
+
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'refresh_token' => $refresh_token,
+					'grant_type'    => 'refresh_token',
+				),
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': failed to exchange refresh token for access token.',
+				array(
+					'connection_id' => $connection_id,
+					'error'         => $response->get_error_message(),
+				)
+			);
+			return '';
+		}
+
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': refresh token exchange returned non-200 status.',
+				array(
+					'connection_id' => $connection_id,
+					'status'        => wp_remote_retrieve_response_code( $response ),
+				)
+			);
+			return '';
+		}
+
+		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': invalid response from refresh token exchange.',
+				array( 'connection_id' => $connection_id )
+			);
+			return '';
+		}
+
+		$access_token = (string) $decoded['access_token'];
+		$expires_in   = isset( $decoded['expires_in'] ) ? max( 60, (int) $decoded['expires_in'] - 60 ) : 3540;
+
+		// Cache access token for slightly less than its expiry time.
+		set_transient( $cache_key, $access_token, $expires_in );
+
+		return $access_token;
 	}
 }
 

@@ -185,6 +185,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_google_drive_oauth_callback();
 		}
 
+		// Handle Google Chat OAuth connect action.
+		if ( 'google_chat_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'google_chat_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$this->handle_google_chat_oauth_start( $connection_id );
+		}
+
+		// Handle Google Chat OAuth callback action.
+		if ( 'google_chat_oauth_callback' === $oauth_handler ) {
+			$this->handle_google_chat_oauth_callback();
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -252,7 +269,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
 				case 'google_chat':
-					$api_key = isset( $_POST['google_chat_service_account_key'] ) ? wp_unslash( $_POST['google_chat_service_account_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key       = isset( $_POST['google_chat_service_account_key'] ) ? wp_unslash( $_POST['google_chat_service_account_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$client_id     = isset( $_POST['google_chat_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_chat_client_secret'] ) ? wp_unslash( $_POST['google_chat_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['google_chat_refresh_token'] ) ? wp_unslash( $_POST['google_chat_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -2477,7 +2497,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Google Chat -->
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_chat_service_account_key"><?php esc_html_e( 'Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="google_chat_service_account_key"><?php esc_html_e( 'Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<textarea name="google_chat_service_account_key" id="google_chat_service_account_key" class="large-text" rows="6" autocomplete="off" placeholder='{"type":"service_account","project_id":"...","private_key":"-----BEGIN RSA PRIVATE KEY-----\n...","client_email":"...@....iam.gserviceaccount.com",...}'></textarea>
@@ -2488,6 +2508,118 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php endif; ?>
 					</td>
 				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td colspan="2"><hr style="border-top: 1px solid #ddd; margin: 4px 0;"><p style="margin: 4px 0; font-size: 12px; color: #777; text-align: center;"><?php esc_html_e( '— or connect via OAuth 2.0 (recommended for 1-click setup) —', 'mcp-ai-wpoos-pro' ); ?></p><hr style="border-top: 1px solid #ddd; margin: 4px 0;"></td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_chat_client_id" id="google_chat_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console. Required for 1-click OAuth connect.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="google_chat_client_secret" id="google_chat_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['client_secret'] ) ) : ?>
+							<p class="description">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console. Required for 1-click OAuth connect.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$google_chat_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'google_chat_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_chat_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials.', 'mcp-ai-wpoos-pro' ); ?>
+							<br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_chat_refresh_token" id="google_chat_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['refresh_token'] ) ) : ?>
+							<p class="description">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth refresh token. Obtained automatically via the 1-click connect button below, or paste manually.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Google Chat OAuth 1-click connect button -->
+				<?php if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="google_chat-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( '1-Click OAuth Connect', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$gc_oauth_url = wp_nonce_url(
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'google_chat_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
+								'google_chat_oauth_connect_' . $connection['id']
+							);
+							?>
+							<a href="<?php echo esc_url( $gc_oauth_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Connect to Google Chat', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain an access token and refresh token automatically. Make sure to save the OAuth Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description" style="color: #46b450;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized via OAuth. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
 
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
@@ -2612,19 +2744,30 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p style="margin: 0 0 8px 0; font-weight: 600;">
 								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
+							<p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600;"><?php esc_html_e( 'Option A: 1-Click OAuth Connect (recommended)', 'mcp-ai-wpoos-pro' ); ?></p>
 							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Open Google Cloud Console (console.cloud.google.com) and enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Go to APIs &amp; Services → Credentials and create an OAuth 2.0 Client ID (Web application type).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Add the Authorized Redirect URI shown above to the allowed redirect URIs for that credential.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter the OAuth Client ID and Client Secret above, then save the connection.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Connect to Google Chat" to authorize with your Google account and obtain a refresh token automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign one or more AI Assistants and enable the connection.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600;"><?php esc_html_e( 'Option B: Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?></p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Create a service account under IAM & Admin → Service Accounts; grant it the Chat API scope (https://www.googleapis.com/auth/chat.bot).', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Download the JSON key file for the service account and paste its full contents into the Service Account JSON Key field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Download the JSON key file and paste its contents into the Service Account JSON Key field above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to automatically retrieve your bot\'s spaces, or enter a space name manually. Leave blank to handle all spaces.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Click "Test Google Chat Connection" to verify your Service Account key is valid.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Assign one or more AI Assistants — the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Save the connection and enable it to start receiving and auto-replying to Google Chat messages.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to retrieve your bot\'s spaces, then assign Assistants, save, and enable the connection.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin: 0; font-size: 13px; color: #2271b1;">
-								ℹ <strong><?php esc_html_e( 'Required scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								ℹ <strong><?php esc_html_e( 'OAuth scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<code>https://www.googleapis.com/auth/chat.messages</code>
+								<code>https://www.googleapis.com/auth/chat.spaces.readonly</code>
+								&nbsp;|&nbsp;
+								<strong><?php esc_html_e( 'Service Account scope:', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<code>https://www.googleapis.com/auth/chat.bot</code>
 							</p>
 						</div>
@@ -4826,6 +4969,231 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$success_message = sprintf(
 				/* translators: %s: email address */
 				__( 'Google Drive connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
+				$email_address
+			);
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+		exit;
+	}
+
+	/**
+	 * Handle Google Chat OAuth start for a remote connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 */
+	protected function handle_google_chat_oauth_start( $connection_id ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( 'google_chat' !== $connection['connection_type'] ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Chat connection.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the OAuth Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Generate OAuth state and store connection ID.
+		$state     = wp_generate_uuid4();
+		$transient = 'wp_mcp_ai_google_chat_oauth_state_' . md5( $state );
+
+		set_transient(
+			$transient,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		$params = array(
+			'client_id'              => $connection['client_id'],
+			'redirect_uri'           => add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'google_chat_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			),
+			'response_type'          => 'code',
+			'scope'                  => 'https://www.googleapis.com/auth/chat.messages https://www.googleapis.com/auth/chat.spaces.readonly',
+			'access_type'            => 'offline',
+			'include_granted_scopes' => 'true',
+			'prompt'                 => 'consent',
+			'state'                  => $state,
+		);
+
+		$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+
+		wp_safe_redirect( $authorize_url );
+		exit;
+	}
+
+	/**
+	 * Handle Google Chat OAuth callback for a remote connection.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function handle_google_chat_oauth_callback() {
+		// OAuth callback parameters from Google. No nonce verification required as state parameter provides CSRF protection.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
+			exit;
+		}
+
+		$transient_key = 'wp_mcp_ai_google_chat_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+
+		delete_transient( $transient_key );
+
+		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $code ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$connection_id = $state_data['connection_id'];
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Decrypt client_secret for token exchange.
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		// Exchange authorization code for tokens.
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'code'          => $code,
+					'client_id'     => $connection['client_id'],
+					'client_secret' => $client_secret,
+					'redirect_uri'  => add_query_arg(
+						array(
+							'page'          => 'wp-mcp-ai-remote-sites',
+							'oauth_handler' => 'google_chat_oauth_callback',
+						),
+						admin_url( 'admin.php' )
+					),
+					'grant_type'    => 'authorization_code',
+				),
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== (int) $status_code ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( ! is_array( $decoded ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+
+		// If no refresh token, check if we can reuse existing one.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
+			exit;
+		}
+
+		// Get email address from userinfo if access token is available.
+		$email_address = '';
+		if ( $access_token ) {
+			$userinfo_response = wp_remote_get(
+				'https://www.googleapis.com/oauth2/v2/userinfo',
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+				)
+			);
+
+			if ( ! is_wp_error( $userinfo_response ) && 200 === wp_remote_retrieve_response_code( $userinfo_response ) ) {
+				$userinfo_body = json_decode( wp_remote_retrieve_body( $userinfo_response ), true );
+				if ( isset( $userinfo_body['email'] ) ) {
+					$email_address = sanitize_email( $userinfo_body['email'] );
+				}
+			}
+		}
+
+		// Update the connection with the new refresh token.
+		$update_data = array(
+			'id'                => $connection_id,
+			'name'              => $connection['name'],
+			'url'               => $connection['url'],
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'client_id'         => $connection['client_id'],
+			'client_secret'     => '', // Keep existing (don't re-encrypt).
+			'refresh_token'     => $refresh_token,
+			'enabled'           => $connection['enabled'],
+			'google_chat_space' => isset( $connection['google_chat_space'] ) ? $connection['google_chat_space'] : '',
+			'verify_token'      => isset( $connection['verify_token'] ) ? $connection['verify_token'] : '',
+			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
+		);
+
+		// Preserve encrypted client_secret and api_key.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			exit;
+		}
+
+		$success_message = __( 'Google Chat connected successfully!', 'mcp-ai-wpoos-pro' );
+		if ( $email_address ) {
+			$success_message = sprintf(
+				/* translators: %s: email address */
+				__( 'Google Chat connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
 				$email_address
 			);
 		}
