@@ -19,9 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Check if Chat Channels toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_chat_channels_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load if enabled and not in base version.
+// Only load if enabled and not in base version (Pro plugin active overrides base version restriction).
 if ( $is_enabled && ! $is_base ) {
 
 	// --- CCTs: Channel Messages and Channel Contacts ---
