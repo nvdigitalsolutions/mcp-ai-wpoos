@@ -1263,6 +1263,31 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 								'to'              => substr( $to, 0, 4 ) . '***',
 							)
 						);
+						// Persist the outbound AI reply to the Channel Messages CCT.
+						if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+							WP_MCP_AI_Channel_Messages_CCT::insert(
+								array(
+									'channel'            => 'whatsapp',
+									'channel_contact_id' => $to,
+									'direction'          => 'outbound',
+									'message_type'       => 'text',
+									'content'            => $content,
+									'status'             => 'sent',
+									'connection_id'      => $connection_id,
+									'phone_number_id'    => $phone_number_id,
+									'timestamp'          => time(),
+									'reply_sent'         => 1,
+									'assigned_agent'     => (string) $assistant_id,
+								)
+							);
+						}
+						// Touch the contact record to update last_message_at.
+						if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+							$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+							if ( $wa_contact_row_id ) {
+								WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
+							}
+						}
 						return;
 					} else {
 						$log_context['retry_http_code'] = is_wp_error( $retry_result ) ? 0 : (int) wp_remote_retrieve_response_code( $retry_result );
@@ -1289,6 +1314,33 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'to'              => substr( $to, 0, 4 ) . '***',
 			)
 		);
+
+		// Persist the outbound AI reply to the Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'whatsapp',
+					'channel_contact_id' => $to,
+					'direction'          => 'outbound',
+					'message_type'       => 'text',
+					'content'            => $content,
+					'status'             => 'sent',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $phone_number_id,
+					'timestamp'          => time(),
+					'reply_sent'         => 1,
+					'assigned_agent'     => (string) $assistant_id,
+				)
+			);
+		}
+
+		// Touch the contact record to update last_message_at.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$wa_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'whatsapp', $to );
+			if ( $wa_contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $wa_contact_row_id );
+			}
+		}
 
 		// Persist the updated conversation history so subsequent messages from
 		// this sender include the context built up in this exchange.
