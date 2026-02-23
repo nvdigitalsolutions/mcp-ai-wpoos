@@ -1664,6 +1664,40 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$tg_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="telegram_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $tg_assistants as $tg_assistant ) :
+								$tg_is_selected = in_array( $tg_assistant->ID, $tg_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>" <?php echo esc_attr( $tg_is_selected ); ?>>
+									<?php echo esc_html( $tg_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to your Telegram bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="telegram_test_connection_btn" class="button button-secondary">
