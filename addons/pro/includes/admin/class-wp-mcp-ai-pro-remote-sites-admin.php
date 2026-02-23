@@ -37,6 +37,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_whatsapp_group', array( $this, 'ajax_create_whatsapp_group' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_live', array( $this, 'ajax_test_telegram_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_set_telegram_webhook', array( $this, 'ajax_set_telegram_webhook' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_telegram_webhook_info', array( $this, 'ajax_get_telegram_webhook_info' ) );
 	}
 
 	/**
@@ -364,6 +367,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$verify_token = sanitize_text_field( wp_unslash( $_POST['google_chat_audience'] ) );
 			}
 
+			// Resolve and validate the Telegram webhook secret token.
+			// Only valid tokens (A–Z, a–z, 0–9, _ and –; 1–256 chars) are accepted; empty means "no change".
+			$telegram_secret_token = '';
+			if ( isset( $_POST['telegram_secret_token'] ) ) {
+				$raw_secret = wp_unslash( $_POST['telegram_secret_token'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated below.
+				$raw_secret = trim( (string) $raw_secret );
+				if ( '' !== $raw_secret ) {
+					if ( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( $raw_secret ) ) {
+						$telegram_secret_token = $raw_secret;
+					} else {
+						wp_die(
+							esc_html__( 'Webhook Secret Token may only contain A–Z, a–z, 0–9, underscores and hyphens (1–256 characters).', 'mcp-ai-wpoos-pro' ),
+							esc_html__( 'Invalid Input', 'mcp-ai-wpoos-pro' ),
+							array( 'back_link' => true )
+						);
+					}
+				}
+			}
+
 			$connection_data = array(
 				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '',
 				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
@@ -395,6 +417,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 				// Telegram-specific fields.
 				'bot_username'    => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
+				'secret_token'    => $telegram_secret_token,
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -524,6 +547,22 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 								<?php if ( isset( $test_results['has_app_secret'] ) && $test_results['has_app_secret'] ) : ?>
 									<li style="color: #00a32a;">✓ <?php esc_html_e( 'App Secret configured (webhook signatures will be validated)', 'mcp-ai-wpoos-pro' ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['webhook_url'] ) ) : ?>
+									<li>
+										<?php esc_html_e( 'Webhook URL:', 'mcp-ai-wpoos-pro' ); ?>
+										<code style="background: #f0f0f0; padding: 2px 6px; font-size: 12px;"><?php echo esc_html( $test_results['webhook_url'] ); ?></code>
+									</li>
+								<?php endif; ?>
+							<?php elseif ( isset( $test_results['telegram'] ) && $test_results['telegram'] ) : ?>
+								<?php if ( ! empty( $test_results['bot_name'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Bot Name: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_name'] ) ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['bot_username'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Bot Username: @%s', 'mcp-ai-wpoos-pro' ), ltrim( $test_results['bot_username'], '@' ) ) ); ?></li>
+								<?php endif; ?>
+								<?php if ( ! empty( $test_results['bot_id'] ) ) : ?>
+									<li><?php echo esc_html( sprintf( __( 'Bot ID: %s', 'mcp-ai-wpoos-pro' ), $test_results['bot_id'] ) ); ?></li>
 								<?php endif; ?>
 								<?php if ( ! empty( $test_results['webhook_url'] ) ) : ?>
 									<li>
@@ -1602,6 +1641,76 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description"><?php esc_html_e( 'Configure this URL in your Telegram bot settings.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_secret_token"><?php esc_html_e( 'Webhook Secret Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="telegram_secret_token" id="telegram_secret_token" class="regular-text" value="" autocomplete="new-password" placeholder="<?php esc_attr_e( 'Optional: random 1–256 character string', 'mcp-ai-wpoos-pro' ); ?>">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing secret token. Set when registering the webhook to add an extra layer of security — Telegram will include this in the X-Telegram-Bot-Api-Secret-Token header on every incoming update.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional. When set, Telegram will send this value in the X-Telegram-Bot-Api-Secret-Token header on every update, allowing the plugin to verify that the request is genuinely from Telegram. Allowed characters: A–Z, a–z, 0–9, _ and –.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="telegram_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Bot Token', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="telegram_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Calls the Telegram Bot API (getMe + getWebhookInfo) to verify your token and check the current webhook status. Works before saving.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="telegram_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Webhook Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+							<button type="button" id="telegram_set_webhook_btn" class="button button-primary">
+								<?php esc_html_e( 'Set Webhook', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<button type="button" id="telegram_check_webhook_btn" class="button button-secondary">
+								<?php esc_html_e( 'Check Webhook Status', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="telegram_webhook_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Set Webhook registers the URL above with Telegram (calls setWebhook). Check Webhook Status retrieves current webhook info from Telegram (calls getWebhookInfo). Requires the bot token to be saved or entered above.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="telegram_webhook_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Bot Creation Guide', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<details>
+							<summary style="cursor: pointer; font-weight: 600; color: #2271b1;"><?php esc_html_e( 'How to create a Telegram bot with @BotFather', 'mcp-ai-wpoos-pro' ); ?></summary>
+							<ol style="margin: 10px 0 0 16px; line-height: 1.8;">
+								<li><?php esc_html_e( 'Open Telegram and start a chat with @BotFather (https://t.me/BotFather).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Send the /newbot command.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Choose a display name for your bot (e.g. "My Site Support Bot").', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Choose a username ending in "bot" (e.g. "mysitesupport_bot"). This becomes your bot\'s @handle.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the bot token that BotFather sends (format: 1234567890:ABCdef…) and paste it into the Bot Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Optionally, use /setdescription, /setabouttext, and /setuserpic to customize your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then click Set Webhook to register the webhook URL with Telegram automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin-top: 8px; font-size: 13px;">
+								<?php
+								printf(
+									/* translators: %s: link to Telegram Bot API docs */
+									esc_html__( 'For advanced configuration see the %s.', 'mcp-ai-wpoos-pro' ),
+									'<a href="https://core.telegram.org/bots/api" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Telegram Bot API documentation', 'mcp-ai-wpoos-pro' ) . '</a>'
+								);
+								?>
+							</p>
+						</details>
 					</td>
 				</tr>
 
@@ -2957,6 +3066,263 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
 						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
 					}
+				});
+			}
+
+			// WhatsApp: Access Token show/hide toggle button.
+			var tokenToggleBtn = document.getElementById('whatsapp_access_token_toggle');
+			if (tokenToggleBtn) {
+				tokenToggleBtn.addEventListener('click', function() {
+					var tokenInput = document.getElementById('whatsapp_access_token');
+					if (tokenInput.type === 'password') {
+						tokenInput.type = 'text';
+						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					} else {
+						tokenInput.type = 'password';
+						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
+						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+					}
+				});
+			}
+
+			// Telegram: inline Test Bot Token button (works before saving).
+			var tgTestBtn     = document.getElementById('telegram_test_connection_btn');
+			var tgTestSpinner = document.getElementById('telegram_test_spinner');
+			var tgTestResult  = document.getElementById('telegram_test_result');
+			if (tgTestBtn) {
+				tgTestBtn.addEventListener('click', function() {
+					var botToken     = document.getElementById('telegram_bot_token').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!botToken && !connectionId) {
+						if (tgTestResult) {
+							tgTestResult.style.display = 'block';
+							tgTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Bot Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					tgTestBtn.disabled = true;
+					if (tgTestSpinner) { tgTestSpinner.style.display = 'inline-block'; }
+					if (tgTestResult)  { tgTestResult.style.display = 'none'; tgTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_telegram_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_telegram_live' ) ); ?>);
+					if (botToken) { data.append('bot_token', botToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							tgTestBtn.disabled = false;
+							if (tgTestSpinner) { tgTestSpinner.style.display = 'none'; }
+							if (!tgTestResult) { return; }
+							tgTestResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Bot token verified!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.bot_name)     { items.push(<?php echo wp_json_encode( __( 'Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_name); }
+									if (d.bot_username) {
+										items.push(<?php echo wp_json_encode( __( 'Username:', 'mcp-ai-wpoos-pro' ) ); ?> + ' @' + d.bot_username);
+										var userEl = document.getElementById('telegram_bot_username');
+										if (userEl && !userEl.value) { userEl.value = '@' + d.bot_username; }
+									}
+									if (d.bot_id)       { items.push(<?php echo wp_json_encode( __( 'Bot ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_id); }
+									if (d.webhook_url) {
+										items.push(<?php echo wp_json_encode( __( 'Webhook URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.webhook_url + '</code>');
+									} else {
+										items.push(<?php echo wp_json_encode( __( 'Webhook: not set', 'mcp-ai-wpoos-pro' ) ); ?>);
+									}
+									if (typeof d.pending_updates !== 'undefined') {
+										items.push(<?php echo wp_json_encode( __( 'Pending updates:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.pending_updates);
+									}
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.warning) {
+										html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>';
+									}
+									if (d.webhook_last_error) {
+										html += '<p style="margin:6px 0 0;color:#d63638;font-size:13px;">✕ <?php echo esc_js( __( 'Last webhook error:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.webhook_last_error + '</p>';
+									}
+								}
+								html += '</div>';
+								tgTestResult.innerHTML = html;
+							} else {
+								tgTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							tgTestBtn.disabled = false;
+							if (tgTestSpinner) { tgTestSpinner.style.display = 'none'; }
+							if (tgTestResult) {
+								tgTestResult.style.display = 'block';
+								tgTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Telegram: Set Webhook button.
+			var tgSetWebhookBtn  = document.getElementById('telegram_set_webhook_btn');
+			var tgCheckWebhookBtn = document.getElementById('telegram_check_webhook_btn');
+			var tgWebhookSpinner = document.getElementById('telegram_webhook_spinner');
+			var tgWebhookResult  = document.getElementById('telegram_webhook_result');
+			if (tgSetWebhookBtn) {
+				tgSetWebhookBtn.addEventListener('click', function() {
+					var botToken     = document.getElementById('telegram_bot_token').value.trim();
+					var secretToken  = document.getElementById('telegram_secret_token') ? document.getElementById('telegram_secret_token').value.trim() : '';
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!botToken && !connectionId) {
+						if (tgWebhookResult) {
+							tgWebhookResult.style.display = 'block';
+							tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Bot Token or save the connection first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					tgSetWebhookBtn.disabled = true;
+					if (tgCheckWebhookBtn) { tgCheckWebhookBtn.disabled = true; }
+					if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'inline-block'; }
+					if (tgWebhookResult)  { tgWebhookResult.style.display = 'none'; tgWebhookResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_set_telegram_webhook');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_set_telegram_webhook' ) ); ?>);
+					if (botToken) { data.append('bot_token', botToken); }
+					if (secretToken) { data.append('secret_token', secretToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							tgSetWebhookBtn.disabled = false;
+							if (tgCheckWebhookBtn) { tgCheckWebhookBtn.disabled = false; }
+							if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'none'; }
+							if (!tgWebhookResult) { return; }
+							tgWebhookResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Webhook set successfully!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.webhook_url) {
+									html += '<p style="margin:4px 0 0;font-size:13px;">' + <?php echo wp_json_encode( __( 'Webhook URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.webhook_url + '</code></p>';
+								}
+								html += '</div>';
+								tgWebhookResult.innerHTML = html;
+							} else {
+								tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to set webhook.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							tgSetWebhookBtn.disabled = false;
+							if (tgCheckWebhookBtn) { tgCheckWebhookBtn.disabled = false; }
+							if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'none'; }
+							if (tgWebhookResult) {
+								tgWebhookResult.style.display = 'block';
+								tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Telegram: Check Webhook Status button.
+			if (tgCheckWebhookBtn) {
+				tgCheckWebhookBtn.addEventListener('click', function() {
+					var botToken     = document.getElementById('telegram_bot_token').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!botToken && !connectionId) {
+						if (tgWebhookResult) {
+							tgWebhookResult.style.display = 'block';
+							tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Bot Token or save the connection first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					if (tgSetWebhookBtn) { tgSetWebhookBtn.disabled = true; }
+					tgCheckWebhookBtn.disabled = true;
+					if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'inline-block'; }
+					if (tgWebhookResult)  { tgWebhookResult.style.display = 'none'; tgWebhookResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_get_telegram_webhook_info');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_get_telegram_webhook_info' ) ); ?>);
+					if (botToken) { data.append('bot_token', botToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							if (tgSetWebhookBtn) { tgSetWebhookBtn.disabled = false; }
+							tgCheckWebhookBtn.disabled = false;
+							if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'none'; }
+							if (!tgWebhookResult) { return; }
+							tgWebhookResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-info inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Webhook Status', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.webhook_url) {
+										items.push(<?php echo wp_json_encode( __( 'URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.webhook_url + '</code>');
+									} else {
+										items.push(<?php echo wp_json_encode( __( 'URL: not set', 'mcp-ai-wpoos-pro' ) ); ?>);
+									}
+									if (typeof d.pending_updates !== 'undefined') {
+										items.push(<?php echo wp_json_encode( __( 'Pending updates:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.pending_updates);
+									}
+									if (d.has_custom_certificate) {
+										items.push(<?php echo wp_json_encode( __( 'Custom certificate: Yes', 'mcp-ai-wpoos-pro' ) ); ?>);
+									}
+									if (d.max_connections) {
+										items.push(<?php echo wp_json_encode( __( 'Max connections:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.max_connections);
+									}
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.last_error_message) {
+										html += '<p style="margin:6px 0 0;color:#d63638;font-size:13px;">✕ <?php echo esc_js( __( 'Last error:', 'mcp-ai-wpoos-pro' ) ); ?> ' + d.last_error_message + '</p>';
+									}
+									if (d.warning) {
+										html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>';
+									}
+								}
+								html += '</div>';
+								tgWebhookResult.innerHTML = html;
+							} else {
+								tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to retrieve webhook status.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							if (tgSetWebhookBtn) { tgSetWebhookBtn.disabled = false; }
+							tgCheckWebhookBtn.disabled = false;
+							if (tgWebhookSpinner) { tgWebhookSpinner.style.display = 'none'; }
+							if (tgWebhookResult) {
+								tgWebhookResult.style.display = 'block';
+								tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
 				});
 			}
 
@@ -5189,6 +5555,307 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'invite_link' => $invite_link,
 			)
 		);
+	}
+
+	/**
+	 * AJAX handler: Test Telegram bot token (getMe + getWebhookInfo).
+	 *
+	 * Works before saving — falls back to the stored bot token when the field is left blank.
+	 */
+	public function ajax_test_telegram_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_telegram_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
+		$bot_token = trim( (string) $bot_token );
+
+		// Fall back to stored token when the field is blank.
+		if ( empty( $bot_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+		}
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Bot Token is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_bot_token( $bot_token ) ) {
+			wp_send_json_error( __( 'The token format is invalid. A Telegram bot token looks like: 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz. Obtain yours from @BotFather on Telegram.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$api_base    = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+		$get_me_resp = wp_remote_get( $api_base . '/getMe', array( 'timeout' => 15 ) );
+
+		if ( is_wp_error( $get_me_resp ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$get_me_resp->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$get_me_code = wp_remote_retrieve_response_code( $get_me_resp );
+		$get_me_data = json_decode( wp_remote_retrieve_body( $get_me_resp ), true );
+
+		if ( 200 !== (int) $get_me_code || empty( $get_me_data['ok'] ) ) {
+			$description = isset( $get_me_data['description'] ) ? $get_me_data['description'] : __( 'Invalid response from Telegram API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		$bot    = isset( $get_me_data['result'] ) ? $get_me_data['result'] : array();
+		$result = array(
+			'bot_id'       => isset( $bot['id'] ) ? $bot['id'] : '',
+			'bot_username' => isset( $bot['username'] ) ? $bot['username'] : '',
+			'bot_name'     => isset( $bot['first_name'] ) ? $bot['first_name'] : '',
+			'webhook_url'  => '',
+			'pending_updates' => 0,
+		);
+
+		// Retrieve current webhook info.
+		$wh_resp = wp_remote_get( $api_base . '/getWebhookInfo', array( 'timeout' => 15 ) );
+		if ( ! is_wp_error( $wh_resp ) && 200 === (int) wp_remote_retrieve_response_code( $wh_resp ) ) {
+			$wh_data = json_decode( wp_remote_retrieve_body( $wh_resp ), true );
+			if ( ! empty( $wh_data['ok'] ) && isset( $wh_data['result'] ) ) {
+				$wh = $wh_data['result'];
+				$result['webhook_url']    = isset( $wh['url'] ) ? $wh['url'] : '';
+				$result['pending_updates'] = isset( $wh['pending_update_count'] ) ? (int) $wh['pending_update_count'] : 0;
+				if ( ! empty( $wh['last_error_message'] ) ) {
+					$result['webhook_last_error'] = $wh['last_error_message'];
+				}
+				$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+				if ( empty( $result['webhook_url'] ) ) {
+					$result['warning'] = sprintf(
+						/* translators: %s: expected webhook URL */
+						__( 'No webhook is set. Click Set Webhook to register: %s', 'mcp-ai-wpoos-pro' ),
+						$expected_url
+					);
+				} elseif ( false === strpos( $result['webhook_url'], home_url( '/' ) ) ) {
+					$result['warning'] = sprintf(
+						/* translators: 1: current webhook URL, 2: expected URL */
+						__( 'Webhook points to a different site (%1$s). Expected: %2$s', 'mcp-ai-wpoos-pro' ),
+						$result['webhook_url'],
+						$expected_url
+					);
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Register this site's webhook URL with Telegram (setWebhook).
+	 */
+	public function ajax_set_telegram_webhook() {
+		check_ajax_referer( 'wp_mcp_ai_set_telegram_webhook', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token    = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$bot_token    = trim( (string) $bot_token );
+		$secret_token = isset( $_POST['secret_token'] ) ? wp_unslash( $_POST['secret_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$secret_token = trim( (string) $secret_token );
+
+		// Fall back to stored credentials.
+		if ( empty( $bot_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+			if ( empty( $secret_token ) && ! empty( $stored_connection['secret_token'] ) ) {
+				$secret_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['secret_token'] );
+			}
+		}
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Bot Token is required. Save the connection first or enter the token above.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_bot_token( $bot_token ) ) {
+			wp_send_json_error( __( 'The bot token format is invalid.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Validate secret token characters (A–Z, a–z, 0–9, _ and – only; 1–256 chars).
+		if ( ! empty( $secret_token ) && ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( $secret_token ) ) {
+			wp_send_json_error( __( 'Webhook Secret Token may only contain A–Z, a–z, 0–9, underscores and hyphens (1–256 characters).', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+
+		// Webhook URL must use HTTPS (Telegram requirement).
+		if ( 0 !== strpos( $webhook_url, 'https://' ) ) {
+			wp_send_json_error( __( 'Telegram requires a webhook URL using HTTPS. Ensure your site is configured with an HTTPS home URL (Settings → General → WordPress Address).', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$body = array(
+			'url'             => $webhook_url,
+			'max_connections' => 40,
+			'allowed_updates' => array( 'message', 'edited_message', 'callback_query' ),
+		);
+
+		if ( ! empty( $secret_token ) ) {
+			$body['secret_token'] = $secret_token;
+		}
+
+		$api_base = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+		$response = wp_remote_post(
+			$api_base . '/setWebhook',
+			array(
+				'timeout' => 20,
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== (int) $code || empty( $data['ok'] ) ) {
+			$description = isset( $data['description'] ) ? $data['description'] : __( 'Invalid response from Telegram API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'webhook_url' => $webhook_url,
+				'message'     => __( 'Webhook registered successfully.', 'mcp-ai-wpoos-pro' ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Retrieve webhook info from Telegram (getWebhookInfo).
+	 */
+	public function ajax_get_telegram_webhook_info() {
+		check_ajax_referer( 'wp_mcp_ai_get_telegram_webhook_info', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$bot_token = trim( (string) $bot_token );
+
+		// Fall back to stored token.
+		if ( empty( $bot_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+		}
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Bot Token is required. Save the connection first or enter the token above.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_bot_token( $bot_token ) ) {
+			wp_send_json_error( __( 'The bot token format is invalid.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$api_base = 'https://api.telegram.org/bot' . rawurlencode( $bot_token );
+		$response = wp_remote_get( $api_base . '/getWebhookInfo', array( 'timeout' => 15 ) );
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== (int) $code || empty( $data['ok'] ) ) {
+			$description = isset( $data['description'] ) ? $data['description'] : __( 'Invalid response from Telegram API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		$wh     = isset( $data['result'] ) ? $data['result'] : array();
+		$result = array(
+			'webhook_url'         => isset( $wh['url'] ) ? $wh['url'] : '',
+			'pending_updates'     => isset( $wh['pending_update_count'] ) ? (int) $wh['pending_update_count'] : 0,
+			'has_custom_certificate' => ! empty( $wh['has_custom_certificate'] ),
+			'max_connections'     => isset( $wh['max_connections'] ) ? (int) $wh['max_connections'] : 0,
+			'last_error_message'  => isset( $wh['last_error_message'] ) ? $wh['last_error_message'] : '',
+		);
+
+		$expected_url = home_url( '/wp-json/mcp-ai/v1/webhooks/telegram' );
+		if ( empty( $result['webhook_url'] ) ) {
+			$result['warning'] = sprintf(
+				/* translators: %s: expected webhook URL */
+				__( 'No webhook is set. Click Set Webhook to register: %s', 'mcp-ai-wpoos-pro' ),
+				$expected_url
+			);
+		} elseif ( false === strpos( $result['webhook_url'], home_url( '/' ) ) ) {
+			$result['warning'] = sprintf(
+				/* translators: 1: current webhook URL, 2: expected URL */
+				__( 'Webhook points to a different site (%1$s). Expected: %2$s', 'mcp-ai-wpoos-pro' ),
+				$result['webhook_url'],
+				$expected_url
+			);
+		}
+
+		wp_send_json_success( $result );
 	}
 }
 
