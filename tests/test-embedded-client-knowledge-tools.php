@@ -317,4 +317,64 @@ class Test_Embedded_Client_Knowledge_Tools extends WP_UnitTestCase {
 		// Clean up.
 		wp_delete_post( $assistant_id, true );
 	}
+
+	/**
+	 * Test that enhanced WebLLM scripts are enqueued when a profession attribute is supplied.
+	 *
+	 * When an embedded assistant has NO own system prompt and NO tools but the shortcode
+	 * includes a profession attribute, the professional role prompt will be built and sent
+	 * as the system prompt.  The enhanced WebLLM function-calling scripts must therefore be
+	 * enqueued so the WP_MCP_AI_WebLLM_FunctionCalling client is available in the browser.
+	 */
+	public function test_enhanced_scripts_enqueued_with_profession_attribute() {
+		// Create an embedded assistant with NO system prompt and NO tools.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Profession Role Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Embedded assistant without its own system prompt',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		// Intentionally no system prompt, no tools, no knowledge.
+
+		// Create a minimal profession post to act as the profession attribute value.
+		$profession_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Test Profession',
+				'post_status' => 'publish',
+			)
+		);
+
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		// Render with the profession attribute to simulate the professional-roles flow.
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant' => $assistant_id,
+				'profession' => $profession_id,
+			)
+		);
+		ob_get_clean();
+
+		// Enhanced scripts must be enqueued even though the assistant has no own system prompt,
+		// because the profession attribute signals that a professional role prompt will be used.
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'enqueued' ),
+			'WebLLM tool adapter should be enqueued when profession attribute is supplied'
+		);
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'enqueued' ),
+			'WebLLM function calling client should be enqueued when profession attribute is supplied'
+		);
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+		wp_delete_post( $profession_id, true );
+	}
 }

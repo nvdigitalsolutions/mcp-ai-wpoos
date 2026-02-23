@@ -805,8 +805,11 @@ class WP_MCP_AI_Shortcode {
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
 			// Check if assistant has tools, system prompt, or knowledge (used in multiple places).
+			// Also consider the profession shortcode attribute: if a profession is specified, a professional
+			// role prompt will be built and sent as the system prompt, so the enhanced embedded scripts
+			// must be enqueued even when the assistant itself has no system_prompt configured.
 			$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
-			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] ) || ! empty( $atts['profession'] );
 			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
