@@ -6341,24 +6341,22 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$service_account_key = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- key JSON must not be sanitized.
 		$service_account_key = trim( (string) $service_account_key );
 
-		// Fall back to stored credentials when the field is left blank.
-		if ( empty( $service_account_key ) ) {
+		// Always load the stored connection so we can fall back to OAuth credentials if needed.
 		$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 		$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
-		if ( ! empty( $stored_connection['api_key'] ) ) {
+
+		// Fall back to stored service account key when the field is left blank.
+		if ( empty( $service_account_key ) && ! empty( $stored_connection['api_key'] ) ) {
 		$service_account_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
 		}
-		}
 
-		if ( empty( $service_account_key ) ) {
-		wp_send_json_error( __( 'Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) );
-		return;
-		}
-
-		// Resolve an access token — supports both Service Account JSON and legacy raw tokens.
+		// Load the helper class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
+
+		// Resolve an access token — supports Service Account JSON, legacy raw tokens, and OAuth refresh tokens.
+		$access_token = '';
 
 		if ( strlen( $service_account_key ) > 0 && '{' === $service_account_key[0] ) {
 		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
@@ -6366,6 +6364,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		'https://www.googleapis.com/auth/chat.bot'
 		);
 		if ( is_wp_error( $token_result ) ) {
+		// If the JSON is the wrong credential type and OAuth credentials are stored, fall through to OAuth.
+		if ( 'wp_mcp_ai_gc_sa_wrong_key_type' === $token_result->get_error_code() && ! empty( $stored_connection['refresh_token'] ) ) {
+		// Fall through to OAuth fallback below.
+		} else {
 		wp_send_json_error(
 		sprintf(
 		/* translators: %s: error message */
@@ -6375,10 +6377,40 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 		return;
 		}
-		$access_token = $token_result;
 		} else {
+		$access_token = $token_result;
+		}
+		} elseif ( strlen( $service_account_key ) > 0 ) {
 		// Legacy raw access token.
 		$access_token = $service_account_key;
+		}
+
+		// OAuth fallback: use stored refresh token when no service account key produced a token.
+		if ( '' === $access_token && $stored_connection && ! empty( $stored_connection['refresh_token'] ) ) {
+		$oauth_client_id     = ! empty( $stored_connection['client_id'] ) ? $stored_connection['client_id'] : '';
+		$oauth_client_secret = ! empty( $stored_connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['client_secret'] ) : '';
+		$oauth_refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['refresh_token'] );
+		$oauth_result        = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+		$oauth_client_id,
+		$oauth_client_secret,
+		$oauth_refresh_token
+		);
+		if ( is_wp_error( $oauth_result ) ) {
+		wp_send_json_error(
+		sprintf(
+		/* translators: %s: error message */
+		__( 'Failed to obtain access token via OAuth: %s', 'mcp-ai-wpoos-pro' ),
+		$oauth_result->get_error_message()
+		)
+		);
+		return;
+		}
+		$access_token = $oauth_result;
+		}
+
+		if ( '' === $access_token ) {
+		wp_send_json_error( __( 'No valid credentials found. Please provide a Service Account JSON key or set up OAuth via the 1-click connect button.', 'mcp-ai-wpoos-pro' ) );
+		return;
 		}
 
 		// Call the Google Chat spaces.list endpoint — this is the canonical way to verify
@@ -6448,24 +6480,22 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$service_account_key = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- key JSON must not be sanitized.
 		$service_account_key = trim( (string) $service_account_key );
 
-		// Fall back to stored credentials when the field is left blank.
-		if ( empty( $service_account_key ) ) {
+		// Always load the stored connection so we can fall back to OAuth credentials if needed.
 		$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 		$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
-		if ( ! empty( $stored_connection['api_key'] ) ) {
+
+		// Fall back to stored service account key when the field is left blank.
+		if ( empty( $service_account_key ) && ! empty( $stored_connection['api_key'] ) ) {
 		$service_account_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
 		}
-		}
 
-		if ( empty( $service_account_key ) ) {
-		wp_send_json_error( array( 'message' => __( 'Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) ) );
-		return;
-		}
-
-		// Resolve an access token — supports both Service Account JSON and legacy raw tokens.
+		// Load the helper class.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
+
+		// Resolve an access token — supports Service Account JSON, legacy raw tokens, and OAuth refresh tokens.
+		$access_token = '';
 
 		if ( strlen( $service_account_key ) > 0 && '{' === $service_account_key[0] ) {
 		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
@@ -6473,6 +6503,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		'https://www.googleapis.com/auth/chat.bot'
 		);
 		if ( is_wp_error( $token_result ) ) {
+		// If the JSON is the wrong credential type and OAuth credentials are stored, fall through to OAuth.
+		if ( 'wp_mcp_ai_gc_sa_wrong_key_type' === $token_result->get_error_code() && ! empty( $stored_connection['refresh_token'] ) ) {
+		// Fall through to OAuth fallback below.
+		} else {
 		wp_send_json_error(
 		array(
 		'message' => sprintf(
@@ -6484,10 +6518,42 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 		return;
 		}
-		$access_token = $token_result;
 		} else {
+		$access_token = $token_result;
+		}
+		} elseif ( strlen( $service_account_key ) > 0 ) {
 		// Legacy raw access token.
 		$access_token = $service_account_key;
+		}
+
+		// OAuth fallback: use stored refresh token when no service account key produced a token.
+		if ( '' === $access_token && $stored_connection && ! empty( $stored_connection['refresh_token'] ) ) {
+		$oauth_client_id     = ! empty( $stored_connection['client_id'] ) ? $stored_connection['client_id'] : '';
+		$oauth_client_secret = ! empty( $stored_connection['client_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['client_secret'] ) : '';
+		$oauth_refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['refresh_token'] );
+		$oauth_result        = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+		$oauth_client_id,
+		$oauth_client_secret,
+		$oauth_refresh_token
+		);
+		if ( is_wp_error( $oauth_result ) ) {
+		wp_send_json_error(
+		array(
+		'message' => sprintf(
+		/* translators: %s: error message */
+		__( 'Failed to obtain access token via OAuth: %s', 'mcp-ai-wpoos-pro' ),
+		$oauth_result->get_error_message()
+		),
+		)
+		);
+		return;
+		}
+		$access_token = $oauth_result;
+		}
+
+		if ( '' === $access_token ) {
+		wp_send_json_error( array( 'message' => __( 'No valid credentials found. Please provide a Service Account JSON key or set up OAuth via the 1-click connect button.', 'mcp-ai-wpoos-pro' ) ) );
+		return;
 		}
 
 		$all_spaces = array();
