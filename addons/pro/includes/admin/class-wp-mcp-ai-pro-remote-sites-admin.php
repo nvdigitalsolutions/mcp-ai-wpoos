@@ -6183,6 +6183,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		wp_send_json_success( $result );
 		}
+	/**
 	 * AJAX handler: Test Telegram bot token (getMe + getWebhookInfo).
 	 *
 	 * Works before saving — falls back to the stored bot token when the field is left blank.
