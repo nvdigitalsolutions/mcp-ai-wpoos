@@ -1617,5 +1617,173 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$this->assertEquals( 'whatsapp_verification_failed', $response->get_error_code() );
 	}
 
+	/**
+	 * Test that dispatch_whatsapp_ai_reply (via reflection) routes to group when group_id is set on connection.
+	 */
+	public function test_dispatch_routes_to_group_when_group_id_configured() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$group_id = '120363111222333444@g.us';
+
+		$connection_data = array(
+			'name'            => 'Group Routing Connection',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_token',
+			'phone_number_id' => '123456789012345',
+			'group_id'        => $group_id,
+			'verify_token'    => 'verify_test',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Verify group_id is stored in the connection.
+		$this->assertEquals( $group_id, $saved['group_id'], 'Group ID should be stored on connection' );
+
+		// Verify that when group_id is present, dispatch_whatsapp_ai_reply schedules
+		// the cron job with the group as recipient via reflection.
+		$controller  = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection  = new ReflectionClass( $controller );
+		$method      = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
+		$method->setAccessible( true );
+
+		$scheduled_before = wp_next_scheduled( 'wp_mcp_ai_whatsapp_reply' );
+
+		$message_data = array(
+			'id'   => 'wamid.test123',
+			'from' => '+15550001234',
+			'type' => 'text',
+			'text' => array( 'body' => 'Hello group' ),
+		);
+
+		// Create a dummy assistant post so there is an assigned_assistant_ids array.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
+
+		$method->invoke( $controller, $message_data, $saved, array( $assistant_id ) );
+
+		// Retrieve scheduled cron args.
+		$cron_args  = null;
+		$crons      = _get_cron_array();
+		foreach ( $crons as $timestamp => $hooks ) {
+			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
+				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
+					$cron_args = $cron_entry['args'][0];
+					break 2;
+				}
+			}
+		}
+
+		$this->assertNotNull( $cron_args, 'Cron job should have been scheduled' );
+		$this->assertEquals( $group_id, $cron_args['to'], 'Cron job "to" should be the group ID' );
+		$this->assertEquals( 'group', $cron_args['recipient_type'], 'Cron job recipient_type should be "group"' );
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test that dispatch_whatsapp_ai_reply (via reflection) routes to individual sender when no group_id is set.
+	 */
+	public function test_dispatch_routes_to_individual_when_no_group_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$sender_phone = '+15550009999';
+
+		$connection_data = array(
+			'name'            => 'Individual Routing Connection',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_token_ind',
+			'phone_number_id' => '999888777666555',
+			'verify_token'    => 'verify_individual',
+			// No group_id set.
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
+		$method->setAccessible( true );
+
+		$message_data = array(
+			'id'   => 'wamid.individual456',
+			'from' => $sender_phone,
+			'type' => 'text',
+			'text' => array( 'body' => 'Hello there' ),
+		);
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant Individual',
+			)
+		);
+
+		$method->invoke( $controller, $message_data, $saved, array( $assistant_id ) );
+
+		// Retrieve scheduled cron args.
+		$cron_args  = null;
+		$crons      = _get_cron_array();
+		foreach ( $crons as $timestamp => $hooks ) {
+			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
+				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
+					$cron_args = $cron_entry['args'][0];
+					break 2;
+				}
+			}
+		}
+
+		$this->assertNotNull( $cron_args, 'Cron job should have been scheduled' );
+		$this->assertEquals( $sender_phone, $cron_args['to'], 'Cron job "to" should be the sender phone number' );
+		$this->assertEquals( 'individual', $cron_args['recipient_type'], 'Cron job recipient_type should be "individual"' );
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+	}
+
 }
 

@@ -988,9 +988,19 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$to              = isset( $message_data['from'] ) ? $message_data['from'] : '';
 		$phone_number_id = isset( $connection['phone_number_id'] ) ? $connection['phone_number_id'] : '';
 		$connection_id   = isset( $connection['id'] ) ? $connection['id'] : '';
+
+		// When a group_id is configured on the connection, route the reply to the
+		// group instead of echoing back to the individual sender.
+		$group_id = isset( $connection['group_id'] ) ? sanitize_text_field( $connection['group_id'] ) : '';
+		if ( '' !== $group_id ) {
+			$to             = $group_id;
+			$recipient_type = 'group';
+		} else {
+			$to             = isset( $message_data['from'] ) ? $message_data['from'] : '';
+			$recipient_type = 'individual';
+		}
 
 		if ( '' === $to || '' === $phone_number_id || '' === $connection_id ) {
 			return;
@@ -1006,6 +1016,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 				'assistant_id'      => $assigned_assistant_ids[0],
 				'message_text'      => $message_text,
 				'to'                => $to,
+				'recipient_type'    => $recipient_type,
 				'connection_id'     => $connection_id,
 				'phone_number_id'   => $phone_number_id,
 				'graph_api_version' => $graph_api_version,
@@ -1032,6 +1043,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$assistant_id      = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
 		$message_text      = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
 		$to                = isset( $args['to'] ) ? (string) $args['to'] : '';
+		$recipient_type    = isset( $args['recipient_type'] ) && 'group' === $args['recipient_type'] ? 'group' : 'individual';
 		$connection_id     = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		$phone_number_id   = isset( $args['phone_number_id'] ) ? (string) $args['phone_number_id'] : '';
 		$graph_api_version = isset( $args['graph_api_version'] ) ? sanitize_text_field( $args['graph_api_version'] ) : self::DEFAULT_GRAPH_API_VERSION;
@@ -1178,6 +1190,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		$payload = array(
 			'messaging_product' => 'whatsapp',
+			'recipient_type'    => $recipient_type,
 			'to'                => $to,
 			'type'              => 'text',
 			'text'              => array( 'body' => $content ),

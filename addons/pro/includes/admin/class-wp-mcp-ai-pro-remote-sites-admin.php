@@ -399,6 +399,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
 				'channel_url'          => isset( $_POST['whatsapp_channel_url'] ) ? esc_url_raw( wp_unslash( $_POST['whatsapp_channel_url'] ) ) : '',
+				'group_id'             => isset( $_POST['whatsapp_group_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_group_id'] ) ) : '',
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
 				'channel_description'  => isset( $_POST['whatsapp_channel_description'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_channel_description'] ) ) : '',
@@ -1721,6 +1722,42 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description">
 							<?php esc_html_e( 'Optional. Enter a custom channel URL (e.g. a WhatsApp Group invite link from the Groups Management API) to use instead of the auto-generated phone number link. When provided, this URL will be shown as the Channel Link and used for the QR code.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="whatsapp_group_id"><?php esc_html_e( 'Group ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="whatsapp_group_id" id="whatsapp_group_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['group_id'] ) ? esc_attr( $connection['group_id'] ) : ''; ?>" placeholder="<?php esc_attr_e( 'e.g. 120363…@g.us', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Optional. When set, AI auto-replies will be sent to this WhatsApp group instead of the individual sender. The business phone must be a member of the group. Use the Create Group tool below or paste a group ID from the Groups Management API.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="whatsapp-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Create Group', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px;">
+							<div>
+								<label for="whatsapp_group_subject" style="display: block; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Group Name (Subject)', 'mcp-ai-wpoos-pro' ); ?></label>
+								<input type="text" id="whatsapp_group_subject" class="regular-text" maxlength="100" placeholder="<?php esc_attr_e( 'My Group Name', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off" style="width: 220px;">
+							</div>
+							<div style="flex: 1; min-width: 200px;">
+								<label for="whatsapp_group_description" style="display: block; font-weight: 600; margin-bottom: 4px;"><?php esc_html_e( 'Description (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+								<input type="text" id="whatsapp_group_description" class="regular-text" maxlength="512" placeholder="<?php esc_attr_e( 'Group description…', 'mcp-ai-wpoos-pro' ); ?>" autocomplete="off" style="width: 100%;">
+							</div>
+						</div>
+						<div>
+							<button type="button" id="whatsapp_create_group_btn" class="button button-secondary">
+								<?php esc_html_e( 'Create WhatsApp Group', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="whatsapp_create_group_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Creates a new WhatsApp group via the Groups Management API. The business phone number must have the whatsapp_business_messaging permission. On success, the Group ID and Channel URL fields are populated automatically — save the connection to persist them.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="whatsapp_create_group_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -3160,14 +3197,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								var d = result.data;
 								var inviteLink = d && d.invite_link ? d.invite_link : '';
 								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Group created successfully!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
-								if (d && d.group_id) { html += '<p>' + <?php echo wp_json_encode( __( 'Group ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.group_id + '</code></p>'; }
+								if (d && d.group_id) {
+									html += '<p>' + <?php echo wp_json_encode( __( 'Group ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.group_id + '</code></p>';
+									// Auto-populate the Group ID field so it is saved with the connection.
+									var groupIdField = document.getElementById('whatsapp_group_id');
+									if (groupIdField) {
+										groupIdField.value = d.group_id;
+									}
+								}
 								if (inviteLink) {
 									html += '<p>' + <?php echo wp_json_encode( __( 'Invite Link:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <a href="' + inviteLink + '" target="_blank" rel="noopener noreferrer">' + inviteLink + '</a></p>';
 									// Auto-populate the Channel URL field.
 									var channelUrlField = document.getElementById('whatsapp_channel_url');
 									if (channelUrlField) {
 										channelUrlField.value = inviteLink;
-										html += '<p style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Channel URL field has been populated with the invite link. Save the connection to persist it.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+										html += '<p style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Group ID and Channel URL fields have been populated. Save the connection to persist them.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
 									}
 								}
 								html += '</div>';
