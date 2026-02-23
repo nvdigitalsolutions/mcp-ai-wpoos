@@ -2424,7 +2424,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Space name (optional — if provided, the AI reply will be sent to this Google Chat space)', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
 							<div style="flex: 2; min-width: 250px;">
-								<textarea id="google_chat_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test messageâ¦', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+								<textarea id="google_chat_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
 							</div>
 						</div>
 						<div style="margin-top: 8px;">
@@ -2447,17 +2447,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</p>
 							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Open Google Cloud Console (console.cloud.google.com) and enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Create a service account under IAM & Admin â Service Accounts; grant it the Chat API scope (https://www.googleapis.com/auth/chat.bot).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Create a service account under IAM & Admin → Service Accounts; grant it the Chat API scope (https://www.googleapis.com/auth/chat.bot).', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Generate an OAuth 2.0 access token from the service account and enter it in the Service Account Access Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'In the Google Chat API â Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field â Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to automatically retrieve your bot\'s spaces, or enter a space name manually. Leave blank to handle all spaces.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click "Test Google Chat Connection" to verify your access token is valid.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Assign one or more AI Assistants â the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign one or more AI Assistants — the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save the connection and enable it to start receiving and auto-replying to Google Chat messages.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin: 0; font-size: 13px; color: #2271b1;">
-								â¹ <strong><?php esc_html_e( 'Required scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								ℹ <strong><?php esc_html_e( 'Required scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<code>https://www.googleapis.com/auth/chat.bot</code>
 							</p>
 						</div>
@@ -3436,235 +3436,235 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 
-// Google Chat: Access Token show/hide toggle button.
-var gcTokenToggleBtn = document.getElementById('google_chat_access_token_toggle');
-if (gcTokenToggleBtn) {
-gcTokenToggleBtn.addEventListener('click', function() {
-var tokenInput = document.getElementById('google_chat_access_token');
-if (tokenInput.type === 'password') {
-tokenInput.type = 'text';
-gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-} else {
-tokenInput.type = 'password';
-gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
-gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-}
-});
-}
+			// Google Chat: Access Token show/hide toggle button.
+			var gcTokenToggleBtn = document.getElementById('google_chat_access_token_toggle');
+			if (gcTokenToggleBtn) {
+			gcTokenToggleBtn.addEventListener('click', function() {
+			var tokenInput = document.getElementById('google_chat_access_token');
+			if (tokenInput.type === 'password') {
+			tokenInput.type = 'text';
+			gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+			gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+			} else {
+			tokenInput.type = 'password';
+			gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
+			gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+			}
+			});
+			}
 
-// Google Chat: Fetch Spaces button.
-var gcFetchSpacesBtn    = document.getElementById('wp-mcp-ai-gc-fetch-spaces-btn');
-var gcFetchSpacesResult = document.getElementById('wp-mcp-ai-gc-fetch-spaces-result');
-if (gcFetchSpacesBtn) {
-gcFetchSpacesBtn.addEventListener('click', function() {
-var tokenEl     = document.getElementById('google_chat_access_token');
-var accessToken = tokenEl ? tokenEl.value.trim() : '';
-var connIdEl    = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
-var connectionId = connIdEl ? connIdEl.value.trim() : '';
+			// Google Chat: Fetch Spaces button.
+			var gcFetchSpacesBtn    = document.getElementById('wp-mcp-ai-gc-fetch-spaces-btn');
+			var gcFetchSpacesResult = document.getElementById('wp-mcp-ai-gc-fetch-spaces-result');
+			if (gcFetchSpacesBtn) {
+			gcFetchSpacesBtn.addEventListener('click', function() {
+			var tokenEl     = document.getElementById('google_chat_access_token');
+			var accessToken = tokenEl ? tokenEl.value.trim() : '';
+			var connIdEl    = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+			var connectionId = connIdEl ? connIdEl.value.trim() : '';
 
-if (!accessToken && !connectionId) {
-if (gcFetchSpacesResult) {
-gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
-}
-return;
-}
+			if (!accessToken && !connectionId) {
+			if (gcFetchSpacesResult) {
+			gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+			}
+			return;
+			}
 
-gcFetchSpacesBtn.disabled    = true;
-gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetchingâ¦', 'mcp-ai-wpoos-pro' ) ); ?>;
-if (gcFetchSpacesResult) { gcFetchSpacesResult.innerHTML = ''; }
+			gcFetchSpacesBtn.disabled    = true;
+			gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetching…', 'mcp-ai-wpoos-pro' ) ); ?>;
+			if (gcFetchSpacesResult) { gcFetchSpacesResult.innerHTML = ''; }
 
-var data = new FormData();
-data.append('action', 'wp_mcp_ai_fetch_google_chat_spaces');
-data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_fetch_google_chat_spaces' ) ); ?>);
-data.append('access_token', accessToken);
-if (connectionId) { data.append('connection_id', connectionId); }
+			var data = new FormData();
+			data.append('action', 'wp_mcp_ai_fetch_google_chat_spaces');
+			data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_fetch_google_chat_spaces' ) ); ?>);
+			data.append('access_token', accessToken);
+			if (connectionId) { data.append('connection_id', connectionId); }
 
-fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
-.then(function(r) {
-if (!r.ok) { throw new Error(r.status); }
-return r.json();
-})
-.then(function(json) {
-gcFetchSpacesBtn.disabled    = false;
-gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetch Spaces', 'mcp-ai-wpoos-pro' ) ); ?>;
-if (!gcFetchSpacesResult) { return; }
-if (!json.success) {
-gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + (json.data && json.data.message ? json.data.message : <?php echo wp_json_encode( __( 'Failed to fetch spaces.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</span>';
-return;
-}
-var spaces = json.data.spaces || [];
-if (!spaces.length) {
-gcFetchSpacesResult.innerHTML = '<span style="color:#646970;">' + <?php echo wp_json_encode( __( 'No spaces found. Make sure your bot is added to at least one Google Chat space.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
-return;
-}
-if (spaces.length === 1) {
-document.getElementById('google_chat_space').value = spaces[0].name;
-gcFetchSpacesResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Space set automatically:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + (spaces[0].displayName || spaces[0].name) + ' (' + spaces[0].name + ')</span>';
-} else {
-var sel = '<select id="wp-mcp-ai-gc-space-select" style="max-width:400px;">';
-sel += '<option value="">' + <?php echo wp_json_encode( __( '-- Select a space --', 'mcp-ai-wpoos-pro' ) ); ?> + '</option>';
-spaces.forEach(function(s) {
-sel += '<option value="' + s.name + '">' + (s.displayName ? s.displayName + ' â ' : '') + s.name + '</option>';
-});
-sel += '</select> <button type="button" id="wp-mcp-ai-gc-space-apply" class="button">' + <?php echo wp_json_encode( __( 'Use Selected', 'mcp-ai-wpoos-pro' ) ); ?> + '</button>';
-gcFetchSpacesResult.innerHTML = sel;
-document.getElementById('wp-mcp-ai-gc-space-apply').addEventListener('click', function() {
-var selEl = document.getElementById('wp-mcp-ai-gc-space-select');
-if (selEl && selEl.value) {
-document.getElementById('google_chat_space').value = selEl.value;
-gcFetchSpacesResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Space applied.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
-}
-});
-}
-})
-.catch(function() {
-gcFetchSpacesBtn.disabled    = false;
-gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetch Spaces', 'mcp-ai-wpoos-pro' ) ); ?>;
-if (gcFetchSpacesResult) {
-gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
-}
-});
-});
-}
+			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function(r) {
+			if (!r.ok) { throw new Error(r.status); }
+			return r.json();
+			})
+			.then(function(json) {
+			gcFetchSpacesBtn.disabled    = false;
+			gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetch Spaces', 'mcp-ai-wpoos-pro' ) ); ?>;
+			if (!gcFetchSpacesResult) { return; }
+			if (!json.success) {
+			gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + (json.data && json.data.message ? json.data.message : <?php echo wp_json_encode( __( 'Failed to fetch spaces.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</span>';
+			return;
+			}
+			var spaces = json.data.spaces || [];
+			if (!spaces.length) {
+			gcFetchSpacesResult.innerHTML = '<span style="color:#646970;">' + <?php echo wp_json_encode( __( 'No spaces found. Make sure your bot is added to at least one Google Chat space.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+			return;
+			}
+			if (spaces.length === 1) {
+			document.getElementById('google_chat_space').value = spaces[0].name;
+			gcFetchSpacesResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Space set automatically:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + (spaces[0].displayName || spaces[0].name) + ' (' + spaces[0].name + ')</span>';
+			} else {
+			var sel = '<select id="wp-mcp-ai-gc-space-select" style="max-width:400px;">';
+			sel += '<option value="">' + <?php echo wp_json_encode( __( '-- Select a space --', 'mcp-ai-wpoos-pro' ) ); ?> + '</option>';
+			spaces.forEach(function(s) {
+			sel += '<option value="' + s.name + '">' + (s.displayName ? s.displayName + ' – ' : '') + s.name + '</option>';
+			});
+			sel += '</select> <button type="button" id="wp-mcp-ai-gc-space-apply" class="button">' + <?php echo wp_json_encode( __( 'Use Selected', 'mcp-ai-wpoos-pro' ) ); ?> + '</button>';
+			gcFetchSpacesResult.innerHTML = sel;
+			document.getElementById('wp-mcp-ai-gc-space-apply').addEventListener('click', function() {
+			var selEl = document.getElementById('wp-mcp-ai-gc-space-select');
+			if (selEl && selEl.value) {
+			document.getElementById('google_chat_space').value = selEl.value;
+			gcFetchSpacesResult.innerHTML = '<span style="color:#00a32a;">' + <?php echo wp_json_encode( __( 'Space applied.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+			}
+			});
+			}
+			})
+			.catch(function() {
+			gcFetchSpacesBtn.disabled    = false;
+			gcFetchSpacesBtn.textContent = <?php echo wp_json_encode( __( 'Fetch Spaces', 'mcp-ai-wpoos-pro' ) ); ?>;
+			if (gcFetchSpacesResult) {
+			gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+			}
+			});
+			});
+			}
 
-// Google Chat: Test Connection button.
-var gcTestBtn     = document.getElementById('google_chat_test_connection_btn');
-var gcTestSpinner = document.getElementById('google_chat_test_spinner');
-var gcTestResult  = document.getElementById('google_chat_test_result');
-if (gcTestBtn) {
-gcTestBtn.addEventListener('click', function() {
-var accessToken  = document.getElementById('google_chat_access_token').value.trim();
-var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
-var connectionId = connIdEl ? connIdEl.value.trim() : '';
+			// Google Chat: Test Connection button.
+			var gcTestBtn     = document.getElementById('google_chat_test_connection_btn');
+			var gcTestSpinner = document.getElementById('google_chat_test_spinner');
+			var gcTestResult  = document.getElementById('google_chat_test_result');
+			if (gcTestBtn) {
+			gcTestBtn.addEventListener('click', function() {
+			var accessToken  = document.getElementById('google_chat_access_token').value.trim();
+			var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+			var connectionId = connIdEl ? connIdEl.value.trim() : '';
 
-if (!accessToken && !connectionId) {
-if (gcTestResult) {
-gcTestResult.style.display = 'block';
-gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
-}
-return;
-}
+			if (!accessToken && !connectionId) {
+			if (gcTestResult) {
+			gcTestResult.style.display = 'block';
+			gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			return;
+			}
 
-gcTestBtn.disabled = true;
-if (gcTestSpinner) { gcTestSpinner.style.display = 'inline-block'; }
-if (gcTestResult)  { gcTestResult.style.display = 'none'; gcTestResult.innerHTML = ''; }
+			gcTestBtn.disabled = true;
+			if (gcTestSpinner) { gcTestSpinner.style.display = 'inline-block'; }
+			if (gcTestResult)  { gcTestResult.style.display = 'none'; gcTestResult.innerHTML = ''; }
 
-var data = new FormData();
-data.append('action', 'wp_mcp_ai_test_google_chat_live');
-data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_google_chat_live' ) ); ?>);
-data.append('access_token', accessToken);
-if (connectionId) { data.append('connection_id', connectionId); }
+			var data = new FormData();
+			data.append('action', 'wp_mcp_ai_test_google_chat_live');
+			data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_google_chat_live' ) ); ?>);
+			data.append('access_token', accessToken);
+			if (connectionId) { data.append('connection_id', connectionId); }
 
-fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
-.then(function(response) {
-if (!response.ok) { throw new Error('HTTP ' + response.status); }
-return response.json();
-})
-.then(function(result) {
-gcTestBtn.disabled = false;
-if (gcTestSpinner) { gcTestSpinner.style.display = 'none'; }
-if (!gcTestResult) { return; }
-gcTestResult.style.display = 'block';
-if (result.success) {
-var d    = result.data;
-var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
-if (d && typeof d === 'object') {
-var items = [];
-if (d.space_count !== undefined) { items.push(<?php echo wp_json_encode( __( 'Spaces accessible:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.space_count); }
-if (d.bot_name)  { items.push(<?php echo wp_json_encode( __( 'Bot name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_name); }
-if (items.length) {
-html += '<ul style="margin:8px 0;padding-left:20px;">';
-items.forEach(function(item) { html += '<li>' + item + '</li>'; });
-html += '</ul>';
-}
-}
-html += '</div>';
-gcTestResult.innerHTML = html;
-} else {
-gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
-}
-})
-.catch(function() {
-gcTestBtn.disabled = false;
-if (gcTestSpinner) { gcTestSpinner.style.display = 'none'; }
-if (gcTestResult) {
-gcTestResult.style.display = 'block';
-gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
-}
-});
-});
-}
+			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function(response) {
+			if (!response.ok) { throw new Error('HTTP ' + response.status); }
+			return response.json();
+			})
+			.then(function(result) {
+			gcTestBtn.disabled = false;
+			if (gcTestSpinner) { gcTestSpinner.style.display = 'none'; }
+			if (!gcTestResult) { return; }
+			gcTestResult.style.display = 'block';
+			if (result.success) {
+			var d    = result.data;
+			var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+			if (d && typeof d === 'object') {
+			var items = [];
+			if (d.space_count !== undefined) { items.push(<?php echo wp_json_encode( __( 'Spaces accessible:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.space_count); }
+			if (d.bot_name)  { items.push(<?php echo wp_json_encode( __( 'Bot name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_name); }
+			if (items.length) {
+			html += '<ul style="margin:8px 0;padding-left:20px;">';
+			items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+			html += '</ul>';
+			}
+			}
+			html += '</div>';
+			gcTestResult.innerHTML = html;
+			} else {
+			gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+			}
+			})
+			.catch(function() {
+			gcTestBtn.disabled = false;
+			if (gcTestSpinner) { gcTestSpinner.style.display = 'none'; }
+			if (gcTestResult) {
+			gcTestResult.style.display = 'block';
+			gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			});
+			});
+			}
 
-// Google Chat: Test Auto-Reply button.
-var gcAutoReplyBtn     = document.getElementById('google_chat_test_auto_reply_btn');
-var gcAutoReplySpinner = document.getElementById('google_chat_test_auto_reply_spinner');
-var gcAutoReplyResult  = document.getElementById('google_chat_test_auto_reply_result');
-if (gcAutoReplyBtn) {
-gcAutoReplyBtn.addEventListener('click', function() {
-var msgEl = document.getElementById('google_chat_test_auto_reply_msg');
-var spaceEl = document.getElementById('google_chat_test_auto_reply_space');
-var msg   = msgEl   ? msgEl.value.trim()   : '';
-var space = spaceEl ? spaceEl.value.trim() : '';
+			// Google Chat: Test Auto-Reply button.
+			var gcAutoReplyBtn     = document.getElementById('google_chat_test_auto_reply_btn');
+			var gcAutoReplySpinner = document.getElementById('google_chat_test_auto_reply_spinner');
+			var gcAutoReplyResult  = document.getElementById('google_chat_test_auto_reply_result');
+			if (gcAutoReplyBtn) {
+			gcAutoReplyBtn.addEventListener('click', function() {
+			var msgEl = document.getElementById('google_chat_test_auto_reply_msg');
+			var spaceEl = document.getElementById('google_chat_test_auto_reply_space');
+			var msg   = msgEl   ? msgEl.value.trim()   : '';
+			var space = spaceEl ? spaceEl.value.trim() : '';
 
-if (!msg) {
-if (gcAutoReplyResult) {
-gcAutoReplyResult.style.display = 'block';
-gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
-}
-return;
-}
+			if (!msg) {
+			if (gcAutoReplyResult) {
+			gcAutoReplyResult.style.display = 'block';
+			gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			return;
+			}
 
-gcAutoReplyBtn.disabled = true;
-if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'inline-block'; }
-if (gcAutoReplyResult)  { gcAutoReplyResult.style.display = 'none'; gcAutoReplyResult.innerHTML = ''; }
+			gcAutoReplyBtn.disabled = true;
+			if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'inline-block'; }
+			if (gcAutoReplyResult)  { gcAutoReplyResult.style.display = 'none'; gcAutoReplyResult.innerHTML = ''; }
 
-var data = new FormData();
-data.append('action', 'wp_mcp_ai_test_google_chat_auto_reply');
-data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_google_chat_auto_reply' ) ); ?>);
-data.append('test_message', msg);
-if (space) { data.append('test_space', space); }
-var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
-if (connIdEl) { data.append('connection_id', connIdEl.value); }
+			var data = new FormData();
+			data.append('action', 'wp_mcp_ai_test_google_chat_auto_reply');
+			data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_google_chat_auto_reply' ) ); ?>);
+			data.append('test_message', msg);
+			if (space) { data.append('test_space', space); }
+			var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+			if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
-.then(function(response) {
-if (!response.ok) { throw new Error('HTTP ' + response.status); }
-return response.json();
-})
-.then(function(result) {
-gcAutoReplyBtn.disabled = false;
-if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'none'; }
-if (!gcAutoReplyResult) { return; }
-gcAutoReplyResult.style.display = 'block';
-if (result.success) {
-var d    = result.data;
-var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
-if (d && d.ai_reply) {
-html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #1a73e8;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
-}
-if (d && d.sent) {
-html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">â <?php echo esc_js( __( 'Reply sent to the test space via Google Chat.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
-} else if (space && d && !d.sent) {
-var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
-html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">â  <?php echo esc_js( __( 'AI reply generated but sending via Google Chat failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
-}
-html += '</div>';
-gcAutoReplyResult.innerHTML = html;
-} else {
-gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
-}
-})
-.catch(function() {
-gcAutoReplyBtn.disabled = false;
-if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'none'; }
-if (gcAutoReplyResult) {
-gcAutoReplyResult.style.display = 'block';
-gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
-}
-});
-});
-}
+			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function(response) {
+			if (!response.ok) { throw new Error('HTTP ' + response.status); }
+			return response.json();
+			})
+			.then(function(result) {
+			gcAutoReplyBtn.disabled = false;
+			if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'none'; }
+			if (!gcAutoReplyResult) { return; }
+			gcAutoReplyResult.style.display = 'block';
+			if (result.success) {
+			var d    = result.data;
+			var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+			if (d && d.ai_reply) {
+			html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #1a73e8;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+			}
+			if (d && d.sent) {
+			html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test space via Google Chat.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+			} else if (space && d && !d.sent) {
+			var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+			html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Google Chat failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+			}
+			html += '</div>';
+			gcAutoReplyResult.innerHTML = html;
+			} else {
+			gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+			}
+			})
+			.catch(function() {
+			gcAutoReplyBtn.disabled = false;
+			if (gcAutoReplySpinner) { gcAutoReplySpinner.style.display = 'none'; }
+			if (gcAutoReplyResult) {
+			gcAutoReplyResult.style.display = 'block';
+			gcAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			});
+			});
+			}
 
 			// Messenger: Access Token show/hide toggle button.
 			var msngTokenToggleBtn = document.getElementById('messenger_access_token_toggle');
