@@ -138,6 +138,47 @@ class Test_Google_Service_Account_Helper extends WP_UnitTestCase {
 		$this->assertSame( 'bot@my-project.iam.gserviceaccount.com', $result['client_email'] );
 	}
 
+	/**
+	 * Test parse_key returns a wrong-key-type error for authorized_user credentials.
+	 */
+	public function test_parse_key_rejects_authorized_user_type() {
+		$this->load_helper();
+
+		$json = wp_json_encode(
+			array(
+				'type'          => 'authorized_user',
+				'client_id'     => 'client-id.apps.googleusercontent.com',
+				'client_secret' => 'client-secret',
+				'refresh_token' => 'refresh-token',
+			)
+		);
+
+		$result = WP_MCP_AI_Pro_Google_Service_Account::parse_key( $json );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_gc_sa_wrong_key_type', $result->get_error_code() );
+	}
+
+	/**
+	 * Test parse_key returns a wrong-key-type error for other non-service-account types.
+	 */
+	public function test_parse_key_rejects_unknown_key_type() {
+		$this->load_helper();
+
+		$json = wp_json_encode(
+			array(
+				'type'      => 'external_account',
+				'audience'  => 'some-audience',
+				'token_url' => 'https://sts.googleapis.com/v1/token',
+			)
+		);
+
+		$result = WP_MCP_AI_Pro_Google_Service_Account::parse_key( $json );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_gc_sa_wrong_key_type', $result->get_error_code() );
+	}
+
 	// =========================================================================
 	// get_access_token – credential validation.
 	// =========================================================================
@@ -218,5 +259,57 @@ class Test_Google_Service_Account_Helper extends WP_UnitTestCase {
 		delete_transient( $cache_key );
 
 		$this->assertSame( 'cached-access-token-value', $result, 'Should return the cached token without attempting JWT signing' );
+	}
+
+	// =========================================================================
+	// get_access_token_from_refresh_token – OAuth refresh token support.
+	// =========================================================================
+
+	/**
+	 * Test get_access_token_from_refresh_token returns error for empty client_id.
+	 */
+	public function test_get_access_token_from_refresh_token_rejects_empty_client_id() {
+		$this->load_helper();
+
+		$result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+			'',
+			'client-secret',
+			'refresh-token'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_gc_oauth_incomplete_credentials', $result->get_error_code() );
+	}
+
+	/**
+	 * Test get_access_token_from_refresh_token returns error for empty client_secret.
+	 */
+	public function test_get_access_token_from_refresh_token_rejects_empty_client_secret() {
+		$this->load_helper();
+
+		$result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+			'client-id',
+			'',
+			'refresh-token'
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_gc_oauth_incomplete_credentials', $result->get_error_code() );
+	}
+
+	/**
+	 * Test get_access_token_from_refresh_token returns error for empty refresh_token.
+	 */
+	public function test_get_access_token_from_refresh_token_rejects_empty_refresh_token() {
+		$this->load_helper();
+
+		$result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+			'client-id',
+			'client-secret',
+			''
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_gc_oauth_incomplete_credentials', $result->get_error_code() );
 	}
 }

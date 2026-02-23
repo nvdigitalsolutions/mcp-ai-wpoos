@@ -50,6 +50,19 @@ class WP_MCP_AI_Pro_Google_Service_Account {
 			);
 		}
 
+		// Detect non-service-account credential types and give a helpful error.
+		$key_type = $credentials['type'] ?? '';
+		if ( '' !== $key_type && 'service_account' !== $key_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_gc_sa_wrong_key_type',
+				sprintf(
+					/* translators: %s: credential type found in the JSON key */
+					__( 'The provided JSON is not a Service Account key (found type: "%s"). Please download a Service Account JSON key from Google Cloud Console, or use the OAuth 1-click connect button.', 'mcp-ai-wpoos-pro' ),
+					$key_type
+				)
+			);
+		}
+
 		if ( empty( $credentials['client_email'] ) || empty( $credentials['private_key'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_gc_sa_incomplete_key',
@@ -178,6 +191,77 @@ class WP_MCP_AI_Pro_Google_Service_Account {
 		}
 
 		return self::get_access_token( $credentials, $scope, $timeout );
+	}
+
+	/**
+	 * Retrieve an access token using an OAuth 2.0 refresh token.
+	 *
+	 * Useful when the connection was authorized via the 1-click OAuth flow
+	 * rather than a Service Account key file.
+	 *
+	 * @param string $client_id     OAuth 2.0 client ID.
+	 * @param string $client_secret OAuth 2.0 client secret.
+	 * @param string $refresh_token OAuth 2.0 refresh token.
+	 * @param int    $timeout       HTTP request timeout in seconds.
+	 * @return string|WP_Error Access token string or error.
+	 */
+	public static function get_access_token_from_refresh_token( $client_id, $client_secret, $refresh_token, $timeout = 15 ) {
+		$client_id     = trim( (string) $client_id );
+		$client_secret = trim( (string) $client_secret );
+		$refresh_token = trim( (string) $refresh_token );
+
+		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_gc_oauth_incomplete_credentials',
+				__( 'Incomplete OAuth credentials: client_id, client_secret, and refresh_token are all required.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = wp_remote_post(
+			self::TOKEN_URI,
+			array(
+				'headers' => array( 'Content-Type' => 'application/x-www-form-urlencoded' ),
+				'timeout' => absint( $timeout ) > 0 ? absint( $timeout ) : 15,
+				'body'    => array(
+					'grant_type'    => 'refresh_token',
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'refresh_token' => $refresh_token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_gc_oauth_token_request_failed',
+				__( 'Unable to obtain a Google access token via OAuth refresh token.', 'mcp-ai-wpoos-pro' ),
+				array( 'error' => $response )
+			);
+		}
+
+		$status = (int) wp_remote_retrieve_response_code( $response );
+		$body   = wp_remote_retrieve_body( $response );
+		$data   = json_decode( $body, true );
+
+		if ( $status < 200 || $status >= 300 || empty( $data['access_token'] ) ) {
+			$message = __( 'Google rejected the OAuth token refresh request.', 'mcp-ai-wpoos-pro' );
+			if ( ! empty( $data['error_description'] ) ) {
+				$message = sprintf( '%s %s', $message, $data['error_description'] );
+			} elseif ( ! empty( $data['error'] ) ) {
+				$message = sprintf( '%s %s', $message, $data['error'] );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_gc_oauth_token_rejected',
+				$message,
+				array(
+					'status'   => $status,
+					'response' => $data,
+				)
+			);
+		}
+
+		return (string) $data['access_token'];
 	}
 
 	/**
