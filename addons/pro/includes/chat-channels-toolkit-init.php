@@ -24,16 +24,46 @@ $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_bas
 // Only load if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
 
-	// Load Chat Channels admin pages.
+	// --- CCTs: Channel Messages and Channel Contacts ---
+	$_cc_messages_cct = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
+	$_cc_contacts_cct = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cct.php';
+
+	if ( file_exists( $_cc_messages_cct ) ) {
+		require_once $_cc_messages_cct;
+		WP_MCP_AI_Channel_Messages_CCT::bootstrap();
+	}
+	if ( file_exists( $_cc_contacts_cct ) ) {
+		require_once $_cc_contacts_cct;
+		WP_MCP_AI_Channel_Contacts_CCT::bootstrap();
+	}
+	unset( $_cc_messages_cct, $_cc_contacts_cct );
+
+	// --- REST API: Chat Channels inbox controller ---
+	$_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php';
+	if ( file_exists( $_cc_rest ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_REST_Controller' ) ) {
+		require_once $_cc_rest;
+		new WP_MCP_AI_Chat_Channels_REST_Controller();
+	}
+	unset( $_cc_rest );
+
+	// --- Admin: top-level Chat Channels menu (Dashboard, Inbox, Contacts, Automation) ---
 	if ( is_admin() ) {
-		$admin_page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
-		if ( file_exists( $admin_page_file ) ) {
-			require_once $admin_page_file;
+		$_cc_menu = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-menu.php';
+		if ( file_exists( $_cc_menu ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_Menu' ) ) {
+			require_once $_cc_menu;
+			new WP_MCP_AI_Chat_Channels_Menu();
 		}
+		unset( $_cc_menu );
+
+		// Existing per-toolkit settings page (preserved for backwards compatibility).
+		$_cc_settings_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
+		if ( file_exists( $_cc_settings_page ) ) {
+			require_once $_cc_settings_page;
+		}
+		unset( $_cc_settings_page );
 	}
 
-	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/src/Tools/ChatChannels/.
+	// Register tools via the standard pro tools hook.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_chat_channels_tools' );
 }
 
@@ -157,3 +187,4 @@ function wp_mcp_ai_load_chat_channels_tools() {
 		}
 	}
 }
+

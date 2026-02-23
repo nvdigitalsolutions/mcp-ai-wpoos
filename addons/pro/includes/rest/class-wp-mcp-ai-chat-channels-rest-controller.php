@@ -443,13 +443,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		$channel            = $contact['channel'];
 		$channel_contact_id = $contact['channel_contact_id'];
-		$phone_number       = ! empty( $contact['phone_number'] ) ? $contact['phone_number'] : $channel_contact_id;
 
 		$result = false;
 
 		switch ( $channel ) {
 			case 'whatsapp':
-				$result = $this->send_whatsapp_reply( $channel_contact_id, $phone_number, $message_text, $connection_id );
+				$result = $this->send_whatsapp_reply( $channel_contact_id, $message_text, $connection_id );
 				break;
 
 			default:
@@ -518,12 +517,11 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	 * Uses the connection settings stored by the Chat Channels Toolkit settings page.
 	 *
 	 * @param string $to            Recipient phone number (E.164 without '+').
-	 * @param string $phone_number  Recipient display phone (may equal $to).
 	 * @param string $message_text  Text to send.
 	 * @param string $connection_id Settings connection key.
 	 * @return true|WP_Error
 	 */
-	protected function send_whatsapp_reply( $to, $phone_number, $message_text, $connection_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected function send_whatsapp_reply( $to, $message_text, $connection_id ) {
 		$settings   = get_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array() );
 		$connection = $this->resolve_whatsapp_connection( $settings, $connection_id );
 

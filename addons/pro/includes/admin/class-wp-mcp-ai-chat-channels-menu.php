@@ -47,24 +47,34 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	 * Register top-level menu and sub-pages.
 	 */
 	public function register_menus() {
-		// Top-level Chat Channels menu.
+		// Top-level Chat Channels menu – lands on the Dashboard.
 		add_menu_page(
 			__( 'Chat Channels', 'mcp-ai-wpoos-pro' ),
 			__( 'Chat Channels', 'mcp-ai-wpoos-pro' ),
 			self::CAPABILITY,
 			self::MENU_SLUG,
-			array( $this, 'render_inbox_page' ),
+			array( $this, 'render_dashboard_page' ),
 			'dashicons-format-chat',
 			58 // After WooCommerce (55) and E-Commerce Toolkit (56).
 		);
 
-		// Inbox (default – same callback as top-level to avoid duplicate entry).
+		// Dashboard (default top-level).
+		add_submenu_page(
+			self::MENU_SLUG,
+			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
+			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
+			self::CAPABILITY,
+			self::MENU_SLUG,
+			array( $this, 'render_dashboard_page' )
+		);
+
+		// Inbox – unified multi-channel conversation view.
 		add_submenu_page(
 			self::MENU_SLUG,
 			__( 'Inbox', 'mcp-ai-wpoos-pro' ),
 			__( 'Inbox', 'mcp-ai-wpoos-pro' ),
 			self::CAPABILITY,
-			self::MENU_SLUG,
+			self::MENU_SLUG . '-inbox',
 			array( $this, 'render_inbox_page' )
 		);
 
@@ -100,37 +110,56 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	}
 
 	/**
+	 * All admin page hook suffixes managed by this class.
+	 *
+	 * @return array
+	 */
+	protected function get_page_hooks() {
+		return array(
+			'toplevel_page_' . self::MENU_SLUG,                                       // Dashboard.
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-inbox',                  // Inbox.
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-contacts',               // Contacts.
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-automation',             // Automation.
+		);
+	}
+
+	/**
 	 * Enqueue CSS and JS assets for Chat Channels admin pages.
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		$chat_channel_hooks = array(
-			'toplevel_page_' . self::MENU_SLUG,
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-contacts',
-			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-automation',
-		);
-
-		if ( ! in_array( $hook, $chat_channel_hooks, true ) ) {
+		if ( ! in_array( $hook, $this->get_page_hooks(), true ) ) {
 			return;
 		}
 
-		// Inbox CSS.
+		// Shared CSS for all Chat Channels pages.
 		$css_file = WP_MCP_AI_PRO_PATH . 'assets/css/chat-channels-inbox.css';
 		if ( file_exists( $css_file ) ) {
 			wp_enqueue_style(
-				'wp-mcp-ai-chat-channels-inbox',
+				'wp-mcp-ai-chat-channels',
 				WP_MCP_AI_PRO_URL . 'assets/css/chat-channels-inbox.css',
 				array(),
 				WP_MCP_AI_PRO_VERSION
 			);
 		}
 
-		// Inbox JS.
+		// Chart.js – loaded only on the Dashboard page.
+		if ( 'toplevel_page_' . self::MENU_SLUG === $hook ) {
+			wp_enqueue_script(
+				'chartjs',
+				'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+				array(),
+				'4.4.0',
+				true
+			);
+		}
+
+		// Inbox JS (also powers the dashboard stats fetch).
 		$js_file = WP_MCP_AI_PRO_PATH . 'assets/js/chat-channels-inbox.js';
 		if ( file_exists( $js_file ) ) {
 			wp_enqueue_script(
-				'wp-mcp-ai-chat-channels-inbox',
+				'wp-mcp-ai-chat-channels',
 				WP_MCP_AI_PRO_URL . 'assets/js/chat-channels-inbox.js',
 				array( 'jquery', 'wp-api-fetch' ),
 				WP_MCP_AI_PRO_VERSION,
@@ -138,12 +167,13 @@ class WP_MCP_AI_Chat_Channels_Menu {
 			);
 
 			wp_localize_script(
-				'wp-mcp-ai-chat-channels-inbox',
+				'wp-mcp-ai-chat-channels',
 				'wpMcpAiChatChannels',
 				array(
-					'restUrl'   => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
-					'nonce'     => wp_create_nonce( 'wp_rest' ),
-					'i18n'      => array(
+					'restUrl'       => esc_url_raw( rest_url( 'mcp-ai-pro/v1/chat-channels' ) ),
+					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'currentPage'   => $this->current_page_slug( $hook ),
+					'i18n'          => array(
 						'loading'         => __( 'Loading…', 'mcp-ai-wpoos-pro' ),
 						'noConversations' => __( 'No conversations found.', 'mcp-ai-wpoos-pro' ),
 						'sendReply'       => __( 'Send Reply', 'mcp-ai-wpoos-pro' ),
@@ -154,6 +184,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						'confirmResolve'  => __( 'Mark this conversation as resolved?', 'mcp-ai-wpoos-pro' ),
 						'replySent'       => __( 'Reply sent.', 'mcp-ai-wpoos-pro' ),
 						'errorSending'    => __( 'Failed to send reply. Please try again.', 'mcp-ai-wpoos-pro' ),
+						'allChannels'     => __( 'All Channels', 'mcp-ai-wpoos-pro' ),
 					),
 					'channelLabels' => array(
 						'whatsapp'    => 'WhatsApp',
@@ -171,37 +202,203 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		}
 	}
 
+	/**
+	 * Map a hook suffix to a short page slug for JS.
+	 *
+	 * @param string $hook Hook suffix.
+	 * @return string
+	 */
+	protected function current_page_slug( $hook ) {
+		$map = array(
+			'toplevel_page_' . self::MENU_SLUG                             => 'dashboard',
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-inbox'       => 'inbox',
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-contacts'    => 'contacts',
+			self::MENU_SLUG . '_page_' . self::MENU_SLUG . '-automation'  => 'automation',
+		);
+
+		return isset( $map[ $hook ] ) ? $map[ $hook ] : '';
+	}
+
 	// =========================================================================
 	// Page renderers
 	// =========================================================================
 
 	/**
-	 * Render the Inbox page.
+	 * Render the Dashboard analytics page (Chart.js).
+	 */
+	public function render_dashboard_page() {
+		if ( ! current_user_can( self::CAPABILITY ) ) {
+			wp_die( esc_html__( 'You do not have permission to view this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$this->render_page_header( __( 'Chat Channels Dashboard', 'mcp-ai-wpoos-pro' ), 'dashboard' );
+
+		// Fetch summary stats directly from DB.
+		$stats = $this->get_dashboard_stats();
+		?>
+		<div class="wp-mcp-ai-chat-channels-wrap">
+
+			<!-- KPI row -->
+			<div class="cc-kpi-row">
+				<div class="cc-kpi-card">
+					<span class="cc-kpi-value"><?php echo esc_html( number_format_i18n( $stats['total_messages_7d'] ) ); ?></span>
+					<span class="cc-kpi-label"><?php esc_html_e( 'Messages (7 days)', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="cc-kpi-card">
+					<span class="cc-kpi-value"><?php echo esc_html( number_format_i18n( $stats['total_contacts'] ) ); ?></span>
+					<span class="cc-kpi-label"><?php esc_html_e( 'Total Contacts', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="cc-kpi-card">
+					<span class="cc-kpi-value"><?php echo esc_html( number_format_i18n( $stats['open_conversations'] ) ); ?></span>
+					<span class="cc-kpi-label"><?php esc_html_e( 'Open Conversations', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="cc-kpi-card">
+					<span class="cc-kpi-value"><?php echo esc_html( number_format_i18n( $stats['human_takeover_count'] ) ); ?></span>
+					<span class="cc-kpi-label"><?php esc_html_e( 'Human Takeovers', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+				<div class="cc-kpi-card">
+					<span class="cc-kpi-value"><?php echo esc_html( number_format_i18n( $stats['inbound_today'] ) ); ?></span>
+					<span class="cc-kpi-label"><?php esc_html_e( 'Inbound Today', 'mcp-ai-wpoos-pro' ); ?></span>
+				</div>
+			</div>
+
+			<!-- Charts row -->
+			<div class="cc-charts-row">
+				<!-- 7-day message volume bar chart -->
+				<div class="cc-chart-card cc-chart-card--wide">
+					<h3><?php esc_html_e( 'Message Volume – Last 7 Days', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<canvas id="cc-volume-chart" height="120"></canvas>
+				</div>
+				<!-- Channel distribution doughnut -->
+				<div class="cc-chart-card">
+					<h3><?php esc_html_e( 'Messages by Channel', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<canvas id="cc-channel-chart" height="200"></canvas>
+				</div>
+				<!-- Inbound vs outbound doughnut -->
+				<div class="cc-chart-card">
+					<h3><?php esc_html_e( 'Inbound vs Outbound (7 days)', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<canvas id="cc-direction-chart" height="200"></canvas>
+				</div>
+			</div>
+
+			<!-- Quick-nav links -->
+			<div class="cc-quick-nav">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '-inbox' ) ); ?>" class="button button-primary">
+					<?php esc_html_e( 'Open Inbox', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '-contacts' ) ); ?>" class="button">
+					<?php esc_html_e( 'Manage Contacts', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::MENU_SLUG . '-automation' ) ); ?>" class="button">
+					<?php esc_html_e( 'Automation Rules', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
+			</div>
+
+		</div>
+
+		<script>
+		(function() {
+			if ( typeof Chart === 'undefined' ) { return; }
+
+			// --- 7-day volume bar chart ---
+			var volumeData = <?php echo wp_json_encode( $stats['volume_by_day'] ); ?>;
+			new Chart( document.getElementById('cc-volume-chart'), {
+				type: 'bar',
+				data: {
+					labels: volumeData.labels,
+					datasets: [{
+						label: '<?php echo esc_js( __( 'Messages', 'mcp-ai-wpoos-pro' ) ); ?>',
+						data: volumeData.counts,
+						backgroundColor: '#4f46e5',
+						borderRadius: 4,
+					}]
+				},
+				options: {
+					responsive: true,
+					plugins: { legend: { display: false } },
+					scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+				}
+			});
+
+			// --- Channel doughnut chart ---
+			var channelData = <?php echo wp_json_encode( $stats['by_channel'] ); ?>;
+			if ( channelData.labels.length ) {
+				new Chart( document.getElementById('cc-channel-chart'), {
+					type: 'doughnut',
+					data: {
+						labels: channelData.labels,
+						datasets: [{
+							data: channelData.counts,
+							backgroundColor: ['#4f46e5','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316'],
+						}]
+					},
+					options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+				});
+			}
+
+			// --- Inbound / Outbound doughnut ---
+			var dirData = <?php echo wp_json_encode( $stats['by_direction'] ); ?>;
+			new Chart( document.getElementById('cc-direction-chart'), {
+				type: 'doughnut',
+				data: {
+					labels: ['<?php echo esc_js( __( 'Inbound', 'mcp-ai-wpoos-pro' ) ); ?>','<?php echo esc_js( __( 'Outbound', 'mcp-ai-wpoos-pro' ) ); ?>'],
+					datasets: [{
+						data: [ dirData.inbound, dirData.outbound ],
+						backgroundColor: ['#22c55e', '#4f46e5'],
+					}]
+				},
+				options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+			});
+		})();
+		</script>
+		</div><!-- .wrap -->
+		<?php
+	}
+
+	/**
+	 * Render the Inbox page with per-channel tabs.
 	 */
 	public function render_inbox_page() {
 		if ( ! current_user_can( self::CAPABILITY ) ) {
 			wp_die( esc_html__( 'You do not have permission to view this page.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Active channel tab from query string (defaults to 'all').
+		$active_channel = isset( $_GET['channel'] ) ? sanitize_key( wp_unslash( $_GET['channel'] ) ) : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
 		$this->render_page_header( __( 'Chat Channels Inbox', 'mcp-ai-wpoos-pro' ), 'inbox' );
 		?>
 		<div id="wp-mcp-ai-chat-channels-app" class="wp-mcp-ai-chat-channels-wrap">
 
-			<!-- Toolbar: channel filter + search -->
+			<!-- Per-channel tab strip -->
+			<div class="cc-channel-tabs">
+				<?php
+				$channel_tabs = array(
+					'all'         => __( 'All', 'mcp-ai-wpoos-pro' ),
+					'whatsapp'    => 'WhatsApp',
+					'telegram'    => 'Telegram',
+					'slack'       => 'Slack',
+					'discord'     => 'Discord',
+					'teams'       => 'Microsoft Teams',
+					'messenger'   => 'Facebook Messenger',
+					'google_chat' => 'Google Chat',
+					'twitter'     => 'Twitter/X',
+					'webchat'     => 'WebChat',
+				);
+				foreach ( $channel_tabs as $slug => $label ) :
+					$url = admin_url( 'admin.php?page=' . self::MENU_SLUG . '-inbox' . ( 'all' === $slug ? '' : '&channel=' . $slug ) );
+					?>
+					<a href="<?php echo esc_url( $url ); ?>"
+					   class="cc-channel-tab<?php echo $active_channel === $slug ? ' cc-channel-tab--active' : ''; ?>"
+					   data-channel="<?php echo esc_attr( $slug ); ?>">
+						<?php echo esc_html( $label ); ?>
+					</a>
+				<?php endforeach; ?>
+			</div>
+
+			<!-- Toolbar: status filter + search -->
 			<div class="cc-toolbar">
 				<div class="cc-filters">
-					<select id="cc-filter-channel" class="cc-select">
-						<option value=""><?php esc_html_e( 'All Channels', 'mcp-ai-wpoos-pro' ); ?></option>
-						<option value="whatsapp">WhatsApp</option>
-						<option value="telegram">Telegram</option>
-						<option value="slack">Slack</option>
-						<option value="discord">Discord</option>
-						<option value="teams"><?php esc_html_e( 'Microsoft Teams', 'mcp-ai-wpoos-pro' ); ?></option>
-						<option value="messenger"><?php esc_html_e( 'Facebook Messenger', 'mcp-ai-wpoos-pro' ); ?></option>
-						<option value="google_chat"><?php esc_html_e( 'Google Chat', 'mcp-ai-wpoos-pro' ); ?></option>
-						<option value="twitter">Twitter/X</option>
-						<option value="webchat">WebChat</option>
-					</select>
 					<select id="cc-filter-status" class="cc-select">
 						<option value=""><?php esc_html_e( 'All Statuses', 'mcp-ai-wpoos-pro' ); ?></option>
 						<option value="new"><?php esc_html_e( 'New', 'mcp-ai-wpoos-pro' ); ?></option>
@@ -231,11 +428,11 @@ class WP_MCP_AI_Chat_Channels_Menu {
 						<p><?php esc_html_e( 'Select a conversation to view the message thread.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</div>
 					<div id="cc-thread-content" class="cc-thread-content" style="display:none;">
-						<!-- Contact header -->
+						<!-- Contact header with channel badge -->
 						<div class="cc-thread-header" id="cc-thread-header"></div>
 						<!-- Messages -->
 						<div class="cc-messages" id="cc-messages"></div>
-						<!-- Reply box -->
+						<!-- Reply box – hidden when human takeover is off for this contact -->
 						<div class="cc-reply-box" id="cc-reply-box">
 							<textarea id="cc-reply-text" class="cc-reply-textarea" rows="3" placeholder="<?php esc_attr_e( 'Type a reply…', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
 							<div class="cc-reply-actions">
@@ -248,7 +445,12 @@ class WP_MCP_AI_Chat_Channels_Menu {
 				</div>
 
 			</div><!-- .cc-layout -->
+
+			<!-- Hidden: active channel for JS -->
+			<input type="hidden" id="cc-active-channel" value="<?php echo esc_attr( 'all' === $active_channel ? '' : $active_channel ); ?>" />
+
 		</div><!-- #wp-mcp-ai-chat-channels-app -->
+		</div><!-- .wrap -->
 		<?php
 	}
 
@@ -323,6 +525,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 			</div>
 
 		</div>
+		</div><!-- .wrap -->
 		<?php
 	}
 
@@ -353,6 +556,7 @@ class WP_MCP_AI_Chat_Channels_Menu {
 
 		$rules = get_option( $option_name, array() );
 		$this->render_automation_form( $rules, $option_name );
+		echo '</div><!-- .wrap -->';
 	}
 
 	/**
@@ -367,17 +571,156 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	// Helpers
 	// =========================================================================
 
+	// =========================================================================
+	// Dashboard statistics
+	// =========================================================================
+
+	/**
+	 * Collect summary statistics from the CCT tables for the Dashboard.
+	 *
+	 * All queries are direct DB reads; the Dashboard is only visible to
+	 * administrators so this is acceptable.
+	 *
+	 * @return array {
+	 *   @type int   $total_messages_7d  Messages in the last 7 days.
+	 *   @type int   $total_contacts     Total stored contacts.
+	 *   @type int   $open_conversations Contacts with crm_status != 'resolved'.
+	 *   @type int   $human_takeover_count Contacts with human_takeover = 1.
+	 *   @type int   $inbound_today      Inbound messages since midnight.
+	 *   @type array $volume_by_day      { labels: string[], counts: int[] } for 7 days.
+	 *   @type array $by_channel         { labels: string[], counts: int[] }.
+	 *   @type array $by_direction       { inbound: int, outbound: int }.
+	 * }
+	 */
+	protected function get_dashboard_stats() {
+		global $wpdb;
+
+		$default = array(
+			'total_messages_7d'    => 0,
+			'total_contacts'       => 0,
+			'open_conversations'   => 0,
+			'human_takeover_count' => 0,
+			'inbound_today'        => 0,
+			'volume_by_day'        => array( 'labels' => array(), 'counts' => array() ),
+			'by_channel'           => array( 'labels' => array(), 'counts' => array() ),
+			'by_direction'         => array( 'inbound' => 0, 'outbound' => 0 ),
+		);
+
+		$msg_table  = class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ? WP_MCP_AI_Channel_Messages_CCT::get_table_name() : '';
+		$con_table  = class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ? WP_MCP_AI_Channel_Contacts_CCT::get_table_name() : '';
+
+		$seven_days_ago = time() - ( 7 * DAY_IN_SECONDS );
+		$today_start    = mktime( 0, 0, 0 );
+
+		// --- messages CCT queries ---
+		if ( $msg_table ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$default['total_messages_7d'] = (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$msg_table} WHERE message_timestamp >= %d", $seven_days_ago )
+			);
+
+			$default['inbound_today'] = (int) $wpdb->get_var(
+				$wpdb->prepare( "SELECT COUNT(*) FROM {$msg_table} WHERE direction = 'inbound' AND message_timestamp >= %d", $today_start )
+			);
+
+			// 7-day volume – one row per day.
+			$volume_rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT DATE(FROM_UNIXTIME(message_timestamp)) AS day, COUNT(*) AS cnt
+					 FROM {$msg_table}
+					 WHERE message_timestamp >= %d
+					 GROUP BY day
+					 ORDER BY day ASC",
+					$seven_days_ago
+				),
+				ARRAY_A
+			);
+
+			$vol_labels = array();
+			$vol_counts = array();
+			foreach ( (array) $volume_rows as $row ) {
+				$vol_labels[] = isset( $row['day'] ) ? $row['day'] : '';
+				$vol_counts[] = isset( $row['cnt'] ) ? (int) $row['cnt'] : 0;
+			}
+			$default['volume_by_day'] = array( 'labels' => $vol_labels, 'counts' => $vol_counts );
+
+			// By channel.
+			$channel_rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT channel, COUNT(*) AS cnt FROM {$msg_table} WHERE message_timestamp >= %d GROUP BY channel ORDER BY cnt DESC",
+					$seven_days_ago
+				),
+				ARRAY_A
+			);
+
+			$ch_labels = array();
+			$ch_counts = array();
+			$channel_map = array(
+				'whatsapp'    => 'WhatsApp',
+				'telegram'    => 'Telegram',
+				'slack'       => 'Slack',
+				'discord'     => 'Discord',
+				'teams'       => 'Microsoft Teams',
+				'messenger'   => 'Facebook Messenger',
+				'google_chat' => 'Google Chat',
+				'twitter'     => 'Twitter/X',
+				'webchat'     => 'WebChat',
+			);
+			foreach ( (array) $channel_rows as $row ) {
+				$slug        = isset( $row['channel'] ) ? $row['channel'] : '';
+				$ch_labels[] = isset( $channel_map[ $slug ] ) ? $channel_map[ $slug ] : ucfirst( $slug );
+				$ch_counts[] = isset( $row['cnt'] ) ? (int) $row['cnt'] : 0;
+			}
+			$default['by_channel'] = array( 'labels' => $ch_labels, 'counts' => $ch_counts );
+
+			// Inbound vs outbound.
+			$dir_rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT direction, COUNT(*) AS cnt FROM {$msg_table} WHERE message_timestamp >= %d GROUP BY direction",
+					$seven_days_ago
+				),
+				ARRAY_A
+			);
+			foreach ( (array) $dir_rows as $row ) {
+				$dir = isset( $row['direction'] ) ? $row['direction'] : '';
+				if ( 'inbound' === $dir ) {
+					$default['by_direction']['inbound'] = (int) $row['cnt'];
+				} elseif ( 'outbound' === $dir ) {
+					$default['by_direction']['outbound'] = (int) $row['cnt'];
+				}
+			}
+			// phpcs:enable
+		}
+
+		// --- contacts CCT queries ---
+		if ( $con_table ) {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$default['total_contacts'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$con_table} WHERE cct_status = 'publish'" );
+
+			$default['open_conversations'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$con_table} WHERE cct_status = 'publish' AND crm_status != 'resolved'" );
+
+			$default['human_takeover_count'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$con_table} WHERE cct_status = 'publish' AND human_takeover = 1" );
+			// phpcs:enable
+		}
+
+		return $default;
+	}
+
 	/**
 	 * Render a consistent page header with navigation tabs.
 	 *
-	 * @param string $title Page title.
-	 * @param string $active Active tab slug: 'inbox', 'contacts', or 'automation'.
+	 * @param string $title  Page title.
+	 * @param string $active Active tab slug: 'dashboard', 'inbox', 'contacts', or 'automation'.
 	 */
 	protected function render_page_header( $title, $active ) {
 		$tabs = array(
+			'dashboard'  => array(
+				'label' => __( 'Dashboard', 'mcp-ai-wpoos-pro' ),
+				'url'   => admin_url( 'admin.php?page=' . self::MENU_SLUG ),
+			),
 			'inbox'      => array(
 				'label' => __( 'Inbox', 'mcp-ai-wpoos-pro' ),
-				'url'   => admin_url( 'admin.php?page=' . self::MENU_SLUG ),
+				'url'   => admin_url( 'admin.php?page=' . self::MENU_SLUG . '-inbox' ),
 			),
 			'contacts'   => array(
 				'label' => __( 'Contacts', 'mcp-ai-wpoos-pro' ),

@@ -20,6 +20,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
+// Load channel persistence helpers when available.
+$_cc_messages_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
+$_cc_contacts_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cct.php';
+if ( file_exists( $_cc_messages_file ) && ! class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+	require_once $_cc_messages_file;
+}
+if ( file_exists( $_cc_contacts_file ) && ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+	require_once $_cc_contacts_file;
+}
+unset( $_cc_messages_file, $_cc_contacts_file );
+
 /**
  * WhatsApp webhook REST controller.
  */
@@ -693,6 +704,66 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 
+		// Resolve display name from the contacts array sent with the webhook payload.
+		// Meta includes a `contacts` key alongside `messages` in the value object.
+		$contact_name = $from;
+		if ( isset( $context['contacts'] ) && is_array( $context['contacts'] ) ) {
+			foreach ( $context['contacts'] as $wa_contact ) {
+				if ( isset( $wa_contact['wa_id'] ) && $wa_contact['wa_id'] === $from ) {
+					if ( isset( $wa_contact['profile']['name'] ) && '' !== $wa_contact['profile']['name'] ) {
+						$contact_name = sanitize_text_field( $wa_contact['profile']['name'] );
+					}
+					break;
+				}
+			}
+		}
+
+		$phone_number_id_meta = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
+		$connection_id_meta   = isset( $message_data['connection_id'] ) ? $message_data['connection_id'] : '';
+
+		// Persist to Channel Contacts CCT (find or create contact record).
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'whatsapp',
+				$from,
+				array(
+					'display_name' => $contact_name,
+					'phone_number' => $from,
+				)
+			);
+
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		// Persist to Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$content_for_storage = $message_data['content'];
+			if ( is_array( $content_for_storage ) ) {
+				$content_for_storage = wp_json_encode( $content_for_storage );
+			}
+
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'whatsapp',
+					'channel_contact_id' => $from,
+					'contact_name'       => $contact_name,
+					'direction'          => 'inbound',
+					'message_id'         => $message_id,
+					'message_type'       => $message_type,
+					'content'            => (string) $content_for_storage,
+					'raw_payload'        => $message,
+					'status'             => 'received',
+					'connection_id'      => $connection_id_meta,
+					'phone_number_id'    => $phone_number_id_meta,
+					'timestamp'          => $timestamp,
+					'reply_sent'         => 0,
+					'assigned_agent'     => '',
+				)
+			);
+		}
+
 		/**
 		 * Fires when a WhatsApp message is received.
 		 *
@@ -782,16 +853,86 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Maybe auto-reply to incoming message.
 	 *
+	 * Skips auto-reply when:
+	 *  - Human takeover is active for this contact.
+	 *  - The message matches a human-takeover keyword (triggers takeover).
+	 *  - The message matches an AI-resume keyword (disables takeover and resumes AI).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array $message_data Parsed message data.
 	 * @param array $context Full webhook context.
 	 */
 	protected function maybe_auto_reply( $message_data, $context ) {
+		$from = isset( $message_data['from'] ) ? $message_data['from'] : '';
+
+		// --- Automation keyword checks ---
+		$automation_rules    = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		$message_text_lower  = strtolower( is_string( $message_data['content'] ) ? $message_data['content'] : '' );
+
+		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && $message_text_lower !== '' ) {
+			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
+			foreach ( $takeover_kws as $kw ) {
+				if ( $kw !== '' && strpos( $message_text_lower, $kw ) !== false ) {
+					// Enable human takeover for this contact.
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'whatsapp', $from );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'whatsapp_human_takeover_triggered',
+						'Human takeover triggered by keyword.',
+						array( 'from' => substr( $from, 0, 4 ) . '***', 'keyword' => $kw )
+					);
+					return; // Do not auto-reply; human agent will respond.
+				}
+			}
+		}
+
+		if ( ! empty( $automation_rules['ai_resume_keywords'] ) && $message_text_lower !== '' ) {
+			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
+			foreach ( $resume_kws as $kw ) {
+				if ( $kw !== '' && strpos( $message_text_lower, $kw ) !== false ) {
+					// Disable human takeover → resume AI.
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'whatsapp', $from );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'whatsapp_ai_resumed',
+						'AI auto-reply resumed by keyword.',
+						array( 'from' => substr( $from, 0, 4 ) . '***', 'keyword' => $kw )
+					);
+					break; // Continue and allow AI to reply.
+				}
+			}
+		}
+
+		// --- Human takeover gate ---
+		if ( ! empty( $from ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'whatsapp', $from ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'whatsapp_auto_reply_skipped_human_takeover',
+					'Auto-reply skipped: human takeover is active for this contact.',
+					array( 'from' => substr( $from, 0, 4 ) . '***' )
+				);
+				return;
+			}
+		}
+
 		// Determine which connection received this message based on phone_number_id.
 		$phone_number_id        = isset( $context['metadata']['phone_number_id'] ) ? sanitize_text_field( $context['metadata']['phone_number_id'] ) : '';
 		$connection             = ! empty( $phone_number_id ) ? $this->get_connection_by_phone_number_id( $phone_number_id ) : null;
 		$assigned_assistant_ids = $connection ? $this->get_assigned_assistant_ids( $connection ) : array();
+
+		// Fall back to the global default assistant from automation settings.
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
 
 		/**
 		 * Filter whether to auto-reply to WhatsApp messages.
@@ -1293,6 +1434,34 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) );
+	}
+
+	/**
+	 * Retrieve the Channel Contacts CCT row ID for a given channel + contact pair.
+	 *
+	 * Returns null when the CCT class or table is unavailable.
+	 *
+	 * @param string $channel            Platform slug (e.g. 'whatsapp').
+	 * @param string $channel_contact_id Platform-side contact identifier.
+	 * @return int|null
+	 */
+	protected function get_channel_contact_id( $channel, $channel_contact_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				sanitize_key( $channel ),
+				sanitize_text_field( $channel_contact_id )
+			)
+		);
+
+		return $id ? (int) $id : null;
 	}
 
 	/**
