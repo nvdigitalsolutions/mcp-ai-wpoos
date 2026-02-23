@@ -40,6 +40,7 @@
 			dayIndex++;
 		}
 
+		try {
 		new Chart(ctx.getContext('2d'), {
 			type: 'line',
 			data: {
@@ -114,6 +115,12 @@
 				}
 			}
 		});
+		} catch (e) {
+			// Chart initialization failed; log error but prevent disruption of other scripts.
+			if (window.console && console.error) {
+				console.error('WP MCP AI: Analytics trends chart initialization failed:', e);
+			}
+		}
 	}
 
 	$(document).ready(initializeTrendChart);
