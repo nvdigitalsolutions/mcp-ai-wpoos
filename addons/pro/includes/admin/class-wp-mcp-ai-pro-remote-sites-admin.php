@@ -252,7 +252,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$app_id     = isset( $_POST['whatsapp_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_app_id'] ) ) : '';
 					break;
 				case 'google_chat':
-					$api_key = isset( $_POST['google_chat_access_token'] ) ? wp_unslash( $_POST['google_chat_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key = isset( $_POST['google_chat_service_account_key'] ) ? wp_unslash( $_POST['google_chat_service_account_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -2442,15 +2442,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Google Chat -->
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_chat_access_token"><?php esc_html_e( 'Service Account Access Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="google_chat_service_account_key"><?php esc_html_e( 'Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="google_chat_access_token" id="google_chat_access_token" class="regular-text" value="" autocomplete="new-password">
-						<button type="button" id="google_chat_access_token_toggle" class="button button-small" style="margin-left: 5px; vertical-align: middle;" aria-label="<?php esc_attr_e( 'Show access token', 'mcp-ai-wpoos-pro' ); ?>"><?php esc_html_e( 'Show', 'mcp-ai-wpoos-pro' ); ?></button>
+						<textarea name="google_chat_service_account_key" id="google_chat_service_account_key" class="large-text" rows="6" autocomplete="off" placeholder='{"type":"service_account","project_id":"...","private_key":"-----BEGIN RSA PRIVATE KEY-----\n...","client_email":"...@....iam.gserviceaccount.com",...}'></textarea>
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing access token.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Paste the full contents of your Service Account JSON key file here to replace the stored key. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'OAuth 2.0 access token from a Google service account with the Chat API scope (https://www.googleapis.com/auth/chat.bot). Used to post AI replies to Google Chat spaces.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Paste the full contents of your Google Service Account JSON key file (downloaded from Google Cloud Console). The key must grant the Chat API scope (https://www.googleapis.com/auth/chat.bot). Access tokens are generated automatically and cached — you never need to refresh them manually.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -2543,7 +2542,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Test Google Chat Connection', 'mcp-ai-wpoos-pro' ); ?>
 						</button>
 						<span id="google_chat_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
-						<p class="description"><?php esc_html_e( 'Enter your Service Account Access Token above, then click to verify your credentials with the Google Chat API.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Paste your Service Account JSON key above, then click to verify your credentials with the Google Chat API.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<div id="google_chat_test_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
@@ -2581,11 +2580,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
 								<li><?php esc_html_e( 'Open Google Cloud Console (console.cloud.google.com) and enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Create a service account under IAM & Admin → Service Accounts; grant it the Chat API scope (https://www.googleapis.com/auth/chat.bot).', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Generate an OAuth 2.0 access token from the service account and enter it in the Service Account Access Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Download the JSON key file for the service account and paste its full contents into the Service Account JSON Key field above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to automatically retrieve your bot\'s spaces, or enter a space name manually. Leave blank to handle all spaces.', 'mcp-ai-wpoos-pro' ); ?></li>
-								<li><?php esc_html_e( 'Click "Test Google Chat Connection" to verify your access token is valid.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Click "Test Google Chat Connection" to verify your Service Account key is valid.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Assign one or more AI Assistants — the first assistant will automatically reply to messages sent to your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save the connection and enable it to start receiving and auto-replying to Google Chat messages.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
@@ -3896,36 +3895,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 
-			// Google Chat: Access Token show/hide toggle button.
-			var gcTokenToggleBtn = document.getElementById('google_chat_access_token_toggle');
-			if (gcTokenToggleBtn) {
-			gcTokenToggleBtn.addEventListener('click', function() {
-			var tokenInput = document.getElementById('google_chat_access_token');
-			if (tokenInput.type === 'password') {
-			tokenInput.type = 'text';
-			gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-			gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-			} else {
-			tokenInput.type = 'password';
-			gcTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
-			gcTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-			}
-			});
-			}
-
 			// Google Chat: Fetch Spaces button.
 			var gcFetchSpacesBtn    = document.getElementById('wp-mcp-ai-gc-fetch-spaces-btn');
 			var gcFetchSpacesResult = document.getElementById('wp-mcp-ai-gc-fetch-spaces-result');
 			if (gcFetchSpacesBtn) {
 			gcFetchSpacesBtn.addEventListener('click', function() {
-			var tokenEl     = document.getElementById('google_chat_access_token');
+			var tokenEl     = document.getElementById('google_chat_service_account_key');
 			var accessToken = tokenEl ? tokenEl.value.trim() : '';
 			var connIdEl    = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 			var connectionId = connIdEl ? connIdEl.value.trim() : '';
 
 			if (!accessToken && !connectionId) {
 			if (gcFetchSpacesResult) {
-			gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
+			gcFetchSpacesResult.innerHTML = '<span style="color:#d63638;">' + <?php echo wp_json_encode( __( 'Please paste your Service Account JSON key first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</span>';
 			}
 			return;
 			}
@@ -3994,14 +3976,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var gcTestResult  = document.getElementById('google_chat_test_result');
 			if (gcTestBtn) {
 			gcTestBtn.addEventListener('click', function() {
-			var accessToken  = document.getElementById('google_chat_access_token').value.trim();
+			var accessToken  = document.getElementById('google_chat_service_account_key').value.trim();
 			var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 			var connectionId = connIdEl ? connIdEl.value.trim() : '';
 
 			if (!accessToken && !connectionId) {
 			if (gcTestResult) {
 			gcTestResult.style.display = 'block';
-			gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Service Account Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			gcTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please paste your Service Account JSON key first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 			}
 			return;
 			}
@@ -5950,21 +5932,48 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		return;
 		}
 
-		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized.
-		$access_token = trim( (string) $access_token );
+		// The JS passes the field value (service account JSON key) as 'access_token' for backwards compat.
+		$service_account_key = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- key JSON must not be sanitized.
+		$service_account_key = trim( (string) $service_account_key );
 
-		// Fall back to stored credentials when the token field is left blank.
-		if ( empty( $access_token ) ) {
+		// Fall back to stored credentials when the field is left blank.
+		if ( empty( $service_account_key ) ) {
 		$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 		$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
 		if ( ! empty( $stored_connection['api_key'] ) ) {
-		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+		$service_account_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
 		}
 		}
 
-		if ( empty( $access_token ) ) {
-		wp_send_json_error( __( 'Service Account Access Token is required.', 'mcp-ai-wpoos-pro' ) );
+		if ( empty( $service_account_key ) ) {
+		wp_send_json_error( __( 'Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) );
 		return;
+		}
+
+		// Resolve an access token — supports both Service Account JSON and legacy raw tokens.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+		}
+
+		if ( strlen( $service_account_key ) > 0 && '{' === $service_account_key[0] ) {
+		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
+		$service_account_key,
+		'https://www.googleapis.com/auth/chat.bot'
+		);
+		if ( is_wp_error( $token_result ) ) {
+		wp_send_json_error(
+		sprintf(
+		/* translators: %s: error message */
+		__( 'Failed to obtain access token from Service Account key: %s', 'mcp-ai-wpoos-pro' ),
+		$token_result->get_error_message()
+		)
+		);
+		return;
+		}
+		$access_token = $token_result;
+		} else {
+		// Legacy raw access token.
+		$access_token = $service_account_key;
 		}
 
 		// Call the Google Chat spaces.list endpoint — this is the canonical way to verify
@@ -6030,21 +6039,50 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		return;
 		}
 
-		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized.
-		$access_token = trim( (string) $access_token );
+		// The JS passes the field value (service account JSON key) as 'access_token' for backwards compat.
+		$service_account_key = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- key JSON must not be sanitized.
+		$service_account_key = trim( (string) $service_account_key );
 
-		// Fall back to stored credentials when the token field is left blank.
-		if ( empty( $access_token ) ) {
+		// Fall back to stored credentials when the field is left blank.
+		if ( empty( $service_account_key ) ) {
 		$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 		$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
 		if ( ! empty( $stored_connection['api_key'] ) ) {
-		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+		$service_account_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
 		}
 		}
 
-		if ( empty( $access_token ) ) {
-		wp_send_json_error( array( 'message' => __( 'Service Account Access Token is required.', 'mcp-ai-wpoos-pro' ) ) );
+		if ( empty( $service_account_key ) ) {
+		wp_send_json_error( array( 'message' => __( 'Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) ) );
 		return;
+		}
+
+		// Resolve an access token — supports both Service Account JSON and legacy raw tokens.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+		}
+
+		if ( strlen( $service_account_key ) > 0 && '{' === $service_account_key[0] ) {
+		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
+		$service_account_key,
+		'https://www.googleapis.com/auth/chat.bot'
+		);
+		if ( is_wp_error( $token_result ) ) {
+		wp_send_json_error(
+		array(
+		'message' => sprintf(
+		/* translators: %s: error message */
+		__( 'Failed to obtain access token from Service Account key: %s', 'mcp-ai-wpoos-pro' ),
+		$token_result->get_error_message()
+		),
+		)
+		);
+		return;
+		}
+		$access_token = $token_result;
+		} else {
+		// Legacy raw access token.
+		$access_token = $service_account_key;
 		}
 
 		$all_spaces = array();
@@ -6231,7 +6269,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		return;
 		}
 
-		$gc_access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		$gc_raw_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' !== $gc_raw_key ) {
+		// Resolve access token from Service Account JSON key or legacy raw token.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+		}
+
+		$gc_access_token = '';
+		if ( strlen( $gc_raw_key ) > 0 && '{' === $gc_raw_key[0] ) {
+		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
+		$gc_raw_key,
+		'https://www.googleapis.com/auth/chat.bot'
+		);
+		$gc_access_token = is_wp_error( $token_result ) ? '' : (string) $token_result;
+		} else {
+		$gc_access_token = $gc_raw_key;
+		}
+
 		if ( '' !== $gc_access_token ) {
 		// Google Chat API: 4096-character limit for text messages.
 		$chat_body = wp_strip_all_tags( $ai_reply );
@@ -6270,6 +6325,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result['send_error'] = isset( $send_error_body['error']['message'] )
 		? $send_error_body['error']['message']
 		: ( is_wp_error( $send_result ) ? $send_result->get_error_message() : __( 'Unknown send error.', 'mcp-ai-wpoos-pro' ) );
+		}
 		}
 		}
 		}

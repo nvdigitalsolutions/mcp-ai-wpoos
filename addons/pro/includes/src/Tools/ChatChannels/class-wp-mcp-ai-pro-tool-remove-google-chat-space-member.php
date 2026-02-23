@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once __DIR__ . '/class-wp-mcp-ai-pro-google-service-account.php';
 
 /**
  * Provides a tool for removing a member from a Google Chat space via the Google Chat API.
@@ -47,6 +48,11 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 	}
 
 	/**
+	 * Google Chat API scope for bot operations.
+	 */
+	const CHAT_BOT_SCOPE = 'https://www.googleapis.com/auth/chat.bot';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
@@ -60,16 +66,20 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'service_account_key' => array(
+					'type'        => 'string',
+					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
+				),
 				'access_token'  => array(
 					'type'        => 'string',
-					'description' => __( 'OAuth 2.0 access token for authentication.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'OAuth 2.0 access token for authentication. Use service_account_key instead for automatic token management.', 'mcp-ai-wpoos-pro' ),
 				),
 				'membership'    => array(
 					'type'        => 'string',
 					'description' => __( 'Membership resource name to remove (e.g., spaces/SPACE_ID/members/MEMBER_ID).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'access_token', 'membership' ),
+			'required'             => array( 'membership' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -95,10 +105,14 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_token( $arguments['access_token'] ) : '';
+		$access_token = $this->resolve_access_token( $arguments, $context );
+
+		if ( is_wp_error( $access_token ) ) {
+			return $access_token;
+		}
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'A valid OAuth 2.0 access token is required.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'A valid OAuth 2.0 access token or Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$membership = isset( $arguments['membership'] ) ? sanitize_text_field( $arguments['membership'] ) : '';
@@ -181,6 +195,26 @@ class WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member implements WP_MCP_AI_To
 		);
 
 		return $decoded;
+	}
+
+	/**
+	 * Resolve an OAuth 2.0 access token from arguments.
+	 *
+	 * Prefers service_account_key (automatic token exchange) over a raw access_token.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return string|WP_Error Access token string or error.
+	 */
+	protected function resolve_access_token( array $arguments, array $context ) {
+		$service_account_key = isset( $arguments['service_account_key'] ) ? trim( (string) $arguments['service_account_key'] ) : '';
+
+		if ( '' !== $service_account_key ) {
+			$timeout = (int) apply_filters( 'wp_mcp_ai_remove_google_chat_space_member_token_timeout', 15, $context, $arguments );
+			return WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key( $service_account_key, self::CHAT_BOT_SCOPE, $timeout );
+		}
+
+		return isset( $arguments['access_token'] ) ? $this->sanitize_token( $arguments['access_token'] ) : '';
 	}
 
 	/**
