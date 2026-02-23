@@ -12020,37 +12020,47 @@
             };
         });
 
-        // Build complete system prompt using the embedded client's decoded system prompt.
-        // embeddedClient.systemPrompt combines both the assistant system prompt and professional role
-        // prompt, and HTML entities have already been decoded via decodeHtmlEntities() in the client
-        // constructor. This avoids sending raw HTML entities (e.g. &amp; from wp_kses_post()) to the
-        // model, which would corrupt the system instructions.
-        // This ensures embedded providers receive the same system instructions as server-side providers.
+        // Build the effective system prompt per-request from the current state.config values.
+        // This mirrors the server-side approach in sanitize_options() (class-wp-mcp-ai-rest-validator.php)
+        // where the system prompt is assembled fresh on every request by combining the assistant's
+        // system_prompt (which already includes primary professional roles from get_assistant_configuration)
+        // with any additional professional_prompt provided at request time.
         //
-        // Fall back to state.config values when embeddedClient.systemPrompt is null.
-        // This handles cases where the embedded client was created before the system prompt was
-        // available in state.config (e.g. if config values change after client initialization).
-        var effectiveSystemPrompt = embeddedClient.systemPrompt;
-        if (!effectiveSystemPrompt && (state.config.systemPrompt || state.config.professionalPrompt)) {
-            var rawFallbackPrompt = '';
-            if (state.config.professionalPrompt) {
-                rawFallbackPrompt = state.config.professionalPrompt;
-                if (state.config.systemPrompt) {
-                    rawFallbackPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
-                }
-            } else {
-                rawFallbackPrompt = state.config.systemPrompt;
-            }
+        // Order matches the server-side REST handler (class-wp-mcp-ai-rest.php):
+        //   professional_prompt prepended to system_prompt, separated by a divider.
+        //
+        // HTML entities are decoded to undo wp_kses_post() / wp_json_encode() escaping, matching
+        // what the embedded client constructor does via decodeHtmlEntities().
+        //
+        // Fall back to the client's stored systemPrompt if state.config has no values (e.g. when the
+        // assistant has no system prompt and no professional roles are configured).
+        let rawSystemPrompt = '';
+        if (state.config.professionalPrompt && state.config.systemPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
+        } else if (state.config.professionalPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt;
+        } else if (state.config.systemPrompt) {
+            rawSystemPrompt = state.config.systemPrompt;
+        }
+
+        let effectiveSystemPrompt;
+        if (rawSystemPrompt) {
             // Decode HTML entities from wp_kses_post() sanitization (mirrors embedded client constructor).
-            var decodeEl = document.createElement('textarea');
-            decodeEl.innerHTML = rawFallbackPrompt;
+            const decodeEl = document.createElement('textarea');
+            decodeEl.innerHTML = rawSystemPrompt;
             effectiveSystemPrompt = decodeEl.value || null;
-            if (effectiveSystemPrompt) {
-                console.log('[NV oOS] System prompt recovered from state.config fallback:', {
-                    systemPromptLength: effectiveSystemPrompt.length,
-                    assistantId: state.config.assistantId
-                });
-            }
+        } else {
+            // No system prompt in state.config; fall back to the client's stored value.
+            effectiveSystemPrompt = embeddedClient.systemPrompt;
+        }
+
+        if (rawSystemPrompt && effectiveSystemPrompt) {
+            console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
+                systemPromptLength: effectiveSystemPrompt.length,
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
+                assistantId: state.config.assistantId
+            });
         }
         if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
             var systemPromptContent = effectiveSystemPrompt;
@@ -12087,9 +12097,11 @@
             });
 
             console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt from embedded client (decoded):', {
+            console.log('[NV oOS] Prepended system prompt to embedded request:', {
                 systemPromptLength: systemPromptContent.length,
                 systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
                 hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
                 hasDateTimeContext: true,
                 assistantId: state.config.assistantId
