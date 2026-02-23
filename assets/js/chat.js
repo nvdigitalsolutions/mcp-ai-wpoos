@@ -11586,22 +11586,23 @@
                 });
             }
             
-            // Build complete system prompt by combining assistant system prompt with professional prompt
-            // This ensures embedded client receives both the assistant's instructions and professional role
-            var completeSystemPrompt = state.config.systemPrompt || '';
+            // Build complete system prompt by combining professional prompt with assistant system prompt.
+            // Order matches server-side behavior: professional role comes first, then assistant instructions.
+            // See class-wp-mcp-ai-rest.php where professional_prompt is prepended to system_prompt.
+            var completeSystemPrompt = '';
             if (state.config.professionalPrompt) {
-                if (completeSystemPrompt) {
-                    // Combine: assistant system prompt + professional role prompt
-                    completeSystemPrompt = completeSystemPrompt + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    // Use professional prompt as the system prompt if no assistant prompt exists
-                    completeSystemPrompt = state.config.professionalPrompt;
+                completeSystemPrompt = state.config.professionalPrompt;
+                if (state.config.systemPrompt) {
+                    // Prepend professional role, then append assistant instructions (matches server-side format).
+                    completeSystemPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
                 }
-                console.log('[NV oOS] Combined system prompt with professional prompt:', {
-                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                console.log('[NV oOS] Combined professional prompt with system prompt:', {
                     professionalPromptLength: state.config.professionalPrompt.length,
+                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
                     combinedLength: completeSystemPrompt.length
                 });
+            } else {
+                completeSystemPrompt = state.config.systemPrompt || '';
             }
             
             // Prepare assistant configuration for embedded client
@@ -12019,51 +12020,52 @@
             };
         });
 
-        // Build complete system prompt combining assistant prompt, professional prompt, and knowledge context
-        // This ensures embedded providers receive the same system instructions as server-side providers
-        if ((state.config.systemPrompt || state.config.professionalPrompt) && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = state.config.systemPrompt || '';
-            
-            // Add professional prompt if provided (for profession-based assistants)
-            if (state.config.professionalPrompt) {
-                if (systemPromptContent) {
-                    systemPromptContent = systemPromptContent + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    systemPromptContent = state.config.professionalPrompt;
-                }
-                console.log('[NV oOS] Added professional prompt to message system prompt:', {
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    professionalPromptPreview: state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt
-                });
-            }
-            
-            // Enhance system prompt with base knowledge context if available
-            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+        // Build complete system prompt using the embedded client's decoded system prompt.
+        // embeddedClient.systemPrompt combines both the assistant system prompt and professional role
+        // prompt, and HTML entities have already been decoded via decodeHtmlEntities() in the client
+        // constructor. This avoids sending raw HTML entities (e.g. &amp; from wp_kses_post()) to the
+        // model, which would corrupt the system instructions.
+        // This ensures embedded providers receive the same system instructions as server-side providers.
+        if (embeddedClient.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = embeddedClient.systemPrompt;
+
+            // Enhance system prompt with base knowledge context if available.
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers.
             if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
                 var knowledgeContext = '\n\n## Base Knowledge\n\n';
                 knowledgeContext += 'You have access to the following knowledge base files:\n';
                 knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
                 systemPromptContent += knowledgeContext;
-                
+
                 console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
                     memoryFileCount: state.config.memoryFiles.length,
                     vectorStoreId: state.config.vectorStoreId || 'none'
                 });
             }
-            
+
+            // Inject current date/time context so the model knows the current date.
+            // Server-side providers receive this via sanitize_options() in PHP; embedded must add it here.
+            // Format matches PHP: gmdate('l, F j, Y'), gmdate('Y'), gmdate('H:i:s').
+            var now = new Date();
+            var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            var pad2 = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
+            var dateStr = dayNames[now.getUTCDay()] + ', ' + monthNames[now.getUTCMonth()] + ' ' + now.getUTCDate() + ', ' + now.getUTCFullYear();
+            var timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
+            systemPromptContent += '\n\n---\n\n**Current Context Information:**\n- Current Date: ' + dateStr + '\n- Current Year: ' + now.getUTCFullYear() + '\n- Current Time: ' + timeStr;
+
             formattedMessages.unshift({
                 role: 'system',
                 content: systemPromptContent
             });
-            
+
             console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+            console.log('[NV oOS] Prepended system prompt from embedded client (decoded):', {
                 systemPromptLength: systemPromptContent.length,
                 systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-                systemPromptFull: systemPromptContent,
                 hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasDateTimeContext: true,
                 assistantId: state.config.assistantId
             });
         }
