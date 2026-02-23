@@ -302,19 +302,12 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 			return;
 		}
 
-		$args = array(
-			'slug'           => self::SLUG,
-			'name'           => __( 'Channel Contacts', 'mcp-ai-wpoos-pro' ),
-			'singular_name'  => __( 'Channel Contact', 'mcp-ai-wpoos-pro' ),
-			'status'         => 'publish',
-			'show_edit_link' => false,
-			'has_single'     => false,
-			'fields'         => self::get_fields_schema(),
-		);
-
-		if ( method_exists( $module->manager, 'edit_item' ) ) {
-			$module->manager->edit_item( false, $args );
+		if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+			return;
 		}
+
+		$module->manager->data->set_request( self::get_registration_request() );
+		$module->manager->data->create_item( false );
 	}
 
 	/**
@@ -346,17 +339,79 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	}
 
 	/**
-	 * Check whether the CCT slug exists.
+	 * Check whether the CCT slug exists (database check).
 	 *
 	 * @param object $module CCT module.
 	 * @return bool
 	 */
 	protected static function cct_exists( $module ) {
-		if ( empty( $module->manager ) ) {
+		if ( empty( $module->manager ) || empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
 			return false;
 		}
 
-		return ! empty( $module->manager->get_content_types( self::SLUG ) );
+		$records = $module->manager->data->db->query(
+			'post_types',
+			array(
+				'slug'   => self::SLUG,
+				'status' => 'content-type',
+			),
+			null,
+			false
+		);
+
+		return ! empty( $records );
+	}
+
+	/**
+	 * Build the JetEngine registration request payload.
+	 *
+	 * @return array
+	 */
+	protected static function get_registration_request() {
+		$label = __( 'Channel Contacts', 'mcp-ai-wpoos-pro' );
+
+		return array(
+			'name'        => $label,
+			'slug'        => self::SLUG,
+			'args'        => self::get_cct_args( $label ),
+			'meta_fields' => self::get_fields_schema(),
+		);
+	}
+
+	/**
+	 * Assemble JetEngine CCT arguments for channel contacts.
+	 *
+	 * @param string $label Human-readable label.
+	 * @return array
+	 */
+	protected static function get_cct_args( $label ) {
+		return array(
+			'name'                => $label,
+			'slug'                => self::SLUG,
+			'position'            => '-1',
+			'icon'                => 'dashicons-businessman',
+			'capability'          => 'manage_options',
+			'has_single'          => false,
+			'create_index'        => true,
+			'hide_field_names'    => false,
+			'rest_get_enabled'    => true,
+			'rest_put_enabled'    => false,
+			'rest_post_enabled'   => false,
+			'rest_delete_enabled' => false,
+			'rest_get_access'     => 'manage_options',
+			'rest_put_access'     => 'edit_posts',
+			'rest_post_access'    => 'edit_posts',
+			'rest_delete_access'  => 'edit_posts',
+			'admin_columns'       => array(
+				'_ID'                => array( 'enabled' => true, 'prefix' => '#', 'is_sortable' => true, 'is_num' => true ),
+				'channel'            => array( 'enabled' => true, 'is_sortable' => true ),
+				'channel_contact_id' => array( 'enabled' => true ),
+				'display_name'       => array( 'enabled' => true, 'is_sortable' => true ),
+				'crm_status'         => array( 'enabled' => true, 'is_sortable' => true ),
+				'last_message_at'    => array( 'enabled' => true, 'is_sortable' => true, 'is_num' => true ),
+				'cct_created'        => array( 'enabled' => true, 'is_sortable' => true ),
+			),
+		);
 	}
 
 	/**
@@ -367,7 +422,7 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 	protected static function get_fields_schema() {
 		$b = self::FIELD_ID_BASE;
 
-		return array(
+		$fields = array(
 			array(
 				'id'          => $b + 1,
 				'title'       => __( 'Channel', 'mcp-ai-wpoos-pro' ),
@@ -507,5 +562,13 @@ class WP_MCP_AI_Channel_Contacts_CCT {
 				'description' => __( 'JSON metadata for platform-specific contact fields', 'mcp-ai-wpoos-pro' ),
 			),
 		);
+
+		foreach ( $fields as &$field ) {
+			$field['object_type'] = 'field';
+			$field['isNested']    = false;
+		}
+		unset( $field );
+
+		return $fields;
 	}
 }
