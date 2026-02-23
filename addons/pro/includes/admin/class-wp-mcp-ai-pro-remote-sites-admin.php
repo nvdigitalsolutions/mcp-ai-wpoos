@@ -921,6 +921,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	protected function render_edit_form( $connection ) {
 		$is_edit = ! empty( $connection );
+		$editing = $is_edit && isset( $connection['id'] ) ? $connection['id'] : '';
 		?>
 		<h2><?php echo $is_edit ? esc_html__( 'Edit Connection', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Add New Connection', 'mcp-ai-wpoos-pro' ); ?></h2>
 
