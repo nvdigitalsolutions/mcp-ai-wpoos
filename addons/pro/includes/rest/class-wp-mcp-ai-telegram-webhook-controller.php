@@ -178,6 +178,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Process a Telegram message object and dispatch an AI reply if applicable.
 	 *
+	 * Mirrors the WhatsApp auto-reply logic: checks automation rules for human
+	 * takeover / AI resume keywords, enforces the human takeover gate, falls back
+	 * to the global default assistant when no per-connection assistant is assigned,
+	 * and exposes a filter so site developers can override the decision.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array $message Telegram message object.
@@ -196,22 +201,85 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// Resolve the Telegram connection and its assigned assistants.
+		// --- Automation keyword checks (mirrors WhatsApp maybe_auto_reply) ---
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		$text_lower       = strtolower( $text );
+
+		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && '' !== $text_lower ) {
+			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
+			foreach ( $takeover_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
+					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'telegram_human_takeover_triggered',
+						'Human takeover triggered by keyword.',
+						array(
+							'from_id' => substr( $from_id, 0, 4 ) . '***',
+							'keyword' => $kw,
+						)
+					);
+					return; // Do not auto-reply; human agent will respond.
+				}
+			}
+		}
+
+		if ( ! empty( $automation_rules['ai_resume_keywords'] ) && '' !== $text_lower ) {
+			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
+			foreach ( $resume_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
+					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'telegram_ai_resumed',
+						'AI auto-reply resumed by keyword.',
+						array(
+							'from_id' => substr( $from_id, 0, 4 ) . '***',
+							'keyword' => $kw,
+						)
+					);
+					break; // Continue and allow AI to reply.
+				}
+			}
+		}
+
+		// --- Human takeover gate ---
+		if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $from_id ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'telegram_auto_reply_skipped_human_takeover',
+					'Auto-reply skipped: human takeover is active for this contact.',
+					array( 'from_id' => substr( $from_id, 0, 4 ) . '***' )
+				);
+				return;
+			}
+		}
+
+		// Resolve the Telegram connection.
 		$connection = $this->get_active_telegram_connection();
 
 		if ( ! $connection ) {
 			WP_MCP_AI_Logger::log_error(
-				'Telegram webhook: no active Telegram connection with assigned assistants found.'
+				'Telegram webhook: no active Telegram connection found.'
 			);
 			return;
 		}
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
-			? array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
 			: array();
 
-		if ( empty( $assigned_assistant_ids ) ) {
-			return;
+		// Fall back to the global default assistant from automation settings.
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
 		}
 
 		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
@@ -226,18 +294,40 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$job_args = array(
-			array(
-				'assistant_id'  => $assigned_assistant_ids[0],
-				'message_text'  => $text,
-				'chat_id'       => $chat_id,
-				'from_id'       => '' !== $from_id ? $from_id : $chat_id,
-				'connection_id' => $connection_id,
-			),
-		);
+		/**
+		 * Filter whether to auto-reply to Telegram messages.
+		 *
+		 * Defaults to true when the connection has one or more assigned AI assistants
+		 * or a global default assistant is configured in the automation rules.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $auto_reply       Whether to auto-reply.
+		 * @param array $message          Telegram message object.
+		 * @param array $automation_rules Saved automation rule settings.
+		 */
+		$should_reply = apply_filters( 'wp_mcp_ai_telegram_should_auto_reply', ! empty( $assigned_assistant_ids ), $message, $automation_rules );
 
-		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
-		spawn_cron();
+		if ( ! $should_reply ) {
+			return;
+		}
+
+		do_action( 'wp_mcp_ai_telegram_auto_reply', $message, $automation_rules, $assigned_assistant_ids );
+
+		if ( ! empty( $assigned_assistant_ids ) ) {
+			$job_args = array(
+				array(
+					'assistant_id'  => $assigned_assistant_ids[0],
+					'message_text'  => $text,
+					'chat_id'       => $chat_id,
+					'from_id'       => '' !== $from_id ? $from_id : $chat_id,
+					'connection_id' => $connection_id,
+				),
+			);
+
+			wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+			spawn_cron();
+		}
 	}
 
 	/**
@@ -506,7 +596,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Find the first active Telegram connection with assigned assistants.
+	 * Find the first active (enabled) Telegram connection.
+	 *
+	 * Unlike the previous implementation, this no longer requires
+	 * assigned_assistant_ids to be set on the connection so that the global
+	 * default_assistant_id from the automation rules can serve as a fallback
+	 * (mirroring the WhatsApp auto-reply behaviour).
 	 *
 	 * @since 1.0.0
 	 *
@@ -532,14 +627,42 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				continue;
 			}
 
-			if ( empty( $connection['assigned_assistant_ids'] ) || ! is_array( $connection['assigned_assistant_ids'] ) ) {
-				continue;
-			}
-
 			return $connection;
 		}
 
 		return null;
+	}
+
+	/**
+	 * Look up the channel contact record ID for the given Telegram user.
+	 *
+	 * Used to set/clear the human takeover flag on per-contact records stored
+	 * in the WP_MCP_AI_Channel_Contacts_CCT table (mirrors the identical helper
+	 * in the WhatsApp webhook controller).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel            Platform slug ('telegram').
+	 * @param string $channel_contact_id Platform-level contact identifier (Telegram user ID).
+	 * @return int|null Contact record ID or null if not found.
+	 */
+	protected function get_channel_contact_id( $channel, $channel_contact_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				sanitize_key( $channel ),
+				sanitize_text_field( $channel_contact_id )
+			)
+		);
+
+		return $id ? (int) $id : null;
 	}
 
 	/**

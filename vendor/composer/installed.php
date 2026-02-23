@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-telegram-chat-assistant',
+        'version' => 'dev-copilot/update-telegram-chat-assistant',
+        'reference' => '6efc0be1f46a289319756214faa7d4e210207ff7',
         'pretty_version' => 'dev-copilot/review-chat-channel-connection',
         'version' => 'dev-copilot/review-chat-channel-connection',
         'reference' => '440c905bd810f8637be637ef74eb25172c86e95e',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-telegram-chat-assistant',
+            'version' => 'dev-copilot/update-telegram-chat-assistant',
+            'reference' => '6efc0be1f46a289319756214faa7d4e210207ff7',
             'pretty_version' => 'dev-copilot/review-chat-channel-connection',
             'version' => 'dev-copilot/review-chat-channel-connection',
             'reference' => '440c905bd810f8637be637ef74eb25172c86e95e',
