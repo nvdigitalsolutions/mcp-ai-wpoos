@@ -29,6 +29,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
 
+// Load channel CCT helpers when available.
+$_cc_messages_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
+$_cc_contacts_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cct.php';
+if ( file_exists( $_cc_messages_file ) && ! class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+	require_once $_cc_messages_file;
+}
+if ( file_exists( $_cc_contacts_file ) && ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+	require_once $_cc_contacts_file;
+}
+unset( $_cc_messages_file, $_cc_contacts_file );
+
 /**
  * Google Chat webhook REST controller.
  */
@@ -319,6 +330,38 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// explicitly addresses an assigned assistant by its WordPress post slug.
 		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
 			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Find or create the contact in the Channel Contacts CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'google_chat',
+				$sender_name,
+				array( 'display_name' => $sender_name )
+			);
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		// Persist inbound message to Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'google_chat',
+					'channel_contact_id' => $sender_name,
+					'direction'          => 'inbound',
+					'message_id'         => $message_id,
+					'message_type'       => 'text',
+					'content'            => $message_text,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $space_name,
+					'timestamp'          => time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+				)
+			);
 		}
 
 		$job_args = array(
@@ -624,6 +667,33 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'space_name'   => $space_name,
 			)
 		);
+
+		// Persist the outbound AI reply to the Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'google_chat',
+					'channel_contact_id' => $sender_name,
+					'direction'          => 'outbound',
+					'message_type'       => 'text',
+					'content'            => $content,
+					'status'             => 'sent',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $space_name,
+					'timestamp'          => time(),
+					'reply_sent'         => 1,
+					'assigned_agent'     => (string) $assistant_id,
+				)
+			);
+		}
+
+		// Touch the contact record to update last_message_at.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$gc_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'google_chat', $sender_name );
+			if ( $gc_contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $gc_contact_row_id );
+			}
+		}
 	}
 
 	/**

@@ -21,6 +21,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
+// Load channel CCT helpers when available.
+$_cc_messages_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
+$_cc_contacts_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cct.php';
+if ( file_exists( $_cc_messages_file ) && ! class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+	require_once $_cc_messages_file;
+}
+if ( file_exists( $_cc_contacts_file ) && ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+	require_once $_cc_contacts_file;
+}
+unset( $_cc_messages_file, $_cc_contacts_file );
+
 /**
  * Messenger webhook REST controller.
  */
@@ -888,6 +899,38 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			? $connection['graph_api_version']
 			: self::DEFAULT_GRAPH_API_VERSION;
 
+		// Find or create the contact in the Channel Contacts CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'messenger',
+				$sender_id,
+				array( 'display_name' => $sender_id )
+			);
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		// Persist inbound message to Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'messenger',
+					'channel_contact_id' => $sender_id,
+					'direction'          => 'inbound',
+					'message_id'         => isset( $message_data['id'] ) ? (string) $message_data['id'] : '',
+					'message_type'       => 'text',
+					'content'            => $text,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => isset( $message_data['page_id'] ) ? (string) $message_data['page_id'] : '',
+					'timestamp'          => isset( $message_data['timestamp'] ) ? absint( $message_data['timestamp'] ) : time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => (string) $assigned_assistant_ids[0],
+				)
+			);
+		}
+
 		$job_args = array(
 			array(
 				'assistant_id'      => $assigned_assistant_ids[0],
@@ -1074,6 +1117,32 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'sender_id'    => substr( $sender_id, 0, 4 ) . '***',
 			)
 		);
+
+		// Persist the outbound AI reply to the Channel Messages CCT.
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'messenger',
+					'channel_contact_id' => $sender_id,
+					'direction'          => 'outbound',
+					'message_type'       => 'text',
+					'content'            => $content,
+					'status'             => 'sent',
+					'connection_id'      => $connection_id,
+					'timestamp'          => time(),
+					'reply_sent'         => 1,
+					'assigned_agent'     => (string) $assistant_id,
+				)
+			);
+		}
+
+		// Touch the contact record to update last_message_at.
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			$msng_contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create( 'messenger', $sender_id );
+			if ( $msng_contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $msng_contact_row_id );
+			}
+		}
 	}
 
 	/**
