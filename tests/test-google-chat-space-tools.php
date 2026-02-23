@@ -78,7 +78,7 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_google_chat_spaces returns error on missing access token.
+	 * Test get_google_chat_spaces returns error when no credentials are provided.
 	 */
 	public function test_get_google_chat_spaces_requires_access_token() {
 		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces', 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php' );
@@ -91,6 +91,19 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Error::class, $result );
 		$this->assertSame( 'wp_mcp_ai_missing_access_token', $result->get_error_code() );
+	}
+
+	/**
+	 * Test get_google_chat_spaces schema includes service_account_key and access_token parameters.
+	 */
+	public function test_get_google_chat_spaces_schema_has_auth_params() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces', 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php' );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'service_account_key', $schema['properties'], 'Schema must include service_account_key' );
+		$this->assertArrayHasKey( 'access_token', $schema['properties'], 'Schema must include access_token for backwards compat' );
 	}
 
 	// =========================================================================
@@ -194,12 +207,12 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertSame( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'service_account_key', $schema['properties'] );
 		$this->assertArrayHasKey( 'access_token', $schema['properties'] );
 		$this->assertArrayHasKey( 'space', $schema['properties'] );
 		$this->assertArrayHasKey( 'page_size', $schema['properties'] );
 		$this->assertArrayHasKey( 'page_token', $schema['properties'] );
 		$this->assertArrayHasKey( 'filter', $schema['properties'] );
-		$this->assertContains( 'access_token', $schema['required'] );
 		$this->assertContains( 'space', $schema['required'] );
 	}
 
@@ -447,7 +460,8 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertArrayHasKey( 'membership', $schema['properties'] );
-		$this->assertContains( 'access_token', $schema['required'] );
+		$this->assertArrayHasKey( 'service_account_key', $schema['properties'] );
+		$this->assertArrayHasKey( 'access_token', $schema['properties'] );
 		$this->assertContains( 'membership', $schema['required'] );
 	}
 

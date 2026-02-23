@@ -27,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
 
 /**
  * Google Chat webhook REST controller.
@@ -71,6 +72,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * Expected OIDC token issuer for Google.
 	 */
 	const GOOGLE_OIDC_ISSUER = 'accounts.google.com';
+
+	/**
+	 * Google Chat API scope for bot operations.
+	 */
+	const CHAT_BOT_SCOPE = 'https://www.googleapis.com/auth/chat.bot';
 
 	/**
 	 * Google tokeninfo endpoint for OIDC token validation.
@@ -450,13 +456,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat AI reply' );
 
 		if ( '' === $access_token ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat AI reply: access token decryption returned empty string.',
-				array( 'connection_id' => $connection_id )
-			);
 			return;
 		}
 
@@ -658,13 +660,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat welcome message' );
 
 		if ( '' === $access_token ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat welcome message: access token decryption returned empty string.',
-				array( 'connection_id' => $connection_id )
-			);
 			return;
 		}
 
@@ -897,6 +895,50 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Retrieve an OAuth 2.0 access token from a connection's stored credentials.
+	 *
+	 * Supports both Service Account JSON keys (preferred, automatically exchanges for
+	 * a fresh access token) and legacy raw access tokens stored in api_key.
+	 *
+	 * @param array  $connection    Connection configuration array.
+	 * @param string $connection_id Connection ID (used for log context).
+	 * @param string $log_context   Human-readable context string for log messages.
+	 * @return string Access token, or empty string on failure.
+	 */
+	protected function get_connection_access_token( array $connection, $connection_id, $log_context ) {
+		$raw_key = isset( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $raw_key ) {
+			WP_MCP_AI_Logger::log_error(
+				$log_context . ': service account key decryption returned empty string.',
+				array( 'connection_id' => $connection_id )
+			);
+			return '';
+		}
+
+		// Detect Service Account JSON key (starts with '{').
+		if ( strlen( $raw_key ) > 0 && '{' === $raw_key[0] ) {
+			$token = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key( $raw_key, self::CHAT_BOT_SCOPE );
+
+			if ( is_wp_error( $token ) ) {
+				WP_MCP_AI_Logger::log_error(
+					$log_context . ': failed to obtain access token from service account key.',
+					array(
+						'connection_id' => $connection_id,
+						'error'         => $token->get_error_message(),
+					)
+				);
+				return '';
+			}
+
+			return (string) $token;
+		}
+
+		// Legacy: raw access token stored directly.
+		return $raw_key;
 	}
 }
 
