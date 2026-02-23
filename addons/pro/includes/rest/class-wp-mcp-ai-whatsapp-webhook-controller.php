@@ -932,6 +932,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		// Fall back to the global default assistant from automation settings.
 		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
 			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+    }
+		// When the connection requires an @slug mention, only reply if the message
+		// explicitly addresses an assigned assistant by its WordPress post slug.
+		if ( ! empty( $connection['require_mention'] ) ) {
+			$mention_text = $this->extract_text_for_ai( $message_data );
+			if ( ! $this->message_mentions_assistant( $mention_text, $assigned_assistant_ids ) ) {
+				return;
+			}
 		}
 
 		/**
@@ -2481,6 +2489,31 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return WP_MCP_AI_Pro_Remote_Site_Manager::refresh_whatsapp_token( $connection, $connection_id, $current_token, $graph_api_version );
+	}
+
+	/**
+	 * Check whether any assigned assistant is mentioned by @slug in the message text.
+	 *
+	 * Used when a connection has require_mention enabled so the bot only replies
+	 * when a user explicitly addresses it with @assistant-slug in a group chat.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text  The incoming message text.
+	 * @param int[]  $assistant_ids Array of assigned assistant post IDs.
+	 * @return bool True if any assistant slug is found as @slug in the text.
+	 */
+	protected function message_mentions_assistant( $message_text, array $assistant_ids ) {
+		if ( '' === $message_text ) {
+			return false;
+		}
+		foreach ( $assistant_ids as $assistant_id ) {
+			$slug = get_post_field( 'post_name', absint( $assistant_id ) );
+			if ( is_string( $slug ) && '' !== $slug && preg_match( '/@' . preg_quote( $slug, '/' ) . '(?:[^a-zA-Z0-9-]|$)/i', $message_text ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
 

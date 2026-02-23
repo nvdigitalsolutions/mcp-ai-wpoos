@@ -1100,4 +1100,213 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertSame( '', $method->invoke( $controller, 'not_an_array' ) );
 		$this->assertSame( '', $method->invoke( $controller, array( 'data' => array( 'choices' => array() ) ) ) );
 	}
+
+	// =========================================================================
+	// message_mentions_assistant() — @slug mention trigger (all channels)
+	// =========================================================================
+
+	/**
+	 * Helper: invoke message_mentions_assistant() via reflection on a given controller.
+	 *
+	 * @param object $controller  Controller instance.
+	 * @param string $text        Message text.
+	 * @param int[]  $ids         Array of assistant post IDs.
+	 * @return bool
+	 */
+	private function call_mentions( $controller, $text, array $ids ) {
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'message_mentions_assistant' );
+		$method->setAccessible( true );
+		return $method->invoke( $controller, $text, $ids );
+	}
+
+	/**
+	 * message_mentions_assistant returns false for empty message text.
+	 */
+	public function test_mention_trigger_returns_false_for_empty_text() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+
+		// Create a real assistant post so get_post_field can find a slug.
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Test Bot',
+			'post_name'   => 'test-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertFalse( $this->call_mentions( $controller, '', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * message_mentions_assistant returns false for empty assistant IDs.
+	 */
+	public function test_mention_trigger_returns_false_for_empty_ids() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+
+		$this->assertFalse( $this->call_mentions( $controller, '@any-bot Hello', array() ) );
+	}
+
+	/**
+	 * message_mentions_assistant returns true when @slug appears in the text.
+	 */
+	public function test_mention_trigger_detects_slug_mention() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Sales Bot',
+			'post_name'   => 'sales-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertTrue( $this->call_mentions( $controller, '@sales-bot can you help me?', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * message_mentions_assistant is case-insensitive.
+	 */
+	public function test_mention_trigger_is_case_insensitive() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Support Bot',
+			'post_name'   => 'support-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertTrue( $this->call_mentions( $controller, '@Support-Bot please help', array( $post_id ) ) );
+		$this->assertTrue( $this->call_mentions( $controller, '@SUPPORT-BOT test', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * message_mentions_assistant returns false when @slug is not present.
+	 */
+	public function test_mention_trigger_returns_false_when_no_slug_in_text() {
+		$this->load_controller( 'WP_MCP_AI_Discord_Interaction_Controller', 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php' );
+		$controller = new WP_MCP_AI_Discord_Interaction_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Help Bot',
+			'post_name'   => 'help-bot',
+			'post_status' => 'publish',
+		) );
+
+		// No @mention at all.
+		$this->assertFalse( $this->call_mentions( $controller, 'Can someone help me?', array( $post_id ) ) );
+		// Slug without the @ prefix should not match.
+		$this->assertFalse( $this->call_mentions( $controller, 'help-bot please assist', array( $post_id ) ) );
+		// @bot should not match when slug is help-bot (different slug).
+		$post_id_bot = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Bot',
+			'post_name'   => 'bot',
+			'post_status' => 'publish',
+		) );
+		// @help-bot should NOT trigger slug "bot" (boundary check).
+		$this->assertFalse( $this->call_mentions( $controller, '@help-bot can you help?', array( $post_id_bot ) ) );
+		// @bots should NOT trigger slug "bot" (boundary check).
+		$this->assertFalse( $this->call_mentions( $controller, '@bots are great', array( $post_id_bot ) ) );
+
+		wp_delete_post( $post_id, true );
+		wp_delete_post( $post_id_bot, true );
+	}
+
+	/**
+	 * message_mentions_assistant returns true when any one of multiple assistants is mentioned.
+	 */
+	public function test_mention_trigger_matches_any_assigned_assistant() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+
+		$post_id_1 = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Assistant Alpha',
+			'post_name'   => 'assistant-alpha',
+			'post_status' => 'publish',
+		) );
+		$post_id_2 = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'Assistant Beta',
+			'post_name'   => 'assistant-beta',
+			'post_status' => 'publish',
+		) );
+
+		// Mentioning the second assistant should still return true.
+		$this->assertTrue( $this->call_mentions( $controller, 'Hey @assistant-beta help', array( $post_id_1, $post_id_2 ) ) );
+		// Mentioning neither should return false.
+		$this->assertFalse( $this->call_mentions( $controller, 'Hey everyone!', array( $post_id_1, $post_id_2 ) ) );
+
+		wp_delete_post( $post_id_1, true );
+		wp_delete_post( $post_id_2, true );
+	}
+
+	/**
+	 * message_mentions_assistant is available on the Google Chat controller.
+	 */
+	public function test_mention_trigger_available_on_google_chat_controller() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'GC Bot',
+			'post_name'   => 'gc-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertTrue( $this->call_mentions( $controller, 'Hello @gc-bot, what is the weather?', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * message_mentions_assistant is available on the WhatsApp controller.
+	 */
+	public function test_mention_trigger_available_on_whatsapp_controller() {
+		$this->load_controller( 'WP_MCP_AI_WhatsApp_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php' );
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'WA Bot',
+			'post_name'   => 'wa-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertTrue( $this->call_mentions( $controller, '@wa-bot check my order', array( $post_id ) ) );
+		$this->assertFalse( $this->call_mentions( $controller, 'check my order', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * message_mentions_assistant is available on the Messenger controller.
+	 */
+	public function test_mention_trigger_available_on_messenger_controller() {
+		$this->load_controller( 'WP_MCP_AI_Messenger_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php' );
+		$controller = new WP_MCP_AI_Messenger_Webhook_Controller();
+
+		$post_id = wp_insert_post( array(
+			'post_type'   => 'mcp_ai_assistant',
+			'post_title'  => 'FB Bot',
+			'post_name'   => 'fb-bot',
+			'post_status' => 'publish',
+		) );
+
+		$this->assertTrue( $this->call_mentions( $controller, '@fb-bot help me', array( $post_id ) ) );
+
+		wp_delete_post( $post_id, true );
+	}
 }
