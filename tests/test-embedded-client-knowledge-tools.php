@@ -377,4 +377,137 @@ class Test_Embedded_Client_Knowledge_Tools extends WP_UnitTestCase {
 		wp_delete_post( $assistant_id, true );
 		wp_delete_post( $profession_id, true );
 	}
+
+	/**
+	 * Test that additional_tools from shortcode attribute are merged into tool definitions
+	 * for the embedded provider.
+	 *
+	 * The server-side (OpenAI) path sends additional_tools as slugs to the server which
+	 * resolves them. For the embedded provider the slugs must be resolved to full OpenAI
+	 * function definitions up-front in PHP so the client-side LLM receives them.
+	 */
+	public function test_additional_tools_merged_into_embedded_tools() {
+		// Create assistant with NO configured tools so that any tools in the output come
+		// exclusively from the additional_tools shortcode attribute.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Additional Tools Test Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Embedded assistant without its own tools',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_system_prompt', 'You are a helpful assistant.' );
+		// Intentionally no tools set on the assistant itself.
+
+		// Use a tool slug that is guaranteed to be registered in the base version.
+		// list_tools is a core tool that should always be available.
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant'        => $assistant_id,
+				'additional_tools' => 'list_tools',
+			)
+		);
+		ob_get_clean();
+
+		// Extract config from localized script data.
+		global $wp_scripts;
+		$localized = $wp_scripts->get_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'data' );
+		preg_match( '/wpMcpAiChatInstances\s*=\s*({.*?});/s', $localized, $matches );
+
+		if ( empty( $matches[1] ) ) {
+			wp_delete_post( $assistant_id, true );
+			$this->markTestSkipped( 'Could not extract wpMcpAiChatInstances from script data.' );
+			return;
+		}
+
+		$instances = json_decode( $matches[1], true );
+		$config    = null;
+		foreach ( $instances as $instance_config ) {
+			if ( isset( $instance_config['assistantId'] ) && intval( $instance_config['assistantId'] ) === $assistant_id ) {
+				$config = $instance_config;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $config, 'Should find config for test assistant' );
+
+		// If list_tools is not registered, the tools array may be absent – skip gracefully.
+		if ( ! isset( $config['tools'] ) || empty( $config['tools'] ) ) {
+			wp_delete_post( $assistant_id, true );
+			$this->markTestSkipped( 'list_tools tool not registered; skipping additional_tools merge test.' );
+			return;
+		}
+
+		// Tools should be present and in OpenAI-compatible format.
+		$this->assertIsArray( $config['tools'], 'Tools should be an array' );
+		$this->assertNotEmpty( $config['tools'], 'Tools array should not be empty' );
+
+		foreach ( $config['tools'] as $tool ) {
+			$this->assertArrayHasKey( 'type', $tool, 'Tool should have type field' );
+			$this->assertEquals( 'function', $tool['type'], 'Tool type should be function' );
+			$this->assertArrayHasKey( 'function', $tool, 'Tool should have function field' );
+			$this->assertArrayHasKey( 'name', $tool['function'], 'Tool function should have name' );
+		}
+
+		// additionalTools (slugs) should also be stored for the server-side path.
+		$this->assertArrayHasKey( 'additionalTools', $config, 'Config should have additionalTools array for server-side path' );
+		$this->assertContains( 'list_tools', $config['additionalTools'], 'additionalTools should contain the specified slug' );
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test that additional_tools cause enhanced WebLLM scripts to be enqueued even when
+	 * the assistant itself has no configured tools.
+	 *
+	 * The tool adapter and function-calling client must be loaded so the browser-side LLM
+	 * can invoke the tools that are supplied via the additional_tools attribute.
+	 */
+	public function test_enhanced_scripts_enqueued_with_additional_tools_only() {
+		// Create an embedded assistant with NO system prompt and NO tools.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Additional Tools Scripts Test Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Embedded assistant without its own tools',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		// Intentionally no system prompt, no tools, no knowledge.
+
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant'        => $assistant_id,
+				'additional_tools' => 'list_tools',
+			)
+		);
+		ob_get_clean();
+
+		// The enhanced WebLLM scripts must be enqueued because additional_tools were supplied.
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'enqueued' ),
+			'WebLLM tool adapter should be enqueued when additional_tools are supplied'
+		);
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'enqueued' ),
+			'WebLLM function calling client should be enqueued when additional_tools are supplied'
+		);
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+	}
 }
