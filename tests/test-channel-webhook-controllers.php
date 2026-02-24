@@ -615,12 +615,37 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		// Build a JWT with a past expiry and matching audience.
-		$header  = rtrim( strtr( base64_encode( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		$payload = rtrim( strtr( base64_encode( wp_json_encode( array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-			'iss' => 'accounts.google.com',
-			'aud' => $webhook_url,
-			'exp' => time() - 3600,
-		) ) ), '+/', '-_' ), '=' );
+		$header  = rtrim(
+			strtr(
+				base64_encode(
+					wp_json_encode(
+						array(
+							'alg' => 'RS256',
+							'typ' => 'JWT',
+						)
+					)
+				),
+				'+/',
+				'-_'
+			),
+			'='
+		); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$payload = rtrim(
+			strtr(
+				base64_encode(
+					wp_json_encode(
+						array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						'iss' => 'accounts.google.com',
+						'aud' => $webhook_url,
+						'exp' => time() - 3600,
+						)
+					)
+				),
+				'+/',
+				'-_'
+			),
+			'='
+		);
 		$token   = $header . '.' . $payload . '.fakesig';
 
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
@@ -661,12 +686,37 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		// Build a JWT with a different (wrong) audience.
-		$header  = rtrim( strtr( base64_encode( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) ), '+/', '-_' ), '=' ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		$payload = rtrim( strtr( base64_encode( wp_json_encode( array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-			'iss' => 'accounts.google.com',
-			'aud' => 'https://example.com/wrong-endpoint',
-			'exp' => time() + 3600,
-		) ) ), '+/', '-_' ), '=' );
+		$header  = rtrim(
+			strtr(
+				base64_encode(
+					wp_json_encode(
+						array(
+							'alg' => 'RS256',
+							'typ' => 'JWT',
+						)
+					)
+				),
+				'+/',
+				'-_'
+			),
+			'='
+		); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$payload = rtrim(
+			strtr(
+				base64_encode(
+					wp_json_encode(
+						array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						'iss' => 'accounts.google.com',
+						'aud' => 'https://example.com/wrong-endpoint',
+						'exp' => time() + 3600,
+						)
+					)
+				),
+				'+/',
+				'-_'
+			),
+			'='
+		);
 		$token   = $header . '.' . $payload . '.fakesig';
 
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
@@ -1128,12 +1178,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
 
 		// Create a real assistant post so get_post_field can find a slug.
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Test Bot',
-			'post_name'   => 'test-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Test Bot',
+				'post_name'   => 'test-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertFalse( $this->call_mentions( $controller, '', array( $post_id ) ) );
 
@@ -1157,12 +1209,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Sales Bot',
-			'post_name'   => 'sales-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Sales Bot',
+				'post_name'   => 'sales-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertTrue( $this->call_mentions( $controller, '@sales-bot can you help me?', array( $post_id ) ) );
 
@@ -1176,12 +1230,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
 		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Support Bot',
-			'post_name'   => 'support-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Support Bot',
+				'post_name'   => 'support-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertTrue( $this->call_mentions( $controller, '@Support-Bot please help', array( $post_id ) ) );
 		$this->assertTrue( $this->call_mentions( $controller, '@SUPPORT-BOT test', array( $post_id ) ) );
@@ -1196,24 +1252,28 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Discord_Interaction_Controller', 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php' );
 		$controller = new WP_MCP_AI_Discord_Interaction_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Help Bot',
-			'post_name'   => 'help-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Help Bot',
+				'post_name'   => 'help-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		// No @mention at all.
 		$this->assertFalse( $this->call_mentions( $controller, 'Can someone help me?', array( $post_id ) ) );
 		// Slug without the @ prefix should not match.
 		$this->assertFalse( $this->call_mentions( $controller, 'help-bot please assist', array( $post_id ) ) );
 		// @bot should not match when slug is help-bot (different slug).
-		$post_id_bot = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Bot',
-			'post_name'   => 'bot',
-			'post_status' => 'publish',
-		) );
+		$post_id_bot = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Bot',
+				'post_name'   => 'bot',
+				'post_status' => 'publish',
+			)
+		);
 		// @help-bot should NOT trigger slug "bot" (boundary check).
 		$this->assertFalse( $this->call_mentions( $controller, '@help-bot can you help?', array( $post_id_bot ) ) );
 		// @bots should NOT trigger slug "bot" (boundary check).
@@ -1230,18 +1290,22 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
 		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
 
-		$post_id_1 = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Assistant Alpha',
-			'post_name'   => 'assistant-alpha',
-			'post_status' => 'publish',
-		) );
-		$post_id_2 = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Assistant Beta',
-			'post_name'   => 'assistant-beta',
-			'post_status' => 'publish',
-		) );
+		$post_id_1 = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Assistant Alpha',
+				'post_name'   => 'assistant-alpha',
+				'post_status' => 'publish',
+			)
+		);
+		$post_id_2 = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Assistant Beta',
+				'post_name'   => 'assistant-beta',
+				'post_status' => 'publish',
+			)
+		);
 
 		// Mentioning the second assistant should still return true.
 		$this->assertTrue( $this->call_mentions( $controller, 'Hey @assistant-beta help', array( $post_id_1, $post_id_2 ) ) );
@@ -1259,12 +1323,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'GC Bot',
-			'post_name'   => 'gc-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC Bot',
+				'post_name'   => 'gc-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertTrue( $this->call_mentions( $controller, 'Hello @gc-bot, what is the weather?', array( $post_id ) ) );
 
@@ -1278,12 +1344,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_WhatsApp_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php' );
 		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'WA Bot',
-			'post_name'   => 'wa-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'WA Bot',
+				'post_name'   => 'wa-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertTrue( $this->call_mentions( $controller, '@wa-bot check my order', array( $post_id ) ) );
 		$this->assertFalse( $this->call_mentions( $controller, 'check my order', array( $post_id ) ) );
@@ -1298,15 +1366,271 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Messenger_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php' );
 		$controller = new WP_MCP_AI_Messenger_Webhook_Controller();
 
-		$post_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'FB Bot',
-			'post_name'   => 'fb-bot',
-			'post_status' => 'publish',
-		) );
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'FB Bot',
+				'post_name'   => 'fb-bot',
+				'post_status' => 'publish',
+			)
+		);
 
 		$this->assertTrue( $this->call_mentions( $controller, '@fb-bot help me', array( $post_id ) ) );
 
 		wp_delete_post( $post_id, true );
+	}
+
+	// =========================================================================
+	// Google Chat — native @mention bypass for require_mention
+	// =========================================================================
+
+	/**
+	 * Google Chat payload with argumentText indicates the bot was natively @mentioned.
+	 *
+	 * When Google Chat sends argumentText it has already stripped the bot's display name
+	 * from the message. This is the canonical signal that the user triggered the bot via
+	 * Google Chat's own @mention mechanism.
+	 */
+	public function test_google_chat_argument_text_signals_native_bot_mention() {
+		// A payload where the user typed "@BotApp hello" — Google Chat strips
+		// the mention and puts the remainder in argumentText.
+		$payload_with_mention = array(
+			'message' => array(
+				'text'         => '@BotApp hello',
+				'argumentText' => ' hello',
+			),
+		);
+
+		// A DM payload: no argumentText (Google Chat does not populate it in DMs).
+		$payload_dm = array(
+			'message' => array(
+				'text' => 'just a question',
+			),
+		);
+
+		// argumentText presence is the signal that the bot was @mentioned in a space.
+		$this->assertTrue( isset( $payload_with_mention['message']['argumentText'] ), 'argumentText must be present when bot is @mentioned in a Google Chat space' );
+		$this->assertFalse( isset( $payload_dm['message']['argumentText'] ), 'argumentText absent in DM payloads — DM detection should rely on space type instead' );
+	}
+
+	/**
+	 * Google Chat DIRECT_MESSAGE space type indicates a direct message to the bot.
+	 *
+	 * In direct messages every incoming message triggers the bot webhook, so
+	 * require_mention should always be considered satisfied.
+	 */
+	public function test_google_chat_direct_message_space_type_detected() {
+		$dm_space_type    = 'DIRECT_MESSAGE';
+		$group_space_type = 'SPACE';
+
+		$this->assertSame( 'DIRECT_MESSAGE', $dm_space_type );
+		$this->assertNotSame( 'DIRECT_MESSAGE', $group_space_type );
+	}
+
+	/**
+	 * Google Chat handle_webhook returns an empty response when require_mention is
+	 * enabled but there is no argumentText and the space is not a DM and the
+	 * message text does not contain the @slug.
+	 */
+	public function test_google_chat_require_mention_drops_unaddressed_group_message() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC Require Bot',
+				'post_name'   => 'gc-require-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Store a connection with require_mention enabled.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				array(
+					'id'                     => 'gc_require_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'api_key'                => 'dummy_token',
+					'assigned_assistant_ids' => array( $post_id ),
+					'require_mention'        => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Build a MESSAGE payload for a GROUP SPACE without argumentText and without @slug.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name' => 'spaces/AAABBB',
+				'type' => 'SPACE',
+			),
+			'message' => array(
+				'name'   => 'spaces/AAABBB/messages/msg-001',
+				'text'   => 'Hello everyone!',
+				'sender' => array( 'name' => 'users/111' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$response = $controller->handle_webhook( $request );
+		$data     = rest_ensure_response( $response )->get_data();
+
+		// No cron event scheduled — the message was silently dropped.
+		$this->assertFalse(
+			(bool) wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'Cron job must NOT be scheduled when require_mention is on and the bot was not addressed'
+		);
+
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Google Chat handle_webhook schedules a reply when require_mention is enabled
+	 * and the payload contains argumentText (native Google Chat @mention).
+	 */
+	public function test_google_chat_require_mention_allows_native_at_mention() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC Native Bot',
+				'post_name'   => 'gc-native-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Store a connection with require_mention enabled.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				array(
+					'id'                     => 'gc_native_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'api_key'                => 'dummy_token',
+					'assigned_assistant_ids' => array( $post_id ),
+					'require_mention'        => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Build a MESSAGE payload where Google Chat populated argumentText
+		// (indicating the user sent "@BotApp hello" in a group space).
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name' => 'spaces/CCCDDD',
+				'type' => 'SPACE',
+			),
+			'message' => array(
+				'name'         => 'spaces/CCCDDD/messages/msg-native-001',
+				'text'         => '@BotApp hello',
+				'argumentText' => ' hello',
+				'sender'       => array( 'name' => 'users/222' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$controller->handle_webhook( $request );
+
+		// Cron job must be scheduled — the native @mention satisfies require_mention.
+		$this->assertNotFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'Cron job must be scheduled when the bot receives a native Google Chat @mention (argumentText present)'
+		);
+
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Google Chat handle_webhook schedules a reply when require_mention is enabled
+	 * and the space type is DIRECT_MESSAGE.
+	 */
+	public function test_google_chat_require_mention_allows_direct_message() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC DM Bot',
+				'post_name'   => 'gc-dm-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Store a connection with require_mention enabled.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				array(
+					'id'                     => 'gc_dm_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'api_key'                => 'dummy_token',
+					'assigned_assistant_ids' => array( $post_id ),
+					'require_mention'        => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// DM payload: no argumentText, space type is DIRECT_MESSAGE.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name' => 'spaces/EEEFFF',
+				'type' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/EEEFFF/messages/msg-dm-001',
+				'text'   => 'Hello bot!',
+				'sender' => array( 'name' => 'users/333' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$controller->handle_webhook( $request );
+
+		// Cron job must be scheduled — DMs always satisfy require_mention.
+		$this->assertNotFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'Cron job must be scheduled when the message arrives in a DIRECT_MESSAGE space'
+		);
+
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
 }
