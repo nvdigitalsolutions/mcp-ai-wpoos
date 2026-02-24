@@ -246,6 +246,9 @@ jobs:
               body: comment
             });
 
+      - name: Build production autoloader
+        run: composer install --no-dev --classmap-authoritative --no-interaction
+
       - name: Build summary
         if: always()
         run: |

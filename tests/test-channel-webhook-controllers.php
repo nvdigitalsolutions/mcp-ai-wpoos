@@ -1428,11 +1428,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Google Chat handle_webhook returns an empty response when require_mention is
-	 * enabled but there is no argumentText and the space is not a DM and the
-	 * message text does not contain the @slug.
+	 * Google Chat handle_webhook always schedules a reply regardless of the require_mention
+	 * setting — the bot auto-replies to every message it receives.
 	 */
-	public function test_google_chat_require_mention_drops_unaddressed_group_message() {
+	public function test_google_chat_always_schedules_reply_for_group_message() {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
@@ -1486,12 +1485,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$response = $controller->handle_webhook( $request );
 		$data     = rest_ensure_response( $response )->get_data();
 
-		// No cron event scheduled — the message was silently dropped.
-		$this->assertFalse(
-			(bool) wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
-			'Cron job must NOT be scheduled when require_mention is on and the bot was not addressed'
+		// Cron job must be scheduled — the bot always auto-replies to every message.
+		$this->assertNotFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'Cron job must be scheduled — the bot always auto-replies regardless of require_mention setting'
 		);
 
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
 		wp_delete_post( $post_id, true );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
