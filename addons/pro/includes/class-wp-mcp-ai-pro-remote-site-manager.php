@@ -724,6 +724,29 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_ezuite_connection( $connection );
 		}
 
+		// Handle Google Chat connections separately.
+		if ( 'google_chat' === $connection_type ) {
+			return self::test_google_chat_connection( $connection );
+		}
+
+		// Handle Gmail connections separately.
+		if ( 'gmail' === $connection_type ) {
+			return array(
+				'success' => true,
+				'gmail'   => true,
+				'message' => __( 'Gmail OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Handle Google Drive connections separately.
+		if ( 'google_drive' === $connection_type ) {
+			return array(
+				'success'      => true,
+				'google_drive' => true,
+				'message'      => __( 'Google Drive OAuth credentials saved. Complete the OAuth flow via the connect button to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
@@ -757,6 +780,141 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Test Google Chat API connection.
+	 *
+	 * Supports Service Account JSON key, OAuth refresh token, or OAuth
+	 * Client ID + Secret only (partial setup — OAuth flow not yet completed).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_chat_connection( $connection ) {
+		$has_api_key     = ! empty( $connection['api_key'] );
+		$has_refresh     = ! empty( $connection['refresh_token'] );
+		$has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+
+		if ( ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_credentials',
+				__( 'No credentials configured for this Google Chat connection. Please add a Service Account JSON key or complete the OAuth setup (OAuth Client ID and Client Secret).', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// If only OAuth client credentials are present (no service account key and no refresh
+		// token) we cannot make a live API call yet — the OAuth flow must be completed first.
+		if ( ! $has_api_key && ! $has_refresh ) {
+			return array(
+				'success'     => true,
+				'google_chat' => true,
+				'partial'     => true,
+				'message'     => __( 'OAuth credentials saved. Complete the OAuth flow via the "Connect to Google Chat" button to finish setup and obtain a refresh token.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		// Load the Google Service Account helper.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
+		}
+
+		$access_token = '';
+
+		// Try Service Account JSON key first.
+		if ( $has_api_key ) {
+			$api_key      = self::decrypt_value( $connection['api_key'] );
+			$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
+				$api_key,
+				'https://www.googleapis.com/auth/chat.bot'
+			);
+
+			if ( ! is_wp_error( $token_result ) ) {
+				$access_token = $token_result;
+			} elseif ( $has_refresh ) {
+				// Service account failed; fall through to OAuth refresh token below.
+			} else {
+				return $token_result;
+			}
+		}
+
+		// Fall back to OAuth refresh token.
+		if ( '' === $access_token && $has_refresh ) {
+			$client_id     = isset( $connection['client_id'] ) ? $connection['client_id'] : '';
+			$client_secret = ! empty( $connection['client_secret'] ) ? self::decrypt_value( $connection['client_secret'] ) : '';
+			$refresh_token = self::decrypt_value( $connection['refresh_token'] );
+
+			$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+				$client_id,
+				$client_secret,
+				$refresh_token
+			);
+
+			if ( is_wp_error( $token_result ) ) {
+				return $token_result;
+			}
+
+			$access_token = $token_result;
+		}
+
+		if ( '' === $access_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_token_error',
+				__( 'Failed to obtain a Google access token. Please check your credentials.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Verify the token by calling the Google Chat spaces.list endpoint.
+		$response = wp_remote_get(
+			'https://chat.googleapis.com/v1/spaces?pageSize=1',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Google Chat API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $status_code ) {
+			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Invalid response from Google Chat API.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_google_chat_api_error',
+				sprintf(
+					/* translators: 1: HTTP status code, 2: error message */
+					__( 'Google Chat API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
+					$status_code,
+					$error_msg
+				)
+			);
+		}
+
+		$spaces      = isset( $body['spaces'] ) && is_array( $body['spaces'] ) ? $body['spaces'] : array();
+		$space_count = count( $spaces );
+
+		return array(
+			'success'     => true,
+			'google_chat' => true,
+			/* translators: %d: number of accessible Google Chat spaces */
+			'message'     => sprintf( _n( 'Google Chat connection successful. %d space accessible.', 'Google Chat connection successful. %d spaces accessible.', $space_count, 'mcp-ai-wpoos-pro' ), $space_count ),
+			'space_count' => $space_count,
+		);
 	}
 
 	/**
