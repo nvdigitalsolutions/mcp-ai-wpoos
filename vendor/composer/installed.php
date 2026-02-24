@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-channel-settings',
-        'version' => 'dev-copilot/fix-chat-channel-settings',
-        'reference' => 'e1ccc14ab1cf51b895d084e1bc2fed7972d1a10e',
+        'pretty_version' => 'dev-copilot/fix-auto-reply-to-bot',
+        'version' => 'dev-copilot/fix-auto-reply-to-bot',
+        'reference' => '49eca072a640fe7c27fef4fd9f592ff3de72ab52',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-channel-settings',
-            'version' => 'dev-copilot/fix-chat-channel-settings',
-            'reference' => 'e1ccc14ab1cf51b895d084e1bc2fed7972d1a10e',
+            'pretty_version' => 'dev-copilot/fix-auto-reply-to-bot',
+            'version' => 'dev-copilot/fix-auto-reply-to-bot',
+            'reference' => '49eca072a640fe7c27fef4fd9f592ff3de72ab52',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
