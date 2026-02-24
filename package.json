@@ -82,7 +82,9 @@
 		"webpack-dev-server": ">=5.2.1",
 		"langsmith": ">=0.4.6",
 		"minimatch": ">=10.2.1",
-		"test-exclude": ">=8.0.0"
+		"test-exclude": {
+			"minimatch": "^3.1.2"
+		}
 	},
 	"engines": {
 		"node": ">=18.17.0",
