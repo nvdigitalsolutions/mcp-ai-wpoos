@@ -382,13 +382,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			// Resolve the shared verify_token field (used by WhatsApp, Messenger, and Google Chat).
+			// Use connection_type to select the correct field so hidden form fields from other
+			// connection types (which are still submitted with empty values) don't take precedence.
 			$verify_token = '';
-			if ( isset( $_POST['whatsapp_verify_token'] ) ) {
-				$verify_token = sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) );
-			} elseif ( isset( $_POST['messenger_verify_token'] ) ) {
-				$verify_token = sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) );
-			} elseif ( isset( $_POST['google_chat_audience'] ) ) {
+			if ( 'google_chat' === $connection_type && isset( $_POST['google_chat_audience'] ) ) {
 				$verify_token = sanitize_text_field( wp_unslash( $_POST['google_chat_audience'] ) );
+			} elseif ( 'facebook_messenger' === $connection_type && isset( $_POST['messenger_verify_token'] ) ) {
+				$verify_token = sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) );
+			} elseif ( isset( $_POST['whatsapp_verify_token'] ) ) {
+				$verify_token = sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) );
 			}
 
 			// Resolve and validate the Telegram webhook secret token.
@@ -450,7 +452,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'business_account_id'  => isset( $_POST['whatsapp_business_account_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_business_account_id'] ) ) : '',
 				'system_user_id'       => isset( $_POST['whatsapp_system_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_system_user_id'] ) ) : '',
 				'channel_description'  => isset( $_POST['whatsapp_channel_description'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_channel_description'] ) ) : '',
-				'verify_token'    => isset( $_POST['whatsapp_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_verify_token'] ) ) : ( isset( $_POST['messenger_verify_token'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_verify_token'] ) ) : '' ),
+				'verify_token'    => $verify_token,
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
 				'workspace_id'    => isset( $_POST['slack_workspace_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_workspace_id'] ) ) : '',
