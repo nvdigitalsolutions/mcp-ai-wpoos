@@ -6792,10 +6792,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$chat_body = mb_substr( $chat_body, 0, 4093 ) . '...';
 		}
 
-		$endpoint = sprintf(
-		'https://chat.googleapis.com/v1/%s/messages',
-		rawurlencode( $test_space )
-		);
+		$endpoint = 'https://chat.googleapis.com/v1/' . $test_space . '/messages';
 
 		$payload = array(
 		'text' => $chat_body,
