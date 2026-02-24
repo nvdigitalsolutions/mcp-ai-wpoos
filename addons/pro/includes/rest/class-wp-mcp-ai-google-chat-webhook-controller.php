@@ -491,7 +491,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
-		if ( ! $connection || empty( $connection['api_key'] ) ) {
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		if ( ! $has_credentials ) {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat AI reply: connection not found or access token missing.',
 				array( 'connection_id' => $connection_id )
@@ -722,7 +727,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
-		if ( ! $connection || empty( $connection['api_key'] ) ) {
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		if ( ! $has_credentials ) {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat welcome message: connection not found or access token missing.',
 				array( 'connection_id' => $connection_id )
