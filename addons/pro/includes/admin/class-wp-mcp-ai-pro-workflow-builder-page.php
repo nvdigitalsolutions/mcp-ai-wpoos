@@ -29,6 +29,17 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	const PAGE_SLUG = 'nvoos-pro-workflow-builder';
 
 	/**
+	 * Actual WordPress hook name returned by add_submenu_page().
+	 *
+	 * Stored during register_page() so enqueue_assets() can compare against the
+	 * real hook (which uses sanitize_title(menu_title) as prefix, not the raw
+	 * parent slug).
+	 *
+	 * @var string
+	 */
+	private $page_hook = '';
+
+	/**
 	 * Cached templates class instance.
 	 *
 	 * @var WP_MCP_AI_Pattern_Workflow_Templates|null
@@ -56,7 +67,7 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @since 2.0.0
 	 */
 	public function register_page() {
-		add_submenu_page(
+		$this->page_hook = add_submenu_page(
 			'nvoos-pro-dashboard',
 			__( 'Pro Workflow Builder', 'mcp-ai-wpoos' ),
 			__( 'Pro Workflows', 'mcp-ai-wpoos' ),
@@ -85,16 +96,10 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		// Hook format: nvoos-pro-dashboard_page_{PAGE_SLUG}
-		$expected_hook = 'nvoos-pro-dashboard_page_' . self::PAGE_SLUG;
-
-		// Debug logging for troubleshooting asset enqueue issues.
-		if ( $this->is_debug_logging_enabled() ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
-			error_log( sprintf( 'Workflow Builder: Hook=%s, Expected=%s, Match=%s', $hook, $expected_hook, ( $expected_hook === $hook ) ? 'YES' : 'NO' ) );
-		}
-
-		if ( $expected_hook !== $hook ) {
+		// Use the actual hook stored when add_submenu_page() was called so that
+		// we match the real WordPress-generated hook suffix (which is derived from
+		// sanitize_title(menu_title), not from the raw parent slug).
+		if ( empty( $this->page_hook ) || $hook !== $this->page_hook ) {
 			return;
 		}
 
