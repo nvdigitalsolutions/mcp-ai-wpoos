@@ -42,13 +42,13 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'             => 'Test Google Chat Connection',
-			'url'              => 'https://chat.googleapis.com/v1',
-			'connection_type'  => 'google_chat',
-			'auth_type'        => 'none',
-			'enabled'          => true,
-			'api_key'          => 'ya29.test_access_token',
-			'verify_token'     => 'https://example.com/wp-json/mcp-ai/v1/webhooks/google-chat',
+			'name'              => 'Test Google Chat Connection',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_access_token',
+			'verify_token'      => 'https://example.com/wp-json/mcp-ai/v1/webhooks/google-chat',
 			'google_chat_space' => 'spaces/AAAATestSpace',
 		);
 
@@ -76,13 +76,13 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		$audience_url = 'https://example.com/wp-json/mcp-ai/v1/webhooks/google-chat';
 
 		$connection_data = array(
-			'name'             => 'Test Google Chat Audience',
-			'url'              => 'https://chat.googleapis.com/v1',
-			'connection_type'  => 'google_chat',
-			'auth_type'        => 'none',
-			'enabled'          => true,
-			'api_key'          => 'ya29.test_token',
-			'verify_token'     => $audience_url,
+			'name'              => 'Test Google Chat Audience',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_token',
+			'verify_token'      => $audience_url,
 			'google_chat_space' => '',
 		);
 
@@ -137,13 +137,13 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'             => 'Test Google Chat No Space',
-			'url'              => 'https://chat.googleapis.com/v1',
-			'connection_type'  => 'google_chat',
-			'auth_type'        => 'none',
-			'enabled'          => true,
-			'api_key'          => 'ya29.test_token',
-			'verify_token'     => '',
+			'name'            => 'Test Google Chat No Space',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'ya29.test_token',
+			'verify_token'    => '',
 		);
 
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -239,5 +239,192 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $invalid_space ),
 			'Invalid space should fail format validation'
 		);
+	}
+
+	// =========================================================================
+	// test_connection() — Google Chat routing and partial-setup handling.
+	// =========================================================================
+
+	/**
+	 * The test_connection() method must return WP_Error when a Google Chat connection has
+	 * no credentials at all (no api_key, no refresh_token, no client credentials).
+	 */
+	public function test_test_connection_google_chat_no_credentials_returns_error() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Google Chat No Creds',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Save should succeed' );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$result     = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'test_connection should return WP_Error with no credentials' );
+		$this->assertStringContainsString( 'credentials', strtolower( $result->get_error_message() ), 'Error message should mention credentials' );
+	}
+
+	/**
+	 * The test_connection() method must return a partial-success array (not a WP_Error and not
+	 * an HTTP 404) when only OAuth Client ID and Client Secret are saved but the
+	 * OAuth flow has not yet been completed (no refresh_token, no api_key).
+	 */
+	public function test_test_connection_google_chat_oauth_client_only_returns_partial_success() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Google Chat OAuth Only',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'client_id'       => 'test-client-id.apps.googleusercontent.com',
+			'client_secret'   => 'test-client-secret',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Save should succeed' );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$result     = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection );
+
+		// Must NOT return a WP_Error (which would surface as "HTTP error 404").
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'test_connection should not return WP_Error when OAuth credentials are saved but flow not completed' );
+		$this->assertIsArray( $result, 'Result should be an array' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Result should indicate success' );
+		$this->assertTrue( isset( $result['partial'] ) && $result['partial'], 'Result should flag as partial setup' );
+		$this->assertStringContainsString( 'OAuth', $result['message'], 'Message should mention OAuth flow' );
+	}
+
+	/**
+	 * The test_connection() method must call the Google Chat API and return success when
+	 * a valid api_key (Service Account JSON) is stored.
+	 */
+	public function test_test_connection_google_chat_with_api_key_calls_google_api() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save connection with a dummy api_key so the code path is reached.
+		$connection_data = array(
+			'name'            => 'Google Chat Service Account',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => '{"type":"service_account","project_id":"test","private_key_id":"k1","private_key":"FAKE","client_email":"bot@test.iam.gserviceaccount.com","client_id":"123","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/bot%40test.iam.gserviceaccount.com"}',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Save should succeed' );
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Stub all outbound HTTP requests so no real network call is made.
+		$filter_callback = function ( $preempt, $parsed_args, $url ) {
+			// Token exchange endpoint — return a fake access token.
+			if ( false !== strpos( $url, 'oauth2.googleapis.com/token' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'access_token' => 'ya29.fake_token',
+							'expires_in'   => 3600,
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			// Google Chat spaces.list endpoint — return a fake space list.
+			if ( false !== strpos( $url, 'chat.googleapis.com' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'spaces' => array( array( 'name' => 'spaces/AAAA' ) ) ) ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'test_connection should not return WP_Error with valid api_key' );
+		$this->assertIsArray( $result, 'Result should be an array' );
+		$this->assertTrue( isset( $result['success'] ) && $result['success'], 'Result should indicate success' );
+		$this->assertSame( 1, $result['space_count'], 'Space count should match stub response' );
+	}
+
+	/**
+	 * The test_connection() method must NOT send a request to wp/v2/types on the Google
+	 * Chat domain — that is the old (broken) path that caused HTTP 404 errors.
+	 */
+	public function test_test_connection_google_chat_does_not_hit_wordpress_api() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$wordpress_api_requested = false;
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) use ( &$wordpress_api_requested ) {
+			if ( false !== strpos( $url, 'wp/v2' ) || false !== strpos( $url, 'wp-json' ) ) {
+				$wordpress_api_requested = true;
+			}
+			// Always short-circuit to avoid real network calls.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array() ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		$connection_data = array(
+			'name'            => 'Google Chat WP API Check',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'client_id'       => 'test-client-id',
+			'client_secret'   => 'test-client-secret',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+		WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection );
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertFalse( $wordpress_api_requested, 'test_connection must NOT request the WordPress REST API for Google Chat connections' );
 	}
 }

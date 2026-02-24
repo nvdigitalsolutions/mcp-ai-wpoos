@@ -2501,7 +2501,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<textarea name="google_chat_service_account_key" id="google_chat_service_account_key" class="large-text" rows="6" autocomplete="off" placeholder='{"type":"service_account","project_id":"...","private_key":"-----BEGIN RSA PRIVATE KEY-----\n...","client_email":"...@....iam.gserviceaccount.com",...}'></textarea>
-						<?php if ( $is_edit ) : ?>
+						<?php if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['api_key'] ) ) : ?>
+							<p class="description">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php esc_html_e( 'Service Account key is set. Leave blank to keep the existing key, or paste a new key to replace it.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						<?php elseif ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Paste the full contents of your Service Account JSON key file here to replace the stored key. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Paste the full contents of your Google Service Account JSON key file (downloaded from Google Cloud Console). The key must grant the Chat API scope (https://www.googleapis.com/auth/chat.bot). Access tokens are generated automatically and cached — you never need to refresh them manually.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2511,7 +2516,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row"></th>
-					<td colspan="2"><hr style="border-top: 1px solid #ddd; margin: 4px 0;"><p style="margin: 4px 0; font-size: 12px; color: #777; text-align: center;"><?php esc_html_e( '— or connect via OAuth 2.0 (recommended for 1-click setup) —', 'mcp-ai-wpoos-pro' ); ?></p><hr style="border-top: 1px solid #ddd; margin: 4px 0;"></td>
+					<td colspan="2">
+						<hr style="border-top: 1px solid #ddd; margin: 4px 0;">
+						<p style="margin: 4px 0; font-size: 12px; color: #777; text-align: center;">
+							<?php esc_html_e( '— or connect via OAuth 2.0 (recommended for 1-click setup) —', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<hr style="border-top: 1px solid #ddd; margin: 4px 0;">
+						<?php if ( ! $is_edit ) : ?>
+							<p style="margin: 4px 0; font-size: 12px; color: #777; text-align: center;">
+								<em><?php esc_html_e( 'Save this connection first — the 1-click OAuth connect button will appear here once the connection is saved.', 'mcp-ai-wpoos-pro' ); ?></em>
+							</p>
+						<?php endif; ?>
+					</td>
 				</tr>
 
 				<tr class="google_chat-only-field" style="display: none;">
@@ -2592,25 +2608,35 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</th>
 						<td>
 							<?php
-							$gc_oauth_url = wp_nonce_url(
-								add_query_arg(
-									array(
-										'page'          => 'wp-mcp-ai-remote-sites',
-										'oauth_handler' => 'google_chat_oauth_connect',
-										'connection_id' => $connection['id'],
+							$gc_has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+							$gc_oauth_url       = $gc_has_credentials
+								? wp_nonce_url(
+									add_query_arg(
+										array(
+											'page'          => 'wp-mcp-ai-remote-sites',
+											'oauth_handler' => 'google_chat_oauth_connect',
+											'connection_id' => $connection['id'],
+										),
+										admin_url( 'admin.php' )
 									),
-									admin_url( 'admin.php' )
-								),
-								'google_chat_oauth_connect_' . $connection['id']
-							);
+									'google_chat_oauth_connect_' . $connection['id']
+								)
+								: '#';
 							?>
-							<a href="<?php echo esc_url( $gc_oauth_url ); ?>" class="button button-secondary">
+							<a href="<?php echo esc_url( $gc_oauth_url ); ?>" class="button button-secondary" <?php echo $gc_has_credentials ? '' : 'aria-disabled="true" style="opacity:0.5;cursor:not-allowed;" onclick="return false;"'; ?>>
 								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
 								<?php esc_html_e( 'Connect to Google Chat', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
-							<p class="description">
-								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain an access token and refresh token automatically. Make sure to save the OAuth Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
-							</p>
+							<?php if ( ! $gc_has_credentials ) : ?>
+								<p class="description" style="color: #d63638;">
+									<span class="dashicons dashicons-warning"></span>
+									<?php esc_html_e( 'Enter and save the OAuth Client ID and Client Secret above before using this button.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description">
+									<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain an access token and refresh token automatically.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							<?php endif; ?>
 							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
 								<p class="description" style="color: #46b450;">
 									<span class="dashicons dashicons-yes-alt"></span>
