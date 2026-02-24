@@ -470,6 +470,13 @@
 			}
 
 			try {
+				// Inject stored system prompt if caller did not include one, matching the
+				// behaviour of generateStreamingCompletion so both paths behave consistently.
+				const systemMessage = messages.find(msg => msg.role === 'system');
+				if (!systemMessage && this.systemPrompt) {
+					messages = [{ role: 'system', content: this.systemPrompt }].concat(messages);
+				}
+
 				const response = await this.currentEngine.chat.completions.create({
 					messages: messages,
 					temperature: options.temperature || 0.7,
