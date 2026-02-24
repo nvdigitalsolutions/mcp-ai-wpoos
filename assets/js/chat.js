@@ -11560,6 +11560,58 @@
             return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
+        // If the embedded client hasn't been created yet and the system prompt is missing from the
+        // client-side config (e.g. page was served from cache), fetch fresh configuration from the
+        // server before initialising the client.  We only do this once per state instance and only
+        // when the system prompt is genuinely absent so that normal (non-cached) page loads are
+        // unaffected.
+        if (
+            !state.embeddedClient &&
+            !state.embeddedConfigFetched &&
+            !state.config.systemPrompt &&
+            state.config.embeddedConfigEndpoint &&
+            state.config.assistantId
+        ) {
+            state.embeddedConfigFetched = true; // Prevent repeated fetches on re-entry
+            const fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(state.config.assistantId);
+            console.log('[NV oOS] System prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
+
+            var applyServerConfig = function(serverConfig) {
+                if (serverConfig && serverConfig.system_prompt) {
+                    console.log('[NV oOS] Fetched system prompt from server:', {
+                        systemPromptLength: serverConfig.system_prompt.length,
+                        hasTools: !!(serverConfig.tools && serverConfig.tools.length),
+                        hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
+                    });
+                    state.config.systemPrompt = serverConfig.system_prompt;
+                }
+                if (serverConfig && serverConfig.tools && serverConfig.tools.length > 0 && (!state.config.tools || !state.config.tools.length)) {
+                    state.config.tools = serverConfig.tools;
+                }
+                if (serverConfig && serverConfig.memory_files && serverConfig.memory_files.length > 0 && (!state.config.memoryFiles || !state.config.memoryFiles.length)) {
+                    state.config.memoryFiles = serverConfig.memory_files;
+                }
+                if (serverConfig && serverConfig.vector_store_id && !state.config.vectorStoreId) {
+                    state.config.vectorStoreId = serverConfig.vector_store_id;
+                }
+                // Re-enter sendChatEmbedded with the updated state — embeddedConfigFetched prevents looping
+                return sendChatEmbedded(state, messages, finalize, submissionContext);
+            };
+
+            return fetch(fetchUrl, { headers: buildJsonHeaders(state) })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(applyServerConfig)
+                .catch(function(err) {
+                    console.warn('[NV oOS] Could not fetch embedded client config from server (proceeding without server-side system prompt):', err.message);
+                    return applyServerConfig(null);
+                });
+        }
+
         // Create embedded client instance for this widget if not already created
         if (!state.embeddedClient) {
             // Generate unique instance ID
