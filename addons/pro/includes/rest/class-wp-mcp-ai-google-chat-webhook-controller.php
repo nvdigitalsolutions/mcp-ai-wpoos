@@ -326,21 +326,6 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		// When the connection requires an @slug mention, reply if:
-		// 1. The bot was triggered via Google Chat's native @mention (argumentText present —
-		// Google Chat only populates this field when the message was directed at the bot
-		// via an @mention in a group space), OR
-		// 2. The message arrived in a direct message space (every DM triggers the bot), OR
-		// 3. The message explicitly addresses an assigned assistant by its WordPress post slug.
-		$is_gc_bot_mentioned = isset( $payload['message']['argumentText'] );
-		$space_type          = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
-		$is_direct_message   = 'DIRECT_MESSAGE' === $space_type;
-		$mention_satisfied   = $is_gc_bot_mentioned || $is_direct_message || $this->message_mentions_assistant( $message_text, $assigned_assistant_ids );
-
-		if ( ! empty( $connection['require_mention'] ) && ! $mention_satisfied ) {
-			return rest_ensure_response( $this->empty_response() );
-		}
-
 		// Find or create the contact in the Channel Contacts CCT.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
