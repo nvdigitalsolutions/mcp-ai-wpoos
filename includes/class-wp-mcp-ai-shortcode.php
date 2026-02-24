@@ -804,11 +804,26 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
+			// Parse additional_tools from the shortcode attribute early so it can be used for:
+			// 1. Embedded provider tool definition resolution (added to $tool_slugs_to_include below).
+			// 2. Enhanced WebLLM script enqueueing ($has_tools flag below).
+			// 3. Tool shortcuts ($additional_tools_for_shortcuts variable below).
+			// The parsed slugs are stored in $config['additionalTools'] for the server-side (OpenAI) path,
+			// and also resolved to full OpenAI function definitions for the embedded path.
+			$additional_tools = array();
+			if ( ! empty( $atts['additional_tools'] ) ) {
+				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
+				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
+				$additional_tools     = array_values( array_filter( array_map( 'sanitize_key', $additional_tools ) ) );
+			}
+
 			// Check if assistant has tools, system prompt, or knowledge (used in multiple places).
 			// Also consider the profession shortcode attribute: if a profession is specified, a professional
 			// role prompt will be built and sent as the system prompt, so the enhanced embedded scripts
 			// must be enqueued even when the assistant itself has no system_prompt configured.
-			$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+			// Also consider additional_tools: if any are specified, treat them as "has tools" so the
+			// enhanced WebLLM scripts (tool adapter, function calling client) are enqueued.
+			$has_tools         = ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) || ! empty( $additional_tools );
 			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] ) || ! empty( $atts['profession'] );
 			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
@@ -953,6 +968,16 @@ class WP_MCP_AI_Shortcode {
 				$tool_slugs_to_include = $assistant_config_for_provider['tools'];
 			}
 
+			// Merge additional_tools from the shortcode attribute so the embedded client receives their
+			// full OpenAI function definitions.  The server-side (OpenAI) path gets these as slugs via
+			// $config['additionalTools'] and resolves them on every request, but the embedded client
+			// needs the resolved definitions up-front in $config['tools'].
+			foreach ( $additional_tools as $additional_slug ) {
+				if ( ! in_array( $additional_slug, $tool_slugs_to_include, true ) ) {
+					$tool_slugs_to_include[] = $additional_slug;
+				}
+			}
+
 			// Automatically add semantic_content_search if assistant has knowledge files (RAG pattern).
 			// This enables embedded client to retrieve knowledge content server-side when needed.
 			if ( $has_knowledge && ! in_array( 'semantic_content_search', $tool_slugs_to_include, true ) ) {
@@ -1060,16 +1085,12 @@ class WP_MCP_AI_Shortcode {
 				$config['cptActions'] = $cpt_actions;
 			}
 
-			// Parse additional tools if provided.
+			// Store additional_tools as slugs in config for the server-side (OpenAI) path.
 			// These tools will be available regardless of the assistant's configured tools.
-			if ( ! empty( $atts['additional_tools'] ) ) {
-				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
-				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
-				$additional_tools     = array_filter( array_map( 'sanitize_key', $additional_tools ) );
-
-				if ( ! empty( $additional_tools ) ) {
-					$config['additionalTools'] = array_values( $additional_tools );
-				}
+			// Note: For the embedded provider, these are already resolved and merged into
+			// $config['tools'] above via $tool_slugs_to_include.
+			if ( ! empty( $additional_tools ) ) {
+				$config['additionalTools'] = $additional_tools;
 			}
 
 			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
