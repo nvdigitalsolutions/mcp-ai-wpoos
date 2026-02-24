@@ -129,6 +129,19 @@ class WP_MCP_AI_Pro_Workflow_Builder_Page {
 				array(),
 				$asset['version']
 			);
+
+			// Enqueue ReactFlow's CSS (compiled from `import 'reactflow/dist/style.css'`)
+			// by wp-scripts into a separate style-*.css file. Without this, the canvas
+			// area has no layout and nodes/edges do not render correctly.
+			$style_file = WP_MCP_AI_PATH . 'addons/pro/build/workflow-builder/style-workflow-builder.css';
+			if ( file_exists( $style_file ) ) {
+				wp_enqueue_style(
+					'mcp-ai-pro-workflow-builder-reactflow',
+					WP_MCP_AI_URL . 'addons/pro/build/workflow-builder/style-workflow-builder.css',
+					array(),
+					$asset['version']
+				);
+			}
 		} else {
 			// Fallback for development - load from src.
 			// Debug logging.
