@@ -516,8 +516,8 @@
 					hasTools: !!(options.tools && options.tools.length > 0)
 				});
 				
-				// Diagnostic: Log system prompt configuration
-				const systemMessage = messages.find(msg => msg.role === 'system');
+				// Diagnostic: Log system prompt configuration; inject stored prompt if caller omitted it.
+				let systemMessage = messages.find(msg => msg.role === 'system');
 				if (systemMessage) {
 					console.log('[NV oOS Embedded Client] System prompt included in request (OpenAI-compatible):', {
 						hasSystemPrompt: true,
@@ -525,6 +525,16 @@
 						systemPromptPreview: systemMessage.content.length > 200 ? systemMessage.content.substring(0, 200) + '...' : systemMessage.content,
 						instanceId: this.instanceId,
 						note: 'System prompt must be sent with every request per OpenAI API pattern'
+					});
+				} else if (this.systemPrompt) {
+					// Caller did not inject a system message but this client has a stored system prompt.
+					// Inject it here as a safety net so it is always sent with every request.
+					messages = [{ role: 'system', content: this.systemPrompt }].concat(messages);
+					systemMessage = messages[0];
+					console.log('[NV oOS Embedded Client] Injected stored system prompt (fallback):', {
+						instanceId: this.instanceId,
+						systemPromptLength: this.systemPrompt.length,
+						systemPromptPreview: this.systemPrompt.length > 200 ? this.systemPrompt.substring(0, 200) + '...' : this.systemPrompt
 					});
 				} else {
 					console.warn('[NV oOS Embedded Client] WARNING: No system prompt in messages for instance:', {
