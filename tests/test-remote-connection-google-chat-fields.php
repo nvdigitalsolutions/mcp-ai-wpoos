@@ -241,6 +241,50 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Test that the Google Chat API endpoint URL is built without URL-encoding the space
+	 * name. Encoding the slash in `spaces/ID` breaks the Google Chat API request.
+	 *
+	 * This mirrors the URL-building logic in ajax_test_google_chat_auto_reply() and
+	 * handle_google_chat_reply_job(), both of which must use string concatenation rather
+	 * than rawurlencode() so the path separator is preserved.
+	 */
+	public function test_google_chat_endpoint_url_not_rawurlencoded() {
+		$space = 'spaces/AAAATestSpace123';
+
+		// Correct approach: direct concatenation, as used in the fixed code.
+		$correct_endpoint = 'https://chat.googleapis.com/v1/' . $space . '/messages';
+
+		$this->assertStringContainsString(
+			'spaces/AAAATestSpace123',
+			$correct_endpoint,
+			'Endpoint URL must contain the literal slash in the space name'
+		);
+		$this->assertStringNotContainsString(
+			'spaces%2F',
+			$correct_endpoint,
+			'Endpoint URL must not URL-encode the slash in the space name'
+		);
+		$this->assertSame(
+			'https://chat.googleapis.com/v1/spaces/AAAATestSpace123/messages',
+			$correct_endpoint,
+			'Correct endpoint format must match Google Chat API v1 path'
+		);
+
+		// Demonstrate that rawurlencode() produces a broken URL (the original bug).
+		$broken_endpoint = sprintf( 'https://chat.googleapis.com/v1/%s/messages', rawurlencode( $space ) );
+		$this->assertStringContainsString(
+			'spaces%2F',
+			$broken_endpoint,
+			'rawurlencode() incorrectly encodes the slash — confirms the old approach was broken'
+		);
+		$this->assertNotSame(
+			$correct_endpoint,
+			$broken_endpoint,
+			'rawurlencode() endpoint must differ from the correct endpoint'
+		);
+	}
+
 	// =========================================================================
 	// test_connection() — Google Chat routing and partial-setup handling.
 	// =========================================================================

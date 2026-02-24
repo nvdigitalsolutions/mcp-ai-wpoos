@@ -81,7 +81,8 @@
 		"tmp": ">=0.2.4",
 		"webpack-dev-server": ">=5.2.1",
 		"langsmith": ">=0.4.6",
-		"minimatch": ">=10.2.1"
+		"minimatch": ">=10.2.1",
+		"test-exclude": ">=8.0.0"
 	},
 	"engines": {
 		"node": ">=18.17.0",
