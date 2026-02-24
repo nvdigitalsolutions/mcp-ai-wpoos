@@ -946,10 +946,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return array Empty response.
+	 * @return stdClass Empty JSON object response.
 	 */
 	protected function empty_response() {
-		return array();
+		return new stdClass();
 	}
 
 	/**
