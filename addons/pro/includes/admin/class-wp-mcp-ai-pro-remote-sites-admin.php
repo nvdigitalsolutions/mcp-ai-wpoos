@@ -2065,7 +2065,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								'order'          => 'ASC',
 							)
 						);
-						$saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+						$saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'whatsapp' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
 							? array_map( 'absint', $connection['assigned_assistant_ids'] )
 							: array();
 						?>
