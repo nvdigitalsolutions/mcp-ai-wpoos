@@ -12065,11 +12065,25 @@
                     .map(function(item) { return item.text; })
                     .join('\n');
             }
-            
-            return {
+
+            const formatted = {
                 role: msg.role,
                 content: content
             };
+
+            // Preserve tool-calling fields required by the OpenAI-compatible WebLLM API.
+            // Assistant messages may carry tool_calls; tool messages require tool_call_id and name.
+            if (msg.tool_calls) {
+                formatted.tool_calls = msg.tool_calls;
+            }
+            if (msg.tool_call_id) {
+                formatted.tool_call_id = msg.tool_call_id;
+            }
+            if (msg.name) {
+                formatted.name = msg.name;
+            }
+
+            return formatted;
         });
 
         // Build the effective system prompt per-request from the current state.config values.
