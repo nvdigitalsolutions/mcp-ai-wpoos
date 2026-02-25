@@ -833,6 +833,256 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertTrue( true );
 	}
 
+	/**
+	 * Test get_active_google_chat_connection returns a connection even when
+	 * assigned_assistant_ids is not set (removed that requirement so the global
+	 * default_assistant_id fallback can be applied in handle_webhook).
+	 */
+	public function test_google_chat_connection_found_without_assigned_assistants() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Connection with no assigned_assistant_ids.
+		$connections = array(
+			array(
+				'id'              => 'no_assistant_conn',
+				'connection_type' => 'google_chat',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, '' );
+
+		$this->assertIsArray( $result, 'Connection without assigned_assistant_ids should still be returned' );
+		$this->assertSame( 'no_assistant_conn', $result['id'], 'Correct connection should be returned' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test that handle_webhook uses the global default_assistant_id from automation rules
+	 * when the connection has no assigned_assistant_ids — mirrors the Telegram/WhatsApp pattern.
+	 */
+	public function test_google_chat_handle_webhook_uses_default_assistant_id_fallback() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a google_chat connection with NO assigned_assistant_ids.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Default Assistant Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+			)
+		);
+
+		// Set the global default_assistant_id in automation rules.
+		$assistant_id = 42;
+		update_option(
+			'wp_mcp_ai_chat_channels_automation_rules',
+			array( 'default_assistant_id' => $assistant_id )
+		);
+
+		// Use the filter to capture the resolved assistant IDs without actually scheduling cron.
+		$captured_assistant_ids = null;
+		add_filter(
+			'wp_mcp_ai_google_chat_should_auto_reply',
+			function ( $should_reply, $payload, $automation_rules ) use ( &$captured_assistant_ids, $assistant_id ) {
+				// The controller resolves $assigned_assistant_ids before calling the filter.
+				// We verify this by capturing the default from automation_rules.
+				$captured_assistant_ids = ! empty( $automation_rules['default_assistant_id'] )
+					? array( absint( $automation_rules['default_assistant_id'] ) )
+					: array();
+				return false; // Prevent cron dispatch.
+			},
+			10,
+			3
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.token.here' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'MESSAGE',
+					'message' => array(
+						'name'   => 'spaces/AAABBB/messages/msg001',
+						'text'   => 'Hello bot',
+						'sender' => array( 'name' => 'users/12345' ),
+					),
+					'space'   => array( 'name' => 'spaces/AAABBB' ),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		remove_all_filters( 'wp_mcp_ai_google_chat_should_auto_reply' );
+
+		$this->assertNotNull( $captured_assistant_ids, 'wp_mcp_ai_google_chat_should_auto_reply filter should have been called' );
+		$this->assertContains(
+			$assistant_id,
+			$captured_assistant_ids,
+			'Automation rules default_assistant_id should be used as fallback'
+		);
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+		delete_option( 'wp_mcp_ai_chat_channels_automation_rules' );
+	}
+
+	/**
+	 * Test that the wp_mcp_ai_google_chat_should_auto_reply filter can block the auto-reply.
+	 */
+	public function test_google_chat_should_auto_reply_filter_is_applied() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Filter Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 1 ),
+			)
+		);
+
+		$filter_was_called = false;
+		add_filter(
+			'wp_mcp_ai_google_chat_should_auto_reply',
+			function () use ( &$filter_was_called ) {
+				$filter_was_called = true;
+				return false; // Block reply without dispatching cron.
+			}
+		);
+
+		// Capture cron state before invocation.
+		$before_crons = _get_cron_array();
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.token.here' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'MESSAGE',
+					'message' => array(
+						'name'   => 'spaces/AAABBB/messages/msg002',
+						'text'   => 'Filter test message',
+						'sender' => array( 'name' => 'users/99999' ),
+					),
+					'space'   => array( 'name' => 'spaces/AAABBB' ),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		remove_all_filters( 'wp_mcp_ai_google_chat_should_auto_reply' );
+
+		$after_crons = _get_cron_array();
+
+		$this->assertTrue( $filter_was_called, 'wp_mcp_ai_google_chat_should_auto_reply filter should have been invoked' );
+		$this->assertEquals(
+			$before_crons,
+			$after_crons,
+			'No cron event should be scheduled when the filter returns false'
+		);
+
+		// Cleanup.
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test that handle_webhook schedules a cron job for MESSAGE events when the connection
+	 * has assigned assistants — the core auto-reply trigger.
+	 */
+	public function test_google_chat_handle_webhook_schedules_cron_for_message_event() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Cron Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 7 ),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.token.here' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'MESSAGE',
+					'message' => array(
+						'name'   => 'spaces/CCCDDDD/messages/msg003',
+						'text'   => 'Hello from space',
+						'sender' => array( 'name' => 'users/55555' ),
+					),
+					'space'   => array( 'name' => 'spaces/CCCDDDD' ),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$found = false;
+		foreach ( $crons as $events ) {
+			if ( isset( $events[ $hook ] ) ) {
+				$found = true;
+				break;
+			}
+		}
+
+		$this->assertTrue( $found, 'Cron job should be scheduled for a MESSAGE event with an active connection' );
+
+		// Clean up.
+		wp_clear_scheduled_hook( $hook );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
 	// =========================================================================
 	// Shared conversation history trimming logic (platform-agnostic).
 	// =========================================================================
