@@ -171,6 +171,9 @@ composer.phar
 !addons/pro/assets/vendor/**/*.js
 !addons/pro/assets/vendor/**/*.css
 
+# Exclude source maps from vendor directories (not needed in production; reduces repo size)
+addons/pro/assets/vendor/**/*.map
+
 # Exclude canvas native binaries (platform-specific, must be compiled via npm install)
 addons/pro/assets/vendor/canvas/build/
 
