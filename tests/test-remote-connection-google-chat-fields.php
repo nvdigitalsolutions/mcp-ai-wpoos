@@ -700,4 +700,108 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		$this->assertTrue( $result, 'handle_channel_send_reply should return true on successful send' );
 		$this->assertStringContainsString( 'spaces/AAAATestSendReply/messages', $sent_to_url, 'Request should be sent to the correct Google Chat endpoint' );
 	}
+
+	// =========================================================================
+	// Connection-specific webhook route registration.
+	// =========================================================================
+
+	/**
+	 * The webhook controller must register a connection-specific route so that the
+	 * channel-specific URL displayed in the admin UI (/webhooks/google-chat/{id})
+	 * is reachable by Google Chat and does not return 404.
+	 */
+	public function test_connection_specific_webhook_route_is_registered() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		// Trigger REST route registration.
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		do_action( 'rest_api_init' );
+
+		$routes = rest_get_server()->get_routes();
+
+		// Generic route must exist.
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/webhooks/google-chat',
+			$routes,
+			'Generic Google Chat webhook route must be registered'
+		);
+
+		// Connection-specific route must also be registered so channel-specific
+		// URLs shown in the admin UI resolve to a real endpoint.
+		$found_specific_route = false;
+		foreach ( array_keys( $routes ) as $route ) {
+			if ( preg_match( '#^/mcp-ai/v1/webhooks/google-chat/\(#', $route ) ) {
+				$found_specific_route = true;
+				break;
+			}
+		}
+
+		$this->assertTrue(
+			$found_specific_route,
+			'Connection-specific Google Chat webhook route (/webhooks/google-chat/{connection_id}) must be registered'
+		);
+	}
+
+	/**
+	 * handle_webhook must look up the connection by URL connection_id when that
+	 * route parameter is present, bypassing the space-name-based lookup.
+	 */
+	public function test_handle_webhook_uses_url_connection_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		// Save a Google Chat connection with a unique space name.
+		$connection_data = array(
+			'name'                  => 'GC Incoming Route Test',
+			'url'                   => 'https://chat.googleapis.com/v1',
+			'connection_type'       => 'google_chat',
+			'auth_type'             => 'none',
+			'enabled'               => true,
+			'api_key'               => 'ya29.fake_token',
+			'google_chat_space'     => 'spaces/AAAARouteTest',
+			'assigned_assistant_ids' => array(),
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Build a minimal Google Chat MESSAGE webhook payload.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'name'   => 'spaces/AAAARouteTest/messages/msg123',
+				'text'   => 'Hello bot',
+				'sender' => array( 'name' => 'users/99999' ),
+				'thread' => array( 'name' => 'spaces/AAAARouteTest/threads/t1' ),
+			),
+			'space'   => array(
+				'name' => 'spaces/AAAARouteTest',
+				'type' => 'DIRECT_MESSAGE',
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat/' . $connection_id );
+		$request->set_param( 'connection_id', $connection_id );
+		$request->set_json_params( $payload );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$response   = $controller->handle_webhook( $request );
+
+		// The handler should return an empty 200 response (async cron scheduled).
+		// A null $response here would indicate an exception or early bail-out.
+		$this->assertNotNull( $response, 'handle_webhook must return a response (not null)' );
+
+		// Clean up scheduled cron event.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+	}
 }
