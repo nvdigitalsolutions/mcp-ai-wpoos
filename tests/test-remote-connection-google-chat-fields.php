@@ -804,4 +804,349 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		// Clean up scheduled cron event.
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
 	}
+
+	// =========================================================================
+	// allow_google_oidc_auth — REST authentication error bypass.
+	// =========================================================================
+
+	/**
+	 * allow_google_oidc_auth passes non-error values through unchanged.
+	 */
+	public function test_allow_google_oidc_auth_passes_through_null() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$result     = $controller->allow_google_oidc_auth( null );
+
+		$this->assertNull( $result, 'allow_google_oidc_auth must return null unchanged when no error is set' );
+	}
+
+	/**
+	 * allow_google_oidc_auth clears WP_Error for requests to the webhook base path.
+	 */
+	public function test_allow_google_oidc_auth_clears_error_for_webhook_path() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		// Simulate a JWT auth plugin setting an error on the webhook path.
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat';
+
+		$error      = new WP_Error( 'jwt_auth_bad_auth_header', 'Authorization header malformed.' );
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$result     = $controller->allow_google_oidc_auth( $error );
+
+		unset( $_SERVER['REQUEST_URI'] );
+
+		$this->assertNull( $result, 'allow_google_oidc_auth must clear auth errors for the google-chat webhook path' );
+	}
+
+	/**
+	 * allow_google_oidc_auth leaves WP_Error untouched for unrelated paths.
+	 */
+	public function test_allow_google_oidc_auth_preserves_error_for_other_paths() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/chat';
+
+		$error      = new WP_Error( 'jwt_auth_bad_auth_header', 'Authorization header malformed.' );
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$result     = $controller->allow_google_oidc_auth( $error );
+
+		unset( $_SERVER['REQUEST_URI'] );
+
+		$this->assertInstanceOf( WP_Error::class, $result, 'allow_google_oidc_auth must not clear errors for unrelated REST paths' );
+	}
+
+	/**
+	 * allow_google_oidc_auth also clears errors for connection-specific webhook URLs.
+	 */
+	public function test_allow_google_oidc_auth_clears_error_for_connection_specific_path() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat/conn_abc123';
+
+		$error      = new WP_Error( 'rest_not_logged_in', 'REST API requires authentication.' );
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$result     = $controller->allow_google_oidc_auth( $error );
+
+		unset( $_SERVER['REQUEST_URI'] );
+
+		$this->assertNull( $result, 'allow_google_oidc_auth must clear auth errors for connection-specific webhook paths' );
+	}
+
+	// =========================================================================
+	// require_mention removal — DM and space mention handling.
+	// =========================================================================
+
+	/**
+	 * DM messages are processed without any mention check (require_mention removed).
+	 */
+	public function test_handle_webhook_processes_dm_without_mention_check() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'DM Test Assistant',
+			)
+		);
+
+		// Connection with no require_mention field (the field is gone).
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC DM Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'ya29.fake',
+				'google_chat_space'      => 'spaces/AAAADMTest',
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Simulate a plain DM — no argumentText, no @mention in text.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'name'   => 'spaces/AAAADMTest/messages/dm1',
+				'text'   => 'what can you do?',
+				'sender' => array( 'name' => 'users/42' ),
+				'thread' => array( 'name' => 'spaces/AAAADMTest/threads/t1' ),
+			),
+			'space'   => array(
+				'name'      => 'spaces/AAAADMTest',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_json_params( $payload );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$response   = $controller->handle_webhook( $request );
+
+		$this->assertNotNull( $response, 'handle_webhook must return a response for DM messages' );
+
+		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
+		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for DM messages' );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+	}
+
+	/**
+	 * Space @mention messages are processed (argumentText present, no mention gate).
+	 */
+	public function test_handle_webhook_processes_space_mention() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Space Mention Assistant',
+			)
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Space Mention Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'ya29.fake',
+				'google_chat_space'      => 'spaces/AAAASpaceTest',
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Simulate a space @mention — argumentText is the text after the @mention.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'name'         => 'spaces/AAAASpaceTest/messages/m1',
+				'text'         => '@NV oOS what can you do?',
+				'argumentText' => ' what can you do?',
+				'sender'       => array( 'name' => 'users/77' ),
+				'thread'       => array( 'name' => 'spaces/AAAASpaceTest/threads/t2' ),
+			),
+			'space'   => array(
+				'name'      => 'spaces/AAAASpaceTest',
+				'spaceType' => 'SPACE',
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_json_params( $payload );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$response   = $controller->handle_webhook( $request );
+
+		$this->assertNotNull( $response );
+
+		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
+		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for space @mention messages' );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+	}
+
+	// =========================================================================
+	// APP_COMMAND (slash command) handling.
+	// =========================================================================
+	/**
+	 * extract_app_command_text returns the commandText from the payload.
+	 */
+	public function test_extract_app_command_text_returns_command_text() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_app_command_text' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'appCommandPayload' => array(
+				'commandText' => 'What can you do?',
+			),
+		);
+
+		$result = $method->invoke( $controller, $payload );
+		$this->assertSame( 'What can you do?', $result );
+	}
+
+	/**
+	 * extract_app_command_text returns a non-empty fallback when commandText is absent.
+	 */
+	public function test_extract_app_command_text_returns_fallback_for_empty_command_text() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_app_command_text' );
+		$method->setAccessible( true );
+
+		// No commandText key at all.
+		$result_no_key = $method->invoke( $controller, array( 'appCommandPayload' => array() ) );
+		$this->assertNotEmpty( $result_no_key, 'Fallback must be non-empty when commandText is absent' );
+		$this->assertIsString( $result_no_key );
+
+		// commandText present but empty string.
+		$result_empty = $method->invoke( $controller, array( 'appCommandPayload' => array( 'commandText' => '' ) ) );
+		$this->assertNotEmpty( $result_empty, 'Fallback must be non-empty when commandText is an empty string' );
+	}
+
+	/**
+	 * handle_webhook schedules a cron reply for APP_COMMAND events.
+	 */
+	public function test_handle_webhook_schedules_reply_for_app_command_event() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
+
+		$connection_data = array(
+			'name'                   => 'GC APP_COMMAND Test',
+			'url'                    => 'https://chat.googleapis.com/v1',
+			'connection_type'        => 'google_chat',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'ya29.fake_token',
+			'google_chat_space'      => 'spaces/AAAACmdTest',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Connection save should succeed' );
+
+		// Simulate an APP_COMMAND payload (slash command invoked in a DM).
+		$payload = array(
+			'type'              => 'APP_COMMAND',
+			'appCommandPayload' => array(
+				'appCommandMetadata' => array(
+					'appCommandType' => 'SLASH_COMMAND',
+					'appCommandId'   => 1,
+				),
+				'commandText'        => 'What can you do?',
+			),
+			'space'             => array(
+				'name'      => 'spaces/AAAACmdTest',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'user'              => array(
+				'name' => 'users/12345',
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_json_params( $payload );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$response   = $controller->handle_webhook( $request );
+
+		$this->assertNotNull( $response, 'handle_webhook must return a response for APP_COMMAND events' );
+
+		// A cron event must have been scheduled.
+		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
+		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for APP_COMMAND events' );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+	}
 }
