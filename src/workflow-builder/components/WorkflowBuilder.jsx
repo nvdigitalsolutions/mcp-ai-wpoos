@@ -29,7 +29,7 @@ import ExecutionControls from './ExecutionControls';
 import ExecutionHistoryPanel from './ExecutionHistoryPanel';
 import MetricsDashboard from './MetricsDashboard';
 import nodeTypes from '../nodes';
-import { generateNodeId, validateWorkflow } from '../utils/workflowHelpers';
+import { exportWorkflow, importWorkflow, generateNodeId, validateWorkflow } from '../utils/workflowHelpers';
 import { WorkflowHistory, debounce } from '../utils/workflowHistory';
 import { createVersion, saveVersionToLocal, getVersionsFromLocal } from '../utils/workflowVersioning';
 import { WorkflowExecutor, ExecutionStatus } from '../utils/workflowExecutor';
@@ -264,6 +264,83 @@ const WorkflowBuilderInner = () => {
 	}, [] );
 
 	/**
+	 * Validate and test workflow without executing
+	 */
+	const handleTest = useCallback( () => {
+		const errors = validateWorkflow( nodes, edges );
+		setValidationErrors( errors );
+		if ( errors.length === 0 ) {
+			// eslint-disable-next-line no-console
+			console.log( __( 'Workflow validation passed', 'mcp-ai-wpoos' ) );
+		}
+	}, [nodes, edges] );
+
+	/**
+	 * Export current workflow as JSON file
+	 */
+	const handleExport = useCallback( () => {
+		exportWorkflow( {
+			name: workflowName,
+			description: workflowDescription,
+			nodes,
+			edges,
+		} );
+	}, [workflowName, workflowDescription, nodes, edges] );
+
+	/**
+	 * Import workflow from JSON file
+	 */
+	const handleImport = useCallback( async ( file ) => {
+		try {
+			const workflow = await importWorkflow( file );
+			if ( workflow.name ) {
+				setWorkflowName( workflow.name );
+			}
+			if ( workflow.description !== undefined ) {
+				setWorkflowDescription( workflow.description );
+			}
+			setNodes( workflow.nodes || [] );
+			setEdges( workflow.edges || [] );
+			setValidationErrors( [] );
+		} catch ( error ) {
+			setValidationErrors( [ error.message ] );
+		}
+	}, [setNodes, setEdges] );
+
+	/**
+	 * Load a saved workflow into the editor
+	 */
+	const handleLoadWorkflow = useCallback( ( workflow ) => {
+		setWorkflowName( workflow.name );
+		setWorkflowDescription( workflow.description || '' );
+		setNodes( workflow.nodes || [] );
+		setEdges( workflow.edges || [] );
+		setValidationErrors( [] );
+	}, [setNodes, setEdges] );
+
+	/**
+	 * Delete a saved workflow
+	 */
+	const handleDeleteWorkflow = useCallback( async ( workflowId ) => {
+		try {
+			await fetch( window.mcpAiWorkflowBuilder?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( {
+					action: 'wp_mcp_ai_delete_pro_workflow',
+					nonce: window.mcpAiWorkflowBuilder?.nonce || '',
+					workflow_id: workflowId,
+				} ),
+			} );
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( 'Error deleting workflow:', error );
+		}
+	}, [] );
+
+	/**
 	 * Handle new connection between nodes
 	 */
 	const onConnect = useCallback(
@@ -446,9 +523,16 @@ const WorkflowBuilderInner = () => {
 				workflowName={workflowName}
 				onNameChange={setWorkflowName}
 				onSave={saveWorkflow}
+				onTest={handleTest}
 				onUndo={handleUndo}
 				onRedo={handleRedo}
 				onSaveVersion={handleSaveVersion}
+				onExport={handleExport}
+				onImport={handleImport}
+				onToggleHistory={() => setShowHistory( ( prev ) => ! prev )}
+				onToggleMetrics={() => setShowMetrics( ( prev ) => ! prev )}
+				showHistory={showHistory}
+				showMetrics={showMetrics}
 				canUndo={canUndo}
 				canRedo={canRedo}
 				isSaving={isSaving}
@@ -466,7 +550,11 @@ const WorkflowBuilderInner = () => {
 			/>
 			
 			<div className="workflow-builder-main">
-				<WorkflowSidebar onLoadTemplate={loadTemplate} />
+				<WorkflowSidebar
+					onLoadTemplate={loadTemplate}
+					onLoadWorkflow={handleLoadWorkflow}
+					onDeleteWorkflow={handleDeleteWorkflow}
+				/>
 				
 				<div className="workflow-canvas-wrapper" ref={reactFlowWrapper}>
 					<ReactFlow
