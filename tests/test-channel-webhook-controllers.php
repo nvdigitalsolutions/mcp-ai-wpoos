@@ -1883,4 +1883,148 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		wp_delete_post( $post_id, true );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
+
+	// =========================================================================
+	// Google Chat — thread-reply passthrough
+	// =========================================================================
+
+	/**
+	 * handle_webhook passes message.thread.name through to the cron job args
+	 * so that handle_google_chat_reply_job can reply in the same thread.
+	 */
+	public function test_google_chat_thread_name_passed_to_cron_job() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Thread Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 5 ),
+			)
+		);
+
+		$thread_resource = 'spaces/AAABBB/threads/thread-xyz';
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.token.here' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'MESSAGE',
+					'message' => array(
+						'name'         => 'spaces/AAABBB/messages/msg-thread-001',
+						'text'         => '@Bot hello in thread',
+						'argumentText' => ' hello in thread',
+						'thread'       => array( 'name' => $thread_resource ),
+						'sender'       => array( 'name' => 'users/77777' ),
+					),
+					'space'   => array(
+						'name' => 'spaces/AAABBB',
+						'type' => 'SPACE',
+					),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$thread_name_found = false;
+
+		foreach ( $crons as $events ) {
+			if ( ! isset( $events[ $hook ] ) ) {
+				continue;
+			}
+			foreach ( $events[ $hook ] as $event ) {
+				if ( isset( $event['args'][0]['thread_name'] ) && $thread_resource === $event['args'][0]['thread_name'] ) {
+					$thread_name_found = true;
+				}
+			}
+		}
+
+		$this->assertTrue( $thread_name_found, 'thread_name must be included in cron job args for thread-based replies' );
+
+		wp_unschedule_hook( $hook );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * handle_webhook passes an empty thread_name to the cron job when the payload
+	 * contains no message.thread field (e.g. DMs or new top-level messages).
+	 */
+	public function test_google_chat_empty_thread_name_when_no_thread_in_payload() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC No Thread Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 6 ),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.token.here' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'MESSAGE',
+					'message' => array(
+						'name'   => 'spaces/GGGHHH/messages/msg-no-thread-001',
+						'text'   => 'Hello DM bot',
+						'sender' => array( 'name' => 'users/88888' ),
+					),
+					'space'   => array(
+						'name' => 'spaces/GGGHHH',
+						'type' => 'DIRECT_MESSAGE',
+					),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$empty_thread_found = false;
+
+		foreach ( $crons as $events ) {
+			if ( ! isset( $events[ $hook ] ) ) {
+				continue;
+			}
+			foreach ( $events[ $hook ] as $event ) {
+				if ( isset( $event['args'][0] ) && '' === ( $event['args'][0]['thread_name'] ?? null ) ) {
+					$empty_thread_found = true;
+				}
+			}
+		}
+
+		$this->assertTrue( $empty_thread_found, 'thread_name must be empty string when no thread is present in the payload' );
+
+		wp_unschedule_hook( $hook );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
 }
