@@ -116,6 +116,30 @@
 			recommended: true,
 			functionCalling: true
 		},
+		'Hermes-3-Llama-3.1-8B-q4f16_1-MLC': {
+			name: 'Hermes 3 Llama 3.1 8B',
+			size: '~4.9GB',
+			description: 'Updated Hermes 3 with improved function calling on Llama 3.1',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: true
+		},
+		'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC': {
+			name: 'DeepSeek R1 Distill Llama 8B',
+			size: '~5GB',
+			description: 'DeepSeek R1 reasoning model distilled to Llama 8B for advanced reasoning tasks',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
+		'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC': {
+			name: 'DeepSeek R1 Distill Qwen 7B',
+			size: '~5.1GB',
+			description: 'DeepSeek R1 reasoning model distilled to Qwen 7B for advanced reasoning tasks',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
 		'Qwen2.5-7B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 7B Instruct',
 			size: '~4.5GB',
@@ -132,11 +156,27 @@
 			recommended: false,
 			functionCalling: true
 		},
+		'gemma-2-2b-it-q4f16_1-MLC': {
+			name: 'Gemma 2 2B Instruct',
+			size: '~1.9GB',
+			description: "Google's Gemma 2 2B instruction-tuned model, efficient and capable",
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
 		'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
 			name: 'Llama 3.2 3B Instruct',
 			size: '~2GB',
 			description: 'Balanced model for general chat (does not support function calling)',
 			contextWindow: 131072,
+			recommended: false,
+			functionCalling: false
+		},
+		'SmolLM2-1.7B-Instruct-q4f16_1-MLC': {
+			name: 'SmolLM2 1.7B Instruct',
+			size: '~1.8GB',
+			description: "HuggingFace's efficient SmolLM2 model, ideal for resource-constrained devices",
+			contextWindow: 4096,
 			recommended: false,
 			functionCalling: false
 		},
