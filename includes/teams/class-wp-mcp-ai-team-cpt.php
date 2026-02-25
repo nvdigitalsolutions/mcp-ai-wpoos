@@ -727,20 +727,8 @@ class WP_MCP_AI_Team_CPT {
 				<label for="wp-mcp-ai-default-model">
 					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
-				<select name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat">
+				<select name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat" data-current-model="<?php echo esc_attr( $default_model ); ?>">
 					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
-					<?php if ( ! empty( $models ) ) : ?>
-						<?php foreach ( $models as $model_id => $model_name ) : ?>
-							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
-								<?php echo esc_html( $model_name ); ?>
-							</option>
-						<?php endforeach; ?>
-					<?php endif; ?>
-					<?php if ( $default_model && ( empty( $models ) || ! isset( $models[ $default_model ] ) ) ) : ?>
-						<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
-							<?php echo esc_html( $default_model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
-						</option>
-					<?php endif; ?>
 				</select>
 				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'mcp-ai-wpoos' ); ?></span>
 			</p>
