@@ -110,14 +110,27 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
+		$route_args = array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'handle_webhook' ),
+			'permission_callback' => array( $this, 'validate_google_oidc_token' ),
+		);
+
+		// Generic webhook URL — handles all Google Chat connections.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
-			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle_webhook' ),
-				'permission_callback' => array( $this, 'validate_google_oidc_token' ),
-			)
+			$route_args
+		);
+
+		// Connection-specific webhook URL (e.g. /webhooks/google-chat/{connection_id}).
+		// The admin UI exposes this URL so each Google Cloud project can route events
+		// to its own dedicated endpoint. Without this registration those URLs return 404
+		// and Google Chat events are silently dropped.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			$route_args
 		);
 	}
 
@@ -172,8 +185,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		$connection = $this->get_active_google_chat_connection();
-		$audience   = '';
+		// When the request hits the connection-specific route, use the connection_id
+		// URL param to load the exact connection (and its audience URL) directly.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+		} else {
+			$connection = $this->get_active_google_chat_connection();
+		}
+
+		$audience = '';
 
 		if ( $connection && ! empty( $connection['verify_token'] ) ) {
 			$audience = $connection['verify_token'];
@@ -305,8 +326,17 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		// Resolve connection, preferring space-specific connections.
-		$connection = $this->get_active_google_chat_connection( $space_name );
+		// Resolve connection: prefer the connection_id from the URL route (connection-specific
+		// webhook endpoint), then fall back to space-name-based matching.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		} else {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
 
 		if ( ! $connection ) {
 			WP_MCP_AI_Logger::log_error(
