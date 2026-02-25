@@ -110,6 +110,50 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_google_chat_reply_job' ) );
 		add_action( 'wp_mcp_ai_google_chat_send_welcome_message', array( $this, 'handle_welcome_message_job' ) );
 		add_filter( 'wp_mcp_ai_chat_channels_send_reply', array( $this, 'handle_channel_send_reply' ), 10, 6 );
+
+		// WordPress Application Passwords (WP 5.6+) and JWT auth plugins intercept
+		// the Authorization: Bearer header and can set a WP_Error in
+		// rest_authentication_errors before our permission_callback runs, causing a
+		// 401/403 that Google Chat immediately reports as "not responding".
+		// Clear that error for requests to our webhook endpoints so that our own
+		// validate_google_oidc_token() callback handles authentication.
+		add_filter( 'rest_authentication_errors', array( $this, 'allow_google_oidc_auth' ), 99 );
+	}
+
+	/**
+	 * Allow Google OIDC-authenticated webhook requests to reach our permission callback.
+	 *
+	 * WordPress Application Passwords (WP 5.6+) and third-party JWT auth plugins
+	 * listen on the `determine_current_user` filter and set a WP_Error in
+	 * `rest_authentication_errors` when they cannot parse the Authorization header.
+	 * Because WordPress evaluates that filter before calling our permission_callback,
+	 * any such error causes a 401/403 response that Google Chat immediately surfaces
+	 * as "not responding" — our validate_google_oidc_token() never even runs.
+	 *
+	 * For requests targeting our webhook endpoints we clear the authentication error
+	 * (return null) so WordPress proceeds to call validate_google_oidc_token(), which
+	 * is the correct authority on whether the Google OIDC Bearer token is valid.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Error|null $error Existing authentication error or null.
+	 * @return WP_Error|null Null for our webhook routes; unchanged value for all others.
+	 */
+	public function allow_google_oidc_auth( $error ) {
+		// Only intervene when another plugin already set an error — if there is no
+		// error we have nothing to clear.
+		if ( ! is_wp_error( $error ) ) {
+			return $error;
+		}
+
+		// Check whether this request targets one of our webhook routes.
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+		if ( false !== strpos( $request_uri, '/' . $this->rest_base ) ) {
+			// Clear the error so our permission_callback handles auth instead.
+			return null;
+		}
+
+		return $error;
 	}
 
 	/**
@@ -300,6 +344,14 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return $this->handle_added_to_space( $payload );
 		}
 
+		// Handle APP_COMMAND events (slash commands configured in Google Cloud Console).
+		// Google Chat sends APP_COMMAND instead of MESSAGE when a user invokes a
+		// configured slash command. Without this branch the event is silently dropped
+		// and Google Chat immediately shows "not responding".
+		if ( 'APP_COMMAND' === $event_type ) {
+			return $this->handle_app_command( $payload, $request );
+		}
+
 		// Only process MESSAGE events (not REMOVED_FROM_SPACE, CARD_CLICKED, etc.).
 		if ( 'MESSAGE' !== $event_type ) {
 			return rest_ensure_response( $this->empty_response() );
@@ -366,40 +418,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
 		}
 
-		// When the connection requires an @slug mention, check whether the
-		// native Google Chat mention mechanism has already satisfied it before
-		// falling back to the slug-based check.
-		//
-		// Google Chat's delivery rules mean that a MESSAGE event is only sent to
-		// the bot when the bot has been @mentioned (in SPACE / GROUP_CHAT) or
-		// when the message is a DIRECT_MESSAGE. Both cases constitute an implicit
-		// mention acknowledgement:
-		//
-		//  • argumentText populated → Google Chat stripped the bot @mention from
-		//    the text, confirming the user addressed the bot in a group space.
-		//  • DIRECT_MESSAGE space type → every message in a DM is directed at the
-		//    bot; no explicit @mention is possible or required.
-		//  • SPACE / GROUP_CHAT → Google Chat only delivers events to the bot when
-		//    it is @mentioned, so any arriving MESSAGE is already a native mention.
-		//
-		// In all these cases the require_mention flag is considered satisfied and
-		// the slug-based message_mentions_assistant() check is skipped.
-		if ( ! empty( $connection['require_mention'] ) ) {
-			$is_direct_message    = 'DIRECT_MESSAGE' === $space_type;
-			$has_argument_text    = isset( $payload['message']['argumentText'] ) && '' !== trim( $payload['message']['argumentText'] );
-			$is_group_space       = in_array( $space_type, array( 'SPACE', 'GROUP_CHAT', 'ROOM' ), true );
-			$is_native_bot_mention = $is_direct_message || $has_argument_text || $is_group_space;
-
-			if ( ! $is_native_bot_mention && ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
-				return rest_ensure_response( $this->empty_response() );
-			}
-		}
-
 		/**
 		 * Filter whether to auto-reply to Google Chat messages.
 		 *
 		 * Defaults to true when the connection has one or more assigned AI assistants
 		 * or a global default assistant is configured in the automation rules.
+		 *
+		 * Note: Google Chat already enforces mention/routing rules at the platform
+		 * level — MESSAGE events in spaces are only delivered to the bot when it is
+		 * @mentioned, and every message in a DIRECT_MESSAGE space is directed at the
+		 * bot. No additional require_mention filtering is needed here.
 		 *
 		 * @since 1.0.0
 		 *
@@ -595,6 +623,95 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'space_name' => $space_name,
 				'space_type' => $space_type,
+			)
+		);
+
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Handle an APP_COMMAND event (slash command configured in Google Cloud Console).
+	 *
+	 * Google Chat sends APP_COMMAND instead of MESSAGE when a user invokes a
+	 * configured slash command. The text argument entered after the command name
+	 * is available in appCommandPayload.commandText. When no argument text is
+	 * provided (e.g. the user typed just "/help"), a generic prompt is used so
+	 * the AI still returns a useful reply.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array           $payload Normalised Google Chat event payload.
+	 * @param WP_REST_Request $request Original REST request (used to read connection_id param).
+	 * @return WP_REST_Response Empty acknowledgement response.
+	 */
+	protected function handle_app_command( array $payload, WP_REST_Request $request ) {
+		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type  = $this->get_space_type( $payload );
+		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
+
+		if ( '' === $space_name ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: APP_COMMAND missing space name.' );
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$message_text = $this->extract_app_command_text( $payload );
+
+		// Resolve connection: prefer the connection_id from the URL route.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		} else {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
+
+		if ( ! $connection ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: APP_COMMAND — no active connection found.' );
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		$job_args = array(
+			array(
+				'assistant_id'  => $assigned_assistant_ids[0],
+				'message_text'  => $message_text,
+				'space_name'    => $space_name,
+				'sender_name'   => $sender_name,
+				'connection_id' => $connection_id,
+				'thread_name'   => '',
+			),
+		);
+
+		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+		spawn_cron();
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_app_command',
+			'Google Chat APP_COMMAND received; AI reply scheduled.',
+			array(
+				'space_name'  => $space_name,
+				'space_type'  => $space_type,
+				'sender_name' => $sender_name,
 			)
 		);
 
@@ -1074,6 +1191,34 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Extract the plain-text content from a Google Chat APP_COMMAND event payload.
+	 *
+	 * For slash commands, Google Chat populates appCommandPayload.commandText with
+	 * the text the user typed after the command name. When the command is invoked
+	 * with no argument (e.g. "/help" with nothing after it) commandText is empty;
+	 * in that case a generic prompt is returned so the AI still provides a reply
+	 * instead of treating it as a no-op.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Normalised Google Chat APP_COMMAND event payload.
+	 * @return string Non-empty plain-text string to send to the AI.
+	 */
+	protected function extract_app_command_text( array $payload ) {
+		$command_text = isset( $payload['appCommandPayload']['commandText'] )
+			? trim( $payload['appCommandPayload']['commandText'] )
+			: '';
+
+		if ( '' !== $command_text ) {
+			return sanitize_textarea_field( $command_text );
+		}
+
+		// No argument text was supplied — use a generic prompt so the AI responds.
+		/* translators: Fallback prompt sent to the AI when a slash command is invoked with no argument text. */
+		return __( 'What can you do?', 'mcp-ai-wpoos-pro' );
+	}
+
+	/**
 	 * Find the best active Google Chat connection for the given space.
 	 *
 	 * When a space-specific connection is available (i.e. the connection's
@@ -1172,8 +1317,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Check whether any assigned assistant is mentioned by @slug in the message text.
 	 *
-	 * Used when a connection has require_mention enabled so the bot only replies
-	 * when a user explicitly addresses it with @assistant-slug in a group chat.
+	 * Available as a hook target for integrations that want custom mention routing.
 	 *
 	 * @since 1.0.0
 	 *
