@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-install-command',
-        'version' => 'dev-copilot/run-composer-install-command',
-        'reference' => '25c048b91dcda4d8779b1f3ea55b457068cd6ff4',
+        'pretty_version' => 'dev-copilot/fix-google-chat-auto-reply',
+        'version' => 'dev-copilot/fix-google-chat-auto-reply',
+        'reference' => '8eb7ba10cc21ea81c3408ad3d40f286f6cb767f2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-install-command',
-            'version' => 'dev-copilot/run-composer-install-command',
-            'reference' => '25c048b91dcda4d8779b1f3ea55b457068cd6ff4',
+            'pretty_version' => 'dev-copilot/fix-google-chat-auto-reply',
+            'version' => 'dev-copilot/fix-google-chat-auto-reply',
+            'reference' => '8eb7ba10cc21ea81c3408ad3d40f286f6cb767f2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
