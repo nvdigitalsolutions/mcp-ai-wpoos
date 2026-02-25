@@ -12111,8 +12111,10 @@
         // Order matches the server-side REST handler (class-wp-mcp-ai-rest.php):
         //   professional_prompt prepended to system_prompt, separated by a divider.
         //
-        // HTML entities are decoded to undo wp_kses_post() / wp_json_encode() escaping, matching
-        // what the embedded client constructor does via decodeHtmlEntities().
+        // HTML entities and allowed tags (preserved by wp_kses_post()) are decoded to plain text
+        // using a div element. A textarea was previously used, but textarea.value returns an empty
+        // string when innerHTML contains real HTML tags (<p>, <strong>, etc.) in Chrome and other
+        // browsers, silently dropping the entire system prompt.
         //
         // Fall back to the client's stored systemPrompt if state.config has no values (e.g. when the
         // assistant has no system prompt and no professional roles are configured).
@@ -12127,12 +12129,16 @@
 
         let effectiveSystemPrompt;
         if (rawSystemPrompt) {
-            // Decode HTML entities from wp_kses_post() sanitization (mirrors embedded client constructor).
-            const decodeEl = document.createElement('textarea');
+            // Decode HTML entities and strip allowed HTML tags from wp_kses_post() sanitization.
+            // Use a div (not textarea) so that tags like <p> and <strong> are handled correctly;
+            // textarea.value is empty when innerHTML contains HTML tags in Chrome/Firefox/Safari.
+            const decodeEl = document.createElement('div');
             decodeEl.innerHTML = rawSystemPrompt;
-            effectiveSystemPrompt = decodeEl.value || null;
-        } else {
-            // No system prompt in state.config; fall back to the client's stored value.
+            effectiveSystemPrompt = (decodeEl.textContent || decodeEl.innerText || rawSystemPrompt) || null;
+        }
+
+        // Fallback: if state.config had no prompt or decoding failed, use the client's stored value.
+        if (!effectiveSystemPrompt) {
             effectiveSystemPrompt = embeddedClient.systemPrompt;
         }
 
