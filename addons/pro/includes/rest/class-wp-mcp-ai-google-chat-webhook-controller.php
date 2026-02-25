@@ -302,21 +302,47 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		// Resolve connection with assigned assistants, preferring space-specific connections.
+		// Resolve connection, preferring space-specific connections.
 		$connection = $this->get_active_google_chat_connection( $space_name );
 
 		if ( ! $connection ) {
 			WP_MCP_AI_Logger::log_error(
-				'Google Chat webhook: no active Google Chat connection with assigned assistants found.'
+				'Google Chat webhook: no active Google Chat connection found.'
 			);
 			return rest_ensure_response( $this->empty_response() );
 		}
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
-			? array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
 			: array();
 
-		if ( empty( $assigned_assistant_ids ) ) {
+		// --- Automation rules: fall back to global default assistant ---
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
+
+		// When the connection requires an @slug mention, only reply if the message
+		// explicitly addresses an assigned assistant by its WordPress post slug.
+		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		/**
+		 * Filter whether to auto-reply to Google Chat messages.
+		 *
+		 * Defaults to true when the connection has one or more assigned AI assistants
+		 * or a global default assistant is configured in the automation rules.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $auto_reply       Whether to auto-reply.
+		 * @param array $payload          Google Chat event payload.
+		 * @param array $automation_rules Saved automation rule settings.
+		 */
+		$should_reply = apply_filters( 'wp_mcp_ai_google_chat_should_auto_reply', ! empty( $assigned_assistant_ids ), $payload, $automation_rules );
+
+		if ( ! $should_reply ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -325,6 +351,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		if ( '' === $connection_id ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
+
+		do_action( 'wp_mcp_ai_google_chat_auto_reply', $payload, $automation_rules, $assigned_assistant_ids );
 
 		// Find or create the contact in the Channel Contacts CCT.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
@@ -852,8 +880,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * When a space-specific connection is available (i.e. the connection's
 	 * `google_chat_space` field matches $space_name) it is preferred over a
-	 * generic connection. Falls back to the first enabled connection with
-	 * assigned assistants when no space-specific match is found.
+	 * generic connection. Falls back to the first enabled connection when no
+	 * space-specific match is found. The caller is responsible for resolving
+	 * assigned assistants (including the global default_assistant_id fallback).
 	 *
 	 * @since 1.0.0
 	 *
@@ -879,10 +908,6 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 
 			if ( empty( $connection['enabled'] ) ) {
-				continue;
-			}
-
-			if ( empty( $connection['assigned_assistant_ids'] ) || ! is_array( $connection['assigned_assistant_ids'] ) ) {
 				continue;
 			}
 
