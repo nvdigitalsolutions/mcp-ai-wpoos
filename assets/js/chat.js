@@ -11560,14 +11560,16 @@
             return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
-        // If the embedded client hasn't been created yet and the system prompt (or professional prompt)
-        // is missing from the client-side config (e.g. page was served from cache), fetch fresh
-        // configuration from the server before initialising the client.  We only do this once per
-        // state instance so that normal (non-cached) page loads are unaffected.
+        // If the embedded client hasn't been created yet and neither a system prompt nor a
+        // professional prompt is available in the client-side config (e.g. page was served from
+        // cache), fetch fresh configuration from the server before initialising the client.
+        // New page renders always have systemPrompt pre-combined by PHP; this fetch only fires
+        // for stale cached pages where both values are absent.  We only fetch once per state
+        // instance so that normal (non-cached) page loads are unaffected.
         if (
             !state.embeddedClient &&
             !state.embeddedConfigFetched &&
-            (!state.config.systemPrompt || (state.config.professionId && !state.config.professionalPrompt)) &&
+            (!state.config.systemPrompt && !state.config.professionalPrompt) &&
             state.config.embeddedConfigEndpoint &&
             state.config.assistantId
         ) {
@@ -11587,19 +11589,25 @@
             console.log('[NV oOS] System/professional prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
 
             var applyServerConfig = function(serverConfig) {
-                if (serverConfig && serverConfig.system_prompt) {
-                    console.log('[NV oOS] Fetched system prompt from server:', {
-                        systemPromptLength: serverConfig.system_prompt.length,
-                        hasTools: !!(serverConfig.tools && serverConfig.tools.length),
-                        hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
-                    });
-                    state.config.systemPrompt = serverConfig.system_prompt;
-                }
-                if (serverConfig && serverConfig.professional_prompt && !state.config.professionalPrompt) {
-                    console.log('[NV oOS] Fetched professional prompt from server:', {
-                        professionalPromptLength: serverConfig.professional_prompt.length
-                    });
-                    state.config.professionalPrompt = serverConfig.professional_prompt;
+                if (serverConfig && (serverConfig.system_prompt || serverConfig.professional_prompt)) {
+                    // Pre-combine professional_prompt + system_prompt, matching PHP shortcode behaviour
+                    // for embedded providers so the client always has a single populated systemPrompt.
+                    var fetchedSystemPrompt = serverConfig.system_prompt || '';
+                    var fetchedProfessionalPrompt = serverConfig.professional_prompt || '';
+                    var combinedSystemPrompt = '';
+                    if (fetchedProfessionalPrompt && fetchedSystemPrompt) {
+                        combinedSystemPrompt = fetchedProfessionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + fetchedSystemPrompt;
+                    } else {
+                        combinedSystemPrompt = fetchedProfessionalPrompt || fetchedSystemPrompt;
+                    }
+                    if (combinedSystemPrompt && !state.config.systemPrompt) {
+                        console.log('[NV oOS] Fetched and pre-combined system prompt from server:', {
+                            systemPromptLength: combinedSystemPrompt.length,
+                            hasTools: !!(serverConfig.tools && serverConfig.tools.length),
+                            hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
+                        });
+                        state.config.systemPrompt = combinedSystemPrompt;
+                    }
                 }
                 if (serverConfig && serverConfig.tools && serverConfig.tools.length > 0 && (!state.config.tools || !state.config.tools.length)) {
                     state.config.tools = serverConfig.tools;
@@ -11654,23 +11662,26 @@
                 });
             }
             
-            // Build complete system prompt by combining professional prompt with assistant system prompt.
-            // Order matches server-side behavior: professional role comes first, then assistant instructions.
-            // See class-wp-mcp-ai-rest.php where professional_prompt is prepended to system_prompt.
+            // Build the system prompt that will be passed to the embedded client constructor.
+            // New page renders: PHP pre-combines professional + assistant prompts into systemPrompt.
+            // Old cached pages: may have only professionalPrompt (no systemPrompt) or both.
             var completeSystemPrompt = '';
-            if (state.config.professionalPrompt) {
-                completeSystemPrompt = state.config.professionalPrompt;
-                if (state.config.systemPrompt) {
-                    // Prepend professional role, then append assistant instructions (matches server-side format).
-                    completeSystemPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
+            if (state.config.systemPrompt) {
+                // PHP has already merged any professional-role content into systemPrompt.
+                // Use it directly to avoid duplicating professional content.
+                completeSystemPrompt = state.config.systemPrompt;
+                if (state.config.professionalPrompt) {
+                    console.log('[NV oOS] Using pre-combined system prompt (includes professional role):', {
+                        professionalPromptLength: state.config.professionalPrompt.length,
+                        totalLength: completeSystemPrompt.length
+                    });
                 }
-                console.log('[NV oOS] Combined professional prompt with system prompt:', {
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
-                    combinedLength: completeSystemPrompt.length
+            } else if (state.config.professionalPrompt) {
+                // Fallback for stale cached configs from before this change: combine here in JS.
+                completeSystemPrompt = state.config.professionalPrompt;
+                console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
+                    professionalPromptLength: state.config.professionalPrompt.length
                 });
-            } else {
-                completeSystemPrompt = state.config.systemPrompt || '';
             }
             
             // Prepare assistant configuration for embedded client

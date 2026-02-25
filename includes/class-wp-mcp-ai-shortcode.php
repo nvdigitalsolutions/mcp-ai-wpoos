@@ -888,8 +888,9 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Handle profession attribute to build professional role prompt.
-			$professional_prompt = '';
-			$profession_data     = null;
+			$professional_prompt  = '';
+			$profession_data      = null;
+			$profession_mem_files = array();
 			if ( ! empty( $atts['profession'] ) ) {
 				$profession_id = absint( $atts['profession'] );
 				if ( $profession_id > 0 ) {
@@ -900,6 +901,11 @@ class WP_MCP_AI_Shortcode {
 						if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
 							$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
 						}
+						// Collect profession memory files so they can be merged into the embedded client config.
+						$fetched = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+						if ( is_array( $fetched ) && ! empty( $fetched ) ) {
+							$profession_mem_files = $fetched;
+						}
 					}
 				}
 			} elseif ( $is_profession_test && ! empty( $profession_id ) ) {
@@ -909,6 +915,11 @@ class WP_MCP_AI_Shortcode {
 				$profession_data = $profession;
 				if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
 					$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+				}
+				// Collect profession memory files so they can be merged into the embedded client config.
+				$fetched = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+				if ( is_array( $fetched ) && ! empty( $fetched ) ) {
+					$profession_mem_files = $fetched;
 				}
 			}
 
@@ -960,8 +971,16 @@ class WP_MCP_AI_Shortcode {
 
 			// Add base knowledge (memory files and vector store) for embedded provider.
 			// This enables the embedded client to access the same knowledge base as server-side providers.
+			// Merge assistant memory files with any profession memory files so both are available.
+			$combined_memory_files = array();
 			if ( ! empty( $assistant_config_for_provider['memory_files'] ) && is_array( $assistant_config_for_provider['memory_files'] ) ) {
-				$config['memoryFiles'] = $assistant_config_for_provider['memory_files'];
+				$combined_memory_files = $assistant_config_for_provider['memory_files'];
+			}
+			if ( ! empty( $profession_mem_files ) ) {
+				$combined_memory_files = array_values( array_unique( array_merge( $combined_memory_files, $profession_mem_files ) ) );
+			}
+			if ( ! empty( $combined_memory_files ) ) {
+				$config['memoryFiles'] = $combined_memory_files;
 			}
 			if ( ! empty( $assistant_config_for_provider['vector_store_id'] ) ) {
 				$config['vectorStoreId'] = $assistant_config_for_provider['vector_store_id'];
@@ -1132,7 +1151,25 @@ class WP_MCP_AI_Shortcode {
 
 			// Add professional role prompt if provided via profession attribute.
 			if ( ! empty( $professional_prompt ) ) {
-				$config['professionalPrompt'] = $professional_prompt;
+				// For server-side providers: keep professionalPrompt as a separate config field so
+				// the JS can pass it to the server in the chat payload for server-side system-prompt
+				// assembly and for the professional-selector feature.
+				// For embedded providers: pre-combine with the assistant's own system prompt so the
+				// embedded client always has a populated systemPrompt from the initial page render —
+				// no extra server round-trip is needed.  We intentionally omit professionalPrompt
+				// from the embedded config to prevent JS from double-combining professional content
+				// that is already included in systemPrompt.
+				if ( 'embedded' !== $assistant_provider ) {
+					$config['professionalPrompt'] = $professional_prompt;
+				} else {
+					// Merge professional role first, then assistant instructions — the same separator
+					// and ordering used by the server-side REST handler (class-wp-mcp-ai-rest.php).
+					if ( ! empty( $config['systemPrompt'] ) ) {
+						$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
+					} else {
+						$config['systemPrompt'] = $professional_prompt;
+					}
+				}
 			}
 
 			// Include profession info for display purposes.

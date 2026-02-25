@@ -510,4 +510,163 @@ class Test_Embedded_Client_Knowledge_Tools extends WP_UnitTestCase {
 		// Clean up.
 		wp_delete_post( $assistant_id, true );
 	}
+
+	/**
+	 * Test that profession memory files are merged into the embedded client config.
+	 *
+	 * When a profession with memory files is specified via the profession attribute,
+	 * those files must appear in the memoryFiles config key so the embedded LLM
+	 * client reports hasKnowledge: true.
+	 */
+	public function test_profession_memory_files_merged_into_config() {
+		// Create an embedded assistant with NO memory files of its own.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Profession Knowledge Test Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Embedded assistant without its own knowledge',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_system_prompt', 'You are a helpful assistant.' );
+		// Intentionally no memory files on the assistant itself.
+
+		// Create a profession with memory files.
+		$profession_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Knowledge Profession',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', array( 101, 102 ) );
+
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant'  => $assistant_id,
+				'profession' => $profession_id,
+			)
+		);
+		ob_get_clean();
+
+		// Extract config from localized script data.
+		global $wp_scripts;
+		$localized = $wp_scripts->get_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'data' );
+		preg_match( '/wpMcpAiChatInstances\s*=\s*({.*?});/s', $localized, $matches );
+
+		if ( empty( $matches[1] ) ) {
+			wp_delete_post( $assistant_id, true );
+			wp_delete_post( $profession_id, true );
+			$this->markTestSkipped( 'Could not extract wpMcpAiChatInstances from script data.' );
+			return;
+		}
+
+		$instances = json_decode( $matches[1], true );
+		$config    = null;
+		foreach ( $instances as $instance_config ) {
+			if ( isset( $instance_config['assistantId'] ) && intval( $instance_config['assistantId'] ) === $assistant_id ) {
+				$config = $instance_config;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $config, 'Should find config for test assistant' );
+
+		// The profession memory files must be present in the config.
+		$this->assertArrayHasKey( 'memoryFiles', $config, 'Config should include memoryFiles from profession' );
+		$this->assertIsArray( $config['memoryFiles'], 'memoryFiles should be an array' );
+		$this->assertContains( 101, $config['memoryFiles'], 'memoryFiles should contain profession file ID 101' );
+		$this->assertContains( 102, $config['memoryFiles'], 'memoryFiles should contain profession file ID 102' );
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+		wp_delete_post( $profession_id, true );
+	}
+
+	/**
+	 * Test that both assistant and profession memory files are merged without duplicates.
+	 *
+	 * When both the assistant and profession have memory files, the embedded client
+	 * config must contain all unique file IDs from both sources.
+	 */
+	public function test_assistant_and_profession_memory_files_merged_uniquely() {
+		// Create an embedded assistant WITH its own memory files.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Combined Knowledge Test Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Embedded assistant with own knowledge',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_system_prompt', 'You are a helpful assistant.' );
+		// Assistant has files 201 and 202.
+		update_post_meta( $assistant_id, '_wp_mcp_ai_memory_files', array( 201, 202 ) );
+
+		// Create a profession whose files overlap (202) and add a new one (203).
+		$profession_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Overlap Profession',
+				'post_status' => 'publish',
+			)
+		);
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', array( 202, 203 ) );
+
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant'  => $assistant_id,
+				'profession' => $profession_id,
+			)
+		);
+		ob_get_clean();
+
+		// Extract config from localized script data.
+		global $wp_scripts;
+		$localized = $wp_scripts->get_data( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'data' );
+		preg_match( '/wpMcpAiChatInstances\s*=\s*({.*?});/s', $localized, $matches );
+
+		if ( empty( $matches[1] ) ) {
+			wp_delete_post( $assistant_id, true );
+			wp_delete_post( $profession_id, true );
+			$this->markTestSkipped( 'Could not extract wpMcpAiChatInstances from script data.' );
+			return;
+		}
+
+		$instances = json_decode( $matches[1], true );
+		$config    = null;
+		foreach ( $instances as $instance_config ) {
+			if ( isset( $instance_config['assistantId'] ) && intval( $instance_config['assistantId'] ) === $assistant_id ) {
+				$config = $instance_config;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $config, 'Should find config for test assistant' );
+
+		// All three unique file IDs should appear exactly once.
+		$this->assertArrayHasKey( 'memoryFiles', $config, 'Config should include memoryFiles' );
+		$this->assertIsArray( $config['memoryFiles'], 'memoryFiles should be an array' );
+		$this->assertContains( 201, $config['memoryFiles'], 'memoryFiles should contain assistant file 201' );
+		$this->assertContains( 202, $config['memoryFiles'], 'memoryFiles should contain shared file 202' );
+		$this->assertContains( 203, $config['memoryFiles'], 'memoryFiles should contain profession file 203' );
+		// No duplicates: count should equal the number of unique IDs.
+		$this->assertCount( 3, $config['memoryFiles'], 'Merged memoryFiles should have 3 unique entries' );
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+		wp_delete_post( $profession_id, true );
+	}
 }
