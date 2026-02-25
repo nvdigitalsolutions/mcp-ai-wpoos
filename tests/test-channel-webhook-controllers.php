@@ -1884,6 +1884,78 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
 
+	/**
+	 * Google Chat handle_webhook schedules an AI reply (not a welcome message) when
+	 * the ADDED_TO_SPACE event has DIRECT_MESSAGE space type and includes a user message.
+	 *
+	 * Google Chat embeds the user's first DM in the ADDED_TO_SPACE payload, so the bot
+	 * must respond with an AI reply rather than a static welcome message.
+	 */
+	public function test_google_chat_added_to_space_dm_schedules_ai_reply() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC DM Added Bot',
+				'post_name'   => 'gc-dm-added-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Store a connection with an assigned assistant.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				array(
+					'id'                     => 'gc_dm_added_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'api_key'                => 'dummy_token',
+					'assigned_assistant_ids' => array( $post_id ),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// ADDED_TO_SPACE payload for a DM that includes the user's first message.
+		$payload = array(
+			'type'    => 'ADDED_TO_SPACE',
+			'space'   => array(
+				'name' => 'spaces/DDDMMM',
+				'type' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/DDDMMM/messages/msg-added-001',
+				'text'   => 'Hello! I need help.',
+				'sender' => array( 'name' => 'users/444' ),
+			),
+			'user'    => array( 'name' => 'users/444' ),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$controller->handle_webhook( $request );
+
+		// The AI reply cron job must be scheduled — the user's first message must not be ignored.
+		$this->assertNotFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'An AI reply cron job must be scheduled when the bot is added via DM and the user included an initial message'
+		);
+
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
+		wp_unschedule_hook( 'wp_mcp_ai_google_chat_send_welcome_message' );
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
 	// =========================================================================
 	// Google Chat — thread-reply passthrough
 	// =========================================================================

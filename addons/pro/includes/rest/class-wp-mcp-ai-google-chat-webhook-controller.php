@@ -498,6 +498,53 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
+		// When the bot is added to a DIRECT_MESSAGE space, Google Chat includes the
+		// user's first message in the ADDED_TO_SPACE event payload. Process it as an
+		// AI reply so the user's question is answered rather than ignored.
+		if ( 'DIRECT_MESSAGE' === $space_type ) {
+			$initial_message_text = $this->extract_message_text( $payload );
+
+			if ( '' !== $initial_message_text ) {
+				$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+					? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+					: array();
+
+				$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+				if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+					$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
+				}
+
+				if ( ! empty( $assigned_assistant_ids ) ) {
+					$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
+
+					$job_args = array(
+						array(
+							'assistant_id'  => $assigned_assistant_ids[0],
+							'message_text'  => $initial_message_text,
+							'space_name'    => $space_name,
+							'sender_name'   => $sender_name,
+							'connection_id' => $connection_id,
+							'thread_name'   => $thread_name,
+						),
+					);
+
+					wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
+					spawn_cron();
+
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_added_to_space',
+						'Bot added to Google Chat DM; AI reply scheduled for initial message.',
+						array(
+							'space_name' => $space_name,
+							'space_type' => $space_type,
+						)
+					);
+
+					return rest_ensure_response( $this->empty_response() );
+				}
+			}
+		}
+
 		/**
 		 * Filters the welcome message sent when the bot is added to a Google Chat space.
 		 *
