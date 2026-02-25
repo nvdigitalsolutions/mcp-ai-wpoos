@@ -60,12 +60,21 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 	}
 
 	/**
+	 * Google Chat incoming webhook URL pattern.
+	 */
+	const WEBHOOK_URL_PATTERN = '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'webhook_url'         => array(
+					'type'        => 'string',
+					'description' => __( 'Google Chat incoming webhook URL (from Spaces app settings, e.g. https://chat.googleapis.com/v1/spaces/…/messages?key=…&token=…). When provided, messages are posted directly via the webhook without requiring OAuth credentials or a space name.', 'mcp-ai-wpoos-pro' ),
+				),
 				'service_account_key' => array(
 					'type'        => 'string',
 					'description' => __( 'Google Service Account JSON key (contents of the downloaded .json key file). Used to generate an OAuth 2.0 access token automatically.', 'mcp-ai-wpoos-pro' ),
@@ -76,7 +85,7 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 				),
 				'space'        => array(
 					'type'        => 'string',
-					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Google Chat space name (e.g., spaces/AAAAxxxxxx). Required when not using webhook_url.', 'mcp-ai-wpoos-pro' ),
 				),
 				'text'         => array(
 					'type'        => 'string',
@@ -91,7 +100,7 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 					'description' => __( 'Optional thread resource name (e.g., spaces/SPACE_ID/threads/THREAD_ID) to reply in an existing thread.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'space', 'text' ),
+			'required'             => array( 'text' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -117,6 +126,13 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Incoming webhook path: post directly to the webhook URL without OAuth.
+		$webhook_url = isset( $arguments['webhook_url'] ) ? esc_url_raw( trim( $arguments['webhook_url'] ) ) : '';
+
+		if ( '' !== $webhook_url ) {
+			return $this->send_via_webhook( $webhook_url, $arguments, $context );
+		}
+
 		$access_token = $this->resolve_access_token( $arguments, $context );
 
 		if ( is_wp_error( $access_token ) ) {
@@ -124,13 +140,13 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 		}
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'A valid OAuth 2.0 access token or Service Account JSON key is required.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'A valid OAuth 2.0 access token, Service Account JSON key, or webhook_url is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$space = isset( $arguments['space'] ) ? sanitize_text_field( $arguments['space'] ) : '';
 
 		if ( '' === $space ) {
-			return new WP_Error( 'wp_mcp_ai_missing_space', __( 'A space name is required.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_space', __( 'A space name is required when not using webhook_url.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $space ) ) {
@@ -249,6 +265,96 @@ class WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message implements WP_MCP_AI_Tool_Inte
 		}
 
 		return isset( $arguments['access_token'] ) ? $this->sanitize_token( $arguments['access_token'] ) : '';
+	}
+
+	/**
+	 * Send a message via a Google Chat incoming webhook URL.
+	 *
+	 * Incoming webhooks (created in Spaces app settings) embed the key and token
+	 * directly in the URL — no OAuth Bearer token is needed. A plain POST with a
+	 * JSON body is all that is required.
+	 *
+	 * @param string $webhook_url Incoming webhook URL.
+	 * @param array  $arguments   Tool arguments.
+	 * @param array  $context     Execution context.
+	 * @return array|WP_Error Decoded response body or error.
+	 */
+	protected function send_via_webhook( $webhook_url, array $arguments, array $context ) {
+		if ( ! preg_match( self::WEBHOOK_URL_PATTERN, $webhook_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_webhook_url',
+				__( 'Invalid Google Chat webhook URL. Expected format: https://chat.googleapis.com/v1/spaces/SPACE_ID/messages?key=…&token=…', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$text = isset( $arguments['text'] ) ? $this->sanitize_message_text( $arguments['text'] ) : '';
+
+		if ( '' === $text ) {
+			return new WP_Error( 'wp_mcp_ai_missing_message_text', __( 'Message text must be provided.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$payload = array( 'text' => $text );
+		$body    = wp_json_encode( $payload );
+
+		if ( false === $body ) {
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Google Chat request payload.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_send_webhook_message_request',
+			'Sending Google Chat message via incoming webhook.',
+			array( 'webhook_url' => preg_replace( '/([?&])(key|token)=[^&]*/', '$1$2=REDACTED', $webhook_url ) )
+		);
+
+		$response = wp_remote_post(
+			$webhook_url,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => apply_filters( 'wp_mcp_ai_send_google_chat_message_timeout', self::DEFAULT_TIMEOUT, $context, $arguments ),
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook message request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return new WP_Error(
+				'wp_mcp_ai_google_chat_http_error',
+				__( 'The Google Chat webhook request failed to send.', 'mcp-ai-wpoos-pro' ),
+				array( 'error' => $response )
+			);
+		}
+
+		$code          = wp_remote_retrieve_response_code( $response );
+		$response_body = wp_remote_retrieve_body( $response );
+		$decoded       = json_decode( $response_body, true );
+
+		if ( null === $decoded ) {
+			$decoded = array();
+		}
+
+		if ( 200 !== $code ) {
+			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Google Chat webhook returned an error.', 'mcp-ai-wpoos-pro' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook message request was not successful.',
+				array(
+					'http_code' => $code,
+					'error'     => $message,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_google_chat_api_error',
+				esc_html( $message ),
+				array(
+					'code'     => $code,
+					'response' => $decoded,
+				)
+			);
+		}
+
+		return $decoded;
 	}
 
 	/**
