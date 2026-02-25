@@ -902,11 +902,20 @@ class WP_MCP_AI_Shortcode {
 						}
 					}
 				}
+			} elseif ( $is_profession_test && ! empty( $profession_id ) ) {
+				// For profession tests (assistant="profession_XXX"), build the profession's prompt so the
+				// embedded LLM client receives the correct professional role prompt.
+				// $profession is guaranteed valid here — invalid professions return early above.
+				$profession_data = $profession;
+				if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+					$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+				}
 			}
 
 			$config = array(
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
+				'embeddedAssistantId'   => absint( $permissions_assistant_id ),
 				'userId'                => get_current_user_id(),
 				'restUrl'               => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
