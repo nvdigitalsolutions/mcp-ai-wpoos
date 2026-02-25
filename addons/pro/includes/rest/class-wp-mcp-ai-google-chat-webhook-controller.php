@@ -293,9 +293,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		// Extract space name and sender for routing.
+		// Extract space name, space type, thread name, and sender for routing.
 		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
+		$space_type  = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
 		$sender_name = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
+		$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
 
 		if ( '' === $space_name ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
@@ -322,10 +324,33 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
 		}
 
-		// When the connection requires an @slug mention, only reply if the message
-		// explicitly addresses an assigned assistant by its WordPress post slug.
-		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
-			return rest_ensure_response( $this->empty_response() );
+		// When the connection requires an @slug mention, check whether the
+		// native Google Chat mention mechanism has already satisfied it before
+		// falling back to the slug-based check.
+		//
+		// Google Chat's delivery rules mean that a MESSAGE event is only sent to
+		// the bot when the bot has been @mentioned (in SPACE / GROUP_CHAT) or
+		// when the message is a DIRECT_MESSAGE. Both cases constitute an implicit
+		// mention acknowledgement:
+		//
+		//  • argumentText populated → Google Chat stripped the bot @mention from
+		//    the text, confirming the user addressed the bot in a group space.
+		//  • DIRECT_MESSAGE space type → every message in a DM is directed at the
+		//    bot; no explicit @mention is possible or required.
+		//  • SPACE / GROUP_CHAT → Google Chat only delivers events to the bot when
+		//    it is @mentioned, so any arriving MESSAGE is already a native mention.
+		//
+		// In all these cases the require_mention flag is considered satisfied and
+		// the slug-based message_mentions_assistant() check is skipped.
+		if ( ! empty( $connection['require_mention'] ) ) {
+			$is_direct_message    = 'DIRECT_MESSAGE' === $space_type;
+			$has_argument_text    = isset( $payload['message']['argumentText'] ) && '' !== trim( $payload['message']['argumentText'] );
+			$is_group_space       = in_array( $space_type, array( 'SPACE', 'GROUP_CHAT', 'ROOM' ), true );
+			$is_native_bot_mention = $is_direct_message || $has_argument_text || $is_group_space;
+
+			if ( ! $is_native_bot_mention && ! $this->message_mentions_assistant( $message_text, $assigned_assistant_ids ) ) {
+				return rest_ensure_response( $this->empty_response() );
+			}
 		}
 
 		/**
@@ -393,6 +418,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'space_name'    => $space_name,
 				'sender_name'   => $sender_name,
 				'connection_id' => $connection_id,
+				'thread_name'   => $thread_name,
 			),
 		);
 
@@ -426,7 +452,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		$connection = $this->get_active_google_chat_connection( $space_name );
 
-		if ( ! $connection || empty( $connection['api_key'] ) ) {
+		$has_credentials = $connection && (
+			! empty( $connection['api_key'] ) ||
+			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
+		);
+
+		if ( ! $has_credentials ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -502,6 +533,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$space_name    = isset( $args['space_name'] ) ? sanitize_text_field( (string) $args['space_name'] ) : '';
 		$sender_name   = isset( $args['sender_name'] ) ? sanitize_text_field( (string) $args['sender_name'] ) : '';
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$thread_name   = isset( $args['thread_name'] ) ? sanitize_text_field( (string) $args['thread_name'] ) : '';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $space_name || '' === $connection_id ) {
 			return;
@@ -617,11 +649,24 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Post the reply via Google Chat API.
+		// When the original message belongs to a thread, reply in that thread so the
+		// response appears inline rather than as a new top-level message in the space.
+		// The messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD query parameter
+		// instructs the API to create a new thread when the provided thread no longer
+		// exists (e.g. race conditions or deleted threads).
 		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+
+		if ( '' !== $thread_name ) {
+			$endpoint = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+		}
 
 		$payload = array(
 			'text' => $content,
 		);
+
+		if ( '' !== $thread_name ) {
+			$payload['thread'] = array( 'name' => $thread_name );
+		}
 
 		$body = wp_json_encode( $payload );
 
@@ -636,6 +681,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'assistant_id' => $assistant_id,
 				'space_name'   => $space_name,
+				'thread_name'  => $thread_name,
 			)
 		);
 
