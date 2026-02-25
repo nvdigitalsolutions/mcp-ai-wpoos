@@ -1731,6 +1731,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$profession_post = get_post( $profession_id );
 			if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
 				$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+
+				// Merge profession memory files with assistant memory files.
+				$profession_memory_files = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+				if ( is_array( $profession_memory_files ) && ! empty( $profession_memory_files ) ) {
+					$memory_files = array_values( array_unique( array_merge( $memory_files, $profession_memory_files ) ) );
+				}
 			}
 		}
 
