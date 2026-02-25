@@ -9,14 +9,22 @@
  * - AI auto-reply via WordPress cron (async, no timeout risk)
  * - Message deduplication via transient cache
  * - Support for MESSAGE, ADDED_TO_SPACE, and CARD_CLICKED event types
+ * - Support for both direct Chat app events and Google Workspace Add-ons event format
  *
  * Google Chat sends POST requests to a configured bot endpoint when a user
  * messages the bot. Each request carries a Google-signed OIDC token in the
  * Authorization header. When an audience URL is configured on the connection,
  * the token's `aud` claim is validated against it.
  *
- * @see https://developers.google.com/chat/how-tos/bots-develop
- * @see https://developers.google.com/chat/api/reference/rest/v1/spaces.messages/create
+ * Two event payload formats are accepted:
+ *  1. Direct Chat app (HTTP endpoint via Google Cloud Console):
+ *       {"type":"MESSAGE","message":{...},"space":{...},"user":{...}}
+ *  2. Google Workspace Add-ons framework:
+ *       {"type":"GOOGLE_CHAT","google":{"chat":{"type":"MESSAGE","message":{...},...}}}
+ * Both are normalised to the standard format before processing.
+ *
+ * @see https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/create
+ * @see https://developers.google.com/workspace/add-ons/chat/build#event-objects
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
@@ -272,6 +280,9 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
+		// Normalise Workspace Add-ons wrapper format to standard Chat event format.
+		$payload = $this->normalize_payload( $payload );
+
 		$event_type = isset( $payload['type'] ) ? sanitize_text_field( $payload['type'] ) : '';
 		$message_id = isset( $payload['message']['name'] ) ? sanitize_text_field( $payload['message']['name'] ) : '';
 
@@ -317,7 +328,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Extract space name, space type, thread name, and sender for routing.
 		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
-		$space_type  = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
+		$space_type  = $this->get_space_type( $payload );
 		$sender_name = isset( $payload['message']['sender']['name'] ) ? sanitize_text_field( $payload['message']['sender']['name'] ) : '';
 		$thread_name = isset( $payload['message']['thread']['name'] ) ? sanitize_text_field( $payload['message']['thread']['name'] ) : '';
 
@@ -474,7 +485,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function handle_added_to_space( array $payload ) {
 		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
-		$space_type  = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
+		$space_type  = $this->get_space_type( $payload );
 		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
 
 		if ( '' === $space_name ) {
@@ -971,6 +982,69 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function is_duplicate_message( $message_id ) {
 		return (bool) get_transient( 'wp_mcp_ai_gc_dedup_' . md5( $message_id ) );
+	}
+
+	/**
+	 * Normalize a Google Chat event payload to the standard format.
+	 *
+	 * Google Chat delivers events in two formats depending on how the app
+	 * is registered:
+	 *
+	 *  1. Direct Chat app (HTTP endpoint via Google Cloud Console):
+	 *       {"type":"MESSAGE","message":{...},"space":{...},"user":{...}}
+	 *
+	 *  2. Google Workspace Add-ons framework (registered via Workspace Add-ons):
+	 *       {"type":"GOOGLE_CHAT","google":{"chat":{"type":"MESSAGE","message":{...},...}}}
+	 *
+	 * When the Workspace Add-ons wrapper is detected the inner `google.chat`
+	 * object is returned so that all downstream logic handles both formats
+	 * identically.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Raw event payload from Google Chat.
+	 * @return array Normalised event payload.
+	 */
+	protected function normalize_payload( array $payload ) {
+		if (
+			isset( $payload['type'] ) && 'GOOGLE_CHAT' === $payload['type'] &&
+			isset( $payload['google']['chat'] ) && is_array( $payload['google']['chat'] )
+		) {
+			return $payload['google']['chat'];
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Extract and normalise the space type from a Google Chat event payload.
+	 *
+	 * Google Chat is migrating from the deprecated `space.type` field (values:
+	 * DM, ROOM) to the newer `space.spaceType` field (values: DIRECT_MESSAGE,
+	 * SPACE, GROUP_CHAT). This helper reads `spaceType` first and falls back
+	 * to the legacy `type` field, mapping old values to their canonical
+	 * equivalents so downstream logic only needs to handle the modern names.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $payload Google Chat event payload (already normalised).
+	 * @return string Normalised space type (e.g. DIRECT_MESSAGE, SPACE, GROUP_CHAT).
+	 */
+	protected function get_space_type( array $payload ) {
+		// Prefer the current spaceType field (introduced alongside Chat API v1 deprecations).
+		if ( ! empty( $payload['space']['spaceType'] ) ) {
+			return sanitize_text_field( $payload['space']['spaceType'] );
+		}
+
+		// Map deprecated type field values to their modern equivalents.
+		$legacy_type = isset( $payload['space']['type'] ) ? sanitize_text_field( $payload['space']['type'] ) : '';
+
+		$type_map = array(
+			'DM'   => 'DIRECT_MESSAGE',
+			'ROOM' => 'SPACE',
+		);
+
+		return isset( $type_map[ $legacy_type ] ) ? $type_map[ $legacy_type ] : $legacy_type;
 	}
 
 	/**

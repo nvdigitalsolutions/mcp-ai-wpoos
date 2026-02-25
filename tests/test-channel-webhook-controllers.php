@@ -2099,4 +2099,377 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		wp_unschedule_hook( $hook );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
+
+	// =========================================================================
+	// Google Chat — normalize_payload (Workspace Add-ons format support)
+	// =========================================================================
+
+	/**
+	 * Standard format payload passes through normalize_payload unchanged.
+	 *
+	 * When the standard Chat API format is used (type field is MESSAGE, not GOOGLE_CHAT),
+	 * the original payload must be returned without modification.
+	 */
+	public function test_google_chat_normalize_payload_passthrough_for_standard_format() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_payload' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array( 'text' => 'Hello' ),
+			'space'   => array(
+				'name' => 'spaces/AAA',
+				'type' => 'DM',
+			),
+			'user'    => array( 'name' => 'users/123' ),
+		);
+
+		$result = $method->invoke( $controller, $payload );
+
+		$this->assertSame( $payload, $result, 'Standard Chat API payload should pass through normalize_payload unchanged' );
+	}
+
+	/**
+	 * Workspace Add-ons format is unwrapped by normalize_payload.
+	 *
+	 * Must unwrap the Google Workspace Add-ons event envelope
+	 * (type=GOOGLE_CHAT with google.chat nesting) to expose the inner Chat event.
+	 */
+	public function test_google_chat_normalize_payload_unwraps_workspace_addon_format() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_payload' );
+		$method->setAccessible( true );
+
+		$inner_event = array(
+			'type'    => 'MESSAGE',
+			'message' => array( 'text' => 'Hello from Add-on' ),
+			'space'   => array(
+				'name'      => 'spaces/AAA',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'user'    => array( 'name' => 'users/123' ),
+		);
+
+		$workspace_addon_payload = array(
+			'type'    => 'GOOGLE_CHAT',
+			'eventId' => 'unique-event-id',
+			'google'  => array(
+				'chat' => $inner_event,
+			),
+		);
+
+		$result = $method->invoke( $controller, $workspace_addon_payload );
+
+		$this->assertSame(
+			$inner_event,
+			$result,
+			'normalize_payload must unwrap the Google Workspace Add-ons GOOGLE_CHAT envelope'
+		);
+		$this->assertSame( 'MESSAGE', $result['type'], 'Inner event type must be MESSAGE after unwrapping' );
+	}
+
+	/**
+	 * Malformed Workspace Add-ons envelopes are returned as-is by normalize_payload.
+	 *
+	 * Returns the original payload when the GOOGLE_CHAT type is set
+	 * but the google.chat key is absent or not an array.
+	 */
+	public function test_google_chat_normalize_payload_handles_malformed_workspace_addon_envelope() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_payload' );
+		$method->setAccessible( true );
+
+		// Missing google.chat key.
+		$malformed = array(
+			'type'   => 'GOOGLE_CHAT',
+			'google' => array(),
+		);
+		$this->assertSame( $malformed, $method->invoke( $controller, $malformed ), 'Malformed envelope must be returned as-is' );
+
+		// google.chat is not an array.
+		$malformed2 = array(
+			'type'   => 'GOOGLE_CHAT',
+			'google' => array( 'chat' => 'not-an-array' ),
+		);
+		$this->assertSame( $malformed2, $method->invoke( $controller, $malformed2 ), 'Non-array google.chat must be returned as-is' );
+	}
+
+	// =========================================================================
+	// Google Chat — get_space_type (modern + legacy type normalisation)
+	// =========================================================================
+
+	/**
+	 * Prefers spaceType field over deprecated type field when both are present.
+	 *
+	 * Returns the modern spaceType value when both spaceType and
+	 * the deprecated type field are present in the payload.
+	 */
+	public function test_google_chat_get_space_type_prefers_space_type_field() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_space_type' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'space' => array(
+				'name'      => 'spaces/AAA',
+				'type'      => 'DM',            // deprecated.
+				'spaceType' => 'DIRECT_MESSAGE', // modern.
+			),
+		);
+
+		$this->assertSame(
+			'DIRECT_MESSAGE',
+			$method->invoke( $controller, $payload ),
+			'get_space_type must prefer spaceType over the deprecated type field'
+		);
+	}
+
+	/**
+	 * Maps legacy "DM" type to the modern "DIRECT_MESSAGE" value.
+	 */
+	public function test_google_chat_get_space_type_maps_dm_to_direct_message() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_space_type' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'space' => array(
+				'name' => 'spaces/AAA',
+				'type' => 'DM', // deprecated legacy value.
+			),
+		);
+
+		$this->assertSame(
+			'DIRECT_MESSAGE',
+			$method->invoke( $controller, $payload ),
+			'get_space_type must map legacy "DM" to "DIRECT_MESSAGE"'
+		);
+	}
+
+	/**
+	 * Maps legacy "ROOM" type to the modern "SPACE" value.
+	 */
+	public function test_google_chat_get_space_type_maps_room_to_space() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_space_type' );
+		$method->setAccessible( true );
+
+		$payload = array(
+			'space' => array(
+				'name' => 'spaces/BBB',
+				'type' => 'ROOM', // deprecated legacy value.
+			),
+		);
+
+		$this->assertSame(
+			'SPACE',
+			$method->invoke( $controller, $payload ),
+			'get_space_type must map legacy "ROOM" to "SPACE"'
+		);
+	}
+
+	/**
+	 * Returns modern values unchanged (GROUP_CHAT, SPACE, DIRECT_MESSAGE).
+	 *
+	 * Values that do not need mapping should pass through without modification.
+	 */
+	public function test_google_chat_get_space_type_returns_modern_values_unchanged() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_space_type' );
+		$method->setAccessible( true );
+
+		foreach ( array( 'DIRECT_MESSAGE', 'SPACE', 'GROUP_CHAT' ) as $modern_type ) {
+			$payload = array(
+				'space' => array(
+					'name' => 'spaces/CCC',
+					'type' => $modern_type,
+				),
+			);
+			$this->assertSame(
+				$modern_type,
+				$method->invoke( $controller, $payload ),
+				"get_space_type must return modern value '{$modern_type}' unchanged"
+			);
+		}
+	}
+
+	// =========================================================================
+	// Google Chat — Workspace Add-ons end-to-end: handle_webhook with GOOGLE_CHAT wrapper
+	// =========================================================================
+
+	/**
+	 * Workspace Add-ons GOOGLE_CHAT envelope schedules a cron reply via handle_webhook.
+	 *
+	 * A MESSAGE event wrapped in the Google Workspace Add-ons GOOGLE_CHAT envelope
+	 * format must trigger the standard AI reply cron job.
+	 */
+	public function test_google_chat_handle_webhook_processes_workspace_addon_event() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Workspace Add-on Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 99 ),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.valid.token' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		// Workspace Add-ons event envelope: outer type is GOOGLE_CHAT; inner type is MESSAGE.
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'    => 'GOOGLE_CHAT',
+					'eventId' => 'workspace-event-001',
+					'google'  => array(
+						'chat' => array(
+							'type'    => 'MESSAGE',
+							'message' => array(
+								'name'   => 'spaces/WWWXXX/messages/msg-wa-001',
+								'text'   => 'Hello from Workspace Add-on',
+								'sender' => array( 'name' => 'users/99999' ),
+							),
+							'space'   => array(
+								'name'      => 'spaces/WWWXXX',
+								'spaceType' => 'DIRECT_MESSAGE',
+							),
+							'user'    => array( 'name' => 'users/99999' ),
+						),
+					),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$found = false;
+		foreach ( $crons as $events ) {
+			if ( isset( $events[ $hook ] ) ) {
+				$found = true;
+				break;
+			}
+		}
+
+		$this->assertTrue(
+			$found,
+			'handle_webhook must schedule a cron reply for Workspace Add-ons GOOGLE_CHAT event format'
+		);
+
+		wp_clear_scheduled_hook( $hook );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Workspace Add-ons envelope with legacy "DM" space type must still schedule a reply.
+	 *
+	 * The DM-to-DIRECT_MESSAGE mapping must apply when processing events from the
+	 * Workspace Add-ons framework with a require_mention connection.
+	 */
+	public function test_google_chat_workspace_addon_with_legacy_dm_space_type_schedules_reply() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Legacy DM Test',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'dummy_token',
+				'assigned_assistant_ids' => array( 88 ),
+				'require_mention'        => true, // Require mention enabled — DM must still pass.
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.valid.token' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		// Workspace Add-ons envelope; inner event uses the OLD deprecated "DM" space type.
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'   => 'GOOGLE_CHAT',
+					'google' => array(
+						'chat' => array(
+							'type'    => 'MESSAGE',
+							'message' => array(
+								'name'   => 'spaces/LLLLMM/messages/msg-dm-legacy-001',
+								'text'   => 'Hello legacy DM',
+								'sender' => array( 'name' => 'users/77777' ),
+							),
+							'space'   => array(
+								'name' => 'spaces/LLLLMM',
+								'type' => 'DM', // Legacy value — should be mapped to DIRECT_MESSAGE.
+							),
+							'user'    => array( 'name' => 'users/77777' ),
+						),
+					),
+				)
+			)
+		);
+
+		$controller->handle_webhook( $request );
+
+		$crons = _get_cron_array();
+		$hook  = WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK;
+
+		$found = false;
+		foreach ( $crons as $events ) {
+			if ( isset( $events[ $hook ] ) ) {
+				$found = true;
+				break;
+			}
+		}
+
+		$this->assertTrue(
+			$found,
+			'A DM with legacy "DM" space type inside a Workspace Add-ons envelope must still trigger an AI reply'
+		);
+
+		wp_clear_scheduled_hook( $hook );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
 }
