@@ -58,13 +58,13 @@ class Test_Anthropic_Model_Service extends WP_UnitTestCase {
 		$this->assertIsArray( $models );
 		$this->assertNotEmpty( $models );
 
-		// Check for Claude 4.6 models.
-		$this->assertArrayHasKey( 'claude-opus-4-6-20260205', $models );
-		$this->assertArrayHasKey( 'claude-sonnet-4-6-20260217', $models );
+		// Check for Claude 4.6 models (alias IDs - no dated snapshots yet for 4.6).
+		$this->assertArrayHasKey( 'claude-opus-4-6', $models );
+		$this->assertArrayHasKey( 'claude-sonnet-4-6', $models );
 
 		// Verify model names.
-		$this->assertEquals( 'Claude Opus 4.6 (Feb 2026) - Flagship', $models['claude-opus-4-6-20260205'] );
-		$this->assertEquals( 'Claude Sonnet 4.6 (Feb 2026) - Recommended', $models['claude-sonnet-4-6-20260217'] );
+		$this->assertEquals( 'Claude Opus 4.6 (Feb 2026) - Flagship', $models['claude-opus-4-6'] );
+		$this->assertEquals( 'Claude Sonnet 4.6 (Feb 2026) - Recommended', $models['claude-sonnet-4-6'] );
 	}
 
 	/**
@@ -87,8 +87,8 @@ class Test_Anthropic_Model_Service extends WP_UnitTestCase {
 		$model_keys = array_keys( $models );
 
 		// Find positions of 4.6 and 4.5 models.
-		$opus_46_pos   = array_search( 'claude-opus-4-6-20260205', $model_keys, true );
-		$sonnet_46_pos = array_search( 'claude-sonnet-4-6-20260217', $model_keys, true );
+		$opus_46_pos   = array_search( 'claude-opus-4-6', $model_keys, true );
+		$sonnet_46_pos = array_search( 'claude-sonnet-4-6', $model_keys, true );
 		$sonnet_45_pos = array_search( 'claude-sonnet-4-5-20250929', $model_keys, true );
 
 		// 4.6 models should appear before 4.5 models.
@@ -115,7 +115,7 @@ class Test_Anthropic_Model_Service extends WP_UnitTestCase {
 		$this->assertNotEmpty( $models, 'Anthropic models should be available even without API key for browsing' );
 		
 		// Check that Claude 4.6 models are still present.
-		$this->assertArrayHasKey( 'claude-opus-4-6-20260205', $models );
-		$this->assertArrayHasKey( 'claude-sonnet-4-6-20260217', $models );
+		$this->assertArrayHasKey( 'claude-opus-4-6', $models );
+		$this->assertArrayHasKey( 'claude-sonnet-4-6', $models );
 	}
 }

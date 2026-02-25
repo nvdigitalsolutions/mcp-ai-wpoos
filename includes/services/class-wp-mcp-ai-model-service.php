@@ -235,8 +235,8 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// Claude 4.6 series (multimodal - vision capable) - Latest (Feb 2026).
-		$models['claude-opus-4-6-20260205']   = 'Claude Opus 4.6 (Feb 2026) - Flagship';
-		$models['claude-sonnet-4-6-20260217'] = 'Claude Sonnet 4.6 (Feb 2026) - Recommended';
+		$models['claude-opus-4-6']   = 'Claude Opus 4.6 (Feb 2026) - Flagship';
+		$models['claude-sonnet-4-6'] = 'Claude Sonnet 4.6 (Feb 2026) - Recommended';
 
 		// Claude 4.5 series (multimodal - vision capable) - Recent (2025).
 		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
