@@ -9,6 +9,7 @@
         transcriptsEndpoint: '',
         nonce: '',
         historyPerPage: 20,
+        maxHistoryMessages: 8,
         asyncToolTimeout: 300000,
         strings: {},
     };
@@ -12515,7 +12516,17 @@
         const isEmbeddedProvider = state.config.provider === 'embedded';
         
         if (isEmbeddedProvider) {
-            return sendChatEmbedded(state, cleanMessages, finalize, submissionContext);
+            // Apply max history messages limit for the embedded path.
+            // Server-side providers have this enforced in enforce_chat_request_limits() on the server,
+            // but the embedded provider runs client-side and requires the limit applied here to
+            // maintain the agentic workflow without overflowing the local model's context window.
+            const maxHistoryMessages = (state.config && state.config.maxHistoryMessages)
+                || globalConfig.maxHistoryMessages
+                || 8;
+            const embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
+                ? cleanMessages.slice(-maxHistoryMessages)
+                : cleanMessages;
+            return sendChatEmbedded(state, embeddedMessages, finalize, submissionContext);
         }
 
         // Check if streaming is enabled
