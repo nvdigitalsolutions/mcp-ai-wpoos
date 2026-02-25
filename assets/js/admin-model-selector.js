@@ -146,7 +146,10 @@
 			}
 
 			// Store current value before replacing field.
-			const currentValue = $modelField.val();
+			// Prefer the data-current-model attribute (set server-side for initial load)
+			// over val() so the saved model is correctly pre-selected after a fresh AJAX fetch.
+			const dataModel = $modelField.data( 'current-model' );
+			const currentValue = ( dataModel !== undefined && dataModel !== '' ) ? String( dataModel ) : $modelField.val();
 			const fieldId = $modelField.attr( 'id' );
 			const fieldName = $modelField.attr( 'name' );
 			const fieldClasses = $modelField.attr( 'class' );
