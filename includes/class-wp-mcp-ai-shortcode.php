@@ -1151,7 +1151,25 @@ class WP_MCP_AI_Shortcode {
 
 			// Add professional role prompt if provided via profession attribute.
 			if ( ! empty( $professional_prompt ) ) {
-				$config['professionalPrompt'] = $professional_prompt;
+				// For server-side providers: keep professionalPrompt as a separate config field so
+				// the JS can pass it to the server in the chat payload for server-side system-prompt
+				// assembly and for the professional-selector feature.
+				// For embedded providers: pre-combine with the assistant's own system prompt so the
+				// embedded client always has a populated systemPrompt from the initial page render —
+				// no extra server round-trip is needed.  We intentionally omit professionalPrompt
+				// from the embedded config to prevent JS from double-combining professional content
+				// that is already included in systemPrompt.
+				if ( 'embedded' !== $assistant_provider ) {
+					$config['professionalPrompt'] = $professional_prompt;
+				} else {
+					// Merge professional role first, then assistant instructions — the same separator
+					// and ordering used by the server-side REST handler (class-wp-mcp-ai-rest.php).
+					if ( ! empty( $config['systemPrompt'] ) ) {
+						$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
+					} else {
+						$config['systemPrompt'] = $professional_prompt;
+					}
+				}
 			}
 
 			// Include profession info for display purposes.
