@@ -313,6 +313,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'required'          => true,
 						'sanitize_callback' => 'absint',
 					),
+					'profession_id' => array(
+						'description'       => __( 'Optional ID of a profession whose professional role prompt to include.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
 				),
 			)
 		);
@@ -1676,6 +1682,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 */
 	public function handle_embedded_client_config( WP_REST_Request $request ) {
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$profession_id = absint( $request->get_param( 'profession_id' ) );
 
 		if ( ! $assistant_id ) {
 			return $this->error(
@@ -1718,25 +1725,36 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$memory_files  = isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) ? $assistant_config['memory_files'] : array();
 		$vector_store  = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
 
+		// Build professional prompt if a profession ID was provided.
+		$professional_prompt = '';
+		if ( $profession_id > 0 && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+			$profession_post = get_post( $profession_id );
+			if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+				$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+			}
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'embedded_client_config_fetched',
 				'Embedded client fetched fresh configuration from server',
 				array(
-					'assistant_id'      => $assistant_id,
-					'has_system_prompt' => ! empty( $system_prompt ),
-					'tools_count'       => count( $tools ),
-					'has_knowledge'     => ! empty( $memory_files ) || ! empty( $vector_store ),
+					'assistant_id'           => $assistant_id,
+					'has_system_prompt'      => ! empty( $system_prompt ),
+					'has_professional_prompt' => ! empty( $professional_prompt ),
+					'tools_count'            => count( $tools ),
+					'has_knowledge'          => ! empty( $memory_files ) || ! empty( $vector_store ),
 				)
 			);
 		}
 
 		return rest_ensure_response(
 			array(
-				'system_prompt'   => $system_prompt,
-				'tools'           => $tools,
-				'memory_files'    => $memory_files,
-				'vector_store_id' => $vector_store,
+				'system_prompt'      => $system_prompt,
+				'professional_prompt' => $professional_prompt,
+				'tools'              => $tools,
+				'memory_files'       => $memory_files,
+				'vector_store_id'    => $vector_store,
 			)
 		);
 	}

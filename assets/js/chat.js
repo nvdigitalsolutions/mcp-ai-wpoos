@@ -11560,21 +11560,31 @@
             return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
-        // If the embedded client hasn't been created yet and the system prompt is missing from the
-        // client-side config (e.g. page was served from cache), fetch fresh configuration from the
-        // server before initialising the client.  We only do this once per state instance and only
-        // when the system prompt is genuinely absent so that normal (non-cached) page loads are
-        // unaffected.
+        // If the embedded client hasn't been created yet and the system prompt (or professional prompt)
+        // is missing from the client-side config (e.g. page was served from cache), fetch fresh
+        // configuration from the server before initialising the client.  We only do this once per
+        // state instance so that normal (non-cached) page loads are unaffected.
         if (
             !state.embeddedClient &&
             !state.embeddedConfigFetched &&
-            !state.config.systemPrompt &&
+            (!state.config.systemPrompt || (state.config.professionId && !state.config.professionalPrompt)) &&
             state.config.embeddedConfigEndpoint &&
             state.config.assistantId
         ) {
             state.embeddedConfigFetched = true; // Prevent repeated fetches on re-entry
-            const fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(state.config.assistantId);
-            console.log('[NV oOS] System prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
+
+            // Use embeddedAssistantId (always a valid integer) for the server fetch.
+            // For profession tests assistantId is "profession_XXX" which fails absint() server-side.
+            // Explicitly check for undefined/null rather than relying on falsy, since 0 is a
+            // distinct "no valid assistant" case and must not fall back to "profession_XXX".
+            var fetchAssistantId = (state.config.embeddedAssistantId !== undefined && state.config.embeddedAssistantId !== null)
+                ? state.config.embeddedAssistantId
+                : state.config.assistantId;
+            var fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(fetchAssistantId);
+            if (state.config.professionId) {
+                fetchUrl += '&profession_id=' + encodeURIComponent(state.config.professionId);
+            }
+            console.log('[NV oOS] System/professional prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
 
             var applyServerConfig = function(serverConfig) {
                 if (serverConfig && serverConfig.system_prompt) {
@@ -11584,6 +11594,12 @@
                         hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
                     });
                     state.config.systemPrompt = serverConfig.system_prompt;
+                }
+                if (serverConfig && serverConfig.professional_prompt && !state.config.professionalPrompt) {
+                    console.log('[NV oOS] Fetched professional prompt from server:', {
+                        professionalPromptLength: serverConfig.professional_prompt.length
+                    });
+                    state.config.professionalPrompt = serverConfig.professional_prompt;
                 }
                 if (serverConfig && serverConfig.tools && serverConfig.tools.length > 0 && (!state.config.tools || !state.config.tools.length)) {
                     state.config.tools = serverConfig.tools;
