@@ -24,21 +24,28 @@
 	 * Decode HTML entities in a string
 	 * 
 	 * This is needed because WordPress sanitizes meta fields with wp_kses_post()
-	 * which converts characters like & to &amp;. When passed via wp_json_encode()
+	 * which may preserve allowed HTML tags (e.g. &lt;p&gt;, &lt;strong&gt;) and
+	 * also encodes characters like &amp; to &amp;amp;. When passed via wp_json_encode()
 	 * to JavaScript, these HTML entities need to be decoded back to plain text.
+	 *
+	 * Uses a div element rather than a textarea because setting innerHTML on a
+	 * detached textarea does not reliably update textarea.value when the string
+	 * contains real HTML tags — it returns an empty string in Chrome and other
+	 * browsers. A div's textContent correctly strips tags and decodes entities.
 	 * 
-	 * @param {string} text - Text with potential HTML entities
-	 * @return {string} Decoded text
+	 * @param {string} text - Text with potential HTML entities or tags
+	 * @return {string} Decoded plain text
 	 */
 	function decodeHtmlEntities(text) {
 		if (!text || typeof text !== 'string') {
 			return text;
 		}
 		
-		// Create a temporary DOM element to leverage browser's built-in HTML entity decoding
-		const textarea = document.createElement('textarea');
-		textarea.innerHTML = text;
-		return textarea.value;
+		// Use a div so that both HTML entities (&amp; → &) and allowed HTML tags
+		// (<p>text</p> → text) are resolved to plain text via textContent.
+		const div = document.createElement('div');
+		div.innerHTML = text;
+		return div.textContent || div.innerText || text;
 	}
 
 	/**
