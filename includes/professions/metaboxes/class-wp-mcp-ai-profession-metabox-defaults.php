@@ -101,6 +101,16 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			)
 		);
 
+		// Load model service if available.
+		$models = array();
+		if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+		}
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $default_provider );
+		}
+
 		?>
 		<div class="wp-mcp-ai-profession-defaults">
 			<p class="description">
@@ -144,8 +154,20 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 				<label for="profession_default_model">
 					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
-				<select name="profession_default_model" id="profession_default_model" class="widefat" data-current-model="<?php echo esc_attr( $default_model ); ?>">
+				<select name="profession_default_model" id="profession_default_model" class="widefat">
 					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
+					<?php if ( ! empty( $models ) ) : ?>
+						<?php foreach ( $models as $model_id => $model_name ) : ?>
+							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
+								<?php echo esc_html( $model_name ); ?>
+							</option>
+						<?php endforeach; ?>
+					<?php endif; ?>
+					<?php if ( $default_model && ( empty( $models ) || ! isset( $models[ $default_model ] ) ) ) : ?>
+						<option value="<?php echo esc_attr( $default_model ); ?>" selected="selected">
+							<?php echo esc_html( $default_model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
+						</option>
+					<?php endif; ?>
 				</select>
 			</p>
 

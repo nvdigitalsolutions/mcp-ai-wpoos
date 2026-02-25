@@ -130,6 +130,16 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$temperature = '';
 		}
 
+		// Load model service if available.
+		$models = array();
+		if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+		}
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $provider );
+		}
+
 		?>
 	<p>
 		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></strong></label>
@@ -149,8 +159,20 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	</p>
 	<p>
 		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong></label>
-		<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat" data-current-model="<?php echo esc_attr( $model ); ?>">
+		<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
 			<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
+			<?php if ( ! empty( $models ) ) : ?>
+				<?php foreach ( $models as $model_id => $model_name ) : ?>
+					<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model, $model_id ); ?>>
+						<?php echo esc_html( $model_name ); ?>
+					</option>
+				<?php endforeach; ?>
+			<?php endif; ?>
+			<?php if ( $model && ( empty( $models ) || ! isset( $models[ $model ] ) ) ) : ?>
+				<option value="<?php echo esc_attr( $model ); ?>" selected="selected">
+					<?php echo esc_html( $model ); ?><?php echo ! empty( $models ) ? ' (custom)' : ''; ?>
+				</option>
+			<?php endif; ?>
 		</select>
 	</p>
 	<p>
