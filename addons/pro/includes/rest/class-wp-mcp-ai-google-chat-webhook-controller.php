@@ -101,6 +101,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( self::REPLY_CRON_HOOK, array( $this, 'handle_google_chat_reply_job' ) );
 		add_action( 'wp_mcp_ai_google_chat_send_welcome_message', array( $this, 'handle_welcome_message_job' ) );
+		add_filter( 'wp_mcp_ai_chat_channels_send_reply', array( $this, 'handle_channel_send_reply' ), 10, 6 );
 	}
 
 	/**
@@ -1174,6 +1175,162 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		set_transient( $cache_key, $access_token, $expires_in );
 
 		return $access_token;
+	}
+
+	/**
+	 * Handle the wp_mcp_ai_chat_channels_send_reply filter for Google Chat.
+	 *
+	 * Sends a manual reply from the admin inbox to the originating Google Chat
+	 * space. Called via the `wp_mcp_ai_chat_channels_send_reply` filter fired
+	 * by WP_MCP_AI_Chat_Channels_REST_Controller::send_reply().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool|WP_Error $result             Current filter result.
+	 * @param string        $channel            Channel slug.
+	 * @param string        $channel_contact_id Platform-side contact ID (sender resource name).
+	 * @param string        $message_text       Message text to send.
+	 * @param string        $connection_id      Connection ID.
+	 * @param array         $contact            Full contact row from the contacts CCT.
+	 * @return bool|WP_Error True on success, WP_Error on failure, or $result unchanged for other channels.
+	 */
+	public function handle_channel_send_reply( $result, $channel, $channel_contact_id, $message_text, $connection_id, $contact ) {
+		if ( 'google_chat' !== $channel ) {
+			return $result;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		// Try to resolve the explicit connection first; fall back to any active Google Chat connection.
+		$connection = '' !== $connection_id ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+
+		if ( ! $connection ) {
+			$connection = $this->get_active_google_chat_connection();
+		}
+
+		if ( ! $connection ) {
+			return new WP_Error(
+				'google_chat_no_connection',
+				__( 'No active Google Chat connection found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$resolved_connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : $connection_id;
+
+		// Determine the target space for this contact.
+		$space_name = $this->resolve_google_chat_space_for_contact( $channel_contact_id, $connection );
+
+		if ( '' === $space_name ) {
+			return new WP_Error(
+				'google_chat_no_space',
+				__( 'Unable to determine the Google Chat space for this contact. Ensure messages have been received and a space is configured on the connection.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 422 )
+			);
+		}
+
+		$access_token = $this->get_connection_access_token( $connection, $resolved_connection_id, 'Google Chat inbox reply' );
+
+		if ( '' === $access_token ) {
+			return new WP_Error(
+				'google_chat_token_error',
+				__( 'Failed to obtain a Google Chat access token. Check the connection credentials.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+		$body     = wp_json_encode( array( 'text' => $message_text ) );
+
+		if ( false === $body ) {
+			return new WP_Error(
+				'google_chat_encode_error',
+				__( 'Failed to encode the Google Chat message payload.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$response = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'google_chat_send_failed',
+				$response->get_error_message(),
+				array( 'status' => 502 )
+			);
+		}
+
+		$http_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 200 !== $http_code ) {
+			$body_data = json_decode( wp_remote_retrieve_body( $response ), true );
+			$error_msg = isset( $body_data['error']['message'] )
+				? $body_data['error']['message']
+				: __( 'Google Chat API error.', 'mcp-ai-wpoos-pro' );
+			return new WP_Error( 'google_chat_api_error', $error_msg, array( 'status' => 502 ) );
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_inbox_reply_sent',
+			'Google Chat inbox reply sent successfully.',
+			array(
+				'space_name'         => $space_name,
+				'channel_contact_id' => $channel_contact_id,
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Resolve the Google Chat space resource name for a given contact.
+	 *
+	 * Queries the Channel Messages CCT for the most recent message from the
+	 * contact (phone_number_id stores the space name for Google Chat messages).
+	 * Falls back to the connection's configured google_chat_space.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel_contact_id Sender resource name (e.g. users/12345).
+	 * @param array  $connection         Google Chat connection array.
+	 * @return string Space resource name (e.g. spaces/AAAA) or empty string.
+	 */
+	protected function resolve_google_chat_space_for_contact( $channel_contact_id, array $connection ) {
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) && WP_MCP_AI_Channel_Messages_CCT::table_exists() ) {
+			global $wpdb;
+			$messages_table = WP_MCP_AI_Channel_Messages_CCT::get_table_name();
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$space_name = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT phone_number_id FROM {$messages_table} WHERE channel = %s AND channel_contact_id = %s AND phone_number_id != '' ORDER BY message_timestamp DESC LIMIT 1",
+					'google_chat',
+					$channel_contact_id
+				)
+			);
+
+			if ( ! empty( $space_name ) ) {
+				return sanitize_text_field( $space_name );
+			}
+		}
+
+		// Fall back to the connection's configured space.
+		if ( ! empty( $connection['google_chat_space'] ) ) {
+			return sanitize_text_field( $connection['google_chat_space'] );
+		}
+
+		return '';
 	}
 }
 

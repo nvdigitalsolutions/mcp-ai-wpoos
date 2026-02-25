@@ -471,4 +471,233 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		$this->assertFalse( $wordpress_api_requested, 'test_connection must NOT request the WordPress REST API for Google Chat connections' );
 	}
+
+	// =========================================================================
+	// handle_channel_send_reply() — Google Chat inbox reply.
+	// =========================================================================
+
+	/**
+	 * handle_channel_send_reply must pass through unchanged for non-google_chat channels.
+	 */
+	public function test_handle_channel_send_reply_ignores_other_channels() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller_path = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+		if ( ! file_exists( $controller_path ) ) {
+			$this->markTestSkipped( 'Google Chat webhook controller not found' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			// File instantiates the class at the bottom; load it without double-instantiation.
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_channel_send_reply' );
+		$method->setAccessible( true );
+
+		// For a non-google_chat channel the original $result must be returned unchanged.
+		$initial_result = 'untouched';
+		$result         = $method->invoke( $controller, $initial_result, 'whatsapp', 'contact_123', 'Hello', 'conn_id', array() );
+		$this->assertSame( $initial_result, $result, 'handle_channel_send_reply must not alter $result for non-google_chat channels' );
+	}
+
+	/**
+	 * resolve_google_chat_space_for_contact falls back to connection's google_chat_space
+	 * when the messages CCT table is not available.
+	 */
+	public function test_resolve_google_chat_space_falls_back_to_connection_space() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_google_chat_space_for_contact' );
+		$method->setAccessible( true );
+
+		$connection = array(
+			'google_chat_space' => 'spaces/AAAATestFallback',
+		);
+
+		// The messages CCT is not available in unit tests, so it falls back to the connection.
+		$space = $method->invoke( $controller, 'users/12345', $connection );
+
+		$this->assertSame( 'spaces/AAAATestFallback', $space, 'Should fall back to connection google_chat_space when messages CCT is unavailable' );
+	}
+
+	/**
+	 * resolve_google_chat_space_for_contact returns empty string when neither
+	 * the messages CCT nor the connection has a space configured.
+	 */
+	public function test_resolve_google_chat_space_returns_empty_when_no_space() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_google_chat_space_for_contact' );
+		$method->setAccessible( true );
+
+		$connection = array();
+
+		$space = $method->invoke( $controller, 'users/12345', $connection );
+
+		$this->assertSame( '', $space, 'Should return empty string when no space is configured anywhere' );
+	}
+
+	/**
+	 * handle_channel_send_reply returns WP_Error when no Google Chat connection is found.
+	 */
+	public function test_handle_channel_send_reply_returns_error_when_no_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_channel_send_reply' );
+		$method->setAccessible( true );
+
+		// No connections saved — passing an empty connection_id should result in WP_Error.
+		$result = $method->invoke( $controller, false, 'google_chat', 'users/12345', 'Hello', '', array() );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when no connection is found' );
+		$this->assertSame( 'google_chat_no_connection', $result->get_error_code(), 'Error code should be google_chat_no_connection' );
+	}
+
+	/**
+	 * handle_channel_send_reply returns WP_Error when connection is found but no space can be resolved.
+	 */
+	public function test_handle_channel_send_reply_returns_error_when_no_space() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		// Save a Google Chat connection with no google_chat_space so space resolution fails.
+		$connection_data = array(
+			'name'            => 'Google Chat No Space Reply Test',
+			'url'             => 'https://chat.googleapis.com/v1',
+			'connection_type' => 'google_chat',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'ya29.fake_token',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Save should succeed' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_channel_send_reply' );
+		$method->setAccessible( true );
+
+		// No space configured anywhere — should get google_chat_no_space error.
+		$result = $method->invoke( $controller, false, 'google_chat', 'users/12345', 'Hello', $connection_id, array() );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error when space cannot be resolved' );
+		$this->assertSame( 'google_chat_no_space', $result->get_error_code(), 'Error code should be google_chat_no_space' );
+	}
+
+	/**
+	 * handle_channel_send_reply sends the message to the Google Chat API and returns true on success.
+	 */
+	public function test_handle_channel_send_reply_sends_message_on_success() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
+			$sa_path = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php'
+				: '';
+			if ( $sa_path && file_exists( $sa_path ) ) {
+				require_once $sa_path;
+			} else {
+				$this->markTestSkipped( 'Google Service Account helper not available' );
+				return;
+			}
+		}
+
+		// Save a Google Chat connection with google_chat_space so space resolution succeeds.
+		$connection_data = array(
+			'name'              => 'Google Chat Send Reply Test',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.fake_raw_token',
+			'google_chat_space' => 'spaces/AAAATestSendReply',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id, 'Save should succeed' );
+
+		$sent_to_url = '';
+
+		$filter_callback = function ( $preempt, $parsed_args, $url ) use ( &$sent_to_url ) {
+			$sent_to_url = $url;
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'name' => 'spaces/AAAATestSendReply/messages/msg1' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_channel_send_reply' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, false, 'google_chat', 'users/12345', 'Hello from inbox', $connection_id, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertTrue( $result, 'handle_channel_send_reply should return true on successful send' );
+		$this->assertStringContainsString( 'spaces/AAAATestSendReply/messages', $sent_to_url, 'Request should be sent to the correct Google Chat endpoint' );
+	}
 }

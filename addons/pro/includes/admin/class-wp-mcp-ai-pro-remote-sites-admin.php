@@ -6760,7 +6760,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		// If a space was provided, send the reply via the Google Chat API.
-		if ( ! empty( $test_space ) && ! empty( $connection['api_key'] ) ) {
+		$has_api_key     = ! empty( $connection['api_key'] );
+		$has_oauth       = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] );
+		if ( ! empty( $test_space ) && ( $has_api_key || $has_oauth ) ) {
 		// Validate space format: must match spaces/{spaceId}.
 		if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $test_space ) ) {
 		$result['send_error'] = __( 'Invalid space format. Must be spaces/AAAAxxxxxx.', 'mcp-ai-wpoos-pro' );
@@ -6768,22 +6770,43 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		return;
 		}
 
-		$gc_raw_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
-		if ( '' !== $gc_raw_key ) {
-		// Resolve access token from Service Account JSON key or legacy raw token.
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Google_Service_Account' ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-google-service-account.php';
 		}
 
 		$gc_access_token = '';
+
+		// Try service account key first.
+		if ( $has_api_key ) {
+		$gc_raw_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' !== $gc_raw_key ) {
 		if ( strlen( $gc_raw_key ) > 0 && '{' === $gc_raw_key[0] ) {
 		$token_result = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_key(
 		$gc_raw_key,
 		'https://www.googleapis.com/auth/chat.bot'
 		);
-		$gc_access_token = is_wp_error( $token_result ) ? '' : (string) $token_result;
+		if ( ! is_wp_error( $token_result ) ) {
+		$gc_access_token = (string) $token_result;
+		}
 		} else {
 		$gc_access_token = $gc_raw_key;
+		}
+		}
+		}
+
+		// Fall back to OAuth refresh token when no service account token was obtained.
+		if ( '' === $gc_access_token && $has_oauth ) {
+		$oauth_client_id     = $connection['client_id'];
+		$oauth_client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+		$oauth_refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['refresh_token'] );
+		$token_result        = WP_MCP_AI_Pro_Google_Service_Account::get_access_token_from_refresh_token(
+		$oauth_client_id,
+		$oauth_client_secret,
+		$oauth_refresh_token
+		);
+		if ( ! is_wp_error( $token_result ) ) {
+		$gc_access_token = (string) $token_result;
+		}
 		}
 
 		if ( '' !== $gc_access_token ) {
@@ -6821,7 +6844,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$result['send_error'] = isset( $send_error_body['error']['message'] )
 		? $send_error_body['error']['message']
 		: ( is_wp_error( $send_result ) ? $send_result->get_error_message() : __( 'Unknown send error.', 'mcp-ai-wpoos-pro' ) );
-		}
 		}
 		}
 		}
