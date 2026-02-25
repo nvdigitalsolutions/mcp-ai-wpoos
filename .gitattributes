@@ -66,3 +66,9 @@
 # Minified files - mark as binary (not human-readable, no meaningful diffs)
 *.min.js binary
 *.min.css binary
+
+# Third-party vendor files - do not normalize line endings.
+# These files are owned by external packages and may use CRLF; attempting
+# to convert them causes spurious "unstaged changes" warnings during git
+# operations (pull --rebase, stash, etc.).
+addons/pro/assets/vendor/** -text
