@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-analyze-video-tool-error',
+        'version' => 'dev-copilot/fix-analyze-video-tool-error',
+        'reference' => '192e8b988aac5a9b9a77dec4de636d49fc80635f',
         'pretty_version' => 'dev-copilot/fix-file-attachment-error',
         'version' => 'dev-copilot/fix-file-attachment-error',
         'reference' => 'a210d3bf7f03a41c49fc06ee002c492c2663558e',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-analyze-video-tool-error',
+            'version' => 'dev-copilot/fix-analyze-video-tool-error',
+            'reference' => '192e8b988aac5a9b9a77dec4de636d49fc80635f',
             'pretty_version' => 'dev-copilot/fix-file-attachment-error',
             'version' => 'dev-copilot/fix-file-attachment-error',
             'reference' => 'a210d3bf7f03a41c49fc06ee002c492c2663558e',
