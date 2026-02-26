@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-video-generation-tool',
-        'version' => 'dev-copilot/enhance-video-generation-tool',
-        'reference' => '0eb0eafe557e7a2932a2baa3b6c485baa4fbedc8',
+        'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
+        'version' => 'dev-copilot/enhance-anthropic-chat-client',
+        'reference' => 'aa41571e3fa1a236b6f7c0e6aaa1758f4ed86f1a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-video-generation-tool',
-            'version' => 'dev-copilot/enhance-video-generation-tool',
-            'reference' => '0eb0eafe557e7a2932a2baa3b6c485baa4fbedc8',
+            'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
+            'version' => 'dev-copilot/enhance-anthropic-chat-client',
+            'reference' => 'aa41571e3fa1a236b6f7c0e6aaa1758f4ed86f1a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

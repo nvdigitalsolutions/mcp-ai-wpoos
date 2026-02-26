@@ -145,7 +145,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
 			$timeout  = max( 5, $timeout );
 
-			$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+			$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local file for upload; no remote URL involved.
 
 			if ( false === $file_contents ) {
 				WP_MCP_AI_Logger::log_error(
@@ -1581,14 +1581,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Normalize quality values based on the model being used.
 			// Different OpenAI image models accept different quality parameter values:
 			// - gpt-image-1/1.5 accept: 'low', 'medium', 'high', 'auto'
-			// - DALL-E 2/3 accept: 'standard', 'hd'
-			$model_lower = strtolower( $model );
+			// - DALL-E 2/3 accept: 'standard', 'hd'.
+			$model_lower        = strtolower( $model );
 			$is_gpt_image_model = ( 'gpt-image-1' === $model_lower || 'gpt-image-1.5' === $model_lower );
 
 			if ( $is_gpt_image_model ) {
 				// For gpt-image models, validate and use quality values directly.
 				$valid_gpt_qualities = array( 'low', 'medium', 'high', 'auto' );
-				
+
 				// If quality is a DALL-E value, map it to gpt-image values.
 				if ( 'standard' === $quality ) {
 					$quality = 'medium';
@@ -1763,7 +1763,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$image_response = $decoded['data'][0];
 
 				if ( isset( $image_response['b64_json'] ) && '' !== $image_response['b64_json'] ) {
-					$image_data = base64_decode( $image_response['b64_json'], true );
+					$image_data = base64_decode( $image_response['b64_json'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding a base64 image payload returned by the OpenAI API.
 
 					if ( false === $image_data ) {
 						WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
@@ -2715,7 +2715,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$mime_type = 'application/octet-stream';
 			}
 
-			$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+			$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local file for upload; no remote URL involved.
 
 			if ( false === $file_contents ) {
 				WP_MCP_AI_Logger::log_error(
@@ -2990,10 +2990,46 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! empty( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+
+				// Allow running multiple tool calls concurrently (Chat Completions API only).
+				if ( ! $should_use_responses_api && isset( $options['parallel_tool_calls'] ) ) {
+					$payload['parallel_tool_calls'] = (bool) $options['parallel_tool_calls'];
+				}
 			}
 
 			if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
+			}
+
+			// Reasoning model support (o1, o3, o4, o-mini variants, etc.).
+			// These models use reasoning_effort instead of temperature and may require
+			// the Responses API 'reasoning' object.
+			if ( ! empty( $options['reasoning_effort'] ) ) {
+				$effort = sanitize_text_field( $options['reasoning_effort'] );
+				if ( in_array( $effort, array( 'low', 'medium', 'high' ), true ) ) {
+					if ( $should_use_responses_api ) {
+						// Responses API uses a 'reasoning' object with 'effort'.
+						$payload['reasoning'] = array( 'effort' => $effort );
+					} else {
+						// Chat Completions API uses top-level 'reasoning_effort'.
+						$payload['reasoning_effort'] = $effort;
+					}
+					// Reasoning models do not accept temperature — remove it.
+					unset( $payload['temperature'] );
+				}
+			}
+
+			// Seed for deterministic/reproducible outputs.
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			// Service tier controls cost/latency: 'auto', 'default', 'flex', 'priority', or 'scale'.
+			if ( ! empty( $options['service_tier'] ) ) {
+				$tier = sanitize_text_field( $options['service_tier'] );
+				if ( in_array( $tier, array( 'auto', 'default', 'flex', 'priority', 'scale' ), true ) ) {
+					$payload['service_tier'] = $tier;
+				}
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
@@ -3671,6 +3707,22 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public static function is_codex_model( $model ) {
 			return (bool) preg_match( '/\bcodex\b/', $model );
+		}
+
+		/**
+		 * Determine whether a model identifier is an OpenAI reasoning (o-series) model.
+		 *
+		 * Reasoning models (o1, o1-mini, o3, o3-mini, o4-mini, etc.) use reasoning_effort
+		 * instead of temperature and have different parameter requirements from standard GPT models.
+		 * All current o-series models include a version number immediately after 'o' (e.g. o1, o3, o4).
+		 *
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		public static function is_reasoning_model( $model ) {
+			// Matches o1, o1-mini, o3, o3-mini, o4-mini, o10+, and dated variants like o3-2025-04-16.
+			// All shipped o-series models have at least one digit after the 'o' prefix.
+			return (bool) preg_match( '/^o[0-9]+(-|$)/i', $model );
 		}
 
 		/**
@@ -4652,11 +4704,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @param array $options  Additional options (model).
 		 * @return int|WP_Error Token count or WP_Error on failure.
 		 */
-		public function count_tokens( array $messages, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for model-specific token counting.
-			// For OpenAI, we don't have a direct token counting API endpoint,.
-
-			// so we use estimation based on character count.
-			// This is a reasonable heuristic: ~4 characters per token for English text.
+		public function count_tokens( array $messages, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $options is reserved for future model-specific token counting.
+			// For OpenAI, we don't have a direct token counting API endpoint.
+			// We use estimation based on character count (~4 characters per token for English text).
 
 			$total_chars = 0;
 

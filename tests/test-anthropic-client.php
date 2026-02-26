@@ -299,4 +299,286 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'max_tokens', $captured_payload );
 		$this->assertSame( 500, $captured_payload['max_tokens'] );
 	}
+
+	/**
+	 * Helper: build a mock HTTP filter that returns a successful Anthropic response.
+	 *
+	 * @param array|null $captured_payload Reference to capture the decoded request body.
+	 * @param string     $model            Model name to echo back.
+	 * @return callable
+	 */
+	private function make_mock_filter( &$captured_payload, $model = 'claude-3-5-sonnet-20241022' ) {
+		return function ( $preempt, $args, $url ) use ( &$captured_payload, $model ) {
+			$captured_payload = json_decode( $args['body'], true );
+
+			$mock_response = array(
+				'id'          => 'msg_test',
+				'type'        => 'message',
+				'role'        => 'assistant',
+				'model'       => $model,
+				'content'     => array(
+					array(
+						'type' => 'text',
+						'text' => 'OK',
+					),
+				),
+				'stop_reason' => 'end_turn',
+				'usage'       => array(
+					'input_tokens'  => 5,
+					'output_tokens' => 2,
+				),
+			);
+
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( $mock_response ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+	}
+
+	/**
+	 * Test that tool-role messages are converted to Anthropic tool_result format.
+	 */
+	public function test_tool_messages_converted_to_tool_result() {
+		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['anthropic_api_key'] = 'sk-ant-test-key';
+		$defaults['anthropic_model']   = 'claude-3-5-sonnet-20241022';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Anthropic_Client();
+		$captured_payload = null;
+		$filter           = $this->make_mock_filter( $captured_payload );
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'What is 2+2?',
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => array(
+					array(
+						'type' => 'text',
+						'text' => 'Let me calculate.',
+					),
+				),
+				'tool_calls' => array(
+					array(
+						'id'       => 'toolu_abc123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'calculate',
+							'arguments' => '{"expression":"2+2"}',
+						),
+					),
+				),
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'toolu_abc123',
+				'name'         => 'calculate',
+				'content'      => '4',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+		remove_filter( 'pre_http_request', $filter );
+
+		$this->assertNotWPError( $response );
+		$this->assertNotNull( $captured_payload );
+		$this->assertArrayHasKey( 'messages', $captured_payload );
+
+		$sent_messages = $captured_payload['messages'];
+
+		// Expect: user, assistant (with tool_use), user (with tool_result).
+		$this->assertCount( 3, $sent_messages );
+
+		// First: original user message.
+		$this->assertSame( 'user', $sent_messages[0]['role'] );
+
+		// Second: assistant message must contain a tool_use block.
+		$this->assertSame( 'assistant', $sent_messages[1]['role'] );
+		$assistant_content = $sent_messages[1]['content'];
+		$this->assertIsArray( $assistant_content );
+		$tool_use_block = null;
+		foreach ( $assistant_content as $block ) {
+			if ( isset( $block['type'] ) && 'tool_use' === $block['type'] ) {
+				$tool_use_block = $block;
+				break;
+			}
+		}
+		$this->assertNotNull( $tool_use_block, 'Assistant message should contain a tool_use block.' );
+		$this->assertSame( 'toolu_abc123', $tool_use_block['id'] );
+		$this->assertSame( 'calculate', $tool_use_block['name'] );
+		$this->assertSame( array( 'expression' => '2+2' ), $tool_use_block['input'] );
+
+		// Third: user message with tool_result block.
+		$this->assertSame( 'user', $sent_messages[2]['role'] );
+		$tool_result_content = $sent_messages[2]['content'];
+		$this->assertIsArray( $tool_result_content );
+		$this->assertCount( 1, $tool_result_content );
+		$this->assertSame( 'tool_result', $tool_result_content[0]['type'] );
+		$this->assertSame( 'toolu_abc123', $tool_result_content[0]['tool_use_id'] );
+		$this->assertSame( '4', $tool_result_content[0]['content'] );
+	}
+
+	/**
+	 * Test that multiple consecutive tool messages are grouped into one user message.
+	 */
+	public function test_consecutive_tool_messages_are_grouped() {
+		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['anthropic_api_key'] = 'sk-ant-test-key';
+		$defaults['anthropic_model']   = 'claude-3-5-sonnet-20241022';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Anthropic_Client();
+		$captured_payload = null;
+		$filter           = $this->make_mock_filter( $captured_payload );
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Do two things.',
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => '',
+				'tool_calls' => array(
+					array(
+						'id'       => 'toolu_111',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'tool_a',
+							'arguments' => '{}',
+						),
+					),
+					array(
+						'id'       => 'toolu_222',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'tool_b',
+							'arguments' => '{}',
+						),
+					),
+				),
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'toolu_111',
+				'name'         => 'tool_a',
+				'content'      => 'result_a',
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'toolu_222',
+				'name'         => 'tool_b',
+				'content'      => 'result_b',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+		remove_filter( 'pre_http_request', $filter );
+
+		$this->assertNotWPError( $response );
+		$this->assertNotNull( $captured_payload );
+
+		$sent_messages = $captured_payload['messages'];
+
+		// user + assistant + 1 user (two tool_results merged).
+		$this->assertCount( 3, $sent_messages );
+		$this->assertSame( 'user', $sent_messages[2]['role'] );
+		$this->assertCount( 2, $sent_messages[2]['content'] );
+		$this->assertSame( 'tool_result', $sent_messages[2]['content'][0]['type'] );
+		$this->assertSame( 'toolu_111', $sent_messages[2]['content'][0]['tool_use_id'] );
+		$this->assertSame( 'tool_result', $sent_messages[2]['content'][1]['type'] );
+		$this->assertSame( 'toolu_222', $sent_messages[2]['content'][1]['tool_use_id'] );
+	}
+
+	/**
+	 * Test that a trailing assistant message is silently removed.
+	 */
+	public function test_trailing_assistant_message_is_removed() {
+		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['anthropic_api_key'] = 'sk-ant-test-key';
+		$defaults['anthropic_model']   = 'claude-3-5-sonnet-20241022';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Anthropic_Client();
+		$captured_payload = null;
+		$filter           = $this->make_mock_filter( $captured_payload );
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		// Pass a conversation that incorrectly ends with an assistant message.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Hi there!',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+		remove_filter( 'pre_http_request', $filter );
+
+		// The request should succeed (trailing assistant message removed).
+		$this->assertNotWPError( $response );
+		$this->assertNotNull( $captured_payload );
+
+		// Only the user message should have been sent.
+		$sent_messages = $captured_payload['messages'];
+		$this->assertCount( 1, $sent_messages );
+		$this->assertSame( 'user', $sent_messages[0]['role'] );
+	}
+
+	/**
+	 * Test that consecutive user messages are merged into one.
+	 */
+	public function test_consecutive_user_messages_are_merged() {
+		$defaults                      = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['anthropic_api_key'] = 'sk-ant-test-key';
+		$defaults['anthropic_model']   = 'claude-3-5-sonnet-20241022';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Anthropic_Client();
+		$captured_payload = null;
+		$filter           = $this->make_mock_filter( $captured_payload );
+
+		add_filter( 'pre_http_request', $filter, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'First part.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'Second part.',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+		remove_filter( 'pre_http_request', $filter );
+
+		$this->assertNotWPError( $response );
+		$this->assertNotNull( $captured_payload );
+
+		// The two consecutive user messages should be merged into one.
+		$sent_messages = $captured_payload['messages'];
+		$this->assertCount( 1, $sent_messages );
+		$this->assertSame( 'user', $sent_messages[0]['role'] );
+		$this->assertStringContainsString( 'First part.', $sent_messages[0]['content'] );
+		$this->assertStringContainsString( 'Second part.', $sent_messages[0]['content'] );
+	}
 }

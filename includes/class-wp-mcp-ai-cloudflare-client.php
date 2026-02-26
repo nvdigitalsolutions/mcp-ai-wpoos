@@ -471,6 +471,32 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Additional sampling parameters supported by Cloudflare Workers AI.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
+				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
+			}
+
+			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+				$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
+			}
+
+			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+				$payload['presence_penalty'] = (float) $options['presence_penalty'];
+			}
+
+			// LoRA adapter: specifies a fine-tuned LoRA model variant to use on top of the base model.
+			if ( ! empty( $options['lora'] ) ) {
+				$payload['lora'] = sanitize_text_field( $options['lora'] );
+			}
+
 			// Set max_tokens using Resource Manager if not explicitly provided.
 			// Cloudflare defaults to only 256 tokens which is extremely low.
 			// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
@@ -1245,7 +1271,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 
 				// Base64 encoded image data.
-				$image_data = base64_decode( $decoded['result']['image'], true );
+				$image_data = base64_decode( $decoded['result']['image'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding binary image data from Cloudflare Workers AI API response.
 
 				if ( false === $image_data || '' === $image_data ) {
 					return new WP_Error(
@@ -2460,7 +2486,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				)
 			);
 
-			// Smart Turn v2 returns: {"result": {"is_complete": true/false, "probability": 0.0-1.0}}.
+			// Smart Turn v2 response has a result object with is_complete (bool) and probability (float 0–1) fields.
 			if ( isset( $decoded['result']['is_complete'] ) ) {
 				return array(
 					'is_complete' => (bool) $decoded['result']['is_complete'],
