@@ -65,6 +65,8 @@ class Test_Sora_Video_Tool extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'model', $schema['properties'] );
 		$this->assertArrayHasKey( 'required', $schema );
 		$this->assertContains( 'prompt', $schema['required'] );
+		// fps is not supported by the OpenAI Sora API and must not be in the schema.
+		$this->assertArrayNotHasKey( 'fps', $schema['properties'] );
 	}
 
 	/**
