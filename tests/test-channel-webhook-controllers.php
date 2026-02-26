@@ -2938,4 +2938,72 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
+
+	// =========================================================================
+	// Google Chat AJAX webhook (Cloudflare fallback).
+	// =========================================================================
+
+	/**
+	 * Test that the AJAX webhook actions are registered on both privileged and
+	 * unprivileged wp_ajax_* hooks so Google Chat requests arrive without a
+	 * WordPress user session.
+	 */
+	public function test_google_chat_ajax_webhook_actions_registered() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Make sure the expected hook is registered.
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$this->assertTrue(
+			has_action( 'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook action must be registered'
+		);
+		$this->assertTrue(
+			has_action( 'wp_ajax_wp_mcp_ai_google_chat_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_wp_mcp_ai_google_chat_webhook action must be registered'
+		);
+	}
+
+	/**
+	 * Test that handle_ajax_webhook validates the OIDC token the same way as the REST endpoint.
+	 *
+	 * When no Authorization header is present, validate_google_oidc_token() must
+	 * return false, so the AJAX handler must send a 401 and stop processing.
+	 */
+	public function test_google_chat_ajax_webhook_validate_oidc_delegates_to_rest_validator() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'validate_google_oidc_token' );
+		$method->setAccessible( true );
+
+		// No Authorization header — must return false.
+		$rest_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$result       = $method->invoke( $controller, $rest_request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must return false when Authorization header is absent' );
+	}
+
+	/**
+	 * Test that handle_ajax_webhook reuses the existing validate_google_oidc_token logic.
+	 *
+	 * A fake Bearer token that is not a valid JWT must be rejected by both the
+	 * REST permission_callback and the AJAX handler.
+	 */
+	public function test_google_chat_ajax_webhook_rejects_invalid_jwt() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'validate_google_oidc_token' );
+		$method->setAccessible( true );
+
+		$rest_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// 'not-a-jwt' has fewer than 2 dot-separated segments.
+		$rest_request->set_header( 'authorization', 'Bearer not-a-jwt' );
+
+		$result = $method->invoke( $controller, $rest_request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must return false for a non-JWT token' );
+	}
 }
