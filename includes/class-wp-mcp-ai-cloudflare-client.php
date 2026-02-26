@@ -484,6 +484,19 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
 			}
 
+			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+				$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
+			}
+
+			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+				$payload['presence_penalty'] = (float) $options['presence_penalty'];
+			}
+
+			// LoRA adapter: specifies a fine-tuned LoRA model variant to use on top of the base model.
+			if ( ! empty( $options['lora'] ) ) {
+				$payload['lora'] = sanitize_text_field( $options['lora'] );
+			}
+
 			// Set max_tokens using Resource Manager if not explicitly provided.
 			// Cloudflare defaults to only 256 tokens which is extremely low.
 			// This follows the same pattern as Ollama, Gemini, LM Studio, etc.

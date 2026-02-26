@@ -2083,6 +2083,36 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				);
 			}
 
+			// Return log probabilities of output tokens.
+			if ( isset( $options['response_logprobs'] ) ) {
+				$payload['generationConfig']['responseLogprobs'] = (bool) $options['response_logprobs'];
+			}
+
+			if ( isset( $options['logprobs'] ) && is_numeric( $options['logprobs'] ) ) {
+				$payload['generationConfig']['logprobs'] = max( 0, min( 20, (int) $options['logprobs'] ) );
+			}
+
+			// Response modalities: which output types the model may return (TEXT, IMAGE, AUDIO).
+			if ( ! empty( $options['response_modalities'] ) && is_array( $options['response_modalities'] ) ) {
+				$allowed_modalities = array( 'TEXT', 'IMAGE', 'AUDIO' );
+				$modalities         = array();
+				foreach ( $options['response_modalities'] as $modality ) {
+					$normalised = strtoupper( (string) $modality );
+					if ( in_array( $normalised, $allowed_modalities, true ) ) {
+						$modalities[] = $normalised;
+					}
+				}
+				if ( ! empty( $modalities ) ) {
+					$payload['generationConfig']['responseModalities'] = $modalities;
+				}
+			}
+
+			// Media resolution for image inputs: LOW (64 tokens), MEDIUM (256 tokens), HIGH (256 tokens, zoomed).
+			$allowed_resolutions = array( 'MEDIA_RESOLUTION_LOW', 'MEDIA_RESOLUTION_MEDIUM', 'MEDIA_RESOLUTION_HIGH' );
+			if ( isset( $options['media_resolution'] ) && in_array( $options['media_resolution'], $allowed_resolutions, true ) ) {
+				$payload['generationConfig']['mediaResolution'] = $options['media_resolution'];
+			}
+
 			if ( empty( $payload['generationConfig'] ) ) {
 				unset( $payload['generationConfig'] );
 			}
@@ -2144,6 +2174,37 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$payload['tools'][] = $grounding_tool;
 				} else {
 					$payload['tools'] = array( $grounding_tool );
+				}
+			}
+
+			// Code execution tool: lets the model generate and run Python code (sandboxed by Gemini).
+			if ( ! empty( $options['code_execution'] ) ) {
+				$code_tool = array( 'codeExecution' => (object) array() );
+				if ( isset( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
+					$payload['tools'][] = $code_tool;
+				} else {
+					$payload['tools'] = array( $code_tool );
+				}
+			}
+
+			// Tool config: controls function calling behaviour (function_calling_mode: AUTO, ANY, NONE).
+			// Optionally restrict to specific function names via allowed_function_names.
+			if ( isset( $options['tool_config'] ) && is_array( $options['tool_config'] ) ) {
+				$allowed_modes = array( 'AUTO', 'ANY', 'NONE' );
+				$fc_mode       = isset( $options['tool_config']['mode'] ) ? strtoupper( sanitize_text_field( $options['tool_config']['mode'] ) ) : '';
+				if ( in_array( $fc_mode, $allowed_modes, true ) ) {
+					$payload['toolConfig'] = array(
+						'functionCallingConfig' => array(
+							'mode' => $fc_mode,
+						),
+					);
+					if ( 'ANY' === $fc_mode && ! empty( $options['tool_config']['allowed_function_names'] ) && is_array( $options['tool_config']['allowed_function_names'] ) ) {
+						$allowed_names = array();
+						foreach ( $options['tool_config']['allowed_function_names'] as $fn_name ) {
+							$allowed_names[] = sanitize_text_field( (string) $fn_name );
+						}
+						$payload['toolConfig']['functionCallingConfig']['allowedFunctionNames'] = $allowed_names;
+					}
 				}
 			}
 
