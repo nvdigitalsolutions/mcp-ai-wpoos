@@ -280,22 +280,151 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					continue;
 				}
 
-				// Skip tool messages for now (Anthropic has different tool calling format).
+				// Tool result messages must be converted to Anthropic's tool_result format
+				// and grouped under a user-role message.
 				if ( 'tool' === $role ) {
+					$tool_use_id    = isset( $message['tool_call_id'] ) ? sanitize_text_field( $message['tool_call_id'] ) : '';
+					$result_content = is_string( $content ) ? $content : wp_json_encode( $content );
+
+					$tool_result_block = array(
+						'type'        => 'tool_result',
+						'tool_use_id' => $tool_use_id,
+						'content'     => $result_content,
+					);
+
+					// Append to the previous user message if it is already a tool-result
+					// user message (i.e. consecutive tool results from the same turn).
+					$last_idx = count( $anthropic_messages ) - 1;
+					if (
+						$last_idx >= 0
+						&& 'user' === $anthropic_messages[ $last_idx ]['role']
+						&& is_array( $anthropic_messages[ $last_idx ]['content'] )
+						&& ! empty( $anthropic_messages[ $last_idx ]['content'] )
+						&& isset( $anthropic_messages[ $last_idx ]['content'][0]['type'] )
+						&& 'tool_result' === $anthropic_messages[ $last_idx ]['content'][0]['type']
+					) {
+						$anthropic_messages[ $last_idx ]['content'][] = $tool_result_block;
+					} else {
+						$anthropic_messages[] = array(
+							'role'    => 'user',
+							'content' => array( $tool_result_block ),
+						);
+					}
 					continue;
 				}
 
-				// Normalize content to Anthropic format.
+				// Assistant messages may carry tool_calls (OpenAI format) from a previous
+				// run_with_tools iteration. Convert them to Anthropic tool_use blocks.
+				if ( 'assistant' === $role ) {
+					$assistant_content = array();
+
+					// Include text / image content.
+					$normalized_content = $this->normalize_content_for_anthropic( $content );
+					if ( ! empty( $normalized_content ) ) {
+						if ( is_string( $normalized_content ) ) {
+							$assistant_content[] = array(
+								'type' => 'text',
+								'text' => $normalized_content,
+							);
+						} elseif ( is_array( $normalized_content ) ) {
+							foreach ( $normalized_content as $block ) {
+								$assistant_content[] = $block;
+							}
+						}
+					}
+
+					// Convert tool_calls (OpenAI format) to Anthropic tool_use blocks.
+					if ( ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						foreach ( $message['tool_calls'] as $tool_call ) {
+							if ( ! isset( $tool_call['function']['name'] ) ) {
+								continue;
+							}
+
+							$args = array();
+							if ( isset( $tool_call['function']['arguments'] ) ) {
+								$raw_args = $tool_call['function']['arguments'];
+								if ( is_string( $raw_args ) ) {
+									$decoded = json_decode( $raw_args, true );
+									if ( JSON_ERROR_NONE === json_last_error() ) {
+										$args = is_array( $decoded ) ? $decoded : array();
+									}
+								} elseif ( is_array( $raw_args ) ) {
+									$args = $raw_args;
+								}
+							}
+
+							$assistant_content[] = array(
+								'type'  => 'tool_use',
+								'id'    => isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : 'toolu_' . wp_generate_password( 16, false ),
+								'name'  => sanitize_text_field( $tool_call['function']['name'] ),
+								'input' => $args,
+							);
+						}
+					}
+
+					if ( empty( $assistant_content ) ) {
+						continue;
+					}
+
+					$anthropic_messages[] = array(
+						'role'    => 'assistant',
+						'content' => $assistant_content,
+					);
+					continue;
+				}
+
+				// Default: user (or any other) message.
 				$normalized_content = $this->normalize_content_for_anthropic( $content );
 
 				if ( empty( $normalized_content ) ) {
 					continue;
 				}
 
-				$anthropic_messages[] = array(
-					'role'    => $role,
-					'content' => $normalized_content,
+				// Anthropic forbids consecutive messages with the same role.
+				// Merge into the previous message when the roles match.
+				$last_idx = count( $anthropic_messages ) - 1;
+				if ( $last_idx >= 0 && $role === $anthropic_messages[ $last_idx ]['role'] ) {
+					$prev_content = $anthropic_messages[ $last_idx ]['content'];
+					if ( is_string( $prev_content ) && is_string( $normalized_content ) ) {
+						$anthropic_messages[ $last_idx ]['content'] = $prev_content . "\n\n" . $normalized_content;
+					} elseif ( is_array( $prev_content ) && is_array( $normalized_content ) ) {
+						$anthropic_messages[ $last_idx ]['content'] = array_merge( $prev_content, $normalized_content );
+					} elseif ( is_string( $prev_content ) && is_array( $normalized_content ) ) {
+						$anthropic_messages[ $last_idx ]['content'] = array_merge(
+							array(
+								array(
+									'type' => 'text',
+									'text' => $prev_content,
+								),
+							),
+							$normalized_content
+						);
+					} else {
+						// prev is array, new is string.
+						$anthropic_messages[ $last_idx ]['content'][] = array(
+							'type' => 'text',
+							'text' => $normalized_content,
+						);
+					}
+				} else {
+					$anthropic_messages[] = array(
+						'role'    => $role,
+						'content' => $normalized_content,
+					);
+				}
+			}
+
+			// Anthropic requires conversations to end with a user message.
+			// Remove any trailing assistant messages to prevent the
+			// "conversation must end with a user message" error.
+			$last_msg = ! empty( $anthropic_messages ) ? end( $anthropic_messages ) : false;
+			while ( $last_msg && 'assistant' === $last_msg['role'] ) {
+				array_pop( $anthropic_messages );
+				WP_MCP_AI_Logger::log_event(
+					'anthropic_message_normalized',
+					'Removed trailing assistant message to satisfy Anthropic API requirement that conversations end with a user message.'
 				);
+				$last_msg = ! empty( $anthropic_messages ) ? end( $anthropic_messages ) : false;
 			}
 
 			if ( empty( $anthropic_messages ) ) {
