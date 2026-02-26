@@ -3884,6 +3884,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				} elseif ( 'input_file' === $type ) {
 					$segment = $this->populate_responses_file_segment( $segment, $attachments );
+
+					// Skip segments that have no file_id or file_data — the Responses API requires one
+					// of these fields and would reject a bare input_file entry (e.g. a video attached
+					// via URL that has not been uploaded to OpenAI).
+					if ( ! isset( $segment['file_id'] ) && ! isset( $segment['file_data'] ) ) {
+						WP_MCP_AI_Logger::log_error(
+							'Skipping input_file segment without file_id or file_data for Responses API.',
+							array( 'segment_type' => $type )
+						);
+						continue;
+					}
 				}
 
 				if ( isset( $segment['mode'] ) ) {
@@ -4108,6 +4119,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( '' === $file_id ) {
+				// Remove internal metadata fields that are not part of the OpenAI Responses API spec.
+				// Fields like url, attachment_id, file_name, mime_type, bytes are used internally but
+				// cause "unknown parameter" errors when sent to the API without a matching file_id.
+				$metadata_fields = array( 'url', 'attachment_id', 'name', 'file_name', 'mime_type', 'bytes', 'display_name' );
+				foreach ( $metadata_fields as $field ) {
+					if ( isset( $segment[ $field ] ) ) {
+						unset( $segment[ $field ] );
+					}
+				}
 				return $segment;
 			}
 
@@ -4142,9 +4162,10 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Remove agentic workflow metadata fields that are not part of the OpenAI Responses API spec.
-			// These fields (url, attachment_id, name, mime_type, bytes, display_name) are added by
+			// These fields (url, attachment_id, file_name, name, mime_type, bytes, display_name) are added by
 			// WP_MCP_AI_Message_Attachments for internal use but should not be sent to the API.
-			$metadata_fields = array( 'url', 'attachment_id', 'name', 'mime_type', 'bytes', 'display_name' );
+			// PDFs (and other files) rely on this cleanup to avoid "unknown parameter" errors.
+			$metadata_fields = array( 'url', 'attachment_id', 'file_name', 'name', 'mime_type', 'bytes', 'display_name' );
 			foreach ( $metadata_fields as $field ) {
 				if ( isset( $segment[ $field ] ) ) {
 					unset( $segment[ $field ] );
