@@ -161,6 +161,173 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// Send Google Chat Message – incoming webhook URL support.
+	// =========================================================================
+
+	/**
+	 * Test send_google_chat_message schema includes webhook_url parameter.
+	 */
+	public function test_send_google_chat_message_schema_has_webhook_url_param() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'webhook_url', $schema['properties'], 'Schema must include webhook_url' );
+		$this->assertSame( 'string', $schema['properties']['webhook_url']['type'] );
+	}
+
+	/**
+	 * Test send_google_chat_message schema no longer requires space when webhook_url is present.
+	 */
+	public function test_send_google_chat_message_schema_space_not_required() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertNotContains( 'space', $schema['required'], 'space must not be required so webhook_url path works without it' );
+		$this->assertContains( 'text', $schema['required'], 'text must remain required' );
+	}
+
+	/**
+	 * Test send_google_chat_message rejects an invalid webhook URL format.
+	 */
+	public function test_send_google_chat_message_rejects_invalid_webhook_url() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$result = $tool->execute(
+			array(
+				'webhook_url' => 'https://example.com/not-a-google-chat-webhook',
+				'text'        => 'Hello',
+			),
+			array( 'user_id' => $admin )
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_webhook_url', $result->get_error_code() );
+	}
+
+	/**
+	 * Test send_google_chat_message sends via webhook URL without OAuth credentials.
+	 */
+	public function test_send_google_chat_message_sends_via_webhook_url() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		$captured_args = array();
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_args ) {
+				$captured_args = $args;
+				return array(
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'body'     => wp_json_encode( array( 'name' => 'spaces/AAQApBZ2n3o/messages/abc123' ) ),
+					'headers'  => array(),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$result = $tool->execute(
+			array(
+				'webhook_url' => 'https://chat.googleapis.com/v1/spaces/AAQApBZ2n3o/messages?key=fakekey&token=faketoken',
+				'text'        => 'Hello from webhook',
+			),
+			array( 'user_id' => $admin )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertNotInstanceOf( WP_Error::class, $result, 'Webhook send should succeed with valid URL and text' );
+		// No Authorization header should be sent for incoming webhooks.
+		$this->assertArrayNotHasKey( 'Authorization', $captured_args['headers'], 'Webhook requests must not include an Authorization header' );
+		// Content-Type should be set.
+		$this->assertArrayHasKey( 'Content-Type', $captured_args['headers'] );
+		$this->assertSame( 'application/json', $captured_args['headers']['Content-Type'] );
+	}
+
+	/**
+	 * Test send_google_chat_message via webhook requires text.
+	 */
+	public function test_send_google_chat_message_webhook_requires_text() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$result = $tool->execute(
+			array(
+				'webhook_url' => 'https://chat.googleapis.com/v1/spaces/AAQApBZ2n3o/messages?key=fakekey&token=faketoken',
+				'text'        => '',
+			),
+			array( 'user_id' => $admin )
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_missing_message_text', $result->get_error_code() );
+	}
+
+	/**
+	 * Test send_google_chat_message via webhook returns API error on non-200 response.
+	 */
+	public function test_send_google_chat_message_webhook_handles_api_error() {
+		$this->load_tool( 'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message', 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php' );
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		add_filter(
+			'pre_http_request',
+			function () {
+				return array(
+					'response' => array( 'code' => 401, 'message' => 'Unauthorized' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'code'    => 401,
+								'message' => 'API keys are not supported by this API.',
+								'status'  => 'UNAUTHENTICATED',
+							),
+						)
+					),
+					'headers'  => array(),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			},
+			10,
+			3
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message();
+		$result = $tool->execute(
+			array(
+				'webhook_url' => 'https://chat.googleapis.com/v1/spaces/AAQApBZ2n3o/messages?key=badkey&token=badtoken',
+				'text'        => 'Hello',
+			),
+			array( 'user_id' => $admin )
+		);
+
+		remove_all_filters( 'pre_http_request' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'wp_mcp_ai_google_chat_api_error', $result->get_error_code() );
+	}
+
+	// =========================================================================
 	// Get Google Chat Messages – pagination, ordering, filtering.
 	// =========================================================================
 
