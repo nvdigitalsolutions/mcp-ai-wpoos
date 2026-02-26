@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-google-chat-response-issue',
+        'version' => 'dev-copilot/fix-google-chat-response-issue',
+        'reference' => '953ad596015c016186ad669c5f282a11eedce907',
         'pretty_version' => 'dev-copilot/fix-per-models-page-issue',
         'version' => 'dev-copilot/fix-per-models-page-issue',
         'reference' => '146281cbced2dbe9f9059362dbc005f8c5280cc6',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-google-chat-response-issue',
+            'version' => 'dev-copilot/fix-google-chat-response-issue',
+            'reference' => '953ad596015c016186ad669c5f282a11eedce907',
             'pretty_version' => 'dev-copilot/fix-per-models-page-issue',
             'version' => 'dev-copilot/fix-per-models-page-issue',
             'reference' => '146281cbced2dbe9f9059362dbc005f8c5280cc6',
