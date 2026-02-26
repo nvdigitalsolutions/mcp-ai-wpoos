@@ -141,8 +141,12 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Handler' ) ) {
 		 * This covers both direct messages and @mentions in Spaces.
 		 * The raw message text in a Space mention looks like:
 		 *   "<users/123456789> what can you do?"
-		 * This method strips the markup to produce:
-		 *   "what can you do?"
+		 *
+		 * Google provides an "argumentText" field on the message that already
+		 * has the app @mention stripped. That field is used as the primary
+		 * source of clean text (regardless of the app display name or any
+		 * space characters it may contain). The regex-based stripping is only
+		 * applied as a fallback when argumentText is absent.
 		 *
 		 * @since 1.0.0
 		 *
@@ -155,8 +159,15 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Handler' ) ) {
 			$space_type = isset( $space['type'] ) ? sanitize_text_field( $space['type'] ) : '';
 			$raw_text   = isset( $message['text'] ) ? $message['text'] : '';
 
-			// Strip @mention markup e.g. "<users/USER_ID>" from the message text.
-			$clean_text = $this->strip_mention_markup( $raw_text );
+			// Google provides "argumentText" with the app @mention already removed.
+			// This is the canonical way to get clean text and is immune to variations
+			// in the app display name (e.g. names with spaces like "NV oOS").
+			// Fall back to our regex-based stripping when the field is absent.
+			if ( isset( $message['argumentText'] ) && '' !== trim( $message['argumentText'] ) ) {
+				$clean_text = trim( $message['argumentText'] );
+			} else {
+				$clean_text = $this->strip_mention_markup( $raw_text );
+			}
 
 			/**
 			 * Action fired when a Google Chat MESSAGE event is received.

@@ -313,6 +313,68 @@ class WP_MCP_AI_Google_Chat_Webhook_Handler_Test extends WP_UnitTestCase {
 	}
 
 	// ------------------------------------------------------------------
+	// argumentText (canonical clean text from Google)
+	// ------------------------------------------------------------------
+
+	/**
+	 * Test that argumentText is used as clean text when present.
+	 *
+	 * Google provides this field with the @mention already stripped,
+	 * which handles app names containing spaces (e.g. "NV oOS").
+	 */
+	public function test_handle_webhook_uses_argument_text_when_present() {
+		$received_clean = null;
+
+		add_action(
+			'wp_mcp_ai_google_chat_message',
+			function ( $clean, $raw, $space_type, $message, $event ) use ( &$received_clean ) {
+				$received_clean = $clean;
+			},
+			10,
+			5
+		);
+
+		$event = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'text'         => '<users/12345> what can you do?',
+				'argumentText' => 'what can you do?',
+			),
+			'space'   => array( 'type' => 'ROOM' ),
+		);
+
+		$request = $this->make_request( $event );
+		$this->handler->handle_webhook( $request );
+
+		// argumentText should win over regex-stripped text.
+		$this->assertSame( 'what can you do?', $received_clean );
+	}
+
+	/**
+	 * Test that the regex fallback is used when argumentText is absent.
+	 */
+	public function test_handle_webhook_falls_back_to_regex_when_no_argument_text() {
+		$received_clean = null;
+
+		add_action(
+			'wp_mcp_ai_google_chat_message',
+			function ( $clean, $raw, $space_type, $message, $event ) use ( &$received_clean ) {
+				$received_clean = $clean;
+			},
+			10,
+			5
+		);
+
+		$raw_text = '<users/67890> tell me a joke';
+		$event    = $this->make_message_event( 'ROOM', $raw_text );
+		$request  = $this->make_request( $event );
+
+		$this->handler->handle_webhook( $request );
+
+		$this->assertSame( 'tell me a joke', $received_clean );
+	}
+
+	// ------------------------------------------------------------------
 	// strip_mention_markup
 	// ------------------------------------------------------------------
 
