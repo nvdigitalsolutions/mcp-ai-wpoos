@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-google-chat-connection',
-        'version' => 'dev-copilot/review-google-chat-connection',
-        'reference' => '96a64adf82caac8ecc8fda73e6ba21ed300a6086',
+        'pretty_version' => 'dev-copilot/fix-file-attachment-error',
+        'version' => 'dev-copilot/fix-file-attachment-error',
+        'reference' => 'a210d3bf7f03a41c49fc06ee002c492c2663558e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-google-chat-connection',
-            'version' => 'dev-copilot/review-google-chat-connection',
-            'reference' => '96a64adf82caac8ecc8fda73e6ba21ed300a6086',
+            'pretty_version' => 'dev-copilot/fix-file-attachment-error',
+            'version' => 'dev-copilot/fix-file-attachment-error',
+            'reference' => 'a210d3bf7f03a41c49fc06ee002c492c2663558e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
