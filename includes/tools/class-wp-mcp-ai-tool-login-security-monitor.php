@@ -420,7 +420,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->prepare( "SELECT ctime, fail, username, IP, blocked FROM `{$table_name}` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
+			$wpdb->prepare( "SELECT ctime, fail, username, IP, blocked FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);
 
@@ -490,23 +490,30 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			}
 			$logs = ITSEC_Log::get_logs( $args );
 			foreach ( (array) $logs as $log ) {
+				$log_ip   = isset( $log['remote_ip'] ) ? sanitize_text_field( $log['remote_ip'] ) : '';
+				$log_user = isset( $log['username'] ) ? sanitize_text_field( $log['username'] ) : '';
+
+				// Apply IP filter before counting to keep all counters consistent.
+				if ( ! empty( $ip_address ) && $log_ip !== $ip_address ) {
+					continue;
+				}
+
 				++$data['total'];
-				$log_data   = isset( $log['data'] ) ? (array) maybe_unserialize( $log['data'] ) : array();
 				$status     = isset( $log['type'] ) ? sanitize_text_field( $log['type'] ) : 'info';
-				$log_ip     = isset( $log['remote_ip'] ) ? sanitize_text_field( $log['remote_ip'] ) : '';
-				$log_user   = isset( $log['username'] ) ? sanitize_text_field( $log['username'] ) : '';
 				$is_blocked = 'critical' === $status;
-				$is_failed  = 'error' === $status || isset( $log_data['fail'] );
+
+				// Use json_decode for log data to avoid object injection via unserialize.
+				$raw_data  = isset( $log['data'] ) ? $log['data'] : '';
+				$log_data  = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
+				$log_data  = is_array( $log_data ) ? $log_data : array();
+				$is_failed = 'error' === $status || isset( $log_data['fail'] );
+
 				if ( $is_blocked ) {
 					++$data['blocked'];
 				} elseif ( $is_failed ) {
 					++$data['failed'];
 				} else {
 					++$data['successful'];
-				}
-				if ( ! empty( $ip_address ) && $log_ip !== $ip_address ) {
-					--$data['total'];
-					continue;
 				}
 				$data['attempts'][] = array(
 					'timestamp'  => isset( $log['timestamp'] ) ? strtotime( $log['timestamp'] ) : 0,
@@ -550,7 +557,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->prepare( "SELECT timestamp, type, username, remote_ip, module FROM `{$table_name}` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
+			$wpdb->prepare( "SELECT timestamp, type, username, remote_ip, module FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);
 
