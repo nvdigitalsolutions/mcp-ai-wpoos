@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			$models = array();
 
-			// Hugging Face uses OpenAI format: { "data": [ { "id": "model-name", ... }, ... ] }.
+			// Hugging Face uses OpenAI-compatible format: a data array of objects each containing an id field.
 			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 				foreach ( $decoded['data'] as $model ) {
 					if ( isset( $model['id'] ) ) {

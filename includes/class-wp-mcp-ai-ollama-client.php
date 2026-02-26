@@ -79,103 +79,103 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 		}
 
-	/**
-	 * List available models from the Ollama server.
-	 *
-	 * @param array $options Optional parameters (bypass_cache).
-	 * @return array|WP_Error Array of models or WP_Error on failure.
-	 */
-	public function list_models( array $options = array() ) {
-		$endpoint_url = $this->get_endpoint_url();
-		if ( empty( $endpoint_url ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
-		}
-
-		// Check if caching is enabled.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$use_cache = ! empty( $settings['enable_ollama_api_caching'] );
-		$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
-
-		// Allow disabling via constant.
-		if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
-			$use_cache = false;
-		}
-
 		/**
-		 * Filter whether to cache Ollama model list requests.
+		 * List available models from the Ollama server.
 		 *
-		 * @param bool   $use_cache    Whether to use caching.
-		 * @param string $endpoint_url Ollama endpoint URL.
-		 * @param array  $options      Request options.
+		 * @param array $options Optional parameters (bypass_cache).
+		 * @return array|WP_Error Array of models or WP_Error on failure.
 		 */
-		$use_cache = apply_filters( 'wp_mcp_ai_cache_ollama_models', $use_cache, $endpoint_url, $options );
+		public function list_models( array $options = array() ) {
+			$endpoint_url = $this->get_endpoint_url();
+			if ( empty( $endpoint_url ) ) {
+				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+			}
 
-		if ( $use_cache && ! $bypass_cache ) {
-			// Build cache key including endpoint URL (Ollama is self-hosted, different endpoints = different models).
-			$cache_key = 'ollama_models_list_' . md5( $endpoint_url );
+			// Check if caching is enabled.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$use_cache    = ! empty( $settings['enable_ollama_api_caching'] );
+			$bypass_cache = isset( $options['bypass_cache'] ) && $options['bypass_cache'];
 
-			// Get cache TTL from settings or use default (5 minutes for local servers).
-			$cache_ttl = isset( $settings['ollama_model_list_cache_ttl'] ) ? absint( $settings['ollama_model_list_cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+			// Allow disabling via constant.
+			if ( defined( 'WP_MCP_AI_DISABLE_API_CACHE' ) && WP_MCP_AI_DISABLE_API_CACHE ) {
+				$use_cache = false;
+			}
 
 			/**
-			 * Filter the cache TTL for Ollama model lists.
+			 * Filter whether to cache Ollama model list requests.
 			 *
-			 * @param int    $cache_ttl    Cache TTL in seconds.
+			 * @param bool   $use_cache    Whether to use caching.
 			 * @param string $endpoint_url Ollama endpoint URL.
 			 * @param array  $options      Request options.
 			 */
-			$cache_ttl = apply_filters( 'wp_mcp_ai_ollama_model_list_ttl', $cache_ttl, $endpoint_url, $options );
+			$use_cache = apply_filters( 'wp_mcp_ai_cache_ollama_models', $use_cache, $endpoint_url, $options );
 
-			return WP_MCP_AI_Cache_Helper::remember(
-				$cache_key,
-				function () use ( $endpoint_url ) {
-					return $this->fetch_models_from_api( $endpoint_url );
-				},
-				$cache_ttl
-			);
+			if ( $use_cache && ! $bypass_cache ) {
+				// Build cache key including endpoint URL (Ollama is self-hosted, different endpoints = different models).
+				$cache_key = 'ollama_models_list_' . md5( $endpoint_url );
+
+				// Get cache TTL from settings or use default (5 minutes for local servers).
+				$cache_ttl = isset( $settings['ollama_model_list_cache_ttl'] ) ? absint( $settings['ollama_model_list_cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+
+				/**
+				 * Filter the cache TTL for Ollama model lists.
+				 *
+				 * @param int    $cache_ttl    Cache TTL in seconds.
+				 * @param string $endpoint_url Ollama endpoint URL.
+				 * @param array  $options      Request options.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_ollama_model_list_ttl', $cache_ttl, $endpoint_url, $options );
+
+				return WP_MCP_AI_Cache_Helper::remember(
+					$cache_key,
+					function () use ( $endpoint_url ) {
+						return $this->fetch_models_from_api( $endpoint_url );
+					},
+					$cache_ttl
+				);
+			}
+
+			return $this->fetch_models_from_api( $endpoint_url );
 		}
 
-		return $this->fetch_models_from_api( $endpoint_url );
-	}
+		/**
+		 * Fetch models from Ollama API (internal method).
+		 *
+		 * @param string $endpoint_url Ollama endpoint URL.
+		 * @return array|WP_Error Array of models or WP_Error on failure.
+		 */
+		private function fetch_models_from_api( $endpoint_url ) {
+			$url = untrailingslashit( $endpoint_url ) . '/api/tags';
 
-	/**
-	 * Fetch models from Ollama API (internal method).
-	 *
-	 * @param string $endpoint_url Ollama endpoint URL.
-	 * @return array|WP_Error Array of models or WP_Error on failure.
-	 */
-	private function fetch_models_from_api( $endpoint_url ) {
-		$url = untrailingslashit( $endpoint_url ) . '/api/tags';
+			// Use a minimum of 30 seconds for listing models from local providers.
+			// Local network connections may have higher latency than localhost.
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
-		// Use a minimum of 30 seconds for listing models from local providers.
-		// Local network connections may have higher latency than localhost.
-		$timeout = max( 30, $this->resolve_timeout( array() ) );
+			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
-		$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
+			if ( is_wp_error( $response ) ) {
+				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
+			}
 
-		if ( is_wp_error( $response ) ) {
-			return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
-		}
+			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
+			}
 
-		$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
-		}
-
-		$models = array();
-		if ( isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
-			foreach ( $decoded['models'] as $model ) {
-				if ( isset( $model['name'] ) ) {
-					$models[] = array(
-						'name' => $model['name'],
-						'size' => isset( $model['size'] ) ? $model['size'] : 0,
-						'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
-					);
+			$models = array();
+			if ( isset( $decoded['models'] ) && is_array( $decoded['models'] ) ) {
+				foreach ( $decoded['models'] as $model ) {
+					if ( isset( $model['name'] ) ) {
+						$models[] = array(
+							'name'   => $model['name'],
+							'size'   => isset( $model['size'] ) ? $model['size'] : 0,
+							'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+						);
+					}
 				}
 			}
+			return $models;
 		}
-		return $models;
-	}
 
 
 		/**
@@ -208,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			$http_args = array(
 				'headers' => array( 'Content-Type' => 'application/json' ),
-				'body' => wp_json_encode( $payload ),
+				'body'    => wp_json_encode( $payload ),
 				// Use higher minimum timeout for local AI models which need more time to generate responses.
 				'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 			);
@@ -262,7 +262,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$lines = explode( "\n", $body );
 
 			$accumulated_content = '';
-			$final_chunk = null;
+			$final_chunk         = null;
 
 			foreach ( $lines as $line ) {
 				$line = trim( $line );
@@ -301,10 +301,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Use the final chunk for metadata (usage, done_reason, etc.).
 			$normalized_response = array(
 				'message' => array(
-					'role' => isset( $final_chunk['message']['role'] ) ? $final_chunk['message']['role'] : 'assistant',
+					'role'    => isset( $final_chunk['message']['role'] ) ? $final_chunk['message']['role'] : 'assistant',
 					'content' => $accumulated_content,
 				),
-				'done' =>  true,
+				'done'    => true,
 			);
 
 			// Copy over metadata fields from the final chunk if available.
@@ -350,7 +350,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				if ( ! is_array( $message ) ) {
 					continue;
 				}
-				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
 
 				if ( is_array( $content ) ) {
@@ -372,12 +372,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 				if ( 'tool' === $role ) {
 					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
-					$content = sprintf( '[Tool %s]: %s', $tool_name, $content );
-					$role = 'user';
+					$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
+					$role      = 'user';
 				}
 
 				$ollama_messages[] = array(
-					'role' => $role,
+					'role'    => $role,
 					'content' => $content,
 				);
 			}
@@ -387,9 +387,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$stream = isset( $options['stream'] ) && $options['stream'] ? true : false;
 
 			$payload = array(
-				'model' => $model,
+				'model'    => $model,
 				'messages' => $ollama_messages,
-				'stream' => $stream,
+				'stream'   => $stream,
 			);
 
 			if ( ! isset( $payload['options'] ) ) {
@@ -407,7 +407,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier).
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-				$num_predict = $resource_mgr->get_max_tokens();
+				$num_predict  = $resource_mgr->get_max_tokens();
 
 				/**
 				 * Filter the maximum tokens (num_predict) for Ollama requests.
@@ -443,9 +443,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 						'ollama_system_prompt_included',
 						'Ollama: System prompt added to payload',
 						array(
-							'model' => $model,
+							'model'                => $model,
 							'system_prompt_length' => strlen( $payload['system'] ),
-							'system_preview' => substr( $payload['system'], 0, 100 ) . '...',
+							'system_preview'       => substr( $payload['system'], 0, 100 ) . '...',
 						)
 					);
 				}
@@ -455,8 +455,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					'ollama_system_prompt_missing',
 					'Ollama: No system prompt in options',
 					array(
-						'model' => $model,
-						'has_options_key' => isset( $options['system_prompt'] ),
+						'model'            => $model,
+						'has_options_key'  => isset( $options['system_prompt'] ),
 						'options_is_empty' => empty( $options['system_prompt'] ),
 					)
 				);
@@ -472,7 +472,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		 * @return int Timeout in seconds.
 		 */
 		protected function resolve_timeout( array $options ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for local AI providers since these are external.
 			// HTTP requests that don't consume PHP execution time while waiting.
@@ -534,25 +534,25 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 
 			$normalized = array(
-				'choices' =>  array(
+				'choices'  => array(
 					array(
-						'index' =>  0,
-						'message' => $message,
+						'index'         => 0,
+						'message'       => $message,
 						'finish_reason' => $finish_reason,
 					),
 				),
 				'provider' => 'ollama',
-				'model' => $model,
+				'model'    => $model,
 			);
 
 			if ( isset( $response['prompt_eval_count'] ) || isset( $response['eval_count'] ) ) {
-				$prompt_tokens = isset( $response['prompt_eval_count'] ) ? (int) $response['prompt_eval_count'] : 0;
+				$prompt_tokens     = isset( $response['prompt_eval_count'] ) ? (int) $response['prompt_eval_count'] : 0;
 				$completion_tokens = isset( $response['eval_count'] ) ? (int) $response['eval_count'] : 0;
 
 				$normalized['usage'] = array(
-					'prompt_tokens' => $prompt_tokens,
+					'prompt_tokens'     => $prompt_tokens,
 					'completion_tokens' => $completion_tokens,
-					'total_tokens' => $prompt_tokens + $completion_tokens,
+					'total_tokens'      => $prompt_tokens + $completion_tokens,
 				);
 			}
 
@@ -598,7 +598,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$payload = array(
-				'model' => $model,
+				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
 				'stream' => false,
 			);
@@ -616,7 +616,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$url,
 				array(
 					'headers' => array( 'Content-Type' => 'application/json' ),
-					'body' => wp_json_encode( $payload ),
+					'body'    => wp_json_encode( $payload ),
 					// Use higher minimum timeout for local AI models which need more time to generate responses.
 					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 				)
@@ -648,7 +648,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					$error_message,
 					array(
 						'status' => $code,
-						'body' => $decoded,
+						'body'   => $decoded,
 					)
 				);
 			}
@@ -657,14 +657,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Normalize to OpenAI-style format for consistency.
 			if ( isset( $decoded['response'] ) ) {
 				$normalized = array(
-					'id' =>  'ollama-gen-' . time(),
-					'object' =>  'text_completion',
+					'id'      => 'ollama-gen-' . time(),
+					'object'  => 'text_completion',
 					'created' => time(),
-					'model' => $model,
+					'model'   => $model,
 					'choices' => array(
 						array(
-							'text' => $decoded['response'],
-							'index' =>  0,
+							'text'          => $decoded['response'],
+							'index'         => 0,
 							'finish_reason' => isset( $decoded['done'] ) && $decoded['done'] ? 'stop' : 'length',
 						),
 					),

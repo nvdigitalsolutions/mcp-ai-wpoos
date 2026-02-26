@@ -1245,7 +1245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 
 				// Base64 encoded image data.
-				$image_data = base64_decode( $decoded['result']['image'], true );
+				$image_data = base64_decode( $decoded['result']['image'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding binary image data from Cloudflare Workers AI API response.
 
 				if ( false === $image_data || '' === $image_data ) {
 					return new WP_Error(
@@ -2460,7 +2460,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				)
 			);
 
-			// Smart Turn v2 returns: {"result": {"is_complete": true/false, "probability": 0.0-1.0}}.
+			// Smart Turn v2 response has a result object with is_complete (bool) and probability (float 0–1) fields.
 			if ( isset( $decoded['result']['is_complete'] ) ) {
 				return array(
 					'is_complete' => (bool) $decoded['result']['is_complete'],
