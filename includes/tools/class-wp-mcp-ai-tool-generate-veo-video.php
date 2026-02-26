@@ -113,6 +113,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
 				),
+				'design_context'          => array(
+					'type'        => 'boolean',
+					'description' => __( 'Prefix the prompt with design-context framing ("Design concept visualization:") to help signal creative/design intent to the Gemini content filters. Useful when prompts are incorrectly flagged by content moderation. Default is false.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
 			),
 			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
@@ -462,6 +467,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	protected function enhance_prompt_with_style( $arguments ) {
 		$prompt = sanitize_textarea_field( $arguments['prompt'] );
 		$style  = isset( $arguments['style'] ) ? $arguments['style'] : 'none';
+
+		// Apply design context prefix when requested, to signal creative/design intent
+		// to the Gemini content filters and reduce false-positive policy rejections.
+		if ( ! empty( $arguments['design_context'] ) ) {
+			$prompt = 'Design concept visualization: ' . $prompt;
+		}
 
 		if ( 'none' === $style || empty( $style ) ) {
 			return $prompt;
