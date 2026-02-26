@@ -400,6 +400,55 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$payload['options']['temperature'] = (float) $options['temperature'];
 			}
 
+			// Additional Ollama sampling parameters (see https://github.com/ollama/ollama/blob/main/docs/modelfile.md).
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$payload['options']['top_k'] = (int) $options['top_k'];
+			}
+
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['options']['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['options']['seed'] = (int) $options['seed'];
+			}
+
+			if ( isset( $options['num_ctx'] ) && is_numeric( $options['num_ctx'] ) ) {
+				$payload['options']['num_ctx'] = (int) $options['num_ctx'];
+			}
+
+			if ( isset( $options['repeat_penalty'] ) && is_numeric( $options['repeat_penalty'] ) ) {
+				$payload['options']['repeat_penalty'] = (float) $options['repeat_penalty'];
+			}
+
+			if ( isset( $options['repeat_last_n'] ) && is_numeric( $options['repeat_last_n'] ) ) {
+				$payload['options']['repeat_last_n'] = (int) $options['repeat_last_n'];
+			}
+
+			if ( isset( $options['tfs_z'] ) && is_numeric( $options['tfs_z'] ) ) {
+				$payload['options']['tfs_z'] = (float) $options['tfs_z'];
+			}
+
+			if ( isset( $options['typical_p'] ) && is_numeric( $options['typical_p'] ) ) {
+				$payload['options']['typical_p'] = (float) $options['typical_p'];
+			}
+
+			if ( isset( $options['mirostat'] ) && is_numeric( $options['mirostat'] ) ) {
+				$payload['options']['mirostat'] = (int) $options['mirostat'];
+			}
+
+			if ( isset( $options['mirostat_eta'] ) && is_numeric( $options['mirostat_eta'] ) ) {
+				$payload['options']['mirostat_eta'] = (float) $options['mirostat_eta'];
+			}
+
+			if ( isset( $options['mirostat_tau'] ) && is_numeric( $options['mirostat_tau'] ) ) {
+				$payload['options']['mirostat_tau'] = (float) $options['mirostat_tau'];
+			}
+
+			if ( ! empty( $options['stop'] ) ) {
+				$payload['options']['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
+			}
+
 			// Apply resource-aware num_predict if not explicitly set.
 			// Priority order:
 			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)

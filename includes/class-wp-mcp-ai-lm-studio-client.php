@@ -549,6 +549,23 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Additional OpenAI-compatible parameters supported by LM Studio.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+				$payload['presence_penalty'] = (float) $options['presence_penalty'];
+			}
+
+			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+				$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();

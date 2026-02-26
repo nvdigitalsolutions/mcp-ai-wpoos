@@ -582,6 +582,27 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Additional sampling parameters supported by Hugging Face Inference API.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$payload['top_k'] = (int) $options['top_k'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			if ( ! empty( $options['stop'] ) ) {
+				$payload['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
+			}
+
+			if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
+				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			// Hugging Face uses max_completion_tokens (OpenAI-compatible) for output token limit.
 			if ( ! isset( $options['max_tokens'] ) ) {

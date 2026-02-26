@@ -2046,6 +2046,43 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['responseJsonSchema'] = $options['response_json_schema'];
 			}
 
+			// Additional generationConfig sampling parameters.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['generationConfig']['topP'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$payload['generationConfig']['topK'] = (int) $options['top_k'];
+			}
+
+			if ( isset( $options['candidate_count'] ) && is_numeric( $options['candidate_count'] ) ) {
+				$payload['generationConfig']['candidateCount'] = max( 1, (int) $options['candidate_count'] );
+			}
+
+			if ( ! empty( $options['stop_sequences'] ) && is_array( $options['stop_sequences'] ) ) {
+				$payload['generationConfig']['stopSequences'] = array_values( array_map( 'sanitize_text_field', $options['stop_sequences'] ) );
+			}
+
+			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+				$payload['generationConfig']['presencePenalty'] = (float) $options['presence_penalty'];
+			}
+
+			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+				$payload['generationConfig']['frequencyPenalty'] = (float) $options['frequency_penalty'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['generationConfig']['seed'] = (int) $options['seed'];
+			}
+
+			// Extended thinking / reasoning support (Gemini 2.5+ models).
+			// When thinking_budget_tokens is set, enable the thinkingConfig with the specified budget.
+			if ( ! empty( $options['thinking_budget_tokens'] ) && is_numeric( $options['thinking_budget_tokens'] ) ) {
+				$payload['generationConfig']['thinkingConfig'] = array(
+					'thinkingBudget' => (int) $options['thinking_budget_tokens'],
+				);
+			}
+
 			if ( empty( $payload['generationConfig'] ) ) {
 				unset( $payload['generationConfig'] );
 			}
@@ -2096,6 +2133,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$translated_tools = $this->translate_tools( $options['tools'] );
 				if ( ! empty( $translated_tools ) ) {
 					$payload['tools'] = $translated_tools;
+				}
+			}
+
+			// Google Search grounding: enables dynamic retrieval from Google Search.
+			// Requires the google_search_grounding option to be truthy.
+			if ( ! empty( $options['google_search_grounding'] ) ) {
+				$grounding_tool = array( 'googleSearch' => (object) array() );
+				if ( isset( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
+					$payload['tools'][] = $grounding_tool;
+				} else {
+					$payload['tools'] = array( $grounding_tool );
 				}
 			}
 

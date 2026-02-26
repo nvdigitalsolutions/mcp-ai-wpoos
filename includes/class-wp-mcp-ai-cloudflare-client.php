@@ -471,6 +471,19 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Additional sampling parameters supported by Cloudflare Workers AI.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
+				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
+			}
+
 			// Set max_tokens using Resource Manager if not explicitly provided.
 			// Cloudflare defaults to only 256 tokens which is extremely low.
 			// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
