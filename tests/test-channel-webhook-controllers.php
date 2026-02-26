@@ -2472,4 +2472,99 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		wp_clear_scheduled_hook( $hook );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
+
+	// =========================================================================
+	// Google Chat – Marketplace App / auth robustness (priority + header fixes).
+	// =========================================================================
+
+	/**
+	 * Test allow_google_oidc_auth is registered at priority 99999.
+	 *
+	 * Third-party JWT auth plugins commonly hook rest_authentication_errors at
+	 * priority 100–999. Our filter must run after them so it can clear any
+	 * WP_Error they set before WordPress rejects the request.
+	 */
+	public function test_google_chat_auth_filter_registered_at_99999() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$priority = has_filter( 'rest_authentication_errors', array( $controller, 'allow_google_oidc_auth' ) );
+
+		$this->assertSame(
+			99999,
+			$priority,
+			'allow_google_oidc_auth must be registered at priority 99999 so it runs after JWT plugins at 100–999'
+		);
+	}
+
+	/**
+	 * Test allow_google_oidc_auth clears a WP_Error set by a JWT plugin simulated
+	 * at priority 500 (i.e. higher than the old priority of 99).
+	 */
+	public function test_google_chat_auth_filter_clears_error_from_high_priority_jwt_plugin() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Simulate a JWT auth plugin that sets a WP_Error after the OLD priority (99).
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for our webhook route.
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat';
+
+		$result = $controller->allow_google_oidc_auth( $jwt_error );
+
+		$this->assertNull( $result, 'allow_google_oidc_auth must clear WP_Error set by plugins at higher priorities' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a Bearer token supplied via
+	 * $_SERVER['HTTP_AUTHORIZATION'] when the WP_REST_Request header is empty
+	 * (simulates Apache + FastCGI environments that strip the Authorization header).
+	 */
+	public function test_google_chat_validation_accepts_bearer_from_server_http_authorization() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no connection is stored so audience defaults to empty (always passes).
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Inject Bearer token directly into $_SERVER (no WP_REST_Request header set).
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer some.valid.looking.token';
+
+		try {
+			$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+			// Do NOT set_header() — we want get_header() to return empty.
+
+			$result = $controller->validate_google_oidc_token( $request );
+		} finally {
+			unset( $_SERVER['HTTP_AUTHORIZATION'] );
+		}
+
+		$this->assertTrue( $result, 'validate_google_oidc_token should accept Bearer token from $_SERVER[HTTP_AUTHORIZATION] fallback' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a Bearer token supplied via
+	 * $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] (a second common Apache fallback).
+	 */
+	public function test_google_chat_validation_accepts_bearer_from_redirect_http_authorization() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Bearer another.valid.looking.token';
+
+		try {
+			$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+
+			$result = $controller->validate_google_oidc_token( $request );
+		} finally {
+			unset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		}
+
+		$this->assertTrue( $result, 'validate_google_oidc_token should accept Bearer token from $_SERVER[REDIRECT_HTTP_AUTHORIZATION] fallback' );
+	}
 }

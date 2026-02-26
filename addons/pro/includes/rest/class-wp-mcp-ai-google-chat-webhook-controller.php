@@ -117,7 +117,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// 401/403 that Google Chat immediately reports as "not responding".
 		// Clear that error for requests to our webhook endpoints so that our own
 		// validate_google_oidc_token() callback handles authentication.
-		add_filter( 'rest_authentication_errors', array( $this, 'allow_google_oidc_auth' ), 99 );
+		// Priority 99999 ensures we run after third-party JWT plugins (commonly 100–999)
+		// and WordPress Application Passwords (priority 100) that may re-set the error
+		// after a lower-priority filter has already cleared it.
+		add_filter( 'rest_authentication_errors', array( $this, 'allow_google_oidc_auth' ), 99999 );
 	}
 
 	/**
@@ -223,6 +226,17 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	public function validate_google_oidc_token( $request ) {
 		$auth_header = $request->get_header( 'authorization' );
 
+		// Fallback: some server configurations (Apache + FastCGI / PHP-FPM) do not
+		// populate $_SERVER['HTTP_AUTHORIZATION'], so WordPress's get_header() returns
+		// empty. Check the two common alternative server variables before giving up.
+		if ( empty( $auth_header ) && ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$auth_header = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		}
+
+		if ( empty( $auth_header ) && ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+			$auth_header = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+		}
+
 		if ( empty( $auth_header ) || 0 !== strncasecmp( $auth_header, 'Bearer ', 7 ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook rejected: missing or malformed Authorization Bearer header.'
@@ -240,7 +254,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// When the request hits the connection-specific route, use the connection_id
 		// URL param to load the exact connection (and its audience URL) directly.
 		$url_connection_id = $request->get_param( 'connection_id' );
-		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
 		} else {
 			$connection = $this->get_active_google_chat_connection();
@@ -341,7 +358,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Handle ADDED_TO_SPACE: send a welcome message via cron.
 		if ( 'ADDED_TO_SPACE' === $event_type ) {
-			return $this->handle_added_to_space( $payload );
+			return $this->handle_added_to_space( $payload, $request );
 		}
 
 		// Handle APP_COMMAND events (slash commands configured in Google Cloud Console).
@@ -392,7 +409,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// Resolve connection: prefer the connection_id from the URL route (connection-specific
 		// webhook endpoint), then fall back to space-name-based matching.
 		$url_connection_id = $request->get_param( 'connection_id' );
-		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
 			if ( ! $connection || empty( $connection['enabled'] ) ) {
 				$connection = null;
@@ -508,10 +528,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param array $payload Google Chat event payload.
+	 * @param array           $payload Google Chat event payload.
+	 * @param WP_REST_Request $request Original REST request (used to read connection_id param).
 	 * @return WP_REST_Response Empty acknowledgement response.
 	 */
-	protected function handle_added_to_space( array $payload ) {
+	protected function handle_added_to_space( array $payload, WP_REST_Request $request = null ) {
 		$space_name  = isset( $payload['space']['name'] ) ? sanitize_text_field( $payload['space']['name'] ) : '';
 		$space_type  = $this->get_space_type( $payload );
 		$sender_name = isset( $payload['user']['name'] ) ? sanitize_text_field( $payload['user']['name'] ) : '';
@@ -520,7 +541,22 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
-		$connection = $this->get_active_google_chat_connection( $space_name );
+		// Resolve connection: prefer the connection_id from the URL route so that
+		// per-connection webhook URLs work correctly for ADDED_TO_SPACE events too.
+		$url_connection_id = $request ? $request->get_param( 'connection_id' ) : '';
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+			if ( ! $connection || empty( $connection['enabled'] ) ) {
+				$connection = null;
+			}
+		}
+
+		if ( empty( $connection ) ) {
+			$connection = $this->get_active_google_chat_connection( $space_name );
+		}
 
 		$has_credentials = $connection && (
 			! empty( $connection['api_key'] ) ||
@@ -658,7 +694,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		// Resolve connection: prefer the connection_id from the URL route.
 		$url_connection_id = $request->get_param( 'connection_id' );
-		if ( ! empty( $url_connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
 			if ( ! $connection || empty( $connection['enabled'] ) ) {
 				$connection = null;
