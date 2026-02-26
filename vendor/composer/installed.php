@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
-        'version' => 'dev-copilot/enhance-anthropic-chat-client',
-        'reference' => 'aa41571e3fa1a236b6f7c0e6aaa1758f4ed86f1a',
+        'pretty_version' => 'dev-copilot/fix-per-models-page-issue',
+        'version' => 'dev-copilot/fix-per-models-page-issue',
+        'reference' => '146281cbced2dbe9f9059362dbc005f8c5280cc6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
-            'version' => 'dev-copilot/enhance-anthropic-chat-client',
-            'reference' => 'aa41571e3fa1a236b6f7c0e6aaa1758f4ed86f1a',
+            'pretty_version' => 'dev-copilot/fix-per-models-page-issue',
+            'version' => 'dev-copilot/fix-per-models-page-issue',
+            'reference' => '146281cbced2dbe9f9059362dbc005f8c5280cc6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
