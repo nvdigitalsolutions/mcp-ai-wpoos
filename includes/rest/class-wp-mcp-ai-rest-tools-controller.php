@@ -337,6 +337,45 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+
+		// /attachments/prepare - Pre-register a WordPress attachment with the AI provider.
+		// This enables the multi-step attachment pipeline in the chat client:
+		// step 1 uploads to WordPress, step 2 pre-registers with the AI Files API.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/attachments/prepare',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_attachment_prepare' ),
+					'args'                => array(
+						'attachment_id' => array(
+							'description'       => __( 'WordPress attachment ID to prepare for the AI provider.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+						'assistant_id'  => array(
+							'description'       => __( 'Assistant ID used to detect the AI provider and model.', 'mcp-ai-wpoos' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 0,
+							'sanitize_callback' => 'absint',
+						),
+						'usage'         => array(
+							'description'       => __( 'Usage context: "image" for image attachments, "file" for all other files.', 'mcp-ai-wpoos' ),
+							'type'              => 'string',
+							'required'          => false,
+							'default'           => 'file',
+							'enum'              => array( 'image', 'file' ),
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			),
+			true
+		);
 	}
 
 	/**
@@ -830,5 +869,59 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Fallback for unexpected types - try to convert to int.
 		return absint( $assistant_id );
+	}
+
+	/**
+	 * Handle POST /attachments/prepare request.
+	 *
+	 * Pre-registers a WordPress attachment with the AI provider's Files API so it is
+	 * ready before the user sends their chat message. This is step 2 of the multi-step
+	 * attachment pipeline: step 1 uploads the file to WordPress, step 2 calls this
+	 * endpoint to process the file and register it with the provider, and step 3 sends
+	 * the message with the pre-registered file_id so no extra upload is needed at
+	 * chat-send time.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response with prepared attachment data or error.
+	 */
+	public function handle_attachment_prepare( WP_REST_Request $request ) {
+		$attachment_id = absint( $request->get_param( 'attachment_id' ) );
+		$assistant_id  = absint( $request->get_param( 'assistant_id' ) );
+		$usage         = $request->get_param( 'usage' ) ? $request->get_param( 'usage' ) : 'file';
+
+		if ( $attachment_id <= 0 ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_attachment_id',
+				__( 'A valid attachment ID is required.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Determine provider and model from the assistant configuration.
+		$provider = 'openai';
+		$model    = '';
+
+		if ( $assistant_id > 0 ) {
+			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-cpt.php';
+			}
+
+			$config   = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : 'openai';
+			$model    = isset( $config['model'] ) ? sanitize_text_field( $config['model'] ) : '';
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+		}
+
+		$helper = new WP_MCP_AI_Message_Attachments( $provider, $model );
+		$result = $helper->prepare_attachment( $attachment_id, $usage );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( $result );
 	}
 }

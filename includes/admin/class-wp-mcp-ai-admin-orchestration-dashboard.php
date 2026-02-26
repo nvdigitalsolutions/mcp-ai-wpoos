@@ -31,6 +31,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_action( 'wp_ajax_wp_mcp_ai_get_recent_workflows', array( $this, 'ajax_get_recent_workflows' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_workflow', array( $this, 'ajax_execute_workflow' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_restart_workflow', array( $this, 'ajax_restart_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_refresh_memory_stats', array( $this, 'ajax_refresh_memory_stats' ) );
 	}
 
 	/**
@@ -1132,6 +1133,35 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * AJAX handler: Refresh agent memory statistics.
+	 *
+	 * Clears the cache and returns fresh memory stats.
+	 *
+	 * @return void
+	 * @since 1.1.0
+	 */
+	public function ajax_refresh_memory_stats() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Clear the cache to force fresh data retrieval.
+		delete_transient( 'wp_mcp_ai_agent_memory_stats' );
+
+		// Get fresh stats (will be recalculated and cached).
+		$stats = $this->get_agent_memory_stats();
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Memory stats refreshed successfully.', 'mcp-ai-wpoos' ),
+				'stats'   => $stats,
+			)
+		);
+	}
+
+	/**
 	 * AJAX handler: Restart workflow.
 	 *
 	 * @return void
@@ -1226,6 +1256,68 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Get agent memory statistics.
+	 *
+	 * Retrieves stats from cache or calculates them fresh.
+	 *
+	 * @return array Array containing total_contexts, total_agents, and contexts_by_type.
+	 * @since 1.1.0
+	 */
+	protected function get_agent_memory_stats() {
+		// Try to get stats from cache first (5 minute cache for dashboard performance).
+		$cache_key = 'wp_mcp_ai_agent_memory_stats';
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		global $wpdb;
+
+		// Count total stored contexts.
+		$total_contexts = 0;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} 
+				WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+			)
+		);
+
+		$contexts_by_type = array();
+		$total_agents     = 0;
+
+		foreach ( $transients as $transient ) {
+			$index = maybe_unserialize( $transient->option_value );
+			if ( is_array( $index ) && ! empty( $index ) ) {
+				++$total_agents;
+				$total_contexts += count( $index );
+
+				// Count by type.
+				foreach ( $index as $context_id => $context_meta ) {
+					$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
+					if ( ! isset( $contexts_by_type[ $type ] ) ) {
+						$contexts_by_type[ $type ] = 0;
+					}
+					++$contexts_by_type[ $type ];
+				}
+			}
+		}
+
+		$stats = array(
+			'total_contexts'   => $total_contexts,
+			'total_agents'     => $total_agents,
+			'contexts_by_type' => $contexts_by_type,
+		);
+
+		// Cache the results for 5 minutes.
+		set_transient( $cache_key, $stats, 5 * MINUTE_IN_SECONDS );
+
+		return $stats;
+	}
+
+	/**
 	 * Render agent memory statistics widget.
 	 *
 	 * Shows usage statistics for the new agent memory tools (Phase 4/5).
@@ -1234,62 +1326,20 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @since 1.1.0
 	 */
 	protected function render_agent_memory_stats() {
-		// Try to get stats from cache first (5 minute cache for dashboard performance).
-		$cache_key = 'wp_mcp_ai_agent_memory_stats';
-		$cached    = get_transient( $cache_key );
+		$stats = $this->get_agent_memory_stats();
 
-		if ( false !== $cached ) {
-			$total_contexts   = $cached['total_contexts'];
-			$total_agents     = $cached['total_agents'];
-			$contexts_by_type = $cached['contexts_by_type'];
-		} else {
-			global $wpdb;
-
-			// Count total stored contexts.
-			$total_contexts = 0;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
-			$transients = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT option_name, option_value FROM {$wpdb->options} 
-					WHERE option_name LIKE %s",
-					$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
-				)
-			);
-
-			$contexts_by_type = array();
-			$total_agents     = 0;
-
-			foreach ( $transients as $transient ) {
-				$index = maybe_unserialize( $transient->option_value );
-				if ( is_array( $index ) && ! empty( $index ) ) {
-					++$total_agents;
-					$total_contexts += count( $index );
-
-					// Count by type.
-					foreach ( $index as $context_id => $context_meta ) {
-						$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
-						if ( ! isset( $contexts_by_type[ $type ] ) ) {
-							$contexts_by_type[ $type ] = 0;
-						}
-						++$contexts_by_type[ $type ];
-					}
-				}
-			}
-
-			// Cache the results for 5 minutes.
-			set_transient(
-				$cache_key,
-				array(
-					'total_contexts'   => $total_contexts,
-					'total_agents'     => $total_agents,
-					'contexts_by_type' => $contexts_by_type,
-				),
-				5 * MINUTE_IN_SECONDS
-			);
-		}
+		$total_contexts   = $stats['total_contexts'];
+		$total_agents     = $stats['total_agents'];
+		$contexts_by_type = $stats['contexts_by_type'];
 
 		?>
 		<div class="agent-memory-stats-widget">
+			<div class="memory-stats-header">
+				<button type="button" class="button button-secondary refresh-memory-stats" title="<?php esc_attr_e( 'Refresh memory statistics', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
 			<div class="memory-stats-grid">
 				<div class="memory-stat-card">
 					<div class="stat-icon">💾</div>
@@ -1358,7 +1408,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<ul>
 					<?php
 					// Get agent memory tools from registry dynamically.
-					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search' );
+					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search', 'manage_context_lifecycle' );
 					$registry          = WP_MCP_AI_Tool_Registry::get_instance();
 
 					if ( $registry ) {
@@ -1398,6 +1448,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 							<strong>semantic_context_search:</strong>
 							<?php esc_html_e( 'Search contexts using vector embeddings for superior semantic understanding', 'mcp-ai-wpoos' ); ?>
 						</li>
+						<li>
+							<strong>manage_context_lifecycle:</strong>
+							<?php esc_html_e( 'Advanced lifecycle management: refresh TTL, compress, merge contexts, and prune unused', 'mcp-ai-wpoos' ); ?>
+						</li>
 						<?php
 					}
 					?>
@@ -1411,6 +1465,152 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					</a>
 				</p>
 			</div>
+
+			<!-- RAG Architecture Features -->
+			<div class="rag-architecture-info">
+				<h4><?php esc_html_e( 'RAG Architecture Enhancements', 'mcp-ai-wpoos' ); ?></h4>
+				<p><?php esc_html_e( 'The memory management system implements industry-standard RAG (Retrieval-Augmented Generation) best practices:', 'mcp-ai-wpoos' ); ?></p>
+				
+				<div class="rag-features-grid">
+					<div class="rag-feature-card">
+						<div class="feature-icon">🧩</div>
+						<h5><?php esc_html_e( 'Semantic Chunking', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Optimal 150-1000 token chunks with 10-20% overlap for context preservation', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🗜️</div>
+						<h5><?php esc_html_e( 'Context Compression', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Automatic summarization based on context age with TTL-aware policies', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">📊</div>
+						<h5><?php esc_html_e( 'Enhanced Scoring', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Multi-factor scoring: recency decay, frequency tracking, importance, TTL', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🔍</div>
+						<h5><?php esc_html_e( 'Hybrid Retrieval', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Combines semantic (vector) and keyword search for optimal relevance', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">⏱️</div>
+						<h5><?php esc_html_e( 'Exponential Decay', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Time-based relevance decay ensures recent contexts are prioritized', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					
+					<div class="rag-feature-card">
+						<div class="feature-icon">🎯</div>
+						<h5><?php esc_html_e( 'Token Budget Management', 'mcp-ai-wpoos' ); ?></h5>
+						<p><?php esc_html_e( 'Intelligent context selection within LLM token constraints', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Context Health Metrics -->
+			<?php
+			// Display health metrics for memory system.
+			$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+			
+			// Get a sample agent ID or aggregate metrics.
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sample_agent_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} 
+					WHERE option_name LIKE %s 
+					LIMIT 1",
+					$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+				)
+			);
+
+			if ( $sample_agent_id ) {
+				$sample_agent_id = str_replace( '_transient_mcp_ai_ctx_index_', '', $sample_agent_id );
+				// This is the md5 hash, but we can use it to get one agent's metrics.
+				$health_metrics = $context_manager->get_context_health_metrics( $sample_agent_id );
+
+				if ( $health_metrics['total_count'] > 0 ) :
+					?>
+					<div class="memory-health-metrics">
+						<h4><?php esc_html_e( 'Memory Health Metrics', 'mcp-ai-wpoos' ); ?></h4>
+						
+						<div class="health-score-display">
+							<div class="health-score-circle <?php echo $health_metrics['health_score'] >= 70 ? 'good' : ( $health_metrics['health_score'] >= 40 ? 'fair' : 'poor' ); ?>">
+								<span class="score-value"><?php echo esc_html( $health_metrics['health_score'] ); ?></span>
+								<span class="score-label"><?php esc_html_e( 'Health Score', 'mcp-ai-wpoos' ); ?></span>
+							</div>
+							
+							<div class="health-metrics-grid">
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( number_format_i18n( $health_metrics['metrics']['active_contexts'] ) ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Active Contexts', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( $health_metrics['metrics']['avg_age_days'] ); ?>d</span>
+									<span class="metric-label"><?php esc_html_e( 'Avg Age', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item">
+									<span class="metric-value"><?php echo esc_html( $health_metrics['metrics']['avg_access_count'] ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Avg Accesses', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+								
+								<div class="metric-item <?php echo $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : ''; ?>">
+									<span class="metric-value"><?php echo esc_html( number_format_i18n( $health_metrics['metrics']['expiring_soon'] ) ); ?></span>
+									<span class="metric-label"><?php esc_html_e( 'Expiring Soon', 'mcp-ai-wpoos' ); ?></span>
+								</div>
+							</div>
+						</div>
+
+						<div class="health-insights">
+							<h5><?php esc_html_e( 'Health Insights', 'mcp-ai-wpoos' ); ?></h5>
+							<ul>
+								<?php if ( $health_metrics['metrics']['never_accessed'] > 0 ) : ?>
+									<li class="info">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts have never been accessed. Consider reviewing their relevance.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['never_accessed'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+								
+								<?php if ( $health_metrics['metrics']['frequently_accessed'] > 0 ) : ?>
+									<li class="success">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts are frequently accessed (5+ times). These are high-value memories.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['frequently_accessed'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+								
+								<?php if ( $health_metrics['metrics']['expiring_soon'] > 0 ) : ?>
+									<li class="warning">
+										<?php
+										printf(
+											/* translators: %d: number of contexts */
+											esc_html__( '%d contexts expiring within 7 days. Consider extending TTL for important memories.', 'mcp-ai-wpoos' ),
+											esc_html( $health_metrics['metrics']['expiring_soon'] )
+										);
+										?>
+									</li>
+								<?php endif; ?>
+							</ul>
+						</div>
+					</div>
+					<?php
+				endif;
+			}
+			?>
 		</div>
 		<?php
 	}

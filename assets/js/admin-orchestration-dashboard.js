@@ -42,6 +42,9 @@
 			// Refresh workflows button
 			$('#refresh-workflows-btn').on('click', this.loadWorkflows.bind(this));
 
+			// Refresh memory stats button
+			$('.refresh-memory-stats').on('click', this.refreshMemoryStats.bind(this));
+
 			// Workflow action buttons (delegated for dynamically created elements)
 			$(document).on('click', '.workflow-action-continue', this.handleContinueWorkflow.bind(this));
 			$(document).on('click', '.workflow-action-restart', this.handleRestartWorkflow.bind(this));
@@ -434,6 +437,92 @@
 					$button.prop('disabled', false);
 					$button.html(originalText);
 				}
+			});
+		},
+
+		/**
+		 * Refresh agent memory statistics.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		refreshMemoryStats: function(e) {
+			e.preventDefault();
+
+			const $button = $(e.currentTarget);
+			const $icon = $button.find('.dashicons');
+			const originalText = $button.html();
+
+			// Show loading state
+			$button.prop('disabled', true);
+			$icon.addClass('wp-mcp-ai-spin');
+
+			// Make AJAX request
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_refresh_memory_stats',
+					nonce: wpMcpAiOrchestration.nonce
+				},
+				success: function(response) {
+					if (response.success && response.data.stats) {
+						// Update the stats display with fresh data
+						const stats = response.data.stats;
+						$('.memory-stat-card').eq(0).find('h3').text(stats.total_contexts.toLocaleString());
+						$('.memory-stat-card').eq(1).find('h3').text(stats.total_agents.toLocaleString());
+						$('.memory-stat-card').eq(2).find('h3').text(Object.keys(stats.contexts_by_type).length.toLocaleString());
+
+						// Update the contexts by type table if it exists
+						if (Object.keys(stats.contexts_by_type).length > 0) {
+							OrchestrationDashboard.updateContextsTable(stats.contexts_by_type, stats.total_contexts);
+						}
+
+						// Show success feedback
+						$button.prop('disabled', false);
+						$icon.removeClass('wp-mcp-ai-spin');
+						$button.addClass('button-primary');
+						setTimeout(function() {
+							$button.removeClass('button-primary');
+						}, 1000);
+					} else {
+						alert('Error: ' + (response.data.message || 'Unknown error'));
+						$button.prop('disabled', false);
+						$icon.removeClass('wp-mcp-ai-spin');
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					alert('Error refreshing memory stats. Check console for details.');
+					$button.prop('disabled', false);
+					$icon.removeClass('wp-mcp-ai-spin');
+				}
+			});
+		},
+
+		/**
+		 * Update the contexts by type table.
+		 *
+		 * @param {Object} contextsByType Contexts grouped by type.
+		 * @param {number} totalContexts Total number of contexts.
+		 */
+		updateContextsTable: function(contextsByType, totalContexts) {
+			const $tbody = $('.memory-contexts-breakdown tbody');
+			if (!$tbody.length) {
+				return;
+			}
+
+			// Sort by count descending
+			const sortedTypes = Object.entries(contextsByType).sort((a, b) => b[1] - a[1]);
+
+			// Clear and rebuild table
+			$tbody.empty();
+			sortedTypes.forEach(function([type, count]) {
+				const percentage = totalContexts > 0 ? ((count / totalContexts) * 100).toFixed(1) : 0;
+				const $row = $('<tr>')
+					.append($('<td>').html('<strong>' + type.charAt(0).toUpperCase() + type.slice(1) + '</strong>'))
+					.append($('<td>').text(count.toLocaleString()))
+					.append($('<td>').text(percentage + '%'));
+				$tbody.append($row);
 			});
 		},
 

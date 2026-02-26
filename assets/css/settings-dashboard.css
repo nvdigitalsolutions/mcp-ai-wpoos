@@ -47,7 +47,7 @@
 	border: 1px solid transparent;
 	border-bottom: none;
 	background: transparent;
-	font-size: 14px;
+	font-size: 11px;
 	line-height: 1.4;
 	transition: all 0.2s ease;
 }
@@ -156,8 +156,28 @@
 
 /* Submit Button */
 .wp-mcp-ai-settings-dashboard .submit {
-	padding: 0;
-	margin-top: 20px;
+	padding: 20px;
+	margin-top: 30px;
+	background: #f9f9f9;
+	border: 2px solid #2271b1;
+	border-radius: 4px;
+	text-align: center;
+}
+
+.wp-mcp-ai-settings-dashboard .submit::before {
+	content: "";
+	display: block;
+	height: 2px;
+	background: linear-gradient(to right, transparent, #2271b1, transparent);
+	margin: 0 auto 20px;
+	width: 100%;
+}
+
+.wp-mcp-ai-settings-dashboard .submit input[type="submit"] {
+	font-size: 14px;
+	padding: 10px 30px;
+	height: auto;
+	min-height: 40px;
 }
 
 /* Notices */

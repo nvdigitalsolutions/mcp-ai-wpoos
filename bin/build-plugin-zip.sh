@@ -421,6 +421,11 @@ if [ "$BUILD_PRO" = true ]; then
     PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
+    # Note: All NPM packages (Sharp, etc.) are pre-packaged in assets/vendor/ and committed to git.
+    # The copy-dependencies.js script is only used by maintainers when updating vendor packages.
+    # For building the zip, we just copy the pre-packaged vendor directory.
+    echo "ℹ️  Using pre-packaged NPM dependencies from assets/vendor/ (104 MB, 43 packages)"
+    
     # Copy pro addon files with aggressive exclusions to reduce size
     if [ -d "addons/pro" ]; then
         echo "Step 3b.1: Copying Pro add-on files (excluding tests, docs, dev files)..."
@@ -440,7 +445,13 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '*.js.map' \
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
-            --exclude 'assets/vendor/canvas/build' \
+            --exclude 'assets/vendor/canvas' \
+            --exclude 'assets/vendor/chart.js' \
+            --exclude 'assets/vendor/katex' \
+            --exclude 'assets/vendor/d3' \
+            --exclude 'assets/vendor/axios' \
+            --exclude 'assets/vendor/mathjs' \
+            --exclude 'assets/vendor/prettier' \
             --exclude 'vendor/*/tests' \
             --exclude 'vendor/*/test' \
             --exclude 'vendor/*/Test' \
@@ -484,7 +495,13 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/Makefile' \
             --exclude 'vendor/*/*/Makefile'
         
-        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB), Canvas native binaries (~181MB)"
+        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB)"
+        echo "✓ Excluded packages requiring system dependencies: canvas (requires libvips/Cairo for PDF OCR)"
+        echo "✓ Excluded CDN packages: chart.js (~420KB), katex (~3.1MB), d3 (~864KB), axios (~1.6MB), mathjs (~17MB), prettier (~500KB)"
+        echo "ℹ️  Note: Excluded packages are kept in git repo but not in ZIP distribution"
+        echo "ℹ️  Note: CDN packages load from jsDelivr with automatic fallback"
+        echo "ℹ️  Note: Canvas requires system-level installation for PDF OCR; install via npm when needed"
+        echo "ℹ️  Note: Other vendor packages (~40+ NPM packages including puppeteer-core) are included for immediate functionality"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then

@@ -6,9 +6,9 @@
  * supported AI providers. It combines web search with iterative AI analysis to produce
  * comprehensive research reports.
  *
- * Recommended Models for Deep Research (December 2025):
+ * Recommended Models for Deep Research (February 2026):
  * - OpenAI: gpt-4o (multimodal, fast, cost-effective) or gpt-4.5/o3 (advanced reasoning)
- * - Gemini: gemini-3-pro (flagship, 1M token context, agentic capabilities)
+ * - Gemini: gemini-3.1-pro-preview (flagship, 1M token context, 64K output, agentic capabilities)
  * - Anthropic: claude-opus-4.5 (highest intelligence, 200K context, persistent memory)
  * - Cloudflare: @cf/meta/llama-4-scout-17b-instruct or @cf/deepseek/deepseek-v3.2-thinking
  * - HuggingFace: meta-llama/Llama-3.3-70B-Instruct or deepseek-ai/DeepSeek-V3.2
@@ -544,8 +544,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$client = new WP_MCP_AI_Gemini_Client();
-			// Prefer gemini-3-pro for deep research (1M context, agentic capabilities) or fall back to configured default.
-			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3-pro';
+			// Prefer gemini-3.1-pro-preview for deep research (1M context, 64K output, agentic capabilities) or fall back to configured default.
+			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.1-pro-preview';
 			return array(
 				'client'   => $client,
 				'provider' => 'gemini',

@@ -54,6 +54,8 @@ These files are excluded from the distribution to reduce size:
 
 **Total excluded**: ~286 MB uncompressed → ~77 MB compressed savings
 
+**Note**: Puppeteer Core (~8 MB uncompressed, ~2 MB compressed) is INCLUDED in the distribution for immediate browser automation functionality.
+
 #### Why Canvas Binaries Are Excluded
 
 The `canvas` npm package includes native binary libraries (~181MB) for Linux:
@@ -327,7 +329,7 @@ These optimizations are NOT YET implemented but could be considered:
    - Most users don't need headless Chrome
    - **Trade-off**: Removes advanced PDF rendering capabilities
    - **Complexity**: Easy - just exclude from copy script
-   - **Status**: Not implemented
+   - **Status**: Not implemented (kept in distribution for immediate functionality)
 
 ### Maximum Optimization Potential
 
@@ -337,11 +339,14 @@ These optimizations are NOT YET implemented but could be considered:
 | ✅ Remove source maps | -12 MB | 42 MB | **DONE** |
 | ✅ Remove PDF samples | -2 MB | 40 MB | **DONE** |
 | ✅ Remove Facebook SDK | -5 MB | 35 MB | **DONE** |
-| **After implemented** | **-19 MB** | **~37 MB** | **CURRENT** |
-| Keep only latest PDF.js | -2 MB | 33 MB | Not done |
-| Dynamic TCPDF fonts | -4 MB | 29 MB | Not done |
-| Code splitting | -3 MB | 26 MB | Not done |
-| Optional Puppeteer | -2 MB | 24 MB | Not done |
+| **After implemented** | **-19 MB** | **~33 MB** | **CURRENT** |
+| Keep only latest PDF.js | -2 MB | 31 MB | Not done |
+| Dynamic TCPDF fonts | -4 MB | 27 MB | Not done |
+| Code splitting | -3 MB | 24 MB | Not done |
+| Optional Puppeteer | -2 MB | 22 MB | Not done (kept for functionality) |
+
+**Current size**: ~33 MB (39% reduction from 54 MB)
+**Maximum potential**: ~22 MB (59% reduction from 54 MB) if all optimizations applied
 
 **Current size**: ~37 MB (31% reduction from 54 MB)
 **Maximum potential**: ~24 MB (55% reduction from 54 MB) if all optimizations applied

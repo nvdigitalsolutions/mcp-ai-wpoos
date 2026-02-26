@@ -92,6 +92,17 @@ Each package configuration in `copy-dependencies.js` specifies:
 - Example files
 - Development dependencies
 
+**Special handling for Sharp:**
+Sharp with Linux x64 binaries is pre-packaged in `assets/vendor/sharp/node_modules/`:
+- Sharp JavaScript library
+- Dependencies (detect-libc, color, semver)
+- Linux x64 platform binaries (@img/sharp-linux-x64, @img/sharp-libvips-linux-x64)
+
+These are committed to git and cloned with the repository. The copy script only copies Sharp's library and dependencies if they're missing, but NOT the platform binaries (they're already there).
+
+**For other platforms:**
+Users need to run `npm install sharp --include=optional` to get their platform's binaries.
+
 ---
 
 ## Git Workflow
@@ -106,20 +117,55 @@ Each package configuration in `copy-dependencies.js` specifies:
 
 # TRACKED (included)
 !/addons/pro/assets/vendor/         # Pre-built packages for distribution
+!/addons/pro/assets/vendor/sharp/node_modules/  # Sharp dependencies and platform binaries (pre-packaged)
 ```
 
-### Workflow
+### Workflow for End Users (Building Zips)
 
 ```bash
-# 1. Install dependencies (creates node_modules - not tracked)
-npm install
+# All vendor packages are pre-packaged in assets/vendor/ and committed to git.
+# No npm install needed! Just build the zip:
 
-# 2. Build vendor directory (creates assets/vendor - tracked)
-npm run build
+# From repository root
+./bin/build-plugin-zip.sh --pro
 
-# 3. Commit the vendor directory
-git add addons/pro/assets/vendor/
-git commit -m "Update vendor packages"
+# Or build everything:
+./bin/build-plugin-zip.sh --all
+```
+
+**What happens:**
+1. Script copies pre-packaged files from `addons/pro/` to `build/` directory
+2. Vendor directory (104 MB, 43 packages) is already there
+3. Creates zip file
+4. Done! ✅
+
+**No npm install required** because all vendor files are committed to git.
+
+### Workflow for Maintainers (Updating Packages)
+
+Only needed when updating NPM package versions:
+
+```bash
+# Update specific package
+cd addons/pro
+npm install package-name@new-version
+npm run build  # Copies from node_modules to assets/vendor/
+git add assets/vendor/
+git commit -m "Update package-name to new-version"
+```
+
+**For Sharp specifically:**
+```bash
+cd addons/pro
+mkdir temp-sharp && cd temp-sharp
+npm install sharp@NEW_VERSION --include=optional
+cd ..
+cp -r temp-sharp/node_modules/sharp/* assets/vendor/sharp/
+cp -r temp-sharp/node_modules/{detect-libc,color,semver} assets/vendor/sharp/node_modules/
+cp -r temp-sharp/node_modules/@img assets/vendor/sharp/node_modules/
+rm -rf temp-sharp
+git add assets/vendor/sharp/
+git commit -m "Update Sharp to NEW_VERSION"
 ```
 
 ---
@@ -128,24 +174,33 @@ git commit -m "Update vendor packages"
 
 ### Plugin Zip Creation
 
-When creating a distribution zip:
+**All vendor files (104 MB, 43 packages) are pre-packaged and committed to git.**
+
+Building the zip is simple:
 
 ```bash
 # From repository root
-bin/build-plugin-zip.sh
+./bin/build-plugin-zip.sh --pro
+
+# Or build all versions:
+./bin/build-plugin-zip.sh --all
 ```
 
 **What's included:**
 - ✅ All PHP files
-- ✅ `addons/pro/assets/vendor/` (pre-built packages)
+- ✅ Pre-packaged vendor directory (104 MB, 43 NPM packages)
+- ✅ Sharp with Linux x64 binaries (works immediately on 90% of servers)
+- ✅ All other NPM packages (turf, cheerio, canvas, etc.)
 - ✅ `readme.txt`, `LICENSE`, etc.
 
-**What's excluded** (see `.distignore`):
-- ❌ `node_modules/` (development only)
-- ❌ `package.json`, `package-lock.json`
-- ❌ `scripts/` directory
-- ❌ Test files
-- ❌ Documentation (except README.md)
+**What's excluded** (see build script):
+- ❌ `node_modules/` (development only - not needed, vendor has everything)
+- ❌ `package.json`, `package-lock.json` (not needed by end users)
+- ❌ `scripts/copy-dependencies.js` (maintainer tool only)
+- ❌ Test files, documentation
+- ❌ CDN packages (chart.js, katex, etc. - loaded from CDN)
+
+**No npm install or build step needed** - everything is already in git!
 
 ### WordPress.org Deployment
 

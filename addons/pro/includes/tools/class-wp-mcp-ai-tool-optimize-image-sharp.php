@@ -20,6 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - Batch optimization capabilities
  * - Compression without quality loss
  *
+ * Sharp is pre-packaged with Linux x64 binaries in addons/pro/assets/vendor/sharp/
+ * for immediate use on most production servers. Other platforms require running
+ * "npm install sharp --include=optional" in the addons/pro directory.
+ *
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
@@ -186,7 +190,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $sharp_available ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Sharp is not available. Please ensure Node.js and Sharp package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'error'   => __( 'Sharp is not fully installed. Sharp requires Node.js, platform-specific binaries (libvips), and its dependencies (detect-libc, color, semver). To install: (1) Navigate to addons/pro directory, (2) Run "npm install --include=optional" to install Sharp with platform binaries, (3) Run "npm run build" to copy to vendor directory. See docs/BUILD_AND_DISTRIBUTION.md for details.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -273,7 +277,28 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/lib/index.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/sharp/lib/index.js';
 
-		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
+		$sharp_exists = file_exists( $vendor_path ) || file_exists( $node_modules_path );
+		if ( ! $sharp_exists ) {
+			return false;
+		}
+
+		// Check if required dependencies exist (detect-libc, color, semver).
+		// These should be in Sharp's node_modules subdirectory.
+		$base_dir = file_exists( $vendor_path ) ? WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/' : WP_MCP_AI_PRO_PATH . 'node_modules/sharp/';
+		
+		$required_deps = array( 'detect-libc', 'color', 'semver' );
+		foreach ( $required_deps as $dep ) {
+			$dep_path = $base_dir . 'node_modules/' . $dep;
+			if ( ! is_dir( $dep_path ) ) {
+				// Dependency missing - Sharp won't work.
+				return false;
+			}
+		}
+
+		// Check if platform-specific binaries exist.
+		// At least one platform binary should exist for Sharp to function.
+		$platform_binaries_path = $base_dir . 'node_modules/@img';
+		if ( ! is_dir( $platform_binaries_path ) ) {
 			return false;
 		}
 

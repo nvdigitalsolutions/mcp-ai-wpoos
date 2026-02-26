@@ -57,17 +57,17 @@ class WP_MCP_AI_LangChain_Enqueue {
 			true
 		);
 
-		// LangChain libraries from CDN (loaded on-demand).
-		// Note: These are loaded via import() in the orchestration client for lazy loading.
-		// We register them here for dependency management only.
-		$langchain_version           = '0.3.6';
-		$langchain_core_version      = '0.3.20';
-		$langchain_community_version = '0.3.14';
+		// LangChain libraries from CDN (loaded on-demand via dynamic import() in orchestration client).
+		// Versions aligned with package.json optionalDependencies.
+		// Note: These are registered for reference; actual loading uses import() in JS.
+		$langchain_version           = '0.3.x';
+		$langchain_core_version      = '0.3.x';
+		$langchain_community_version = '0.3.x';
 
 		// Register CDN scripts (for reference, not directly enqueued).
 		wp_register_script(
 			'langchain-core',
-			"https://cdn.jsdelivr.net/npm/@langchain/core@{$langchain_core_version}/+esm",
+			"https://cdn.jsdelivr.net/npm/@langchain/core/+esm",
 			array(),
 			$langchain_core_version,
 			true
@@ -75,7 +75,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain',
-			"https://cdn.jsdelivr.net/npm/langchain@{$langchain_version}/+esm",
+			"https://cdn.jsdelivr.net/npm/langchain/+esm",
 			array( 'langchain-core' ),
 			$langchain_version,
 			true
@@ -83,7 +83,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain-community',
-			"https://cdn.jsdelivr.net/npm/@langchain/community@{$langchain_community_version}/+esm",
+			"https://cdn.jsdelivr.net/npm/@langchain/community/+esm",
 			array( 'langchain-core' ),
 			$langchain_community_version,
 			true
@@ -114,17 +114,21 @@ class WP_MCP_AI_LangChain_Enqueue {
 		wp_enqueue_script( 'wp-mcp-ai-langchain-orchestration' );
 
 		// Pass configuration to JavaScript.
+		$webllm_settings = get_option( 'wp_mcp_ai_webllm_settings', array() );
 		wp_localize_script(
 			'wp-mcp-ai-langchain-orchestration',
 			'wpMcpAiLangChain',
 			array(
-				'enabled'       => true,
-				'maxIterations' => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
-				'verbose'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'cdnUrls'       => array(
-					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
-					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
-					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm',
+				'enabled'         => true,
+				'maxIterations'   => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
+				'maxRetries'      => absint( $webllm_settings['langchain_max_retries'] ?? 3 ),
+				'memoryWindowK'   => absint( $webllm_settings['langchain_memory_window'] ?? 10 ),
+				'enableStreaming'  => ! empty( $webllm_settings['langchain_enable_streaming'] ),
+				'verbose'         => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'cdnUrls'         => array(
+					'core'      => 'https://cdn.jsdelivr.net/npm/@langchain/core/+esm',
+					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain/+esm',
+					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community/+esm',
 				),
 			)
 		);

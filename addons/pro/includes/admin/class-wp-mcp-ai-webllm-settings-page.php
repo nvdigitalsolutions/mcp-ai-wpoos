@@ -108,6 +108,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		);
 
 		add_settings_field(
+			'langchain_enable_streaming',
+			__( 'LangChain Streaming', 'mcp-ai-wpoos' ),
+			array( $this, 'render_langchain_streaming_field' ),
+			self::PAGE_SLUG,
+			'webllm_features'
+		);
+
+		add_settings_field(
 			'enable_web_workers',
 			__( 'Enable Web Workers (Phase 4)', 'mcp-ai-wpoos' ),
 			array( $this, 'render_web_workers_field' ),
@@ -139,6 +147,22 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			'webllm_performance'
 		);
 
+		add_settings_field(
+			'langchain_memory_window',
+			__( 'LangChain Memory Window', 'mcp-ai-wpoos' ),
+			array( $this, 'render_langchain_memory_window_field' ),
+			self::PAGE_SLUG,
+			'webllm_performance'
+		);
+
+		add_settings_field(
+			'langchain_max_retries',
+			__( 'LangChain Max Retries', 'mcp-ai-wpoos' ),
+			array( $this, 'render_langchain_max_retries_field' ),
+			self::PAGE_SLUG,
+			'webllm_performance'
+		);
+
 		// Debug Section.
 		add_settings_section(
 			'webllm_debug',
@@ -163,13 +187,16 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 	 */
 	private function get_default_settings() {
 		return array(
-			'enable_tool_calling' => false,
-			'enable_multimodal'   => false,
-			'enable_langchain'    => false,
-			'enable_web_workers'  => false,
-			'cache_models'        => true,
-			'max_tools'           => 20,
-			'enable_console_logs' => false,
+			'enable_tool_calling'        => false,
+			'enable_multimodal'          => false,
+			'enable_langchain'           => false,
+			'langchain_enable_streaming' => false,
+			'enable_web_workers'         => false,
+			'cache_models'               => true,
+			'max_tools'                  => 20,
+			'langchain_memory_window'    => 10,
+			'langchain_max_retries'      => 3,
+			'enable_console_logs'        => false,
 		);
 	}
 
@@ -182,13 +209,16 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 	public function sanitize_settings( $input ) {
 		$sanitized = array();
 
-		$sanitized['enable_tool_calling'] = ! empty( $input['enable_tool_calling'] );
-		$sanitized['enable_multimodal']   = ! empty( $input['enable_multimodal'] );
-		$sanitized['enable_langchain']    = ! empty( $input['enable_langchain'] );
-		$sanitized['enable_web_workers']  = ! empty( $input['enable_web_workers'] );
-		$sanitized['cache_models']        = ! empty( $input['cache_models'] );
-		$sanitized['max_tools']           = absint( $input['max_tools'] ?? 20 );
-		$sanitized['enable_console_logs'] = ! empty( $input['enable_console_logs'] );
+		$sanitized['enable_tool_calling']        = ! empty( $input['enable_tool_calling'] );
+		$sanitized['enable_multimodal']          = ! empty( $input['enable_multimodal'] );
+		$sanitized['enable_langchain']           = ! empty( $input['enable_langchain'] );
+		$sanitized['langchain_enable_streaming'] = ! empty( $input['langchain_enable_streaming'] );
+		$sanitized['enable_web_workers']         = ! empty( $input['enable_web_workers'] );
+		$sanitized['cache_models']               = ! empty( $input['cache_models'] );
+		$sanitized['max_tools']                  = absint( $input['max_tools'] ?? 20 );
+		$sanitized['langchain_memory_window']    = absint( $input['langchain_memory_window'] ?? 10 );
+		$sanitized['langchain_max_retries']      = absint( $input['langchain_max_retries'] ?? 3 );
+		$sanitized['enable_console_logs']        = ! empty( $input['enable_console_logs'] );
 
 		// Validate max_tools range.
 		if ( $sanitized['max_tools'] < 1 ) {
@@ -196,6 +226,12 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		} elseif ( $sanitized['max_tools'] > 50 ) {
 			$sanitized['max_tools'] = 50;
 		}
+
+		// Validate langchain_memory_window range (2–50 turn-pairs).
+		$sanitized['langchain_memory_window'] = max( 2, min( 50, $sanitized['langchain_memory_window'] ) );
+
+		// Validate langchain_max_retries range (0–10).
+		$sanitized['langchain_max_retries'] = max( 0, min( 10, $sanitized['langchain_max_retries'] ) );
 
 		// Update legacy options for backward compatibility.
 		update_option( 'wp_mcp_ai_enable_webllm_tools', $sanitized['enable_tool_calling'] );
@@ -392,6 +428,70 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			<strong><?php esc_html_e( 'Browser Support:', 'mcp-ai-wpoos' ); ?></strong> Chrome 4+, Firefox 3.5+, Safari 4+, Edge (all versions)
 			<br>
 			<em><?php esc_html_e( 'Note: Automatically falls back to main thread if Web Workers are not supported.', 'mcp-ai-wpoos' ); ?></em>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render LangChain streaming toggle field
+	 */
+	public function render_langchain_streaming_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$checked  = ! empty( $settings['langchain_enable_streaming'] );
+		?>
+		<label>
+			<input type="checkbox"
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[langchain_enable_streaming]"
+					value="1"
+					<?php checked( $checked ); ?>>
+			<?php esc_html_e( 'Enable token streaming for LangChain responses', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Streams LLM output token-by-token as it is generated, giving users faster perceived response time. Requires LangChain Orchestration to be enabled.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render LangChain memory window field
+	 */
+	public function render_langchain_memory_window_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = absint( $settings['langchain_memory_window'] ?? 10 );
+		?>
+		<input type="number"
+				name="<?php echo esc_attr( self::OPTION_NAME ); ?>[langchain_memory_window]"
+				value="<?php echo esc_attr( $value ); ?>"
+				min="2"
+				max="50"
+				class="small-text">
+		<p class="description">
+			<?php esc_html_e( 'Number of conversation turn-pairs (user + assistant) to retain in memory. Higher values improve context but increase token usage.', 'mcp-ai-wpoos' ); ?>
+			<br>
+			<strong><?php esc_html_e( 'Range:', 'mcp-ai-wpoos' ); ?></strong> 2–50 &nbsp;
+			<strong><?php esc_html_e( 'Default:', 'mcp-ai-wpoos' ); ?></strong> 10
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render LangChain max retries field
+	 */
+	public function render_langchain_max_retries_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$value    = absint( $settings['langchain_max_retries'] ?? 3 );
+		?>
+		<input type="number"
+				name="<?php echo esc_attr( self::OPTION_NAME ); ?>[langchain_max_retries]"
+				value="<?php echo esc_attr( $value ); ?>"
+				min="0"
+				max="10"
+				class="small-text">
+		<p class="description">
+			<?php esc_html_e( 'Maximum automatic retries on failed LLM or tool calls (exponential back-off). Set to 0 to disable retries.', 'mcp-ai-wpoos' ); ?>
+			<br>
+			<strong><?php esc_html_e( 'Range:', 'mcp-ai-wpoos' ); ?></strong> 0–10 &nbsp;
+			<strong><?php esc_html_e( 'Default:', 'mcp-ai-wpoos' ); ?></strong> 3
 		</p>
 		<?php
 	}

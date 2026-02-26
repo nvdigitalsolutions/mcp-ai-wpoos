@@ -218,10 +218,17 @@ phase: 'stats'
 
 /**
  * Main message handler
+ *
+ * Kept synchronous at the listener level to avoid the Chromium
+ * "message channel closed before a response was received" error that
+ * occurs when an async listener implicitly returns a Promise.  All
+ * async work is performed inside a self-invoking async function whose
+ * rejection is caught and forwarded as an 'error' message.
  */
-self.addEventListener( 'message', async ( event ) => {
+self.addEventListener( 'message', ( event ) => {
 const { type, data } = event.data;
 
+( async () => {
 switch ( type ) {
 case 'init':
 await initializeEngine( data );
@@ -252,6 +259,16 @@ type: 'error',
 data: { message: `Unknown message type: ${type}` }
 } );
 }
+} )().catch( ( error ) => {
+self.postMessage( {
+type: 'error',
+data: {
+message: error.message,
+stack: error.stack,
+phase: 'message_handler'
+}
+} );
+} );
 } );
 
 /**

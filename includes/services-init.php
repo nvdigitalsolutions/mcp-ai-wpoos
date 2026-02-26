@@ -98,6 +98,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-conte
 // Load vector context service (DeepSeek V4 enhancements - Phase 5.5).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
 
+// Load context compression service (RAG enhancements).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-context-compression-service.php';
+
 // Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-balancer.php';
@@ -400,6 +403,19 @@ function wp_mcp_ai_get_agent_context_manager() {
  */
 function wp_mcp_ai_get_vector_context_service() {
 	return WP_MCP_AI_Vector_Context_Service::get_instance();
+}
+
+/**
+ * Get context compression service instance
+ *
+ * Helper function to get the context compression service for
+ * managing context compression, chunking, and summarization.
+ *
+ * @since 1.1.0
+ * @return WP_MCP_AI_Context_Compression_Service Compression service instance.
+ */
+function wp_mcp_ai_get_context_compression_service() {
+	return WP_MCP_AI_Context_Compression_Service::get_instance();
 }
 
 /**

@@ -2670,18 +2670,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						if ( ! is_wp_error( $fallback_validation ) ) {
 							// Fallback model can handle the request.
 							$original_model   = $model;
+							$original_provider = isset( $options['provider'] ) ? $options['provider'] : '';
 							$options['model'] = $fallback_model;
 							$model            = $fallback_model;
 							$switched_model   = true;
+
+							// Also switch provider to match the fallback model so the router
+							// sends the request to the correct LLM API endpoint.
+							$fallback_model_config = class_exists( 'WP_MCP_AI_Model_Config' )
+								? WP_MCP_AI_Model_Config::get_model_config( $fallback_model )
+								: null;
+							if ( $fallback_model_config && ! empty( $fallback_model_config['provider'] ) ) {
+								$options['provider'] = sanitize_key( $fallback_model_config['provider'] );
+							}
 
 							WP_MCP_AI_Logger::log_event(
 								'agentic_model_switched',
 								'Switched to higher-capacity model due to token limits',
 								array(
-									'iteration'      => $iteration,
-									'original_model' => $original_model,
-									'new_model'      => $fallback_model,
-									'assistant_id'   => $assistant_id,
+									'iteration'        => $iteration,
+									'original_model'   => $original_model,
+									'original_provider' => $original_provider,
+									'new_model'        => $fallback_model,
+									'new_provider'     => isset( $options['provider'] ) ? $options['provider'] : '',
+									'assistant_id'     => $assistant_id,
 								)
 							);
 						}
@@ -3377,6 +3389,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							$options['model'] = $fallback_model;
 							$model            = $fallback_model;
 							$switched_model   = true;
+
+							// Also switch provider to match the fallback model so the router
+							// sends the request to the correct LLM API endpoint.
+							$fallback_model_config = class_exists( 'WP_MCP_AI_Model_Config' )
+								? WP_MCP_AI_Model_Config::get_model_config( $fallback_model )
+								: null;
+							if ( $fallback_model_config && ! empty( $fallback_model_config['provider'] ) ) {
+								$options['provider'] = sanitize_key( $fallback_model_config['provider'] );
+							}
 
 							$this->send_sse_event(
 								'status',

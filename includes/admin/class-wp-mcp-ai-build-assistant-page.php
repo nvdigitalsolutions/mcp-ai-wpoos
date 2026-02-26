@@ -163,6 +163,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 			array(
 				'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
 				'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'prepareEndpoint'     => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/attachments/prepare' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
@@ -254,6 +255,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
 			/* translators: %s: filename */
 			'uploadingFile'                 => __( 'Uploading "%s"…', 'mcp-ai-wpoos' ),
+			/* translators: %s: filename */
+			'processingFile'                => __( 'Processing "%s"…', 'mcp-ai-wpoos' ),
 			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
 			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
 			'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),

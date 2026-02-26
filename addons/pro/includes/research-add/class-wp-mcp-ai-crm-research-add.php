@@ -39,6 +39,7 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	protected function get_entity_types() {
 		return array(
 			'contacts'  => __( 'Contacts', 'mcp-ai-wpoos-pro' ),
+			'companies' => __( 'Companies', 'mcp-ai-wpoos-pro' ),
 			'campaigns' => __( 'Email Campaigns', 'mcp-ai-wpoos-pro' ),
 			'leads'     => __( 'Leads', 'mcp-ai-wpoos-pro' ),
 		);
@@ -60,6 +61,8 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 		switch ( $entity_type ) {
 			case 'contacts':
 				return $this->get_contacts_schema();
+			case 'companies':
+				return $this->get_companies_schema();
 			case 'campaigns':
 				return $this->get_campaigns_schema();
 			case 'leads':
@@ -196,6 +199,155 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 			),
 			'notes'            => array(
 				'title' => __( 'Notes', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+		);
+	}
+
+	/**
+	 * Get companies field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function get_companies_schema() {
+		return array(
+			'company_name'   => array(
+				'title'       => __( 'Company Name', 'mcp-ai-wpoos-pro' ),
+				'type'        => 'text',
+				'width'       => '100%',
+				'is_required' => true,
+			),
+			'industry'       => array(
+				'title'       => __( 'Industry', 'mcp-ai-wpoos-pro' ),
+				'type'        => 'text',
+				'width'       => '50%',
+				'is_required' => true,
+			),
+			'company_size'   => array(
+				'title'   => __( 'Company Size', 'mcp-ai-wpoos-pro' ),
+				'type'    => 'select',
+				'width'   => '50%',
+				'options' => array(
+					array(
+						'key'   => '1-10',
+						'value' => __( '1-10 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '11-50',
+						'value' => __( '11-50 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '51-200',
+						'value' => __( '51-200 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '201-500',
+						'value' => __( '201-500 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '501-1000',
+						'value' => __( '501-1,000 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '1001-5000',
+						'value' => __( '1,001-5,000 employees', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => '5001+',
+						'value' => __( '5,001+ employees', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+			),
+			'website'        => array(
+				'title' => __( 'Website', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '100%',
+			),
+			'address'        => array(
+				'title' => __( 'Address', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'city'           => array(
+				'title' => __( 'City', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '33%',
+			),
+			'state'          => array(
+				'title' => __( 'State/Province', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '33%',
+			),
+			'zip'            => array(
+				'title' => __( 'ZIP/Postal Code', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '34%',
+			),
+			'country'        => array(
+				'title' => __( 'Country', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'phone'          => array(
+				'title' => __( 'Phone Number', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'revenue'        => array(
+				'title' => __( 'Annual Revenue', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'target_status'  => array(
+				'title'   => __( 'Target Status', 'mcp-ai-wpoos-pro' ),
+				'type'    => 'select',
+				'width'   => '50%',
+				'options' => array(
+					array(
+						'key'   => 'prospect',
+						'value' => __( 'Prospect', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'target',
+						'value' => __( 'Target', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'in_discussion',
+						'value' => __( 'In Discussion', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'client',
+						'value' => __( 'Client', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'not_interested',
+						'value' => __( 'Not Interested', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+			),
+			'linkedin'       => array(
+				'title' => __( 'LinkedIn URL', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'twitter'        => array(
+				'title' => __( 'Twitter/X Handle', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'description'    => array(
+				'title' => __( 'Company Description', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'tags'           => array(
+				'title' => __( 'Tags', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '100%',
+			),
+			'notes'          => array(
+				'title' => __( 'Research Notes', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'textarea',
 				'width' => '100%',
 			),

@@ -121,6 +121,18 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		$matrix_b  = isset( $arguments['matrix_b'] ) ? $arguments['matrix_b'] : null;
 		$format    = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'both';
 
+		// Check if Math.js package is available.
+		if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'mathjs' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_package_not_available',
+				__( 'Math.js package is not available. Please ensure Node.js and Math.js are properly installed. Visit the Pro Packages settings page for installation instructions.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'package'      => 'mathjs',
+					'settings_url' => admin_url( 'admin.php?page=wp-mcp-ai-pro-packages-settings' ),
+				)
+			);
+		}
+
 		// Validate binary operations have matrix_b.
 		$binary_ops = array( 'add', 'subtract', 'multiply' );
 		if ( in_array( $operation, $binary_ops, true ) && null === $matrix_b ) {

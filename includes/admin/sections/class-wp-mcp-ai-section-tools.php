@@ -599,6 +599,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// PRO TOOLKITS - New Professional Toolkits (Phases 2-6)
 				// ========================================================================
 
+				// CRM & Email Marketing Toolkit.
+				'enable_crm_toolkit'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable CRM, email marketing, and company management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered CRM and email marketing toolkit with company management, contact tracking, lead management, and email campaign tools. Includes Company CPT with Research & Add page for AI-powered company research and target identification. Integrates with Newsletter and WP Mail SMTP plugins. Provides web search integration for industry analysis and best practices research. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// E-commerce Toolkit.
 				'enable_ecommerce_toolkit'               => array(
 					'type'           => 'checkbox',
@@ -817,7 +826,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -934,6 +943,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			// The 'connections' subtab is handled by the Integrations section itself,.
 			// which will render when the subtab is active. No special rendering needed here.
+			// Show a helper message for this subtab.
+			if ( 'connections' === $active_subtab ) {
+				?>
+				<tr>
+					<td colspan="2" style="padding: 20px;">
+						<div class="notice notice-info inline" style="margin: 0;">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to integrations tab */
+										__( 'Connection settings are managed in the <a href="%s">Integrations</a> tab. Use that tab to configure OAuth connections for external services like Google Drive, Gmail, GitHub, and more.', 'mcp-ai-wpoos' ),
+										esc_url(
+											add_query_arg(
+												array(
+													'page' => 'wp-mcp-ai-dashboard',
+													'tab'  => 'integrations',
+												),
+												admin_url( 'admin.php' )
+											)
+										)
+									)
+								);
+								?>
+							</p>
+						</div>
+					</td>
+				</tr>
+				<?php
+				return;
+			}
 
 			// Render fields for the active sub-tab.
 			foreach ( $active_group['fields'] as $key ) {
@@ -990,6 +1030,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_eca_management'                  => 40,   // 5+ tools, iSAMS integration.
 				'enable_health_wellness_management'      => 128,  // 30+ tools, secure health data storage.
 				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
+				'enable_crm_toolkit'                     => 56,   // 10+ tools, company/contact/lead/campaign management with web search.
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
 				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
 				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.
@@ -1097,7 +1138,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 					<script>
 					jQuery(document).ready(function($) {
-						var toolkitMemory = <?php echo ( wp_json_encode( $this->get_toolkit_memory_requirements() ) ? wp_json_encode( $this->get_toolkit_memory_requirements() ) : '{}' ); ?>;
+						<?php
+						// Store the result once to avoid redundant function calls.
+						$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
+						?>
+						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
