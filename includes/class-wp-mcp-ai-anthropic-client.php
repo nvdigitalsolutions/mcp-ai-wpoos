@@ -109,12 +109,20 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			$payload['model'] = $model;
 
+			$headers = array(
+				'Content-Type'      => 'application/json',
+				'x-api-key'         => $api_key,
+				'anthropic-version' => self::API_VERSION,
+			);
+
+			// Add anthropic-beta header when needed.
+			$betas = $this->resolve_beta_features( $payload, $options );
+			if ( ! empty( $betas ) ) {
+				$headers['anthropic-beta'] = implode( ',', $betas );
+			}
+
 			$request_args = array(
-				'headers' => array(
-					'Content-Type'      => 'application/json',
-					'x-api-key'         => $api_key,
-					'anthropic-version' => self::API_VERSION,
-				),
+				'headers' => $headers,
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
@@ -439,18 +447,31 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				'messages' => $anthropic_messages,
 			);
 
-			// Add system message if present.
+			// Build combined system text.
+			$system_text = '';
 			if ( ! empty( $system_parts ) ) {
-				$payload['system'] = implode( "\n\n", $system_parts );
+				$system_text = implode( "\n\n", $system_parts );
+			}
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$extra       = wp_kses_post( $options['system_prompt'] );
+				$system_text = '' !== $system_text ? $system_text . "\n\n" . $extra : $extra;
 			}
 
-			// Add system prompt from options if provided.
-			if ( ! empty( $options['system_prompt'] ) ) {
-				$system_prompt = wp_kses_post( $options['system_prompt'] );
-				if ( ! empty( $payload['system'] ) ) {
-					$payload['system'] .= "\n\n" . $system_prompt;
+			if ( '' !== $system_text ) {
+				// Use prompt caching when requested: send system as a content block with
+				// cache_control so Anthropic can reuse the KV cache across turns.
+				// 'ephemeral' = short-lived cache (5 min TTL) that drastically cuts
+				// input token costs when the same system prompt is reused across calls.
+				if ( ! empty( $options['cache_system_prompt'] ) ) {
+					$payload['system'] = array(
+						array(
+							'type'          => 'text',
+							'text'          => $system_text,
+							'cache_control' => array( 'type' => 'ephemeral' ),
+						),
+					);
 				} else {
-					$payload['system'] = $system_prompt;
+					$payload['system'] = $system_text;
 				}
 			}
 
@@ -482,6 +503,27 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				$tools = $this->translate_tools_for_anthropic( $options['tools'] );
 				if ( ! empty( $tools ) ) {
 					$payload['tools'] = $tools;
+				}
+			}
+
+			// Add tool_choice if specified.
+			// Supported values: 'auto' (default), 'any' (force tool use), 'none' (no tools),
+			// or array with 'type' => 'tool' and 'name' => 'tool_name'.
+			if ( isset( $options['tool_choice'] ) ) {
+				$payload['tool_choice'] = $this->resolve_tool_choice( $options['tool_choice'] );
+			}
+
+			// Add extended thinking when a budget is specified.
+			// See https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking.
+			if ( ! empty( $options['thinking_budget_tokens'] ) ) {
+				$budget_tokens = absint( $options['thinking_budget_tokens'] );
+				if ( $budget_tokens > 0 ) {
+					$payload['thinking'] = array(
+						'type'          => 'enabled',
+						'budget_tokens' => $budget_tokens,
+					);
+					// Extended thinking requires temperature = 1 (Anthropic requirement).
+					$payload['temperature'] = 1;
 				}
 			}
 
@@ -916,6 +958,82 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		}
 
 		/**
+		 * Resolve the tool_choice value to Anthropic API format.
+		 *
+		 * Maps standard values ('auto', 'any', 'none') and OpenAI-style tool_choice
+		 * arrays to the Anthropic API's tool_choice object format.
+		 *
+		 * @param mixed $tool_choice String ('auto'|'any'|'none') or array with 'type'/'name' keys.
+		 * @return array Anthropic-formatted tool_choice object.
+		 */
+		protected function resolve_tool_choice( $tool_choice ) {
+			if ( is_array( $tool_choice ) ) {
+				// Already an array; ensure 'type' is set.
+				if ( isset( $tool_choice['type'] ) ) {
+					return $tool_choice;
+				}
+				// OpenAI-style: { type: 'function', function: { name: '...' } }.
+				if ( isset( $tool_choice['function']['name'] ) ) {
+					return array(
+						'type' => 'tool',
+						'name' => sanitize_text_field( $tool_choice['function']['name'] ),
+					);
+				}
+				return array( 'type' => 'auto' );
+			}
+
+			$choice = sanitize_text_field( (string) $tool_choice );
+
+			switch ( $choice ) {
+				case 'required':
+				case 'any':
+					return array( 'type' => 'any' );
+				case 'none':
+					return array( 'type' => 'none' );
+				default:
+					return array( 'type' => 'auto' );
+			}
+		}
+
+		/**
+		 * Resolve required Anthropic beta features for a payload.
+		 *
+		 * Returns beta feature identifiers that must be sent in the
+		 * 'anthropic-beta' request header for the given payload.
+		 *
+		 * @param array $payload The built request payload.
+		 * @param array $options Original request options.
+		 * @return string[] Beta feature identifiers.
+		 */
+		protected function resolve_beta_features( array $payload, array $options ) {
+			$betas = array();
+
+			// Prompt caching is GA on claude-3-5 and later but still requires the header
+			// on older (claude-3-haiku, claude-3-sonnet) models.
+			if ( ! empty( $options['cache_system_prompt'] ) ) {
+				$betas[] = 'prompt-caching-2024-07-31';
+			}
+
+			// Extended thinking requires the interleaved-thinking beta for models that
+			// support it but have not yet promoted it to GA.
+			if ( ! empty( $payload['thinking'] ) ) {
+				$betas[] = 'interleaved-thinking-2025-05-14';
+			}
+
+			// Allow callers to pass additional betas via options.
+			if ( ! empty( $options['anthropic_betas'] ) && is_array( $options['anthropic_betas'] ) ) {
+				foreach ( $options['anthropic_betas'] as $beta ) {
+					$beta = sanitize_text_field( (string) $beta );
+					if ( '' !== $beta && ! in_array( $beta, $betas, true ) ) {
+						$betas[] = $beta;
+					}
+				}
+			}
+
+			return $betas;
+		}
+
+		/**
 		 * Resolve the timeout for the request.
 		 *
 		 * @param array $options Request options.
@@ -946,6 +1064,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$tool_calls = array();
 
 			// Extract content from Anthropic's response.
+			$thinking_blocks = array();
 			if ( isset( $response['content'] ) && is_array( $response['content'] ) ) {
 				foreach ( $response['content'] as $block ) {
 					if ( ! is_array( $block ) ) {
@@ -959,6 +1078,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 							'type' => 'text',
 							'text' => (string) $block['text'],
 						);
+					}
+
+					// Collect extended thinking blocks.
+					if ( 'thinking' === $type && isset( $block['thinking'] ) ) {
+						$thinking_blocks[] = (string) $block['thinking'];
 					}
 
 					// Handle tool use blocks if present.
@@ -977,6 +1101,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			if ( ! empty( $tool_calls ) ) {
 				$message['tool_calls'] = $tool_calls;
+			}
+
+			// Expose thinking content separately so callers can display or log it.
+			if ( ! empty( $thinking_blocks ) ) {
+				$message['thinking'] = implode( "\n\n", $thinking_blocks );
 			}
 
 			$normalized = array(

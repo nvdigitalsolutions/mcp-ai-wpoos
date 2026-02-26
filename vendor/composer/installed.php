@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
         'version' => 'dev-copilot/enhance-anthropic-chat-client',
-        'reference' => '541831f78934e0e710327a9320075f027769ff17',
+        'reference' => '135285187a263c4b7c485077d76cd572b8bc9f79',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-anthropic-chat-client',
             'version' => 'dev-copilot/enhance-anthropic-chat-client',
-            'reference' => '541831f78934e0e710327a9320075f027769ff17',
+            'reference' => '135285187a263c4b7c485077d76cd572b8bc9f79',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
