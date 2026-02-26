@@ -235,4 +235,132 @@ class WP_MCP_AI_Assistant_Tool_Presets_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( $key, $presets, "Preset '{$key}' should exist." );
 		}
 	}
+
+	/**
+	 * Test that all tool files are accounted for in presets.
+	 *
+	 * This test ensures every tool file in includes/tools/ is referenced
+	 * in at least one preset. This prevents tools from being orphaned.
+	 */
+	public function test_all_tools_accounted_for_in_presets() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		// Get all registered tool slugs.
+		$registered_tools = array();
+		foreach ( $registry->get_tools() as $tool ) {
+			$registered_tools[] = $tool->get_slug();
+		}
+
+		// Get all tools from all presets.
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+
+		$presets = $method->invoke( $assistant_cpt );
+
+		// Collect all tools mentioned in presets.
+		$tools_in_presets = array();
+		foreach ( $presets as $preset_key => $preset_data ) {
+			if ( isset( $preset_data['tools'] ) && is_array( $preset_data['tools'] ) ) {
+				$tools_in_presets = array_merge( $tools_in_presets, $preset_data['tools'] );
+			}
+		}
+		$tools_in_presets = array_unique( $tools_in_presets );
+
+		// Find tools that are registered but not in any preset.
+		$missing_tools = array_diff( $registered_tools, $tools_in_presets );
+
+		// Assert that no tools are missing from presets.
+		$this->assertEmpty(
+			$missing_tools,
+			'All registered tools should be included in at least one preset. Missing tools: ' . implode( ', ', $missing_tools )
+		);
+
+		// Report summary.
+		$this->assertGreaterThan(
+			200,
+			count( $registered_tools ),
+			'Should have over 200 registered tools'
+		);
+		$this->assertEquals(
+			count( $registered_tools ),
+			count( array_intersect( $registered_tools, $tools_in_presets ) ),
+			'All registered tools should be in presets'
+		);
+	}
+
+	/**
+	 * Test that newly added tools are in appropriate presets.
+	 *
+	 * Specifically tests that the 26 tools added in the latest update
+	 * are present in the presets.
+	 */
+	public function test_newly_added_tools_in_presets() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+		$reflection    = new ReflectionClass( $assistant_cpt );
+		$method        = $reflection->getMethod( 'get_tool_presets' );
+		$method->setAccessible( true );
+
+		$presets = $method->invoke( $assistant_cpt );
+
+		// Test client-side AI tools in ai_ml preset.
+		$client_tools = array(
+			'client_analyze_sentiment',
+			'client_extract_entities',
+			'client_question_answering',
+			'client_semantic_search',
+			'client_summarize_text',
+			'client_translate_text',
+		);
+
+		if ( isset( $presets['ai_ml']['tools'] ) ) {
+			foreach ( $client_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['ai_ml']['tools'],
+					"Client tool '{$tool}' should be in ai_ml preset"
+				);
+			}
+		}
+
+		// Test workflow tools in agentic_workflow preset.
+		$workflow_tools = array(
+			'check_workflow_health',
+			'validate_workflow',
+			'visualize_workflow_metrics',
+		);
+
+		if ( isset( $presets['agentic_workflow']['tools'] ) ) {
+			foreach ( $workflow_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['agentic_workflow']['tools'],
+					"Workflow tool '{$tool}' should be in agentic_workflow preset"
+				);
+			}
+		}
+
+		// Test Google Site Kit tools in seo_marketing preset.
+		$sitekit_tools = array(
+			'sitekit_adsense',
+			'sitekit_analytics',
+			'sitekit_pagespeed',
+			'sitekit_search_console',
+		);
+
+		if ( isset( $presets['seo_marketing']['tools'] ) ) {
+			foreach ( $sitekit_tools as $tool ) {
+				$this->assertContains(
+					$tool,
+					$presets['seo_marketing']['tools'],
+					"Site Kit tool '{$tool}' should be in seo_marketing preset"
+				);
+			}
+		}
+	}
 }

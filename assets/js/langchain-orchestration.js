@@ -1,450 +1,410 @@
 /**
  * LangChain.js Orchestration Client for WordPress
  *
- * Provides sophisticated multi-step reasoning, chains, agents, and memory management
+ * Provides multi-step reasoning, chains, agents, and memory management
  * using LangChain.js integrated with WebLLM for browser-first AI orchestration.
  *
- * Dependencies: langchain, @langchain/core, @langchain/community, @mlc-ai/web-llm
+ * Best practices implemented (v1.1.0):
+ * - Dynamic ESM import() instead of window.langchain check (fixes CDN ESM detection)
+ * - Exponential-backoff retry on all LLM and tool calls
+ * - ConversationBufferWindowMemory with localStorage persistence
+ * - Token streaming via OpenAI-compatible stream API
+ * - ReAct-style Thought/Action/Observation agent loop
  *
  * @package WP_MCP_AI
  * @since 1.2.0
- * @version 1.0.0
+ * @version 1.1.0
  */
 
-/* global wpMcpAiChat */
+/* global wpMcpAiChat, wpMcpAiLangChain */
 
 (function() {
-	'use strict';
+'use strict';
 
-	/**
-	 * LangChain Orchestrator for browser-side AI workflows
-	 *
-	 * Enables:
-	 * - Multi-step reasoning chains
-	 * - Agent-based tool orchestration
-	 * - Conversation memory management
-	 * - Sequential and parallel execution
-	 * - Self-reflection and error correction
-	 */
-	class WP_MCP_AI_LangChain_Orchestrator {
-		/**
-		 * Constructor
-		 *
-		 * @param {Object} webllmEngine - WebLLM engine instance from embedded-llm-client
-		 */
-		constructor( webllmEngine ) {
-			this.webllmEngine = webllmEngine;
-			this.chatModel = null;
-			this.memory = null;
-			this.tools = [];
-			this.initialized = false;
+/**
+ * Async retry with exponential backoff.
+ * Mirrors LangChain's withRetry() pattern.
+ *
+ * @param {Function} fn         Async function to attempt
+ * @param {number}   maxRetries Maximum retry count (default 3)
+ * @param {number}   baseDelay  Base delay ms (default 500)
+ * @return {Promise<any>}
+ */
+async function withRetry( fn, maxRetries, baseDelay ) {
+maxRetries = maxRetries || 3;
+baseDelay  = baseDelay  || 500;
+let last;
+for ( let i = 0; i <= maxRetries; i++ ) {
+try { return await fn(); } catch ( e ) {
+last = e;
+if ( i < maxRetries ) {
+await new Promise( r => setTimeout( r, Math.min( baseDelay * Math.pow( 2, i ), 10000 ) ) );
+}
+}
+}
+throw last;
+}
 
-			// Check if LangChain libraries are loaded
-			this.hasLangChain = typeof window.langchain !== 'undefined';
-			this.hasLangChainCore = typeof window.langchainCore !== 'undefined';
-			this.hasLangChainCommunity = typeof window.langchainCommunity !== 'undefined';
+// Export so langchain-tool-adapter (loaded first) can reuse without duplication.
+window.WP_MCP_AI_LangChain_withRetry = withRetry;
 
-			if ( ! this.hasLangChain || ! this.hasLangChainCore || ! this.hasLangChainCommunity ) {
-				console.warn( '[NV oOS LangChain] LangChain libraries not loaded. Orchestration features unavailable.' );
-				return;
-			}
+/**
+ * LangChain Orchestrator for browser-side AI workflows.
+ *
+ * Enables:
+ * - Multi-step reasoning chains with memory
+ * - ReAct-style agent tool orchestration
+ * - Conversation memory with sliding window + localStorage persistence
+ * - Token streaming with onToken callback
+ * - Sequential and parallel execution
+ */
+class WP_MCP_AI_LangChain_Orchestrator {
+/**
+ * @param {Object} webllmEngine WebLLM engine (OpenAI-compatible API)
+ * @param {Object} config       Optional config overrides
+ */
+constructor( webllmEngine, config ) {
+this.webllmEngine = webllmEngine;
+this.tools        = [];
+this.initialized  = false;
+this._lc          = null;
 
-			console.log( '[NV oOS LangChain] Orchestrator initialized' );
-		}
+const php = ( typeof wpMcpAiLangChain !== 'undefined' ) ? wpMcpAiLangChain : {};
+this.config = Object.assign(
+{ maxIterations: 10, maxRetries: 3, memoryWindowK: 10, enableStreaming: false, verbose: false },
+php,
+config || {}
+);
 
-		/**
-		 * Initialize the LangChain chat model with WebLLM
-		 *
-		 * @return {Promise<void>}
-		 */
-		async initialize() {
-			if ( this.initialized ) {
-				return;
-			}
+// onToken callback for streaming UIs.
+this.onToken = null;
 
-			if ( ! this.webllmEngine ) {
-				throw new Error( 'WebLLM engine not provided. Initialize embedded LLM first.' );
-			}
+this.memory = this._createMemory( this.config.memoryWindowK );
+console.log( '[NV oOS LangChain] Orchestrator constructed' );
+}
 
-			try {
-				// Create ChatWebLLM instance that wraps our WebLLM engine
-				// Note: This is a conceptual implementation - actual implementation
-				// depends on LangChain's ChatWebLLM adapter availability
-				this.chatModel = {
-					_engine: this.webllmEngine,
-					_call: async ( messages ) => {
-						const response = await this.webllmEngine.chat.completions.create( {
-							messages: messages.map( msg => ( {
-								role: msg._getType(),
-								content: msg.content
-							} ) ),
-							stream: false
-						} );
+/**
+ * Lazy-load LangChain ESM modules via dynamic import().
+ *
+ * ESM modules loaded from CDN do NOT set window.langchain, so
+ * checking typeof window.langchain is unreliable. Dynamic import()
+ * is the correct approach for CDN-hosted ESM bundles.
+ *
+ * @return {Promise<Object|null>}
+ */
+async _loadLangChain() {
+if ( this._lc ) { return this._lc; }
+const urls = ( typeof wpMcpAiLangChain !== 'undefined' && wpMcpAiLangChain.cdnUrls )
+? wpMcpAiLangChain.cdnUrls
+: { core: 'https://cdn.jsdelivr.net/npm/@langchain/core/+esm' };
+try {
+this._lc = { core: await import( urls.core ) };
+if ( urls.langchain ) {
+try { this._lc.lc = await import( urls.langchain ); } catch ( _ ) { /* optional */ }
+}
+console.log( '[NV oOS LangChain] ESM modules loaded' );
+} catch ( e ) {
+console.warn( '[NV oOS LangChain] ESM import failed; running standalone.', e );
+this._lc = null;
+}
+return this._lc;
+}
 
-						return response.choices[ 0 ].message.content;
-					},
-					// LangChain BaseChatModel interface
-					async invoke( input ) {
-						return this._call( [ input ] );
-					}
-				};
+/**
+ * Initialize the orchestrator (loads ESM + validates engine).
+ *
+ * @return {Promise<void>}
+ */
+async initialize() {
+if ( this.initialized ) { return; }
+if ( ! this.webllmEngine ) {
+throw new Error( '[NV oOS LangChain] WebLLM engine not provided.' );
+}
+await this._loadLangChain();
+this.initialized = true;
+console.log( '[NV oOS LangChain] Initialized' );
+}
 
-				// Initialize conversation buffer memory
-				this.memory = this.createMemory();
+/**
+ * ConversationBufferWindowMemory with localStorage persistence.
+ *
+ * Mirrors LangChain's ConversationBufferWindowMemory(k=N): retains the
+ * last k turn-pairs and persists across page loads via localStorage (24h TTL).
+ *
+ * @param {number} k Window size in turn-pairs
+ * @return {Object}
+ */
+_createMemory( k ) {
+const key = 'wp_mcp_ai_lc_memory';
+const ttl = 864e5; // 24 h
+const max = ( k || 10 ) * 2;
+let messages = [];
 
-				this.initialized = true;
-				console.log( '[NV oOS LangChain] Chat model initialized successfully' );
-			} catch ( error ) {
-				console.error( '[NV oOS LangChain] Initialization failed:', error );
-				throw error;
-			}
-		}
+// Restore from localStorage if not expired.
+try {
+const s = JSON.parse( localStorage.getItem( key ) || 'null' );
+if ( s && s.expires > Date.now() ) { messages = s.messages || []; }
+} catch ( _ ) { /* unavailable */ }
 
-		/**
-		 * Create conversation buffer memory
-		 *
-		 * @param {number} k - Number of previous messages to remember
-		 * @return {Object} Memory instance
-		 */
-		createMemory( k = 10 ) {
-			return {
-				messages: [],
-				maxMessages: k,
+const persist = () => {
+try { localStorage.setItem( key, JSON.stringify( { messages, expires: Date.now() + ttl } ) ); }
+catch ( _ ) { /* full */ }
+};
 
-				/**
-				 * Add a message to memory
-				 *
-				 * @param {string} role - Message role (user/assistant)
-				 * @param {string} content - Message content
-				 */
-				addMessage( role, content ) {
-					this.messages.push( { role, content, timestamp: Date.now() } );
+return {
+messages,
+addMessage( role, content ) {
+this.messages.push( { role, content } );
+if ( this.messages.length > max ) { this.messages = this.messages.slice( -max ); }
+persist();
+},
+getMessages() { return this.messages; },
+formatContext() {
+return this.messages.map( m => ( m.role === 'user' ? 'Human' : 'AI' ) + ': ' + m.content ).join( '\n' );
+},
+clear() {
+this.messages = [];
+try { localStorage.removeItem( key ); } catch ( _ ) { /* ok */ }
+},
+};
+}
 
-					// Keep only last k messages
-					if ( this.messages.length > this.maxMessages ) {
-						this.messages = this.messages.slice( -this.maxMessages );
-					}
-				},
+/**
+ * Call WebLLM with retry and optional token streaming.
+ *
+ * Streaming follows the OpenAI streaming protocol; each delta token is
+ * forwarded to this.onToken (or options.onToken) as it arrives.
+ *
+ * @param {Array}  messages Chat messages
+ * @param {Object} opts     {stream, onToken}
+ * @return {Promise<string>}
+ */
+async _callLLM( messages, opts ) {
+opts = opts || {};
+const streaming = opts.stream !== undefined ? opts.stream : this.config.enableStreaming;
+const onToken   = opts.onToken || this.onToken;
 
-				/**
-				 * Get all messages in memory
-				 *
-				 * @return {Array} Messages
-				 */
-				getMessages() {
-					return this.messages;
-				},
+return withRetry( async () => {
+if ( streaming && onToken ) {
+const stream = await this.webllmEngine.chat.completions.create( { messages, stream: true } );
+let text = '';
+for await ( const chunk of stream ) {
+const delta = ( chunk.choices[ 0 ] || {} ).delta;
+const t = delta ? ( delta.content || '' ) : '';
+if ( t ) { text += t; onToken( t ); }
+}
+return text;
+}
+const r = await this.webllmEngine.chat.completions.create( { messages, stream: false } );
+return r.choices[ 0 ].message.content;
+}, this.config.maxRetries );
+}
 
-				/**
-				 * Clear memory
-				 */
-				clear() {
-					this.messages = [];
-				}
-			};
-		}
+/**
+ * Create a simple chain with template.
+ *
+ * Injects {chat_history} from memory when the placeholder is present,
+ * or prepends conversation context automatically.
+ *
+ * @param {string} template  Prompt template with {variables}
+ * @param {Object} variables Variables to substitute
+ * @return {Promise<string>}
+ */
+async createChain( template, variables ) {
+if ( ! this.initialized ) { await this.initialize(); }
+variables = variables || {};
+try {
+let prompt = template;
+for ( const [ k, v ] of Object.entries( variables ) ) {
+prompt = prompt.replace( new RegExp( '\\{' + k + '\\}', 'g' ), String( v ) );
+}
 
-		/**
-		 * Create a simple chain with template
-		 *
-		 * @param {string} template - Prompt template with {variables}
-		 * @param {Object} variables - Variables to fill in template
-		 * @return {Promise<string>} Chain result
-		 */
-		async createChain( template, variables = {} ) {
-			if ( ! this.initialized ) {
-				await this.initialize();
-			}
+if ( this.memory.messages.length > 0 ) {
+if ( template.includes( '{chat_history}' ) ) {
+prompt = prompt.replace( '{chat_history}', this.memory.formatContext() );
+} else {
+prompt = 'Chat history:\n' + this.memory.formatContext() + '\n\nCurrent:\n' + prompt;
+}
+}
 
-			try {
-				// Simple template substitution
-				let prompt = template;
-				for ( const [ key, value ] of Object.entries( variables ) ) {
-					const regex = new RegExp( `\\{${key}\\}`, 'g' );
-					prompt = prompt.replace( regex, value );
-				}
+const messages = [
+{ role: 'system', content: 'You are a helpful AI assistant.' },
+{ role: 'user', content: prompt },
+];
+const result = await this._callLLM( messages );
 
-				// Add memory context if available
-				if ( this.memory && this.memory.messages.length > 0 ) {
-					const context = this.memory.messages
-						.map( msg => `${msg.role}: ${msg.content}` )
-						.join( '\n' );
-					prompt = `Previous conversation:\n${context}\n\nCurrent request:\n${prompt}`;
-				}
+this.memory.addMessage( 'user', variables.input || prompt );
+this.memory.addMessage( 'assistant', result );
+return result;
+} catch ( error ) {
+console.error( '[NV oOS LangChain] Chain execution failed:', error );
+throw error;
+}
+}
 
-				// Execute the chain
-				const messages = [
-					{ role: 'system', content: 'You are a helpful AI assistant.' },
-					{ role: 'user', content: prompt }
-				];
+/**
+ * Execute multiple chains sequentially, piping output of each step to the next.
+ * Mirrors LangChain's RunnableSequence / SequentialChain pattern.
+ *
+ * @param {Array<{template: string, variables: Object}>} steps
+ * @return {Promise<string[]>}
+ */
+async createSequentialChain( steps ) {
+if ( ! this.initialized ) { await this.initialize(); }
+const results = [];
+let prev = '';
+for ( let i = 0; i < steps.length; i++ ) {
+console.log( '[NV oOS LangChain] Sequential step ' + ( i + 1 ) + '/' + steps.length );
+const vars = Object.assign( {}, steps[ i ].variables, { previous_result: prev } );
+const r = await this.createChain( steps[ i ].template, vars );
+results.push( r );
+prev = r;
+}
+return results;
+}
 
-				const response = await this.webllmEngine.chat.completions.create( {
-					messages,
-					stream: false
-				} );
+/**
+ * Register WordPress tools for agent use.
+ *
+ * @param {Array} wpTools Tool definitions
+ */
+setTools( wpTools ) {
+this.tools = wpTools;
+console.log( '[NV oOS LangChain] Registered ' + this.tools.length + ' tools' );
+}
 
-				const result = response.choices[ 0 ].message.content;
+/**
+ * Run a ReAct-style agent (Thought -> Action -> Observation loop).
+ *
+ * Implements the ReAct paper pattern used by LangChain's AgentExecutor:
+ * the model reasons in "Thought:" steps, calls tools via "Action:" steps,
+ * and receives "Observation:" results before continuing to the next step.
+ *
+ * @param {string} task    Task description
+ * @param {Object} options {maxIterations, verbose, onToken, stream}
+ * @return {Promise<{success: boolean, result: string, iterations: number, executionLog: Array}>}
+ */
+async createAgent( task, options ) {
+if ( ! this.initialized ) { await this.initialize(); }
+options = options || {};
+const maxIter = options.maxIterations || this.config.maxIterations;
+const verbose = options.verbose || this.config.verbose;
 
-				// Store in memory
-				if ( this.memory ) {
-					this.memory.addMessage( 'user', prompt );
-					this.memory.addMessage( 'assistant', result );
-				}
+const systemPrompt =
+'WordPress AI agent. Tools:\n\n' +
+this.tools.map( t =>
+'Tool: ' + t.name + '\nDesc: ' + t.description +
+'\nSchema: ' + JSON.stringify( t.schema || {} )
+).join( '\n\n' ) +
+'\n\nFormat:\nThought: [reason]\nAction: [tool]\nAction Input: [JSON]\nObservation: [result]\n\n' +
+'Final: Thought: Done.\nFinal Answer: [answer]\n\nOne tool per turn. Action Input = valid JSON.';
 
-				return result;
-			} catch ( error ) {
-				console.error( '[NV oOS LangChain] Chain execution failed:', error );
-				throw error;
-			}
-		}
+const messages = [
+{ role: 'system', content: systemPrompt },
+{ role: 'user', content: task },
+];
 
-		/**
-		 * Create and execute a sequential chain
-		 *
-		 * Executes multiple chains in sequence, passing output of one to the next
-		 *
-		 * @param {Array} steps - Array of step objects with {template, variables}
-		 * @return {Promise<Array>} Array of results from each step
-		 */
-		async createSequentialChain( steps ) {
-			if ( ! this.initialized ) {
-				await this.initialize();
-			}
+let iteration = 0;
+const executionLog = [];
 
-			const results = [];
-			let previousResult = '';
+try {
+while ( iteration < maxIter ) {
+iteration++;
+if ( verbose ) { console.log( '[NV oOS LangChain] Agent iteration ' + iteration ); }
 
-			for ( let i = 0; i < steps.length; i++ ) {
-				const step = steps[ i ];
-				console.log( `[NV oOS LangChain] Executing step ${i + 1}/${steps.length}` );
+const agentResponse = await this._callLLM( messages, {
+stream: options.stream,
+onToken: options.onToken || this.onToken,
+} );
 
-				// Add previous result to variables
-				const variables = {
-					...step.variables,
-					previous_result: previousResult
-				};
+executionLog.push( { iteration, type: 'thought', content: agentResponse } );
 
-				const result = await this.createChain( step.template, variables );
-				results.push( result );
-				previousResult = result;
-			}
+const finalMatch = agentResponse.match( /Final Answer:\s*([\s\S]+)$/i );
+if ( finalMatch ) {
+const result = finalMatch[ 1 ].trim();
+this.memory.addMessage( 'user', task );
+this.memory.addMessage( 'assistant', result );
+return { success: true, result, iterations: iteration, executionLog };
+}
 
-			return results;
-		}
+const actionMatch      = agentResponse.match( /Action:\s*(.+)/i );
+const actionInputMatch = agentResponse.match( /Action Input:\s*([\s\S]+?)(?=\n(?:Thought|Action|Observation|$))/i );
 
-		/**
-		 * Set tools available for agent
-		 *
-		 * @param {Array} wpTools - WordPress tools from REST API
-		 */
-		setTools( wpTools ) {
-			this.tools = wpTools;
-			console.log( `[NV oOS LangChain] Loaded ${this.tools.length} tools for agent` );
-		}
+if ( actionMatch ) {
+const toolName = actionMatch[ 1 ].trim();
+let toolArgs = {};
+if ( actionInputMatch ) {
+try { toolArgs = JSON.parse( actionInputMatch[ 1 ].trim() ); } catch ( _ ) { /* invalid JSON */ }
+}
 
-		/**
-		 * Create and execute an agent with tool calling
-		 *
-		 * The agent can use tools to accomplish complex tasks through reasoning
-		 *
-		 * @param {string} task - Task description for the agent
-		 * @param {Object} options - Options (maxIterations, verbose)
-		 * @return {Promise<Object>} Agent execution result
-		 */
-		async createAgent( task, options = {} ) {
-			if ( ! this.initialized ) {
-				await this.initialize();
-			}
+const toolResult = await this.executeTool( toolName, toolArgs );
+executionLog.push( { iteration, type: 'tool_call', tool: toolName, args: toolArgs, result: toolResult } );
 
-			const maxIterations = options.maxIterations || 10;
-			const verbose = options.verbose || false;
+messages.push( { role: 'assistant', content: agentResponse } );
+messages.push( { role: 'user', content: 'Observation: ' + JSON.stringify( toolResult ) } );
+} else {
+// No action found - treat as final answer.
+this.memory.addMessage( 'user', task );
+this.memory.addMessage( 'assistant', agentResponse );
+return { success: true, result: agentResponse, iterations: iteration, executionLog };
+}
+}
 
-			try {
-				console.log( `[NV oOS LangChain] Starting agent with task: ${task}` );
+console.warn( '[NV oOS LangChain] Agent reached max iterations' );
+return { success: false, error: 'Max iterations reached', iterations: iteration, executionLog };
+} catch ( error ) {
+console.error( '[NV oOS LangChain] Agent execution failed:', error );
+return { success: false, error: error.message, executionLog };
+}
+}
 
-				const agentPrompt = `You are an AI agent with access to WordPress tools. Your task is:
+/**
+ * Execute a WordPress tool (client-side or server-side) with retry.
+ *
+ * @param {string} toolName Tool name or slug
+ * @param {Object} args     Tool arguments
+ * @return {Promise<any>}
+ */
+async executeTool( toolName, args ) {
+if ( this.config.verbose ) { console.log( '[NV oOS LangChain] Executing tool:', toolName, args ); }
 
-${task}
+const tool = this.tools.find( t => t.name === toolName || t.slug === toolName );
 
-Available tools:
-${this.tools.map( t => `- ${t.name}: ${t.description}` ).join( '\n' )}
+if ( tool && tool.client_executable && window.WP_MCP_AI_Transformers ) {
+try {
+return await withRetry(
+() => window.WP_MCP_AI_Transformers.executeClientTool( toolName, args ),
+this.config.maxRetries
+);
+} catch ( _ ) { /* fall through to server */ }
+}
 
-Think step by step and use tools as needed. When you have completed the task, respond with your final answer.
+const endpoint = ( typeof wpMcpAiChat !== 'undefined' && wpMcpAiChat.toolsEndpoint )
+? wpMcpAiChat.toolsEndpoint : '/wp-json/mcp-ai/v1/tools/execute';
+const nonce = ( typeof wpMcpAiChat !== 'undefined' ) ? ( wpMcpAiChat.nonce || '' ) : '';
 
-Format tool calls as: TOOL_CALL: tool_name({"arg": "value"})`;
+return withRetry( async () => {
+const r = await fetch( endpoint, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+body: JSON.stringify( { tool: toolName, arguments: args } ),
+} );
+if ( ! r.ok ) { throw new Error( 'Tool execution failed: ' + r.status + ' ' + r.statusText ); }
+return r.json();
+}, this.config.maxRetries ).catch( e => ( { error: e.message, tool: toolName } ) );
+}
 
-				const messages = [
-					{ role: 'system', content: agentPrompt },
-					{ role: 'user', content: task }
-				];
+/** @return {Object} Memory instance */
+getMemory() { return this.memory; }
 
-				let iteration = 0;
-				const executionLog = [];
+/** Clear memory and localStorage entry */
+clearMemory() { this.memory.clear(); console.log( '[NV oOS LangChain] Memory cleared' ); }
 
-				while ( iteration < maxIterations ) {
-					iteration++;
-					if ( verbose ) {
-						console.log( `[NV oOS LangChain] Agent iteration ${iteration}` );
-					}
+/** @return {boolean} True when initialized */
+isReady() { return this.initialized; }
+}
 
-					const response = await this.webllmEngine.chat.completions.create( {
-						messages,
-						stream: false
-					} );
-
-					const agentResponse = response.choices[ 0 ].message.content;
-					executionLog.push( {
-						iteration,
-						type: 'thought',
-						content: agentResponse
-					} );
-
-					// Check if agent wants to call a tool
-					const toolCallMatch = agentResponse.match( /TOOL_CALL:\s*(\w+)\((.*)\)/ );
-
-					if ( toolCallMatch ) {
-						const toolName = toolCallMatch[ 1 ];
-						let toolArgs = {};
-
-						try {
-							toolArgs = JSON.parse( toolCallMatch[ 2 ] );
-						} catch ( e ) {
-							console.warn( '[NV oOS LangChain] Failed to parse tool arguments:', e );
-						}
-
-						// Execute tool
-						const toolResult = await this.executeTool( toolName, toolArgs );
-						executionLog.push( {
-							iteration,
-							type: 'tool_call',
-							tool: toolName,
-							args: toolArgs,
-							result: toolResult
-						} );
-
-						// Add tool result to conversation
-						messages.push( {
-							role: 'assistant',
-							content: agentResponse
-						} );
-						messages.push( {
-							role: 'user',
-							content: `Tool result: ${JSON.stringify( toolResult )}`
-						} );
-					} else {
-						// Agent has finished - no more tool calls
-						if ( verbose ) {
-							console.log( '[NV oOS LangChain] Agent completed task' );
-						}
-
-						return {
-							success: true,
-							result: agentResponse,
-							iterations: iteration,
-							executionLog
-						};
-					}
-				}
-
-				// Max iterations reached
-				console.warn( '[NV oOS LangChain] Agent reached max iterations' );
-				return {
-					success: false,
-					error: 'Max iterations reached',
-					iterations: iteration,
-					executionLog
-				};
-			} catch ( error ) {
-				console.error( '[NV oOS LangChain] Agent execution failed:', error );
-				return {
-					success: false,
-					error: error.message,
-					executionLog: []
-				};
-			}
-		}
-
-		/**
-		 * Execute a WordPress tool
-		 *
-		 * @param {string} toolName - Tool name/slug
-		 * @param {Object} args - Tool arguments
-		 * @return {Promise<any>} Tool result
-		 */
-		async executeTool( toolName, args ) {
-			console.log( `[NV oOS LangChain] Executing tool: ${toolName}`, args );
-
-			// Check if tool is client-executable
-			const tool = this.tools.find( t => t.name === toolName || t.slug === toolName );
-
-			if ( tool && tool.client_executable ) {
-				// Execute client-side using Transformers.js if available
-				if ( window.WP_MCP_AI_Transformers ) {
-					return window.WP_MCP_AI_Transformers.executeClientTool( toolName, args );
-				}
-			}
-
-			// Execute server-side via REST API
-			try {
-				const response = await fetch( wpMcpAiChat.toolsEndpoint || '/wp-json/mcp-ai/v1/tools/execute', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': wpMcpAiChat.nonce || ''
-					},
-					body: JSON.stringify( {
-						tool: toolName,
-						arguments: args
-					} )
-				} );
-
-				if ( ! response.ok ) {
-					throw new Error( `Tool execution failed: ${response.status} ${response.statusText}` );
-				}
-
-				const result = await response.json();
-				return result;
-			} catch ( error ) {
-				console.error( `[NV oOS LangChain] Tool execution error:`, error );
-				return {
-					error: error.message,
-					tool: toolName
-				};
-			}
-		}
-
-		/**
-		 * Get conversation memory
-		 *
-		 * @return {Object} Memory instance
-		 */
-		getMemory() {
-			return this.memory;
-		}
-
-		/**
-		 * Clear conversation memory
-		 */
-		clearMemory() {
-			if ( this.memory ) {
-				this.memory.clear();
-				console.log( '[NV oOS LangChain] Memory cleared' );
-			}
-		}
-
-		/**
-		 * Check if orchestrator is ready
-		 *
-		 * @return {boolean} Ready state
-		 */
-		isReady() {
-			return this.initialized && this.hasLangChain;
-		}
-	}
-
-	// Export to global scope
-	window.WP_MCP_AI_LangChain_Orchestrator = WP_MCP_AI_LangChain_Orchestrator;
-
-	console.log( '[NV oOS LangChain] Orchestration client loaded' );
+window.WP_MCP_AI_LangChain_Orchestrator = WP_MCP_AI_LangChain_Orchestrator;
+console.log( '[NV oOS LangChain] Orchestration client loaded (v1.1.0)' );
 
 })();

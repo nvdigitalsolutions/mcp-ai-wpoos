@@ -3889,7 +3889,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images.', 'mcp-ai-wpoos' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images. Use gpt-image qualities (low, medium, high, auto) for gpt-image-1/1.5 models, or DALL-E qualities (standard, hd) for DALL-E 2/3 models.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -5364,20 +5364,24 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_quality_choices() {
 			$qualities = array(
-				'low'    => __( 'Low', 'mcp-ai-wpoos' ),
-				'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
-				'high'   => __( 'High', 'mcp-ai-wpoos' ),
-				'auto'   => __( 'Auto', 'mcp-ai-wpoos' ),
+				'low'      => __( 'Low (gpt-image)', 'mcp-ai-wpoos' ),
+				'medium'   => __( 'Medium (gpt-image)', 'mcp-ai-wpoos' ),
+				'high'     => __( 'High (gpt-image)', 'mcp-ai-wpoos' ),
+				'auto'     => __( 'Auto (gpt-image)', 'mcp-ai-wpoos' ),
+				'standard' => __( 'Standard (DALL-E)', 'mcp-ai-wpoos' ),
+				'hd'       => __( 'HD (DALL-E)', 'mcp-ai-wpoos' ),
 			);
 
 			$qualities = apply_filters( 'wp_mcp_ai_openai_image_qualities', $qualities );
 
 			if ( ! is_array( $qualities ) || empty( $qualities ) ) {
 				$qualities = array(
-					'low'    => __( 'Low', 'mcp-ai-wpoos' ),
-					'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
-					'high'   => __( 'High', 'mcp-ai-wpoos' ),
-					'auto'   => __( 'Auto', 'mcp-ai-wpoos' ),
+					'low'      => __( 'Low (gpt-image)', 'mcp-ai-wpoos' ),
+					'medium'   => __( 'Medium (gpt-image)', 'mcp-ai-wpoos' ),
+					'high'     => __( 'High (gpt-image)', 'mcp-ai-wpoos' ),
+					'auto'     => __( 'Auto (gpt-image)', 'mcp-ai-wpoos' ),
+					'standard' => __( 'Standard (DALL-E)', 'mcp-ai-wpoos' ),
+					'hd'       => __( 'HD (DALL-E)', 'mcp-ai-wpoos' ),
 				);
 			}
 

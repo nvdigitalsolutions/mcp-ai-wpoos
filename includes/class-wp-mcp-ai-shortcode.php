@@ -205,16 +205,18 @@ class WP_MCP_AI_Shortcode {
 				array(
 					'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 					'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+					'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
 					'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 					'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-					'historyPerPage'      => 20,
-					'currentUserId'       => get_current_user_id(),
-					'nonce'               => wp_create_nonce( 'wp_rest' ),
-					'showUsageCosts'      => false,
-					'showCapabilityFlags' => false,
-					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
-					'isElementorEditor'   => true,
+					'historyPerPage'        => 20,
+					'maxHistoryMessages'    => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
+					'currentUserId'         => get_current_user_id(),
+					'nonce'                 => wp_create_nonce( 'wp_rest' ),
+					'showUsageCosts'        => false,
+					'showCapabilityFlags'   => false,
+					'asyncToolTimeout'      => self::get_async_tool_timeout_ms( $settings ),
+					'isElementorEditor'     => true,
 					'strings'             => array(
 						'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos' ),
 					),
@@ -242,10 +244,12 @@ class WP_MCP_AI_Shortcode {
 			array(
 				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
 				'historyPerPage'      => 20,
+				'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
@@ -426,6 +430,8 @@ class WP_MCP_AI_Shortcode {
 			'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
 			/* translators: %s: file name being uploaded */
 			'uploadingFile'                 => __( 'Uploading "%s"…', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name being processed */
+			'processingFile'                => __( 'Processing "%s"…', 'mcp-ai-wpoos' ),
 			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
 			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
 			'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
@@ -545,10 +551,12 @@ class WP_MCP_AI_Shortcode {
 			array(
 				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'prepareEndpoint'     => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
 				'historyPerPage'      => 20,
+				'maxHistoryMessages'  => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
@@ -804,9 +812,27 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
+			// Parse additional_tools from the shortcode attribute early so it can be used for:
+			// 1. Embedded provider tool definition resolution (added to $tool_slugs_to_include below).
+			// 2. Enhanced WebLLM script enqueueing ($has_tools flag below).
+			// 3. Tool shortcuts ($additional_tools_for_shortcuts variable below).
+			// The parsed slugs are stored in $config['additionalTools'] for the server-side (OpenAI) path,
+			// and also resolved to full OpenAI function definitions for the embedded path.
+			$additional_tools = array();
+			if ( ! empty( $atts['additional_tools'] ) ) {
+				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
+				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
+				$additional_tools     = array_values( array_filter( array_map( 'sanitize_key', $additional_tools ) ) );
+			}
+
 			// Check if assistant has tools, system prompt, or knowledge (used in multiple places).
-			$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
-			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+			// Also consider the profession shortcode attribute: if a profession is specified, a professional
+			// role prompt will be built and sent as the system prompt, so the enhanced embedded scripts
+			// must be enqueued even when the assistant itself has no system_prompt configured.
+			// Also consider additional_tools: if any are specified, treat them as "has tools" so the
+			// enhanced WebLLM scripts (tool adapter, function calling client) are enqueued.
+			$has_tools         = ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) || ! empty( $additional_tools );
+			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] ) || ! empty( $atts['profession'] );
 			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
@@ -870,8 +896,9 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Handle profession attribute to build professional role prompt.
-			$professional_prompt = '';
-			$profession_data     = null;
+			$professional_prompt  = '';
+			$profession_data      = null;
+			$profession_mem_files = array();
 			if ( ! empty( $atts['profession'] ) ) {
 				$profession_id = absint( $atts['profession'] );
 				if ( $profession_id > 0 ) {
@@ -882,20 +909,41 @@ class WP_MCP_AI_Shortcode {
 						if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
 							$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
 						}
+						// Collect profession memory files so they can be merged into the embedded client config.
+						$fetched = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+						if ( is_array( $fetched ) && ! empty( $fetched ) ) {
+							$profession_mem_files = $fetched;
+						}
 					}
+				}
+			} elseif ( $is_profession_test && ! empty( $profession_id ) ) {
+				// For profession tests (assistant="profession_XXX"), build the profession's prompt so the
+				// embedded LLM client receives the correct professional role prompt.
+				// $profession is guaranteed valid here — invalid professions return early above.
+				$profession_data = $profession;
+				if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+					$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+				}
+				// Collect profession memory files so they can be merged into the embedded client config.
+				$fetched = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+				if ( is_array( $fetched ) && ! empty( $fetched ) ) {
+					$profession_mem_files = $fetched;
 				}
 			}
 
 			$config = array(
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
+				'embeddedAssistantId'   => absint( $permissions_assistant_id ),
 				'userId'                => get_current_user_id(),
 				'restUrl'               => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
 				'uploadEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'prepareEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/attachments/prepare' ) ) ),
 				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'embeddedConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
 				'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
 				'crawl4aiDefaultPollMs' => 5000,
 				'requiredCapability'    => $capability ? $capability : '',
@@ -906,6 +954,7 @@ class WP_MCP_AI_Shortcode {
 				'allowSensitiveTools'   => (bool) $allow_sensitive_tools,
 				'sessionKey'            => $session_key,
 				'historyPerPage'        => 20,
+				'maxHistoryMessages'    => isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8,
 				'restNonce'             => wp_create_nonce( 'wp_rest' ),
 			);
 
@@ -932,8 +981,16 @@ class WP_MCP_AI_Shortcode {
 
 			// Add base knowledge (memory files and vector store) for embedded provider.
 			// This enables the embedded client to access the same knowledge base as server-side providers.
+			// Merge assistant memory files with any profession memory files so both are available.
+			$combined_memory_files = array();
 			if ( ! empty( $assistant_config_for_provider['memory_files'] ) && is_array( $assistant_config_for_provider['memory_files'] ) ) {
-				$config['memoryFiles'] = $assistant_config_for_provider['memory_files'];
+				$combined_memory_files = $assistant_config_for_provider['memory_files'];
+			}
+			if ( ! empty( $profession_mem_files ) ) {
+				$combined_memory_files = array_values( array_unique( array_merge( $combined_memory_files, $profession_mem_files ) ) );
+			}
+			if ( ! empty( $combined_memory_files ) ) {
+				$config['memoryFiles'] = $combined_memory_files;
 			}
 			if ( ! empty( $assistant_config_for_provider['vector_store_id'] ) ) {
 				$config['vectorStoreId'] = $assistant_config_for_provider['vector_store_id'];
@@ -947,6 +1004,16 @@ class WP_MCP_AI_Shortcode {
 			// Start with assistant's configured tools.
 			if ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) {
 				$tool_slugs_to_include = $assistant_config_for_provider['tools'];
+			}
+
+			// Merge additional_tools from the shortcode attribute so the embedded client receives their
+			// full OpenAI function definitions.  The server-side (OpenAI) path gets these as slugs via
+			// $config['additionalTools'] and resolves them on every request, but the embedded client
+			// needs the resolved definitions up-front in $config['tools'].
+			foreach ( $additional_tools as $additional_slug ) {
+				if ( ! in_array( $additional_slug, $tool_slugs_to_include, true ) ) {
+					$tool_slugs_to_include[] = $additional_slug;
+				}
 			}
 
 			// Automatically add semantic_content_search if assistant has knowledge files (RAG pattern).
@@ -972,14 +1039,23 @@ class WP_MCP_AI_Shortcode {
 					$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 					foreach ( $tool_slugs_to_include as $tool_slug ) {
-						$tool = $registry->get_tool( $tool_slug );
-						if ( $tool && method_exists( $tool, 'get_definition' ) ) {
-							$definition = $tool->get_definition();
-							if ( $definition && is_array( $definition ) ) {
-								// Ensure tool definition is in OpenAI-compatible format.
-								// Most tools already return this format.
-								$tool_definitions[] = $definition;
-							}
+						// Use registry's get_tool_definition() which relies on the required tool
+						// interface methods (get_slug, get_description, get_parameters_schema).
+						// This works for ALL registered tools, unlike get_definition() which is
+						// an optional method not part of WP_MCP_AI_Tool_Interface.
+						$tool_definition = $registry->get_tool_definition( $tool_slug );
+						if ( $tool_definition && is_array( $tool_definition ) ) {
+							// Wrap in OpenAI function-calling format expected by the embedded LLM client.
+							// get_tool_definition() always returns name, description, and parameters
+							// via the required WP_MCP_AI_Tool_Interface methods.
+							$tool_definitions[] = array(
+								'type'     => 'function',
+								'function' => array(
+									'name'        => $tool_definition['name'],
+									'description' => $tool_definition['description'],
+									'parameters'  => $tool_definition['parameters'],
+								),
+							);
 						}
 					}
 				}
@@ -1047,16 +1123,12 @@ class WP_MCP_AI_Shortcode {
 				$config['cptActions'] = $cpt_actions;
 			}
 
-			// Parse additional tools if provided.
+			// Store additional_tools as slugs in config for the server-side (OpenAI) path.
 			// These tools will be available regardless of the assistant's configured tools.
-			if ( ! empty( $atts['additional_tools'] ) ) {
-				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
-				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
-				$additional_tools     = array_filter( array_map( 'sanitize_key', $additional_tools ) );
-
-				if ( ! empty( $additional_tools ) ) {
-					$config['additionalTools'] = array_values( $additional_tools );
-				}
+			// Note: For the embedded provider, these are already resolved and merged into
+			// $config['tools'] above via $tool_slugs_to_include.
+			if ( ! empty( $additional_tools ) ) {
+				$config['additionalTools'] = $additional_tools;
 			}
 
 			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
@@ -1089,7 +1161,25 @@ class WP_MCP_AI_Shortcode {
 
 			// Add professional role prompt if provided via profession attribute.
 			if ( ! empty( $professional_prompt ) ) {
-				$config['professionalPrompt'] = $professional_prompt;
+				// For server-side providers: keep professionalPrompt as a separate config field so
+				// the JS can pass it to the server in the chat payload for server-side system-prompt
+				// assembly and for the professional-selector feature.
+				// For embedded providers: pre-combine with the assistant's own system prompt so the
+				// embedded client always has a populated systemPrompt from the initial page render —
+				// no extra server round-trip is needed.  We intentionally omit professionalPrompt
+				// from the embedded config to prevent JS from double-combining professional content
+				// that is already included in systemPrompt.
+				if ( 'embedded' !== $assistant_provider ) {
+					$config['professionalPrompt'] = $professional_prompt;
+				} else {
+					// Merge professional role first, then assistant instructions — the same separator
+					// and ordering used by the server-side REST handler (class-wp-mcp-ai-rest.php).
+					if ( ! empty( $config['systemPrompt'] ) ) {
+						$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
+					} else {
+						$config['systemPrompt'] = $professional_prompt;
+					}
+				}
 			}
 
 			// Include profession info for display purposes.

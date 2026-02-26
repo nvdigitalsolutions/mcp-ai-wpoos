@@ -131,6 +131,18 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 		$simplify    = isset( $arguments['simplify'] ) ? (bool) $arguments['simplify'] : true;
 		$format      = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'both';
 
+		// Check if Math.js package is available.
+		if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'mathjs' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_package_not_available',
+				__( 'Math.js package is not available. Please ensure Node.js and Math.js are properly installed. Visit the Pro Packages settings page for installation instructions.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'package'      => 'mathjs',
+					'settings_url' => admin_url( 'admin.php?page=wp-mcp-ai-pro-packages-settings' ),
+				)
+			);
+		}
+
 		// Validate definite integral has limits.
 		if ( 'definite' === $type && ( null === $lower_limit || null === $upper_limit ) ) {
 			return array(

@@ -11,7 +11,7 @@
 /**
  * Test helper class to access protected methods.
  */
-class WP_MCP_AI_OpenAI_Client_Test_Helper extends WP_MCP_AI_OpenAI_Client {
+class WP_MCP_AI_OpenAI_Client_Schema_Test_Helper extends WP_MCP_AI_OpenAI_Client {
 	/**
 	 * Make sanitize_parameters_for_openai public for testing.
 	 *
@@ -43,7 +43,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that allOf is removed from root level.
 	 */
 	public function test_removes_allof_from_root_level() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'type'       => 'object',
@@ -71,7 +71,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that anyOf is removed from root level.
 	 */
 	public function test_removes_anyof_from_root_level() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'type'       => 'object',
@@ -98,7 +98,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that oneOf is removed from root level.
 	 */
 	public function test_removes_oneof_from_root_level() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'type'       => 'object',
@@ -123,7 +123,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that 'not' is removed from root level.
 	 */
 	public function test_removes_not_from_root_level() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'type'       => 'object',
@@ -146,7 +146,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test the get_import_duty schema specifically.
 	 */
 	public function test_sanitizes_get_import_duty_schema() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		// Schema matching the get_import_duty tool.
 		$schema = array(
@@ -222,7 +222,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that type 'object' is added if missing at root level.
 	 */
 	public function test_adds_type_object_if_missing() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'properties' => array(
@@ -242,7 +242,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that composition keywords are preserved in nested schemas.
 	 */
 	public function test_preserves_composition_keywords_in_nested_schemas() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$schema = array(
 			'type'       => 'object',
@@ -274,7 +274,7 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 	 * Test that tools are properly normalized with schema sanitization.
 	 */
 	public function test_normalises_tools_with_schema_sanitization() {
-		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+		$client = new WP_MCP_AI_OpenAI_Client_Schema_Test_Helper();
 
 		$tools = array(
 			array(

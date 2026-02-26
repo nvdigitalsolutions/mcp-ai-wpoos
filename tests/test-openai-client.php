@@ -2766,4 +2766,31 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'bytes', $segment, 'bytes should be removed from Responses API payload' );
 		$this->assertArrayNotHasKey( 'display_name', $segment, 'display_name should be removed from Responses API payload' );
 	}
+
+	/**
+	 * Test is_codex_model correctly identifies Codex models.
+	 */
+	public function test_is_codex_model_returns_true_for_codex_models() {
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.3-codex' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.3-codex-spark' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.2-codex' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.1-codex' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.1-codex-max' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.1-codex-mini' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5-codex' ) );
+		$this->assertTrue( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5-codex-mini' ) );
+	}
+
+	/**
+	 * Test is_codex_model returns false for non-Codex models.
+	 */
+	public function test_is_codex_model_returns_false_for_non_codex_models() {
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.2' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-5.1' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-4o' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gpt-4o-mini' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'o3' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'claude-sonnet-4-6' ) );
+		$this->assertFalse( WP_MCP_AI_OpenAI_Client::is_codex_model( 'gemini-3-pro-preview' ) );
+	}
 }

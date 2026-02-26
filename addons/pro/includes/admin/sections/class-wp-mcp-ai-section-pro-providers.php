@@ -73,13 +73,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 			// Get available embedded models (WebLLM client-side models).
 			// All available models are listed. Models marked with * support function calling.
 			$embedded_models = array(
-				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
-				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
-				'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
-				'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
-				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
-				'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
-				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC'      => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+				'Hermes-3-Llama-3.1-8B-q4f16_1-MLC'        => __( 'Hermes 3 Llama 3.1 8B (~4.9GB)*', 'mcp-ai-wpoos' ),
+				'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC' => __( 'DeepSeek R1 Distill Llama 8B (~5GB)', 'mcp-ai-wpoos' ),
+				'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC'  => __( 'DeepSeek R1 Distill Qwen 7B (~5.1GB)', 'mcp-ai-wpoos' ),
+				'Qwen2.5-7B-Instruct-q4f16_1-MLC'          => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+				'Phi-3.5-mini-instruct-q4f16_1-MLC'        => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+				'gemma-2-2b-it-q4f16_1-MLC'                => __( 'Gemma 2 2B Instruct (~1.9GB)', 'mcp-ai-wpoos' ),
+				'Llama-3.2-3B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+				'SmolLM2-1.7B-Instruct-q4f16_1-MLC'        => __( 'SmolLM2 1.7B Instruct (~1.8GB)', 'mcp-ai-wpoos' ),
+				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+				'Llama-3.2-1B-Instruct-q4f16_1-MLC'        => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'        => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
 			);
 
 			return array(

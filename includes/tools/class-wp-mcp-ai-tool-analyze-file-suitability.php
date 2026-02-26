@@ -34,15 +34,26 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * Allowed file types for different purposes.
+	 * Based on OpenAI vector store best practices as of 2024.
 	 *
 	 * @var array
 	 */
 	const ALLOWED_FILE_TYPES = array(
-		'assistants' => array( 'pdf', 'txt', 'md', 'json', 'csv', 'docx', 'xlsx', 'pptx' ),
+		'assistants' => array( 'pdf', 'txt', 'md', 'json', 'docx', 'html' ),
 		'fine-tune'  => array( 'jsonl' ),
 		'batch'      => array( 'jsonl' ),
 		'vision'     => array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ),
 		'whisper'    => array( 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm', 'flac' ),
+	);
+
+	/**
+	 * Unreliable file types that may fail or produce poor results.
+	 * These formats should be converted to PDF or TXT before upload.
+	 *
+	 * @var array
+	 */
+	const UNRELIABLE_FILE_TYPES = array(
+		'assistants' => array( 'csv', 'xlsx', 'pptx', 'xls', 'ppt' ),
 	);
 
 	/**
@@ -198,14 +209,31 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 		// Check file type.
 		if ( ! in_array( $file_ext, $allowed_types, true ) ) {
-			$suitable   = false;
-			$warnings[] = sprintf(
-				/* translators: 1: file extension, 2: purpose, 3: allowed types */
-				__( 'File type "%1$s" is not supported for %2$s purpose. Allowed types: %3$s.', 'mcp-ai-wpoos' ),
-				$file_ext,
-				$purpose,
-				implode( ', ', $allowed_types )
-			);
+			// Check if it's an unreliable type that should be converted.
+			$unreliable_types = isset( self::UNRELIABLE_FILE_TYPES[ $purpose ] ) ? self::UNRELIABLE_FILE_TYPES[ $purpose ] : array();
+			if ( in_array( $file_ext, $unreliable_types, true ) ) {
+				$suitable   = false;
+				$warnings[] = sprintf(
+					/* translators: 1: file extension, 2: purpose */
+					__( 'File type "%1$s" is unreliable for %2$s purpose. OpenAI vector stores may fail to parse spreadsheets and presentations properly.', 'mcp-ai-wpoos' ),
+					$file_ext,
+					$purpose
+				);
+				$recommendations[] = sprintf(
+					/* translators: %s: file extension */
+					__( 'Convert %s files to PDF or plain text format before uploading for best results. For spreadsheets, export to clean text format preserving logical structure.', 'mcp-ai-wpoos' ),
+					strtoupper( $file_ext )
+				);
+			} else {
+				$suitable   = false;
+				$warnings[] = sprintf(
+					/* translators: 1: file extension, 2: purpose, 3: allowed types */
+					__( 'File type "%1$s" is not supported for %2$s purpose. Supported types: %3$s.', 'mcp-ai-wpoos' ),
+					$file_ext,
+					$purpose,
+					implode( ', ', $allowed_types )
+				);
+			}
 		}
 
 		// Content-specific checks.
@@ -302,7 +330,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * @param array  &$recommendations Recommendations array.
 	 */
 	private function check_text_properties( $file_path, $file_ext, &$warnings, &$recommendations ) {
-		if ( in_array( $file_ext, array( 'txt', 'md', 'json', 'jsonl', 'csv' ), true ) ) {
+		if ( in_array( $file_ext, array( 'txt', 'md', 'json', 'jsonl', 'html' ), true ) ) {
 			$file_size = filesize( $file_path );
 
 			// Check if file is empty.
@@ -311,12 +339,62 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 				return;
 			}
 
+			// Check encoding for text files.
+			$this->check_file_encoding( $file_path, $file_ext, $warnings, $recommendations );
+
 			// For JSONL, check format.
 			if ( 'jsonl' === $file_ext ) {
 				$this->check_jsonl_format( $file_path, $warnings, $recommendations );
 			}
 
-			$recommendations[] = __( 'Text-based files should use UTF-8 encoding for best results.', 'mcp-ai-wpoos' );
+			// Add general text file recommendations based on best practices.
+			$recommendations[] = __( 'For optimal RAG performance, ensure text is well-structured with clear sections and logical hierarchy.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'Remove excessive headers, footers, and navigation elements before upload.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'For large documents, consider chunking into smaller logical sections (256-512 tokens per section).', 'mcp-ai-wpoos' );
+		} elseif ( 'pdf' === $file_ext ) {
+			// PDF-specific recommendations.
+			$recommendations[] = __( 'Ensure PDF contains actual text, not just scanned images. Use OCR if needed.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'Linearize PDFs and remove embedded images that are not essential for semantic search.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'Clean up formatting: remove irrelevant sections and normalize text structure.', 'mcp-ai-wpoos' );
+		} elseif ( 'docx' === $file_ext ) {
+			// DOCX-specific recommendations.
+			$recommendations[] = __( 'DOCX files should have clear headings and structure for best extraction results.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'Remove track changes, comments, and hidden content before upload.', 'mcp-ai-wpoos' );
+		}
+	}
+
+	/**
+	 * Check file encoding.
+	 *
+	 * @param string $file_path File path.
+	 * @param string $file_ext File extension.
+	 * @param array  &$warnings Warnings array.
+	 * @param array  &$recommendations Recommendations array.
+	 */
+	private function check_file_encoding( $file_path, $file_ext, &$warnings, &$recommendations ) {
+		// Read a sample of the file to check encoding.
+		$sample_size = min( 8192, filesize( $file_path ) );
+		$handle      = fopen( $file_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		if ( ! $handle ) {
+			return;
+		}
+
+		$sample = fread( $handle, $sample_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+
+		if ( false === $sample ) {
+			return;
+		}
+
+		// Check if content is valid UTF-8.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$is_utf8 = @mb_check_encoding( $sample, 'UTF-8' );
+
+		if ( ! $is_utf8 ) {
+			$warnings[] = __( 'File encoding is not UTF-8. This may cause text extraction issues.', 'mcp-ai-wpoos' );
+			$recommendations[] = __( 'Convert file to UTF-8 encoding before upload for best results.', 'mcp-ai-wpoos' );
+		} else {
+			$recommendations[] = __( 'File encoding appears to be UTF-8 - optimal for vector store ingestion.', 'mcp-ai-wpoos' );
 		}
 	}
 

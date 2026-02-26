@@ -222,6 +222,18 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		// Check if Docx package is available.
+		if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'docx' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_package_not_available',
+				__( 'Docx package is not available. Please ensure Node.js and Docx are properly installed. Visit the Pro Packages settings page for installation instructions.', 'mcp-ai-wpoos' ),
+				array(
+					'package'      => 'docx',
+					'settings_url' => admin_url( 'admin.php?page=wp-mcp-ai-pro-packages-settings' ),
+				)
+			);
+		}
+
 		// Validate operation parameter.
 		if ( empty( $arguments['operation'] ) ) {
 			return new WP_Error(

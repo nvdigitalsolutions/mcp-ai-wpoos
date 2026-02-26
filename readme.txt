@@ -260,6 +260,53 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 
 == Changelog ==
 
+= 1.1.2 - February 2026 =
+
+**WordPress.org Compliance Fixes**
+
+* Removed hardcoded admin menu positions from 5 locations (Assistant CPT, Team CPT, Profession CPT, AI Peer CPT, Main Admin Menu)
+* Changed menu_position values from fixed numbers to null for automatic positioning
+* Prevents conflicts with other plugins per WordPress.org guidelines
+* Moved pro-only integration settings to pro addon (Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy)
+* Base plugin now only includes settings for base tools
+* Better architecture: Settings match tool location
+
+**JetEngine CPT/Taxonomy AI Integration**
+
+* AI Assistant Metaboxes: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+* Research & Add Pages: Creates dedicated Research & Add submenu pages for each JetEngine CPT with AI-powered content creation
+* Automatic Field Mapping: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.) to form inputs
+* Version Compatibility: Full support for JetEngine 3.7+ with compatibility layer for different API versions
+* Settings: Two independent toggles - "Enable AI Assistant for JetEngine CPTs" and "Enable Research & Add Pages for JetEngine CPTs"
+
+**Package Pre-Bundling System**
+
+* Enhanced vendor directory pre-bundling for critical npm packages
+* Added pdf-lib, puppeteer-core, pdfkit, docx, exceljs, qrcode, turndown, cheerio
+* Eliminates need for npm install on production servers
+* Faster deployment with packages ready out-of-the-box
+
+**Product Research Page Fixes**
+
+* Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
+* Fixed all workflow tabs displaying simultaneously
+* Improved asset enqueuing priority and hook detection
+* Removed duplicate "Research & Add" tab
+
+**Pro Workflow Builder Stability**
+
+* Fixed React asset loading and initialization issues
+* Fixed double instantiation causing duplicate DOM elements
+* Fixed initialization timing race conditions
+* Fixed menu placement inconsistencies
+* Fixed empty page display issue
+
+**OAuth & API Connection Fixes**
+
+* Fixed Google OAuth approval prompt not displaying to users
+* Fixed Yahoo OAuth redirect URL construction issues
+* Fixed Mailjet API authentication credential handling
+
 = 1.1.0 - January 2026 =
 
 **New Features**

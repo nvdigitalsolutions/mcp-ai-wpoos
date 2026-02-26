@@ -7,7 +7,8 @@ This document provides troubleshooting guidance for common issues with the Pro A
 1. [Installation Configurations](#installation-configurations)
 2. [JavaScript/CSS Not Loading](#javascriptcss-not-loading)
 3. [NPM Package Issues](#npm-package-issues)
-4. [Admin Page Issues](#admin-page-issues)
+4. [Sharp Image Processing Issues](#sharp-image-processing-issues)
+5. [Admin Page Issues](#admin-page-issues)
 
 ## Installation Configurations
 
@@ -105,25 +106,79 @@ If you're using an older version, you can manually fix by editing `addons/pro/mc
 
 ## NPM Package Issues
 
-### sharp Installation Problems
+## Sharp Image Processing Issues
 
-**Symptoms**: Image processing tools fail with "sharp not found" error
+### Error: "Sharp is not fully installed"
+
+**Symptoms**: 
+- The `optimize_image_sharp` tool fails with error about Sharp not being fully installed
+- Error mentions missing dependencies: detect-libc, color, semver
+- Error mentions missing platform binaries or libvips
+
+**Root Cause**:
+Sharp requires three components to work:
+1. Sharp library files (JavaScript)
+2. Sharp's JavaScript dependencies (detect-libc, color, semver)
+3. Platform-specific native binaries with libvips (compiled C++ code)
+
+In a cloned repository, the vendor directory may only have the Sharp library but not the dependencies or platform binaries.
 
 **Solution**:
+
+**Quick Fix** (installs for current platform only):
 ```bash
-# Ubuntu/Debian
+cd wp-content/plugins/mcp-ai-wpoos/addons/pro
+
+# Install Sharp with platform binaries
+npm install --include=optional
+
+# Copy to vendor directory
+npm run build
+```
+
+**Complete Fix** (for distribution with multiple platforms):
+```bash
+cd wp-content/plugins/mcp-ai-wpoos/addons/pro
+
+# Install Sharp with all optional dependencies
+npm install --include=optional
+
+# Copy to vendor directory including all platforms
+WP_MCP_AI_BUILD_OFFLINE=true npm run build
+```
+
+**Verification**:
+```bash
+# Check if dependencies exist
+ls -la assets/vendor/sharp/node_modules/detect-libc
+ls -la assets/vendor/sharp/node_modules/color
+ls -la assets/vendor/sharp/node_modules/semver
+
+# Check if platform binaries exist
+ls -la assets/vendor/sharp/node_modules/@img/
+
+# Test Sharp loads correctly
+node -e "const sharp = require('./assets/vendor/sharp/lib/index.js'); console.log('Sharp version:', sharp.versions);"
+```
+
+**For detailed Sharp setup instructions, see**: `addons/pro/docs/SHARP_SETUP_GUIDE.md`
+
+### System-Level Dependencies (libvips)
+
+**Note**: Sharp bundles pre-compiled libvips binaries, so you typically DON'T need to install libvips system-wide. However, if you're building Sharp from source, you need:
+
+```bash
+# Ubuntu/Debian (only if building from source)
 sudo apt-get install build-essential libvips-dev
 
-# CentOS/RHEL
+# CentOS/RHEL (only if building from source)
 sudo yum install gcc-c++ vips-devel
 
-# macOS
+# macOS (only if building from source)
 brew install vips
-
-# Then reinstall sharp
-cd wp-content/plugins/mcp-ai-wpoos/addons/pro
-npm install sharp --production
 ```
+
+**For pre-built Sharp** (recommended): Just use `npm install sharp --include=optional` which downloads pre-compiled binaries.
 
 ### fluent-ffmpeg Not Working
 

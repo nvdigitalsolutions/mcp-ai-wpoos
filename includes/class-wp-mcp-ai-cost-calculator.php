@@ -171,14 +171,28 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'gemini'      => array(
-			// Gemini 2.5 series (November 2025).
+			// Gemini 3.1 series (February 2026 - latest flagship).
+			'gemini-3.1-pro-preview' => array(
+				'input'  => 2.00,
+				'output' => 12.00,
+			),
+			// Gemini 3 series (preview).
+			'gemini-3-pro-preview'   => array(
+				'input'  => 2.00,
+				'output' => 12.00,
+			),
+			'gemini-3-flash-preview' => array(
+				'input'  => 0.50,
+				'output' => 3.00,
+			),
+			// Gemini 2.5 series (February 2026).
 			'gemini-2.5-pro'         => array(
-				'input'  => 1.20,
-				'output' => 4.80,
+				'input'  => 1.25,
+				'output' => 10.00,
 			),
 			'gemini-2.5-flash'       => array(
-				'input'  => 0.10,
-				'output' => 0.40,
+				'input'  => 0.30,
+				'output' => 2.50,
 			),
 			'gemini-2.5-flash-lite'  => array(
 				'input'  => 0.05,
@@ -228,6 +242,15 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'anthropic'   => array(
+			// Claude 4.6 series (February 2026).
+			'claude-sonnet-4-6' => array(
+				'input'  => 3.00,
+				'output' => 12.00,
+			),
+			'claude-opus-4-6'   => array(
+				'input'  => 5.00,
+				'output' => 25.00,
+			),
 			// Claude 4.5 series (January 2026).
 			'claude-sonnet-4-5'          => array(
 				'input'  => 3.00,

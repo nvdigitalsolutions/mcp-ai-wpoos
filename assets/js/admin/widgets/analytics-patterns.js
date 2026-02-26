@@ -17,6 +17,7 @@
 			return;
 		}
 
+		try {
 		const patternData = window.wpMcpAiPatternData;
 
 		// Hourly Pattern Chart.
@@ -124,6 +125,12 @@
 					}
 				}
 			});
+		}
+		} catch (e) {
+			// Chart initialization failed; log error but prevent disruption of other scripts.
+			if (window.console && console.error) {
+				console.error('WP MCP AI: Analytics patterns chart initialization failed:', e);
+			}
 		}
 	}
 

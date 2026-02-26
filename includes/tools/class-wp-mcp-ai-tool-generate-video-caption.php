@@ -279,9 +279,12 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		// Based on Google's 2025 model lineup - all Gemini 1.x models are deprecated.
 		// Note: Experimental models with -exp suffix are being deprecated in favor of stable versions.
 		$video_capable_models = array(
+			// Gemini 3.1 series (February 2026 flagship).
+			'gemini-3.1-pro-preview',
+
 			// Gemini 3 series (latest - 2025).
 			'gemini-3-pro-preview',
-			'gemini-3-pro',
+			'gemini-3-flash-preview',
 
 			// Gemini 2.5 series (production - 2025).
 			'gemini-2.5-pro',

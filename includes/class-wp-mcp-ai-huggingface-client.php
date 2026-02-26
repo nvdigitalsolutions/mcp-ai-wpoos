@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			$models = array();
 
-			// Hugging Face uses OpenAI format: { "data": [ { "id": "model-name", ... }, ... ] }.
+			// Hugging Face uses OpenAI-compatible format: a data array of objects each containing an id field.
 			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 				foreach ( $decoded['data'] as $model ) {
 					if ( isset( $model['id'] ) ) {
@@ -580,6 +580,65 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			// Add temperature if specified.
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
 				$payload['temperature'] = (float) $options['temperature'];
+			}
+
+			// Additional sampling parameters supported by Hugging Face Inference API.
+			if ( isset( $options['top_p'] ) && is_numeric( $options['top_p'] ) ) {
+				$payload['top_p'] = (float) $options['top_p'];
+			}
+
+			if ( isset( $options['top_k'] ) && is_numeric( $options['top_k'] ) ) {
+				$payload['top_k'] = (int) $options['top_k'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			if ( ! empty( $options['stop'] ) ) {
+				$payload['stop'] = is_array( $options['stop'] ) ? array_values( array_map( 'sanitize_text_field', $options['stop'] ) ) : array( sanitize_text_field( $options['stop'] ) );
+			}
+
+			if ( isset( $options['repetition_penalty'] ) && is_numeric( $options['repetition_penalty'] ) ) {
+				$payload['repetition_penalty'] = (float) $options['repetition_penalty'];
+			}
+
+			if ( isset( $options['frequency_penalty'] ) && is_numeric( $options['frequency_penalty'] ) ) {
+				$payload['frequency_penalty'] = (float) $options['frequency_penalty'];
+			}
+
+			if ( isset( $options['presence_penalty'] ) && is_numeric( $options['presence_penalty'] ) ) {
+				$payload['presence_penalty'] = (float) $options['presence_penalty'];
+			}
+
+			// Reasoning effort for reasoning-capable models (e.g., DeepSeek-R1, Qwen3).
+			$allowed_efforts = array( 'none', 'minimal', 'low', 'medium', 'high', 'xhigh' );
+			if ( isset( $options['reasoning_effort'] ) && in_array( $options['reasoning_effort'], $allowed_efforts, true ) ) {
+				$payload['reasoning_effort'] = $options['reasoning_effort'];
+			}
+
+			// Structured output / JSON mode (OpenAI-compatible format).
+			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) && ! empty( $options['response_format'] ) ) {
+				$payload['response_format'] = $options['response_format'];
+			}
+
+			// Tool choice to control which tool is invoked.
+			if ( isset( $options['tool_choice'] ) ) {
+				$payload['tool_choice'] = $options['tool_choice'];
+			}
+
+			// Tool prompt: a text prefix prepended before the tool definitions (HuggingFace TGI extension).
+			if ( ! empty( $options['tool_prompt'] ) ) {
+				$payload['tool_prompt'] = sanitize_text_field( $options['tool_prompt'] );
+			}
+
+			// Logprobs: return log probabilities of output tokens.
+			if ( isset( $options['logprobs'] ) ) {
+				$payload['logprobs'] = (bool) $options['logprobs'];
+			}
+
+			if ( isset( $options['top_logprobs'] ) && is_numeric( $options['top_logprobs'] ) ) {
+				$payload['top_logprobs'] = max( 0, min( 5, (int) $options['top_logprobs'] ) );
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.

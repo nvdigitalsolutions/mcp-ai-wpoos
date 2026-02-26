@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.1  
-**Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
-**Latest Updates:** February 2026 - Package pre-bundling, Product Research page fixes, Pro Workflow Builder stability  
+**Version:** 1.1.2  
+**Release Date:** 2026-02-16 (February 2026 update with WordPress.org compliance fixes, pro integration settings architecture)  
+**Latest Updates:** February 2026 - WordPress.org compliance, JetEngine integration, package pre-bundling, Product Research fixes  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,8 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (February 2026)](#-latest-updates-february-2026)
-- [🆕 Latest Updates (January 2026)](#-latest-updates-january-2026)
+- [🆕 Latest Updates (January & February 2026)](#-latest-updates-january-february-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -105,9 +104,9 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 
 See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 17 services.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
+The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 79 Pro tools (total 230 tool files across base and Pro).
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 519 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -267,6 +266,35 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ---
 
 ## 🆕 Latest Updates (January-February 2026)
+
+### WordPress.org Compliance Fixes (February 16, 2026) ⭐ **NEW**
+
+**Version 1.1.2 Released: Critical WordPress.org compliance updates**
+
+**Hardcoded Admin Menu Positions Removed:**
+- ✅ Removed hardcoded menu positions from 5 locations (CPTs and main menu)
+- ✅ Changed from fixed positions to null for automatic positioning
+- ✅ Prevents conflicts with other plugins per WordPress.org guidelines
+- ✅ Affects: Assistant CPT, Team CPT, Profession CPT, AI Peer CPT, Main Admin Menu
+
+**Pro Integration Settings Architecture:**
+- ✅ Moved pro-only integration settings to pro addon
+- ✅ Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings relocated
+- ✅ Base plugin now only includes settings for base tools
+- ✅ Better architecture: Settings match tool location
+- ✅ Still WordPress.org compliant: No gating, proper separation
+
+### JetEngine CPT/Taxonomy AI Integration (February 12, 2026) ⭐ **NEW**
+
+**Comprehensive AI assistance for all JetEngine custom post types and taxonomies**
+
+- ✅ **AI Assistant Metaboxes**: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+- ✅ **Research & Add Pages**: Dedicated submenu pages for each JetEngine CPT with AI-powered content creation
+- ✅ **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.)
+- ✅ **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer
+- ✅ **Settings**: Two independent toggles for metaboxes and research pages
+- ✅ **Testing**: Comprehensive test suite with 100% passing tests
+- [Complete Integration Guide →](docs/jetengine-integration-guide.md)
 
 ### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
 

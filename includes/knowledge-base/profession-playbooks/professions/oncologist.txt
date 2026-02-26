@@ -1,0 +1,450 @@
+Profession Playbook — Oncologist (Medical Oncology)
+Slug: oncologist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality oncology clinical decision-making and patient care guidance.
+
+Category guidance
+- Emphasize patient safety, evidence-based medicine, clinical reasoning, and professional accountability.
+- Follow ASCO, NCCN, and ESMO guidelines for cancer diagnosis, staging, and treatment.
+
+1) Role boundaries
+Do:
+- Provide education on cancer types, staging, diagnostic approaches, and treatment modalities
+- Explain systemic cancer therapies (chemotherapy, immunotherapy, targeted therapy, hormone therapy)
+- Guide on evidence-based cancer treatment planning following NCCN and ASCO guidelines
+- Advise on cancer screening, prevention strategies, and genetic risk assessment
+- Explain treatment side effects, supportive care measures, and quality of life considerations
+- Guide on multidisciplinary cancer care coordination and treatment sequencing
+- Support continuing medical education in oncology topics and emerging therapies
+- Guide on patient communication regarding diagnosis, prognosis, and goals of care
+- Explain clinical trial opportunities, benefits, and informed consent process
+- Success = Accurate oncologic information supporting evidence-based treatment decisions and optimal patient outcomes
+
+Do NOT:
+- Provide specific cancer diagnoses for individual patients (requires pathology confirmation and staging workup)
+- Prescribe chemotherapy or immunotherapy without proper patient evaluation and tumor characterization
+- Interpret specific patient biopsies, molecular testing, or imaging without clinical context
+- Override or contradict a patient's established oncology care plan without oncologist consultation
+- Make treatment decisions based on incomplete staging or molecular profiling
+- Practice outside scope of medical oncology (surgical oncology, radiation oncology subspecialties)
+- Guarantee treatment outcomes, survival estimates, or promises about cure
+- Share protected health information without proper HIPAA authorization
+- Delay emergency care for oncologic emergencies (febrile neutropenia, spinal cord compression, tumor lysis syndrome)
+
+Escalate / refer out when:
+- Oncologic emergencies requiring immediate intervention (febrile neutropenia, spinal cord compression, SVC syndrome, tumor lysis syndrome)
+- Complex surgical decisions requiring surgical oncology or thoracic/GI/GU surgical oncology consultation
+- Radiation therapy planning requiring radiation oncology expertise
+- Hematologic malignancies requiring specialized hematology/BMT consultation
+- Advanced cancer requiring palliative care or hospice consultation
+- Genetic counseling for hereditary cancer syndromes (BRCA, Lynch syndrome)
+- Clinical trial enrollment requiring research team coordination
+- End-of-life care discussions requiring ethics consultation or specialized palliative care
+- Patient safety concerns related to treatment-related adverse events or systems failures
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country and healthcare system? (Oncology standards, drug availability, and protocols vary significantly)
+- What is the cancer type and stage? (Histology, TNM staging, molecular characteristics)
+- What prior treatments have been received? (Surgery, radiation, systemic therapy, clinical trials)
+- What is the patient's performance status? (ECOG 0-4, Karnofsky score)
+- What is the treatment intent? (Curative vs. palliative, neoadjuvant vs. adjuvant vs. metastatic)
+- What comorbidities and organ function exist? (Renal, hepatic, cardiac function for treatment selection)
+- What molecular/biomarker testing has been completed? (PD-L1, MSI, TMB, driver mutations)
+- What are the patient's goals of care and quality of life priorities?
+- What psychosocial support systems are in place? (Caregiver support, financial resources, transportation)
+
+1.5) Regional Variations - Oncology Licensing & Practice Standards
+
+**United States:**
+- Subspecialty Certification: ABIM Medical Oncology board certification; Hematology/Oncology combined certification common
+- Guidelines: NCCN (National Comprehensive Cancer Network) guidelines, ASCO (American Society of Clinical Oncology)
+- Drug Access: FDA approval required, insurance authorization for expensive therapies (immunotherapy, targeted agents)
+- Precision Medicine: NGS panel testing (FoundationOne, Guardant360), liquid biopsies
+- Clinical Trials: Robust infrastructure via NCI-designated cancer centers, cooperative groups (SWOG, ECOG-ACRIN)
+- Key Organizations: ASCO, AACR (American Association for Cancer Research), NCCN
+- Quality Programs: OCM (Oncology Care Model), QOPI certification for practices
+
+**United Kingdom:**
+- Specialty Training: Medical Oncology specialty training via Royal College of Physicians; CCT in Medical Oncology
+- Guidelines: NICE guidelines, ESMO (European Society for Medical Oncology), UK cancer treatment protocols
+- NHS Cancer Services: Multidisciplinary team (MDT) meetings mandatory, cancer waiting time standards
+- Drug Access: NICE technology appraisals, Cancer Drugs Fund for early access to novel agents
+- Clinical Trials: Cancer Research UK trials network, NCRI (National Cancer Research Institute)
+- Key Organizations: Royal College of Radiologists (Clinical Oncology), NCRI, Cancer Research UK
+- Quality Standards: CQC (Care Quality Commission) inspections, national cancer audits
+
+**Canada:**
+- Certification: RCPSC subspecialty certification in Medical Oncology
+- Guidelines: Cancer Care Ontario, BC Cancer, provincial cancer agency guidelines based on ASCO/NCCN
+- Provincial Cancer Programs: Centralized cancer care delivery (BC Cancer, Princess Margaret, Jewish General)
+- Drug Access: Provincial formularies, pCODR (pan-Canadian Oncology Drug Review) for funding decisions
+- Clinical Trials: Canadian Cancer Trials Group (CCTG), provincial cancer center trials
+- Key Organizations: Canadian Association of Medical Oncologists (CAMO), Canadian Cancer Society
+
+**Australia:**
+- Fellowship: RACP Advanced Training in Medical Oncology; MSAC (Medical Services Advisory Committee) approval for new technologies
+- Guidelines: eviQ (Cancer Institute NSW evidence-based protocols), COSA (Clinical Oncology Society of Australia)
+- PBS: Pharmaceutical Benefits Scheme funds approved cancer drugs, strict eligibility criteria
+- Clinical Trials: AGITG, ANZGOG, Australasian cooperative groups
+- Key Organizations: COSA, Cancer Council Australia, MSAC
+
+**European Union:**
+- Certification: National oncology board certifications, ESMO certification program
+- Guidelines: ESMO Clinical Practice Guidelines (used across Europe)
+- EMA: European Medicines Agency approval for cancer drugs (EU-wide)
+- Clinical Trials: EORTC (European Organisation for Research and Treatment of Cancer), national cancer centers
+- Key Organizations: ESMO, EORTC, national oncology societies
+
+3) Cancer types and systemic treatment approaches
+
+**Breast Cancer:**
+- Subtypes: HR+/HER2-, HR+/HER2+, HR-/HER2+, Triple-negative (TNBC)
+- Neoadjuvant/Adjuvant: Chemotherapy (AC-T, TC), anti-HER2 (trastuzumab, pertuzumab), endocrine therapy
+- Metastatic: CDK4/6 inhibitors + endocrine (HR+), anti-HER2 combinations, immunotherapy (PD-L1+ TNBC)
+- Emerging: ADCs (T-DXd, T-DM1), PIK3CA inhibitors (alpelisib), PARP inhibitors (BRCA-mutated)
+
+**Lung Cancer:**
+- Non-Small Cell Lung Cancer (NSCLC): Adenocarcinoma, squamous cell, large cell
+  - Early stage: Adjuvant chemotherapy, adjuvant immunotherapy (osimertinib for EGFR+)
+  - Advanced: Targeted therapy (EGFR, ALK, ROS1, BRAF, MET, KRAS G12C), immunotherapy (PD-1/PD-L1 inhibitors)
+- Small Cell Lung Cancer (SCLC): Chemotherapy (platinum/etoposide), atezolizumab for extensive-stage
+- Molecular testing: EGFR, ALK, ROS1, BRAF, MET, RET, KRAS, PD-L1, TMB
+
+**Colorectal Cancer:**
+- Early stage: Adjuvant chemotherapy (FOLFOX, CAPOX) for high-risk stage II, stage III
+- Metastatic: Chemotherapy backbone (FOLFOX, FOLFIRI, CAPOX) + biologics (bevacizumab, cetuximab, panitumumab)
+- RAS/BRAF testing: Guide anti-EGFR therapy (cetuximab/panitumumab for RAS wild-type)
+- MSI-H/dMMR: Immunotherapy (pembrolizumab) highly effective, consider first-line
+
+**Prostate Cancer:**
+- Localized: Active surveillance, surgery, radiation therapy
+- Biochemical recurrence: ADT (androgen deprivation therapy), salvage radiation
+- Metastatic hormone-sensitive (mHSPC): ADT + docetaxel or ADT + abiraterone/enzalutamide/apalutamide
+- Castration-resistant (mCRPC): Abiraterone, enzalutamide, docetaxel, cabazitaxel, radium-223, PARP inhibitors (BRCA-mutated)
+
+**Melanoma:**
+- Early stage: Surgical excision, sentinel lymph node biopsy, adjuvant immunotherapy (nivolumab, pembrolizumab) for stage III
+- Advanced/Metastatic: Anti-PD-1 (nivolumab, pembrolizumab), anti-CTLA-4 (ipilimumab), combination immunotherapy
+- BRAF-mutated: BRAF/MEK inhibitor combinations (dabrafenib/trametinib, vemurafenib/cobimetinib)
+
+**Lymphomas:**
+- Hodgkin Lymphoma: ABVD, escalated BEACOPP, brentuximab vedotin for relapsed/refractory
+- Non-Hodgkin Lymphomas:
+  - DLBCL: R-CHOP, R-EPOCH, CAR T-cell therapy for relapsed/refractory
+  - Follicular Lymphoma: R-bendamustine, R-CHOP, maintenance rituximab
+  - Mantle Cell Lymphoma: R-CHOP, R-bendamustine, BTK inhibitors (ibrutinib, acalabrutinib)
+
+**Leukemias:**
+- Acute Myeloid Leukemia (AML): Induction (7+3), consolidation, allogeneic transplant for high-risk
+- Chronic Lymphocytic Leukemia (CLL): BTK inhibitors (ibrutinib, acalabrutinib), BCL-2 inhibitor (venetoclax), anti-CD20 (obinutuzumab)
+- Chronic Myeloid Leukemia (CML): TKIs (imatinib, dasatinib, nilotinib, bosutinib, ponatinib)
+
+**Ovarian Cancer:**
+- First-line: Carboplatin/paclitaxel + bevacizumab, PARP inhibitor maintenance (BRCA-mutated or HRD+)
+- Recurrent: Platinum-sensitive (repeat platinum), platinum-resistant (weekly paclitaxel, liposomal doxorubicin)
+
+**Pancreatic Cancer:**
+- Resectable: Surgery + adjuvant chemotherapy (FOLFIRINOX, gemcitabine/capecitabine)
+- Locally advanced: FOLFIRINOX, gemcitabine/nab-paclitaxel, radiation therapy
+- Metastatic: FOLFIRINOX (fit patients), gemcitabine/nab-paclitaxel, clinical trials
+
+4) Chemotherapy principles and common regimens
+
+**Chemotherapy Classes:**
+- Alkylating agents: Cyclophosphamide, cisplatin, carboplatin, oxaliplatin (DNA cross-linking)
+- Antimetabolites: 5-FU, capecitabine, gemcitabine, methotrexate (inhibit DNA synthesis)
+- Anthracyclines: Doxorubicin, epirubicin (DNA intercalation, topoisomerase II inhibition)
+- Taxanes: Paclitaxel, docetaxel, nab-paclitaxel (microtubule stabilization)
+- Topoisomerase inhibitors: Irinotecan, topotecan, etoposide
+- Vinca alkaloids: Vincristine, vinblastine, vinorelbine (microtubule depolymerization)
+
+**Common Regimens:**
+- FOLFOX: Folinic acid, 5-FU, oxaliplatin (colorectal, gastric, pancreatic)
+- FOLFIRI: Folinic acid, 5-FU, irinotecan (colorectal)
+- R-CHOP: Rituximab, cyclophosphamide, doxorubicin, vincristine, prednisone (lymphoma)
+- AC-T: Adriamycin/cyclophosphamide followed by paclitaxel (breast)
+- Carboplatin/Paclitaxel: Lung, ovarian, head and neck
+- FOLFIRINOX: Folinic acid, 5-FU, irinotecan, oxaliplatin (pancreatic, colorectal, gastric)
+
+**Chemotherapy Administration:**
+- Routes: IV (most common), oral (capecitabine, temozolomide), intrathecal (methotrexate for CNS disease)
+- Cycles: Typically 14-21 day cycles, allow for bone marrow recovery
+- Dose modifications: Based on organ function (renal, hepatic), toxicity, performance status
+- Pre-medications: Antiemetics (5-HT3 antagonists, NK1 antagonists, steroids), hydration, electrolyte management
+
+**Chemotherapy Toxicities:**
+- Hematologic: Neutropenia (infection risk), anemia (fatigue), thrombocytopenia (bleeding risk)
+- GI: Nausea/vomiting, diarrhea (irinotecan), mucositis (5-FU, methotrexate)
+- Neuropathy: Peripheral neuropathy (taxanes, platinum agents, vinca alkaloids)
+- Cardiac: Cardiomyopathy (anthracyclines), hypertension (bevacizumab)
+- Renal: Nephrotoxicity (cisplatin, methotrexate)
+- Alopecia: Common with taxanes, anthracyclines, cyclophosphamide
+
+5) Immunotherapy and immune-related adverse events (irAEs)
+
+**Checkpoint Inhibitors:**
+- Anti-PD-1: Pembrolizumab, nivolumab (melanoma, lung, renal, head and neck, MSI-H tumors)
+- Anti-PD-L1: Atezolizumab, durvalumab, avelumab (lung, bladder, triple-negative breast)
+- Anti-CTLA-4: Ipilimumab (melanoma, renal, combination with anti-PD-1)
+
+**Biomarkers for Immunotherapy:**
+- PD-L1 expression: Predictive for response in some tumor types (lung, bladder)
+- MSI-H/dMMR: High response rates across tumor types (pembrolizumab FDA-approved agnostic indication)
+- TMB (Tumor Mutational Burden): High TMB predicts response to checkpoint inhibitors
+
+**Immune-Related Adverse Events (irAEs):**
+- Dermatologic: Rash, pruritus, vitiligo (usually mild)
+- Gastrointestinal: Colitis, diarrhea (can be severe, rule out C. diff, manage with steroids)
+- Hepatic: Transaminitis, hepatitis (monitor LFTs, hold therapy, steroids for grade 3-4)
+- Endocrine: Thyroid dysfunction (hypo/hyperthyroidism), hypophysitis, adrenal insufficiency (hormone replacement)
+- Pulmonary: Pneumonitis (imaging, hold therapy, steroids for grade 2+, rule out infection)
+- Rheumatologic: Arthritis, myositis (steroids, consider DMARD for refractory cases)
+- Neurologic: Guillain-Barré, myasthenia gravis, encephalitis (rare but serious, high-dose steroids, IVIG, plasmapheresis)
+
+**irAE Management Principles:**
+- Early recognition: Monitor for symptoms, baseline labs, patient education
+- Grade 1-2: Hold therapy, monitor closely, consider steroids
+- Grade 3-4: Hold therapy, high-dose steroids (prednisone 1-2 mg/kg), consider permanent discontinuation
+- Steroid taper: Gradual over 4-6 weeks, monitor for relapse
+- Refractory cases: Infliximab (colitis), mycophenolate (hepatitis), IVIG (neurologic)
+
+6) Targeted therapy and precision oncology
+
+**EGFR Inhibitors:**
+- Lung cancer: Osimertinib (preferred for EGFR exon 19 del, L858R), afatinib, erlotinib
+- Colorectal cancer: Cetuximab, panitumumab (RAS wild-type only)
+- Head and neck: Cetuximab
+
+**ALK/ROS1 Inhibitors:**
+- Lung cancer: Alectinib (preferred), brigatinib, lorlatinib, crizotinib, ceritinib
+
+**HER2-Targeted Therapy:**
+- Breast cancer: Trastuzumab, pertuzumab, T-DM1, T-DXd (trastuzumab deruxtecan), neratinib, tucatinib
+- Gastric cancer: Trastuzumab, trastuzumab deruxtecan
+
+**BRAF/MEK Inhibitors:**
+- Melanoma: Dabrafenib/trametinib, vemurafenib/cobimetinib, encorafenib/binimetinib
+- Lung cancer: Dabrafenib/trametinib (BRAF V600E)
+- Colorectal cancer: Encorafenib/cetuximab (BRAF V600E)
+
+**VEGF Inhibitors:**
+- Bevacizumab: Colorectal, lung, ovarian, glioblastoma, renal
+- TKIs: Sunitinib, pazopanib, axitinib, cabozantinib (renal, thyroid, HCC)
+
+**CDK4/6 Inhibitors:**
+- Breast cancer (HR+/HER2-): Palbociclib, ribociclib, abemaciclib + endocrine therapy
+
+**PARP Inhibitors:**
+- Ovarian cancer (BRCA-mutated, HRD+): Olaparib, niraparib, rucaparib
+- Breast cancer (BRCA-mutated): Olaparib, talazoparib
+- Prostate cancer (BRCA/HRR-mutated): Olaparib, rucaparib
+
+**KRAS G12C Inhibitors:**
+- Lung cancer: Sotorasib, adagrasib (KRAS G12C-mutated NSCLC)
+
+**BTK Inhibitors:**
+- CLL, mantle cell lymphoma: Ibrutinib, acalabrutinib, zanubrutinib
+
+7) Oncologic emergencies and acute management
+
+**Febrile Neutropenia:**
+- Definition: ANC <500 or <1000 with expected decline, temperature ≥38.3°C or ≥38°C for >1 hour
+- Immediate management: Blood cultures, broad-spectrum antibiotics (cefepime, piperacillin/tazobactam, carbapenem)
+- Risk assessment: High-risk (prolonged neutropenia, hemodynamic instability) → hospitalization
+- G-CSF: Consider for primary prophylaxis (high-risk regimens), secondary prophylaxis (prior febrile neutropenia)
+
+**Tumor Lysis Syndrome (TLS):**
+- Risk: High tumor burden, rapidly proliferating tumors (Burkitt lymphoma, ALL, high-grade NHL)
+- Labs: Hyperkalemia, hyperphosphatemia, hyperuricemia, hypocalcemia, elevated LDH, renal insufficiency
+- Prevention: IV hydration, allopurinol (or rasburicase for high-risk), monitor electrolytes
+- Management: Aggressive hydration, rasburicase, treat electrolyte abnormalities, consider dialysis
+
+**Spinal Cord Compression:**
+- Presentation: Back pain, weakness, sensory loss, bowel/bladder dysfunction
+- Imaging: Urgent MRI spine (whole spine to identify all compression sites)
+- Management: High-dose dexamethasone (10-100 mg IV), urgent radiation therapy or neurosurgical decompression
+- Prognosis: Early diagnosis and treatment critical for neurologic recovery
+
+**Superior Vena Cava (SVC) Syndrome:**
+- Presentation: Facial/upper extremity edema, dyspnea, cough, headache, dilated chest veins
+- Imaging: CT chest with contrast
+- Management: Elevate head of bed, dexamethasone, urgent radiation therapy or chemotherapy (depending on histology)
+- Stenting: Consider for refractory cases or life-threatening symptoms
+
+**Hypercalcemia of Malignancy:**
+- Symptoms: Confusion, lethargy, nausea, constipation, polyuria
+- Labs: Corrected calcium, PTHrP, vitamin D levels
+- Management: IV hydration, bisphosphonates (zoledronic acid), calcitonin (rapid onset), denosumab (bisphosphonate-refractory)
+
+**Malignant Pleural/Pericardial Effusions:**
+- Pleural: Thoracentesis (diagnostic and therapeutic), pleurodesis (talc, doxycycline), indwelling catheter
+- Pericardial: Pericardiocentesis, pericardial window for recurrent effusions
+- Monitor: Signs of tamponade (hypotension, JVD, muffled heart sounds)
+
+**Brain Metastases:**
+- Imaging: MRI brain with contrast (more sensitive than CT)
+- Management: Dexamethasone (reduce edema), whole brain radiation therapy, stereotactic radiosurgery (SRS), neurosurgical resection
+- Systemic therapy: Consider if CNS-penetrant agents available (osimertinib, alectinib, tucatinib)
+
+8) Supportive care and symptom management
+
+**Nausea and Vomiting:**
+- Acute: 5-HT3 antagonists (ondansetron, granisetron, palonosetron)
+- Delayed: NK1 antagonists (aprepitant, rolapitant) + dexamethasone + 5-HT3 antagonist
+- Breakthrough: Metoclopramide, prochlorperazine, olanzapine, lorazepam
+- Anticipatory: Benzodiazepines, behavioral therapy
+
+**Pain Management:**
+- WHO analgesic ladder: Non-opioids (acetaminophen, NSAIDs) → weak opioids (tramadol) → strong opioids (morphine, oxycodone, fentanyl)
+- Breakthrough pain: Short-acting opioids (immediate-release morphine, fentanyl buccal)
+- Neuropathic pain: Gabapentin, pregabalin, duloxetine, tricyclic antidepressants
+- Interventional: Radiation therapy for bone metastases, nerve blocks, palliative surgery
+
+**Fatigue:**
+- Evaluation: Rule out anemia, hypothyroidism, depression, poor nutrition
+- Management: Conserve energy, light exercise (as tolerated), psychosocial support
+- Medications: Limited evidence; consider methylphenidate, modafinil for severe cases
+
+**Anemia:**
+- Transfusion: For symptomatic anemia or Hgb <7-8 g/dL (higher threshold for cardiac disease)
+- ESAs: Limited role, risk of thrombosis and tumor progression; use cautiously if at all
+
+**Neutropenia:**
+- G-CSF: Primary prophylaxis (high-risk regimens), secondary prophylaxis (prior febrile neutropenia)
+- Dose delays/reductions: For prolonged or severe neutropenia
+
+**Diarrhea:**
+- Chemotherapy-induced: Loperamide, hydration, electrolyte replacement
+- Immunotherapy-induced colitis: Rule out infection, steroids for grade 2+, infliximab for refractory
+
+**Mucositis:**
+- Prevention: Good oral hygiene, cryotherapy (for short-infusion chemotherapy)
+- Treatment: Topical anesthetics (viscous lidocaine, "magic mouthwash"), systemic pain control
+
+**Thrombosis:**
+- Cancer-associated thrombosis: LMWH (enoxaparin, dalteparin) preferred over warfarin
+- DOACs: Emerging data (rivaroxaban, apixaban), avoid in GI/GU cancers due to bleeding risk
+
+9) Clinical trials and research participation
+
+**Types of Clinical Trials:**
+- Phase I: Dose-finding, safety, pharmacokinetics (first-in-human studies)
+- Phase II: Preliminary efficacy, further safety assessment
+- Phase III: Randomized controlled trials comparing new therapy to standard of care
+- Phase IV: Post-marketing surveillance, long-term safety and efficacy
+
+**Trial Enrollment Considerations:**
+- Eligibility: Inclusion/exclusion criteria (performance status, organ function, prior therapies)
+- Informed Consent: Detailed discussion of risks, benefits, alternatives, randomization
+- Patient Preferences: Willingness to participate, logistical considerations (travel, frequent visits)
+- Insurance Coverage: Routine care costs typically covered, investigational drug provided by sponsor
+
+**ClinicalTrials.gov:**
+- Search tool for available trials by cancer type, location, eligibility criteria
+- Encourage patients to discuss trial options with their oncology team
+
+10) Palliative care and end-of-life discussions
+
+**Goals of Care Discussions:**
+- Early integration: Initiate conversations at diagnosis of metastatic/incurable cancer
+- Explore values: What is most important to the patient? Quality vs. quantity of life?
+- Treatment preferences: Aggressive interventions vs. comfort-focused care
+- Advance directives: Healthcare proxy, living will, POLST/MOLST forms
+
+**Palliative Care Consultation:**
+- Indications: Symptom management, goals of care discussions, prognostic uncertainty, caregiver distress
+- Team approach: Palliative care physicians, nurses, social workers, chaplains
+- Not end-of-life care: Can be concurrent with active cancer treatment
+
+**Hospice Care:**
+- Eligibility: Prognosis <6 months, focus on comfort rather than curative treatment
+- Services: Home hospice, inpatient hospice, respite care, bereavement support
+- Medicare/Insurance: Typically covered; patient forgoes curative-intent treatments
+
+**Advance Care Planning:**
+- Healthcare proxy: Designated decision-maker if patient unable to make decisions
+- DNR/DNI: Do not resuscitate, do not intubate orders
+- POLST/MOLST: Provider orders for life-sustaining treatment (portable medical orders)
+
+11) Cancer survivorship and long-term follow-up
+
+**Surveillance:**
+- Cancer-specific guidelines: Imaging, labs, physical exams based on cancer type and stage
+- Recurrence risk: Highest in first 2-5 years, varies by cancer type
+- Secondary cancers: Increased risk in some cancer survivors (e.g., lymphoma after Hodgkin's)
+
+**Late Effects of Treatment:**
+- Cardiotoxicity: Anthracyclines, trastuzumab (monitor with echocardiography)
+- Neuropathy: Platinum agents, taxanes (may be chronic)
+- Infertility: Alkylating agents, pelvic radiation (discuss fertility preservation pre-treatment)
+- Cognitive impairment: "Chemo brain" (supportive management, cognitive rehabilitation)
+- Secondary malignancies: Increased risk with radiation, alkylating agents
+
+**Survivorship Care Plans:**
+- Treatment summary: Diagnoses, treatments received, side effects experienced
+- Follow-up recommendations: Surveillance schedule, specialist referrals
+- Health promotion: Diet, exercise, smoking cessation, cancer screening
+- Psychosocial support: Support groups, counseling, financial resources
+
+12) Multidisciplinary cancer care
+
+**Tumor Board / MDT Meetings:**
+- Participants: Medical oncology, surgical oncology, radiation oncology, pathology, radiology
+- Purpose: Discuss complex cases, treatment planning, ensure guideline adherence
+- Frequency: Weekly or biweekly, case-by-case as needed
+
+**Care Coordination:**
+- Nurse navigators: Guide patients through cancer care continuum, coordinate appointments
+- Social work: Financial assistance, transportation, psychosocial support
+- Nutritionists: Dietary counseling, manage treatment-related nutrition issues
+- Physical/occupational therapy: Rehabilitation, lymphedema management, functional restoration
+
+**Genetic Counseling:**
+- Indications: Family history of cancer, young age at diagnosis, specific cancer types (ovarian, pancreatic, early-onset breast)
+- Testing: BRCA1/2, Lynch syndrome genes, other hereditary cancer syndromes
+- Implications: Risk-reducing strategies, cascade testing for family members, treatment selection (PARP inhibitors)
+
+13) Documentation and quality metrics
+
+**Essential Documentation:**
+- Cancer diagnosis: Histology, stage (TNM), grade, molecular markers
+- Treatment plan: Regimen, intent (curative vs. palliative), duration, expected side effects
+- Informed consent: Risks, benefits, alternatives discussed
+- Performance status: ECOG or Karnofsky score at each visit
+- Toxicity assessment: Grade adverse events per CTCAE (Common Terminology Criteria for Adverse Events)
+
+**Quality Metrics (QOPI):**
+- Appropriate chemotherapy selection: Guideline-concordant regimens
+- Toxicity management: Antiemetic prophylaxis, G-CSF for high-risk regimens
+- Survivorship care: Provision of treatment summaries and care plans
+- Palliative care: Early integration for metastatic cancer patients
+
+14) Professional development and evidence-based updates
+
+**Continuing Medical Education:**
+- ASCO Annual Meeting: Largest oncology conference, latest trial results and practice-changing data
+- ESMO Congress: European oncology conference, international perspective
+- Disease-specific conferences: ASH (hematology), SABCS (breast), WCLC (lung)
+
+**Landmark Trials:**
+- Immunotherapy: CheckMate, KEYNOTE, IMpower trials
+- Targeted therapy: FLAURA (osimertinib), ALEX (alectinib), SOLO (olaparib)
+- Chemotherapy: MOSAIC (FOLFOX adjuvant), FOLFIRINOX trials
+
+**Journal Review:**
+- High-impact journals: NEJM, JCO, Lancet Oncology, JAMA Oncology, Nature Medicine
+- Subsp ecialty journals: Blood, Annals of Oncology, European Journal of Cancer
+
+---
+
+**Summary:**
+This oncologist playbook emphasizes evidence-based cancer care, adherence to NCCN/ASCO/ESMO guidelines, patient safety, and comprehensive management of cancer from diagnosis through survivorship or end-of-life care. Success is defined by accurate cancer diagnosis and staging, appropriate use of systemic therapies (chemotherapy, immunotherapy, targeted therapy), management of treatment-related toxicities, multidisciplinary care coordination, and patient-centered care focused on quality of life and informed decision-making.

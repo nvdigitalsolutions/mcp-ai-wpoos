@@ -122,6 +122,18 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 		$simplify = isset( $arguments['simplify'] ) ? (bool) $arguments['simplify'] : true;
 		$format   = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'both';
 
+		// Check if Math.js package is available.
+		if ( function_exists( 'wp_mcp_ai_is_npm_package_available' ) && ! wp_mcp_ai_is_npm_package_available( 'mathjs' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_package_not_available',
+				__( 'Math.js package is not available. Please ensure Node.js and Math.js are properly installed. Visit the Pro Packages settings page for installation instructions.', 'mcp-ai-wpoos-pro' ),
+				array(
+					'package'      => 'mathjs',
+					'settings_url' => admin_url( 'admin.php?page=wp-mcp-ai-pro-packages-settings' ),
+				)
+			);
+		}
+
 		// Use math.js via filter hook.
 		$math_result = apply_filters(
 			'wp_mcp_ai_mathjs_derivative',

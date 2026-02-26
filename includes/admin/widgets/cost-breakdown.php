@@ -64,8 +64,8 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 		<?php
 		wp_enqueue_script(
 			'wp-mcp-ai-cost-breakdown',
-			plugin_dir_url( __DIR__ . '/../' ) . 'assets/js/admin/widgets/cost-breakdown.js',
-			array( 'jquery' ),
+			WP_MCP_AI_URL . 'assets/js/admin/widgets/cost-breakdown.js',
+			array( 'jquery', 'chartjs' ),
 			WP_MCP_AI_VERSION,
 			true
 		);
