@@ -739,6 +739,47 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		}
 
 		/**
+		 * Prepare a WordPress attachment for use with the AI provider.
+		 *
+		 * Validates the attachment, uploads it to the AI provider's Files API (or
+		 * returns cached metadata if already registered), and returns a summary
+		 * suitable for surfacing back to the client as part of a multi-step
+		 * attachment pipeline.
+		 *
+		 * @param int    $attachment_id WordPress attachment post ID.
+		 * @param string $usage         Usage context: 'image' or 'file'. Default 'file'.
+		 * @return array|WP_Error Prepared attachment data on success, WP_Error on failure.
+		 */
+		public function prepare_attachment( $attachment_id, $usage = 'file' ) {
+			$attachment_id = absint( $attachment_id );
+			$usage         = in_array( $usage, array( 'image', 'file' ), true ) ? $usage : 'file';
+
+			$prepared = $this->register_attachment( $attachment_id, $usage );
+
+			if ( is_wp_error( $prepared ) ) {
+				return $prepared;
+			}
+
+			$url = '';
+			if ( $attachment_id > 0 ) {
+				$raw_url = wp_get_attachment_url( $attachment_id );
+				if ( $raw_url ) {
+					$url = esc_url_raw( $raw_url );
+				}
+			}
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'file_id'       => isset( $prepared['file_id'] ) ? $prepared['file_id'] : '',
+				'provider'      => $this->provider,
+				'status'        => 'ready',
+				'url'           => $url,
+				'mime_type'     => isset( $prepared['mime_type'] ) ? $prepared['mime_type'] : '',
+				'file_name'     => isset( $prepared['filename'] ) ? $prepared['filename'] : '',
+			);
+		}
+
+		/**
 		 * Register an attachment for inclusion in the OpenAI payload.
 		 *
 		 * @param int    $attachment_id Attachment post ID.

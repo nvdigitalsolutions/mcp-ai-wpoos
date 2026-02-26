@@ -4,6 +4,7 @@
     const defaultGlobalConfig = {
         restUrl: '',
         uploadEndpoint: '',
+        prepareEndpoint: '',
         filesEndpoint: '',
         toolsEndpoint: '',
         transcriptsEndpoint: '',
@@ -6111,6 +6112,69 @@
         });
     }
 
+    /**
+     * Step 2 of the multi-step attachment pipeline: pre-register the uploaded file
+     * with the AI provider's Files API so it is ready before the user sends their
+     * chat message.
+     *
+     * This is a best-effort operation. If the prepare endpoint is not configured or
+     * the request fails, the attachment remains usable — the server will register it
+     * at chat-send time instead.
+     *
+     * On success, the attachment record is augmented with `providerFileId` and
+     * `provider` so that the server can skip the upload step later.
+     *
+     * @param {Object} state  Chat instance state.
+     * @param {Object} record Normalised attachment record (output of normaliseUploadResponse).
+     * @return {Promise<Object>} Resolves to the (possibly augmented) record.
+     */
+    function prepareAttachment(state, record) {
+        if (!state || !record || !state.config || !state.config.prepareEndpoint) {
+            return Promise.resolve(record);
+        }
+
+        const preparingMessage = formatString(getString('processingFile', 'Processing "%s"…'), record.name || '');
+        setStatus(state.container, preparingMessage);
+
+        const usage = record.isImage ? 'image' : 'file';
+        const headers = buildJsonHeaders(state);
+
+        return postJson(
+            state.config.prepareEndpoint,
+            {
+                attachment_id: record.id,
+                assistant_id: (state.config && state.config.assistantId) ? parseInt(state.config.assistantId, 10) || 0 : 0,
+                usage: usage,
+            },
+            headers,
+            { state: state }
+        )
+            .then(function (response) {
+                return response.json().catch(function () { return null; });
+            })
+            .then(function (data) {
+                if (data && data.file_id) {
+                    record.providerFileId = data.file_id;
+                    record.provider = data.provider || '';
+                    if (window.console && console.log) {
+                        console.log('[NV oOS] Attachment pre-registered with provider:', {
+                            attachment_id: record.id,
+                            file_id: data.file_id,
+                            provider: data.provider,
+                        });
+                    }
+                }
+                return record;
+            })
+            .catch(function (error) {
+                // Non-fatal: fall back to server-side registration at chat-send time.
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] Attachment prepare step failed (non-fatal, will retry at send time):', error);
+                }
+                return record;
+            });
+    }
+
     function uploadAttachment(state, file) {
         if (!state || !state.canUploadAttachments) {
             return Promise.resolve();
@@ -6170,6 +6234,9 @@
                 state.pendingAttachments.push(record);
                 state.attachmentLibrary[record.fileId] = record;
                 renderPendingAttachments(state);
+
+                // Step 2: pre-register the file with the AI provider before send.
+                return prepareAttachment(state, record);
             })
             .catch(function (error) {
                 hadError = true;
