@@ -380,9 +380,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_document_generation_toolkit'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation (Pro Version only)', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Enables the Document Generation Toolkit with 3 tools for creating professional documents: pro_pdf (PDF generation), pro_word (Word documents with templates), and pro_excel_document (Excel spreadsheets with formulas). AI generates content from natural language descriptions. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs) installed on the server. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation with OCR support (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Document Generation Toolkit with tools for creating professional documents (PDF, Word, Excel) and extracting text from scanned documents using OCR. Includes: pro_pdf, pro_word, pro_excel_document, extract_pdf_text (with auto-OCR), and ocr_pdf_text. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs, tesseract.js, pdfjs-dist) installed. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
+				),
+				'ocr_default_provider'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default OCR Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select the default OCR provider for extracting text from scanned PDFs and images. "Auto" tries providers in order of best accuracy: OpenAI Vision (highest accuracy, API cost), Gemini Vision (high accuracy, API cost), Ollama (local, privacy-focused), Tesseract (free, local). Individual tools can override this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'auto'      => __( 'Auto (Try best available)', 'mcp-ai-wpoos' ),
+						'openai'    => __( 'OpenAI Vision (Highest accuracy, requires API key)', 'mcp-ai-wpoos' ),
+						'gemini'    => __( 'Google Gemini Vision (High accuracy, requires API key)', 'mcp-ai-wpoos' ),
+						'ollama'    => __( 'Ollama Vision (Local, privacy-focused)', 'mcp-ai-wpoos' ),
+						'tesseract' => __( 'Tesseract OCR (Free, local, good accuracy)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'auto',
+					'pro_badge'   => true,
+				),
+				'ocr_enable_preprocessing'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable OCR Image Preprocessing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically enhance images before OCR for better accuracy', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Applies image preprocessing (grayscale, contrast enhancement, sharpening, noise reduction) before OCR to improve text recognition accuracy. Uses Sharp (Node.js) or Imagick (PHP). Recommended for scanned documents.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'pro_badge'      => true,
+				),
+				'ocr_max_pages_default'                  => array(
+					'type'        => 'number',
+					'label'       => __( 'OCR Max Pages Default', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default maximum number of pages to process with OCR. OCR is resource-intensive; limiting pages prevents timeouts on large documents. Individual tools can override this setting. Set to 0 for unlimited (not recommended).', 'mcp-ai-wpoos' ),
+					'default'     => 10,
+					'min'         => 0,
+					'max'         => 100,
+					'pro_badge'   => true,
 				),
 
 				// Excel and Document Generation Settings (Pro).
@@ -567,6 +598,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// ========================================================================
 				// PRO TOOLKITS - New Professional Toolkits (Phases 2-6)
 				// ========================================================================
+
+				// CRM & Email Marketing Toolkit.
+				'enable_crm_toolkit'                     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable CRM, email marketing, and company management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered CRM and email marketing toolkit with company management, contact tracking, lead management, and email campaign tools. Includes Company CPT with Research & Add page for AI-powered company research and target identification. Integrates with Newsletter and WP Mail SMTP plugins. Provides web search integration for industry analysis and best practices research. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// E-commerce Toolkit.
 				'enable_ecommerce_toolkit'               => array(
@@ -786,7 +826,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_crm_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_chat_channels_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_webchat_integration', 'enable_fantasy_football' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -903,6 +943,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			// The 'connections' subtab is handled by the Integrations section itself,.
 			// which will render when the subtab is active. No special rendering needed here.
+			// Show a helper message for this subtab.
+			if ( 'connections' === $active_subtab ) {
+				?>
+				<tr>
+					<td colspan="2" style="padding: 20px;">
+						<div class="notice notice-info inline" style="margin: 0;">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to integrations tab */
+										__( 'Connection settings are managed in the <a href="%s">Integrations</a> tab. Use that tab to configure OAuth connections for external services like Google Drive, Gmail, GitHub, and more.', 'mcp-ai-wpoos' ),
+										esc_url(
+											add_query_arg(
+												array(
+													'page' => 'wp-mcp-ai-dashboard',
+													'tab'  => 'integrations',
+												),
+												admin_url( 'admin.php' )
+											)
+										)
+									)
+								);
+								?>
+							</p>
+						</div>
+					</td>
+				</tr>
+				<?php
+				return;
+			}
 
 			// Render fields for the active sub-tab.
 			foreach ( $active_group['fields'] as $key ) {
@@ -959,6 +1030,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_eca_management'                  => 40,   // 5+ tools, iSAMS integration.
 				'enable_health_wellness_management'      => 128,  // 30+ tools, secure health data storage.
 				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
+				'enable_crm_toolkit'                     => 56,   // 10+ tools, company/contact/lead/campaign management with web search.
 				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
 				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
 				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.
@@ -1066,7 +1138,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					?>
 					<script>
 					jQuery(document).ready(function($) {
-						var toolkitMemory = <?php echo ( wp_json_encode( $this->get_toolkit_memory_requirements() ) ? wp_json_encode( $this->get_toolkit_memory_requirements() ) : '{}' ); ?>;
+						<?php
+						// Store the result once to avoid redundant function calls.
+						$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
+						?>
+						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {

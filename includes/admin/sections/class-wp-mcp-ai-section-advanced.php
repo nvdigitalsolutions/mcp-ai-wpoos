@@ -529,15 +529,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 			}
 
-			// Performance section moved to Pro addon.
-			// Check if Pro addon is active before attempting to instantiate.
-			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) && class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
+			// Check if Performance section class is available.
+			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
 				$performance_section = new WP_MCP_AI_Section_Performance();
 				$performance_section->render();
 			} else {
 				?>
 				<div class="notice notice-info inline">
-					<p><?php esc_html_e( 'Performance monitoring features require NV oOS Pro addon.', 'mcp-ai-wpoos' ); ?></p>
+					<p><?php esc_html_e( 'Performance monitoring section is not currently available.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 				<?php
 			}
@@ -552,10 +551,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$total_count      = isset( $profession_count->publish ) ? $profession_count->publish : 0;
 			$draft_count      = isset( $profession_count->draft ) ? $profession_count->draft : 0;
 
+			// Get available profession count from knowledge base.
+			$available_count = $this->get_available_profession_count();
+
 			// Check if professions were seeded.
 			$is_seeded    = get_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, false );
 			$seeded_text  = $is_seeded ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' );
 			$seeded_class = $is_seeded ? 'success' : 'warning';
+
+			// Determine sync status.
+			$sync_needed      = ( $total_count < $available_count );
+			$sync_status_text = $sync_needed ? __( 'Updates Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+			$sync_class       = $sync_needed ? 'warning' : 'success';
 			?>
 			<div class="wp-mcp-ai-data-management-section" style="margin-top: 30px;">
 				<h3><?php esc_html_e( 'Profession Data Management', 'mcp-ai-wpoos' ); ?></h3>
@@ -567,9 +574,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
 					<ul style="margin: 10px 0; padding-left: 20px;">
 						<li><strong><?php esc_html_e( 'Published Professions:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $total_count ); ?></li>
+						<li><strong><?php esc_html_e( 'Available in Knowledge Base:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $available_count ); ?></li>
 						<?php if ( $draft_count > 0 ) : ?>
 							<li><strong><?php esc_html_e( 'Draft Professions:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $draft_count ); ?></li>
 						<?php endif; ?>
+						<li><strong><?php esc_html_e( 'Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $sync_class ); ?>">
+								<?php echo esc_html( $sync_status_text ); ?>
+							</span>
+							<?php if ( $sync_needed ) : ?>
+								<span class="description">
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: %d: Number of new professions */
+											_n( '(%d new profession available)', '(%d new professions available)', $available_count - $total_count, 'mcp-ai-wpoos' ),
+											$available_count - $total_count
+										)
+									);
+									?>
+								</span>
+							<?php endif; ?>
+						</li>
 						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $seeded_class ); ?>">
 								<?php echo esc_html( $seeded_text ); ?>
@@ -1726,6 +1752,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				'seeded'                     => $playbooks_seeded,
 				'last_sync'                  => $last_sync,
 			);
+		}
+
+		/**
+		 * Get available profession count from knowledge base JSON files.
+		 *
+		 * Uses a 1-hour transient cache to avoid repeated file I/O operations.
+		 * The cache is cleared automatically when professions are reseeded.
+		 *
+		 * Note: On cache miss, this loads full profession data from JSON files
+		 * to get the count. The WP_MCP_AI_Profession_Knowledge_Base_Loader
+		 * class is lightweight (no expensive initialization), but loading full
+		 * profession data could be optimized in the future with a count-only method.
+		 *
+		 * @return int Number of professions available in knowledge base.
+		 */
+		private function get_available_profession_count() {
+			// Check cache first (1 hour expiration).
+			$cached_count = get_transient( 'wp_mcp_ai_available_profession_count' );
+			if ( false !== $cached_count ) {
+				return absint( $cached_count );
+			}
+
+			// Load the knowledge base loader if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Knowledge_Base_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
+			}
+
+			// Get all professions from knowledge base.
+			$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+			$professions = $loader->load_all();
+
+			// Return count, handling WP_Error if load failed.
+			if ( is_wp_error( $professions ) ) {
+				return 0;
+			}
+
+			$count = count( $professions );
+
+			// Cache for 1 hour.
+			set_transient( 'wp_mcp_ai_available_profession_count', $count, HOUR_IN_SECONDS );
+
+			return $count;
 		}
 
 		/**

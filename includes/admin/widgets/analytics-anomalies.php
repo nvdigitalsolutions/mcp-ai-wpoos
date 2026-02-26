@@ -117,120 +117,32 @@ $severity_colors = array(
 		</div>
 
 		<?php
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js anomaly detection scatter plot initialization with dynamic data
+		wp_enqueue_script(
+			'wp-mcp-ai-analytics-anomalies',
+			WP_MCP_AI_URL . 'assets/js/admin/widgets/analytics-anomalies.js',
+			array( 'jquery', 'chartjs' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-analytics-anomalies',
+			'wpMcpAiAnomalyData',
+			array(
+				'anomalies'       => $anomalies,
+				'threshold'       => $threshold,
+				'severityColors'  => $severity_colors,
+				'labels'          => array(
+					'anomalies'          => __( 'Anomalies', 'mcp-ai-wpoos' ),
+					'thresholdPositive'  => __( 'Threshold (±3σ)', 'mcp-ai-wpoos' ),
+					'thresholdNegative'  => __( 'Threshold (-3σ)', 'mcp-ai-wpoos' ),
+					'chartTitle'         => __( 'Anomaly Detection (Z-Score Analysis)', 'mcp-ai-wpoos' ),
+					'yAxisTitle'         => __( 'Z-Score (Standard Deviations)', 'mcp-ai-wpoos' ),
+					'xAxisTitle'         => __( 'Anomaly Index', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 		?>
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			if (typeof Chart !== 'undefined') {
-				var ctx = document.getElementById('wp-mcp-ai-anomaly-scatter-chart');
-				if (ctx) {
-					var anomalies = <?php echo wp_json_encode( $anomalies ); ?>;
-
-					// Prepare scatter plot data.
-					var scatterData = anomalies.map(function(anomaly, index) {
-						return {
-							x: index,
-							y: parseFloat(anomaly.z_score),
-							date: anomaly.date,
-							tokens: anomaly.tokens,
-							severity: anomaly.severity
-						};
-					});
-
-					// Color points by severity.
-					var pointColors = scatterData.map(function(point) {
-						var severityMap = <?php echo wp_json_encode( $severity_colors ); ?>;
-						return severityMap[point.severity] || '#666';
-					});
-
-					new Chart(ctx.getContext('2d'), {
-						type: 'scatter',
-						data: {
-							datasets: [{
-								label: '<?php esc_attr_e( 'Anomalies', 'mcp-ai-wpoos' ); ?>',
-								data: scatterData,
-								backgroundColor: pointColors,
-								borderColor: pointColors,
-								pointRadius: 6,
-								pointHoverRadius: 8
-							}, {
-								label: '<?php esc_attr_e( 'Threshold (±3σ)', 'mcp-ai-wpoos' ); ?>',
-								data: [
-									{x: 0, y: <?php echo esc_js( $threshold ); ?>},
-									{x: scatterData.length - 1, y: <?php echo esc_js( $threshold ); ?>}
-								],
-								borderColor: 'rgba(255, 99, 132, 0.5)',
-								borderDash: [5, 5],
-								borderWidth: 2,
-								pointRadius: 0,
-								showLine: true,
-								fill: false
-							}, {
-								label: '<?php esc_attr_e( 'Threshold (-3σ)', 'mcp-ai-wpoos' ); ?>',
-								data: [
-									{x: 0, y: <?php echo esc_js( -$threshold ); ?>},
-									{x: scatterData.length - 1, y: <?php echo esc_js( -$threshold ); ?>}
-								],
-								borderColor: 'rgba(255, 99, 132, 0.5)',
-								borderDash: [5, 5],
-								borderWidth: 2,
-								pointRadius: 0,
-								showLine: true,
-								fill: false
-							}]
-						},
-						options: {
-							responsive: true,
-							maintainAspectRatio: false,
-							plugins: {
-								legend: {
-									display: true,
-									position: 'top'
-								},
-								title: {
-									display: true,
-									text: '<?php esc_attr_e( 'Anomaly Detection (Z-Score Analysis)', 'mcp-ai-wpoos' ); ?>'
-								},
-								tooltip: {
-									callbacks: {
-										label: function(context) {
-											if (context.datasetIndex === 0) {
-												var point = context.raw;
-												return [
-													'Date: ' + point.date,
-													'Z-Score: ' + point.y.toFixed(2),
-													'Tokens: ' + point.tokens.toLocaleString(),
-													'Severity: ' + point.severity
-												];
-											}
-											return '';
-										}
-									}
-								}
-							},
-							scales: {
-								y: {
-									title: {
-										display: true,
-										text: '<?php esc_attr_e( 'Z-Score (Standard Deviations)', 'mcp-ai-wpoos' ); ?>'
-									}
-								},
-								x: {
-									title: {
-										display: true,
-										text: '<?php esc_attr_e( 'Anomaly Index', 'mcp-ai-wpoos' ); ?>'
-									},
-									ticks: {
-										display: false
-									}
-								}
-							}
-						}
-					});
-				}
-			}
-		});
-		</script>
 	<?php else : ?>
 		<!-- No Anomalies -->
 		<div class="wp-mcp-ai-widget-notice" style="padding: 20px; background: #f7f7f7; border-left: 4px solid #00a32a; text-align: center;">

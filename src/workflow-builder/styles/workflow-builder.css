@@ -1124,3 +1124,219 @@
 		border-bottom: 1px solid #e5e7eb;
 	}
 }
+
+/* Node Execution Status */
+.node-execution-badge {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 18px;
+height: 18px;
+border-radius: 50%;
+font-size: 10px;
+font-weight: 700;
+margin-left: auto;
+flex-shrink: 0;
+}
+
+.node-execution-badge--running {
+background: rgba(255, 255, 255, 0.3);
+animation: badge-pulse 1s infinite;
+}
+
+.node-execution-badge--completed {
+background: rgba(16, 185, 129, 0.9);
+color: #fff;
+}
+
+.node-execution-badge--failed {
+background: rgba(239, 68, 68, 0.9);
+color: #fff;
+}
+
+.node-execution-badge--paused,
+.node-execution-badge--cancelled {
+background: rgba(245, 158, 11, 0.9);
+color: #fff;
+}
+
+@keyframes badge-pulse {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.4; }
+}
+
+.workflow-node.node--executing {
+box-shadow: 0 0 0 3px #f59e0b, 0 4px 12px rgba(0, 0, 0, 0.15);
+animation: node-executing-pulse 1s infinite;
+}
+
+.workflow-node.node--completed {
+box-shadow: 0 0 0 2px #10b981, 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.workflow-node.node--failed {
+box-shadow: 0 0 0 2px #ef4444, 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes node-executing-pulse {
+0%, 100% { box-shadow: 0 0 0 3px #f59e0b, 0 4px 12px rgba(0, 0, 0, 0.15); }
+50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.3), 0 4px 12px rgba(0, 0, 0, 0.15); }
+}
+
+/* Toolbar active state for toggle buttons */
+.toolbar-button.active {
+background: #dbeafe;
+color: #1d4ed8;
+border: 1px solid #bfdbfe;
+}
+
+.metrics-button,
+.history-button {
+background: #f3f4f6;
+color: #374151;
+font-size: 16px;
+padding: 8px 10px;
+}
+
+.metrics-button:hover:not(:disabled),
+.history-button:hover:not(:disabled) {
+background: #e5e7eb;
+}
+
+.import-button,
+.export-button {
+background: #f3f4f6;
+color: #374151;
+}
+
+.import-button:hover:not(:disabled),
+.export-button:hover:not(:disabled) {
+background: #e5e7eb;
+}
+
+/* Saved Workflows Tab */
+.saved-workflows {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.saved-workflows-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.workflow-list {
+display: flex;
+flex-direction: column;
+gap: 8px;
+}
+
+.workflow-list-item {
+display: flex;
+align-items: stretch;
+border: 1px solid #e5e7eb;
+border-radius: 8px;
+background: #fff;
+overflow: hidden;
+transition: box-shadow 0.2s;
+}
+
+.workflow-list-item:hover {
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.workflow-list-item-info {
+flex: 1;
+padding: 10px 12px;
+cursor: pointer;
+}
+
+.workflow-list-name {
+font-size: 13px;
+font-weight: 600;
+color: #111827;
+margin-bottom: 2px;
+}
+
+.workflow-list-description {
+font-size: 11px;
+color: #6b7280;
+margin-bottom: 4px;
+overflow: hidden;
+white-space: nowrap;
+text-overflow: ellipsis;
+}
+
+.workflow-list-meta {
+font-size: 11px;
+color: #9ca3af;
+}
+
+.workflow-list-item-actions {
+display: flex;
+flex-direction: column;
+justify-content: center;
+padding: 4px;
+border-left: 1px solid #f3f4f6;
+background: #fafafa;
+gap: 2px;
+}
+
+.workflow-action-button {
+width: 28px;
+height: 28px;
+border: none;
+border-radius: 6px;
+background: transparent;
+cursor: pointer;
+font-size: 14px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background 0.2s;
+}
+
+.workflow-action-delete:hover {
+background: #fee2e2;
+}
+
+.workflow-action-confirm {
+color: #10b981;
+}
+
+.workflow-action-confirm:hover {
+background: #d1fae5;
+}
+
+.workflow-action-cancel {
+color: #6b7280;
+}
+
+.workflow-action-cancel:hover {
+background: #e5e7eb;
+}
+
+/* Property Panel additions */
+.property-help {
+font-size: 11px;
+color: #6b7280;
+padding: 6px 0;
+line-height: 1.5;
+}
+
+.property-checkbox-label {
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 13px;
+color: #374151;
+cursor: pointer;
+}
+
+.property-checkbox-label input[type="checkbox"] {
+width: 16px;
+height: 16px;
+cursor: pointer;
+}

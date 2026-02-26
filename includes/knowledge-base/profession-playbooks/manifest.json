@@ -1,5 +1,5 @@
 {
-  "count": 204,
+  "count": 207,
   "professions": [
     {
       "slug": "accountant",
@@ -115,6 +115,11 @@
       "slug": "cad_drafter",
       "title": "CAD Drafter",
       "category": "technical"
+    },
+    {
+      "slug": "cardiologist",
+      "title": "Cardiologist",
+      "category": "healthcare"
     },
     {
       "slug": "carpenter",
@@ -382,6 +387,11 @@
       "category": "creative"
     },
     {
+      "slug": "gastroenterologist",
+      "title": "Gastroenterologist",
+      "category": "healthcare"
+    },
+    {
       "slug": "geologist",
       "title": "Geologist",
       "category": "technical"
@@ -507,11 +517,6 @@
       "category": "other"
     },
     {
-      "slug": "igcse_year_9_tutor",
-      "title": "IGCSE Year 9 Tutor",
-      "category": "other"
-    },
-    {
       "slug": "igcse_year_10_tutor",
       "title": "IGCSE Year 10 Tutor",
       "category": "other"
@@ -519,6 +524,11 @@
     {
       "slug": "igcse_year_11_tutor",
       "title": "IGCSE Year 11 Tutor",
+      "category": "other"
+    },
+    {
+      "slug": "igcse_year_9_tutor",
+      "title": "IGCSE Year 9 Tutor",
       "category": "other"
     },
     {
@@ -685,6 +695,11 @@
       "slug": "oceanographer",
       "title": "Oceanographer",
       "category": "other"
+    },
+    {
+      "slug": "oncologist",
+      "title": "Oncologist",
+      "category": "healthcare"
     },
     {
       "slug": "paralegal",

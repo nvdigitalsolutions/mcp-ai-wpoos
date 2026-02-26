@@ -19,21 +19,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Check if Chat Channels toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_chat_channels_toolkit'] );
-$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load if enabled and not in base version.
+// Only load if enabled and not in base version (Pro plugin active overrides base version restriction).
 if ( $is_enabled && ! $is_base ) {
 
-	// Load Chat Channels admin pages.
+	// --- CCTs: Channel Messages and Channel Contacts ---
+	$_cc_messages_cct = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-messages-cct.php';
+	$_cc_contacts_cct = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-channel-contacts-cct.php';
+
+	if ( file_exists( $_cc_messages_cct ) ) {
+		require_once $_cc_messages_cct;
+		WP_MCP_AI_Channel_Messages_CCT::bootstrap();
+	}
+	if ( file_exists( $_cc_contacts_cct ) ) {
+		require_once $_cc_contacts_cct;
+		WP_MCP_AI_Channel_Contacts_CCT::bootstrap();
+	}
+	unset( $_cc_messages_cct, $_cc_contacts_cct );
+
+	// --- REST API: Chat Channels inbox controller ---
+	$_cc_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php';
+	if ( file_exists( $_cc_rest ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_REST_Controller' ) ) {
+		require_once $_cc_rest;
+		new WP_MCP_AI_Chat_Channels_REST_Controller();
+	}
+	unset( $_cc_rest );
+
+	// --- Admin: top-level Chat Channels menu (Dashboard, Inbox, Contacts, Automation) ---
 	if ( is_admin() ) {
-		$admin_page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
-		if ( file_exists( $admin_page_file ) ) {
-			require_once $admin_page_file;
+		$_cc_menu = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-menu.php';
+		if ( file_exists( $_cc_menu ) && ! class_exists( 'WP_MCP_AI_Chat_Channels_Menu' ) ) {
+			require_once $_cc_menu;
+			new WP_MCP_AI_Chat_Channels_Menu();
 		}
+		unset( $_cc_menu );
+
+		// Existing per-toolkit settings page (preserved for backwards compatibility).
+		$_cc_settings_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
+		if ( file_exists( $_cc_settings_page ) ) {
+			require_once $_cc_settings_page;
+		}
+		unset( $_cc_settings_page );
 	}
 
-	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/src/Tools/ChatChannels/.
+	// Register tools via the standard pro tools hook.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_chat_channels_tools' );
 }
 
@@ -65,7 +95,7 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_ad
 /**
  * Load and register Chat Channels Toolkit tools.
  *
- * Registers chat channel tools including WebChat message handling.
+ * Registers chat channel tools including WebChat and Google Chat tools.
  *
  * @since 1.0.0
  */
@@ -100,4 +130,61 @@ function wp_mcp_ai_load_chat_channels_tools() {
 			}
 		}
 	}
+
+	// Google Chat space tools.
+	$google_chat_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$google_chat_tools     = array(
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'          => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+		'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
+		'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message'        => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+		'WP_MCP_AI_Pro_Tool_List_Google_Chat_Space_Members'  => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-list-google-chat-space-members.php',
+		'WP_MCP_AI_Pro_Tool_Add_Google_Chat_Space_Member'    => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-add-google-chat-space-member.php',
+		'WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member' => $google_chat_tools_dir . 'class-wp-mcp-ai-pro-tool-remove-google-chat-space-member.php',
+	);
+
+	foreach ( $google_chat_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
+
+	// Twitter/X DM tools.
+	$twitter_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$twitter_tools     = array(
+		'WP_MCP_AI_Pro_Tool_Send_Twitter_DM'        => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-send-twitter-dm.php',
+		'WP_MCP_AI_Pro_Tool_Get_Twitter_DMs'        => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-get-twitter-dms.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Twitter_Webhook' => $twitter_tools_dir . 'class-wp-mcp-ai-pro-tool-manage-twitter-webhook.php',
+	);
+
+	foreach ( $twitter_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
 }
+

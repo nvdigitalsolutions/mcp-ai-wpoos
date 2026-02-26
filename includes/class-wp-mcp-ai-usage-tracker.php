@@ -547,6 +547,49 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.01,
 			),
+			// Anthropic Claude 4.6 series (February 2026).
+			'claude-sonnet-4-6'                            => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.012,
+			),
+			'claude-opus-4-6'                              => array(
+				'input_cost_per_1k'  => 0.005,
+				'output_cost_per_1k' => 0.025,
+			),
+			// Anthropic Claude 4.5 series (January 2026).
+			'claude-sonnet-4-5'                            => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-sonnet-4-5-20250929'                   => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-haiku-4-5'                             => array(
+				'input_cost_per_1k'  => 0.001,
+				'output_cost_per_1k' => 0.005,
+			),
+			'claude-haiku-4-5-20251001'                    => array(
+				'input_cost_per_1k'  => 0.0008,
+				'output_cost_per_1k' => 0.004,
+			),
+			'claude-opus-4-5'                              => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.075,
+			),
+			'claude-opus-4-1-20250805'                     => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.075,
+			),
+			// Anthropic Claude 3.5 series (legacy).
+			'claude-3-5-sonnet-20241022'                   => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-3-5-haiku-20241022'                    => array(
+				'input_cost_per_1k'  => 0.0008,
+				'output_cost_per_1k' => 0.004,
+			),
 			'claude-3.5-sonnet'                            => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
@@ -555,7 +598,16 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
 			),
+			// Anthropic Claude 3 series (legacy).
+			'claude-3-sonnet'                              => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
 			'claude-3-opus'                                => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.075,
+			),
+			'claude-3-opus-20240229'                       => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.075,
 			),

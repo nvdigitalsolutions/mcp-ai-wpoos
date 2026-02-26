@@ -31,6 +31,11 @@ Third-party integrations:
 Code patterns and best practices:
 - [SOC Refactoring: Streaming](patterns/SOC_REFACTORING_STREAMING.md)
 
+### Technical Analyses
+Architecture and optimization analyses:
+- [Canvas Packaging Analysis](canvas-packaging-analysis.md) - Canvas pre-packaging size impact analysis (304 lines)
+- [Pro Plugin Size Optimization](pro-plugin-size-optimization.md) - Size reduction from 87MB to 33MB (185 lines)
+
 ## 🔗 Related Documentation
 - [Developer Guides](../guides/developer/)
 - [Reference](../reference/)

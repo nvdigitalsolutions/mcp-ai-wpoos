@@ -125,8 +125,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 	/**
 	 * Load Pro admin sections.
 	 *
-	 * Loads the Performance monitoring section and other Pro-specific admin sections.
-	 * Also instantiates the Performance section to register its AJAX handlers.
+	 * Loads the Pro-specific admin section class files.
+	 * The sections are instantiated and registered via the container system
+	 * in settings-dashboard-init.php.
 	 *
 	 * @since 1.0.0
 	 */
@@ -135,12 +136,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 		$performance_section_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 		if ( file_exists( $performance_section_file ) ) {
 			require_once $performance_section_file;
+		}
 
-			// Instantiate the Performance section to register AJAX handlers.
-			// The instance is needed early so AJAX hooks are registered before WordPress processes AJAX requests.
-			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
-				new WP_MCP_AI_Section_Performance();
-			}
+		// Load Pro Integrations section (Mailjet, Google Analytics, Fantasy Sports).
+		$pro_integrations_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php';
+		if ( file_exists( $pro_integrations_file ) ) {
+			require_once $pro_integrations_file;
+		}
+
+		// Load Pro Providers section (Embedded LLM).
+		$pro_providers_file = WP_MCP_AI_PRO_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-pro-providers.php';
+		if ( file_exists( $pro_providers_file ) ) {
+			require_once $pro_providers_file;
+		}
+
+		// Load Pro Packages Settings Page (Node.js package status).
+		$pro_packages_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php';
+		if ( file_exists( $pro_packages_page ) ) {
+			require_once $pro_packages_page;
+		}
+
+		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
+		$langchain_enqueue_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+		if ( file_exists( $langchain_enqueue_file ) ) {
+			require_once $langchain_enqueue_file;
+			// Class instantiates itself at end of file.
 		}
 
 		// Load Pro Workflow Builder (Phase 2.0.0 - Visual workflow builder with ReactFlow).
@@ -457,19 +477,40 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
 		}
 
-	// Load Regulatory Registration Toolkit if enabled (Pro feature).
-	if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
-	}
+		// Load Regulatory Registration Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
+		}
 
-	// Load Chat Channels Integration Toolkit if enabled (Pro feature).
-	if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
-	}
+		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
 
-	// ========================================================================
-	// PHASE 6: FRONTEND COMPONENTS INTEGRATION
-	// ========================================================================
+			// Load WhatsApp Webhook Controller for real-time message handling.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+
+			// Load Messenger Webhook Controller for Meta Messenger Platform events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php';
+
+			// Load Telegram Webhook Controller for Telegram Bot API events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+
+			// Load Slack Event Controller for Slack Events API payloads.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
+
+			// Load Discord Interaction Controller for Discord Interactions Endpoint.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php';
+
+			// Load Teams Webhook Controller for Microsoft Teams outgoing webhooks.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php';
+
+			// Load Google Chat Webhook Controller for Google Chat bot events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+		}
+
+		// ========================================================================
+		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
+		// ========================================================================
 		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
 		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
@@ -835,6 +876,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_List_Media_Templates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-media-templates.php',
 				'WP_MCP_AI_Tool_Apply_Media_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php',
 				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-template.php',
+				'WP_MCP_AI_Tool_Create_Media_Collection'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-collection.php',
 				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php',
 				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php',
 				// Sharp image optimization tool (enhanced with NPM package).
@@ -1083,9 +1125,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add Document Generation Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			$document_generation_tools = array(
+				// Core document generation tools (Pro).
 				'WP_MCP_AI_Tool_Pro_PDF'            => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php',
 				'WP_MCP_AI_Tool_Pro_Word'           => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php',
 				'WP_MCP_AI_Tool_Pro_Excel_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-excel-document.php',
+				// Simplified document generation tools.
+				'WP_MCP_AI_Tool_Generate_PDF'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-pdf.php',
+				'WP_MCP_AI_Tool_Generate_Word'      => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-word.php',
+				'WP_MCP_AI_Tool_Generate_Excel'     => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-excel.php',
+				// PDF manipulation tools.
+				'WP_MCP_AI_Tool_Extract_PDF_Text'   => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php',
+				'WP_MCP_AI_Tool_OCR_PDF_Text'       => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-ocr-pdf-text.php',
+				'WP_MCP_AI_Tool_Pro_Document_OCR'   => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-document-ocr.php',
+				'WP_MCP_AI_Tool_HTML_To_PDF'        => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-html-to-pdf.php',
+				'WP_MCP_AI_Tool_Merge_PDFs'         => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-merge-pdfs.php',
+				'WP_MCP_AI_Tool_Add_Watermark_To_PDF' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-add-watermark-to-pdf.php',
+				'WP_MCP_AI_Tool_Generate_Invoice_PDF' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+				// Excel data tools.
+				'WP_MCP_AI_Tool_Excel_Data_Import'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-import.php',
+				'WP_MCP_AI_Tool_Excel_Data_Export'  => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-excel-data-export.php',
 			);
 			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
 		}

@@ -36,12 +36,6 @@ class WP_MCP_AI_WebWorker_Enqueue {
 	 * @return void
 	 */
 	public function register_scripts() {
-		// Only register if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
-		if ( ! $is_pro_available ) {
-			return;
-		}
-
 		// Worker manager (main thread).
 		wp_register_script(
 			'wp-mcp-ai-llm-worker-manager',
@@ -61,12 +55,6 @@ class WP_MCP_AI_WebWorker_Enqueue {
 	 * @return void
 	 */
 	public function maybe_enqueue_scripts() {
-		// Check if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
-		if ( ! $is_pro_available ) {
-			return;
-		}
-
 		// Check if Web Workers feature flag is enabled.
 		$workers_enabled = get_option( 'wp_mcp_ai_enable_web_workers', false );
 		if ( ! $workers_enabled ) {

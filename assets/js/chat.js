@@ -4,11 +4,13 @@
     const defaultGlobalConfig = {
         restUrl: '',
         uploadEndpoint: '',
+        prepareEndpoint: '',
         filesEndpoint: '',
         toolsEndpoint: '',
         transcriptsEndpoint: '',
         nonce: '',
         historyPerPage: 20,
+        maxHistoryMessages: 8,
         asyncToolTimeout: 300000,
         strings: {},
     };
@@ -6110,6 +6112,69 @@
         });
     }
 
+    /**
+     * Step 2 of the multi-step attachment pipeline: pre-register the uploaded file
+     * with the AI provider's Files API so it is ready before the user sends their
+     * chat message.
+     *
+     * This is a best-effort operation. If the prepare endpoint is not configured or
+     * the request fails, the attachment remains usable — the server will register it
+     * at chat-send time instead.
+     *
+     * On success, the attachment record is augmented with `providerFileId` and
+     * `provider` so that the server can skip the upload step later.
+     *
+     * @param {Object} state  Chat instance state.
+     * @param {Object} record Normalised attachment record (output of normaliseUploadResponse).
+     * @return {Promise<Object>} Resolves to the (possibly augmented) record.
+     */
+    function prepareAttachment(state, record) {
+        if (!state || !record || !state.config || !state.config.prepareEndpoint) {
+            return Promise.resolve(record);
+        }
+
+        const preparingMessage = formatString(getString('processingFile', 'Processing "%s"…'), record.name || '');
+        setStatus(state.container, preparingMessage);
+
+        const usage = record.isImage ? 'image' : 'file';
+        const headers = buildJsonHeaders(state);
+
+        return postJson(
+            state.config.prepareEndpoint,
+            {
+                attachment_id: record.id,
+                assistant_id: (state.config && state.config.assistantId) ? parseInt(state.config.assistantId, 10) || 0 : 0,
+                usage: usage,
+            },
+            headers,
+            { state: state }
+        )
+            .then(function (response) {
+                return response.json().catch(function () { return null; });
+            })
+            .then(function (data) {
+                if (data && data.file_id) {
+                    record.providerFileId = data.file_id;
+                    record.provider = data.provider || '';
+                    if (window.console && console.log) {
+                        console.log('[NV oOS] Attachment pre-registered with provider:', {
+                            attachment_id: record.id,
+                            file_id: data.file_id,
+                            provider: data.provider,
+                        });
+                    }
+                }
+                return record;
+            })
+            .catch(function (error) {
+                // Non-fatal: fall back to server-side registration at chat-send time.
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] Attachment prepare step failed (non-fatal, will retry at send time):', error);
+                }
+                return record;
+            });
+    }
+
     function uploadAttachment(state, file) {
         if (!state || !state.canUploadAttachments) {
             return Promise.resolve();
@@ -6169,6 +6234,9 @@
                 state.pendingAttachments.push(record);
                 state.attachmentLibrary[record.fileId] = record;
                 renderPendingAttachments(state);
+
+                // Step 2: pre-register the file with the AI provider before send.
+                return prepareAttachment(state, record);
             })
             .catch(function (error) {
                 hadError = true;
@@ -11560,6 +11628,82 @@
             return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
+        // If the embedded client hasn't been created yet and neither a system prompt nor a
+        // professional prompt is available in the client-side config (e.g. page was served from
+        // cache), fetch fresh configuration from the server before initialising the client.
+        // New page renders always have systemPrompt pre-combined by PHP; this fetch only fires
+        // for stale cached pages where both values are absent.  We only fetch once per state
+        // instance so that normal (non-cached) page loads are unaffected.
+        if (
+            !state.embeddedClient &&
+            !state.embeddedConfigFetched &&
+            (!state.config.systemPrompt && !state.config.professionalPrompt) &&
+            state.config.embeddedConfigEndpoint &&
+            state.config.assistantId
+        ) {
+            state.embeddedConfigFetched = true; // Prevent repeated fetches on re-entry
+
+            // Use embeddedAssistantId (always a valid integer) for the server fetch.
+            // For profession tests assistantId is "profession_XXX" which fails absint() server-side.
+            // Explicitly check for undefined/null rather than relying on falsy, since 0 is a
+            // distinct "no valid assistant" case and must not fall back to "profession_XXX".
+            var fetchAssistantId = (state.config.embeddedAssistantId !== undefined && state.config.embeddedAssistantId !== null)
+                ? state.config.embeddedAssistantId
+                : state.config.assistantId;
+            var fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(fetchAssistantId);
+            if (state.config.professionId) {
+                fetchUrl += '&profession_id=' + encodeURIComponent(state.config.professionId);
+            }
+            console.log('[NV oOS] System/professional prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
+
+            var applyServerConfig = function(serverConfig) {
+                if (serverConfig && (serverConfig.system_prompt || serverConfig.professional_prompt)) {
+                    // Pre-combine professional_prompt + system_prompt, matching PHP shortcode behaviour
+                    // for embedded providers so the client always has a single populated systemPrompt.
+                    var fetchedSystemPrompt = serverConfig.system_prompt || '';
+                    var fetchedProfessionalPrompt = serverConfig.professional_prompt || '';
+                    var combinedSystemPrompt = '';
+                    if (fetchedProfessionalPrompt && fetchedSystemPrompt) {
+                        combinedSystemPrompt = fetchedProfessionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + fetchedSystemPrompt;
+                    } else {
+                        combinedSystemPrompt = fetchedProfessionalPrompt || fetchedSystemPrompt;
+                    }
+                    if (combinedSystemPrompt && !state.config.systemPrompt) {
+                        console.log('[NV oOS] Fetched and pre-combined system prompt from server:', {
+                            systemPromptLength: combinedSystemPrompt.length,
+                            hasTools: !!(serverConfig.tools && serverConfig.tools.length),
+                            hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
+                        });
+                        state.config.systemPrompt = combinedSystemPrompt;
+                    }
+                }
+                if (serverConfig && serverConfig.tools && serverConfig.tools.length > 0 && (!state.config.tools || !state.config.tools.length)) {
+                    state.config.tools = serverConfig.tools;
+                }
+                if (serverConfig && serverConfig.memory_files && serverConfig.memory_files.length > 0 && (!state.config.memoryFiles || !state.config.memoryFiles.length)) {
+                    state.config.memoryFiles = serverConfig.memory_files;
+                }
+                if (serverConfig && serverConfig.vector_store_id && !state.config.vectorStoreId) {
+                    state.config.vectorStoreId = serverConfig.vector_store_id;
+                }
+                // Re-enter sendChatEmbedded with the updated state — embeddedConfigFetched prevents looping
+                return sendChatEmbedded(state, messages, finalize, submissionContext);
+            };
+
+            return fetch(fetchUrl, { headers: buildJsonHeaders(state) })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(applyServerConfig)
+                .catch(function(err) {
+                    console.warn('[NV oOS] Could not fetch embedded client config from server (proceeding without server-side system prompt):', err.message);
+                    return applyServerConfig(null);
+                });
+        }
+
         // Create embedded client instance for this widget if not already created
         if (!state.embeddedClient) {
             // Generate unique instance ID
@@ -11586,21 +11730,25 @@
                 });
             }
             
-            // Build complete system prompt by combining assistant system prompt with professional prompt
-            // This ensures embedded client receives both the assistant's instructions and professional role
-            var completeSystemPrompt = state.config.systemPrompt || '';
-            if (state.config.professionalPrompt) {
-                if (completeSystemPrompt) {
-                    // Combine: assistant system prompt + professional role prompt
-                    completeSystemPrompt = completeSystemPrompt + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    // Use professional prompt as the system prompt if no assistant prompt exists
-                    completeSystemPrompt = state.config.professionalPrompt;
+            // Build the system prompt that will be passed to the embedded client constructor.
+            // New page renders: PHP pre-combines professional + assistant prompts into systemPrompt.
+            // Old cached pages: may have only professionalPrompt (no systemPrompt) or both.
+            var completeSystemPrompt = '';
+            if (state.config.systemPrompt) {
+                // PHP has already merged any professional-role content into systemPrompt.
+                // Use it directly to avoid duplicating professional content.
+                completeSystemPrompt = state.config.systemPrompt;
+                if (state.config.professionalPrompt) {
+                    console.log('[NV oOS] Using pre-combined system prompt (includes professional role):', {
+                        professionalPromptLength: state.config.professionalPrompt.length,
+                        totalLength: completeSystemPrompt.length
+                    });
                 }
-                console.log('[NV oOS] Combined system prompt with professional prompt:', {
-                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    combinedLength: completeSystemPrompt.length
+            } else if (state.config.professionalPrompt) {
+                // Fallback for stale cached configs from before this change: combine here in JS.
+                completeSystemPrompt = state.config.professionalPrompt;
+                console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
+                    professionalPromptLength: state.config.professionalPrompt.length
                 });
             }
             
@@ -12012,58 +12160,117 @@
                     .map(function(item) { return item.text; })
                     .join('\n');
             }
-            
-            return {
+
+            const formatted = {
                 role: msg.role,
                 content: content
             };
+
+            // Preserve tool-calling fields required by the OpenAI-compatible WebLLM API.
+            // Assistant messages may carry tool_calls; tool messages require tool_call_id and name.
+            if (msg.tool_calls) {
+                formatted.tool_calls = msg.tool_calls;
+            }
+            if (msg.tool_call_id) {
+                formatted.tool_call_id = msg.tool_call_id;
+            }
+            if (msg.name) {
+                formatted.name = msg.name;
+            }
+
+            return formatted;
         });
 
-        // Build complete system prompt combining assistant prompt, professional prompt, and knowledge context
-        // This ensures embedded providers receive the same system instructions as server-side providers
-        if ((state.config.systemPrompt || state.config.professionalPrompt) && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = state.config.systemPrompt || '';
-            
-            // Add professional prompt if provided (for profession-based assistants)
-            if (state.config.professionalPrompt) {
-                if (systemPromptContent) {
-                    systemPromptContent = systemPromptContent + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    systemPromptContent = state.config.professionalPrompt;
-                }
-                console.log('[NV oOS] Added professional prompt to message system prompt:', {
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    professionalPromptPreview: state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt
-                });
-            }
-            
-            // Enhance system prompt with base knowledge context if available
-            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+        // Build the effective system prompt per-request from the current state.config values.
+        // This mirrors the server-side approach in sanitize_options() (class-wp-mcp-ai-rest-validator.php)
+        // where the system prompt is assembled fresh on every request by combining the assistant's
+        // system_prompt (which already includes primary professional roles from get_assistant_configuration)
+        // with any additional professional_prompt provided at request time.
+        //
+        // Order matches the server-side REST handler (class-wp-mcp-ai-rest.php):
+        //   professional_prompt prepended to system_prompt, separated by a divider.
+        //
+        // HTML entities and allowed tags (preserved by wp_kses_post()) are decoded to plain text
+        // using a div element. A textarea was previously used, but textarea.value returns an empty
+        // string when innerHTML contains real HTML tags (<p>, <strong>, etc.) in Chrome and other
+        // browsers, silently dropping the entire system prompt.
+        //
+        // Fall back to the client's stored systemPrompt if state.config has no values (e.g. when the
+        // assistant has no system prompt and no professional roles are configured).
+        let rawSystemPrompt = '';
+        if (state.config.professionalPrompt && state.config.systemPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
+        } else if (state.config.professionalPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt;
+        } else if (state.config.systemPrompt) {
+            rawSystemPrompt = state.config.systemPrompt;
+        }
+
+        let effectiveSystemPrompt;
+        if (rawSystemPrompt) {
+            // Decode HTML entities and strip allowed HTML tags from wp_kses_post() sanitization.
+            // Use a div (not textarea) so that tags like <p> and <strong> are handled correctly;
+            // textarea.value is empty when innerHTML contains HTML tags in Chrome/Firefox/Safari.
+            const decodeEl = document.createElement('div');
+            decodeEl.innerHTML = rawSystemPrompt;
+            effectiveSystemPrompt = (decodeEl.textContent || decodeEl.innerText || rawSystemPrompt) || null;
+        }
+
+        // Fallback: if state.config had no prompt or decoding failed, use the client's stored value.
+        if (!effectiveSystemPrompt) {
+            effectiveSystemPrompt = embeddedClient.systemPrompt;
+        }
+
+        if (rawSystemPrompt && effectiveSystemPrompt) {
+            console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
+                systemPromptLength: effectiveSystemPrompt.length,
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
+                assistantId: state.config.assistantId
+            });
+        }
+        if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = effectiveSystemPrompt;
+
+            // Enhance system prompt with base knowledge context if available.
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers.
             if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
                 var knowledgeContext = '\n\n## Base Knowledge\n\n';
                 knowledgeContext += 'You have access to the following knowledge base files:\n';
                 knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
                 systemPromptContent += knowledgeContext;
-                
+
                 console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
                     memoryFileCount: state.config.memoryFiles.length,
                     vectorStoreId: state.config.vectorStoreId || 'none'
                 });
             }
-            
+
+            // Inject current date/time context so the model knows the current date.
+            // Server-side providers receive this via sanitize_options() in PHP; embedded must add it here.
+            // Format matches PHP: gmdate('l, F j, Y'), gmdate('Y'), gmdate('H:i:s').
+            var now = new Date();
+            var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            var pad2 = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
+            var dateStr = dayNames[now.getUTCDay()] + ', ' + monthNames[now.getUTCMonth()] + ' ' + now.getUTCDate() + ', ' + now.getUTCFullYear();
+            var timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
+            systemPromptContent += '\n\n---\n\n**Current Context Information:**\n- Current Date: ' + dateStr + '\n- Current Year: ' + now.getUTCFullYear() + '\n- Current Time: ' + timeStr;
+
             formattedMessages.unshift({
                 role: 'system',
                 content: systemPromptContent
             });
-            
+
             console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+            console.log('[NV oOS] Prepended system prompt to embedded request:', {
                 systemPromptLength: systemPromptContent.length,
                 systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-                systemPromptFull: systemPromptContent,
-                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
                 hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                hasDateTimeContext: true,
                 assistantId: state.config.assistantId
             });
         }
@@ -12376,7 +12583,17 @@
         const isEmbeddedProvider = state.config.provider === 'embedded';
         
         if (isEmbeddedProvider) {
-            return sendChatEmbedded(state, cleanMessages, finalize, submissionContext);
+            // Apply max history messages limit for the embedded path.
+            // Server-side providers have this enforced in enforce_chat_request_limits() on the server,
+            // but the embedded provider runs client-side and requires the limit applied here to
+            // maintain the agentic workflow without overflowing the local model's context window.
+            const maxHistoryMessages = (state.config && state.config.maxHistoryMessages)
+                || globalConfig.maxHistoryMessages
+                || 8;
+            const embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
+                ? cleanMessages.slice(-maxHistoryMessages)
+                : cleanMessages;
+            return sendChatEmbedded(state, embeddedMessages, finalize, submissionContext);
         }
 
         // Check if streaming is enabled
@@ -17408,6 +17625,16 @@
             const systemStatus = data.system_status || {};
             const total = counts.total || 0;
 
+            // Emit individual job updates through the job event bus
+            // This ensures all jobs are synchronized across the system
+            if (window.wpMcpAiJobBus && data.jobs && Array.isArray(data.jobs)) {
+                data.jobs.forEach(function(job) {
+                    if (job && job.job_id) {
+                        window.wpMcpAiJobBus.handleJobUpdate(job.job_id, job);
+                    }
+                });
+            }
+
             // Hide if no jobs and system status is not critical
             const hasCriticalStatus = systemStatus.async && (systemStatus.async.stuck_jobs > 0 || systemStatus.async.status === 'warning');
             if (total === 0 && !hasCriticalStatus) {
@@ -17489,11 +17716,231 @@
     }
 
     /**
+     * Initialize global job event bus listeners
+     * 
+     * This connects the job notification system to all chat instances' status bars.
+     * Listens to job:started, job:progress, job:completed, and job:failed events
+     * and updates status bars across all active chat instances.
+     */
+    function initializeGlobalJobListeners() {
+        // Only initialize once
+        if (window.wpMcpAiJobListenersInitialized) {
+            return;
+        }
+
+        // Check if job event bus is available
+        if (!window.wpMcpAiJobBus) {
+            return;
+        }
+
+        // Track active jobs by instance ID
+        const activeJobsByInstance = {};
+
+        /**
+         * Find the chat instance associated with a job
+         * 
+         * @param {string} jobId Job identifier
+         * @return {Object|null} Object with {container, config, state} or null
+         */
+        function findInstanceForJob(jobId) {
+            if (!jobId) {
+                return null;
+            }
+
+            // Check each initialized chat instance
+            const containers = document.querySelectorAll('[data-wp-mcp-ai-chat][data-wp-mcp-ai-initialized]');
+            for (let i = 0; i < containers.length; i++) {
+                const container = containers[i];
+                const instanceId = container.getAttribute('id');
+                const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+                
+                if (!config) {
+                    continue;
+                }
+
+                // Check if this instance has an active job with this ID
+                if (activeJobsByInstance[instanceId] && activeJobsByInstance[instanceId][jobId]) {
+                    return {
+                        container: container,
+                        config: config,
+                        instanceId: instanceId
+                    };
+                }
+
+                // Check if any pending async tools match this job ID
+                const state = config.state;
+                if (state && state.pendingAsyncTools && state.pendingAsyncTools[jobId]) {
+                    return {
+                        container: container,
+                        config: config,
+                        instanceId: instanceId,
+                        state: state
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * Register a job with an instance
+         * 
+         * @param {string} instanceId Instance identifier
+         * @param {string} jobId Job identifier
+         */
+        function registerJobWithInstance(instanceId, jobId) {
+            if (!activeJobsByInstance[instanceId]) {
+                activeJobsByInstance[instanceId] = {};
+            }
+            activeJobsByInstance[instanceId][jobId] = true;
+        }
+
+        /**
+         * Unregister a job from an instance
+         * 
+         * @param {string} instanceId Instance identifier
+         * @param {string} jobId Job identifier
+         */
+        function unregisterJobFromInstance(instanceId, jobId) {
+            if (activeJobsByInstance[instanceId]) {
+                delete activeJobsByInstance[instanceId][jobId];
+            }
+        }
+
+        // Listen for job started events
+        window.wpMcpAiJobBus.on('job:started', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Register this job with the instance
+                registerJobWithInstance(instance.instanceId, evt.jobId);
+
+                // Update status bar with job started indicator
+                const message = evt.data && evt.data.message ? evt.data.message : getString('jobStarted', 'Job started…');
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'processing',
+                    showTime: true,
+                    startTime: Date.now()
+                });
+            }
+        });
+
+        // Listen for job progress events
+        window.wpMcpAiJobBus.on('job:progress', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Update status bar with progress
+                let message = getString('jobProgress', 'Job in progress…');
+                
+                if (evt.data) {
+                    if (evt.data.progress_message) {
+                        message = evt.data.progress_message;
+                    } else if (evt.data.message) {
+                        message = evt.data.message;
+                    } else if (typeof evt.data.progress === 'number' && evt.data.progress > 0) {
+                        message = formatString(getString('jobProgressPercent', 'Job in progress… (%s%%)'), String(Math.round(evt.data.progress)));
+                    }
+                }
+
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'tool',
+                    showTime: true
+                });
+            }
+        });
+
+        // Listen for job completed events
+        window.wpMcpAiJobBus.on('job:completed', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Show success indicator briefly
+                const message = evt.data && evt.data.message ? evt.data.message : getString('jobCompleted', 'Job completed successfully');
+                setStatus(instance.container, {
+                    message: message,
+                    type: 'success',
+                    showTime: false
+                });
+
+                // Clear status after 3 seconds
+                setTimeout(function() {
+                    setStatus(instance.container, '');
+                }, 3000);
+
+                // Unregister the job
+                unregisterJobFromInstance(instance.instanceId, evt.jobId);
+
+                // Clean up job from cache after a delay
+                setTimeout(function() {
+                    if (window.wpMcpAiJobBus && window.wpMcpAiJobBus.clearCache) {
+                        window.wpMcpAiJobBus.clearCache(evt.jobId);
+                    }
+                }, 30000); // 30 seconds
+            }
+        });
+
+        // Listen for job failed events
+        window.wpMcpAiJobBus.on('job:failed', function(evt) {
+            if (!evt || !evt.jobId) {
+                return;
+            }
+
+            const instance = findInstanceForJob(evt.jobId);
+            if (instance && instance.container) {
+                // Show error in status bar
+                const errorMsg = evt.data && evt.data.error ? evt.data.error : getString('jobFailed', 'Job failed');
+                setStatus(instance.container, {
+                    message: formatString(getString('jobError', 'Error: %s'), errorMsg),
+                    type: 'processing',
+                    showTime: false
+                });
+
+                // Clear status after 5 seconds
+                setTimeout(function() {
+                    setStatus(instance.container, '');
+                }, 5000);
+
+                // Unregister the job
+                unregisterJobFromInstance(instance.instanceId, evt.jobId);
+
+                // Clean up job from cache after a delay
+                setTimeout(function() {
+                    if (window.wpMcpAiJobBus && window.wpMcpAiJobBus.clearCache) {
+                        window.wpMcpAiJobBus.clearCache(evt.jobId);
+                    }
+                }, 30000); // 30 seconds
+            }
+        });
+
+        // Mark as initialized
+        window.wpMcpAiJobListenersInitialized = true;
+
+        if (window.console && console.log) {
+            console.log('[NV oOS] Global job event listeners initialized');
+        }
+    }
+
+    /**
      * Enhanced init function to include cron status
      */
     function initWithCronStatus() {
         // Call original init
         init();
+
+        // Initialize global job event bus listeners (once)
+        initializeGlobalJobListeners();
 
         // Initialize cron status for all chat containers after a brief delay
         // Use requestIdleCallback to avoid blocking main thread

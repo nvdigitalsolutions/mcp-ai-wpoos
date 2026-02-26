@@ -786,7 +786,15 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	<div class="chart-container">
 		<div class="chart-header">
 			<h2>📊 Weather Data Visualization</h2>
-			<p class="subtitle">Powered by Open-Meteo API</p>
+			<?php
+			// Display attribution only if admin has opted in via settings.
+			$show_attribution = get_option( 'wp_mcp_ai_show_openmeteo_attribution', false );
+			if ( $show_attribution ) :
+				?>
+				<p class="subtitle">Powered by Open-Meteo API</p>
+				<?php
+			endif;
+			?>
 		</div>
 		<canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
 		<div class="chart-footer">

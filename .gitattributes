@@ -1,0 +1,74 @@
+# Set default behavior to auto-detect text vs binary
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.htm text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.ini text eol=lf
+*.lock text eol=lf
+
+# Binary files - mark explicitly to prevent corruption and improve pack efficiency
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+
+# Fonts (binary)
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.z binary
+
+# Archives and packages (binary)
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+*.7z binary
+
+# Documents (binary)
+*.pdf binary
+*.doc binary
+*.docx binary
+*.xls binary
+*.xlsx binary
+*.ppt binary
+*.pptx binary
+
+# Native libraries and executables (binary)
+*.so binary
+*.dylib binary
+*.dll binary
+*.node binary
+*.exe binary
+
+# Source maps - mark as binary to prevent inefficient text processing
+# These are large JSON files not meant for human editing or diff
+*.js.map binary
+*.ts.map binary
+*.css.map binary
+*.mjs.map binary
+
+# Minified files - mark as binary (not human-readable, no meaningful diffs)
+*.min.js binary
+*.min.css binary
+
+# Third-party vendor files - do not normalize line endings.
+# These files are owned by external packages and may use CRLF; attempting
+# to convert them causes spurious "unstaged changes" warnings during git
+# operations (pull --rebase, stash, etc.).
+addons/pro/assets/vendor/** -text

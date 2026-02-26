@@ -1,16 +1,18 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.0  
-**Last Updated:** December 24, 2025
+**Version:** 1.1.2  
+**Last Updated:** February 17, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (December 2025)
+## 🆕 Recent Updates (February 2026)
 
-- **Symfony Process Integration** - Pro addon tools now use Symfony Process for safer external command execution
-- **27 New Settings Exposed** - Federation, mesh networking, TTS, MIME controls, and more accessible in admin UI
-- **Test Team Modal** - New team testing feature for deploying multi-assistant teams
-- **Pro Tool Reorganization** - 6 exec-based tools moved to Pro addon (breaking change for base users)
+- **WordPress.org Compliance** - Removed hardcoded admin menu positions (v1.1.2)
+- **JetEngine CPT/Taxonomy AI Integration** - AI metaboxes and Research & Add pages for all JetEngine CPTs
+- **Package Pre-Bundling** - Critical npm packages pre-bundled in vendor directory (no npm install required)
+- **Product Research Fixes** - Fixed CSS/JS loading and tab system issues
+- **Pro Workflow Builder** - Fixed React initialization and stability issues
+- **OAuth Improvements** - Fixed Google, Yahoo, and Mailjet authentication flows
 
 ---
 
@@ -52,7 +54,7 @@ This quick reference provides fast access to the most common tasks and commands 
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 ```
 
 **For Local/VPS:**
@@ -61,18 +63,19 @@ npm install && composer install --no-dev --classmap-authoritative
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 
 # Option 2: Clone, install, then copy
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --classmap-authoritative
+npm install && composer install --no-dev
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 
 **⚠️ Important:** 
 - Always run `npm install` and `composer install` BEFORE moving/copying files
 - On Cloudways: Clone directly into the plugins directory to avoid errors
+- **Note:** Autoloader optimization is configured by default in composer.json
 - If you get `ENOENT: uv_cwd` or `getcwd() failed` errors: EXIT your shell and start a NEW terminal session, then navigate to the plugin directory and run the install commands
 - Running npm/composer after moving files OR from an orphaned directory will fail
 

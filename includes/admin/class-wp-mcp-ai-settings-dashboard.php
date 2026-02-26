@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
 				'dashicons-format-chat',
-				30
+				null // Let WordPress automatically position the menu
 			);
 
 			// Remove the auto-generated submenu item (has same title as top-level menu).
@@ -979,6 +979,37 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
 						'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
+					)
+				);
+			}
+
+			// Enqueue mesh peer test scripts if on advanced tab with federation_mesh subtab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'advanced' === $_GET['tab'] && isset( $_GET['subtab'] ) && 'federation_mesh' === $_GET['subtab'] ) {
+				$mesh_test_js = $this->get_asset_file( 'assets/js/mesh-peer-test.js' );
+				wp_enqueue_script(
+					'wp-mcp-ai-mesh-peer-test',
+					$mesh_test_js['url'],
+					array( 'jquery' ),
+					$mesh_test_js['version'],
+					true
+				);
+
+				wp_localize_script(
+					'wp-mcp-ai-mesh-peer-test',
+					'wpMcpAiMeshTest',
+					array(
+						'restUrl'           => rest_url(),
+						'nonce'             => wp_create_nonce( 'wp_rest' ),
+						'testing'           => __( 'Testing...', 'mcp-ai-wpoos' ),
+						'successMessage'    => __( 'Connection test successful!', 'mcp-ai-wpoos' ),
+						'errorGeneric'      => __( 'Connection test failed. Please check the URL and API key.', 'mcp-ai-wpoos' ),
+						'errorNoUrl'        => __( 'Please enter a site URL before testing.', 'mcp-ai-wpoos' ),
+						'reachable'         => __( 'Site is reachable', 'mcp-ai-wpoos' ),
+						'federationEnabled' => __( 'Federation enabled', 'mcp-ai-wpoos' ),
+						'authSuccess'       => __( 'Authentication successful', 'mcp-ai-wpoos' ),
+						'authFailed'        => __( 'Authentication failed', 'mcp-ai-wpoos' ),
+						'authSkipped'       => __( 'Authentication not tested (no API key)', 'mcp-ai-wpoos' ),
 					)
 				);
 			}

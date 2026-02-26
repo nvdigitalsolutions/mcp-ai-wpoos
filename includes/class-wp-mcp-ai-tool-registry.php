@@ -258,8 +258,302 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				);
 			}
 
+			// Check if tool is globally enabled.
+			if ( ! $this->is_tool_enabled( $slug ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_tool_disabled',
+					sprintf(
+						/* translators: %s: tool slug */
+						__( 'Tool "%s" is disabled and cannot be executed.', 'mcp-ai-wpoos' ),
+						$slug
+					)
+				);
+			}
+
+			// Attempt provider compensation if there's a mismatch.
+			$compensation_result = $this->compensate_for_provider_mismatch( $slug, $arguments, $context );
+			if ( ! is_wp_error( $compensation_result ) && is_array( $compensation_result ) ) {
+				// Provider compensation succeeded - update slug and arguments.
+				$slug = $compensation_result['slug'];
+				$arguments = $compensation_result['arguments'];
+				$tool = $this->get_tool( $slug );
+				
+				if ( ! $tool ) {
+					return new WP_Error(
+						'wp_mcp_ai_tool_not_found',
+						sprintf(
+							/* translators: %s: compensated tool slug */
+							__( 'Compensated tool "%s" not found.', 'mcp-ai-wpoos' ),
+							$slug
+						)
+					);
+				}
+			}
+
+			// Validate tool execution requirements (model, parameters, dependencies).
+			$validation_result = $this->validate_tool_execution( $slug, $arguments, $context );
+			if ( is_wp_error( $validation_result ) ) {
+				return $validation_result;
+			}
+
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
+		}
+
+		/**
+		 * Compensate for provider mismatch by routing to equivalent provider-specific tool.
+		 *
+		 * When a tool is requested that requires a different provider than the current one,
+		 * this method attempts to route to an equivalent tool for the active provider
+		 * and translates parameters as needed.
+		 *
+		 * @param string $slug Tool slug.
+		 * @param array  $arguments Tool arguments.
+		 * @param array  $context Execution context.
+		 * @return array|WP_Error Array with 'slug' and 'arguments' on success, WP_Error or null if no compensation needed.
+		 */
+		protected function compensate_for_provider_mismatch( $slug, $arguments, $context ) {
+			// Extract current provider from context.
+			$current_provider = '';
+			if ( ! empty( $context['assistant_config']['provider'] ) ) {
+				$current_provider = $context['assistant_config']['provider'];
+			} elseif ( ! empty( $context['model'] ) ) {
+				$parts = explode( ':', $context['model'] );
+				$current_provider = count( $parts ) > 1 ? $parts[0] : '';
+			}
+
+			// If no provider context, can't compensate.
+			if ( empty( $current_provider ) ) {
+				return null;
+			}
+
+			// Get tool's required providers.
+			$tool_rules = $this->get_tool_rules( $slug );
+			if ( empty( $tool_rules['model_requirements']['providers'] ) ) {
+				return null;
+			}
+
+			$required_providers = $tool_rules['model_requirements']['providers'];
+
+			// If current provider is acceptable, no compensation needed.
+			if ( in_array( $current_provider, $required_providers, true ) ) {
+				return null;
+			}
+
+			// Define provider-specific tool mappings.
+			$tool_mapping = $this->get_provider_tool_mapping();
+
+			// Check if this tool has a mapping.
+			if ( ! isset( $tool_mapping[ $slug ] ) ) {
+				return null; // No mapping available, will fall through to validation error.
+			}
+
+			$mapping = $tool_mapping[ $slug ];
+
+			// Check if there's a tool for the current provider.
+			if ( ! isset( $mapping[ $current_provider ] ) ) {
+				return null; // No equivalent tool for this provider.
+			}
+
+			$target_slug = $mapping[ $current_provider ];
+
+			// Check if the target tool exists and is enabled.
+			if ( ! $this->is_tool_registered( $target_slug ) || ! $this->is_tool_enabled( $target_slug ) ) {
+				return null;
+			}
+
+			// Translate parameters between providers.
+			$translated_arguments = $this->translate_tool_parameters( $slug, $target_slug, $arguments, $current_provider );
+
+			// Log the provider compensation for debugging.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'provider_compensation',
+					sprintf( 'Provider compensation: routing "%s" to "%s" for provider "%s"', $slug, $target_slug, $current_provider ),
+					array(
+						'original_tool' => $slug,
+						'target_tool' => $target_slug,
+						'provider' => $current_provider,
+						'original_args' => $arguments,
+						'translated_args' => $translated_arguments,
+					)
+				);
+			}
+
+			return array(
+				'slug' => $target_slug,
+				'arguments' => $translated_arguments,
+			);
+		}
+
+		/**
+		 * Get provider-specific tool mappings.
+		 *
+		 * Defines which tools are equivalent across different providers.
+		 *
+		 * @return array Tool mapping structure.
+		 */
+		protected function get_provider_tool_mapping() {
+			$mapping = array(
+				// Image generation tools.
+				'generate_openai_image' => array(
+					'gemini' => 'generate_gemini_image',
+					'anthropic' => 'generate_openai_image', // Anthropic doesn't have image generation (fallback).
+				),
+				'generate_gemini_image' => array(
+					'openai' => 'generate_openai_image',
+					'anthropic' => 'generate_openai_image', // Use OpenAI as fallback.
+				),
+				// Image editing tools.
+				'edit_openai_image' => array(
+					'gemini' => 'edit_gemini_image',
+				),
+				'edit_gemini_image' => array(
+					'openai' => 'edit_openai_image',
+				),
+			);
+
+			/**
+			 * Filter provider tool mapping.
+			 *
+			 * Allows plugins to add or modify provider-specific tool mappings.
+			 *
+			 * @param array $mapping Tool mapping structure.
+			 */
+			return apply_filters( 'wp_mcp_ai_provider_tool_mapping', $mapping );
+		}
+
+		/**
+		 * Translate tool parameters between providers.
+		 *
+		 * Converts provider-specific parameters to equivalent parameters for the target provider.
+		 *
+		 * @param string $source_slug Source tool slug.
+		 * @param string $target_slug Target tool slug.
+		 * @param array  $arguments Original arguments.
+		 * @param string $target_provider Target provider.
+		 * @return array Translated arguments.
+		 */
+		protected function translate_tool_parameters( $source_slug, $target_slug, $arguments, $target_provider ) {
+			$translated = array();
+
+			// Common parameters that don't need translation.
+			$common_params = array( 'prompt', 'file_name', 'timeout', 'output_format' );
+			foreach ( $common_params as $param ) {
+				if ( isset( $arguments[ $param ] ) ) {
+					$translated[ $param ] = $arguments[ $param ];
+				}
+			}
+
+			// Translate OpenAI -> Gemini image parameters.
+			if ( 'generate_openai_image' === $source_slug && 'generate_gemini_image' === $target_slug ) {
+				// Translate size to aspect_ratio.
+				if ( ! empty( $arguments['size'] ) ) {
+					$translated['aspect_ratio'] = $this->convert_size_to_aspect_ratio( $arguments['size'] );
+				}
+
+				// Quality and style are OpenAI-specific, drop them for Gemini.
+				// Gemini uses model selection for quality control.
+
+				// Default mime_type for Gemini.
+				if ( empty( $translated['mime_type'] ) ) {
+					$translated['mime_type'] = 'image/png';
+				}
+			}
+
+			// Translate Gemini -> OpenAI image parameters.
+			if ( 'generate_gemini_image' === $source_slug && 'generate_openai_image' === $target_slug ) {
+				// Translate aspect_ratio to size.
+				if ( ! empty( $arguments['aspect_ratio'] ) ) {
+					$translated['size'] = $this->convert_aspect_ratio_to_size( $arguments['aspect_ratio'] );
+				}
+
+				// Default quality for OpenAI.
+				if ( empty( $translated['quality'] ) ) {
+					$translated['quality'] = 'standard';
+				}
+			}
+
+			/**
+			 * Filter translated tool parameters.
+			 *
+			 * Allows plugins to customize parameter translation.
+			 *
+			 * @param array  $translated Translated arguments.
+			 * @param string $source_slug Source tool slug.
+			 * @param string $target_slug Target tool slug.
+			 * @param array  $arguments Original arguments.
+			 * @param string $target_provider Target provider.
+			 */
+			return apply_filters( 'wp_mcp_ai_translate_tool_parameters', $translated, $source_slug, $target_slug, $arguments, $target_provider );
+		}
+
+		/**
+		 * Convert OpenAI size to Gemini aspect ratio.
+		 *
+		 * @param string $size OpenAI size (e.g., "1024x1024", "1792x1024").
+		 * @return string Gemini aspect ratio (e.g., "1:1", "16:9").
+		 */
+		protected function convert_size_to_aspect_ratio( $size ) {
+			$size_to_aspect = array(
+				'1024x1024' => '1:1',
+				'1792x1024' => '16:9',
+				'1024x1792' => '9:16',
+				'1536x1024' => '3:2',
+				'1024x1536' => '2:3',
+			);
+
+			if ( isset( $size_to_aspect[ $size ] ) ) {
+				return $size_to_aspect[ $size ];
+			}
+
+			// Try to compute aspect ratio from dimensions.
+			if ( preg_match( '/^(\d+)x(\d+)$/', $size, $matches ) ) {
+				$width = (int) $matches[1];
+				$height = (int) $matches[2];
+
+				if ( $width === $height ) {
+					return '1:1';
+				} elseif ( $width > $height ) {
+					$ratio = round( $width / $height, 1 );
+					if ( abs( $ratio - 1.78 ) < 0.1 ) {
+						return '16:9';
+					} elseif ( abs( $ratio - 1.5 ) < 0.1 ) {
+						return '3:2';
+					}
+					return '16:9'; // Default to 16:9 for landscape.
+				} else {
+					return '9:16'; // Default to 9:16 for portrait.
+				}
+			}
+
+			// Default fallback.
+			return '4:3';
+		}
+
+		/**
+		 * Convert Gemini aspect ratio to OpenAI size.
+		 *
+		 * @param string $aspect_ratio Gemini aspect ratio (e.g., "1:1", "16:9").
+		 * @return string OpenAI size (e.g., "1024x1024", "1792x1024").
+		 */
+		protected function convert_aspect_ratio_to_size( $aspect_ratio ) {
+			$aspect_to_size = array(
+				'1:1' => '1024x1024',
+				'16:9' => '1792x1024',
+				'9:16' => '1024x1792',
+				'4:3' => '1024x768',
+				'3:4' => '768x1024',
+				'3:2' => '1536x1024',
+				'2:3' => '1024x1536',
+			);
+
+			if ( isset( $aspect_to_size[ $aspect_ratio ] ) ) {
+				return $aspect_to_size[ $aspect_ratio ];
+			}
+
+			// Default fallback.
+			return '1024x1024';
 		}
 
 				/**
@@ -740,17 +1034,38 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @return true|WP_Error
 		 */
 		protected function validate_model_requirements( $requirements, $arguments, $context ) {
+			// Extract model from arguments, context, or assistant_config.
+			$model = $arguments['model'] ?? $context['model'] ?? '';
+			$from_assistant_config = false;
+			
+			// If model not directly available, check assistant_config.
+			if ( empty( $model ) && ! empty( $context['assistant_config'] ) ) {
+				$assistant_config = $context['assistant_config'];
+				
+				// Extract provider and model from assistant_config.
+				$provider = $assistant_config['provider'] ?? '';
+				$model_name = $assistant_config['model'] ?? '';
+				
+				// Construct model in format "provider:model" if both are present.
+				if ( ! empty( $provider ) && ! empty( $model_name ) ) {
+					$model = $provider . ':' . $model_name;
+					$from_assistant_config = true;
+				}
+			}
+
 			// Check if model is specified when required.
-			if ( ! empty( $requirements['required'] ) && empty( $arguments['model'] ) && empty( $context['model'] ) ) {
+			if ( ! empty( $requirements['required'] ) && empty( $model ) ) {
 				return new WP_Error( 'model_required', 'This tool requires a model to be specified' );
 			}
 
-			$model = $arguments['model'] ?? $context['model'] ?? '';
-
 			// Validate allowed providers.
 			if ( ! empty( $requirements['providers'] ) && ! empty( $model ) ) {
-				$provider = explode( ':', $model )[0] ?? '';
-				if ( ! in_array( $provider, $requirements['providers'], true ) ) {
+				// Extract provider from model string (format: "provider:model" or just "model").
+				$parts = explode( ':', $model );
+				$provider = count( $parts ) > 1 ? $parts[0] : '';
+				
+				// If provider is explicitly specified, validate it.
+				if ( ! empty( $provider ) && ! in_array( $provider, $requirements['providers'], true ) ) {
 					return new WP_Error(
 						'invalid_provider',
 						sprintf( 'Model provider must be one of: %s', implode( ', ', $requirements['providers'] ) )
@@ -758,9 +1073,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				}
 			}
 
-			// Validate specific models.
-			if ( ! empty( $requirements['models'] ) && ! empty( $model ) ) {
-				if ( ! in_array( $model, $requirements['models'], true ) ) {
+			// Validate specific models (only if model is explicitly provided, not from assistant_config).
+			// Models from assistant_config are already validated by provider check above.
+			if ( ! empty( $requirements['models'] ) && ! empty( $model ) && ! $from_assistant_config ) {
+				// Extract just the model name without provider prefix.
+				$model_name = strpos( $model, ':' ) !== false ? explode( ':', $model )[1] : $model;
+				
+				if ( ! in_array( $model_name, $requirements['models'], true ) ) {
 					return new WP_Error(
 						'invalid_model',
 						sprintf( 'Model must be one of: %s', implode( ', ', $requirements['models'] ) )
@@ -993,6 +1312,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Retrieve_Agent_Memory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php',
 				'WP_MCP_AI_Tool_Prioritize_Context'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-prioritize-context.php',
 				'WP_MCP_AI_Tool_Semantic_Context_Search'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-context-search.php',
+				'WP_MCP_AI_Tool_Manage_Context_Lifecycle'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-context-lifecycle.php',
+				'WP_MCP_AI_Tool_Batch_Manage_Memory'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-batch-manage-memory.php',
+				'WP_MCP_AI_Tool_Memory_Audit_Trail'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-memory-audit-trail.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).

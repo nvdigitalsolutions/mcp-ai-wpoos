@@ -174,6 +174,9 @@ const dependencies = [
 		files: [
 			{ src: 'package.json', dest: 'sharp/package.json' },
 		],
+		dependencies: ['detect-libc', 'color', 'semver'], // Sharp's required dependencies
+		// Note: Platform binaries (@img/sharp-linux-x64) are pre-packaged in assets/vendor/sharp/node_modules/@img/
+		// and committed to git, so they don't need to be copied during build.
 	},
 	{
 		name: 'prettier',
@@ -508,10 +511,17 @@ const dependencies = [
 	},
 	{
 		name: 'qrcode',
+		// Copy the Node.js lib/ so node-services/qrcode-service.js can load it
+		// via an explicit path without requiring npm install on the server.
+		dirs: [
+			{ src: 'lib', dest: 'qrcode/lib' },
+		],
 		files: [
-			{ src: 'build/qrcode.min.js', dest: 'qrcode/qrcode.min.js' },
 			{ src: 'package.json', dest: 'qrcode/package.json' },
 		],
+		// Runtime deps needed by qrcode/lib at server side (pngjs for PNG/data-url,
+		// dijkstrajs for the QR matrix algorithm).
+		dependencies: [ 'dijkstrajs', 'pngjs' ],
 	},
 	{
 		name: 'turndown',
@@ -529,6 +539,57 @@ const dependencies = [
 		],
 		files: [
 			{ src: 'package.json', dest: 'cheerio/package.json' },
+		],
+	},
+	{
+		name: 'pdf-parse',
+		dirs: [
+			{ src: 'lib', dest: 'pdf-parse/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdf-parse/package.json' },
+			{ src: 'index.js', dest: 'pdf-parse/index.js' },
+		],
+	},
+	{
+		name: 'node-ensure',
+		files: [
+			{ src: 'index.js', dest: 'node-ensure/index.js' },
+			{ src: 'package.json', dest: 'node-ensure/package.json' },
+		],
+	},
+	// ========================================================================
+	// OCR PACKAGES (Document Generation Toolkit - Phase 3)
+	// ========================================================================
+	{
+		name: 'tesseract.js',
+		dirs: [
+			{ src: 'src', dest: 'tesseract.js/src' },
+		],
+		files: [
+			{ src: 'dist/tesseract.min.js', dest: 'tesseract.js/tesseract.min.js' },
+			{ src: 'package.json', dest: 'tesseract.js/package.json' },
+		],
+	},
+	{
+		name: 'pdfjs-dist',
+		dirs: [
+			{ src: 'legacy/build', dest: 'pdfjs-dist/legacy/build' },
+			{ src: 'legacy/web', dest: 'pdfjs-dist/legacy/web' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'pdfjs-dist/package.json' },
+		],
+	},
+	{
+		name: 'canvas',
+		dirs: [
+			{ src: 'lib', dest: 'canvas/lib' },
+			{ src: 'build', dest: 'canvas/build' },
+		],
+		files: [
+			{ src: 'browser.js', dest: 'canvas/browser.js' },
+			{ src: 'package.json', dest: 'canvas/package.json' },
 		],
 	},
 ];
@@ -613,9 +674,26 @@ dependencies.forEach(dep => {
 		});
 	}
 	
+	// Copy package dependencies (e.g., Sharp requires detect-libc, color, semver)
+	if (dep.dependencies && Array.isArray(dep.dependencies)) {
+		dep.dependencies.forEach(subDepName => {
+			const subDepPath = path.join(proPath, 'node_modules', subDepName);
+			const subDepDestPath = path.join(vendorPath, dep.name, 'node_modules', subDepName);
+			
+			if (fs.existsSync(subDepPath)) {
+				copyDir(subDepPath, subDepDestPath);
+				const size = getSize(subDepDestPath);
+				depSize += size;
+			} else {
+				console.log(`${colors.yellow}  ⚠️  ${subDepName} (dependency of ${dep.name}) not found${colors.reset}`);
+			}
+		});
+	}
+	
 	if (depSize > 0) {
 		const cdnLabel = dep.cdnPackage ? ' (offline fallback)' : '';
-		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${colors.reset} → ${formatSize(depSize)}`);
+		const depsLabel = dep.dependencies ? ` +${dep.dependencies.length} deps` : '';
+		console.log(`${colors.green}✅ ${dep.name}${cdnLabel}${depsLabel}${colors.reset} → ${formatSize(depSize)}`);
 		totalCopied++;
 		totalSize += depSize;
 	}
@@ -630,4 +708,72 @@ if (skippedCdn > 0) {
 	console.log(`${colors.blue}💡 CDN packages will load from jsDelivr with automatic fallback${colors.reset}`);
 	console.log(`${colors.blue}💡 To include CDN packages: WP_MCP_AI_BUILD_OFFLINE=true npm run build${colors.reset}`);
 }
+
+console.log(`\n${colors.blue}ℹ️  Sharp Platform Binaries:${colors.reset}`);
+console.log(`${colors.blue}   Linux x64 binaries are pre-packaged in assets/vendor/sharp/node_modules/@img/${colors.reset}`);
+console.log(`${colors.blue}   They are committed to git and don't need to be copied during build.${colors.reset}`);
+console.log(`${colors.blue}   Other platforms: Users run 'npm install sharp --include=optional'${colors.reset}`);
+
+// ============================================================================
+// POST-COPY CLEANUP: Remove unnecessary files to reduce plugin size
+// ============================================================================
+console.log(`\n${colors.blue}🧹 Cleaning up unnecessary files...${colors.reset}\n`);
+
+let cleanupSaved = 0;
+
+// 1. Remove canvas native binaries (~181MB uncompressed, ~50MB compressed)
+//    Canvas requires system-level installation, bundling binaries doesn't work
+//    We keep the lib files so the cloned repo has the JavaScript code, but users
+//    need to run `npm install canvas` to compile native binaries for their platform
+const canvasBuildPath = path.join(vendorPath, 'canvas', 'build');
+if (fs.existsSync(canvasBuildPath)) {
+	const canvasSize = getSize(canvasBuildPath);
+	fs.rmSync(canvasBuildPath, { recursive: true, force: true });
+	cleanupSaved += canvasSize;
+	console.log(`${colors.green}✓ Removed canvas native binaries${colors.reset} → ${formatSize(canvasSize)} saved`);
+	console.log(`  ${colors.yellow}Note: Canvas lib files preserved; run 'npm install canvas' for PDF OCR${colors.reset}`);
+}
+
+// 2. Remove old pdf.js versions from pdf-parse (keep only v2.0.550)
+//    Old versions: v1.9.426, v1.10.88, v1.10.100 (~18MB total)
+const pdfParseLibPath = path.join(vendorPath, 'pdf-parse', 'lib', 'pdf.js');
+if (fs.existsSync(pdfParseLibPath)) {
+	const oldVersions = ['v1.9.426', 'v1.10.88', 'v1.10.100'];
+	oldVersions.forEach(version => {
+		const versionPath = path.join(pdfParseLibPath, version);
+		if (fs.existsSync(versionPath)) {
+			const versionSize = getSize(versionPath);
+			fs.rmSync(versionPath, { recursive: true, force: true });
+			cleanupSaved += versionSize;
+			console.log(`${colors.green}✓ Removed pdf-parse ${version}${colors.reset} → ${formatSize(versionSize)} saved`);
+		}
+	});
+}
+
+// 3. Remove source maps from pdfjs-dist (~8MB)
+const pdfjsDistPath = path.join(vendorPath, 'pdfjs-dist');
+if (fs.existsSync(pdfjsDistPath)) {
+	let mapSize = 0;
+	const removeMapFiles = (dir) => {
+		if (!fs.existsSync(dir)) return;
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		entries.forEach(entry => {
+			const fullPath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				removeMapFiles(fullPath);
+			} else if (entry.name.endsWith('.map')) {
+				mapSize += getSize(fullPath);
+				fs.unlinkSync(fullPath);
+			}
+		});
+	};
+	removeMapFiles(pdfjsDistPath);
+	if (mapSize > 0) {
+		cleanupSaved += mapSize;
+		console.log(`${colors.green}✓ Removed pdfjs-dist source maps${colors.reset} → ${formatSize(mapSize)} saved`);
+	}
+}
+
+console.log(`\n${colors.green}✅ Cleanup complete: ${formatSize(cleanupSaved)} total saved${colors.reset}\n`);
+
 console.log(`${colors.blue}📦 Vendor directory: ${path.relative(process.cwd(), vendorPath)}${colors.reset}`);

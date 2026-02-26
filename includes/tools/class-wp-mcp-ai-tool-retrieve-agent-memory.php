@@ -163,8 +163,9 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Tool results.
 	 */
 	private function retrieve_specific_context( $agent_id, $context_id, $include_expired ) {
-		$transient_key  = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
-		$context_record = get_transient( $transient_key );
+		// Use enhanced retrieval with compression.
+		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$context_record  = $context_manager->retrieve_context_compressed( $agent_id, $context_id, true );
 
 		if ( ! $context_record ) {
 			return array(
@@ -185,10 +186,17 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
+		// Calculate enhanced score.
+		$enhanced_score = $context_manager->calculate_enhanced_score( $context_record );
+
+		$result = $this->format_context_result( $context_record );
+		$result['enhanced_score'] = round( $enhanced_score, 3 );
+		$result['access_count'] = isset( $context_record['access_count'] ) ? $context_record['access_count'] : 0;
+
 		return array(
 			'success'  => true,
 			'message'  => __( 'Context retrieved successfully.', 'mcp-ai-wpoos' ),
-			'contexts' => array( $this->format_context_result( $context_record ) ),
+			'contexts' => array( $result ),
 			'count'    => 1,
 		);
 	}

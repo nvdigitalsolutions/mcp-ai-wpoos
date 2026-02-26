@@ -21,7 +21,7 @@ const nodeScriptOptions = {
 	platform: 'node',
 	target: 'node14', // WordPress typically runs on Node 14+
 	format: 'cjs', // CommonJS format for Node.js
-	external: ['fs', 'path'], // Don't bundle Node.js built-ins
+	external: ['fs', 'path', 'pdfkit', 'cheerio', 'docx', 'exceljs'], // Don't bundle Node.js built-ins and vendor packages
 	minify: false, // Keep readable for debugging
 	sourcemap: true,
 	logLevel: 'info',
@@ -57,20 +57,22 @@ const builds = [
 		outfile: 'addons/pro/bin/generate-excel.bundle.js',
 		...nodeScriptOptions,
 	},
-	// Orchestration bundle (opossum + p-queue)
+	// Orchestration and research bundles are pre-built and committed
+	// Uncomment to rebuild (requires node_modules with p-queue, cheerio, turndown)
+	/*
 	{
 		entryPoints: ['addons/pro/assets/js/orchestration-bundle.js'],
 		outfile: 'addons/pro/assets/js/orchestration-bundle.min.js',
 		...browserBundleOptions,
 		globalName: 'WpMcpAiOrchestrationBundle',
 	},
-	// Research bundle (cheerio + turndown)
 	{
 		entryPoints: ['addons/pro/assets/js/research-bundle.js'],
 		outfile: 'addons/pro/assets/js/research-bundle.min.js',
 		...browserBundleOptions,
 		globalName: 'WpMcpAiResearchBundle',
 	},
+	*/
 ];
 
 /**

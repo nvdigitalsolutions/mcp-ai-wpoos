@@ -61,12 +61,16 @@ class GenerateOpenAIImageArguments {
 	/**
 	 * Image quality setting.
 	 *
+	 * Different models support different quality values:
+	 * - DALL-E 2/3: 'standard', 'hd'
+	 * - gpt-image-1/1.5: 'low', 'medium', 'high', 'auto'
+	 *
 	 * @var string|null
 	 */
 	#[Assert\Type( type: 'string', message: 'Quality must be a string.' )]
 	#[Assert\Choice(
 		choices: array( 'low', 'medium', 'high', 'auto', 'standard', 'hd' ),
-		message: 'Quality must be one of: {{ choices }}.'
+		message: 'Quality must be one of: {{ choices }}. Note: DALL-E models only support "standard" and "hd", while gpt-image models support "low", "medium", "high", and "auto".'
 	)]
 	public $quality = null;
 

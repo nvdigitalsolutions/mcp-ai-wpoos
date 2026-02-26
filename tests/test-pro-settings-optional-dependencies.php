@@ -176,7 +176,7 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 	}
 
 	/**
-	 * Test that pdf-lib and puppeteer-core packages are detected correctly.
+	 * Test that pdf-lib, puppeteer-core, and ffmpeg-static packages are detected correctly.
 	 *
 	 * These packages should be detected in the vendor directory if it exists.
 	 */
@@ -200,6 +200,13 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 			"check_package_installed('puppeteer-core') should return boolean"
 		);
 
+		// Test ffmpeg-static.
+		$ffmpeg_result = $method->invoke( null, 'ffmpeg-static' );
+		$this->assertIsBool(
+			$ffmpeg_result,
+			"check_package_installed('ffmpeg-static') should return boolean"
+		);
+
 		// If Pro addon is defined and vendor files exist, packages should be detected.
 		if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 			$pdf_lib_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/pdf-lib/cjs/index.js';
@@ -215,6 +222,14 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 				$this->assertTrue(
 					$puppeteer_result,
 					'puppeteer-core should be detected when vendor file exists'
+				);
+			}
+
+			$ffmpeg_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/ffmpeg-static/index.js';
+			if ( file_exists( $ffmpeg_path ) ) {
+				$this->assertTrue(
+					$ffmpeg_result,
+					'ffmpeg-static should be detected when vendor file exists'
 				);
 			}
 		}

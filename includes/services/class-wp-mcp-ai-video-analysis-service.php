@@ -244,6 +244,8 @@ class WP_MCP_AI_Video_Analysis_Service {
 	 * @return array|WP_Error Analysis result.
 	 */
 	protected function analyze_with_openai( $video_url, $attachment_id, $prompt, $model = '', $frame_count = 10 ) {
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
+
 		// Get file information.
 		$file_info = $this->get_file_info( $video_url, $attachment_id );
 		if ( is_wp_error( $file_info ) ) {
@@ -254,6 +256,29 @@ class WP_MCP_AI_Video_Analysis_Service {
 		$temp_file = $file_info['temp_file'];
 
 		// Initialize frame extractor service.
+		if ( ! class_exists( 'WP_MCP_AI_Video_Frame_Extractor_Service' ) ) {
+			$frame_extractor_path = defined( 'WP_MCP_AI_PRO_PATH' )
+				? WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-video-frame-extractor-service.php'
+				: WP_MCP_AI_PATH . 'addons/pro/includes/services/class-wp-mcp-ai-video-frame-extractor-service.php';
+
+			if ( file_exists( $frame_extractor_path ) ) {
+				require_once $frame_extractor_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Video_Frame_Extractor_Service' ) ) {
+			if ( $temp_file && file_exists( $file_path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				unlink( $file_path );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_frame_extractor_unavailable',
+				__( 'Video frame extraction service is not available. Please ensure the pro addon is installed for OpenAI video analysis, or use Gemini which supports direct video analysis.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		$frame_extractor = new WP_MCP_AI_Video_Frame_Extractor_Service();
 
 		// Check if FFmpeg is available.
@@ -336,7 +361,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		}
 
 		// Send request to OpenAI.
-		$response = $openai_client->chat_completion(
+		$response = $openai_client->create_chat_completion(
 			$messages,
 			array(
 				'model'       => $model,

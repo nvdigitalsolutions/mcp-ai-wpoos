@@ -83,9 +83,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
+					'gpt-4.1'     => 'GPT-4.1 (Recommended)',
+					'gpt-4.5'     => 'GPT-4.5 (Creative)',
 					'gpt-4o'      => 'GPT-4o',
 					'gpt-4o-mini' => 'GPT-4o Mini',
-					'gpt-4-turbo' => 'GPT-4 Turbo',
 				);
 			}
 
@@ -98,11 +99,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-sonnet-4-5'          => 'Claude Sonnet 4.5 (Recommended)',
+					'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-opus-4-6'            => 'Claude Opus 4.6 (Flagship)',
 					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
-					'claude-opus-4-5'            => 'Claude Opus 4.5 (Flagship)',
 					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Legacy)',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku (Legacy)',
 				);
 			}
 
@@ -115,8 +115,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
-					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
+					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Recommended)',
+					'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
+					'gemini-2.0-flash' => 'Gemini 2.0 Flash',
 				);
 			}
 
@@ -129,22 +130,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $cloudflare_models ) ) {
 				$cloudflare_models = array(
-					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct (Recommended)',
-					'@cf/meta/llama-3.3-70b-instruct-fp8-fast' => 'Llama 3.3 70B Instruct FP8 Fast',
+					'@cf/meta/llama-4-scout-17b-16e-instruct'    => 'Llama 4 Scout 17B (Recommended)',
+					'@cf/meta/llama-3.3-70b-instruct-fp8-fast'   => 'Llama 3.3 70B Instruct FP8 Fast',
+					'@cf/meta/llama-3.2-3b-instruct'             => 'Llama 3.2 3B Instruct',
 				);
 			}
-
-			// Get available embedded models (WebLLM client-side models).
-			// All available models are listed. Models marked with * support function calling.
-			$embedded_models = array(
-				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
-				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
-				'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
-				'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
-				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
-				'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
-				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
-			);
 
 			// Get provider list dynamically.
 			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
@@ -421,16 +411,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'anthropic_model'                    => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Claude model to use for Anthropic requests. Claude Sonnet 4.6 offers the best balance of intelligence and speed. Claude Haiku 4.5 is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
 					'options'     => $anthropic_models,
-					'default'     => 'claude-3-5-sonnet-20241022',
+					'default'     => 'claude-sonnet-4-6',
 				),
 				'anthropic_vision_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Anthropic Vision Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 3+ models support vision capabilities. Claude 3.5 Sonnet and Opus offer the best vision performance.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 4.x models support vision capabilities. Claude Sonnet 4.6 and Opus 4.6 offer the best vision performance.', 'mcp-ai-wpoos' ),
 					'options'     => $anthropic_models,
-					'default'     => 'claude-3-5-sonnet-20241022',
+					'default'     => 'claude-sonnet-4-6',
 				),
 				'anthropic_max_image_tokens'         => array(
 					'type'        => 'text',
@@ -722,29 +712,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => '',
 				),
 
-				// Embedded LLM Settings (Pro version only - auto-enabled when Pro is present).
-				'enable_embedded'                    => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable client-side embedded language models (Pro - Auto-enabled)', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache. This feature is automatically enabled when the Pro plugin is present.', 'mcp-ai-wpoos' ),
-					'default'        => true,
-					'disabled'       => true, // Read-only since it's auto-enabled with Pro.
-				) : null,
-				'embedded_model'                     => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
-					'type'        => 'select',
-					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Select a model for client-side inference. Models are downloaded on-demand to the user\'s browser cache when first used. Models marked with * support tool/function calling. Recommended: Hermes 2 Pro for best function calling accuracy.', 'mcp-ai-wpoos' ),
-					'options'     => $embedded_models,
-					'default'     => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
-				) : null,
-				'embedded_model_management'          => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
-					'type'        => 'custom',
-					'label'       => __( 'Available Models', 'mcp-ai-wpoos' ),
-					'description' => __( 'Models available for client-side inference. Models are automatically downloaded to the user\'s browser cache when first used. No server-side storage required.', 'mcp-ai-wpoos' ),
-					'callback'    => array( $this, 'render_embedded_model_management' ),
-				) : null,
-
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
 					'type'           => 'checkbox',
@@ -1009,12 +976,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
-				'embedded'             => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
-					'id'     => 'embedded',
-					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-smartphone',
-					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
-				) : null,
 				'huggingface'          => array(
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
@@ -1040,6 +1001,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'fields' => array( 'google_maps_api_key' ),
 				),
 			);
+
+			// Merge Pro provider subtabs if Pro addon is active.
+			// This allows the Embedded LLM subtab to appear alongside other providers.
+			// Note: Pro Providers section is NOT registered in Settings Registry (to prevent duplicate rendering),
+			// so we must get it from the container instead.
+			if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) && function_exists( 'wp_mcp_ai_container' ) ) {
+				$container             = wp_mcp_ai_container();
+				$pro_providers_section = $container->get( 'section.pro_providers' );
+				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_subtab_groups' ) ) {
+					// Get Pro provider subtabs using reflection to call protected method.
+					$reflection = new ReflectionClass( $pro_providers_section );
+					if ( $reflection->hasMethod( 'get_subtab_groups' ) ) {
+						$method = $reflection->getMethod( 'get_subtab_groups' );
+						$method->setAccessible( true );
+						$pro_groups = $method->invoke( $pro_providers_section );
+						if ( is_array( $pro_groups ) ) {
+							// Merge Pro subtabs into the main groups array.
+							$groups = array_merge( $groups, $pro_groups );
+						}
+					}
+				}
+			}
 
 			// Filter out null values (e.g., embedded provider in base version).
 			return array_filter( $groups );
@@ -1150,6 +1133,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			$active_group = $subtab_groups[ $active_subtab ];
+
+			// If this is the 'embedded' subtab, delegate to Pro Providers section.
+			// Note: Pro Providers section is NOT registered in Settings Registry (to prevent duplicate rendering),
+			// so we must get it from the container instead.
+			if ( 'embedded' === $active_subtab && class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) && function_exists( 'wp_mcp_ai_container' ) ) {
+				$container             = wp_mcp_ai_container();
+				$pro_providers_section = $container->get( 'section.pro_providers' );
+				if ( $pro_providers_section && method_exists( $pro_providers_section, 'get_fields' ) ) {
+					// Get Pro provider fields using reflection to call protected method.
+					$reflection = new ReflectionClass( $pro_providers_section );
+					if ( $reflection->hasMethod( 'get_fields' ) ) {
+						$method = $reflection->getMethod( 'get_fields' );
+						$method->setAccessible( true );
+						$pro_fields = $method->invoke( $pro_providers_section );
+						
+						// Render Pro provider fields for the embedded subtab.
+						foreach ( $active_group['fields'] as $key ) {
+							if ( isset( $pro_fields[ $key ] ) ) {
+								// Use Pro section's render_field method if available, otherwise use our own.
+								if ( method_exists( $pro_providers_section, 'render_field' ) ) {
+									$render_method = $reflection->getMethod( 'render_field' );
+									$render_method->setAccessible( true );
+									$render_method->invoke( $pro_providers_section, $key, $pro_fields[ $key ] );
+								} else {
+									$this->render_field( $key, $pro_fields[ $key ] );
+								}
+							}
+						}
+						return;
+					}
+				}
+			}
 
 			// Render fields for the active sub-tab.
 			if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
@@ -1358,21 +1373,5 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			return $input;
 		}
 
-		/**
-		 * Render embedded model management custom field.
-		 *
-		 * @param array $field_data Field configuration data.
-		 * @return void
-		 */
-		public function render_embedded_model_management( $field_data ) {
-			?>
-<div class="notice notice-info inline">
-<p>
-<strong><?php esc_html_e( 'Client-Side Models (Pro Feature)', 'mcp-ai-wpoos' ); ?></strong><br>
-			<?php esc_html_e( 'Models run in the user browser using WebGPU/WebAssembly. See Pro Settings page for model list and NPM dependencies.', 'mcp-ai-wpoos' ); ?>
-</p>
-</div>
-			<?php
-		}
 	}
 }
