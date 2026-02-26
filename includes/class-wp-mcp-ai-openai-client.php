@@ -2990,10 +2990,46 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! empty( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+
+				// Allow running multiple tool calls concurrently (Chat Completions API only).
+				if ( ! $should_use_responses_api && isset( $options['parallel_tool_calls'] ) ) {
+					$payload['parallel_tool_calls'] = (bool) $options['parallel_tool_calls'];
+				}
 			}
 
 			if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
+			}
+
+			// Reasoning model support (o1, o3, o4, o-mini variants, etc.).
+			// These models use reasoning_effort instead of temperature and may require
+			// the Responses API 'reasoning' object.
+			if ( ! empty( $options['reasoning_effort'] ) ) {
+				$effort = sanitize_text_field( $options['reasoning_effort'] );
+				if ( in_array( $effort, array( 'low', 'medium', 'high' ), true ) ) {
+					if ( $should_use_responses_api ) {
+						// Responses API uses a 'reasoning' object with 'effort'.
+						$payload['reasoning'] = array( 'effort' => $effort );
+					} else {
+						// Chat Completions API uses top-level 'reasoning_effort'.
+						$payload['reasoning_effort'] = $effort;
+					}
+					// Reasoning models do not accept temperature — remove it.
+					unset( $payload['temperature'] );
+				}
+			}
+
+			// Seed for deterministic/reproducible outputs.
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = (int) $options['seed'];
+			}
+
+			// Service tier controls cost/latency: 'auto', 'default', 'flex', or 'priority'.
+			if ( ! empty( $options['service_tier'] ) ) {
+				$tier = sanitize_text_field( $options['service_tier'] );
+				if ( in_array( $tier, array( 'auto', 'default', 'flex', 'priority', 'scale' ), true ) ) {
+					$payload['service_tier'] = $tier;
+				}
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
@@ -3671,6 +3707,20 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public static function is_codex_model( $model ) {
 			return (bool) preg_match( '/\bcodex\b/', $model );
+		}
+
+		/**
+		 * Determine whether a model identifier is an OpenAI reasoning (o-series) model.
+		 *
+		 * Reasoning models (o1, o3, o4, o-mini variants) use reasoning_effort instead
+		 * of temperature and have different parameter requirements from standard GPT models.
+		 *
+		 * @param string $model Model identifier.
+		 * @return bool
+		 */
+		public static function is_reasoning_model( $model ) {
+			// Matches o1, o3, o4, o1-mini, o3-mini, o4-mini, and dated variants like o3-2025-04-16.
+			return (bool) preg_match( '/^o[1-9](-|$)/i', $model );
 		}
 
 		/**
