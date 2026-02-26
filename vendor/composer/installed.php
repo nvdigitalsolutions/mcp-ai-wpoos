@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-google-chat-connection',
-        'version' => 'dev-copilot/review-google-chat-connection',
-        'reference' => '96a64adf82caac8ecc8fda73e6ba21ed300a6086',
+        'pretty_version' => 'dev-copilot/fix-analyze-video-tool-error',
+        'version' => 'dev-copilot/fix-analyze-video-tool-error',
+        'reference' => '192e8b988aac5a9b9a77dec4de636d49fc80635f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-google-chat-connection',
-            'version' => 'dev-copilot/review-google-chat-connection',
-            'reference' => '96a64adf82caac8ecc8fda73e6ba21ed300a6086',
+            'pretty_version' => 'dev-copilot/fix-analyze-video-tool-error',
+            'version' => 'dev-copilot/fix-analyze-video-tool-error',
+            'reference' => '192e8b988aac5a9b9a77dec4de636d49fc80635f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
