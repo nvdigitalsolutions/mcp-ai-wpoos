@@ -100,6 +100,16 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check permission: only users with manage_options can use this tool.
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to view login security data.', 'mcp-ai-wpoos' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
+		}
+
 		// Validate parameters.
 		$time_period      = isset( $arguments['time_period'] ) ? sanitize_text_field( $arguments['time_period'] ) : '24hours';
 		$start_date       = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : '';
@@ -113,8 +123,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		$this->do_before_execute( $arguments, $context );
 
 		// Check cache.
-		$cache_key = $this->get_cache_key( $arguments );
-		$cached    = $this->get_cached_result( $cache_key );
+		$cached = $this->get_cached_result( $arguments );
 		if ( false !== $cached ) {
 			return $cached;
 		}
@@ -165,7 +174,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		}
 
 		// Cache result (short duration for security data).
-		$this->set_cached_result( $cache_key, $result, 300 ); // 5 minutes.
+		$this->set_cached_result( $arguments, $result, 300 ); // 5 minutes.
 
 		// After execution hook.
 		$this->do_after_execute( $result, $arguments, $context );
@@ -371,11 +380,10 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array Wordfence data.
 	 */
-	private function get_wordfence_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future Wordfence integration.
-		// Placeholder for Wordfence integration.
-		$this->log( 'Wordfence integration available but not implemented yet' );
+	private function get_wordfence_data( $time_range, $username, $ip_address ) {
+		global $wpdb;
 
-		return array(
+		$data = array(
 			'total'        => 0,
 			'successful'   => 0,
 			'failed'       => 0,
@@ -384,6 +392,68 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			'unique_ips'   => 0,
 			'attempts'     => array(),
 		);
+
+		$table_name = $wpdb->prefix . 'wfLogins';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+		if ( ! $table_exists ) {
+			return $data;
+		}
+
+		// Build query with optional filters.
+		$where_clauses = array( 'ctime BETWEEN %d AND %d' );
+		$query_params  = array( $time_range['start'], $time_range['end'] );
+
+		if ( ! empty( $username ) ) {
+			$where_clauses[] = 'username = %s';
+			$query_params[]  = $username;
+		}
+
+		if ( ! empty( $ip_address ) ) {
+			$where_clauses[] = 'IP = %s';
+			$query_params[]  = $ip_address;
+		}
+
+		$where_sql = implode( ' AND ', $where_clauses );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT ctime, fail, username, IP, blocked FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
+			ARRAY_A
+		);
+
+		if ( empty( $rows ) ) {
+			return $data;
+		}
+
+		foreach ( $rows as $row ) {
+			++$data['total'];
+
+			$is_failed  = ! empty( $row['fail'] );
+			$is_blocked = ! empty( $row['blocked'] );
+
+			if ( $is_blocked ) {
+				++$data['blocked'];
+			} elseif ( $is_failed ) {
+				++$data['failed'];
+			} else {
+				++$data['successful'];
+			}
+
+			$data['attempts'][] = array(
+				'timestamp'  => (int) $row['ctime'],
+				'username'   => sanitize_text_field( $row['username'] ),
+				'status'     => $is_blocked ? 'blocked' : ( $is_failed ? 'failed' : 'success' ),
+				'ip_address' => sanitize_text_field( isset( $row['IP'] ) ? $row['IP'] : '' ),
+			);
+		}
+
+		$data['unique_users'] = count( array_unique( wp_list_pluck( $data['attempts'], 'username' ) ) );
+		$data['unique_ips']   = count( array_unique( array_filter( wp_list_pluck( $data['attempts'], 'ip_address' ) ) ) );
+
+		return $data;
 	}
 
 	/**
@@ -393,13 +463,12 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param array  $time_range Time range.
 	 * @param string $username   Username filter.
 	 * @param string $ip_address IP filter.
-	 * @return array iThemes data.
+	 * @return array iThemes Security data.
 	 */
-	private function get_ithemes_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future iThemes Security integration.
-		// Placeholder for iThemes integration.
-		$this->log( 'iThemes Security integration available but not implemented yet' );
+	private function get_ithemes_data( $time_range, $username, $ip_address ) {
+		global $wpdb;
 
-		return array(
+		$data = array(
 			'total'        => 0,
 			'successful'   => 0,
 			'failed'       => 0,
@@ -408,6 +477,121 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			'unique_ips'   => 0,
 			'attempts'     => array(),
 		);
+
+		// Use the iThemes Security log API if available.
+		if ( class_exists( 'ITSEC_Log' ) && method_exists( 'ITSEC_Log', 'get_logs' ) ) {
+			$args = array(
+				'module'     => 'brute-force',
+				'after_time' => gmdate( 'Y-m-d H:i:s', $time_range['start'] ),
+				'before_time' => gmdate( 'Y-m-d H:i:s', $time_range['end'] ),
+			);
+			if ( ! empty( $username ) ) {
+				$args['username'] = $username;
+			}
+			$logs = ITSEC_Log::get_logs( $args );
+			foreach ( (array) $logs as $log ) {
+				$log_ip   = isset( $log['remote_ip'] ) ? sanitize_text_field( $log['remote_ip'] ) : '';
+				$log_user = isset( $log['username'] ) ? sanitize_text_field( $log['username'] ) : '';
+
+				// Apply IP filter before counting to keep all counters consistent.
+				if ( ! empty( $ip_address ) && $log_ip !== $ip_address ) {
+					continue;
+				}
+
+				++$data['total'];
+				$status     = isset( $log['type'] ) ? sanitize_text_field( $log['type'] ) : 'info';
+				$is_blocked = 'critical' === $status;
+
+				// Use json_decode for log data to avoid object injection via unserialize.
+				$raw_data  = isset( $log['data'] ) ? $log['data'] : '';
+				$log_data  = is_string( $raw_data ) ? json_decode( $raw_data, true ) : array();
+				$log_data  = is_array( $log_data ) ? $log_data : array();
+				$is_failed = 'error' === $status || isset( $log_data['fail'] );
+
+				if ( $is_blocked ) {
+					++$data['blocked'];
+				} elseif ( $is_failed ) {
+					++$data['failed'];
+				} else {
+					++$data['successful'];
+				}
+				$data['attempts'][] = array(
+					'timestamp'  => isset( $log['timestamp'] ) ? strtotime( $log['timestamp'] ) : 0,
+					'username'   => $log_user,
+					'status'     => $is_blocked ? 'blocked' : ( $is_failed ? 'failed' : 'success' ),
+					'ip_address' => $log_ip,
+				);
+			}
+			$data['unique_users'] = count( array_unique( wp_list_pluck( $data['attempts'], 'username' ) ) );
+			$data['unique_ips']   = count( array_unique( array_filter( wp_list_pluck( $data['attempts'], 'ip_address' ) ) ) );
+			return $data;
+		}
+
+		// Fallback: query the iThemes Security logs table directly.
+		$table_name = $wpdb->prefix . 'itsec_logs';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
+		if ( ! $table_exists ) {
+			return $data;
+		}
+
+		$start_date = gmdate( 'Y-m-d H:i:s', $time_range['start'] );
+		$end_date   = gmdate( 'Y-m-d H:i:s', $time_range['end'] );
+
+		$where_clauses = array( 'timestamp BETWEEN %s AND %s' );
+		$query_params  = array( $start_date, $end_date );
+
+		if ( ! empty( $username ) ) {
+			$where_clauses[] = 'username = %s';
+			$query_params[]  = $username;
+		}
+
+		if ( ! empty( $ip_address ) ) {
+			$where_clauses[] = 'remote_ip = %s';
+			$query_params[]  = $ip_address;
+		}
+
+		$where_sql = implode( ' AND ', $where_clauses );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT timestamp, type, username, remote_ip, module FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
+			ARRAY_A
+		);
+
+		if ( empty( $rows ) ) {
+			return $data;
+		}
+
+		foreach ( $rows as $row ) {
+			++$data['total'];
+
+			$status     = sanitize_text_field( isset( $row['type'] ) ? $row['type'] : 'info' );
+			$is_blocked = 'critical' === $status;
+			$is_failed  = 'error' === $status;
+
+			if ( $is_blocked ) {
+				++$data['blocked'];
+			} elseif ( $is_failed ) {
+				++$data['failed'];
+			} else {
+				++$data['successful'];
+			}
+
+			$data['attempts'][] = array(
+				'timestamp'  => isset( $row['timestamp'] ) ? strtotime( $row['timestamp'] ) : 0,
+				'username'   => sanitize_text_field( isset( $row['username'] ) ? $row['username'] : '' ),
+				'status'     => $is_blocked ? 'blocked' : ( $is_failed ? 'failed' : 'success' ),
+				'ip_address' => sanitize_text_field( isset( $row['remote_ip'] ) ? $row['remote_ip'] : '' ),
+			);
+		}
+
+		$data['unique_users'] = count( array_unique( wp_list_pluck( $data['attempts'], 'username' ) ) );
+		$data['unique_ips']   = count( array_unique( array_filter( wp_list_pluck( $data['attempts'], 'ip_address' ) ) ) );
+
+		return $data;
 	}
 
 	/**
@@ -419,9 +603,10 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array WPS Hide Login data.
 	 */
-	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future WPS Hide Login integration.
-		// Placeholder for WPS Hide Login integration.
-		$this->log( 'WPS Hide Login integration available but not implemented yet' );
+	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $time_range, $username, $ip_address reserved; WPS Hide Login redirects requests to a hidden URL and does not log individual login attempts.
+		// WPS Hide Login changes the login URL but does not track login attempts itself.
+		// Return empty data and fall through to WordPress native login tracking.
+		$this->log( 'info', 'WPS Hide Login detected; using WordPress native login data as WPS Hide Login does not track login attempts directly' );
 
 		return array(
 			'total'        => 0,
@@ -624,7 +809,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 				'analysis'  => $response['content'] ?? '',
 			);
 		} catch ( Exception $e ) {
-			$this->log( 'AI insights generation failed: ' . $e->getMessage() );
+			$this->log( 'error', 'AI insights generation failed: ' . $e->getMessage() );
 			return array(
 				'available' => false,
 				'error'     => $e->getMessage(),
