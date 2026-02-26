@@ -2567,4 +2567,375 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$this->assertTrue( $result, 'validate_google_oidc_token should accept Bearer token from $_SERVER[REDIRECT_HTTP_AUTHORIZATION] fallback' );
 	}
+
+	// =========================================================================
+	// Google Chat – issuer (iss) validation and aud array support.
+	// =========================================================================
+
+	/**
+	 * Helper: base64url-encode a string (RFC 4648 §5, no padding).
+	 *
+	 * @param string $value Raw string to encode.
+	 * @return string Base64url-encoded string without padding characters.
+	 */
+	private function base64url_encode_test( $value ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return rtrim( strtr( base64_encode( $value ), '+/', '-_' ), '=' );
+	}
+
+	/**
+	 * Helper: build a minimal base64url-encoded JWT with the supplied payload claims.
+	 *
+	 * The signature segment is a dummy value — these tests only exercise the
+	 * local JWT-decode path, not full crypto verification.
+	 *
+	 * @param array $claims JWT payload claims.
+	 * @return string JWT string in header.payload.sig format.
+	 */
+	private function build_test_jwt( array $claims ) {
+		$header_b64  = $this->base64url_encode_test( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) );
+		$payload_b64 = $this->base64url_encode_test( wp_json_encode( $claims ) );
+		return $header_b64 . '.' . $payload_b64 . '.fakesig';
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a JWT whose 'aud' claim is an array
+	 * containing the configured audience URL.
+	 *
+	 * RFC 7519 §4.1.3 allows 'aud' to be either a single string or an array of
+	 * strings.  Some Google-issued tokens carry the audience as a single-element
+	 * array, so the controller must handle both forms.
+	 */
+	public function test_google_chat_validation_accepts_aud_as_array_containing_audience() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Aud Array Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with 'aud' as an array containing the correct audience.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => array( $webhook_url ),
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept aud as an array when it contains the configured audience URL' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a JWT whose 'aud' array does NOT
+	 * contain the configured audience URL.
+	 */
+	public function test_google_chat_validation_rejects_aud_array_missing_audience() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Aud Array Reject Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with 'aud' as an array that does NOT include the correct audience.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => array( 'https://example.com/wrong', 'https://example.org/also-wrong' ),
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must reject a token whose aud array does not contain the configured audience' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a JWT whose 'iss' claim is not a
+	 * recognised Google issuer (e.g. a forged or third-party token).
+	 */
+	public function test_google_chat_validation_rejects_invalid_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Issuer Reject Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with a non-Google issuer to simulate a forged or third-party token.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'https://malicious-issuer.example.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must reject tokens from non-Google issuers' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a JWT from the canonical Google Chat
+	 * issuer 'chat@system.gserviceaccount.com'.
+	 */
+	public function test_google_chat_validation_accepts_google_chat_system_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Chat System Issuer Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Use the canonical Google Chat issuer (chat@system.gserviceaccount.com).
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from the Google Chat system service account issuer' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token also accepts the 'accounts.google.com'
+	 * issuer for compatibility with Workspace Add-ons and OAuth-based tokens.
+	 */
+	public function test_google_chat_validation_accepts_accounts_google_com_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Accounts Issuer Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Use the accounts.google.com issuer (Workspace Add-ons / OAuth compatibility).
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'accounts.google.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from accounts.google.com for Workspace Add-ons compatibility' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat – get_active_google_chat_connection fallback routing.
+	// =========================================================================
+
+	/**
+	 * Test get_active_google_chat_connection does NOT fall back to a space-specific
+	 * connection that is configured for a different space.
+	 *
+	 * A connection whose google_chat_space is 'spaces/AAA' must not be used for
+	 * an incoming message from 'spaces/BBB' — doing so would route messages with
+	 * the wrong credentials and potentially the wrong AI assistant.
+	 */
+	public function test_google_chat_space_specific_connection_not_used_for_different_space() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Store ONLY space-specific connections — no generic fallback.
+		$connections = array(
+			array(
+				'id'                     => 'space_conn_aaa',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'token_for_aaa',
+				'google_chat_space'      => 'spaces/AAA',
+			),
+			array(
+				'id'                     => 'space_conn_bbb',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 2 ),
+				'api_key'                => 'token_for_bbb',
+				'google_chat_space'      => 'spaces/BBB',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// Message from spaces/CCC — neither specific connection matches.
+		$result = $method->invoke( $controller, 'spaces/CCC' );
+
+		$this->assertNull(
+			$result,
+			'get_active_google_chat_connection must return null when only space-specific connections exist and none match the incoming space'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test get_active_google_chat_connection prefers a generic connection (no
+	 * google_chat_space set) over a space-specific one when no exact match exists.
+	 */
+	public function test_google_chat_generic_connection_used_as_fallback_over_space_specific() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connections = array(
+			array(
+				'id'                => 'space_conn_aaa',
+				'connection_type'   => 'google_chat',
+				'enabled'           => true,
+				'api_key'           => 'token_for_aaa',
+				'google_chat_space' => 'spaces/AAA',
+			),
+			array(
+				'id'              => 'generic_conn',
+				'connection_type' => 'google_chat',
+				'enabled'         => true,
+				'api_key'         => 'token_generic',
+				// No google_chat_space — this is the generic fallback.
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// Message from spaces/BBB — only the generic connection should match as fallback.
+		$result = $method->invoke( $controller, 'spaces/BBB' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame(
+			'generic_conn',
+			$result['id'],
+			'get_active_google_chat_connection must use the generic connection as fallback, not the one for spaces/AAA'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
 }

@@ -88,9 +88,15 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	const CHAT_API_BASE = 'https://chat.googleapis.com/v1';
 
 	/**
-	 * Expected OIDC token issuer for Google.
+	 * Expected OIDC token issuer for Google Chat HTTP-endpoint apps.
+	 *
+	 * Google Chat signs webhook OIDC tokens with the service account
+	 * chat@system.gserviceaccount.com. Workspace Add-ons may additionally
+	 * use accounts.google.com — both are accepted in validate_google_oidc_token().
+	 *
+	 * @see https://developers.google.com/workspace/chat/authenticate-authorize-chat-app
 	 */
-	const GOOGLE_OIDC_ISSUER = 'accounts.google.com';
+	const GOOGLE_OIDC_ISSUER = 'chat@system.gserviceaccount.com';
 
 	/**
 	 * Google Chat API scope for bot operations.
@@ -308,10 +314,40 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return false;
 		}
 
+		// Validate issuer — must be a recognised Google issuer.
+		// Google Chat HTTP-endpoint apps use chat@system.gserviceaccount.com;
+		// Workspace Add-ons may additionally use accounts.google.com or its HTTPS variant.
+		$token_iss     = isset( $claims['iss'] ) ? (string) $claims['iss'] : '';
+		$valid_issuers = array(
+			self::GOOGLE_OIDC_ISSUER,          // chat@system.gserviceaccount.com.
+			'accounts.google.com',             // Workspace Add-ons / OAuth-based tokens.
+			'https://accounts.google.com',     // Alternative HTTPS form sometimes seen.
+		);
+
+		if ( ! in_array( $token_iss, $valid_issuers, true ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: OIDC token issuer is not a recognised Google issuer.',
+				array( 'iss' => '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' )
+			);
+			return false;
+		}
+
 		// Validate audience claim.
+		// The JWT spec (RFC 7519 §4.1.3) allows 'aud' to be either a single string
+		// or an array of strings.  Handle both forms to avoid incorrectly rejecting
+		// legitimate Google Chat OIDC tokens.
 		$token_aud = isset( $claims['aud'] ) ? $claims['aud'] : '';
 
-		if ( $token_aud !== $audience ) {
+		if ( is_array( $token_aud ) ) {
+			// aud is an array — verify the configured audience is one of the values.
+			if ( ! in_array( $audience, $token_aud, true ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
+					array( 'expected' => $audience )
+				);
+				return false;
+			}
+		} elseif ( $token_aud !== $audience ) {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook rejected: OIDC token audience mismatch.',
 				array(
@@ -446,6 +482,7 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		 *
 		 * Note: Google Chat already enforces mention/routing rules at the platform
 		 * level — MESSAGE events in spaces are only delivered to the bot when it is
+		 *
 		 * @mentioned, and every message in a DIRECT_MESSAGE space is directed at the
 		 * bot. No additional require_mention filtering is needed here.
 		 *
@@ -1262,9 +1299,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * When a space-specific connection is available (i.e. the connection's
 	 * `google_chat_space` field matches $space_name) it is preferred over a
-	 * generic connection. Falls back to the first enabled connection when no
-	 * space-specific match is found. The caller is responsible for resolving
-	 * assigned assistants (including the global default_assistant_id fallback).
+	 * generic connection. Falls back to the first enabled connection that has
+	 * NO specific space configured (a "generic" connection). Connections that
+	 * are space-specific for a DIFFERENT space are never used as fallback — using
+	 * the wrong credentials/assistant for an unrelated space would route messages
+	 * incorrectly and could expose one space's data to another.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1299,10 +1338,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				if ( $conn_space === $space_name ) {
 					return $connection;
 				}
+				// This connection is space-specific for a different space — skip it
+				// entirely; it must not become the fallback for an unrelated space.
+				continue;
 			}
 
-			// Keep the first generic connection as fallback.
-			if ( null === $fallback ) {
+			// Keep the first generic (no specific space) connection as fallback.
+			if ( null === $fallback && empty( $connection['google_chat_space'] ) ) {
 				$fallback = $connection;
 			}
 		}
