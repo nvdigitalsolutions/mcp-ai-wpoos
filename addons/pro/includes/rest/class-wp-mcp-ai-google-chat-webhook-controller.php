@@ -127,6 +127,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		// and WordPress Application Passwords (priority 100) that may re-set the error
 		// after a lower-priority filter has already cleared it.
 		add_filter( 'rest_authentication_errors', array( $this, 'allow_google_oidc_auth' ), 99999 );
+
+		// Register an admin-ajax.php fallback endpoint for sites where Cloudflare
+		// WAF, Bot Fight Mode, or other proxies block POST requests to /wp-json/.
+		// Google Chat can be configured with the admin-ajax URL instead.
+		add_action( 'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook', array( $this, 'handle_ajax_webhook' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_google_chat_webhook', array( $this, 'handle_ajax_webhook' ) );
 	}
 
 	/**
@@ -163,6 +169,71 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return $error;
+	}
+
+	/**
+	 * Handle a Google Chat webhook event via the WordPress admin-ajax endpoint.
+	 *
+	 * Provides a Cloudflare-compatible alternative to the REST API webhook URL.
+	 * When Cloudflare WAF, Bot Fight Mode, or other proxies block POST requests
+	 * to /wp-json/ endpoints, configure Google Chat to use the admin-ajax URL
+	 * instead (shown in the plugin's Google Chat connection settings).
+	 *
+	 * Security is identical to the REST endpoint: the Google OIDC Bearer token
+	 * sent by Google Chat is validated by validate_google_oidc_token() before
+	 * any event processing occurs. No WordPress nonce is required here because
+	 * the OIDC token is the authentication mechanism.
+	 *
+	 * AJAX URL format:
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_google_chat_webhook
+	 *   /wp-admin/admin-ajax.php?action=wp_mcp_ai_google_chat_webhook&connection_id={id}
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_ajax_webhook() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OIDC token is the auth mechanism.
+		$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+		// Build a synthetic REST request so validate_google_oidc_token() and
+		// handle_webhook() can be reused without duplicating logic.
+		$route        = '/mcp-ai/v1/webhooks/google-chat' . ( '' !== $connection_id ? '/' . $connection_id : '' );
+		$rest_request = new WP_REST_Request( 'POST', $route );
+
+		// Forward the Authorization header. Some server stacks (Apache + FastCGI)
+		// expose it only via REDIRECT_HTTP_AUTHORIZATION.
+		$auth = '';
+		if ( ! empty( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+			$auth = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
+		} elseif ( ! empty( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
+			$auth = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
+		}
+
+		if ( '' !== $auth ) {
+			$rest_request->set_header( 'authorization', $auth );
+		}
+
+		if ( '' !== $connection_id ) {
+			$rest_request->set_param( 'connection_id', $connection_id );
+		}
+
+		// Validate the Google OIDC Bearer token before processing any payload.
+		if ( ! $this->validate_google_oidc_token( $rest_request ) ) {
+			wp_send_json( array( 'error' => 'Invalid or missing Authorization Bearer token.' ), 401 );
+			return;
+		}
+
+		// Read the raw JSON body sent by Google Chat and pass it to the handler.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$raw_body = file_get_contents( 'php://input' );
+		$rest_request->set_header( 'Content-Type', 'application/json' );
+		$rest_request->set_body( is_string( $raw_body ) ? $raw_body : '{}' );
+
+		// Process the event via the existing REST handler.
+		$response      = $this->handle_webhook( $rest_request );
+		$data          = $response instanceof WP_REST_Response ? $response->get_data() : new stdClass();
+		$status        = $response instanceof WP_REST_Response ? $response->get_status() : 200;
+
+		wp_send_json( $data, $status );
 	}
 
 	/**

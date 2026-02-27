@@ -2674,6 +2674,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all connections):', 'mcp-ai-wpoos-pro' ); ?></p>
 							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 							<p class="description"><?php esc_html_e( 'Use the generic URL only if all connections share the same Google Cloud project. The channel-specific URL above is preferred.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<div style="background: #fff8e1; border-left: 4px solid #f9a825; padding: 10px 12px; margin-top: 12px;">
+								<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;">
+									<span class="dashicons dashicons-shield" style="color: #f9a825;"></span>
+									<?php esc_html_e( 'Cloudflare / Proxy Fallback URL:', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+								<input type="text" readonly="readonly" value="<?php echo esc_url( add_query_arg( array( 'action' => 'wp_mcp_ai_google_chat_webhook', 'connection_id' => $connection['id'] ), admin_url( 'admin-ajax.php' ) ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 4px;">
+								<p class="description"><?php esc_html_e( 'Use this URL instead if Cloudflare, a WAF, or another proxy is blocking the standard /wp-json/ endpoint above. This alternative route bypasses REST API restrictions while applying the same Google OIDC token security.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
 						<?php else : ?>
 							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for use in the Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
