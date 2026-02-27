@@ -331,12 +331,12 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		$allowed_sizes = array( 'large', 'medium', 'small' );
 		$button_size   = in_array( $atts['button_size'], $allowed_sizes, true ) ? $atts['button_size'] : 'large';
 
-		// Build script tag attributes.
+		// Build script tag attributes (values are escaped when the attribute string is assembled below).
 		$script_attrs = array(
 			'src'                 => 'https://telegram.org/js/telegram-widget.js?22',
-			'data-telegram-login' => esc_attr( $bot_username ),
-			'data-size'           => esc_attr( $button_size ),
-			'data-auth-url'       => esc_url( $redirect_url ),
+			'data-telegram-login' => $bot_username,
+			'data-size'           => $button_size,
+			'data-auth-url'       => $redirect_url,
 			'async'               => 'async',
 		);
 
@@ -356,19 +356,24 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		}
 
 		if ( '' !== $atts['lang'] ) {
-			$script_attrs['data-lang'] = esc_attr( sanitize_text_field( $atts['lang'] ) );
+			$script_attrs['data-lang'] = sanitize_text_field( $atts['lang'] );
 		}
+
+		// URL attributes that require esc_url() instead of esc_attr().
+		$url_attrs = array( 'src', 'data-auth-url' );
 
 		$attr_string = '';
 		foreach ( $script_attrs as $attr => $value ) {
 			if ( 'async' === $attr ) {
 				$attr_string .= ' async';
+			} elseif ( in_array( $attr, $url_attrs, true ) ) {
+				$attr_string .= ' ' . esc_attr( $attr ) . '="' . esc_url( $value ) . '"';
 			} else {
 				$attr_string .= ' ' . esc_attr( $attr ) . '="' . esc_attr( $value ) . '"';
 			}
 		}
 
-		return '<script' . $attr_string . '></script>';
+		return '<div class="wp-mcp-ai-telegram-login-widget"><script' . $attr_string . '></script></div>';
 	}
 
 	/**
