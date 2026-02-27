@@ -764,6 +764,8 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		$this->assertSame( 'wp_mcp_ai_missing_discord_token', $result->get_error_code() );
 
 		wp_set_current_user( 0 );
+	}
+
 	// Apple Messages for Business Tools
 	// =========================================================================
 
