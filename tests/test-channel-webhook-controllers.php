@@ -3273,4 +3273,91 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
+
+	// =========================================================================
+	// Google Chat & Telegram – get_any_assistant_id fallback (respond to all).
+	// =========================================================================
+
+	/**
+	 * Test get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Create a published assistant post.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test get_any_assistant_id returns 0 when no published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_zero_when_no_assistant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no published assistants exist.
+		$existing = get_posts(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'fields'      => 'ids',
+				'numberposts' => -1,
+			)
+		);
+		foreach ( $existing as $id ) {
+			wp_delete_post( $id, true );
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( 0, $result, 'get_any_assistant_id should return 0 when no assistants exist' );
+	}
+
+	/**
+	 * Test Telegram get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_telegram_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Telegram Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
 }
+
