@@ -1029,8 +1029,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$data_check_string = implode( "\n", $check_pairs );
 
 		// Compute hash: Mini App uses "WebAppData" as the HMAC key for the secret.
-		$secret_key    = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
-		$expected_hash = hash_hmac( 'sha256', $data_check_string, $secret_key );
+		$hmac_secret_raw = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
+		$expected_hash   = hash_hmac( 'sha256', $data_check_string, $hmac_secret_raw );
 
 		// Assemble a URL-encoded initData string.
 		$init_data = http_build_query(
@@ -1086,8 +1086,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		$pairs             = array( 'auth_date=' . $auth_date );
 		$data_check_string = implode( "\n", $pairs );
-		$secret_key        = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
-		$hash              = hash_hmac( 'sha256', $data_check_string, $secret_key );
+		$hmac_secret_raw   = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
+		$hash              = hash_hmac( 'sha256', $data_check_string, $hmac_secret_raw );
 
 		$init_data = http_build_query(
 			array(
