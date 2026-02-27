@@ -310,4 +310,260 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		$this->assertNull( $result, 'Must return null when channel_contacts table does not exist' );
 	}
+
+	// =========================================================================
+	// Apple Messages for Business Tools
+	// =========================================================================
+
+	/**
+	 * Send Apple Message tool: get_slug() returns correct slug.
+	 */
+	public function test_send_apple_message_tool_get_slug() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
+		$this->assertSame( 'send_apple_message', $tool->get_slug() );
+	}
+
+	/**
+	 * Send Apple Message tool: is_available() returns true.
+	 */
+	public function test_send_apple_message_tool_is_available() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+		);
+
+		$this->assertTrue( WP_MCP_AI_Pro_Tool_Send_Apple_Message::is_available() );
+	}
+
+	/**
+	 * Send Apple Message tool: execute returns WP_Error for missing api_key.
+	 */
+	public function test_send_apple_message_tool_returns_error_without_api_key() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+		);
+
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
+		$result = $tool->execute(
+			array(
+				'msp_api_url' => 'https://api.example.com/v1/apple/messages',
+				// api_key intentionally omitted.
+				'business_id' => 'biz-123',
+				'message'     => 'Hello!',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_apple_api_key', $result->get_error_code() );
+
+		wp_delete_user( $user_id );
+	}
+
+	/**
+	 * Send Apple Message tool: execute returns WP_Error for non-HTTPS msp_api_url.
+	 */
+	public function test_send_apple_message_tool_rejects_http_url() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+		);
+
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
+		$result = $tool->execute(
+			array(
+				'msp_api_url' => 'http://api.example.com/v1/apple/messages',
+				'api_key'     => 'test-api-key',
+				'business_id' => 'biz-123',
+				'message'     => 'Hello!',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_apple_msp_url', $result->get_error_code() );
+
+		wp_delete_user( $user_id );
+	}
+
+	/**
+	 * Send Apple Message tool: capability flags include 'pro' and 'write'.
+	 */
+	public function test_send_apple_message_tool_capability_flags() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Send_Apple_Message();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'pro', $flags );
+		$this->assertContains( 'write', $flags );
+		$this->assertContains( 'external-api', $flags );
+	}
+
+	/**
+	 * Get Apple Messages tool: get_slug() returns correct slug.
+	 */
+	public function test_get_apple_messages_tool_get_slug() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Get_Apple_Messages',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Apple_Messages();
+		$this->assertSame( 'get_apple_messages', $tool->get_slug() );
+	}
+
+	/**
+	 * Get Apple Messages tool: capability flags include 'read-only'.
+	 */
+	public function test_get_apple_messages_tool_capability_flags_include_read_only() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Get_Apple_Messages',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-apple-messages.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Get_Apple_Messages();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'read-only', $flags );
+		$this->assertContains( 'pro', $flags );
+	}
+
+	/**
+	 * Send Apple Message Interactive tool: get_slug() returns correct slug.
+	 */
+	public function test_send_apple_message_interactive_tool_get_slug() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive();
+		$this->assertSame( 'send_apple_message_interactive', $tool->get_slug() );
+	}
+
+	/**
+	 * Send Apple Message Interactive tool: execute returns WP_Error for unsupported type.
+	 */
+	public function test_send_apple_message_interactive_rejects_invalid_type() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+		);
+
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive();
+		$result = $tool->execute(
+			array(
+				'msp_api_url'      => 'https://api.example.com/v1/apple/messages',
+				'api_key'          => 'test-key',
+				'business_id'      => 'biz-123',
+				'interactive_type' => 'invalid_type',
+				'body_text'        => 'Choose an option',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_apple_interactive_type', $result->get_error_code() );
+
+		wp_delete_user( $user_id );
+	}
+
+	/**
+	 * Send Apple Message Interactive tool: supported types constant covers expected values.
+	 */
+	public function test_send_apple_message_interactive_supported_types() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php'
+		);
+
+		$expected_types = array( 'list_picker', 'time_picker', 'rich_link', 'authenticate' );
+
+		foreach ( $expected_types as $type ) {
+			$this->assertContains( $type, WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive::SUPPORTED_TYPES );
+		}
+	}
+
+	/**
+	 * Send Apple Group Message tool: get_slug() returns correct slug.
+	 */
+	public function test_send_apple_message_group_tool_get_slug() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group();
+		$this->assertSame( 'send_apple_message_group', $tool->get_slug() );
+	}
+
+	/**
+	 * Send Apple Group Message tool: rejects participant lists exceeding MAX_PARTICIPANTS.
+	 */
+	public function test_send_apple_message_group_tool_rejects_too_many_participants() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+		);
+
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Build a participant list that exceeds MAX_PARTICIPANTS (32).
+		$participants = array_map(
+			static function ( $i ) {
+				return 'participant_' . $i;
+			},
+			range( 1, 33 )
+		);
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group();
+		$result = $tool->execute(
+			array(
+				'msp_api_url'  => 'https://api.example.com/v1/apple/messages',
+				'api_key'      => 'test-key',
+				'business_id'  => 'biz-123',
+				'message'      => 'Hello group!',
+				'participants' => $participants,
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_too_many_participants', $result->get_error_code() );
+
+		wp_delete_user( $user_id );
+	}
+
+	/**
+	 * Send Apple Group Message tool: MAX_PARTICIPANTS constant equals 32.
+	 */
+	public function test_send_apple_message_group_max_participants_constant() {
+		$this->load_pro_class(
+			'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group',
+			'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-apple-message-group.php'
+		);
+
+		$this->assertSame( 32, WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group::MAX_PARTICIPANTS );
+	}
 }
+

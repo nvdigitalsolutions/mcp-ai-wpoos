@@ -26,7 +26,7 @@ Research Credit: Built on OpenClaw.ai's extensive multi-platform chat integratio
 
 ## Overview
 
-The **Chat Channels Integration Toolkit** provides enterprise-grade integration with six major chat platforms, enabling unified message management, automated responses, and cross-platform broadcasting. Built on research and real-world experience from OpenClaw.ai's multi-platform chat integrations.
+The **Chat Channels Integration Toolkit** provides enterprise-grade integration with major chat platforms, enabling unified message management, automated responses, and cross-platform broadcasting. Built on research and real-world experience from OpenClaw.ai's multi-platform chat integrations.
 
 ### Supported Platforms
 
@@ -38,6 +38,7 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
 | **Discord** | Gateway/REST API | Community engagement, gaming | Server management, roles, embedded messages |
 | **Microsoft Teams** | Graph API | Enterprise collaboration | Channels, tabs, adaptive cards, compliance |
 | **Facebook Messenger** | Send/Receive API | Customer engagement, marketing | Quick replies, persistent menu, webviews |
+| **Apple Messages for Business** | MSP REST API | iOS/macOS customer engagement | List pickers, time pickers, rich links, Apple Pay, authenticate, group conversations |
 
 ### Key Capabilities
 
@@ -1009,6 +1010,91 @@ curl -X POST "https://graph.facebook.com/v18.0/me/subscribed_apps?access_token=<
 
 ---
 
+### Apple Messages for Business Setup
+
+Apple Messages for Business (formerly iMessage Business Chat) lets customers contact your business directly from iMessage, Maps, Safari, and Spotlight on iPhone, iPad, and Mac.
+
+> **Important:** Apple requires all businesses to use an approved **Messaging Service Provider (MSP)** such as Infobip, Zendesk, Sunshine Conversations (Smooch), LivePerson, or CM.com. You cannot connect to Apple's servers directly.
+
+#### Step 1: Register with Apple
+
+1. Visit [register.apple.com/business-chat](https://register.apple.com/business-chat) and create a Business Account.
+2. Fill in your business profile, including brand name, logo, and contact details.
+3. Apple reviews applications manually — approval typically takes 1–4 weeks.
+4. After approval you receive a unique **Business ID** (a UUID string).
+
+#### Step 2: Choose and Configure an MSP
+
+Select an Apple-certified MSP and follow their onboarding process:
+
+| MSP | Documentation |
+|-----|--------------|
+| **Infobip** | https://www.infobip.com/docs/apple-messages-for-business |
+| **Sunshine Conversations** | https://docs.smooch.io/guide/apple-messages-for-business/ |
+| **Zendesk** | https://support.zendesk.com/hc/en-us/articles/8030634178458 |
+| **LivePerson** | https://developers.liveperson.com/apple-messages-for-business-sdk-overview.html |
+| **CM.com** | https://developers.cm.com/messaging/docs/apple-messages-for-business-inbound |
+
+Your MSP will provide:
+- An **API endpoint URL** (`msp_api_url`)
+- An **API key** or bearer token (`api_key`)
+- A **webhook signing secret** (`webhook_secret`) for payload validation
+
+#### Step 3: Configure the Webhook in WordPress
+
+1. In WordPress admin, go to **NV oOS → Chat Channels → Apple Messages for Business**.
+2. Enter your **Business ID**, **MSP API URL**, **API key**, and **webhook secret**.
+3. Note your inbound webhook URL:
+   - Primary: `https://yoursite.com/wp-json/mcp-ai/v1/webhooks/apple-messages`
+   - Per-connection: `https://yoursite.com/wp-json/mcp-ai/v1/webhooks/apple-messages/{connection_id}`
+4. Enter this URL in your MSP dashboard as the destination for Apple Messages events.
+
+#### Step 4: Add Customer Entry Points
+
+Apple Messages for Business supports multiple entry points:
+
+| Entry Point | How to Use |
+|-------------|-----------|
+| **Website button** | Add a `<a href="https://bcrw.apple.com/urn:biz:{businessId}">Message Us</a>` link |
+| **Apple Maps** | Verified businesses get a "Message" button in Maps automatically |
+| **QR code** | Generate a QR code linking to your Business Chat URL |
+| **Email** | Add a "Message Us" button in email campaigns |
+| **Spotlight** | Appears automatically when customers search for your business |
+
+**Entry point URL with intent routing:**
+```
+https://bcrw.apple.com/urn:biz:{businessId}?biz-intent-id=support&biz-group-id=billing
+```
+
+#### Step 5: Test Your Integration
+
+```bash
+# Verify the webhook endpoint is reachable
+curl -I https://yoursite.com/wp-json/mcp-ai/v1/webhooks/apple-messages
+
+# Send a test message using the tool (replace values with your credentials)
+# In your NV oOS AI assistant, run:
+# Tool: send_apple_message
+# Arguments:
+# {
+#   "msp_api_url": "https://api.your-msp.com/v1/apple/messages",
+#   "api_key": "your-msp-api-key",
+#   "business_id": "your-apple-business-id",
+#   "conversation_id": "test-conversation-id",
+#   "message": "Hello from NV oOS!"
+# }
+```
+
+#### Security Best Practices
+
+- Always configure a **webhook secret** to enable HMAC-SHA256 signature validation.
+- Rotate your MSP API key periodically and update the WordPress connection settings immediately.
+- Store credentials in WordPress options — never hardcode them in template files.
+- Respect customer opt-outs: the plugin automatically blocks replies to closed conversations.
+- Follow Apple's [privacy guidelines](https://developer.apple.com/design/human-interface-guidelines/messages-for-business): never send unsolicited messages.
+
+---
+
 ## Usage Examples
 
 ### Example 1: Customer Support Bot
@@ -1241,6 +1327,8 @@ Webhooks enable real-time event processing. When something happens on a chat pla
 | Discord | `/wp-json/mcp-ai/v1/webhooks/discord` |
 | Microsoft Teams | `/wp-json/mcp-ai/v1/webhooks/teams` |
 | Facebook Messenger | `/wp-json/mcp-ai/v1/webhooks/messenger` |
+| Apple Messages for Business | `/wp-json/mcp-ai/v1/webhooks/apple-messages` |
+| Apple Messages (per connection) | `/wp-json/mcp-ai/v1/webhooks/apple-messages/{connection_id}` |
 
 ### Setting Up Webhooks
 
@@ -1302,6 +1390,11 @@ Each platform uses different signature verification:
 - Uses `X-Hub-Signature` header
 - HMAC SHA-1 with app secret
 
+**Apple Messages for Business (via MSP):**
+- Uses `X-Apple-Messages-Signature`, `X-MSP-Signature`, or `X-Hub-Signature-256` header (varies by MSP)
+- HMAC SHA-256 with MSP-supplied webhook secret
+- The plugin automatically checks all common header names and strips the optional `sha256=` prefix
+
 #### Example Verification (PHP)
 
 ```php
@@ -1340,6 +1433,13 @@ if (!hash_equals($expected, $signature)) {
 - `MESSAGE_UPDATE` - Message edited
 - `GUILD_MEMBER_ADD` - Member joined server
 - `INTERACTION_CREATE` - Slash command or button
+
+#### Apple Messages for Business
+- `message` - Customer sent a text message
+- `interactive` - Customer responded to a list picker, time picker, or authentication request
+- `typing` - Customer is composing a message (presence indicator)
+- `read` - Customer read a delivered message
+- `close` - Customer closed the conversation (must stop sending messages per Apple policy)
 
 ### Handling Webhook Delays
 
