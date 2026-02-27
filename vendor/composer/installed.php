@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-web-login-feature',
-        'version' => 'dev-copilot/add-web-login-feature',
-        'reference' => '06b69dd29e8288cc12242fb53dbef0d85919438b',
+        'pretty_version' => 'dev-copilot/fix-telegram-login-rendering',
+        'version' => 'dev-copilot/fix-telegram-login-rendering',
+        'reference' => '5417552fc06dd1d1a91da3dac6bec48015d7a5e6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-web-login-feature',
-            'version' => 'dev-copilot/add-web-login-feature',
-            'reference' => '06b69dd29e8288cc12242fb53dbef0d85919438b',
+            'pretty_version' => 'dev-copilot/fix-telegram-login-rendering',
+            'version' => 'dev-copilot/fix-telegram-login-rendering',
+            'reference' => '5417552fc06dd1d1a91da3dac6bec48015d7a5e6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -800,6 +800,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			)
 		);
 
+		$this->assertStringContainsString( '<div class="wp-mcp-ai-telegram-login-widget">', $output, 'Shortcode should be wrapped in a div container' );
 		$this->assertStringContainsString( '<script', $output, 'Shortcode should output a <script> tag' );
 		$this->assertStringContainsString( 'telegram-widget.js', $output, 'Script should load the Telegram widget JS' );
 		$this->assertStringContainsString( 'data-telegram-login="mytestbot"', $output, 'data-telegram-login attribute should contain the bot username' );
