@@ -2,8 +2,8 @@
 
 **Comprehensive Guide to Multi-Platform Chat Channel Management**
 
-Version: 1.0.0  
-Last Updated: January 2025  
+Version: 2.0.0  
+Last Updated: February 2026  
 Research Credit: Built on OpenClaw.ai's extensive multi-platform chat integration experience
 
 ---
@@ -14,6 +14,15 @@ Research Credit: Built on OpenClaw.ai's extensive multi-platform chat integratio
 2. [Architecture](#architecture)
 3. [Tools Reference](#tools-reference)
 4. [Platform Setup Guides](#platform-setup-guides)
+   - [Telegram Setup](#telegram-setup)
+   - [WhatsApp Business Setup](#whatsapp-business-setup)
+   - [Slack Setup](#slack-setup)
+   - [Discord Setup](#discord-setup)
+   - [Microsoft Teams Setup](#microsoft-teams-setup)
+   - [Facebook Messenger Setup](#facebook-messenger-setup)
+   - [Apple Messages for Business Setup](#apple-messages-for-business-setup)
+   - [Google Chat / Google Spaces Setup](#google-chat--google-spaces-setup)
+   - [Twitter/X Setup](#twitterx-setup)
 5. [Usage Examples](#usage-examples)
 6. [Webhook Configuration](#webhook-configuration)
 7. [Security & Authentication](#security--authentication)
@@ -32,13 +41,15 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
 
 | Platform | API Type | Primary Use Case | Key Features |
 |----------|----------|-----------------|--------------|
-| **Telegram** | Bot API | Community management, automated support | Rich media, inline keyboards, callback queries |
-| **WhatsApp** | Business API | Customer service, notifications | Template messages, interactive buttons, status |
+| **Telegram** | Bot API | Community management, automated support | Rich media, inline keyboards, callback queries, reactions |
+| **WhatsApp** | Business API | Customer service, notifications | Template messages, interactive buttons, media messages |
 | **Slack** | Web API | Team collaboration, internal tools | Workspace integration, threads, interactive components |
-| **Discord** | Gateway/REST API | Community engagement, gaming | Server management, roles, embedded messages |
+| **Discord** | Gateway/REST API | Community engagement, gaming | Server management, roles, embedded messages, reactions, voice |
 | **Microsoft Teams** | Graph API | Enterprise collaboration | Channels, tabs, adaptive cards, compliance |
-| **Facebook Messenger** | Send/Receive API | Customer engagement, marketing | Quick replies, persistent menu, webviews |
-| **Apple Messages for Business** | MSP REST API | iOS/macOS customer engagement | List pickers, time pickers, rich links, Apple Pay, authenticate, group conversations |
+| **Facebook Messenger** | Send/Receive API | Customer engagement, marketing | Quick replies, persistent menu, webviews, broadcasts |
+| **Apple Messages for Business** | MSP REST API | iOS/macOS customer engagement | List pickers, time pickers, rich links, Apple Pay, group conversations |
+| **Google Chat / Spaces** | Chat API v1 | Google Workspace team messaging | Spaces, direct messages, space management, member management, incoming webhooks, OIDC bot events |
+| **Twitter/X** | API v2 | Direct messaging, social notifications | Direct messages, Account Activity API webhooks |
 
 ### Key Capabilities
 
@@ -81,15 +92,18 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
-        ┌─────────────────────────────────────────┐
-        │         External Chat Platforms          │
-        │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  │
-        │  │Telegram WhatsApp│ Slack │Discord │  │
-        │  └──────┘ └──────┘ └──────┘ └──────┘  │
-        │  ┌──────┐ ┌──────┐                     │
-        │  │Teams │ │Messenger                   │
-        │  └──────┘ └──────┘                     │
-        └─────────────────────────────────────────┘
+        ┌─────────────────────────────────────────────────────────┐
+        │                  External Chat Platforms                 │
+        │  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────────────┐  │
+        │  │ Telegram │ │ WhatsApp │ │Slack │ │   Discord    │  │
+        │  └──────────┘ └──────────┘ └──────┘ └──────────────┘  │
+        │  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────────────┐  │
+        │  │  Teams   │ │Messenger │ │Apple │ │ Google Chat  │  │
+        │  └──────────┘ └──────────┘ └──────┘ └──────────────┘  │
+        │  ┌──────────┐                                           │
+        │  │Twitter/X │                                           │
+        │  └──────────┘                                           │
+        └─────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
@@ -118,6 +132,55 @@ class WP_MCP_AI_Tool_Chat_Action extends WP_MCP_AI_Tool_Base {
 ---
 
 ## Tools Reference
+
+> **Version 2.0 Tool Inventory:** The Chat Channels Toolkit now contains **39 platform-specific tools** across 9 platforms. The section below lists the complete set of tool slugs you use in assistant tool calls, organized by platform. The detailed conceptual tools (send_chat_message, etc.) that follow describe the general patterns — see each Platform Setup Guide for platform-specific parameter details.
+
+### Complete Tool Inventory
+
+| Platform | Tool Slug | Description |
+|----------|-----------|-------------|
+| **Telegram** | `get_telegram_updates` | Retrieve recent messages/updates from the bot |
+| **Telegram** | `send_telegram_message` | Send a message to a chat or channel |
+| **Telegram** | `add_telegram_message_reaction` | Add an emoji reaction to a message (Bot API 7.0+) |
+| **Telegram** | `manage_telegram_webhook` | Register or delete a Telegram bot webhook |
+| **WhatsApp** | `get_whatsapp_messages` | Retrieve WhatsApp Cloud API message history |
+| **WhatsApp** | `send_whatsapp_template` | Send a pre-approved template message |
+| **WhatsApp** | `send_whatsapp_interactive` | Send interactive buttons or list messages |
+| **WhatsApp** | `send_whatsapp_media` | Send image, video, audio, document, or sticker |
+| **Slack** | `get_slack_channels` | List channels in a Slack workspace |
+| **Slack** | `get_slack_messages` | Retrieve message history from a channel |
+| **Slack** | `send_slack_message` | Send a message to a Slack channel |
+| **Slack** | `create_slack_channel` | Create a new Slack channel |
+| **Discord** | `get_discord_channels` | List channels in a Discord server |
+| **Discord** | `get_discord_messages` | Retrieve message history from a channel |
+| **Discord** | `send_discord_message` | Send a message to a Discord channel |
+| **Discord** | `create_discord_channel` | Create a new channel in a Discord server |
+| **Discord** | `add_discord_message_reaction` | Add an emoji reaction to a Discord message |
+| **Discord** | `get_discord_voice_channel_members` | List users in a Discord voice channel |
+| **Microsoft Teams** | `get_teams_channels` | List channels in a Teams team |
+| **Microsoft Teams** | `get_teams_messages` | Retrieve message history from a Teams channel |
+| **Microsoft Teams** | `send_teams_message` | Send a message to a Teams channel |
+| **Facebook Messenger** | `get_messenger_conversations` | List Facebook Messenger conversations |
+| **Facebook Messenger** | `send_messenger_message` | Send a Messenger message to a user |
+| **Facebook Messenger** | `create_messenger_broadcast` | Create and send a Messenger broadcast |
+| **Apple Messages** | `get_apple_messages` | Retrieve conversation history from an MSP |
+| **Apple Messages** | `send_apple_message` | Send a text message via Apple Messages for Business |
+| **Apple Messages** | `send_apple_message_group` | Send to a group conversation or create a group |
+| **Apple Messages** | `send_apple_message_interactive` | Send list pickers, date pickers, or rich links |
+| **Google Chat** | `send_google_chat_message` | Send a message to a Google Chat space |
+| **Google Chat** | `get_google_chat_spaces` | List spaces the bot belongs to |
+| **Google Chat** | `get_google_chat_messages` | Retrieve message history from a space |
+| **Google Chat** | `create_google_chat_space` | Create a new space (SPACE, GROUP_CHAT, or DIRECT_MESSAGE) |
+| **Google Chat** | `add_google_chat_space_member` | Add a user to a space |
+| **Google Chat** | `list_google_chat_space_members` | List all members of a space |
+| **Google Chat** | `remove_google_chat_space_member` | Remove a member from a space |
+| **Twitter/X** | `get_twitter_dms` | Retrieve recent Direct Message events |
+| **Twitter/X** | `send_twitter_dm` | Send a Direct Message to a user |
+| **Twitter/X** | `manage_twitter_webhook` | Register/remove Account Activity webhooks |
+| **Multi-Platform** | `unified_channel_broadcast` | Broadcast a message to multiple platforms simultaneously |
+| **WebChat** | `send_webchat_message` | Send a message to a WebChat P2P room |
+
+---
 
 ### Core Messaging Tools
 
@@ -1095,7 +1158,277 @@ curl -I https://yoursite.com/wp-json/mcp-ai/v1/webhooks/apple-messages
 
 ---
 
-## Usage Examples
+### Google Chat / Google Spaces Setup
+
+Google Chat is the messaging component of Google Workspace. NV oOS integrates with the **Google Chat API v1** and supports three connection approaches:
+
+1. **Incoming Webhook** – Simplest option for posting outbound-only messages to a specific Space.
+2. **Service Account** – Recommended for full bot capabilities (read messages, manage spaces/members, bot presence in spaces).
+3. **OAuth 2.0** – For user-delegated access, configured through the NV oOS 1-click OAuth flow.
+
+> **Prerequisites:** A Google Workspace account (free Gmail is not supported for creating Chat spaces via API). Your Google Cloud project must have the **Google Chat API** enabled.
+
+#### Method 1: Incoming Webhook (Simplest – Outbound Only)
+
+Incoming webhooks let you post messages to a specific Google Chat space without OAuth credentials.
+
+**Step 1: Create the Webhook in Google Chat**
+
+1. Open **Google Chat** in a browser and navigate to the target space (or create a new one).
+2. Click the space name at the top → **Apps & Integrations** → **Webhooks**.
+3. Click **Add Webhook**, give it a name (e.g., "NV oOS Bot"), add an optional avatar URL, and click **Save**.
+4. Copy the generated webhook URL — it looks like:
+   ```
+   https://chat.googleapis.com/v1/spaces/AAAXXXXXXXXX/messages?key=...&token=...
+   ```
+
+**Step 2: Add the Connection in WordPress**
+
+1. Go to **NV oOS → Remote Connections → Add New**.
+2. Set **Connection Type** to **Google Chat (Chat Channel)**.
+3. Paste the webhook URL into the **Incoming Webhook URL** field.
+4. Click **Save**.
+
+**Step 3: Send a Message**
+
+Use the `send_google_chat_message` tool with the `webhook_url` parameter:
+
+```json
+{
+  "tool": "send_google_chat_message",
+  "arguments": {
+    "webhook_url": "https://chat.googleapis.com/v1/spaces/AAAA.../messages?key=...&token=...",
+    "text": "Hello from NV oOS!"
+  }
+}
+```
+
+> **Note:** Incoming webhooks can only *post* messages. They cannot read messages, list space members, or manage spaces. Use Method 2 (Service Account) for full bot capabilities.
+
+---
+
+#### Method 2: Service Account (Recommended for Full Bot Access)
+
+A Google Service Account lets the NV oOS bot authenticate as a bot app and interact with spaces it has been added to.
+
+**Step 1: Enable the Google Chat API**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and open or create a project.
+2. Navigate to **APIs & Services → Library** and search for **Google Chat API**.
+3. Click **Enable**.
+
+**Step 2: Create a Service Account**
+
+1. In Google Cloud Console, go to **IAM & Admin → Service Accounts**.
+2. Click **Create Service Account**.
+3. Enter a name (e.g., "nvoos-chat-bot") and optionally a description.
+4. Click **Create and Continue**. You do not need to assign project roles for Chat API usage.
+5. Click **Done**.
+
+**Step 3: Download the JSON Key**
+
+1. Click on the newly created service account.
+2. Go to the **Keys** tab → **Add Key → Create new key**.
+3. Select **JSON** and click **Create**. A `.json` file is downloaded to your computer.
+4. Keep this file secure — it contains your private key.
+
+**Step 4: Configure the Chat App in Google Cloud Console**
+
+1. Go to **APIs & Services → Google Chat API → Configuration** (you may need to enable "Google Chat API" first).
+2. Under **App Status**, set it to **Live**.
+3. In **App Information**, add a name (displayed to users) and an avatar URL.
+4. Under **Connection settings**, choose **HTTP endpoint URL** and enter your WordPress webhook URL:
+   ```
+   https://yoursite.com/wp-json/mcp-ai/v1/webhooks/google-chat
+   ```
+   Replace `yoursite.com` with your actual domain.
+5. Click **Save**.
+
+> **Important:** The bot will not receive events until it has been added to at least one Google Chat space. Users must manually add the bot to a space via **Apps & Integrations → Add Apps**.
+
+**Step 5: Add the Service Account Credentials in WordPress**
+
+1. Go to **NV oOS → Remote Connections → Add New**.
+2. Set **Connection Type** to **Google Chat (Chat Channel)**.
+3. Open the downloaded `.json` key file in a text editor and paste the **entire JSON content** into the **Service Account Key (JSON)** field.
+4. Optionally enter the **Audience URL** (the bot endpoint URL above) if you want OIDC token verification for incoming events.
+5. Click **Save**.
+
+**Step 6: Add the Bot to a Google Chat Space**
+
+1. In Google Chat, open the space where you want to use the bot.
+2. Click the space name → **Apps & Integrations → Add Apps**.
+3. Search for your bot by name and click **Add**.
+
+The bot is now active in the space and can receive messages.
+
+**Step 7: Use the Google Chat Tools**
+
+Once configured, the following tools are available:
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `send_google_chat_message` | Send a text message to a space (webhook or OAuth) |
+| `get_google_chat_spaces` | List all spaces the bot belongs to |
+| `get_google_chat_messages` | Retrieve message history from a space |
+| `create_google_chat_space` | Create a new space (SPACE, GROUP_CHAT, or DIRECT_MESSAGE) |
+| `add_google_chat_space_member` | Add a user or app to a space |
+| `list_google_chat_space_members` | List all members of a space |
+| `remove_google_chat_space_member` | Remove a member from a space |
+
+**Example – Get All Spaces:**
+```json
+{
+  "tool": "get_google_chat_spaces",
+  "arguments": {
+    "service_account_key": "{...paste full JSON key here...}",
+    "filter": "spaceType = \"SPACE\""
+  }
+}
+```
+
+**Example – Send a Message to a Space:**
+```json
+{
+  "tool": "send_google_chat_message",
+  "arguments": {
+    "service_account_key": "{...paste full JSON key here...}",
+    "space": "spaces/AAAAxxxxxxxxx",
+    "text": "Deployment complete ✅"
+  }
+}
+```
+
+**Example – Create a New Space:**
+```json
+{
+  "tool": "create_google_chat_space",
+  "arguments": {
+    "service_account_key": "{...paste full JSON key here...}",
+    "display_name": "Project Alpha",
+    "space_type": "SPACE"
+  }
+}
+```
+
+---
+
+#### Method 3: OAuth 2.0 (User-Delegated Access)
+
+For use cases where you need user-level permissions (e.g., accessing spaces the user belongs to rather than a bot), you can authenticate via the NV oOS 1-click OAuth flow.
+
+**Step 1: Configure OAuth Credentials**
+
+1. In Google Cloud Console, go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+2. Set **Application type** to **Web application**.
+3. Add your WordPress admin URL as an **Authorized redirect URI**:
+   ```
+   https://yoursite.com/wp-admin/admin.php
+   ```
+4. Note the **Client ID** and **Client Secret**.
+
+**Step 2: Add the Connection in WordPress**
+
+1. Go to **NV oOS → Remote Connections → Add New**.
+2. Set **Connection Type** to **Google Chat (Chat Channel)**.
+3. Enter the **Client ID** and **Client Secret** from Step 1.
+4. Click **Connect with Google** to start the OAuth flow. You will be redirected to Google to grant permissions.
+5. After authorization, the refresh token is saved automatically.
+
+---
+
+#### Google Chat Webhook Configuration
+
+When using Service Account mode, NV oOS exposes a webhook endpoint that Google Chat will call when a user sends a message to your bot:
+
+```
+https://yoursite.com/wp-json/mcp-ai/v1/webhooks/google-chat
+```
+
+**Security:** Google Chat signs all webhook events with an OIDC Bearer token in the `Authorization` header. NV oOS validates this token automatically. If you specified an **Audience URL** in the connection settings, the token's `aud` claim is verified against it for additional security.
+
+**Supported Event Types:**
+| Event | Description |
+|-------|-------------|
+| `MESSAGE` | User sent a message to the bot in a space or DM |
+| `ADDED_TO_SPACE` | Bot was added to a space |
+| `REMOVED_FROM_SPACE` | Bot was removed from a space |
+| `CARD_CLICKED` | User clicked a card action in a bot message |
+
+**Auto-Reply Feature:** NV oOS supports AI-powered auto-reply for incoming Google Chat messages. When enabled, the bot calls a configured WordPress AI assistant and posts the response back to the space. This uses WP-Cron for async processing to avoid timeout issues.
+
+---
+
+#### Google Chat Rate Limits
+
+| Limit | Value |
+|-------|-------|
+| Messages per space per day | 1,440 (1 per minute sustained) |
+| Messages per minute (burst) | 60 |
+| Spaces listing page size | 1–1,000 |
+| Members listing page size | 1–1,000 |
+| Message history page size | 1–1,000 |
+
+For high-volume bots, implement exponential back-off and check the `Retry-After` header on 429 responses.
+
+---
+
+### Twitter/X Setup
+
+NV oOS supports Twitter/X Direct Messages via the **Twitter API v2** using **OAuth 1.0a** authentication.
+
+> **Prerequisites:** A Twitter Developer account with a project and app that has **Read and Write and Direct Messages** permissions. Elevated access (or Basic tier) is required for Direct Message endpoints.
+
+#### Step 1: Create a Twitter Developer App
+
+1. Go to [developer.twitter.com](https://developer.twitter.com/) and sign in.
+2. Create a new **Project** and **App**.
+3. Under **User authentication settings**, enable **OAuth 1.0a** with **Read and Write and Direct Messages** permissions.
+4. Set a **Callback URL** (required even if unused, e.g., `https://yoursite.com/`).
+
+#### Step 2: Generate Access Tokens
+
+1. In your App dashboard, go to **Keys and Tokens**.
+2. Note the **API Key** (Consumer Key) and **API Secret** (Consumer Secret).
+3. Click **Generate** under **Access Token and Secret** to create tokens for your own account.
+4. Note the **Access Token** and **Access Token Secret**.
+
+#### Step 3: Configure in WordPress
+
+1. Go to **NV oOS → Remote Connections → Add New**.
+2. Set **Connection Type** to **Twitter/X (Chat Channel)**.
+3. Enter:
+   - **API Key** (Consumer Key)
+   - **API Secret** (Consumer Secret)
+   - **Access Token**
+   - **Access Token Secret**
+4. Click **Save**.
+
+#### Step 4: Set Up the Account Activity Webhook (Optional)
+
+To receive incoming DMs, register a webhook using the `manage_twitter_webhook` tool:
+
+```json
+{
+  "tool": "manage_twitter_webhook",
+  "arguments": {
+    "action": "register",
+    "webhook_url": "https://yoursite.com/wp-json/mcp-ai/v1/webhooks/twitter",
+    "api_key": "your_api_key",
+    "api_secret": "your_api_secret",
+    "access_token": "your_access_token",
+    "access_token_secret": "your_access_token_secret"
+  }
+}
+```
+
+#### Twitter/X Tools
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `get_twitter_dms` | Retrieve recent Direct Message events via API v2 |
+| `send_twitter_dm` | Send a Direct Message to a Twitter/X user |
+| `manage_twitter_webhook` | Register or remove Account Activity API webhooks |
 
 ### Example 1: Customer Support Bot
 
@@ -1329,6 +1662,8 @@ Webhooks enable real-time event processing. When something happens on a chat pla
 | Facebook Messenger | `/wp-json/mcp-ai/v1/webhooks/messenger` |
 | Apple Messages for Business | `/wp-json/mcp-ai/v1/webhooks/apple-messages` |
 | Apple Messages (per connection) | `/wp-json/mcp-ai/v1/webhooks/apple-messages/{connection_id}` |
+| Google Chat | `/wp-json/mcp-ai/v1/webhooks/google-chat` |
+| Twitter/X Account Activity | `/wp-json/mcp-ai/v1/webhooks/twitter` |
 
 ### Setting Up Webhooks
 
@@ -1395,6 +1730,16 @@ Each platform uses different signature verification:
 - HMAC SHA-256 with MSP-supplied webhook secret
 - The plugin automatically checks all common header names and strips the optional `sha256=` prefix
 
+**Google Chat:**
+- Uses OIDC Bearer token in the `Authorization` header
+- NV oOS verifies the token against Google's public keys automatically
+- Optionally validates the token `aud` (audience) claim against the **Audience URL** configured in the connection settings
+- No manual signature code required — handled by `WP_MCP_AI_Google_Chat_Webhook_Controller`
+
+**Twitter/X Account Activity:**
+- Uses `X-Twitter-Webhooks-Signature` (HMAC SHA-256 with consumer secret)
+- CRC challenge/response for webhook registration is handled automatically by `manage_twitter_webhook`
+
 #### Example Verification (PHP)
 
 ```php
@@ -1440,6 +1785,17 @@ if (!hash_equals($expected, $signature)) {
 - `typing` - Customer is composing a message (presence indicator)
 - `read` - Customer read a delivered message
 - `close` - Customer closed the conversation (must stop sending messages per Apple policy)
+
+#### Google Chat
+- `MESSAGE` - User sent a message to the bot in a space or DM
+- `ADDED_TO_SPACE` - Bot was added to a space
+- `REMOVED_FROM_SPACE` - Bot was removed from a space
+- `CARD_CLICKED` - User clicked an interactive card action
+
+#### Twitter/X Account Activity
+- `direct_message_events` - Incoming DM received
+- `direct_message_indicate_typing_events` - Typing indicator in DM
+- `tweet_create_events` - Mention or tweet from a followed user
 
 ### Handling Webhook Delays
 
@@ -2045,6 +2401,33 @@ tail -f /wp-content/debug.log | grep "WP_MCP_AI"
 ---
 
 ## Changelog
+
+### Version 2.0.0 (February 2026)
+
+**New Platforms:**
+- ✅ **Google Chat / Google Spaces** – 7 new tools (`send_google_chat_message`, `get_google_chat_spaces`, `get_google_chat_messages`, `create_google_chat_space`, `add_google_chat_space_member`, `list_google_chat_space_members`, `remove_google_chat_space_member`)
+- ✅ **Twitter/X** – 3 new tools (`get_twitter_dms`, `send_twitter_dm`, `manage_twitter_webhook`)
+- ✅ **WebChat** – 1 new tool (`send_webchat_message`)
+
+**Platform Enhancements:**
+- ✅ **Telegram** – Added `add_telegram_message_reaction` and `manage_telegram_webhook`
+- ✅ **WhatsApp** – Added `send_whatsapp_interactive`, `send_whatsapp_media`, `send_whatsapp_template` (expanded from 1 to 4 tools)
+- ✅ **Discord** – Added `create_discord_channel`, `add_discord_message_reaction`, `get_discord_voice_channel_members`
+- ✅ **Facebook Messenger** – Added `create_messenger_broadcast` and `get_messenger_conversations`
+- ✅ **Apple Messages** – Added `send_apple_message_group` and `send_apple_message_interactive`
+
+**Documentation:**
+- ✅ Added comprehensive Google Chat / Google Spaces setup guide (Service Account, Incoming Webhook, OAuth 2.0)
+- ✅ Added Twitter/X setup guide
+- ✅ Updated complete tool inventory table (39 tools across 9 platforms + 2 utility)
+- ✅ Added Google Service Account JWT authentication documentation
+- ✅ Added webhook event type tables for all platforms
+
+**Architecture:**
+- ✅ `WP_MCP_AI_Pro_Google_Service_Account` helper class for JWT-based Service Account authentication with transient caching
+- ✅ `WP_MCP_AI_Google_Chat_Webhook_Controller` for OIDC-verified incoming Google Chat events
+- ✅ AI auto-reply via WP-Cron for incoming Google Chat events (no timeout risk)
+- ✅ Support for both direct Chat app events and Google Workspace Add-ons event format
 
 ### Version 1.0.0 (January 2025)
 - Initial release

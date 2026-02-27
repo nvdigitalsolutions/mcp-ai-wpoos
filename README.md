@@ -391,15 +391,19 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
-**Production-Ready: 6 chat platforms + collaborative rooms with AI assistants**
+**Production-Ready: 9 chat platforms + collaborative rooms with AI assistants**
 
-**Chat Channels Toolkit (21 Tools):**
-- **Telegram (3)**: Send messages, get updates, manage webhooks
-- **WhatsApp (3)**: Send messages/templates, get message history
+**Chat Channels Toolkit (39 Tools):**
+- **Telegram (4)**: Send messages, get updates, manage webhooks, add message reactions
+- **WhatsApp (4)**: Send template/interactive/media messages, get message history
 - **Slack (4)**: Send messages, get channels/messages, create channels
-- **Discord (4)**: Send messages, get channels/messages, create channels
+- **Discord (6)**: Send messages, get channels/messages, create channels, add reactions, voice channel members
 - **Microsoft Teams (3)**: Send messages, get channels/messages
 - **Facebook Messenger (3)**: Send messages, get conversations, create broadcasts
+- **Apple Messages for Business (4)**: Send text/interactive/group messages, retrieve conversation history
+- **Google Chat / Spaces (7)**: Send messages, list/create spaces, manage members, retrieve history ⭐ **NEW**
+- **Twitter/X (3)**: Send/receive Direct Messages, manage Account Activity webhooks ⭐ **NEW**
+- **WebChat (1)**: `send_webchat_message` - Send to P2P WebChat rooms
 - **Unified Hub (1)**: `unified_channel_broadcast` - Simultaneous multi-platform messaging
 - **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit
 - [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
@@ -795,7 +799,7 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
-- 💬 **Chat Channels Toolkit (21 Tools)**: Integrate with 6 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger
+- 💬 **Chat Channels Toolkit (39 Tools)**: Integrate with 9 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X
 - 🌐 **Unified Broadcasting**: Send messages across multiple platforms simultaneously with `unified_channel_broadcast` tool
 - 🏠 **WebChat Rooms**: Custom post type for real-time collaborative chat rooms with AI assistant assignment
 - 📝 **Message Persistence**: JetEngine CCT integration for permanent message history
