@@ -445,6 +445,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Telegram-specific fields.
 				'bot_username'    => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				'secret_token'    => $telegram_secret_token,
+				'enable_web_login'         => ! empty( $_POST['telegram_enable_web_login'] ),
+				'web_login_redirect_url'   => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -1774,6 +1776,61 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Web Login', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_enable_web_login" id="telegram_enable_web_login" value="1" <?php checked( $is_edit && ! empty( $connection['enable_web_login'] ) ); ?>>
+							<?php esc_html_e( 'Enable Telegram Web Login', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: link to Telegram Web Login docs */
+								esc_html__( 'Allow users to log in to your website using their Telegram account. Uses the %s. Requires you to set your site\'s domain in @BotFather with /setdomain.', 'mcp-ai-wpoos-pro' ),
+								'<a href="https://core.telegram.org/widgets/login" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Telegram Login Widget', 'mcp-ai-wpoos-pro' ) . '</a>'
+							);
+							?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_web_login_redirect_url"><?php esc_html_e( 'Web Login Callback URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-login' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description"><?php esc_html_e( 'Set this URL as the auth-url in the Login Widget (see the shortcode below). Telegram will redirect users here after authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_web_login_redirect_url"><?php esc_html_e( 'After-Login Redirect URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="telegram_web_login_redirect_url" id="telegram_web_login_redirect_url" class="large-text" value="<?php echo $is_edit && isset( $connection['web_login_redirect_url'] ) ? esc_url( $connection['web_login_redirect_url'] ) : ''; ?>" placeholder="<?php echo esc_attr( home_url( '/' ) ); ?>">
+						<p class="description"><?php esc_html_e( 'Where to redirect the user after a successful Web Login. Leave blank to redirect to the home page. Use the wp_mcp_ai_telegram_login_redirect_url filter for dynamic redirects.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Login Widget Shortcode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" readonly="readonly" value="[mcp_ai_telegram_login]" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<?php esc_html_e( 'Add this shortcode to any page or widget to display the Telegram Login button. Optional attributes:', 'mcp-ai-wpoos-pro' ); ?>
+							<code>bot_username="mybot"</code>,
+							<code>button_size="large|medium|small"</code>,
+							<code>corner_radius="10"</code>,
+							<code>request_access="write"</code>,
+							<code>show_avatar="1|0"</code>,
+							<code>lang="en"</code>.
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Bot Creation Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<details>
@@ -1786,6 +1843,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Copy the bot token that BotFather sends (format: 1234567890:ABCdef…) and paste it into the Bot Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Optionally, use /setdescription, /setabouttext, and /setuserpic to customize your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save this connection, then click Set Webhook to register the webhook URL with Telegram automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'To enable Web Login: tick "Enable Telegram Web Login" above and send /setdomain to @BotFather to authorize your site\'s domain.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin-top: 8px; font-size: 13px;">
 								<?php
