@@ -74,22 +74,22 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 				'permission_callback' => '__return_true',
 				'args'                => array(
 					'id'         => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					),
 					'first_name' => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
 					'auth_date'  => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 					),
 					'hash'       => array(
-						'required'          => true,
+						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
@@ -112,6 +112,34 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_login_callback( $request ) {
+		// Validate that required Telegram auth parameters are present.
+		// These are not enforced as REST API 'required' args so that missing-param
+		// requests receive a descriptive error instead of the generic WordPress
+		// rest_missing_callback_param response (which occurs when this login-callback
+		// URL is mistakenly used as the Mini App URL in BotFather).
+		$required_auth_params = array( 'id', 'first_name', 'auth_date', 'hash' );
+		$missing_params       = array();
+		foreach ( $required_auth_params as $param ) {
+			if ( null === $request->get_param( $param ) ) {
+				$missing_params[] = $param;
+			}
+		}
+		if ( ! empty( $missing_params ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram Web Login: missing auth parameters.',
+				array( 'missing' => $missing_params )
+			);
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_missing_params',
+				sprintf(
+					/* translators: %s: comma-separated list of missing parameter names */
+					__( 'Missing required Telegram auth parameter(s): %s. This endpoint handles Telegram Login Widget callbacks. If you are configuring a Telegram Mini App, please use the Mini App URL shown in your plugin settings instead.', 'mcp-ai-wpoos-pro' ),
+					implode( ', ', $missing_params )
+				),
+				array( 'status' => 400 )
+			);
+		}
+
 		$connection = $this->get_active_web_login_connection();
 
 		if ( ! $connection ) {

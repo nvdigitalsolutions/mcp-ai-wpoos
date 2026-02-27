@@ -832,6 +832,44 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<!--', $output, 'Shortcode should return an HTML comment when bot_username is missing' );
 	}
 
+	/**
+	 * Test that handle_login_callback() returns a descriptive WP_Error when required
+	 * Telegram auth parameters are missing from the request.
+	 *
+	 * This covers the case where the login-callback URL is accidentally used as the
+	 * Mini App URL in BotFather: Telegram opens the URL without auth query params,
+	 * which previously surfaced as the generic rest_missing_callback_param error.
+	 */
+	public function test_handle_login_callback_returns_error_when_auth_params_are_missing() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a request with NO Telegram auth parameters.
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-login' );
+
+		$response = $controller->handle_login_callback( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $response, 'A request without auth params should return a WP_Error' );
+		$this->assertEquals(
+			'wp_mcp_ai_telegram_login_missing_params',
+			$response->get_error_code(),
+			'Error code should identify the missing-params scenario'
+		);
+		$this->assertEquals(
+			400,
+			$response->get_error_data()['status'],
+			'HTTP status should be 400'
+		);
+		// Error message should mention all four missing parameters.
+		$message = $response->get_error_message();
+		$this->assertStringContainsString( 'id', $message );
+		$this->assertStringContainsString( 'first_name', $message );
+		$this->assertStringContainsString( 'auth_date', $message );
+		$this->assertStringContainsString( 'hash', $message );
+	}
+
 	// =========================================================================
 	// Telegram Mini App URL tests
 	// =========================================================================
@@ -933,5 +971,151 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			$method->isPublic() && $method->isStatic(),
 			'get_mini_app_url() should be a public static method'
 		);
+	}
+
+	/**
+	 * Test that the Mini App controller registers the validate endpoint.
+	 */
+	public function test_telegram_mini_app_validate_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/validate',
+			$routes,
+			'The /mcp-ai/v1/telegram-mini-app/validate REST route should be registered'
+		);
+	}
+
+	/**
+	 * Test that verify_init_data() verifies a correctly-signed initData string.
+	 *
+	 * Constructs a synthetic initData using the same algorithm Telegram uses:
+	 *   secret_key    = HMAC-SHA256("WebAppData", bot_token)  [raw binary]
+	 *   expected_hash = HMAC-SHA256(data_check_string, secret_key)  [hex]
+	 */
+	public function test_verify_init_data_returns_true_for_valid_data() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$bot_token = 'TestBotToken9876:ABCDEFGHIJKLMNOPQRabcdefghijklmno';
+		$auth_date = (string) time();
+		$user_json = wp_json_encode(
+			array(
+				'id'         => 123456789,
+				'first_name' => 'Alice',
+				'username'   => 'alice_test',
+			)
+		);
+
+		// Build the data-check string exactly as Telegram specifies.
+		$pairs = array(
+			'auth_date' => $auth_date,
+			'user'      => $user_json,
+		);
+		$check_pairs = array();
+		foreach ( $pairs as $k => $v ) {
+			$check_pairs[] = $k . '=' . $v;
+		}
+		sort( $check_pairs );
+		$data_check_string = implode( "\n", $check_pairs );
+
+		// Compute hash: Mini App uses "WebAppData" as the HMAC key for the secret.
+		$hmac_secret_raw = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
+		$expected_hash   = hash_hmac( 'sha256', $data_check_string, $hmac_secret_raw );
+
+		// Assemble a URL-encoded initData string.
+		$init_data = http_build_query(
+			array(
+				'auth_date' => $auth_date,
+				'user'      => $user_json,
+				'hash'      => $expected_hash,
+			)
+		);
+
+		$result = $controller->verify_init_data( $init_data, $bot_token );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'verify_init_data() should succeed for correctly-signed data' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'auth_date', $result );
+	}
+
+	/**
+	 * Test that verify_init_data() returns WP_Error for a tampered hash.
+	 */
+	public function test_verify_init_data_returns_error_for_invalid_hash() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$init_data = http_build_query(
+			array(
+				'auth_date' => (string) time(),
+				'user'      => '{"id":1,"first_name":"Bob"}',
+				'hash'      => str_repeat( 'a', 64 ),
+			)
+		);
+
+		$result = $controller->verify_init_data( $init_data, 'AnyBotToken:123' );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'verify_init_data() should return WP_Error for invalid hash' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_mini_app_invalid_hash', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that verify_init_data() returns WP_Error when auth_date is expired.
+	 */
+	public function test_verify_init_data_returns_error_for_expired_auth_date() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a correctly-signed but expired payload.
+		$bot_token = 'ExpiredToken:ABCDEFGHIJKLMNOPQRabcdefghijklmno';
+		$auth_date = (string) ( time() - 90000 ); // Older than the 24-hour max.
+
+		$pairs             = array( 'auth_date=' . $auth_date );
+		$data_check_string = implode( "\n", $pairs );
+		$hmac_secret_raw   = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
+		$hash              = hash_hmac( 'sha256', $data_check_string, $hmac_secret_raw );
+
+		$init_data = http_build_query(
+			array(
+				'auth_date' => $auth_date,
+				'hash'      => $hash,
+			)
+		);
+
+		$result = $controller->verify_init_data( $init_data, $bot_token );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'verify_init_data() should return WP_Error for expired auth_date' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_mini_app_expired', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that verify_init_data() returns WP_Error when hash is absent.
+	 */
+	public function test_verify_init_data_returns_error_when_hash_missing() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$init_data = http_build_query( array( 'auth_date' => (string) time() ) );
+
+		$result = $controller->verify_init_data( $init_data, 'SomeBotToken:abc' );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_telegram_mini_app_missing_hash', $result->get_error_code() );
 	}
 }

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-login-rendering',
-        'version' => 'dev-copilot/fix-telegram-login-rendering',
-        'reference' => '5417552fc06dd1d1a91da3dac6bec48015d7a5e6',
+        'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
+        'version' => 'dev-copilot/fix-telegram-bot-error',
+        'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-login-rendering',
-            'version' => 'dev-copilot/fix-telegram-login-rendering',
-            'reference' => '5417552fc06dd1d1a91da3dac6bec48015d7a5e6',
+            'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
+            'version' => 'dev-copilot/fix-telegram-bot-error',
+            'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
