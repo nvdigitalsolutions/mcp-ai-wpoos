@@ -469,6 +469,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Google Chat-specific fields.
 				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
 				'reply_webhook_url' => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
+				'disable_oidc_verification' => ! empty( $_POST['google_chat_disable_oidc_verification'] ),
 				// Twitter/X-specific fields.
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
@@ -2658,6 +2659,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="google_chat_audience" id="google_chat_audience" class="regular-text" value="<?php echo $is_edit && isset( $connection['verify_token'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['verify_token'] ) : ''; ?>" placeholder="<?php echo esc_attr( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'The audience URL used to validate the Google OIDC token sent by Google Chat. Set this to your webhook URL (shown below). Leave blank to skip audience verification (less secure).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_disable_oidc_verification"><?php esc_html_e( 'Disable OIDC Verification', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="google_chat_disable_oidc_verification" id="google_chat_disable_oidc_verification" value="1" <?php checked( $is_edit && isset( $connection['disable_oidc_verification'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['disable_oidc_verification'] ) ); ?>>
+							<?php esc_html_e( 'Accept incoming webhook events without validating the Google OIDC Bearer token.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). This mirrors the behavior of the Telegram integration when no secret token is configured. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 

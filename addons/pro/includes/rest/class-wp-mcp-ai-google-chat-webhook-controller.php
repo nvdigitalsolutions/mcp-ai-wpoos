@@ -306,12 +306,42 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	 * against it. If no audience is configured the token presence check is
 	 * still enforced, but audience matching is skipped with a security notice.
 	 *
+	 * When `disable_oidc_verification` is enabled on the connection, all OIDC
+	 * token checks are bypassed and any POST request is accepted. This mirrors
+	 * Telegram's behavior when no secret token is configured, and is useful for
+	 * environments where the Authorization header is stripped by a proxy or WAF.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool True if the token is acceptable, false to reject.
 	 */
 	public function validate_google_oidc_token( $request ) {
+		// Load the connection first so we can check disable_oidc_verification
+		// before doing any token validation.
+		$url_connection_id = $request->get_param( 'connection_id' );
+		if ( ! empty( $url_connection_id ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
+		} else {
+			$connection = $this->get_active_google_chat_connection();
+		}
+
+		// When OIDC verification is disabled for this connection, accept any POST
+		// request without token validation. This mirrors Telegram's no-secret-token
+		// mode and is useful for environments where the Authorization header is
+		// stripped by a server, proxy, or WAF.
+		if ( $connection && ! empty( $connection['disable_oidc_verification'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_oidc_skipped',
+				'Google Chat webhook: OIDC verification is disabled for this connection. Accepting request without token validation. Enable OIDC verification for production environments.',
+				array()
+			);
+			return true;
+		}
+
 		$auth_header = $request->get_header( 'authorization' );
 
 		// Fallback: some server configurations (Apache + FastCGI / PHP-FPM) do not
@@ -337,18 +367,6 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		if ( empty( $token ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: empty Bearer token.' );
 			return false;
-		}
-
-		// When the request hits the connection-specific route, use the connection_id
-		// URL param to load the exact connection (and its audience URL) directly.
-		$url_connection_id = $request->get_param( 'connection_id' );
-		if ( ! empty( $url_connection_id ) ) {
-			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
-			}
-			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
-		} else {
-			$connection = $this->get_active_google_chat_connection();
 		}
 
 		$audience = '';
@@ -1897,16 +1915,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		$access_token = $this->get_connection_access_token( $connection, $resolved_connection_id, 'Google Chat inbox reply' );
 
-		if ( '' === $access_token ) {
+		// Fall back to the incoming webhook URL when no OAuth/service-account credentials
+		// are available. This mirrors the AI auto-reply path in handle_google_chat_reply_job()
+		// and makes manual inbox replies work even without full OAuth setup.
+		$has_reply_webhook = ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		if ( '' === $access_token && ! $has_reply_webhook ) {
 			return new WP_Error(
 				'google_chat_token_error',
-				__( 'Failed to obtain a Google Chat access token. Check the connection credentials.', 'mcp-ai-wpoos-pro' ),
+				__( 'Failed to obtain a Google Chat access token. Check the connection credentials or configure an Incoming Webhook URL.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 503 )
 			);
 		}
 
-		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
-		$body     = wp_json_encode( array( 'text' => $message_text ) );
+		$body = wp_json_encode( array( 'text' => $message_text ) );
 
 		if ( false === $body ) {
 			return new WP_Error(
@@ -1916,17 +1939,31 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$response = wp_remote_post(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $access_token,
-				),
-				'timeout' => 20,
-				'body'    => $body,
-			)
-		);
+		if ( '' !== $access_token ) {
+			// --- OAuth / Service Account path ---
+			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $access_token,
+					),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		} else {
+			// --- Incoming webhook URL path (no OAuth needed) ---
+			$response = wp_remote_post(
+				$connection['reply_webhook_url'],
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
