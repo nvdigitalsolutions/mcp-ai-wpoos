@@ -3006,4 +3006,145 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$this->assertFalse( $result, 'validate_google_oidc_token must return false for a non-JWT token' );
 	}
+
+	// =========================================================================
+	// Google Chat Webhook Controller – maybe_auto_reply / dispatch methods
+	// =========================================================================
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when message_text is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_message() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		// Should not throw and should return null (void) without scheduling.
+		$result = $method->invoke( $controller, '', 'users/123', 'spaces/AAA', 'conn_1', '', array( 1 ) );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early on empty message_text' );
+
+		// No event should be scheduled.
+		$this->assertFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'No cron event should be scheduled when message_text is empty'
+		);
+	}
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when assigned_assistant_ids is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_assistants() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'Hello', 'users/123', 'spaces/AAA', 'conn_1', '', array() );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early when assigned_assistant_ids is empty' );
+	}
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when space_name is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_space_name() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'Hello', 'users/123', '', 'conn_1', '', array( 1 ) );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early when space_name is empty' );
+	}
+
+	/**
+	 * Test maybe_auto_reply stops auto-reply when human takeover keyword is matched.
+	 */
+	public function test_google_chat_maybe_auto_reply_human_takeover_keyword_stops_reply() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_auto_reply' );
+		$method->setAccessible( true );
+
+		$automation_rules = array(
+			'human_takeover_keywords' => 'agent, human',
+		);
+
+		// "I need a human agent" contains the keyword "agent".
+		$method->invoke(
+			$controller,
+			'I need a human agent',
+			'users/123',
+			'spaces/AAA',
+			'conn_1',
+			'',
+			array( 1 ),
+			$automation_rules
+		);
+
+		// No cron event should be scheduled when human takeover keyword is matched.
+		$this->assertFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'No AI reply cron event should be scheduled when human takeover keyword is matched'
+		);
+	}
+
+	/**
+	 * Test maybe_auto_reply does not stop on AI resume keyword (continues to dispatch).
+	 */
+	public function test_google_chat_maybe_auto_reply_ai_resume_keyword_continues() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_auto_reply' );
+		$method->setAccessible( true );
+
+		$automation_rules = array(
+			'ai_resume_keywords' => 'bot, ai',
+		);
+
+		// "resume bot" contains the keyword "bot" — AI should resume and a cron job should be scheduled.
+		$method->invoke(
+			$controller,
+			'resume bot',
+			'users/123',
+			'spaces/AAA',
+			'conn_1',
+			'',
+			array( 5 ),
+			$automation_rules
+		);
+
+		// A cron event should have been scheduled.
+		$this->assertNotFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'AI reply cron event should be scheduled after AI resume keyword clears human takeover'
+		);
+	}
+
+	/**
+	 * Test get_channel_contact_id returns null when CCT is not available.
+	 */
+	public function test_google_chat_get_channel_contact_id_returns_null_when_cct_unavailable() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_channel_contact_id' );
+		$method->setAccessible( true );
+
+		// WP_MCP_AI_Channel_Contacts_CCT does not exist in the base test environment.
+		$result = $method->invoke( $controller, 'google_chat', 'users/99999' );
+
+		$this->assertNull( $result, 'get_channel_contact_id must return null when CCT class is unavailable' );
+	}
 }
