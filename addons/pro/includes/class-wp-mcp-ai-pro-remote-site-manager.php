@@ -389,6 +389,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'google_chat_space'  => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
 			// Google Chat incoming webhook URL for sending AI replies (no OAuth needed).
 			'reply_webhook_url'  => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
+			// When true, OIDC token validation is skipped for incoming webhook events.
+			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
+			'disable_oidc_verification' => ! empty( $connection_data['disable_oidc_verification'] ),
 			// WhatsApp channel routing: assistant IDs listening on this channel.
 			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )

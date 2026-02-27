@@ -3147,4 +3147,217 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$this->assertNull( $result, 'get_channel_contact_id must return null when CCT class is unavailable' );
 	}
+
+	// =========================================================================
+	// Google Chat – disable_oidc_verification (Telegram-like no-auth mode).
+	// =========================================================================
+
+	/**
+	 * Test validate_google_oidc_token allows through without a Bearer token when
+	 * disable_oidc_verification is enabled on the connection.
+	 *
+	 * This mirrors the Telegram behavior where validation passes when no secret
+	 * token is configured — allowing environments that strip the Authorization
+	 * header to still receive Google Chat webhook events.
+	 */
+	public function test_google_chat_oidc_validation_skipped_when_disabled_on_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Store a google_chat connection with disable_oidc_verification enabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC OIDC Disabled Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'api_key'                   => 'dummy_token',
+				'disable_oidc_verification' => true,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// Deliberately omit Authorization header — should still pass when OIDC is disabled.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'Validation must pass when disable_oidc_verification is enabled, even without a Bearer token' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token still requires a Bearer token when
+	 * disable_oidc_verification is false (default behavior unchanged).
+	 */
+	public function test_google_chat_oidc_validation_still_required_when_not_disabled() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Store a connection with disable_oidc_verification explicitly false.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC OIDC Enabled Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'api_key'                   => 'dummy_token',
+				'disable_oidc_verification' => false,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// No Authorization header.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must still reject requests without Bearer token when OIDC is not disabled' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test that disable_oidc_verification is saved and retrieved correctly via
+	 * WP_MCP_AI_Pro_Remote_Site_Manager.
+	 */
+	public function test_google_chat_disable_oidc_verification_field_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$conn_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC Persist Field Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'disable_oidc_verification' => true,
+			)
+		);
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+
+		$this->assertIsArray( $connection );
+		$this->assertTrue( (bool) $connection['disable_oidc_verification'], 'disable_oidc_verification should be persisted as true' );
+
+		// Now save with the flag disabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'                        => $conn_id,
+				'name'                      => 'GC Persist Field Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'disable_oidc_verification' => false,
+			)
+		);
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+
+		$this->assertFalse( (bool) $connection['disable_oidc_verification'], 'disable_oidc_verification should be persisted as false after update' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat & Telegram – get_any_assistant_id fallback (respond to all).
+	// =========================================================================
+
+	/**
+	 * Test get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Create a published assistant post.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test get_any_assistant_id returns 0 when no published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_zero_when_no_assistant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no published assistants exist.
+		$existing = get_posts(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'fields'      => 'ids',
+				'numberposts' => -1,
+			)
+		);
+		foreach ( $existing as $id ) {
+			wp_delete_post( $id, true );
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( 0, $result, 'get_any_assistant_id should return 0 when no assistants exist' );
+	}
+
+	/**
+	 * Test Telegram get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_telegram_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Telegram Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
 }
+

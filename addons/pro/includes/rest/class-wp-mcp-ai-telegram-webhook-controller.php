@@ -293,6 +293,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
 		}
 
+		// Final fallback: use any published assistant so all messages get a reply.
+		if ( empty( $assigned_assistant_ids ) ) {
+			$any_id = $this->get_any_assistant_id();
+			if ( $any_id ) {
+				$assigned_assistant_ids = array( $any_id );
+			}
+		}
+
 		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
 
 		if ( '' === $connection_id ) {
@@ -794,6 +802,35 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 		return false;
+	}
+	/**
+	 * Return the ID of any published AI assistant as a last-resort fallback.
+	 *
+	 * When no assistant is explicitly assigned to a connection and no global
+	 * default_assistant_id is configured in the automation rules, this helper
+	 * queries for the first published mcp_ai_assistant post so that incoming
+	 * messages always receive a reply rather than being silently dropped.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return int Assistant post ID, or 0 if none exist.
+	 */
+	protected function get_any_assistant_id() {
+		$posts = get_posts(
+			array(
+				'post_type'              => 'mcp_ai_assistant',
+				'post_status'            => 'publish',
+				'numberposts'            => 1,
+				'fields'                 => 'ids',
+				'orderby'                => 'date',
+				'order'                  => 'ASC',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		return ! empty( $posts ) ? (int) $posts[0] : 0;
 	}
 }
 
