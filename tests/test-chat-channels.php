@@ -310,4 +310,251 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		$this->assertNull( $result, 'Must return null when channel_contacts table does not exist' );
 	}
+
+	// =========================================================================
+	// Tool file existence – all platform tool classes must be loadable
+	// =========================================================================
+
+	/**
+	 * Helper: assert a ChatChannels tool file exists and the class is loadable.
+	 *
+	 * @param string $class_name PHP class name.
+	 * @param string $file_name  File name inside includes/src/Tools/ChatChannels/.
+	 */
+	private function assert_chat_channels_tool_loadable( $class_name, $file_name ) {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/' . $file_name;
+		$this->assertFileExists( $path, $file_name . ' must exist in ChatChannels directory' );
+
+		if ( ! class_exists( $class_name ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+			}
+			require_once $path;
+		}
+
+		$this->assertTrue( class_exists( $class_name ), $class_name . ' must be loadable' );
+
+		$tool = new $class_name();
+		$this->assertNotEmpty( $tool->get_slug(), $class_name . '::get_slug() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_name(), $class_name . '::get_name() must return a non-empty string' );
+		$this->assertNotEmpty( $tool->get_description(), $class_name . '::get_description() must return a non-empty string' );
+	}
+
+	// ----- WebChat P2P -------------------------------------------------------
+
+	/** WebChat P2P send message tool must be loadable. */
+	public function test_chat_channels_tool_send_webchat_message_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_WebChat_Message',
+			'class-wp-mcp-ai-pro-tool-send-webchat-message.php'
+		);
+	}
+
+	// ----- Telegram ----------------------------------------------------------
+
+	/** Telegram get-updates tool must be loadable. */
+	public function test_chat_channels_tool_get_telegram_updates_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates',
+			'class-wp-mcp-ai-pro-tool-get-telegram-updates.php'
+		);
+	}
+
+	/** Telegram manage-webhook tool must be loadable. */
+	public function test_chat_channels_tool_manage_telegram_webhook_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook',
+			'class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php'
+		);
+	}
+
+	// ----- WhatsApp ----------------------------------------------------------
+
+	/** WhatsApp get-messages tool must be loadable. */
+	public function test_chat_channels_tool_get_whatsapp_messages_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages',
+			'class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php'
+		);
+	}
+
+	/** WhatsApp send-interactive tool must be loadable. */
+	public function test_chat_channels_tool_send_whatsapp_interactive_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Interactive',
+			'class-wp-mcp-ai-pro-tool-send-whatsapp-interactive.php'
+		);
+	}
+
+	/** WhatsApp send-media tool must be loadable. */
+	public function test_chat_channels_tool_send_whatsapp_media_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Media',
+			'class-wp-mcp-ai-pro-tool-send-whatsapp-media.php'
+		);
+	}
+
+	/** WhatsApp send-template tool must be loadable. */
+	public function test_chat_channels_tool_send_whatsapp_template_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template',
+			'class-wp-mcp-ai-pro-tool-send-whatsapp-template.php'
+		);
+	}
+
+	// ----- Slack -------------------------------------------------------------
+
+	/** Slack get-channels tool must be loadable. */
+	public function test_chat_channels_tool_get_slack_channels_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Channels',
+			'class-wp-mcp-ai-pro-tool-get-slack-channels.php'
+		);
+	}
+
+	/** Slack get-messages tool must be loadable. */
+	public function test_chat_channels_tool_get_slack_messages_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Messages',
+			'class-wp-mcp-ai-pro-tool-get-slack-messages.php'
+		);
+	}
+
+	/** Slack send-message tool must be loadable. */
+	public function test_chat_channels_tool_send_slack_message_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_Slack_Message',
+			'class-wp-mcp-ai-pro-tool-send-slack-message.php'
+		);
+	}
+
+	/** Slack create-channel tool must be loadable. */
+	public function test_chat_channels_tool_create_slack_channel_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Create_Slack_Channel',
+			'class-wp-mcp-ai-pro-tool-create-slack-channel.php'
+		);
+	}
+
+	// ----- Discord -----------------------------------------------------------
+
+	/** Discord get-channels tool must be loadable. */
+	public function test_chat_channels_tool_get_discord_channels_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Channels',
+			'class-wp-mcp-ai-pro-tool-get-discord-channels.php'
+		);
+	}
+
+	/** Discord get-messages tool must be loadable. */
+	public function test_chat_channels_tool_get_discord_messages_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Messages',
+			'class-wp-mcp-ai-pro-tool-get-discord-messages.php'
+		);
+	}
+
+	/** Discord send-message tool must be loadable. */
+	public function test_chat_channels_tool_send_discord_message_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_Discord_Message',
+			'class-wp-mcp-ai-pro-tool-send-discord-message.php'
+		);
+	}
+
+	/** Discord create-channel tool must be loadable. */
+	public function test_chat_channels_tool_create_discord_channel_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Create_Discord_Channel',
+			'class-wp-mcp-ai-pro-tool-create-discord-channel.php'
+		);
+	}
+
+	// ----- Microsoft Teams ---------------------------------------------------
+
+	/** Teams get-channels tool must be loadable. */
+	public function test_chat_channels_tool_get_teams_channels_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Channels',
+			'class-wp-mcp-ai-pro-tool-get-teams-channels.php'
+		);
+	}
+
+	/** Teams get-messages tool must be loadable. */
+	public function test_chat_channels_tool_get_teams_messages_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Messages',
+			'class-wp-mcp-ai-pro-tool-get-teams-messages.php'
+		);
+	}
+
+	/** Teams send-message tool must be loadable. */
+	public function test_chat_channels_tool_send_teams_message_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_Teams_Message',
+			'class-wp-mcp-ai-pro-tool-send-teams-message.php'
+		);
+	}
+
+	// ----- Facebook Messenger ------------------------------------------------
+
+	/** Messenger get-conversations tool must be loadable. */
+	public function test_chat_channels_tool_get_messenger_conversations_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations',
+			'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php'
+		);
+	}
+
+	/** Messenger send-message tool must be loadable. */
+	public function test_chat_channels_tool_send_messenger_message_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message',
+			'class-wp-mcp-ai-pro-tool-send-messenger-message.php'
+		);
+	}
+
+	/** Messenger create-broadcast tool must be loadable. */
+	public function test_chat_channels_tool_create_messenger_broadcast_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast',
+			'class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php'
+		);
+	}
+
+	// ----- Unified broadcast -------------------------------------------------
+
+	/** Unified channel broadcast tool must be loadable. */
+	public function test_chat_channels_tool_unified_channel_broadcast_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast',
+			'class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php'
+		);
+	}
+
+	/** Unified broadcast slug must equal 'unified_channel_broadcast'. */
+	public function test_chat_channels_unified_broadcast_slug() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php';
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' ) && file_exists( $path ) ) {
+			if ( file_exists( WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+			}
+			require_once $path;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast could not be loaded' );
+		}
+
+		$tool = new WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast();
+		$this->assertSame( 'unified_channel_broadcast', $tool->get_slug() );
+	}
 }
