@@ -201,7 +201,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['system_user_id'] = $existing_connection['system_user_id'];
 			}
 
-			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] ) ) {
+			// For Google Chat the Audience URL (verify_token) is an optional field that is always
+			// rendered and submitted in the edit form, so allow the user to clear it.
+			// For WhatsApp and Messenger the verify_token is a required webhook secret; preserve
+			// the stored value when the submitted field is empty to avoid accidental erasure.
+			$saved_connection_type = isset( $connection_data['connection_type'] ) ? $connection_data['connection_type'] : '';
+			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] )
+				&& 'google_chat' !== $saved_connection_type ) {
 				$connection_data['verify_token'] = $existing_connection['verify_token'];
 			}
 
