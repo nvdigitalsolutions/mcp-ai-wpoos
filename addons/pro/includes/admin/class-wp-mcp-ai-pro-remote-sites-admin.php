@@ -2558,7 +2558,47 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<!-- Type-specific fields for Google Chat -->
+
+				<!-- Connection Method Selector -->
 				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Connection Method', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						// Determine the previously saved method (for edit mode).
+						$gc_saved_method = 'service_account'; // default.
+						if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+							if ( ! empty( $connection['reply_webhook_url'] ) && empty( $connection['api_key'] ) && empty( $connection['client_id'] ) ) {
+								$gc_saved_method = 'webhook';
+							} elseif ( ! empty( $connection['client_id'] ) || ! empty( $connection['refresh_token'] ) ) {
+								$gc_saved_method = 'oauth';
+							}
+						}
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Connection Method', 'mcp-ai-wpoos-pro' ); ?></legend>
+							<label style="display: inline-flex; align-items: center; margin-right: 20px; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_service_account" value="service_account" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'service_account' ); ?>>
+								<strong><?php esc_html_e( 'Service Account', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(recommended — full bot API access)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+							<label style="display: inline-flex; align-items: center; margin-right: 20px; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_oauth" value="oauth" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'oauth' ); ?>>
+								<strong><?php esc_html_e( 'OAuth 2.0', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(1-click user authorization)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+							<label style="display: inline-flex; align-items: center; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_webhook" value="webhook" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'webhook' ); ?>>
+								<strong><?php esc_html_e( 'Incoming Webhook', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(simplest — outbound-only to one space)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+						</fieldset>
+						<p class="description" style="margin-top: 8px;">
+							<?php esc_html_e( 'Choose how NV oOS authenticates with Google Chat. Service Account is best for bots that need to read and write across multiple spaces. OAuth 2.0 grants user-level access. Incoming Webhook is the simplest option when you only need to post outbound messages to a single space.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Service Account fields -->
+				<tr class="google_chat-only-field gc-method-sa gc-method-oauth" style="display: none;">
 					<th scope="row">
 						<label for="google_chat_service_account_key"><?php esc_html_e( 'Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
