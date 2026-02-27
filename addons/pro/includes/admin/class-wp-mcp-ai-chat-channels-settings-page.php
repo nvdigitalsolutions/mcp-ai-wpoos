@@ -321,6 +321,9 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render Telegram configuration section
 	 */
 	protected function render_telegram_config() {
+		$mini_app_url = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' )
+			? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url()
+			: rest_url( 'mcp-ai/v1/telegram-mini-app' );
 		?>
 		<div class="platform-config">
 			<div class="platform-config-header">
@@ -352,12 +355,29 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							<p class="description"><?php esc_html_e( 'Configure this URL in your Telegram bot settings', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Mini App URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $mini_app_url ); ?>" class="large-text code" onclick="this.select();" onfocus="this.select();" style="background-color:#f0f0f0;" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: opening <a> tag, 2: closing </a> tag */
+									esc_html__( 'Provide this URL to @BotFather when configuring your bot\'s %1$sMini App (Web App)%2$s. In BotFather, use /newapp or /setmenubutton and paste this URL to enable the "Open App" button for your users.', 'mcp-ai-wpoos-pro' ),
+									'<a href="https://core.telegram.org/bots/webapps" target="_blank" rel="noopener noreferrer">',
+									'</a>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
 				</table>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://core.telegram.org/bots" target="_blank"><?php esc_html_e( 'Telegram Bot API Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://core.telegram.org/bots/api" target="_blank"><?php esc_html_e( 'API Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://core.telegram.org/bots/webapps" target="_blank"><?php esc_html_e( 'Mini Apps (Web Apps) Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
