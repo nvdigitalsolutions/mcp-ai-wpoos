@@ -468,6 +468,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
 				// Google Chat-specific fields.
 				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
+				'reply_webhook_url' => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
 				// Twitter/X-specific fields.
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
@@ -2707,6 +2708,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
+						<label for="google_chat_reply_webhook_url"><?php esc_html_e( 'Incoming Webhook URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="google_chat_reply_webhook_url" id="google_chat_reply_webhook_url" class="large-text" value="<?php echo $is_edit && isset( $connection['reply_webhook_url'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['reply_webhook_url'] ) : ''; ?>" placeholder="https://chat.googleapis.com/v1/spaces/AAAAxxxxxx/messages?key=…&amp;token=…" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Paste the incoming webhook URL for the Google Chat space (created in Space Settings → Apps &amp; integrations → Manage webhooks). When provided, the AI assistant will use this URL to reply without requiring OAuth or Service Account credentials. This is the simplest setup option for bots responding in a single space.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php
+							printf(
+								'<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+								esc_url( 'https://developers.google.com/workspace/chat/quickstart/webhooks' ),
+								esc_html__( 'Learn more about Google Chat incoming webhooks', 'mcp-ai-wpoos-pro' )
+							);
+							?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
 						<label for="google_chat_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
@@ -2821,6 +2841,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to retrieve your bot\'s spaces, then assign Assistants, save, and enable the connection.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600;"><?php esc_html_e( 'Option C: Incoming Webhook URL (simplest — single-space bots)', 'mcp-ai-wpoos-pro' ); ?></p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'In the Google Chat space, click the space name → Apps &amp; integrations → Manage webhooks → Add webhook.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the generated webhook URL (starts with https://chat.googleapis.com/v1/spaces/…) and paste it into the Incoming Webhook URL field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'In Google Cloud Console, configure the bot endpoint URL to the Webhook URL shown above (still required so Google Chat can send events to the assistant).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign Assistants, save, and enable the connection. No OAuth credentials are needed for this option.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin: 0; font-size: 13px; color: #2271b1;">
 								ℹ <strong><?php esc_html_e( 'OAuth scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -7106,8 +7133,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// If a space name is available and credentials are present, send the reply
 		// via the Google Chat API to complete the full end-to-end test.
-		$has_api_key = ! empty( $connection['api_key'] );
-		$has_oauth   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] );
+		$has_api_key     = ! empty( $connection['api_key'] );
+		$has_oauth       = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] );
+		$has_webhook_url = ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#', $connection['reply_webhook_url'] );
 
 		if ( '' !== $space_name && ( $has_api_key || $has_oauth ) ) {
 			if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $space_name ) ) {
@@ -7187,6 +7216,35 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				}
 			} else {
 				$result['send_error'] = __( 'Could not obtain an access token from the stored credentials.', 'mcp-ai-wpoos-pro' );
+			}
+		} elseif ( $has_webhook_url ) {
+			// --- Fallback: send via incoming webhook URL (no OAuth needed) ---
+			$chat_body = wp_strip_all_tags( $ai_reply );
+			$chat_body = html_entity_decode( $chat_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			if ( mb_strlen( $chat_body ) > 4096 ) {
+				$chat_body = mb_substr( $chat_body, 0, 4093 ) . '...';
+			}
+
+			$send_body = wp_json_encode( array( 'text' => $chat_body ) );
+
+			if ( false !== $send_body ) {
+				$send_result = wp_remote_post(
+					$connection['reply_webhook_url'],
+					array(
+						'headers' => array( 'Content-Type' => 'application/json' ),
+						'timeout' => 20,
+						'body'    => $send_body,
+					)
+				);
+
+				if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+					$result['sent'] = true;
+				} else {
+					$send_error_body      = ! is_wp_error( $send_result ) ? json_decode( wp_remote_retrieve_body( $send_result ), true ) : null;
+					$result['send_error'] = isset( $send_error_body['error']['message'] )
+						? $send_error_body['error']['message']
+						: ( is_wp_error( $send_result ) ? $send_result->get_error_message() : __( 'Unknown send error.', 'mcp-ai-wpoos-pro' ) );
+				}
 			}
 		}
 

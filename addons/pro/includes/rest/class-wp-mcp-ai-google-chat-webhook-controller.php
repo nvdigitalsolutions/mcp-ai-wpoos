@@ -88,6 +88,17 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	const CHAT_API_BASE = 'https://chat.googleapis.com/v1';
 
 	/**
+	 * Pattern for validating Google Chat incoming webhook URLs.
+	 *
+	 * Incoming webhooks are created in Google Chat space settings and embed the
+	 * authentication key and token directly in the URL, allowing messages to be
+	 * posted to a specific space without OAuth 2.0 credentials.
+	 *
+	 * @see https://developers.google.com/workspace/chat/quickstart/webhooks
+	 */
+	const WEBHOOK_URL_PATTERN = '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#';
+
+	/**
 	 * Expected OIDC token issuer for Google Chat HTTP-endpoint apps.
 	 *
 	 * Google Chat signs webhook OIDC tokens with the service account
@@ -1061,12 +1072,15 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
+		$has_reply_webhook = $connection && ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
 		$has_credentials = $connection && (
 			! empty( $connection['api_key'] ) ||
 			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
 		);
 
-		if ( ! $has_credentials ) {
+		if ( ! $has_credentials && ! $has_reply_webhook ) {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat AI reply: connection not found or access token missing.',
 				array( 'connection_id' => $connection_id )
@@ -1074,9 +1088,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat AI reply' );
+		// Obtain access token only when OAuth/Service Account credentials are available.
+		$access_token = '';
+		if ( $has_credentials ) {
+			$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat AI reply' );
+		}
 
-		if ( '' === $access_token ) {
+		if ( '' === $access_token && ! $has_reply_webhook ) {
 			return;
 		}
 
@@ -1164,54 +1182,90 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// Post the reply via Google Chat API.
+		// Post the reply via Google Chat API or incoming webhook URL.
 		// When the original message belongs to a thread, reply in that thread so the
 		// response appears inline rather than as a new top-level message in the space.
 		// The messageReplyOption=REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD query parameter
 		// instructs the API to create a new thread when the provided thread no longer
 		// exists (e.g. race conditions or deleted threads).
-		$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+		//
+		// Priority: OAuth/Service Account API → incoming webhook URL (fallback).
+		// Incoming webhooks (https://developers.google.com/workspace/chat/quickstart/webhooks)
+		// do not support threading, so thread_name is ignored on that path.
 
-		if ( '' !== $thread_name ) {
-			$endpoint = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+		if ( '' !== $access_token ) {
+			// --- OAuth / Service Account path ---
+			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
+
+			if ( '' !== $thread_name ) {
+				$endpoint = add_query_arg( 'messageReplyOption', 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD', $endpoint );
+			}
+
+			$payload = array(
+				'text' => $content,
+			);
+
+			if ( '' !== $thread_name ) {
+				$payload['thread'] = array( 'name' => $thread_name );
+			}
+
+			$body = wp_json_encode( $payload );
+
+			if ( false === $body ) {
+				WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: failed to JSON-encode payload.' );
+				return;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_ai_reply_sending',
+				'Sending Google Chat AI reply.',
+				array(
+					'assistant_id' => $assistant_id,
+					'space_name'   => $space_name,
+					'thread_name'  => $thread_name,
+				)
+			);
+
+			$result = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $access_token,
+					),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		} else {
+			// --- Incoming webhook URL path (no OAuth needed) ---
+			$webhook_url = $connection['reply_webhook_url'];
+
+			$body = wp_json_encode( array( 'text' => $content ) );
+
+			if ( false === $body ) {
+				WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: failed to JSON-encode webhook payload.' );
+				return;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_ai_reply_sending',
+				'Sending Google Chat AI reply via incoming webhook URL.',
+				array(
+					'assistant_id' => $assistant_id,
+					'space_name'   => $space_name,
+				)
+			);
+
+			$result = wp_remote_post(
+				$webhook_url,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
 		}
-
-		$payload = array(
-			'text' => $content,
-		);
-
-		if ( '' !== $thread_name ) {
-			$payload['thread'] = array( 'name' => $thread_name );
-		}
-
-		$body = wp_json_encode( $payload );
-
-		if ( false === $body ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat AI reply: failed to JSON-encode payload.' );
-			return;
-		}
-
-		WP_MCP_AI_Logger::log_event(
-			'google_chat_ai_reply_sending',
-			'Sending Google Chat AI reply.',
-			array(
-				'assistant_id' => $assistant_id,
-				'space_name'   => $space_name,
-				'thread_name'  => $thread_name,
-			)
-		);
-
-		$result = wp_remote_post(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Content-Type'  => 'application/json',
-					'Authorization' => 'Bearer ' . $access_token,
-				),
-				'timeout' => 20,
-				'body'    => $body,
-			)
-		);
 
 		if ( is_wp_error( $result ) ) {
 			WP_MCP_AI_Logger::log_error(
