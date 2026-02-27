@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
         'version' => 'dev-copilot/fix-telegram-bot-error',
-        'reference' => 'a615163dad3c2da3f4f47c112d4731cdce1c2201',
+        'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
             'version' => 'dev-copilot/fix-telegram-bot-error',
-            'reference' => 'a615163dad3c2da3f4f47c112d4731cdce1c2201',
+            'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
