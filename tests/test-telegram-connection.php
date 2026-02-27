@@ -832,6 +832,44 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<!--', $output, 'Shortcode should return an HTML comment when bot_username is missing' );
 	}
 
+	/**
+	 * Test that handle_login_callback() returns a descriptive WP_Error when required
+	 * Telegram auth parameters are missing from the request.
+	 *
+	 * This covers the case where the login-callback URL is accidentally used as the
+	 * Mini App URL in BotFather: Telegram opens the URL without auth query params,
+	 * which previously surfaced as the generic rest_missing_callback_param error.
+	 */
+	public function test_handle_login_callback_returns_error_when_auth_params_are_missing() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a request with NO Telegram auth parameters.
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-login' );
+
+		$response = $controller->handle_login_callback( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $response, 'A request without auth params should return a WP_Error' );
+		$this->assertEquals(
+			'wp_mcp_ai_telegram_login_missing_params',
+			$response->get_error_code(),
+			'Error code should identify the missing-params scenario'
+		);
+		$this->assertEquals(
+			400,
+			$response->get_error_data()['status'],
+			'HTTP status should be 400'
+		);
+		// Error message should mention all four missing parameters.
+		$message = $response->get_error_message();
+		$this->assertStringContainsString( 'id', $message );
+		$this->assertStringContainsString( 'first_name', $message );
+		$this->assertStringContainsString( 'auth_date', $message );
+		$this->assertStringContainsString( 'hash', $message );
+	}
+
 	// =========================================================================
 	// Telegram Mini App URL tests
 	// =========================================================================
