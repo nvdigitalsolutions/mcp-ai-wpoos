@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-whatsapp-auto-reply',
-        'version' => 'dev-copilot/review-whatsapp-auto-reply',
-        'reference' => 'ea96cd138a5a56ccbd14f8ff7adc2df1a24eec65',
+        'pretty_version' => 'dev-copilot/fix-google-chat-messaging',
+        'version' => 'dev-copilot/fix-google-chat-messaging',
+        'reference' => '83b25b29e50d64181c5aa21c24be9cfedca7c702',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-whatsapp-auto-reply',
-            'version' => 'dev-copilot/review-whatsapp-auto-reply',
-            'reference' => 'ea96cd138a5a56ccbd14f8ff7adc2df1a24eec65',
+            'pretty_version' => 'dev-copilot/fix-google-chat-messaging',
+            'version' => 'dev-copilot/fix-google-chat-messaging',
+            'reference' => '83b25b29e50d64181c5aa21c24be9cfedca7c702',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

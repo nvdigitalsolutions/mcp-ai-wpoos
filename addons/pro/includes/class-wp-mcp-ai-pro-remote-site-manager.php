@@ -265,6 +265,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
 			}
 
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) if not provided.
+			if ( empty( $connection_data['reply_webhook_url'] ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
+			}
+
 			// Preserve existing assigned_assistant_ids (WhatsApp channel routing) if not provided.
 			if ( ! isset( $connection_data['assigned_assistant_ids'] ) && ! empty( $existing_connection['assigned_assistant_ids'] ) ) {
 				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
@@ -368,7 +373,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// WebChat P2P-specific fields.
 			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
 			// Google Chat-specific fields.
-			'google_chat_space' => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
+			'google_chat_space'  => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
+			// Google Chat incoming webhook URL for sending AI replies (no OAuth needed).
+			'reply_webhook_url'  => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
 			// WhatsApp channel routing: assistant IDs listening on this channel.
 			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
