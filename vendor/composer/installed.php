@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/perform-code-review-google-chat',
-        'version' => 'dev-copilot/perform-code-review-google-chat',
-        'reference' => 'e1ac1f74405b1b064d07ff4283fd44a32ab0789d',
+        'pretty_version' => 'dev-copilot/review-whatsapp-auto-reply',
+        'version' => 'dev-copilot/review-whatsapp-auto-reply',
+        'reference' => 'ea96cd138a5a56ccbd14f8ff7adc2df1a24eec65',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/perform-code-review-google-chat',
-            'version' => 'dev-copilot/perform-code-review-google-chat',
-            'reference' => 'e1ac1f74405b1b064d07ff4283fd44a32ab0789d',
+            'pretty_version' => 'dev-copilot/review-whatsapp-auto-reply',
+            'version' => 'dev-copilot/review-whatsapp-auto-reply',
+            'reference' => 'ea96cd138a5a56ccbd14f8ff7adc2df1a24eec65',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

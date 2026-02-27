@@ -609,6 +609,141 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Trigger auto-reply with human takeover / automation keyword checks,
+		// mirroring the WhatsApp auto-reply dispatch pattern.
+		$this->maybe_auto_reply(
+			$message_text,
+			$sender_name,
+			$space_name,
+			$connection_id,
+			$thread_name,
+			$assigned_assistant_ids,
+			$automation_rules
+		);
+
+		// Return empty response — Google Chat accepts 200 with an empty JSON body
+		// or a message payload to reply synchronously. Using async cron avoids timeouts.
+		return rest_ensure_response( $this->empty_response() );
+	}
+
+	/**
+	 * Decide whether to auto-reply to an incoming Google Chat message.
+	 *
+	 * Mirrors the WhatsApp maybe_auto_reply() pattern: applies automation keyword
+	 * checks (human takeover / AI resume) and the human takeover gate before
+	 * dispatching an async AI reply via WordPress cron.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text           Plain-text message from the sender.
+	 * @param string $sender_name            Google Chat sender resource name (e.g. users/12345).
+	 * @param string $space_name             Google Chat space resource name (e.g. spaces/AAAA).
+	 * @param string $connection_id          Remote connection ID.
+	 * @param string $thread_name            Thread resource name (may be empty for new threads).
+	 * @param int[]  $assigned_assistant_ids Assistant post IDs assigned to this connection.
+	 * @param array  $automation_rules       Global chat channels automation rule settings.
+	 */
+	protected function maybe_auto_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids, array $automation_rules ) {
+		// Nothing to do for empty messages — dispatch_google_chat_ai_reply() would
+		// reject them too, but checking early avoids unnecessary keyword iterations.
+		if ( '' === $message_text ) {
+			return;
+		}
+
+		$message_text_lower = strtolower( $message_text );
+
+		// --- Human takeover keyword check ---
+		// When a message contains a configured human-takeover keyword, flag the
+		// contact for human takeover and skip the AI auto-reply so a human agent
+		// can respond instead.
+		if ( ! empty( $automation_rules['human_takeover_keywords'] ) ) {
+			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
+			foreach ( $takeover_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'google_chat', $sender_name );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_human_takeover_triggered',
+						'Human takeover triggered by keyword.',
+						array( 'sender_name' => $sender_name, 'keyword' => $kw )
+					);
+					return; // Do not auto-reply; human agent will respond.
+				}
+			}
+		}
+
+		// --- AI resume keyword check ---
+		// When a message contains a configured AI-resume keyword, clear the human
+		// takeover flag so AI auto-replies resume for this contact.
+		if ( ! empty( $automation_rules['ai_resume_keywords'] ) ) {
+			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
+			foreach ( $resume_kws as $kw ) {
+				if ( '' !== $kw && false !== strpos( $message_text_lower, $kw ) ) {
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'google_chat', $sender_name );
+						if ( $contact_id ) {
+							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
+						}
+					}
+					WP_MCP_AI_Logger::log_event(
+						'google_chat_ai_resumed',
+						'AI auto-reply resumed by keyword.',
+						array( 'sender_name' => $sender_name, 'keyword' => $kw )
+					);
+					break; // Continue and allow AI to reply.
+				}
+			}
+		}
+
+		// --- Human takeover gate ---
+		// Skip AI auto-reply when a human agent is actively handling this contact.
+		if ( ! empty( $sender_name ) && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'google_chat', $sender_name ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'google_chat_auto_reply_skipped_human_takeover',
+					'Auto-reply skipped: human takeover is active for this contact.',
+					array( 'sender_name' => $sender_name )
+				);
+				return;
+			}
+		}
+
+		// Dispatch an AI-generated reply asynchronously via WordPress cron.
+		$this->dispatch_google_chat_ai_reply(
+			$message_text,
+			$sender_name,
+			$space_name,
+			$connection_id,
+			$thread_name,
+			$assigned_assistant_ids
+		);
+	}
+
+	/**
+	 * Schedule an asynchronous cron job to generate and send a Google Chat AI reply.
+	 *
+	 * Mirrors the WhatsApp dispatch_whatsapp_ai_reply() pattern. Scheduling
+	 * slightly in the future (time() + 1) ensures the webhook response is
+	 * returned to Google Chat before the cron job begins, preventing timeouts.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $message_text           Plain-text message from the sender.
+	 * @param string $sender_name            Google Chat sender resource name.
+	 * @param string $space_name             Google Chat space resource name.
+	 * @param string $connection_id          Remote connection ID.
+	 * @param string $thread_name            Thread resource name (may be empty).
+	 * @param int[]  $assigned_assistant_ids Assistant post IDs for this connection.
+	 */
+	protected function dispatch_google_chat_ai_reply( $message_text, $sender_name, $space_name, $connection_id, $thread_name, array $assigned_assistant_ids ) {
+		if ( '' === $message_text || '' === $space_name || '' === $connection_id || empty( $assigned_assistant_ids ) ) {
+			return;
+		}
+
 		$job_args = array(
 			array(
 				'assistant_id'  => $assigned_assistant_ids[0],
@@ -620,12 +755,40 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			),
 		);
 
+		// Schedule slightly in the future so the current request can complete first.
 		wp_schedule_single_event( time() + 1, self::REPLY_CRON_HOOK, $job_args );
 		spawn_cron();
+	}
 
-		// Return empty response — Google Chat accepts 200 with an empty JSON body
-		// or a message payload to reply synchronously. Using async cron avoids timeouts.
-		return rest_ensure_response( $this->empty_response() );
+	/**
+	 * Retrieve the Channel Contacts CCT row ID for a Google Chat sender.
+	 *
+	 * Used by maybe_auto_reply() to set or clear human takeover flags, mirroring
+	 * the equivalent helper in WP_MCP_AI_WhatsApp_Webhook_Controller.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel            Channel slug (e.g. 'google_chat').
+	 * @param string $channel_contact_id Platform-side contact identifier (sender resource name).
+	 * @return int|null CCT row ID, or null if not found or CCT is unavailable.
+	 */
+	protected function get_channel_contact_id( $channel, $channel_contact_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) || ! WP_MCP_AI_Channel_Contacts_CCT::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT _ID FROM {$table} WHERE channel = %s AND channel_contact_id = %s LIMIT 1",
+				sanitize_key( $channel ),
+				sanitize_text_field( $channel_contact_id )
+			)
+		);
+
+		return $id ? (int) $id : null;
 	}
 
 	/**
