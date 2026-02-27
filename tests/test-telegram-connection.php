@@ -831,4 +831,107 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( '<!--', $output, 'Shortcode should return an HTML comment when bot_username is missing' );
 	}
+
+	// =========================================================================
+	// Telegram Mini App URL tests
+	// =========================================================================
+
+	/**
+	 * Load the Telegram Mini App controller, skipping if unavailable.
+	 *
+	 * @return WP_MCP_AI_Telegram_Mini_App_Controller|null
+	 */
+	private function load_telegram_mini_app_controller() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return null;
+			}
+			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+			if ( file_exists( $file ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
+				include_once $file;
+			} else {
+				$this->markTestSkipped( 'Telegram Mini App Controller not available' );
+				return null;
+			}
+		}
+		return new WP_MCP_AI_Telegram_Mini_App_Controller();
+	}
+
+	/**
+	 * Test that the Telegram Mini App controller class exists and can be instantiated.
+	 */
+	public function test_telegram_mini_app_controller_exists() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertInstanceOf(
+			'WP_MCP_AI_Telegram_Mini_App_Controller',
+			$controller,
+			'Telegram Mini App controller should be instantiatable'
+		);
+	}
+
+	/**
+	 * Test that get_mini_app_url() returns a valid URL containing the expected path.
+	 */
+	public function test_get_mini_app_url_returns_valid_url() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$url = WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url();
+
+		$this->assertNotEmpty( $url, 'Mini App URL should not be empty' );
+		$this->assertStringContainsString( 'mcp-ai/v1/telegram-mini-app', $url, 'Mini App URL should contain the expected REST path' );
+		$this->assertStringStartsWith( 'http', $url, 'Mini App URL should be a valid HTTP(S) URL' );
+	}
+
+	/**
+	 * Test that the Telegram Mini App controller registers the expected REST route.
+	 */
+	public function test_telegram_mini_app_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Trigger route registration.
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app',
+			$routes,
+			'The /mcp-ai/v1/telegram-mini-app REST route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the Mini App controller has a public static get_mini_app_url() method.
+	 */
+	public function test_telegram_mini_app_controller_has_get_mini_app_url_method() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+
+		$this->assertTrue(
+			$reflection->hasMethod( 'get_mini_app_url' ),
+			'Telegram Mini App controller should have a get_mini_app_url() method'
+		);
+
+		$method = $reflection->getMethod( 'get_mini_app_url' );
+		$this->assertTrue(
+			$method->isPublic() && $method->isStatic(),
+			'get_mini_app_url() should be a public static method'
+		);
+	}
 }
