@@ -97,6 +97,54 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that clearing the Audience URL (verify_token) on update persists as empty.
+	 *
+	 * Regression test: previously the save manager would restore the old verify_token
+	 * whenever the submitted value was empty, making it impossible to clear the field.
+	 */
+	public function test_google_chat_audience_url_can_be_cleared() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// First save with an audience URL set.
+		$connection_data = array(
+			'name'              => 'Test Google Chat Clear Audience',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_token',
+			'verify_token'      => 'https://example.com/wp-json/mcp-ai/v1/webhooks/google-chat',
+			'google_chat_space' => '',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Now update, explicitly clearing the audience URL (keep api_key unchanged to isolate the fix).
+		$update_data = array(
+			'id'                => $connection_id,
+			'name'              => 'Test Google Chat Clear Audience',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_token',
+			'verify_token'      => '',
+			'google_chat_space' => '',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertSame( '', $saved['verify_token'], 'Clearing the Audience URL should persist as empty' );
+	}
+
+	/**
 	 * Test that assigned_assistant_ids persist for Google Chat connections.
 	 */
 	public function test_google_chat_assigned_assistants_persist() {
