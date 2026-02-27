@@ -3472,5 +3472,420 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$this->assertTrue( $result, 'Without a nonce header the Bearer-token path must still work (no audience → pass)' );
 	}
+
+	// =========================================================================
+	// Apple Messages for Business Webhook Controller
+	// =========================================================================
+
+	/**
+	 * Test CONVERSATION_HISTORY_TTL constant equals 86400 (24 hours).
+	 */
+	public function test_apple_messages_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Apple Messages CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test DEDUP_TRANSIENT_TTL constant equals 60.
+	 */
+	public function test_apple_messages_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Apple Messages DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/**
+	 * Test MAX_MESSAGE_LENGTH constant equals 2000.
+	 */
+	public function test_apple_messages_max_message_length_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			2000,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::MAX_MESSAGE_LENGTH,
+			'Apple Messages MAX_MESSAGE_LENGTH should be 2000 characters'
+		);
+	}
+
+	/**
+	 * Test REPLY_CRON_HOOK constant has expected value.
+	 */
+	public function test_apple_messages_reply_cron_hook_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			'wp_mcp_ai_apple_messages_send_ai_reply',
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::REPLY_CRON_HOOK
+		);
+	}
+
+	/**
+	 * Test SUPPORTED_EVENT_TYPES constant contains the five expected types.
+	 */
+	public function test_apple_messages_supported_event_types() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$expected = array( 'message', 'interactive', 'typing', 'read', 'close' );
+
+		$this->assertSame(
+			$expected,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::SUPPORTED_EVENT_TYPES,
+			'Apple Messages SUPPORTED_EVENT_TYPES should list all five event types'
+		);
+	}
+
+	/**
+	 * Test that validate_webhook_signature returns true when no secret is configured.
+	 */
+	public function test_apple_messages_signature_passes_without_secret() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		// Ensure no settings are stored.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '{"type":"message"}' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook should pass validation when no secret is configured' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects requests with no signature header
+	 * when a secret is configured.
+	 */
+	public function test_apple_messages_signature_rejected_without_header() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => 'mysecret',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '{"type":"message"}' );
+		// No signature header set.
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertFalse( $result, 'Webhook should be rejected when secret is set but no signature header is present' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature accepts a correct HMAC-SHA256 signature.
+	 */
+	public function test_apple_messages_signature_accepted_with_valid_hmac() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'test-webhook-secret';
+		$payload = '{"type":"message","id":"evt_001"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$signature = hash_hmac( 'sha256', $payload, $secret );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		$request->set_header( 'x-apple-messages-signature', $signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook with a correct HMAC-SHA256 signature should be accepted' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature accepts a sha256= prefixed signature.
+	 */
+	public function test_apple_messages_signature_accepted_with_sha256_prefix() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'another-secret';
+		$payload = '{"type":"close","conversationId":"conv_xyz"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$signature = 'sha256=' . hash_hmac( 'sha256', $payload, $secret );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		$request->set_header( 'x-hub-signature-256', $signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook with sha256= prefixed HMAC signature should be accepted' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects a tampered payload.
+	 */
+	public function test_apple_messages_signature_rejected_with_invalid_hmac() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'real-secret';
+		$payload = '{"type":"message"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		// Provide signature computed with wrong secret.
+		$request->set_header( 'x-apple-messages-signature', hash_hmac( 'sha256', $payload, 'wrong-secret' ) );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertFalse( $result, 'Webhook with incorrect HMAC signature should be rejected' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that handle_webhook returns ok:true for an empty payload.
+	 */
+	public function test_apple_messages_handle_webhook_returns_ok_for_empty_payload() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'ok', $data );
+		$this->assertTrue( $data['ok'] );
+	}
+
+	/**
+	 * Test that handle_webhook returns ok:true for an unsupported event type.
+	 */
+	public function test_apple_messages_handle_webhook_ignores_unknown_event_type() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( '{"type":"unknown_event_xyz","id":"evt_123"}' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['ok'], 'Unknown event types must still return ok:true' );
+	}
+
+	/**
+	 * Test that duplicate events are skipped via deduplication transient.
+	 */
+	public function test_apple_messages_deduplication_skips_duplicate_events() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$event_id = 'evt_dedup_test_001';
+
+		// Pre-set the dedup transient to simulate a previously processed event.
+		set_transient( 'wp_mcp_ai_apple_dedup_' . $event_id, 1, 60 );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'           => 'message',
+					'id'             => $event_id,
+					'conversationId' => 'conv_123',
+					'senderId'       => 'sender_456',
+					'body'           => array( 'text' => 'Hello again' ),
+				)
+			)
+		);
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$this->assertTrue( $response->get_data()['ok'], 'Duplicate event should still return ok:true' );
+
+		delete_transient( 'wp_mcp_ai_apple_dedup_' . $event_id );
+	}
+
+	/**
+	 * Test that close event sets opt-out transient for the conversation.
+	 */
+	public function test_apple_messages_close_event_sets_optout_transient() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$conversation_id = 'conv_close_test_' . uniqid();
+		$transient_key   = 'wp_mcp_ai_apple_optout_' . md5( $conversation_id );
+
+		// Ensure no prior transient.
+		delete_transient( $transient_key );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'           => 'close',
+					'id'             => 'evt_close_' . uniqid(),
+					'conversationId' => $conversation_id,
+				)
+			)
+		);
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertTrue( $response->get_data()['ok'] );
+		$this->assertNotFalse( get_transient( $transient_key ), 'Close event should set opt-out transient for the conversation' );
+
+		delete_transient( $transient_key );
+	}
+
+	/**
+	 * Test mask_sensitive_value returns masked string for normal values.
+	 */
+	public function test_apple_messages_mask_sensitive_value() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'mask_sensitive_value' );
+		$method->setAccessible( true );
+
+		$masked_empty = $method->invoke( $controller, '' );
+		$this->assertSame( '', $masked_empty, 'Empty value should return empty string' );
+
+		$masked_short = $method->invoke( $controller, 'ab' );
+		$this->assertSame( '**', $masked_short, 'Short value (<=4) should be fully masked' );
+
+		$masked_long = $method->invoke( $controller, 'abcdefgh' );
+		$this->assertStringStartsWith( 'ab', $masked_long, 'Long value should preserve first two chars' );
+		$this->assertStringEndsWith( 'gh', $masked_long, 'Long value should preserve last two chars' );
+		$this->assertStringContainsString( '****', $masked_long, 'Long value should have asterisks in the middle' );
+	}
+
+	/**
+	 * Test get_connection_settings falls back to default connection when no connection_id matches.
+	 */
+	public function test_apple_messages_get_connection_settings_fallback_to_default() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'msp_api_url' => 'https://default.msp.example.com',
+						'api_key'     => 'default-key',
+						'business_id' => 'biz-default',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_connection_settings' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'nonexistent_connection_id' );
+
+		$this->assertArrayHasKey( 'msp_api_url', $result );
+		$this->assertSame( 'https://default.msp.example.com', $result['msp_api_url'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_connection_settings returns named connection settings when connection_id matches.
+	 */
+	public function test_apple_messages_get_connection_settings_returns_named_connection() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'store_a' => array(
+						'msp_api_url' => 'https://store-a.msp.example.com',
+						'api_key'     => 'store-a-key',
+						'business_id' => 'biz-store-a',
+					),
+					'default' => array(
+						'msp_api_url' => 'https://default.msp.example.com',
+						'api_key'     => 'default-key',
+						'business_id' => 'biz-default',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_connection_settings' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'store_a' );
+
+		$this->assertSame( 'https://store-a.msp.example.com', $result['msp_api_url'] );
+		$this->assertSame( 'biz-store-a', $result['business_id'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }
+
 
