@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-google-chat-messaging',
-        'version' => 'dev-copilot/fix-google-chat-messaging',
-        'reference' => '83b25b29e50d64181c5aa21c24be9cfedca7c702',
+        'pretty_version' => 'dev-copilot/add-web-login-feature',
+        'version' => 'dev-copilot/add-web-login-feature',
+        'reference' => '06b69dd29e8288cc12242fb53dbef0d85919438b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-google-chat-messaging',
-            'version' => 'dev-copilot/fix-google-chat-messaging',
-            'reference' => '83b25b29e50d64181c5aa21c24be9cfedca7c702',
+            'pretty_version' => 'dev-copilot/add-web-login-feature',
+            'version' => 'dev-copilot/add-web-login-feature',
+            'reference' => '06b69dd29e8288cc12242fb53dbef0d85919438b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

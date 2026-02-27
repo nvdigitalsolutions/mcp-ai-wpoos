@@ -176,7 +176,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
 
-		$original = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$original                  = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$original_encrypted_secret = $original['secret_token'];
 
 		// Update without providing secret_token — it should be preserved.
@@ -375,28 +375,35 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		}
 
 		// Create a dummy assistant post.
-		$assistant_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Default Telegram Bot',
-			'post_name'   => 'default-telegram-bot',
-			'post_status' => 'publish',
-		) );
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Default Telegram Bot',
+				'post_name'   => 'default-telegram-bot',
+				'post_status' => 'publish',
+			)
+		);
 		$this->assertGreaterThan( 0, $assistant_id, 'Assistant post should be created successfully' );
 
 		// Set the global default_assistant_id in automation rules.
-		update_option( 'wp_mcp_ai_chat_channels_automation_rules', array(
-			'default_assistant_id' => $assistant_id,
-		) );
+		update_option(
+			'wp_mcp_ai_chat_channels_automation_rules',
+			array(
+				'default_assistant_id' => $assistant_id,
+			)
+		);
 
 		// Save a Telegram connection with NO assigned_assistant_ids.
-		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( array(
-			'name'            => 'Telegram Default Assistant Test',
-			'url'             => 'https://api.telegram.org',
-			'connection_type' => 'telegram',
-			'auth_type'       => 'none',
-			'enabled'         => true,
-			'api_key'         => '6666666666:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
-		) );
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Telegram Default Assistant Test',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '6666666666:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+			)
+		);
 
 		// Use the filter to capture whether auto-reply was triggered.
 		$captured_assistant_ids = null;
@@ -418,12 +425,15 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'process_message' );
 		$method->setAccessible( true );
 
-		$method->invoke( $controller, array(
-			'text'    => 'Hello bot',
-			'chat'    => array( 'id' => '111222333' ),
-			'from'    => array( 'id' => '444555666' ),
-			'message_id' => 1,
-		) );
+		$method->invoke(
+			$controller,
+			array(
+				'text'       => 'Hello bot',
+				'chat'       => array( 'id' => '111222333' ),
+				'from'       => array( 'id' => '444555666' ),
+				'message_id' => 1,
+			)
+		);
 
 		remove_all_filters( 'wp_mcp_ai_telegram_should_auto_reply' );
 
@@ -454,23 +464,27 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		$assistant_id = wp_insert_post( array(
-			'post_type'   => 'mcp_ai_assistant',
-			'post_title'  => 'Filter Test Bot',
-			'post_name'   => 'filter-test-bot',
-			'post_status' => 'publish',
-		) );
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Filter Test Bot',
+				'post_name'   => 'filter-test-bot',
+				'post_status' => 'publish',
+			)
+		);
 		$this->assertGreaterThan( 0, $assistant_id, 'Assistant post should be created successfully' );
 
-		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( array(
-			'name'                  => 'Telegram Filter Test',
-			'url'                   => 'https://api.telegram.org',
-			'connection_type'       => 'telegram',
-			'auth_type'             => 'none',
-			'enabled'               => true,
-			'api_key'               => '7777777777:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
-			'assigned_assistant_ids' => array( $assistant_id ),
-		) );
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'Telegram Filter Test',
+				'url'                    => 'https://api.telegram.org',
+				'connection_type'        => 'telegram',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => '7777777777:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
 
 		$filter_was_called = false;
 		add_filter(
@@ -484,17 +498,336 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$reflection = new ReflectionClass( $controller );
 		$method     = $reflection->getMethod( 'process_message' );
 		$method->setAccessible( true );
-		$method->invoke( $controller, array(
-			'text'       => 'Filter test message',
-			'chat'       => array( 'id' => '777888999' ),
-			'from'       => array( 'id' => '111000111' ),
-			'message_id' => 2,
-		) );
+		$method->invoke(
+			$controller,
+			array(
+				'text'       => 'Filter test message',
+				'chat'       => array( 'id' => '777888999' ),
+				'from'       => array( 'id' => '111000111' ),
+				'message_id' => 2,
+			)
+		);
 
 		remove_all_filters( 'wp_mcp_ai_telegram_should_auto_reply' );
 
 		$this->assertTrue( $filter_was_called, 'wp_mcp_ai_telegram_should_auto_reply filter should have been invoked' );
 
 		wp_delete_post( $assistant_id, true );
+	}
+
+	// =========================================================================
+	// Telegram Web Login feature tests
+	// =========================================================================
+
+	/**
+	 * Load the Telegram Login controller, skipping if unavailable.
+	 *
+	 * @return WP_MCP_AI_Telegram_Login_Controller|null
+	 */
+	private function load_telegram_login_controller() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Login_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return null;
+			}
+			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-login-controller.php';
+			if ( file_exists( $file ) ) {
+				// Guard against loading the file twice (include_once handles this).
+				if ( ! class_exists( 'WP_MCP_AI_Telegram_Login_Controller' ) ) {
+					// phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
+					include_once $file;
+				}
+			} else {
+				$this->markTestSkipped( 'Telegram Login Controller not available' );
+				return null;
+			}
+		}
+		// Return a fresh instance for use with ReflectionClass without triggering
+		// the constructor (which calls add_action / add_shortcode – safe to call again).
+		return new WP_MCP_AI_Telegram_Login_Controller();
+	}
+
+	/**
+	 * Test that verify_auth_data() returns true for a valid Telegram auth payload.
+	 */
+	public function test_verify_auth_data_returns_true_for_valid_data() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a synthetic auth data payload.
+		$bot_token = 'TestBotToken1234567890:ABCDEFGHIJKLMNOPQRabcdefghijklmno';
+		$auth_data = array(
+			'id'         => '123456789',
+			'first_name' => 'John',
+			'username'   => 'johndoe',
+			'auth_date'  => (string) time(),
+		);
+
+		// Compute the correct hash using the same algorithm as the controller.
+		$check_fields = array();
+		foreach ( $auth_data as $key => $value ) {
+			$check_fields[] = $key . '=' . $value;
+		}
+		sort( $check_fields );
+		$data_check_string = implode( "\n", $check_fields );
+		$secret_key        = hash( 'sha256', $bot_token, true );
+		$auth_data['hash'] = hash_hmac( 'sha256', $data_check_string, $secret_key );
+
+		$result = $controller->verify_auth_data( $auth_data, $bot_token );
+
+		$this->assertTrue( $result, 'verify_auth_data() should return true for valid Telegram auth data' );
+	}
+
+	/**
+	 * Test that verify_auth_data() returns WP_Error for a tampered hash.
+	 */
+	public function test_verify_auth_data_returns_error_for_invalid_hash() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$auth_data = array(
+			'id'         => '123456789',
+			'first_name' => 'Jane',
+			'auth_date'  => (string) time(),
+			'hash'       => str_repeat( 'a', 64 ), // Fake hash.
+		);
+
+		$result = $controller->verify_auth_data( $auth_data, 'AnyBotToken:123' );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'verify_auth_data() should return WP_Error for invalid hash' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_login_invalid_hash', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that verify_auth_data() returns WP_Error when auth_date is expired.
+	 */
+	public function test_verify_auth_data_returns_error_for_expired_auth_date() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$bot_token = 'TestBotToken:ExpiredTest123';
+		$auth_data = array(
+			'id'         => '999',
+			'first_name' => 'Old',
+			'auth_date'  => (string) ( time() - 90000 ), // More than 24 h ago.
+		);
+
+		$check_fields = array();
+		foreach ( $auth_data as $key => $value ) {
+			$check_fields[] = $key . '=' . $value;
+		}
+		sort( $check_fields );
+		$data_check_string = implode( "\n", $check_fields );
+		$secret_key        = hash( 'sha256', $bot_token, true );
+		$auth_data['hash'] = hash_hmac( 'sha256', $data_check_string, $secret_key );
+
+		$result = $controller->verify_auth_data( $auth_data, $bot_token );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'verify_auth_data() should return WP_Error for expired auth_date' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_login_expired', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that verify_auth_data() returns WP_Error when hash is missing.
+	 */
+	public function test_verify_auth_data_returns_error_when_hash_missing() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$auth_data = array(
+			'id'         => '123',
+			'first_name' => 'NoHash',
+			'auth_date'  => (string) time(),
+		);
+
+		$result = $controller->verify_auth_data( $auth_data, 'AnyToken:123' );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_telegram_login_missing_hash', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that enable_web_login and web_login_redirect_url persist when saving a connection.
+	 */
+	public function test_telegram_web_login_fields_persist() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'                   => 'Telegram Web Login Test',
+			'url'                    => 'https://api.telegram.org',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '8888888888:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+			'enable_web_login'       => true,
+			'web_login_redirect_url' => 'https://example.com/welcome',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertTrue( (bool) $saved['enable_web_login'], 'enable_web_login should be stored as true' );
+		$this->assertEquals( 'https://example.com/welcome', $saved['web_login_redirect_url'], 'web_login_redirect_url should persist' );
+	}
+
+	/**
+	 * Test that enable_web_login and web_login_redirect_url are preserved on update
+	 * when not provided in the update data.
+	 */
+	public function test_telegram_web_login_fields_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with web login enabled.
+		$connection_data = array(
+			'name'                   => 'Telegram Web Login Preserve',
+			'url'                    => 'https://api.telegram.org',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '9999999999:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+			'enable_web_login'       => true,
+			'web_login_redirect_url' => 'https://example.com/logged-in',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Update without providing web login fields.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Telegram Web Login Preserve — Renamed',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertTrue( (bool) $updated['enable_web_login'], 'enable_web_login should be preserved on update' );
+		$this->assertEquals( 'https://example.com/logged-in', $updated['web_login_redirect_url'], 'web_login_redirect_url should be preserved on update' );
+	}
+
+	/**
+	 * Test that get_active_web_login_connection() returns only connections with Web Login enabled.
+	 */
+	public function test_get_active_web_login_connection_returns_correct_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Save a Telegram connection without web login.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'             => 'No Web Login Bot',
+				'url'              => 'https://api.telegram.org',
+				'connection_type'  => 'telegram',
+				'auth_type'        => 'none',
+				'enabled'          => true,
+				'api_key'          => '1010101010:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'enable_web_login' => false,
+			)
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_web_login_connection' );
+		$method->setAccessible( true );
+
+		// Should return null when no connection has web login enabled.
+		$result = $method->invoke( $controller );
+		$this->assertNull( $result, 'Should return null when no web-login-enabled Telegram connection exists' );
+
+		// Now save one with web login enabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'             => 'Web Login Bot',
+				'url'              => 'https://api.telegram.org',
+				'connection_type'  => 'telegram',
+				'auth_type'        => 'none',
+				'enabled'          => true,
+				'api_key'          => '1111111111:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'enable_web_login' => true,
+			)
+		);
+
+		$result = $method->invoke( $controller );
+		$this->assertNotNull( $result, 'Should return the web-login-enabled Telegram connection' );
+		$this->assertTrue( (bool) $result['enable_web_login'], 'Returned connection should have enable_web_login set' );
+	}
+
+	/**
+	 * Test that the [mcp_ai_telegram_login] shortcode renders a script tag when
+	 * a bot_username is provided via the shortcode attribute.
+	 */
+	public function test_render_login_widget_shortcode_with_bot_username_attr() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$output = $controller->render_login_widget(
+			array(
+				'bot_username'   => 'mytestbot',
+				'redirect_url'   => '',
+				'button_size'    => 'large',
+				'corner_radius'  => '',
+				'request_access' => '',
+				'show_avatar'    => '1',
+				'lang'           => '',
+			)
+		);
+
+		$this->assertStringContainsString( '<script', $output, 'Shortcode should output a <script> tag' );
+		$this->assertStringContainsString( 'telegram-widget.js', $output, 'Script should load the Telegram widget JS' );
+		$this->assertStringContainsString( 'data-telegram-login="mytestbot"', $output, 'data-telegram-login attribute should contain the bot username' );
+		$this->assertStringContainsString( 'data-size="large"', $output, 'data-size attribute should be present' );
+	}
+
+	/**
+	 * Test that the shortcode returns a comment when bot_username is not provided
+	 * and no Web Login connection is configured.
+	 */
+	public function test_render_login_widget_shortcode_without_bot_username_returns_comment() {
+		$controller = $this->load_telegram_login_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$output = $controller->render_login_widget(
+			array(
+				'bot_username'   => '',
+				'redirect_url'   => '',
+				'button_size'    => 'large',
+				'corner_radius'  => '',
+				'request_access' => '',
+				'show_avatar'    => '1',
+				'lang'           => '',
+			)
+		);
+
+		$this->assertStringContainsString( '<!--', $output, 'Shortcode should return an HTML comment when bot_username is missing' );
 	}
 }

@@ -178,6 +178,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['bot_username'] = $existing_connection['bot_username'];
 			}
 
+			// Preserve existing enable_web_login (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_web_login'] ) && isset( $existing_connection['enable_web_login'] ) ) {
+				$connection_data['enable_web_login'] = $existing_connection['enable_web_login'];
+			}
+
+			// Preserve existing web_login_redirect_url (Telegram) if not provided.
+			if ( ! isset( $connection_data['web_login_redirect_url'] ) && isset( $existing_connection['web_login_redirect_url'] ) ) {
+				$connection_data['web_login_redirect_url'] = $existing_connection['web_login_redirect_url'];
+			}
+
 			// Preserve existing WhatsApp-specific fields if not provided.
 			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
 				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
@@ -344,6 +354,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
 			// Telegram-specific fields.
 			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			// Telegram Web Login feature flag and after-login redirect URL.
+			'enable_web_login'       => ! empty( $connection_data['enable_web_login'] ),
+			'web_login_redirect_url' => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',

@@ -495,6 +495,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load Telegram Webhook Controller for Telegram Bot API events.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
 
+			// Load Telegram Login Controller for Web Login widget callback and shortcode.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-login-controller.php';
+
 			// Load Slack Event Controller for Slack Events API payloads.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
 
