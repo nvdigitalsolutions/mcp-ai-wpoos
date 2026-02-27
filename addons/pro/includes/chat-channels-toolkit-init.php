@@ -4,7 +4,8 @@
  *
  * Loads the Chat Channels Toolkit system for unified multi-platform
  * messaging across Telegram, WhatsApp, Slack, Discord, Microsoft Teams,
- * Facebook Messenger, and other major chat platforms.
+ * Facebook Messenger, Apple Messages for Business (iMessage), and other
+ * major chat platforms.
  *
  * This toolkit provides comprehensive chat channel integration following
  * industry best practices for multi-platform messaging.
@@ -45,6 +46,14 @@ if ( $is_enabled && ! $is_base ) {
 		new WP_MCP_AI_Chat_Channels_REST_Controller();
 	}
 	unset( $_cc_rest );
+
+	// --- REST API: Apple Messages for Business webhook controller ---
+	$_apple_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php';
+	if ( file_exists( $_apple_rest ) && ! class_exists( 'WP_MCP_AI_Apple_Messages_Webhook_Controller' ) ) {
+		require_once $_apple_rest;
+		new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+	}
+	unset( $_apple_rest );
 
 	// --- Admin: top-level Chat Channels menu (Dashboard, Inbox, Contacts, Automation) ---
 	if ( is_admin() ) {
@@ -98,6 +107,8 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_ad
  * Registers chat channel tools for all supported platforms: WebChat, Google
  * Chat, Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook
  * Messenger, Twitter/X, and the unified broadcast tool.
+ * Registers chat channel tools including WebChat, Google Chat, Twitter/X,
+ * and Apple Messages for Business (iMessage) tools.
  *
  * @since 1.0.0
  */
@@ -192,6 +203,33 @@ function wp_mcp_ai_load_chat_channels_tools() {
 
 		if ( $should_register ) {
 			$registry->register_tool( new $class() );
+		}
+	}
+
+	// Apple Messages for Business (iMessage) tools.
+	$apple_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$apple_tools     = array(
+		'WP_MCP_AI_Pro_Tool_Send_Apple_Message'             => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message.php',
+		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Interactive' => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-interactive.php',
+		'WP_MCP_AI_Pro_Tool_Get_Apple_Messages'             => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-get-apple-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group'       => $apple_tools_dir . 'class-wp-mcp-ai-pro-tool-send-apple-message-group.php',
+	);
+
+	foreach ( $apple_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
 		}
 	}
 }
