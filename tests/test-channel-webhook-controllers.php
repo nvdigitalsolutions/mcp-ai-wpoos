@@ -3359,5 +3359,118 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		wp_delete_post( $assistant_id, true );
 	}
+
+	// =========================================================================
+	// Google Chat – WordPress nonce authentication.
+	// =========================================================================
+
+	/**
+	 * Test validate_google_oidc_token accepts a logged-in admin supplying a valid
+	 * WordPress nonce in the X-WP-Nonce header.
+	 *
+	 * Admins (manage_options) can authenticate the webhook via the standard
+	 * WordPress REST API nonce, enabling testing and WordPress-side invocations
+	 * without a real Google OIDC Bearer token.
+	 */
+	public function test_google_chat_validation_accepts_admin_with_valid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$nonce = wp_create_nonce( 'wp_rest' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertTrue( $result, 'A logged-in admin with a valid WordPress nonce must be accepted' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a logged-in subscriber even when
+	 * a valid WordPress nonce is supplied.
+	 *
+	 * Only users with manage_options capability are allowed to authenticate via
+	 * WordPress nonce; regular subscribers must not bypass OIDC validation.
+	 */
+	public function test_google_chat_validation_rejects_subscriber_with_valid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$nonce = wp_create_nonce( 'wp_rest' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+		// No Authorization Bearer header — nonce is the only credential supplied.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertFalse( $result, 'A subscriber with a valid nonce must not bypass OIDC validation' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects an admin who sends an invalid nonce.
+	 *
+	 * An invalid or tampered nonce must fall through to the OIDC Bearer-token
+	 * check and be rejected when no Bearer token is present either.
+	 */
+	public function test_google_chat_validation_rejects_admin_with_invalid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', 'invalid_nonce_value' );
+		// No Authorization Bearer header — nothing else to fall back on.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertFalse( $result, 'An admin with an invalid nonce and no Bearer token must be rejected' );
+	}
+
+	/**
+	 * Test that an unauthenticated request with no X-WP-Nonce header still falls
+	 * through to the OIDC Bearer-token check (nonce path is skipped entirely).
+	 *
+	 * This guards against the nonce block accidentally short-circuiting the
+	 * existing OIDC validation when no nonce header is present.
+	 */
+	public function test_google_chat_validation_no_nonce_falls_through_to_oidc() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// No user logged in, no nonce header — a Bearer token is the only path.
+		wp_set_current_user( 0 );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.valid.looking.token' );
+		// No X-WP-Nonce header set.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'Without a nonce header the Bearer-token path must still work (no audience → pass)' );
+	}
 }
 

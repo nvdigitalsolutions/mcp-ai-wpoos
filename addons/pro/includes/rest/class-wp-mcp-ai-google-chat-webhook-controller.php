@@ -342,6 +342,27 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return true;
 		}
 
+		// Accept WordPress nonce authentication for administrator users.
+		// This allows logged-in admins to trigger or test the webhook endpoint
+		// from wp-admin or other WordPress code without a Google OIDC Bearer token.
+		// The standard WordPress REST API nonce (X-WP-Nonce header with action
+		// 'wp_rest') is required, and the caller must have the manage_options
+		// capability so that ordinary subscribers cannot authenticate this way.
+		$wp_nonce = $request->get_header( 'X-WP-Nonce' );
+		if (
+			! empty( $wp_nonce ) &&
+			is_user_logged_in() &&
+			current_user_can( 'manage_options' ) &&
+			wp_verify_nonce( $wp_nonce, 'wp_rest' )
+		) {
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_nonce_auth',
+				'Google Chat webhook: request authenticated via WordPress nonce.',
+				array()
+			);
+			return true;
+		}
+
 		$auth_header = $request->get_header( 'authorization' );
 
 		// Fallback: some server configurations (Apache + FastCGI / PHP-FPM) do not
