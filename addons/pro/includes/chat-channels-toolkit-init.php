@@ -129,8 +129,9 @@ function wp_mcp_ai_load_chat_channels_tools() {
 		'WP_MCP_AI_Pro_Tool_Remove_Google_Chat_Space_Member' => $tools_dir . 'class-wp-mcp-ai-pro-tool-remove-google-chat-space-member.php',
 
 		// Telegram tools.
-		'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
-		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook' => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+		'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'       => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
+		'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+		'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction' => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php',
 
 		// WhatsApp (Meta Cloud API) tools.
 		'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'        => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
@@ -145,10 +146,12 @@ function wp_mcp_ai_load_chat_channels_tools() {
 		'WP_MCP_AI_Pro_Tool_Create_Slack_Channel' => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-slack-channel.php',
 
 		// Discord tools.
-		'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-channels.php',
-		'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-messages.php',
-		'WP_MCP_AI_Pro_Tool_Send_Discord_Message'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-discord-message.php',
-		'WP_MCP_AI_Pro_Tool_Create_Discord_Channel' => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-discord-channel.php',
+		'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-channels.php',
+		'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-messages.php',
+		'WP_MCP_AI_Pro_Tool_Send_Discord_Message'             => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-discord-message.php',
+		'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'           => $tools_dir . 'class-wp-mcp-ai-pro-tool-create-discord-channel.php',
+		'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction'     => $tools_dir . 'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php',
+		'WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php',
 
 		// Microsoft Teams tools.
 		'WP_MCP_AI_Pro_Tool_Get_Teams_Channels' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-channels.php',

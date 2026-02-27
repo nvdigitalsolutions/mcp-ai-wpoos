@@ -39,6 +39,41 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Load a ChatChannels tool class by file name, including the tool interface.
+	 *
+	 * Centralises the interface + class loading pattern shared by slug, schema,
+	 * and execute validation tests.
+	 *
+	 * @param string $class_name PHP class name.
+	 * @param string $file_name  File name inside includes/src/Tools/ChatChannels/.
+	 */
+	private function load_channel_tool( $class_name, $file_name ) {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		if ( class_exists( $class_name ) ) {
+			return;
+		}
+
+		$interface_path = WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+		if ( file_exists( $interface_path ) ) {
+			require_once $interface_path;
+		}
+
+		$path = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/' . $file_name;
+		if ( ! file_exists( $path ) ) {
+			$this->markTestSkipped( $class_name . ' file not found at ' . $path );
+		}
+
+		require_once $path;
+
+		if ( ! class_exists( $class_name ) ) {
+			$this->markTestSkipped( $class_name . ' could not be loaded' );
+		}
+	}
+
 	// =========================================================================
 	// Channel Messages CCT
 	// =========================================================================
@@ -556,5 +591,178 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		$tool = new WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast();
 		$this->assertSame( 'unified_channel_broadcast', $tool->get_slug() );
+	}
+
+	// ----- OpenClaw Feb 2026 parity: Reactions & Voice -----------------------
+
+	/** Discord add-message-reaction tool must be loadable. */
+	public function test_chat_channels_tool_add_discord_message_reaction_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php'
+		);
+	}
+
+	/** Discord add-reaction slug must equal 'add_discord_message_reaction'. */
+	public function test_chat_channels_discord_reaction_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction();
+		$this->assertSame( 'add_discord_message_reaction', $tool->get_slug() );
+	}
+
+	/** Discord add-reaction schema must require token, channel_id, message_id, emoji. */
+	public function test_chat_channels_discord_reaction_schema_required_fields() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php'
+		);
+
+		$tool     = new WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction();
+		$schema   = $tool->get_parameters_schema();
+		$required = $schema['required'];
+
+		$this->assertContains( 'token', $required );
+		$this->assertContains( 'channel_id', $required );
+		$this->assertContains( 'message_id', $required );
+		$this->assertContains( 'emoji', $required );
+	}
+
+	/** Discord add-reaction returns WP_Error when token is missing. */
+	public function test_chat_channels_discord_reaction_execute_missing_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-discord-message-reaction.php'
+		);
+
+		// Run as admin so the capability gate passes.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Add_Discord_Message_Reaction();
+		$result = $tool->execute(
+			array(
+				'channel_id' => '123456789',
+				'message_id' => '987654321',
+				'emoji'      => '👍',
+				// token intentionally omitted.
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_discord_token', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/** Telegram add-message-reaction tool must be loadable. */
+	public function test_chat_channels_tool_add_telegram_message_reaction_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php'
+		);
+	}
+
+	/** Telegram add-reaction slug must equal 'add_telegram_message_reaction'. */
+	public function test_chat_channels_telegram_reaction_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction();
+		$this->assertSame( 'add_telegram_message_reaction', $tool->get_slug() );
+	}
+
+	/** Telegram add-reaction schema must require token, chat_id, message_id, emoji. */
+	public function test_chat_channels_telegram_reaction_schema_required_fields() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php'
+		);
+
+		$tool     = new WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction();
+		$schema   = $tool->get_parameters_schema();
+		$required = $schema['required'];
+
+		$this->assertContains( 'token', $required );
+		$this->assertContains( 'chat_id', $required );
+		$this->assertContains( 'message_id', $required );
+		$this->assertContains( 'emoji', $required );
+	}
+
+	/** Telegram add-reaction returns WP_Error when token is missing. */
+	public function test_chat_channels_telegram_reaction_execute_missing_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction',
+			'class-wp-mcp-ai-pro-tool-add-telegram-message-reaction.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Add_Telegram_Message_Reaction();
+		$result = $tool->execute(
+			array(
+				'chat_id'    => '123456789',
+				'message_id' => 42,
+				'emoji'      => '👍',
+				// token intentionally omitted.
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_telegram_token', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/** Discord get-voice-channel-members tool must be loadable. */
+	public function test_chat_channels_tool_get_discord_voice_channel_members_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members',
+			'class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php'
+		);
+	}
+
+	/** Discord voice-channel-members slug must equal 'get_discord_voice_channel_members'. */
+	public function test_chat_channels_discord_voice_members_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members',
+			'class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members();
+		$this->assertSame( 'get_discord_voice_channel_members', $tool->get_slug() );
+	}
+
+	/** Discord voice-channel-members returns WP_Error when token is missing. */
+	public function test_chat_channels_discord_voice_members_execute_missing_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members',
+			'class-wp-mcp-ai-pro-tool-get-discord-voice-channel-members.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Discord_Voice_Channel_Members();
+		$result = $tool->execute(
+			array(
+				'channel_id' => '123456789',
+				// token intentionally omitted.
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_discord_token', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
 	}
 }
