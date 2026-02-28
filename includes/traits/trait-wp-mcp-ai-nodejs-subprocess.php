@@ -61,38 +61,21 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 		$working_dir = isset( $options['working_dir'] ) ? $options['working_dir'] : dirname( $script_path );
 		$parse_json  = isset( $options['parse_json'] ) ? (bool) $options['parse_json'] : true;
 
-		// Build command.
-		$command = array( $node_path, $script_path );
-		foreach ( $arguments as $arg ) {
-			$command[] = $arg;
-		}
+		// Build command array.
+		$command = array_merge( array( $node_path, $script_path ), $arguments );
 
-		// Escape command for shell execution.
-		$escaped_command = array_map( 'escapeshellarg', $command );
-		$command_string  = implode( ' ', $escaped_command );
-
-		// Execute command.
-		$output      = array();
-		$return_code = 0;
-		$cwd         = getcwd();
-
-		// Change to working directory if specified.
+		// Build process options.
+		$process_options = array( 'timeout' => $timeout );
 		if ( $working_dir && is_dir( $working_dir ) ) {
-			chdir( $working_dir );
+			$process_options['cwd'] = $working_dir;
 		}
 
-		// Execute with timeout.
-		$start_time = time();
-		exec( $command_string . ' 2>&1', $output, $return_code );
-		$duration = time() - $start_time;
+		// Execute via Process Service.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$result          = $process_service->run_silent( $command, $process_options );
 
-		// Restore original working directory.
-		if ( $cwd ) {
-			chdir( $cwd );
-		}
-
-		// Check timeout.
-		if ( $duration >= $timeout ) {
+		// Check for timeout.
+		if ( isset( $result['timeout'] ) && $result['timeout'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_script_timeout',
 				sprintf(
@@ -103,8 +86,8 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 			);
 		}
 
-		// Join output lines.
-		$output_string = implode( "\n", $output );
+		$return_code   = $result['exit_code'];
+		$output_string = trim( $result['output'] );
 
 		// Check return code.
 		if ( 0 !== $return_code ) {
@@ -161,7 +144,6 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 		return array(
 			'output'      => $output_string,
 			'return_code' => $return_code,
-			'duration'    => $duration,
 		);
 	}
 
@@ -171,18 +153,19 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 	 * @return string|WP_Error Path to Node.js executable or WP_Error if not found.
 	 */
 	protected function get_nodejs_executable() {
+		// Use Process Service to locate node via PATH.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$which_node      = $process_service->get_command_path( 'node' );
+		if ( $which_node ) {
+			return $which_node;
+		}
+
 		// Check for Node.js in common locations.
 		$possible_paths = array(
 			'/usr/bin/node',
 			'/usr/local/bin/node',
 			'/opt/homebrew/bin/node', // macOS Homebrew.
 		);
-
-		// Also check PATH.
-		$which_node = exec( 'which node 2>/dev/null' );
-		if ( ! empty( $which_node ) && file_exists( $which_node ) ) {
-			return $which_node;
-		}
 
 		// Check possible paths.
 		foreach ( $possible_paths as $path ) {
@@ -224,16 +207,17 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 			return $node_path;
 		}
 
-		$output = array();
-		exec( escapeshellarg( $node_path ) . ' --version 2>&1', $output, $return_code );
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$result          = $process_service->run_silent( array( $node_path, '--version' ), array( 'timeout' => 10 ) );
 
-		if ( 0 !== $return_code || empty( $output ) ) {
+		if ( ! $result['success'] || empty( $result['output'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_version_error',
 				__( 'Failed to get Node.js version.', 'mcp-ai-wpoos' )
 			);
 		}
 
-		return trim( $output[0] );
+		$lines = explode( "\n", trim( $result['output'] ) );
+		return trim( $lines[0] );
 	}
 }
