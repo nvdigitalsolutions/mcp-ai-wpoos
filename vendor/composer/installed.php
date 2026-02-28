@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
-        'version' => 'dev-copilot/fix-telegram-bot-error',
-        'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
+        'pretty_version' => 'dev-copilot/fix-imessage-dropdown-issue',
+        'version' => 'dev-copilot/fix-imessage-dropdown-issue',
+        'reference' => 'e6beaf1e065fbe181a684f44640f745a22e0ed75',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-bot-error',
-            'version' => 'dev-copilot/fix-telegram-bot-error',
-            'reference' => '7eac29537c2cc91f7f2f9950a0737880294b2e5a',
+            'pretty_version' => 'dev-copilot/fix-imessage-dropdown-issue',
+            'version' => 'dev-copilot/fix-imessage-dropdown-issue',
+            'reference' => 'e6beaf1e065fbe181a684f44640f745a22e0ed75',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

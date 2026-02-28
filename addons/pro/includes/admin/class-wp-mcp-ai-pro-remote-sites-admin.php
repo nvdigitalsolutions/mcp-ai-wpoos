@@ -300,6 +300,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					// WebChat uses connection_id (handled separately as p2p_connection_id below)
 					$api_secret = isset( $_POST['webchat_encryption_key'] ) ? wp_unslash( $_POST['webchat_encryption_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'apple_messages':
+					$api_key    = isset( $_POST['apple_msp_api_key'] ) ? wp_unslash( $_POST['apple_msp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['apple_webhook_secret'] ) ? wp_unslash( $_POST['apple_webhook_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -379,6 +383,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			if ( 'twitter' === $connection_type ) {
 				$url       = 'https://api.twitter.com/2';
+				$auth_type = 'none';
+			}
+
+			if ( 'apple_messages' === $connection_type ) {
+				// The MSP API URL is entered by the user (varies per MSP provider).
+				$url       = isset( $_POST['apple_msp_api_url'] ) ? esc_url_raw( wp_unslash( $_POST['apple_msp_api_url'] ) ) : $url;
 				$auth_type = 'none';
 			}
 
@@ -480,6 +490,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'connection_method' => $gc_method,
 				// Twitter/X-specific fields.
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
+				// Apple Messages for Business-specific fields.
+				'business_id'       => isset( $_POST['apple_business_id'] ) ? sanitize_text_field( wp_unslash( $_POST['apple_business_id'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -730,7 +742,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 									'google_chat'        => __( 'Google Chat', 'mcp-ai-wpoos-pro' ),
 									'twitter'            => __( 'Twitter / X', 'mcp-ai-wpoos-pro' ),
-								);
+									'apple_messages'     => __( 'Apple Messages for Business', 'mcp-ai-wpoos-pro' ),
+									);
 
 								$type_colors = array(
 									'wordpress'          => '#2271b1',
@@ -752,7 +765,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'webchat'            => '#ff6b6b', // WebChat coral red
 									'google_chat'        => '#1a73e8', // Google Chat blue
 									'twitter'            => '#000000', // X (formerly Twitter) black
-								);
+									'apple_messages'     => '#555555', // Apple dark grey
+									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
 								$type_badge_color = isset( $type_colors[ $connection_type ] ) ? $type_colors[ $connection_type ] : '#50575e';
@@ -1054,6 +1068,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="twitter" <?php selected( $connection_type, 'twitter' ); ?>>
 								<?php esc_html_e( 'Twitter / X (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="apple_messages" <?php selected( $connection_type, 'apple_messages' ); ?>>
+								<?php esc_html_e( 'Apple Messages for Business / iMessage (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -3125,6 +3142,90 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								ℹ <strong><?php esc_html_e( 'Signature validation:', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<?php esc_html_e( 'Twitter signs each POST event with HMAC-SHA256 (base64-encoded) using your Consumer Secret in the X-Twitter-Webhooks-Signature header. The API Secret Key above enables automatic signature verification on every incoming event.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
+							</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Apple Messages for Business (iMessage) -->
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_msp_api_url"><?php esc_html_e( 'MSP API URL', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="url" name="apple_msp_api_url" id="apple_msp_api_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['url'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['url'] ) : ''; ?>" placeholder="https://api.your-msp.com/v1/apple/messages" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Base URL of your approved Messaging Service Provider (MSP) REST API endpoint. Each MSP (e.g. Infobip, Zendesk, CM.com) provides its own URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_msp_api_key"><?php esc_html_e( 'MSP API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'API key is saved. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="apple_msp_api_key" id="apple_msp_api_key" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'API key or bearer token issued by your MSP for authenticating Apple Messages for Business API requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_webhook_secret"><?php esc_html_e( 'Webhook Signing Secret (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_secret'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Signing secret is saved. Leave blank to keep the existing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="apple_webhook_secret" id="apple_webhook_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'HMAC-SHA256 signing secret provided by your MSP for validating incoming webhook events. Leave blank to skip signature verification.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_business_id"><?php esc_html_e( 'Apple Business ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="apple_business_id" id="apple_business_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['business_id'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['business_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Apple Messages for Business identifier issued during Apple Business Registration. Required when sending outbound messages via the AI tools.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Channel-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;"><?php esc_html_e( 'Register this URL with your MSP as the webhook endpoint to receive Apple Messages for Business events.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all connections):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use the channel-specific URL above when possible so each MSP configuration routes to its own connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for your MSP configuration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #555555; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Register your business at register.apple.com/messages to obtain an Apple Business ID.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Choose an approved Messaging Service Provider (MSP) such as Infobip, Zendesk, CM.com, or LivePerson and obtain your MSP API credentials.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter the MSP API URL, API Key, and optional Webhook Signing Secret above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection to generate a channel-specific Webhook URL, then register it with your MSP.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to this connection so incoming iMessages are answered automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
 						</div>
 					</td>
 				</tr>
@@ -3239,6 +3340,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
 			var googleChatFields = document.querySelectorAll('.google_chat-only-field');
 			var twitterFields = document.querySelectorAll('.twitter-only-field');
+			var appleMessagesFields = document.querySelectorAll('.apple_messages-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -3301,6 +3403,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			twitterFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			appleMessagesFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -3480,6 +3585,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.value = 'https://api.twitter.com/2';
 				urlField.readOnly = true;
 				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'apple_messages') {
+				appleMessagesFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Apple Messages for Business — MSP API URL is entered by the user
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
 			}
