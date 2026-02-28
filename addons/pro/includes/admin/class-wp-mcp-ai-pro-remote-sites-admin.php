@@ -6545,23 +6545,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		// Always query /me — a Page Access Token returns the page's own data without requiring
-		// pages_read_engagement, Page Public Content Access, or Page Public Metadata Access.
-		// Requesting only id and name to stay within standard token permissions.
-		$endpoint = sprintf(
-			'https://graph.facebook.com/%s/me?fields=id,name',
-			$api_version
+		// Detect App Access Tokens (format: {AppID}|{hash}, e.g. "1704482943846642|EVQCBBJ0mXtyjMW6Z4fGgZkGrVA").
+		// App Access Tokens cannot call /me — that endpoint is reserved for User/Page tokens and returns
+		// "An active access token must be used to query information about the current user" (HTTP 400).
+		// Route App Access Tokens to /app, which returns the app's own identity and works without error.
+		$is_app_token = (bool) preg_match( '/^\d+\|[A-Za-z0-9_\-]+$/', $access_token );
+
+		if ( $is_app_token ) {
+			// App Access Token: verify via /app endpoint.
+			$endpoint = sprintf(
+				'https://graph.facebook.com/%s/app?fields=id,name&access_token=%s',
+				$api_version,
+				rawurlencode( $access_token )
+			);
+		} else {
+			// Page/User Access Token: query /me — returns the page's own data without requiring
+			// pages_read_engagement, Page Public Content Access, or Page Public Metadata Access.
+			// Requesting only id and name to stay within standard token permissions.
+			$endpoint = sprintf(
+				'https://graph.facebook.com/%s/me?fields=id,name',
+				$api_version
+			);
+		}
+
+		$request_args = array(
+			'timeout' => 15,
 		);
 
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $access_token,
-				),
-				'timeout' => 15,
-			)
-		);
+		if ( ! $is_app_token ) {
+			// Page/User tokens: pass via Authorization header.
+			$request_args['headers'] = array(
+				'Authorization' => 'Bearer ' . $access_token,
+			);
+		}
+
+		$response = wp_remote_get( $endpoint, $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			wp_send_json_error(
@@ -6594,7 +6612,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		$returned_id = isset( $body['id'] ) ? $body['id'] : '';
-		$token_type  = ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' );
+		$token_type  = $is_app_token ? __( 'App Access Token', 'mcp-ai-wpoos-pro' ) : __( 'Page Access Token', 'mcp-ai-wpoos-pro' );
 
 		$result = array(
 			'page_name'  => isset( $body['name'] ) ? $body['name'] : '',
@@ -6603,12 +6621,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'message'    => __( 'Messenger connection successful! Credentials are valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		if ( ! empty( $page_id ) && $returned_id !== $page_id ) {
-			// Token is valid but represents a different page (or an App Access Token).
-			$result['warning'] = __( 'The token is valid but the Page ID returned by the API does not match the Page ID entered. Ensure you are using a Page Access Token for the correct page.', 'mcp-ai-wpoos-pro' );
-		} elseif ( empty( $page_id ) ) {
-			// Warn when an App Access Token is used — it can verify identity but cannot send messages.
+		if ( $is_app_token ) {
+			// Warn that App Access Tokens cannot send Messenger messages.
 			$result['warning'] = __( 'App Access Token detected. To send messages via Messenger, obtain a Page Access Token with pages_messaging permission from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' );
+		} elseif ( ! empty( $page_id ) && $returned_id !== $page_id ) {
+			// Page token is valid but represents a different page.
+			$result['warning'] = __( 'The token is valid but the Page ID returned by the API does not match the Page ID provided. Ensure you are using a Page Access Token for the correct page.', 'mcp-ai-wpoos-pro' );
+		} elseif ( empty( $page_id ) ) {
+			// No page_id provided — advise the user.
+			$result['warning'] = __( 'No Page ID provided. To validate that the token matches your intended page, enter a Page ID in the optional field above.', 'mcp-ai-wpoos-pro' );
 		}
 
 		wp_send_json_success( $result );
