@@ -876,6 +876,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	*   1. The explicit `?assistant=` query parameter on the request.
 	*   2. The first entry in `assigned_assistant_ids` on the active Telegram connection.
 	*   3. The `default_assistant_id` from the global chat-channels automation rules.
+	*   4. The `default_assistant` from the Chat Channels Toolkit settings page.
 	*
 	* @since 1.0.0
 	*
@@ -903,6 +904,12 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
 		if ( ! empty( $automation_rules['default_assistant_id'] ) ) {
 			return (string) absint( $automation_rules['default_assistant_id'] );
+		}
+
+		// 4. Fall back to the default assistant saved in the Chat Channels Toolkit settings page.
+		$toolkit_settings = get_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array() );
+		if ( ! empty( $toolkit_settings['default_assistant'] ) ) {
+			return (string) absint( $toolkit_settings['default_assistant'] );
 		}
 
 		return '';

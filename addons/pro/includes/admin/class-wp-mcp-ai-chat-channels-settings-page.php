@@ -123,6 +123,109 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	}
 
 	/**
+	 * Override the configuration form to include the Global Settings section
+	 * inside the WordPress Settings API form so values are properly saved.
+	 */
+	protected function render_configuration_form() {
+		$settings = get_option( $this->option_name, array() );
+
+		$saved_assistant       = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+		$enable_logging        = ! empty( $settings['enable_logging'] );
+		$enable_rate_limiting  = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
+		$verify_webhook        = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<form method="post" action="options.php">
+				<?php settings_fields( $this->option_name . '_group' ); ?>
+				<?php do_settings_sections( $this->option_name ); ?>
+
+				<h2 style="margin-top: 20px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<label for="cc-default-assistant-setting"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<select id="cc-default-assistant-setting" name="<?php echo esc_attr( $this->option_name ); ?>[default_assistant]" class="regular-text">
+								<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $assistants as $assistant ) : ?>
+									<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $saved_assistant, $assistant->ID ); ?>>
+										<?php echo esc_html( $assistant->post_title ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages (used by the Telegram Mini App and other channels).', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_logging]" value="1" <?php checked( $enable_logging ); ?> />
+								<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_rate_limiting]" value="1" <?php checked( $enable_rate_limiting ); ?> />
+								<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[verify_webhook_signatures]" value="1" <?php checked( $verify_webhook ); ?> />
+								<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+				</table>
+
+				<?php submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+			</form>
+		</div><!-- .toolkit-card -->
+		<?php
+		$this->render_configuration_tab();
+	}
+
+	/**
+	 * Override sanitize_settings to include the Global Settings fields.
+	 *
+	 * @param array $input Settings input from the form.
+	 * @return array Sanitized settings array.
+	 */
+	public function sanitize_settings( $input ) {
+		// Call the parent to handle any base-class fields (enable_remote_sites, enable_research,
+		// research_assistant_id) – these are disabled for this toolkit but calling the parent
+		// is harmless and future-proofs the code if they are ever enabled.
+		$sanitized = parent::sanitize_settings( $input );
+
+		// Chat Channels Global Settings fields.
+		$sanitized['default_assistant']        = isset( $input['default_assistant'] ) ? absint( $input['default_assistant'] ) : 0;
+		$sanitized['enable_logging']           = ! empty( $input['enable_logging'] );
+		$sanitized['enable_rate_limiting']     = ! empty( $input['enable_rate_limiting'] );
+		$sanitized['verify_webhook_signatures'] = ! empty( $input['verify_webhook_signatures'] );
+
+		return $sanitized;
+	}
+
+	/**
 	 * Render overview tab
 	 */
 	protected function render_overview_tab() {
@@ -202,60 +305,6 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_teams_config(); ?>
 			<?php $this->render_messenger_config(); ?>
 			<?php $this->render_twitter_config(); ?>
-
-			<h2 style="margin-top: 40px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<select name="default_assistant" class="regular-text">
-							<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
-							<?php
-							$assistants = get_posts(
-								array(
-									'post_type'      => 'mcp_ai_assistant',
-									'posts_per_page' => -1,
-									'post_status'    => 'publish',
-								)
-							);
-							foreach ( $assistants as $assistant ) :
-								?>
-								<option value="<?php echo esc_attr( $assistant->ID ); ?>">
-									<?php echo esc_html( $assistant->post_title ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_logging" value="1" />
-							<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_rate_limiting" value="1" checked />
-							<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="verify_webhook_signatures" value="1" checked />
-							<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-			</table>
 		</div>
 
 		<style>

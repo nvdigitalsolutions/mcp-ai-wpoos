@@ -1211,6 +1211,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		}
 
 		delete_option( 'wp_mcp_ai_chat_channels_automation_rules' );
+		delete_option( 'wp_mcp_ai_chat_channels_toolkit_settings' );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
 
@@ -1221,6 +1222,32 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$result = $method->invoke( $controller, $request, null );
 
 		$this->assertSame( '', $result, 'Empty string should be returned when no assistant is configured' );
+	}
+
+	/**
+	 * Test that resolve_mini_app_assistant() falls back to the toolkit settings default_assistant
+	 * when automation rules also have no default assistant set.
+	 */
+	public function test_resolve_mini_app_assistant_falls_back_to_toolkit_settings() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		delete_option( 'wp_mcp_ai_chat_channels_automation_rules' );
+		update_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array( 'default_assistant' => 88 ) );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, null );
+
+		delete_option( 'wp_mcp_ai_chat_channels_toolkit_settings' );
+
+		$this->assertEquals( '88', $result, 'toolkit settings default_assistant should be used as final fallback' );
 	}
 
 	/**
