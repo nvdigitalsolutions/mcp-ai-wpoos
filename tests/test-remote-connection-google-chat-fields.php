@@ -1442,4 +1442,37 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 			'Non-Google-Chat URL should not match the pattern'
 		);
 	}
+
+	/**
+	 * Test that connection_method persists correctly for all three Google Chat auth methods.
+	 */
+	public function test_google_chat_connection_method_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$methods = array( 'service_account', 'oauth', 'webhook' );
+
+		foreach ( $methods as $method ) {
+			$connection_data = array(
+				'name'              => 'Test Google Chat - ' . $method,
+				'url'               => 'https://chat.googleapis.com/v1',
+				'connection_type'   => 'google_chat',
+				'auth_type'         => 'none',
+				'enabled'           => true,
+				'connection_method' => $method,
+			);
+
+			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+			$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return error for method: ' . $method );
+			$this->assertIsString( $result, 'Connection save should return connection ID for method: ' . $method );
+
+			$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+			$this->assertNotNull( $saved, 'Saved connection should be retrievable for method: ' . $method );
+			$this->assertSame( $method, $saved['connection_method'], 'connection_method should persist as "' . $method . '"' );
+		}
+	}
 }

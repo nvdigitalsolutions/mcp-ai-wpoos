@@ -222,6 +222,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$refresh_token = '';
 			$user_email    = '';
 			$app_id        = '';
+			$gc_method     = 'service_account';
 
 			switch ( $connection_type ) {
 				case 'mesh_peer':
@@ -274,6 +275,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$client_id     = isset( $_POST['google_chat_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['google_chat_client_secret'] ) ? wp_unslash( $_POST['google_chat_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$refresh_token = isset( $_POST['google_chat_refresh_token'] ) ? wp_unslash( $_POST['google_chat_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$gc_method     = isset( $_POST['google_chat_method'] ) ? sanitize_key( wp_unslash( $_POST['google_chat_method'] ) ) : 'service_account';
+					if ( ! in_array( $gc_method, array( 'service_account', 'oauth', 'webhook' ), true ) ) {
+						$gc_method = 'service_account';
+					}
 					break;
 				case 'slack':
 					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -472,6 +477,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
 				'reply_webhook_url' => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
 				'disable_oidc_verification' => ! empty( $_POST['google_chat_disable_oidc_verification'] ),
+				'connection_method' => $gc_method,
 				// Twitter/X-specific fields.
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// WhatsApp channel routing: assistants assigned to listen on this channel.
@@ -2569,7 +2575,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						// Determine the previously saved method (for edit mode).
 						$gc_saved_method = 'service_account'; // default.
 						if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
-							if ( ! empty( $connection['reply_webhook_url'] ) && empty( $connection['api_key'] ) && empty( $connection['client_id'] ) ) {
+							if ( ! empty( $connection['connection_method'] ) ) {
+								// Use the explicitly saved method.
+								$gc_saved_method = $connection['connection_method'];
+							} elseif ( ! empty( $connection['reply_webhook_url'] ) && empty( $connection['api_key'] ) && empty( $connection['client_id'] ) ) {
+								// Legacy fallback: infer from populated fields.
 								$gc_saved_method = 'webhook';
 							} elseif ( ! empty( $connection['client_id'] ) || ! empty( $connection['refresh_token'] ) ) {
 								$gc_saved_method = 'oauth';
