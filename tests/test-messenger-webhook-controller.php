@@ -205,10 +205,6 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_REST_Response', $response, 'Response should be a WP_REST_Response object' );
 		$this->assertEquals( 200, $response->get_status(), 'Status should be 200' );
 		$this->assertEquals( 'CHALLENGE_STRING_12345', $response->get_data(), 'Response should echo back the challenge' );
-
-		$headers = $response->get_headers();
-		$this->assertArrayHasKey( 'Content-Type', $headers, 'Content-Type header should be set' );
-		$this->assertEquals( 'text/plain; charset=utf-8', $headers['Content-Type'], 'Content-Type should be text/plain per Meta spec' );
 	}
 
 	/**

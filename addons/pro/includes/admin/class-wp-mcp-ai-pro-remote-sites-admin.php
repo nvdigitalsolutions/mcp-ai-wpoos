@@ -6390,9 +6390,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		// If a page ID is provided, query that page directly; otherwise query /me (app token).
-		$target  = ! empty( $page_id ) ? rawurlencode( $page_id ) : 'me';
+		// Requesting id, name, and category — fields available with standard page access token
+		// permissions. fan_count is intentionally excluded as it requires the pages_read_engagement
+		// permission which is a restricted permission not available to all apps.
+		$target   = ! empty( $page_id ) ? rawurlencode( $page_id ) : 'me';
 		$endpoint = sprintf(
-			'https://graph.facebook.com/%s/%s?fields=id,name,category,fan_count',
+			'https://graph.facebook.com/%s/%s?fields=id,name,category',
 			$api_version,
 			$target
 		);
@@ -6441,7 +6444,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'page_name'  => isset( $body['name'] ) ? $body['name'] : '',
 			'page_id'    => isset( $body['id'] ) ? $body['id'] : '',
 			'category'   => isset( $body['category'] ) ? $body['category'] : '',
-			'fan_count'  => isset( $body['fan_count'] ) ? (int) $body['fan_count'] : '',
 			'token_type' => ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' ),
 			'message'    => __( 'Messenger connection successful! Credentials are valid.', 'mcp-ai-wpoos-pro' ),
 		);
