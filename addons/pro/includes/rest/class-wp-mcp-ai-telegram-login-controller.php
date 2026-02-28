@@ -125,8 +125,8 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			}
 		}
 		if ( ! empty( $missing_params ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Telegram Web Login: missing auth parameters.',
+			WP_MCP_AI_Logger::log_warning(
+				'Telegram Web Login: missing auth parameters. This URL may have been accidentally set as the Mini App URL in BotFather instead of the Web Login callback URL.',
 				array( 'missing' => $missing_params )
 			);
 			return new WP_Error(
