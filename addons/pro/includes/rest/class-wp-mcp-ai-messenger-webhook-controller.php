@@ -171,11 +171,25 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'Messenger webhook successfully verified.'
 			);
 
-			// Return challenge as plain text (not JSON) to complete verification.
-			// Meta requires the exact challenge string without any wrapping.
-			$response = new WP_REST_Response( $challenge, 200 );
-			$response->header( 'Content-Type', 'text/plain; charset=utf-8' );
-			return $response;
+			// Meta requires the challenge returned as a plain text string without any
+			// JSON encoding or wrapping. WordPress REST API always runs wp_json_encode
+			// on the response body, so we hook into rest_pre_serve_request to output
+			// the raw challenge ourselves and signal WordPress to skip its normal output.
+			add_filter(
+				'rest_pre_serve_request',
+				static function ( $served ) use ( $challenge ) {
+					if ( $served ) {
+						return $served;
+					}
+					status_header( 200 );
+					header( 'Content-Type: text/plain; charset=utf-8' );
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo sanitize_text_field( $challenge );
+					return true;
+				}
+			);
+
+			return new WP_REST_Response( $challenge, 200 );
 		}
 
 		WP_MCP_AI_Logger::log_error(
