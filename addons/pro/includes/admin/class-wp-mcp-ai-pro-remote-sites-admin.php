@@ -477,10 +477,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Discord-specific fields.
 				'application_id'  => isset( $_POST['discord_application_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_application_id'] ) ) : '',
 				'guild_id'        => isset( $_POST['discord_guild_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_guild_id'] ) ) : '',
+				'public_key'      => isset( $_POST['discord_public_key'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_public_key'] ) ) : '',
 				// Microsoft Teams-specific fields.
 				'tenant_id'       => isset( $_POST['teams_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_tenant_id'] ) ) : '',
 				// Facebook Messenger-specific fields.
 				'page_id'         => isset( $_POST['messenger_page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_page_id'] ) ) : '',
+				// Chat-channel setting: only reply when the assistant is @mentioned.
+				// Each channel uses a channel-prefixed field name so that hidden form fields
+				// from other channel types do not conflict with the active one.
+				'require_mention' => (
+					( 'slack' === $connection_type && ! empty( $_POST['slack_require_mention'] ) ) ||
+					( 'discord' === $connection_type && ! empty( $_POST['discord_require_mention'] ) ) ||
+					( 'microsoft_teams' === $connection_type && ! empty( $_POST['teams_require_mention'] ) ) ||
+					( 'facebook_messenger' === $connection_type && ! empty( $_POST['messenger_require_mention'] ) )
+				),
 				// WebChat-specific fields.
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
 				// Google Chat-specific fields.
@@ -2320,6 +2330,51 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row">
+						<label for="slack_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$sl_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$sl_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'slack' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="slack_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $sl_assistants as $sl_assistant ) :
+								$sl_is_selected = in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>" <?php echo esc_attr( $sl_is_selected ); ?>>
+									<?php echo esc_html( $sl_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Slack workspace.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="slack_require_mention" id="slack_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'slack' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Slack channels where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for Discord -->
 				<tr class="discord-only-field" style="display: none;">
 					<th scope="row">
@@ -2365,6 +2420,61 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row">
+						<label for="discord_public_key"><?php esc_html_e( 'Public Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="discord_public_key" id="discord_public_key" class="regular-text" value="<?php echo $is_edit && isset( $connection['public_key'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['public_key'] ) : ''; ?>" autocomplete="off" placeholder="<?php esc_attr_e( 'Ed25519 public key from Discord Developer Portal', 'mcp-ai-wpoos-pro' ); ?>">
+						<p class="description"><?php esc_html_e( 'Ed25519 public key from the Discord Developer Portal. Used to verify the signature of every incoming interaction request. Found under General Information → Public Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row">
+						<label for="discord_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$ds_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$ds_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="discord_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $ds_assistants as $ds_assistant ) :
+								$ds_is_selected = in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>" <?php echo esc_attr( $ds_is_selected ); ?>>
+									<?php echo esc_html( $ds_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Discord bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="discord_require_mention" id="discord_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Discord servers where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for Microsoft Teams -->
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
@@ -2407,6 +2517,51 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description"><?php esc_html_e( 'Configure as Messaging Endpoint in Azure Bot Channels Registration.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$ms_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$ms_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="teams_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $ms_assistants as $ms_assistant ) :
+								$ms_is_selected = in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>" <?php echo esc_attr( $ms_is_selected ); ?>>
+									<?php echo esc_html( $ms_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Teams bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="teams_require_mention" id="teams_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Teams channels where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2542,6 +2697,51 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<code>pages_messaging</code>
 							</p>
 						</div>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row">
+						<label for="messenger_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$msng_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$msng_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'facebook_messenger' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="messenger_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $msng_assistants as $msng_assistant ) :
+								$msng_is_selected = in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>" <?php echo esc_attr( $msng_is_selected ); ?>>
+									<?php echo esc_html( $msng_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages received on this Facebook Page.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="messenger_require_mention" id="messenger_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'facebook_messenger' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful when the Page also handles manual replies and the bot should only intervene when addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

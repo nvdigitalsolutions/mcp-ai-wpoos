@@ -296,6 +296,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
 			}
 
+			// Preserve existing require_mention (chat channels) if not provided.
+			if ( ! isset( $connection_data['require_mention'] ) && isset( $existing_connection['require_mention'] ) ) {
+				$connection_data['require_mention'] = $existing_connection['require_mention'];
+			}
+
 			// Preserve existing test_endpoint if not provided.
 			if ( empty( $connection_data['test_endpoint'] ) && ! empty( $existing_connection['test_endpoint'] ) ) {
 				$connection_data['test_endpoint'] = $existing_connection['test_endpoint'];
@@ -409,6 +414,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
 				: array(),
+			// Chat-channel setting: only auto-reply when an assigned assistant is @mentioned.
+			'require_mention' => ! empty( $connection_data['require_mention'] ),
 			// Generic API test endpoint.
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
