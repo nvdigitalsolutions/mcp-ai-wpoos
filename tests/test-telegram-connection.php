@@ -1276,4 +1276,365 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		$this->assertEquals( 'explicit-slug', $result, 'Explicit query param should take precedence over connection setting' );
 	}
+
+	// =========================================================================
+	// New CMS endpoints: routes, permissions, and get_active_toolkits()
+	// =========================================================================
+
+	/**
+	 * Test that the /content REST route is registered.
+	 */
+	public function test_telegram_mini_app_content_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/content',
+			$routes,
+			'/mcp-ai/v1/telegram-mini-app/content route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the /tools REST route is registered.
+	 */
+	public function test_telegram_mini_app_tools_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/tools',
+			$routes,
+			'/mcp-ai/v1/telegram-mini-app/tools route should be registered'
+		);
+	}
+
+	/**
+	 * Test that the /media REST route is registered.
+	 */
+	public function test_telegram_mini_app_media_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/media',
+			$routes,
+			'/mcp-ai/v1/telegram-mini-app/media route should be registered'
+		);
+	}
+
+	/**
+	 * Test check_permission() returns false for unauthenticated users.
+	 */
+	public function test_check_permission_returns_false_for_unauthenticated_user() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		wp_set_current_user( 0 );
+		$this->assertFalse(
+			$controller->check_permission(),
+			'check_permission() should return false for unauthenticated users'
+		);
+	}
+
+	/**
+	 * Test check_permission() returns true for users with edit_posts capability.
+	 */
+	public function test_check_permission_returns_true_for_editor() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$this->assertTrue(
+			$controller->check_permission(),
+			'check_permission() should return true for users with edit_posts capability'
+		);
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test get_active_toolkits() returns an empty array when Pro addon is absent.
+	 */
+	public function test_get_active_toolkits_returns_empty_when_pro_absent() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// WP_MCP_AI_PRO_VERSION is not defined in the test environment,
+		// so get_active_toolkits() should return an empty array.
+		if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Pro version is active – skipping base-version guard test' );
+			return;
+		}
+
+		$result = $controller->get_active_toolkits();
+
+		$this->assertIsArray( $result, 'get_active_toolkits() should return an array' );
+		$this->assertEmpty( $result, 'get_active_toolkits() should return empty array when Pro is absent' );
+	}
+
+	/**
+	 * Test get_active_toolkits() returns correctly structured entries when Pro is present.
+	 */
+	public function test_get_active_toolkits_returns_structured_entries_when_pro_active() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Pro addon not active' );
+			return;
+		}
+
+		// Enable a known setting-gated toolkit.
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_crm_toolkit']   = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$result = $controller->get_active_toolkits();
+
+		$this->assertIsArray( $result, 'get_active_toolkits() should return an array' );
+
+		// Find the CRM toolkit entry.
+		$found = null;
+		foreach ( $result as $entry ) {
+			if ( 'enable_crm_toolkit' === $entry['key'] ) {
+				$found = $entry;
+				break;
+			}
+		}
+
+		$this->assertNotNull( $found, 'CRM Toolkit should be present when its setting is enabled' );
+		$this->assertArrayHasKey( 'label', $found );
+		$this->assertArrayHasKey( 'post_types', $found );
+		$this->assertArrayHasKey( 'tool_slugs', $found );
+		$this->assertIsArray( $found['post_types'] );
+		$this->assertIsArray( $found['tool_slugs'] );
+
+		// Clean up.
+		unset( $settings['enable_crm_toolkit'] );
+		update_option( 'wp_mcp_ai_settings', $settings );
+	}
+
+	/**
+	 * Test get_active_toolkits() excludes disabled toolkits.
+	 */
+	public function test_get_active_toolkits_excludes_disabled_toolkit() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'Pro addon not active' );
+			return;
+		}
+
+		// Explicitly disable the CRM toolkit.
+		$settings                          = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_crm_toolkit']    = false;
+		$settings['enable_social_media_toolkit'] = false;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$result = $controller->get_active_toolkits();
+
+		foreach ( $result as $entry ) {
+			$this->assertNotEquals( 'enable_crm_toolkit', $entry['key'], 'Disabled CRM Toolkit should not appear' );
+			$this->assertNotEquals( 'enable_social_media_toolkit', $entry['key'], 'Disabled Social Media Toolkit should not appear' );
+		}
+
+		// Clean up.
+		unset( $settings['enable_crm_toolkit'], $settings['enable_social_media_toolkit'] );
+		update_option( 'wp_mcp_ai_settings', $settings );
+	}
+
+	/**
+	 * Test handle_content() returns WP_Error for an invalid post type.
+	 */
+	public function test_handle_content_returns_error_for_invalid_post_type() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Log in as an administrator so permission passes.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'post_type', 'nonexistent_type_xyz' );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'per_page', 20 );
+		$request->set_param( 'search', '' );
+
+		$result = $controller->handle_content( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Invalid post type should return WP_Error' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_invalid_post_type', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test handle_content() returns posts array for a valid post type.
+	 */
+	public function test_handle_content_returns_posts_for_valid_post_type() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Create a test post.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CMS Post',
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'post_type', 'post' );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'per_page', 20 );
+		$request->set_param( 'search', '' );
+
+		$result = $controller->handle_content( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $result );
+		$data = $result->get_data();
+		$this->assertArrayHasKey( 'posts', $data );
+		$this->assertArrayHasKey( 'total', $data );
+		$this->assertArrayHasKey( 'pages', $data );
+		$this->assertArrayHasKey( 'post_types', $data );
+		$this->assertIsArray( $data['posts'] );
+
+		// Verify our test post appears.
+		$ids = wp_list_pluck( $data['posts'], 'id' );
+		$this->assertContains( $post_id, $ids, 'Test post should appear in content response' );
+
+		// Verify post shape.
+		$post_data = array_values(
+			array_filter( $data['posts'], function ( $p ) use ( $post_id ) {
+				return (int) $p['id'] === $post_id;
+			} )
+		);
+		$this->assertNotEmpty( $post_data );
+		$this->assertArrayHasKey( 'title', $post_data[0] );
+		$this->assertArrayHasKey( 'status', $post_data[0] );
+		$this->assertArrayHasKey( 'link', $post_data[0] );
+
+		wp_delete_post( $post_id, true );
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test handle_media() returns WP_Error when user lacks upload_files capability.
+	 */
+	public function test_handle_media_returns_error_for_insufficient_permissions() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Subscriber cannot upload files.
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/media' );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'per_page', 20 );
+		$request->set_param( 'search', '' );
+		$request->set_param( 'type', '' );
+
+		$result = $controller->handle_media( $request );
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Subscriber should get WP_Error from handle_media()' );
+		$this->assertEquals( 'wp_mcp_ai_telegram_forbidden', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test handle_media() returns items array for an administrator.
+	 */
+	public function test_handle_media_returns_items_for_admin() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/media' );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'per_page', 20 );
+		$request->set_param( 'search', '' );
+		$request->set_param( 'type', '' );
+
+		$result = $controller->handle_media( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $result );
+		$data = $result->get_data();
+		$this->assertArrayHasKey( 'items', $data );
+		$this->assertArrayHasKey( 'total', $data );
+		$this->assertArrayHasKey( 'pages', $data );
+		$this->assertIsArray( $data['items'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test handle_tools() returns tools and slash_commands keys for an administrator.
+	 */
+	public function test_handle_tools_returns_expected_keys_for_admin() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/tools' );
+
+		$result = $controller->handle_tools( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $result );
+		$data = $result->get_data();
+		$this->assertArrayHasKey( 'toolkits', $data );
+		$this->assertArrayHasKey( 'tools', $data );
+		$this->assertArrayHasKey( 'slash_commands', $data );
+		$this->assertIsArray( $data['toolkits'] );
+		$this->assertIsArray( $data['tools'] );
+		$this->assertIsArray( $data['slash_commands'] );
+
+		wp_set_current_user( 0 );
+	}
 }
+
