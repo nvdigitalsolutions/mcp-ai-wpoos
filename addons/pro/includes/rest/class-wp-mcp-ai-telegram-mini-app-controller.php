@@ -139,7 +139,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	* @return void Outputs the HTML page directly and exits.
 	*/
 	public function handle_mini_app( $request ) {
-		$assistant_slug = $request->get_param( 'assistant' );
+		// Resolve the active Telegram connection once; used both for assistant
+		// lookup and for extracting the bot username shown in the About tab.
+		$connection = $this->get_active_telegram_connection();
+
+		// Resolve the assistant to use, honouring the explicit query parameter
+		// first, then per-connection settings, then the global automation default.
+		$assistant_slug = $this->resolve_mini_app_assistant( $request, $connection );
 
 		// Build the shortcode so the existing chat UI is rendered inside the Mini App.
 		$shortcode = '[mcp_ai_chat';
@@ -168,8 +174,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		*/
 		$page_title = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
 
-		// Resolve the bot username from the active Telegram connection.
-		$connection   = $this->get_active_telegram_connection();
+		// Extract the bot username from the already-resolved connection.
 		$bot_username = '';
 		if ( $connection && ! empty( $connection['bot_username'] ) ) {
 			$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
@@ -863,6 +868,45 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	// =========================================================================
 	// Helpers
 	// =========================================================================
+
+	/**
+	* Resolve the assistant identifier to use for the Mini App chat UI.
+	*
+	* Resolution order:
+	*   1. The explicit `?assistant=` query parameter on the request.
+	*   2. The first entry in `assigned_assistant_ids` on the active Telegram connection.
+	*   3. The `default_assistant_id` from the global chat-channels automation rules.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request    Incoming REST request.
+	* @param array|null      $connection Active Telegram connection array, or null.
+	* @return string Assistant slug or numeric ID string, or empty string if none resolved.
+	*/
+	protected function resolve_mini_app_assistant( $request, $connection ) {
+		// 1. Honour an explicit query-parameter override.
+		$assistant = $request->get_param( 'assistant' );
+		if ( ! empty( $assistant ) ) {
+			return (string) $assistant;
+		}
+
+		// 2. Use the first assistant assigned to the active Telegram connection.
+		if ( $connection && ! empty( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) ) {
+			$ids      = array_values( $connection['assigned_assistant_ids'] );
+			$first_id = absint( $ids[0] );
+			if ( $first_id ) {
+				return (string) $first_id;
+			}
+		}
+
+		// 3. Fall back to the global default from the automation rules option.
+		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		if ( ! empty( $automation_rules['default_assistant_id'] ) ) {
+			return (string) absint( $automation_rules['default_assistant_id'] );
+		}
+
+		return '';
+	}
 
 	/**
 	* Find the first active (enabled) Telegram connection.

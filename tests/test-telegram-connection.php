@@ -1118,4 +1118,135 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'wp_mcp_ai_telegram_mini_app_missing_hash', $result->get_error_code() );
 	}
+
+	/**
+	 * Test that resolve_mini_app_assistant() returns the explicit ?assistant= query param when provided.
+	 */
+	public function test_resolve_mini_app_assistant_honours_query_param() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+		$request->set_param( 'assistant', 'my-custom-assistant' );
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, null );
+
+		$this->assertEquals( 'my-custom-assistant', $result, 'Explicit query param should be returned as-is' );
+	}
+
+	/**
+	 * Test that resolve_mini_app_assistant() returns the first assigned_assistant_id from the connection
+	 * when no explicit query param is provided.
+	 */
+	public function test_resolve_mini_app_assistant_uses_connection_assigned_assistant() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+		// No assistant param set.
+
+		$connection = array(
+			'connection_type'       => 'telegram',
+			'enabled'               => true,
+			'assigned_assistant_ids' => array( 42, 99 ),
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, $connection );
+
+		$this->assertEquals( '42', $result, 'First assigned_assistant_id from the connection should be used' );
+	}
+
+	/**
+	 * Test that resolve_mini_app_assistant() falls back to automation_rules default_assistant_id
+	 * when the connection has no assigned_assistant_ids.
+	 */
+	public function test_resolve_mini_app_assistant_falls_back_to_automation_rules() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		update_option(
+			'wp_mcp_ai_chat_channels_automation_rules',
+			array( 'default_assistant_id' => 77 )
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+		// No assistant param, connection has no assigned_assistant_ids.
+		$connection = array(
+			'connection_type' => 'telegram',
+			'enabled'         => true,
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, $connection );
+
+		delete_option( 'wp_mcp_ai_chat_channels_automation_rules' );
+
+		$this->assertEquals( '77', $result, 'automation_rules default_assistant_id should be used as fallback' );
+	}
+
+	/**
+	 * Test that resolve_mini_app_assistant() returns empty string when nothing is configured.
+	 */
+	public function test_resolve_mini_app_assistant_returns_empty_when_nothing_configured() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		delete_option( 'wp_mcp_ai_chat_channels_automation_rules' );
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, null );
+
+		$this->assertSame( '', $result, 'Empty string should be returned when no assistant is configured' );
+	}
+
+	/**
+	 * Test that query param takes precedence over connection assigned_assistant_ids.
+	 */
+	public function test_resolve_mini_app_assistant_query_param_takes_precedence_over_connection() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app' );
+		$request->set_param( 'assistant', 'explicit-slug' );
+
+		$connection = array(
+			'connection_type'       => 'telegram',
+			'enabled'               => true,
+			'assigned_assistant_ids' => array( 55 ),
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_mini_app_assistant' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request, $connection );
+
+		$this->assertEquals( 'explicit-slug', $result, 'Explicit query param should take precedence over connection setting' );
+	}
 }
