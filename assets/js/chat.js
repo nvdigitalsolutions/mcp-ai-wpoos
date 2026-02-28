@@ -10890,7 +10890,52 @@
             }
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
-            
+
+            // Telegram Mini App inline authentication.
+            // When the page is opened inside a Telegram Mini App, use Telegram.WebApp.initData
+            // to authenticate the user inline instead of redirecting to a browser-based login.
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData && instanceConfig.telegramWebAppAuthEndpoint) {
+                (function authenticateTelegramWebApp() {
+                    var tg = window.Telegram.WebApp;
+                    // Signal to Telegram that the Mini App is ready.
+                    if (typeof tg.ready === 'function') {
+                        tg.ready();
+                    }
+                    // Expand the Mini App to full height for better UX.
+                    if (typeof tg.expand === 'function') {
+                        tg.expand();
+                    }
+                    // Only authenticate if we don't already have a guest token or nonce.
+                    if (!state.config.guestToken && !state.config.restNonce) {
+                        setStatus(container, getString('telegramAuthenticating', 'Authenticating with Telegram…'));
+                        var authData = {
+                            init_data: tg.initData,
+                            assistant_id: state.config.assistantId ? parseInt(state.config.assistantId, 10) || 0 : 0
+                        };
+                        postJson(instanceConfig.telegramWebAppAuthEndpoint, authData, {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }).then(function (response) {
+                            if (response && response.success && response.guest_token) {
+                                state.config.guestToken = response.guest_token;
+                                state.config.allowGuests = true;
+                                clearStatus(container);
+                                if (response.display_name) {
+                                    setStatus(container, getString('telegramWelcome', 'Welcome') + ', ' + response.display_name + '!');
+                                    setTimeout(function () {
+                                        clearStatus(container);
+                                    }, 3000);
+                                }
+                            } else {
+                                clearStatus(container);
+                            }
+                        }).catch(function () {
+                            clearStatus(container);
+                        });
+                    }
+                })();
+            }
+
             // Handle form submission (for proper <form> elements)
             // Use toUpperCase() for reliable tag name comparison across browsers
             if (form.tagName && form.tagName.toUpperCase() === 'FORM') {

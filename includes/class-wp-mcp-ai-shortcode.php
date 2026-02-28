@@ -494,6 +494,9 @@ class WP_MCP_AI_Shortcode {
 			'embeddedClientInvalid'         => __( 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.', 'mcp-ai-wpoos' ),
 			'embeddedClientInitializing'    => __( 'Initializing embedded AI client...', 'mcp-ai-wpoos' ),
 			'embeddedClientInitError'       => __( 'Failed to initialize embedded AI client: ', 'mcp-ai-wpoos' ),
+			// Telegram Mini App authentication messages.
+			'telegramAuthenticating'        => __( 'Authenticating with Telegram…', 'mcp-ai-wpoos' ),
+			'telegramWelcome'               => __( 'Welcome', 'mcp-ai-wpoos' ),
 			'roleLabels'                    => array(
 				'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'user'      => __( 'You', 'mcp-ai-wpoos' ),
@@ -830,6 +833,17 @@ class WP_MCP_AI_Shortcode {
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
 
+			// Enqueue Telegram WebApp SDK for Mini App inline authentication.
+			// This script is provided by Telegram and enables the Telegram.WebApp API.
+			// It is lightweight and only activates when the page is opened inside a Telegram Mini App.
+			wp_enqueue_script(
+				'telegram-webapp-sdk',
+				'https://telegram.org/js/telegram-web-app.js',
+				array(),
+				null, // External script, no version needed.
+				false // Load in head so Telegram.WebApp is available early.
+			);
+
 			// Enqueue slash commands integration if available.
 			if ( wp_script_is( 'mcp-ai-slash-commands', 'registered' ) ) {
 				wp_enqueue_script( 'mcp-ai-slash-commands' );
@@ -1086,6 +1100,15 @@ class WP_MCP_AI_Shortcode {
 			if ( $guest_token ) {
 				$config['guestToken'] = $guest_token;
 			}
+
+			// Add Telegram Mini App WebApp auth endpoint for inline authentication.
+			// This allows the chat widget to authenticate via Telegram.WebApp.initData
+			// instead of redirecting to a browser-based login page.
+			$config['telegramWebAppAuthEndpoint'] = esc_url_raw(
+				WP_MCP_AI_Request_Context::normalise_rest_url(
+					rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/telegram/webapp-auth' )
+				)
+			);
 
 			// Add professional role prompt if provided via profession attribute.
 			if ( ! empty( $professional_prompt ) ) {
