@@ -10910,7 +10910,7 @@
                         setStatus(container, getString('telegramAuthenticating', 'Authenticating with Telegram…'));
                         var authData = {
                             init_data: tg.initData,
-                            assistant_id: state.config.assistantId ? parseInt(state.config.assistantId, 10) || 0 : 0
+                            assistant_id: parseInt(state.config.assistantId, 10) || 0
                         };
                         postJson(instanceConfig.telegramWebAppAuthEndpoint, authData, {
                             'Content-Type': 'application/json',

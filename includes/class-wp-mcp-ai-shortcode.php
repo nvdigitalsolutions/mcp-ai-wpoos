@@ -840,7 +840,7 @@ class WP_MCP_AI_Shortcode {
 				'telegram-webapp-sdk',
 				'https://telegram.org/js/telegram-web-app.js',
 				array(),
-				null, // External script, no version needed.
+				null, // Telegram manages versioning on their CDN.
 				false // Load in head so Telegram.WebApp is available early.
 			);
 
