@@ -286,6 +286,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
 			}
 
+			// Preserve existing connection_method (Google Chat) if not provided.
+			if ( empty( $connection_data['connection_method'] ) && ! empty( $existing_connection['connection_method'] ) ) {
+				$connection_data['connection_method'] = $existing_connection['connection_method'];
+			}
+
 			// Preserve existing assigned_assistant_ids (WhatsApp channel routing) if not provided.
 			if ( ! isset( $connection_data['assigned_assistant_ids'] ) && ! empty( $existing_connection['assigned_assistant_ids'] ) ) {
 				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
@@ -398,6 +403,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// When true, OIDC token validation is skipped for incoming webhook events.
 			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
 			'disable_oidc_verification' => ! empty( $connection_data['disable_oidc_verification'] ),
+			// Google Chat authentication method: service_account | oauth | webhook.
+			'connection_method'  => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
 			// WhatsApp channel routing: assistant IDs listening on this channel.
 			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
