@@ -119,6 +119,112 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Content (CPT posts) data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/content',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_content' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'post_type' => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => 'post',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'page'      => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 1,
+						'minimum'  => 1,
+					),
+					'per_page'  => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 20,
+						'minimum'  => 1,
+						'maximum'  => 100,
+					),
+					'search'    => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		// Tools & slash-commands data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/tools',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_tools' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Media library data endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/media',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_media' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'page'     => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 1,
+						'minimum'  => 1,
+					),
+					'per_page' => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 20,
+						'minimum'  => 1,
+						'maximum'  => 100,
+					),
+					'search'   => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'type'     => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+	}
+
+	// =========================================================================
+	// Permission check for authenticated CMS endpoints
+	// =========================================================================
+
+	/**
+	* Check that the current user can edit posts.
+	*
+	* Used as the permission_callback for the /content, /tools, and /media
+	* sub-endpoints. This mirrors the minimum capability required by the base
+	* WordPress editor role.
+	*
+	* @since 1.0.0
+	*
+	* @return bool True when the current user has the 'edit_posts' capability.
+	*/
+	public function check_permission() {
+		return current_user_can( 'edit_posts' );
 	}
 
 	// =========================================================================
@@ -191,10 +297,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$bot_username = apply_filters( 'wp_mcp_ai_telegram_mini_app_bot_username', $bot_username, $connection ? $connection : array() );
 
 		$validate_url = rest_url( $this->namespace . '/' . $this->rest_base . '/validate' );
-		$site_name    = esc_js( get_bloginfo( 'name' ) );
-		$site_desc    = esc_js( get_bloginfo( 'description' ) );
-		$bot_js       = esc_js( $bot_username );
-		$validate_js  = esc_js( $validate_url );
+		$content_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/content' );
+		$tools_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
+		$login_url    = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
@@ -219,90 +325,73 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   <header class="tma-header">
     <div class="tma-avatar-wrap" id="tma-avatar-wrap">
       <img src="" alt="" class="tma-avatar-img" id="tma-avatar-img" style="display:none">
-      <div class="tma-avatar-initials" id="tma-avatar-initials">🤖</div>
+      <div class="tma-avatar-initials" id="tma-avatar-initials">📋</div>
     </div>
     <div class="tma-header-info">
       <div class="tma-header-name" id="tma-user-name">' . esc_html( $page_title ) . '</div>
-      <div class="tma-header-status" id="tma-header-status">AI Assistant</div>
+      <div class="tma-header-status" id="tma-header-status">Content Manager</div>
     </div>
     <div class="tma-header-actions">
-      <button class="tma-icon-btn" id="tma-share-btn" title="Share" onclick="tmaShareBot()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <button class="tma-icon-btn" id="tma-search-btn" title="Search" onclick="tmaToggleSearch()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
     </div>
   </header>
 
+  <!-- ── Search bar (hidden by default) ──────────────────────── -->
+  <div class="tma-search-bar" id="tma-search-bar" style="display:none">
+    <input type="search" id="tma-search-input" placeholder="Search…" autocomplete="off"
+           oninput="tmaOnSearch(this.value)" />
+  </div>
+
   <!-- ── Tab content ──────────────────────────────────────────── -->
   <div class="tma-content">
 
+    <!-- Content tab (default) -->
+    <div class="tma-tab-pane tma-active" id="tma-tab-content">
+      <div class="tma-cpt-bar" id="tma-cpt-bar">
+        <div class="tma-cpt-scroll" id="tma-cpt-scroll">
+          <div class="tma-empty">Loading types…</div>
+        </div>
+      </div>
+      <div class="tma-post-list" id="tma-post-list">
+        <div class="tma-empty">Loading content…</div>
+      </div>
+      <div class="tma-pagination" id="tma-content-pagination"></div>
+    </div>
+
+    <!-- Tools tab -->
+    <div class="tma-tab-pane" id="tma-tab-tools">
+      <div class="tma-section-title">Available Tools</div>
+      <div id="tma-toolkit-filter" class="tma-filter-bar"></div>
+      <div id="tma-tools-list" class="tma-cards-list">
+        <div class="tma-empty">Loading tools…</div>
+      </div>
+      <div class="tma-section-title tma-mt">Slash Commands</div>
+      <div id="tma-slash-list" class="tma-cards-list">
+        <div class="tma-empty">Loading commands…</div>
+      </div>
+    </div>
+
+    <!-- Media tab -->
+    <div class="tma-tab-pane" id="tma-tab-media">
+      <div class="tma-filter-bar" id="tma-media-filter">
+        <button class="tma-filter-btn tma-active" data-mime="" onclick="tmaMediaFilter(this,\'\')">All</button>
+        <button class="tma-filter-btn" data-mime="image" onclick="tmaMediaFilter(this,\'image\')">Images</button>
+        <button class="tma-filter-btn" data-mime="video" onclick="tmaMediaFilter(this,\'video\')">Video</button>
+        <button class="tma-filter-btn" data-mime="audio" onclick="tmaMediaFilter(this,\'audio\')">Audio</button>
+        <button class="tma-filter-btn" data-mime="application" onclick="tmaMediaFilter(this,\'application\')">Docs</button>
+      </div>
+      <div class="tma-media-grid" id="tma-media-grid">
+        <div class="tma-empty">Loading media…</div>
+      </div>
+      <div class="tma-pagination" id="tma-media-pagination"></div>
+    </div>
+
     <!-- Chat tab -->
-    <div class="tma-tab-pane tma-active" id="tma-tab-chat">
+    <div class="tma-tab-pane" id="tma-tab-chat">
       <div class="wp-mcp-ai-telegram-mini-app-wrapper">
         ' . $chat_html . '
-      </div>
-    </div>
-
-    <!-- History tab -->
-    <div class="tma-tab-pane" id="tma-tab-history">
-      <div class="tma-section-title">Recent Conversations</div>
-      <div id="tma-history-list"><div class="tma-empty">Loading…</div></div>
-    </div>
-
-    <!-- About tab -->
-    <div class="tma-tab-pane" id="tma-tab-about">
-      <div class="tma-about-hero">
-        <div class="tma-about-icon">🤖</div>
-        <div class="tma-about-name" id="tma-about-name">' . esc_html( $page_title ) . '</div>
-        <div class="tma-about-tagline" id="tma-about-tagline">' . esc_html( get_bloginfo( 'description' ) ) . '</div>
-      </div>
-
-      <div class="tma-about-section">
-        <div class="tma-about-item" onclick="tmaShareBot()">
-          <div class="tma-about-item-icon">🔗</div>
-          <div class="tma-about-item-info">
-            <div class="tma-about-item-label">Share this Bot</div>
-            <div class="tma-about-item-sub">Invite friends to chat with the AI</div>
-          </div>
-          <div class="tma-about-item-arrow">›</div>
-        </div>
-        <div class="tma-about-item" onclick="tmaSwitchTab(\'chat\')">
-          <div class="tma-about-item-icon">💬</div>
-          <div class="tma-about-item-info">
-            <div class="tma-about-item-label">Start New Chat</div>
-            <div class="tma-about-item-sub">Chat with the AI assistant</div>
-          </div>
-          <div class="tma-about-item-arrow">›</div>
-        </div>
-        <div class="tma-about-item" onclick="tmaSwitchTab(\'history\')">
-          <div class="tma-about-item-icon">📋</div>
-          <div class="tma-about-item-info">
-            <div class="tma-about-item-label">Conversation History</div>
-            <div class="tma-about-item-sub">View past conversations</div>
-          </div>
-          <div class="tma-about-item-arrow">›</div>
-        </div>
-        <div class="tma-about-item" onclick="tmaClearHistory()">
-          <div class="tma-about-item-icon">🗑️</div>
-          <div class="tma-about-item-info">
-            <div class="tma-about-item-label">Clear History</div>
-            <div class="tma-about-item-sub">Remove all saved conversations</div>
-          </div>
-          <div class="tma-about-item-arrow">›</div>
-        </div>
-      </div>
-
-      <div class="tma-about-section">
-        <div class="tma-about-item">
-          <div class="tma-about-item-icon">⚡</div>
-          <div class="tma-about-item-info">
-            <div class="tma-about-item-label">Powered by NV oOS</div>
-            <div class="tma-about-item-sub" id="tma-about-version">AI-powered assistant</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="tma-about-footer" id="tma-about-footer">
-        Tap <strong>Chat</strong> to start a conversation
       </div>
     </div>
 
@@ -310,17 +399,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   <!-- ── Bottom navigation ────────────────────────────────────── -->
   <nav class="tma-nav" role="navigation" aria-label="Tabs">
-    <button class="tma-nav-btn tma-active" id="tma-nav-chat" data-tab="chat" onclick="tmaSwitchTab(\'chat\')">
-      <span class="tma-nav-icon">💬</span>
+    <button class="tma-nav-btn tma-active" id="tma-nav-content" data-tab="content" onclick="tmaSwitchTab(\'content\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      <span class="tma-nav-label">Content</span>
+    </button>
+    <button class="tma-nav-btn" id="tma-nav-tools" data-tab="tools" onclick="tmaSwitchTab(\'tools\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span class="tma-nav-label">Tools</span>
+    </button>
+    <button class="tma-nav-btn" id="tma-nav-media" data-tab="media" onclick="tmaSwitchTab(\'media\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span class="tma-nav-label">Media</span>
+    </button>
+    <button class="tma-nav-btn" id="tma-nav-chat" data-tab="chat" onclick="tmaSwitchTab(\'chat\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span class="tma-nav-label">Chat</span>
-    </button>
-    <button class="tma-nav-btn" id="tma-nav-history" data-tab="history" onclick="tmaSwitchTab(\'history\')">
-      <span class="tma-nav-icon">📋</span>
-      <span class="tma-nav-label">History</span>
-    </button>
-    <button class="tma-nav-btn" id="tma-nav-about" data-tab="about" onclick="tmaSwitchTab(\'about\')">
-      <span class="tma-nav-icon">ℹ️</span>
-      <span class="tma-nav-label">About</span>
     </button>
   </nav>
 
@@ -329,8 +422,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 ' . $footer_output . '
 <script>
 /* =========================================================
-   NV oOS – Telegram Mini App Shell
-   Industry-standard Telegram Web App SDK integration.
+   NV oOS – Telegram Mini App Shell (CMS Edition)
+   Content, Tools, Media & Chat management for Telegram.
    ========================================================= */
 (function () {
   \'use strict\';
@@ -338,7 +431,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   /* ── Config injected by PHP ── */
   var TMA_BOT_USERNAME   = ' . wp_json_encode( $bot_username ) . ';
   var TMA_VALIDATE_URL   = ' . wp_json_encode( $validate_url ) . ';
+  var TMA_CONTENT_URL    = ' . wp_json_encode( $content_url ) . ';
+  var TMA_TOOLS_URL      = ' . wp_json_encode( $tools_url ) . ';
+  var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
+  var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
+  var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
   var TMA_STORAGE_PREFIX = \'wp_mcp_ai_chat_\';
 
   /* ── Telegram WebApp SDK ── */
@@ -377,7 +475,17 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   /* ── Tab state ── */
-  var activeTab = \'chat\';
+  var activeTab         = \'content\';
+  var contentPage       = 1;
+  var contentPostType   = \'post\';
+  var contentSearch     = \'\';
+  var mediaPage         = 1;
+  var mediaMimeFilter   = \'\';
+  var mediaSearch       = \'\';
+  var toolkitFilter     = \'\';
+  var allTools          = [];
+  var allSlashCmds      = [];
+  var searchTimeout     = null;
 
   /* ── Public: switch tabs ── */
   window.tmaSwitchTab = function (tabName) {
@@ -396,13 +504,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     activeTab = tabName;
     updateBackButton();
     updateMainButton();
-    if (tabName === \'history\') loadHistory();
+    /* Lazy-load tab data on first visit */
+    if (tabName === \'content\') loadContent();
+    if (tabName === \'tools\')   loadTools();
+    if (tabName === \'media\')   loadMedia();
+    /* Reset search bar context */
+    clearSearch();
   };
 
   /* ── Back Button ── */
   function updateBackButton() {
     if (!twa || !twa.BackButton) return;
-    if (activeTab === \'chat\') {
+    if (activeTab === \'content\') {
       twa.BackButton.hide();
     } else {
       twa.BackButton.show();
@@ -412,98 +525,398 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   /* ── Main Button ── */
   function updateMainButton() {
     if (!twa || !twa.MainButton) return;
-    if (activeTab === \'about\') {
-      twa.MainButton.setText(\'Share Bot 🤖\');
-      twa.MainButton.show();
+    twa.MainButton.hide();
+  }
+
+  /* ── Authenticated fetch helper ── */
+  function authFetch(url) {
+    return fetch(url, {
+      credentials : \'same-origin\',
+      headers     : { \'X-WP-Nonce\': TMA_NONCE },
+    });
+  }
+
+  /* ── HTML escaping ── */
+  function escHtml(str) {
+    var d = document.createElement(\'div\');
+    d.textContent = String(str || \'\');
+    return d.innerHTML;
+  }
+
+  /* ── Search bar toggle ── */
+  window.tmaToggleSearch = function () {
+    haptic(\'light\');
+    var bar = document.getElementById(\'tma-search-bar\');
+    if (!bar) return;
+    var visible = bar.style.display !== \'none\';
+    bar.style.display = visible ? \'none\' : \'flex\';
+    if (!visible) {
+      var inp = document.getElementById(\'tma-search-input\');
+      if (inp) { inp.value = \'\'; inp.focus(); }
     } else {
-      twa.MainButton.hide();
+      clearSearch();
+    }
+  };
+
+  function clearSearch() {
+    contentSearch = \'\';
+    mediaSearch   = \'\';
+    var bar = document.getElementById(\'tma-search-bar\');
+    if (bar) bar.style.display = \'none\';
+    var inp = document.getElementById(\'tma-search-input\');
+    if (inp) inp.value = \'\';
+  }
+
+  window.tmaOnSearch = function (val) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function () {
+      if (activeTab === \'content\') {
+        contentSearch = val;
+        contentPage   = 1;
+        loadContent();
+      } else if (activeTab === \'media\') {
+        mediaSearch = val;
+        mediaPage   = 1;
+        loadMedia();
+      } else if (activeTab === \'tools\') {
+        renderTools(val);
+      }
+    }, 300);
+  };
+
+  /* =========================================================
+     CONTENT TAB
+     ========================================================= */
+  var contentLoaded = false;
+
+  function loadContent() {
+    if (!contentLoaded) contentLoaded = true;
+    var listEl = document.getElementById(\'tma-post-list\');
+    if (listEl) listEl.innerHTML = \'<div class="tma-empty">Loading…</div>\';
+
+    var url = TMA_CONTENT_URL + \'?post_type=\' + encodeURIComponent(contentPostType) +
+              \'&page=\' + contentPage +
+              \'&per_page=20\' +
+              (contentSearch ? \'&search=\' + encodeURIComponent(contentSearch) : \'\');
+
+    authFetch(url)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'content\'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        renderCptBar(data.post_types || []);
+        renderPostList(data.posts || [], data.total || 0, data.pages || 1);
+      })
+      .catch(function () {
+        if (listEl) listEl.innerHTML = \'<div class="tma-empty tma-error">Failed to load content.</div>\';
+      });
+  }
+
+  function renderCptBar(types) {
+    var scroll = document.getElementById(\'tma-cpt-scroll\');
+    if (!scroll || !types.length) return;
+    var html = \'\';
+    types.forEach(function (t) {
+      var active = t.name === contentPostType ? \' tma-active\' : \'\';
+      var badge  = t.count > 0 ? \'<span class="tma-badge">\' + escHtml(String(t.count)) + \'</span>\' : \'\';
+      var tk     = t.toolkit ? \'<span class="tma-tk-dot" title="\' + escHtml(t.toolkit) + \'">●</span>\' : \'\';
+      html += \'<button class="tma-cpt-btn\' + active + \'" onclick="tmaSelectCpt(\\\'\' + escHtml(t.name) + \'\\\')">\' +
+              escHtml(t.label) + badge + tk + \'</button>\';
+    });
+    scroll.innerHTML = html;
+  }
+
+  window.tmaSelectCpt = function (typeName) {
+    haptic(\'selectionChanged\');
+    contentPostType = typeName;
+    contentPage     = 1;
+    document.querySelectorAll(\'.tma-cpt-btn\').forEach(function (b) {
+      b.classList.toggle(\'tma-active\', b.textContent.trim().startsWith(
+        document.querySelector(\'.tma-cpt-btn.tma-active\') ?
+        b.getAttribute(\'onclick\').match(/\'([^\']+)\'/)?.[1] === typeName :
+        false
+      ));
+    });
+    /* Re-render CPT bar active state */
+    document.querySelectorAll(\'.tma-cpt-btn\').forEach(function (b) {
+      var match = b.getAttribute(\'onclick\').match(/\'([^\']+)\'/);
+      if (match) b.classList.toggle(\'tma-active\', match[1] === typeName);
+    });
+    loadContent();
+  };
+
+  function renderPostList(posts, total, pages) {
+    var listEl  = document.getElementById(\'tma-post-list\');
+    var pageEl  = document.getElementById(\'tma-content-pagination\');
+    if (!listEl) return;
+
+    if (!posts.length) {
+      listEl.innerHTML = \'<div class="tma-empty">No items found.</div>\';
+      if (pageEl) pageEl.innerHTML = \'\';
+      return;
+    }
+
+    var html = \'\';
+    posts.forEach(function (p) {
+      var statusClass = p.status === \'publish\' ? \'tma-status-pub\' : \'tma-status-draft\';
+      var statusText  = p.status === \'publish\' ? \'Published\' : (p.status === \'draft\' ? \'Draft\' : p.status);
+      var date        = p.modified ? new Date(p.modified).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
+      html += \'<div class="tma-post-card">\' +
+        \'<div class="tma-post-header">\' +
+          \'<span class="tma-post-title">\' + escHtml(p.title || \'(no title)\') + \'</span>\' +
+          \'<span class="tma-post-status \' + statusClass + \'">\' + statusText + \'</span>\' +
+        \'</div>\' +
+        (p.excerpt ? \'<div class="tma-post-excerpt">\' + escHtml(p.excerpt) + \'</div>\' : \'\') +
+        \'<div class="tma-post-meta">\' +
+          \'<span>\' + escHtml(date) + \'</span>\' +
+          (p.link ? \'<a class="tma-post-edit" href="\' + escHtml(p.link) + \'" target="_blank">Edit ›</a>\' : \'\') +
+        \'</div>\' +
+      \'</div>\';
+    });
+    listEl.innerHTML = html;
+
+    /* Pagination */
+    if (pageEl) {
+      var pHtml = \'\';
+      if (contentPage > 1) {
+        pHtml += \'<button class="tma-page-btn" onclick="tmaContentPage(\' + (contentPage - 1) + \')">‹ Prev</button>\';
+      }
+      pHtml += \'<span class="tma-page-info">\' + contentPage + \' / \' + pages + \'</span>\';
+      if (contentPage < pages) {
+        pHtml += \'<button class="tma-page-btn" onclick="tmaContentPage(\' + (contentPage + 1) + \')">Next ›</button>\';
+      }
+      pageEl.innerHTML = pHtml;
     }
   }
 
-  /* ── Share bot ── */
-  window.tmaShareBot = function () {
-    haptic(\'medium\');
-    if (twa) {
-      if (TMA_BOT_USERNAME) {
-        twa.switchInlineQuery(\'\', [\'users\', \'groups\', \'channels\']);
-      } else {
-        twa.showAlert(\'Share this AI assistant with your friends and colleagues!\');
-      }
-    }
+  window.tmaContentPage = function (p) {
+    haptic(\'light\');
+    contentPage = p;
+    loadContent();
+    document.getElementById(\'tma-tab-content\').scrollTop = 0;
   };
 
-  /* ── Clear history ── */
-  window.tmaClearHistory = function () {
-    haptic(\'medium\');
-    if (twa) {
-      twa.showConfirm(\'Clear all conversation history from this device?\', function (confirmed) {
-        if (!confirmed) return;
-        var keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf(TMA_STORAGE_PREFIX) === 0) keys.push(k);
-        }
-        keys.forEach(function (k) { localStorage.removeItem(k); });
-        haptic(\'notificationOccurred\', \'success\');
-        twa.showAlert(\'Conversation history cleared.\');
-        if (activeTab === \'history\') loadHistory();
+  /* =========================================================
+     TOOLS TAB
+     ========================================================= */
+  var toolsLoaded = false;
+
+  function loadTools() {
+    if (toolsLoaded) { renderTools(\'\'); return; }
+    var toolsEl = document.getElementById(\'tma-tools-list\');
+    var slashEl = document.getElementById(\'tma-slash-list\');
+    if (toolsEl) toolsEl.innerHTML = \'<div class="tma-empty">Loading…</div>\';
+
+    authFetch(TMA_TOOLS_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'tools\'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        toolsLoaded  = true;
+        allTools     = data.tools || [];
+        allSlashCmds = data.slash_commands || [];
+        renderToolkitFilter(data.toolkits || []);
+        renderTools(\'\');
+      })
+      .catch(function () {
+        if (toolsEl) toolsEl.innerHTML = \'<div class="tma-empty tma-error">Failed to load tools.</div>\';
       });
-    } else {
-      if (confirm(\'Clear all conversation history?\')) {
-        for (var i = localStorage.length - 1; i >= 0; i--) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf(TMA_STORAGE_PREFIX) === 0) localStorage.removeItem(k);
-        }
-        if (activeTab === \'history\') loadHistory();
-      }
-    }
+  }
+
+  function renderToolkitFilter(toolkits) {
+    var bar = document.getElementById(\'tma-toolkit-filter\');
+    if (!bar) return;
+    if (!toolkits.length) { bar.style.display = \'none\'; return; }
+    var html = \'<button class="tma-filter-btn tma-active" data-tk="" onclick="tmaToolkitFilter(this,\\\'\\\')">All</button>\';
+    toolkits.forEach(function (tk) {
+      html += \'<button class="tma-filter-btn" data-tk="\' + escHtml(tk.label) +
+              \'" onclick="tmaToolkitFilter(this,\\\'\' + escHtml(tk.label) + \'\\\')">\' +
+              escHtml(tk.label) + \'</button>\';
+    });
+    bar.innerHTML = html;
+  }
+
+  window.tmaToolkitFilter = function (btn, label) {
+    haptic(\'selectionChanged\');
+    toolkitFilter = label;
+    document.querySelectorAll(\'#tma-toolkit-filter .tma-filter-btn\').forEach(function (b) {
+      b.classList.remove(\'tma-active\');
+    });
+    btn.classList.add(\'tma-active\');
+    renderTools(\'\');
   };
 
-  /* ── History tab ── */
-  function loadHistory() {
-    var container = document.getElementById(\'tma-history-list\');
-    if (!container) return;
-    var conversations = [];
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var key = localStorage.key(i);
-        if (!key || key.indexOf(TMA_STORAGE_PREFIX) !== 0) continue;
-        var raw = localStorage.getItem(key);
-        if (!raw) continue;
-        var data = JSON.parse(raw);
-        if (data && Array.isArray(data.messages) && data.messages.length > 0) {
-          conversations.push({
-            assistantId : key.replace(TMA_STORAGE_PREFIX, \'\'),
-            messages    : data.messages,
-            timestamp   : data.timestamp || 0,
-          });
-        }
+  function renderTools(search) {
+    var toolsEl = document.getElementById(\'tma-tools-list\');
+    var slashEl = document.getElementById(\'tma-slash-list\');
+    var q       = (search || \'\').toLowerCase();
+
+    var filtered = allTools.filter(function (t) {
+      var matchSearch  = !q || t.name.toLowerCase().indexOf(q) >= 0 || t.description.toLowerCase().indexOf(q) >= 0;
+      var matchToolkit = !toolkitFilter || t.toolkit === toolkitFilter;
+      return matchSearch && matchToolkit;
+    });
+
+    if (toolsEl) {
+      if (!filtered.length) {
+        toolsEl.innerHTML = \'<div class="tma-empty">No tools found.</div>\';
+      } else {
+        var html = \'\';
+        filtered.forEach(function (t) {
+          var tk = t.toolkit ? \'<span class="tma-card-badge">\' + escHtml(t.toolkit) + \'</span>\' : \'\';
+          var gr = t.group ? \'<span class="tma-card-group">\' + escHtml(t.group) + \'</span>\' : \'\';
+          html += \'<div class="tma-tool-card">\' +
+            \'<div class="tma-card-title">\' + escHtml(t.name) + tk + \'</div>\' +
+            (t.description ? \'<div class="tma-card-desc">\' + escHtml(t.description) + \'</div>\' : \'\') +
+            gr +
+          \'</div>\';
+        });
+        toolsEl.innerHTML = html;
       }
-    } catch (e) {}
-    conversations.sort(function (a, b) { return b.timestamp - a.timestamp; });
-    if (conversations.length === 0) {
-      container.innerHTML = \'<div class="tma-empty">No conversations yet.<br>Tap <strong>Chat</strong> to start!</div>\';
+    }
+
+    /* Slash commands – filtered only by search, not by toolkit */
+    var filteredCmds = allSlashCmds.filter(function (c) {
+      return !q || c.name.toLowerCase().indexOf(q) >= 0 || c.description.toLowerCase().indexOf(q) >= 0;
+    });
+
+    if (slashEl) {
+      if (!filteredCmds.length) {
+        slashEl.innerHTML = \'<div class="tma-empty">No slash commands found.</div>\';
+      } else {
+        var html = \'\';
+        filteredCmds.forEach(function (c) {
+          html += \'<div class="tma-tool-card tma-slash-card">\' +
+            \'<div class="tma-card-title tma-mono">\' + escHtml(c.name) + \'</div>\' +
+            (c.description ? \'<div class="tma-card-desc">\' + escHtml(c.description) + \'</div>\' : \'\') +
+            \'<div class="tma-card-usage">\' + escHtml(c.usage) + \'</div>\' +
+          \'</div>\';
+        });
+        slashEl.innerHTML = html;
+      }
+    }
+  }
+
+  /* =========================================================
+     MEDIA TAB
+     ========================================================= */
+  var mediaLoaded = false;
+
+  function loadMedia() {
+    if (!mediaLoaded) mediaLoaded = true;
+    var gridEl = document.getElementById(\'tma-media-grid\');
+    if (gridEl) gridEl.innerHTML = \'<div class="tma-empty">Loading…</div>\';
+
+    var url = TMA_MEDIA_URL + \'?page=\' + mediaPage + \'&per_page=20\' +
+              (mediaMimeFilter ? \'&type=\' + encodeURIComponent(mediaMimeFilter) : \'\') +
+              (mediaSearch ? \'&search=\' + encodeURIComponent(mediaSearch) : \'\');
+
+    authFetch(url)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'media\'); return null; }
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        renderMediaGrid(data.items || [], data.total || 0, data.pages || 1);
+      })
+      .catch(function () {
+        if (gridEl) gridEl.innerHTML = \'<div class="tma-empty tma-error">Failed to load media.</div>\';
+      });
+  }
+
+  window.tmaMediaFilter = function (btn, mime) {
+    haptic(\'selectionChanged\');
+    mediaMimeFilter = mime;
+    mediaPage       = 1;
+    document.querySelectorAll(\'#tma-media-filter .tma-filter-btn\').forEach(function (b) {
+      b.classList.remove(\'tma-active\');
+    });
+    btn.classList.add(\'tma-active\');
+    loadMedia();
+  };
+
+  function renderMediaGrid(items, total, pages) {
+    var gridEl = document.getElementById(\'tma-media-grid\');
+    var pageEl = document.getElementById(\'tma-media-pagination\');
+    if (!gridEl) return;
+
+    if (!items.length) {
+      gridEl.innerHTML = \'<div class="tma-empty">No media found.</div>\';
+      if (pageEl) pageEl.innerHTML = \'\';
       return;
     }
+
     var html = \'\';
-    conversations.forEach(function (conv) {
-      var msgs  = conv.messages;
-      var last  = msgs[msgs.length - 1];
-      var preview = last ? escHtml((last.content || \'\').substring(0, 100)) : \'\';
-      if (last && last.content && last.content.length > 100) preview += \'…\';
-      var date  = conv.timestamp ? new Date(conv.timestamp).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
-      var count = msgs.length;
-      var role  = last ? (last.role === \'assistant\' ? \'🤖\' : \'👤\') : \'\';
-      html += \'<div class="tma-history-item">\' +
-        \'<div class="tma-history-meta">\' +
-          \'<span class="tma-history-id">🤖 Assistant\' + (conv.assistantId ? \' #\' + escHtml(String(conv.assistantId)) : \'\') + \'</span>\' +
-          \'<span class="tma-history-date">\' + escHtml(date) + \'</span>\' +
+    items.forEach(function (item) {
+      var isImg  = item.mime_type && item.mime_type.indexOf(\'image/\') === 0;
+      var thumb  = isImg && item.thumb ? \'<img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy">\' :
+                   \'<div class="tma-media-icon">\' + mimeIcon(item.mime_type) + \'</div>\';
+      html += \'<div class="tma-media-item" onclick="tmaOpenMedia(\\\'\' + escHtml(item.url) + \'\\\')">\' +
+        thumb +
+        \'<div class="tma-media-info">\' +
+          \'<div class="tma-media-title">\' + escHtml(item.title || \'(untitled)\') + \'</div>\' +
+          \'<div class="tma-media-meta">\' + escHtml(item.filesize || \'\') + \'</div>\' +
         \'</div>\' +
-        \'<div class="tma-history-preview">\' + role + \' \' + preview + \'</div>\' +
-        \'<div class="tma-history-count">\' + count + \' message\' + (count !== 1 ? \'s\' : \'\') + \'</div>\' +
       \'</div>\';
     });
-    container.innerHTML = html;
+    gridEl.innerHTML = html;
+
+    if (pageEl) {
+      var pHtml = \'\';
+      if (mediaPage > 1) {
+        pHtml += \'<button class="tma-page-btn" onclick="tmaMediaPage(\' + (mediaPage - 1) + \')">‹ Prev</button>\';
+      }
+      pHtml += \'<span class="tma-page-info">\' + mediaPage + \' / \' + pages + \'</span>\';
+      if (mediaPage < pages) {
+        pHtml += \'<button class="tma-page-btn" onclick="tmaMediaPage(\' + (mediaPage + 1) + \')">Next ›</button>\';
+      }
+      pageEl.innerHTML = pHtml;
+    }
+  }
+
+  window.tmaMediaPage = function (p) {
+    haptic(\'light\');
+    mediaPage = p;
+    loadMedia();
+    document.getElementById(\'tma-tab-media\').scrollTop = 0;
+  };
+
+  window.tmaOpenMedia = function (url) {
+    haptic(\'light\');
+    if (twa && twa.openLink) {
+      twa.openLink(url);
+    } else {
+      window.open(url, \'_blank\');
+    }
+  };
+
+  function mimeIcon(mime) {
+    if (!mime) return \'📄\';
+    if (mime.indexOf(\'image/\') === 0)       return \'🖼️\';
+    if (mime.indexOf(\'video/\') === 0)       return \'🎬\';
+    if (mime.indexOf(\'audio/\') === 0)       return \'🎵\';
+    if (mime.indexOf(\'application/pdf\') === 0) return \'📕\';
+    if (mime.indexOf(\'application/\') === 0) return \'📦\';
+    return \'📄\';
+  }
+
+  /* =========================================================
+     AUTH / LOGIN PROMPT
+     ========================================================= */
+  function showLoginPrompt(tabName) {
+    var el = document.getElementById(\'tma-tab-\' + tabName);
+    if (!el) return;
+    el.innerHTML = \'<div class="tma-login-prompt">\' +
+      \'<div class="tma-login-icon">🔒</div>\' +
+      \'<div class="tma-login-title">Login Required</div>\' +
+      \'<div class="tma-login-sub">Sign in to manage your content.</div>\' +
+      \'<a class="tma-login-btn" href="\' + escHtml(TMA_LOGIN_URL) + \'" target="_blank">Sign In</a>\' +
+    \'</div>\';
   }
 
   /* ── User info from initDataUnsafe ── */
@@ -525,8 +938,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       imgEl.src = user.photo_url;
       imgEl.style.display = \'block\';
       if (initEl) initEl.style.display = \'none\';
-    } else if (initEl) {
-      initEl.textContent = (user.first_name || \'?\')[0].toUpperCase();
+    } else if (initEl && user.first_name) {
+      initEl.textContent = user.first_name[0].toUpperCase();
     }
   }
 
@@ -542,7 +955,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       .then(function (json) {
         if (json && json.valid) {
           var statusEl = document.getElementById(\'tma-header-status\');
-          if (statusEl && !statusEl.textContent.startsWith(\'@\')) {
+          if (statusEl && statusEl.textContent === \'Content Manager\') {
             statusEl.textContent = \'✓ Verified\';
           }
         }
@@ -560,13 +973,6 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     } catch (e) {}
   }
 
-  /* ── HTML escaping ── */
-  function escHtml(str) {
-    var d = document.createElement(\'div\');
-    d.textContent = String(str);
-    return d.innerHTML;
-  }
-
   /* ── Init ── */
   function init() {
     if (twa) {
@@ -582,14 +988,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
       if (twa.BackButton) {
         twa.BackButton.onClick(function () {
-          if (activeTab !== \'chat\') tmaSwitchTab(\'chat\');
+          if (activeTab !== \'content\') tmaSwitchTab(\'content\');
         });
       }
       if (twa.MainButton) {
-        twa.MainButton.onClick(tmaShareBot);
         twa.MainButton.hide();
       }
     }
+    /* Load the default Content tab immediately */
+    loadContent();
   }
 
   if (document.readyState === \'loading\') {
@@ -603,6 +1010,250 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 </html>';
 		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
+	}
+
+	// =========================================================================
+	// Content management data endpoints
+	// =========================================================================
+
+	/**
+	* Return a paginated list of posts for the requested post type together
+	* with the full list of CPTs (base + any active pro-toolkit CPTs) that the
+	* current user can edit.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response|WP_Error
+	*/
+	public function handle_content( $request ) {
+		$post_type = $request->get_param( 'post_type' );
+		$page      = absint( $request->get_param( 'page' ) );
+		$per_page  = absint( $request->get_param( 'per_page' ) );
+		$search    = $request->get_param( 'search' );
+
+		if ( ! post_type_exists( $post_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_invalid_post_type',
+				__( 'Invalid post type.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$post_type_obj = get_post_type_object( $post_type );
+		if ( ! $post_type_obj || ! current_user_can( $post_type_obj->cap->edit_posts ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_forbidden',
+				__( 'Insufficient permissions for this post type.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$query_args = array(
+			'post_type'      => $post_type,
+			'post_status'    => array( 'publish', 'draft', 'pending' ),
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'modified',
+			'order'          => 'DESC',
+		);
+
+		if ( ! empty( $search ) ) {
+			$query_args['s'] = $search;
+		}
+
+		$query = new WP_Query( $query_args );
+		$posts = array();
+
+		foreach ( $query->posts as $post ) {
+			$excerpt  = $post->post_excerpt;
+			if ( empty( $excerpt ) ) {
+				$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 20, '…' );
+			}
+			$posts[] = array(
+				'id'       => $post->ID,
+				'title'    => get_the_title( $post ),
+				'status'   => $post->post_status,
+				'date'     => $post->post_date,
+				'modified' => $post->post_modified,
+				'link'     => (string) get_edit_post_link( $post->ID, 'raw' ),
+				'excerpt'  => $excerpt,
+			);
+		}
+
+		// Build the list of all accessible CPTs, enriched with active-toolkit info.
+		$all_types      = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$active_toolkits = $this->get_active_toolkits();
+		$cpt_list       = array();
+
+		foreach ( $all_types as $type ) {
+			if ( ! current_user_can( $type->cap->edit_posts ) ) {
+				continue;
+			}
+
+			// Determine which toolkit (if any) registered this CPT.
+			$toolkit_label = '';
+			foreach ( $active_toolkits as $tk ) {
+				if ( in_array( $type->name, $tk['post_types'], true ) ) {
+					$toolkit_label = $tk['label'];
+					break;
+				}
+			}
+
+			$counts    = wp_count_posts( $type->name );
+			$cpt_list[] = array(
+				'name'    => $type->name,
+				'label'   => $type->label,
+				'count'   => isset( $counts->publish ) ? (int) $counts->publish : 0,
+				'toolkit' => $toolkit_label,
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'posts'      => $posts,
+				'total'      => (int) $query->found_posts,
+				'pages'      => (int) $query->max_num_pages,
+				'post_types' => $cpt_list,
+			)
+		);
+	}
+
+	/**
+	* Return all available tools (from the tool registry, grouped by active toolkit)
+	* and all registered slash commands accessible to the current user.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response
+	*/
+	public function handle_tools( $request ) {
+		$result = array(
+			'toolkits'       => array(),
+			'tools'          => array(),
+			'slash_commands' => array(),
+		);
+
+		// Enumerate active pro toolkits so the UI can group tools.
+		$active_toolkits          = $this->get_active_toolkits();
+		$result['toolkits']       = array_values( $active_toolkits );
+
+		// Collect tools from the tool registry.
+		if ( function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			$registry = wp_mcp_ai_get_tool_registry();
+			if ( $registry ) {
+				$group_map  = method_exists( $registry, 'get_tool_group_map' ) ? $registry->get_tool_group_map() : array();
+				$all_tools  = $registry->get_all_tools();
+
+				foreach ( $all_tools as $slug => $tool ) {
+					// Resolve which toolkit this tool belongs to (if any).
+					$toolkit_label = '';
+					foreach ( $active_toolkits as $tk ) {
+						if ( in_array( $slug, $tk['tool_slugs'], true ) ) {
+							$toolkit_label = $tk['label'];
+							break;
+						}
+					}
+
+					$result['tools'][] = array(
+						'slug'        => $slug,
+						'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
+						'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
+						'group'       => isset( $group_map[ $slug ] ) ? $group_map[ $slug ] : '',
+						'toolkit'     => $toolkit_label,
+					);
+				}
+			}
+		}
+
+		// Collect slash commands the current user can run.
+		if ( function_exists( 'wp_mcp_ai_get_slash_command_handler' ) ) {
+			$handler = wp_mcp_ai_get_slash_command_handler();
+			if ( $handler && method_exists( $handler, 'get_commands' ) ) {
+				$commands = $handler->get_commands( true );
+				foreach ( $commands as $name => $config ) {
+					$result['slash_commands'][] = array(
+						'name'        => '/' . $name,
+						'description' => isset( $config['description'] ) ? $config['description'] : '',
+						'usage'       => isset( $config['usage'] ) ? $config['usage'] : '/' . $name,
+						'aliases'     => isset( $config['aliases'] ) ? $config['aliases'] : array(),
+					);
+				}
+			}
+		}
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	* Return a paginated list of media library items.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response|WP_Error
+	*/
+	public function handle_media( $request ) {
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_forbidden',
+				__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$page     = absint( $request->get_param( 'page' ) );
+		$per_page = absint( $request->get_param( 'per_page' ) );
+		$search   = $request->get_param( 'search' );
+		$type     = $request->get_param( 'type' );
+
+		$query_args = array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		);
+
+		if ( ! empty( $search ) ) {
+			$query_args['s'] = $search;
+		}
+
+		// Filter by MIME type prefix (e.g. 'image', 'video', 'application').
+		if ( ! empty( $type ) ) {
+			$query_args['post_mime_type'] = sanitize_text_field( $type );
+		}
+
+		$query = new WP_Query( $query_args );
+		$items = array();
+
+		foreach ( $query->posts as $post ) {
+			$thumb     = wp_get_attachment_image_src( $post->ID, 'thumbnail' );
+			$full_url  = wp_get_attachment_url( $post->ID );
+			$mime_type = get_post_mime_type( $post->ID );
+			$filepath  = get_attached_file( $post->ID );
+			$filesize  = ( $filepath && file_exists( $filepath ) ) ? size_format( (int) filesize( $filepath ) ) : '';
+
+			$items[] = array(
+				'id'        => $post->ID,
+				'title'     => get_the_title( $post ),
+				'url'       => $full_url,
+				'thumb'     => $thumb ? $thumb[0] : '',
+				'mime_type' => $mime_type,
+				'date'      => $post->post_date,
+				'filesize'  => $filesize,
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'items' => $items,
+				'total' => (int) $query->found_posts,
+				'pages' => (int) $query->max_num_pages,
+			)
+		);
 	}
 
 	// =========================================================================
@@ -862,12 +1513,363 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 /* Scrollbars */
 .tma-tab-pane::-webkit-scrollbar{width:4px}
 .tma-tab-pane::-webkit-scrollbar-thumb{background:var(--tma-hint);border-radius:2px;opacity:.5}
+/* Search bar */
+.tma-search-bar{display:flex;align-items:center;padding:6px 12px;background:var(--tma-secondary-bg);border-bottom:1px solid var(--tma-border);flex-shrink:0}
+.tma-search-bar input{flex:1;border:none;outline:none;background:var(--tma-bg);color:var(--tma-text);font-size:14px;padding:6px 10px;border-radius:8px}
+/* Filter bars */
+.tma-filter-bar{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tma-filter-bar::-webkit-scrollbar{display:none}
+.tma-filter-btn{flex-shrink:0;padding:4px 12px;border-radius:16px;border:1px solid var(--tma-border);background:var(--tma-section-bg);color:var(--tma-text);font-size:12px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background var(--tma-transition),color var(--tma-transition)}
+.tma-filter-btn.tma-active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}
+/* CPT bar */
+.tma-cpt-bar{flex-shrink:0;border-bottom:1px solid var(--tma-border);background:var(--tma-secondary-bg)}
+.tma-cpt-scroll{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tma-cpt-scroll::-webkit-scrollbar{display:none}
+.tma-cpt-btn{flex-shrink:0;padding:4px 12px;border-radius:16px;border:1px solid var(--tma-border);background:var(--tma-section-bg);color:var(--tma-text);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;-webkit-tap-highlight-color:transparent}
+.tma-cpt-btn.tma-active{background:var(--tma-btn);color:var(--tma-btn-text);border-color:var(--tma-btn)}
+.tma-badge{background:rgba(0,0,0,.15);border-radius:10px;padding:0 5px;font-size:10px;font-weight:700;min-width:16px;text-align:center}
+.tma-tk-dot{font-size:8px;color:var(--tma-accent);margin-left:2px}
+/* Post cards */
+.tma-post-list{flex:1;overflow-y:auto;padding:8px 12px;-webkit-overflow-scrolling:touch}
+.tma-post-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:12px;margin-bottom:8px;box-shadow:var(--tma-shadow)}
+.tma-post-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.tma-post-title{font-size:14px;font-weight:600;color:var(--tma-text);flex:1;line-height:1.3}
+.tma-post-status{flex-shrink:0;font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px}
+.tma-status-pub{background:#d4edda;color:#155724}
+.tma-status-draft{background:#fff3cd;color:#856404}
+.tma-post-excerpt{font-size:12px;color:var(--tma-subtitle);line-height:1.4;margin-bottom:6px}
+.tma-post-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tma-hint)}
+.tma-post-edit{color:var(--tma-link);text-decoration:none;font-weight:500}
+/* Tool cards */
+.tma-cards-list{padding:8px 12px;overflow-y:auto}
+.tma-tool-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-bottom:8px;box-shadow:var(--tma-shadow)}
+.tma-slash-card{border-left:3px solid var(--tma-btn)}
+.tma-card-title{font-size:14px;font-weight:600;color:var(--tma-text);margin-bottom:3px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.tma-card-desc{font-size:12px;color:var(--tma-subtitle);line-height:1.4;margin-bottom:4px}
+.tma-card-usage{font-size:11px;color:var(--tma-hint);font-family:monospace}
+.tma-card-group{font-size:10px;color:var(--tma-hint);background:var(--tma-secondary-bg);padding:1px 6px;border-radius:6px}
+.tma-card-badge{font-size:10px;background:var(--tma-btn);color:var(--tma-btn-text);padding:1px 6px;border-radius:6px;font-weight:500}
+.tma-mono{font-family:monospace;color:var(--tma-btn)}
+.tma-mt{margin-top:8px}
+/* Media grid */
+.tma-media-grid{padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
+.tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition)}
+.tma-media-item:active{opacity:.7}
+.tma-media-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.tma-media-icon{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--tma-secondary-bg)}
+.tma-media-info{padding:6px 8px}
+.tma-media-title{font-size:11px;font-weight:500;color:var(--tma-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tma-media-meta{font-size:10px;color:var(--tma-hint)}
+/* Pagination */
+.tma-pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;flex-shrink:0;border-top:1px solid var(--tma-border)}
+.tma-page-btn{padding:5px 14px;border-radius:var(--tma-radius);border:1px solid var(--tma-border);background:var(--tma-section-bg);color:var(--tma-text);font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tma-page-btn:active{opacity:.7}
+.tma-page-info{font-size:13px;color:var(--tma-hint)}
+/* Login prompt */
+.tma-login-prompt{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;height:100%;text-align:center}
+.tma-login-icon{font-size:52px;margin-bottom:16px}
+.tma-login-title{font-size:18px;font-weight:700;color:var(--tma-text);margin-bottom:6px}
+.tma-login-sub{font-size:13px;color:var(--tma-hint);margin-bottom:20px}
+.tma-login-btn{display:inline-block;padding:10px 28px;background:var(--tma-btn);color:var(--tma-btn-text);text-decoration:none;border-radius:var(--tma-radius);font-size:14px;font-weight:600}
+/* Error state */
+.tma-error{color:var(--tma-destructive) !important}
+/* Nav SVG icons */
+.tma-nav-svg{width:22px;height:22px;flex-shrink:0}
+/* Content tab layout: column flex so CPT bar + list + pagination stack */
+#tma-tab-content{display:flex;flex-direction:column;overflow:hidden}
+#tma-tab-tools{display:flex;flex-direction:column;overflow:hidden}
+#tma-tab-tools .tma-cards-list{flex:1;overflow-y:auto}
+#tma-tab-tools .tma-section-title{flex-shrink:0}
+#tma-tab-tools .tma-filter-bar{flex-shrink:0}
+#tma-tab-media{display:flex;flex-direction:column;overflow:hidden}
+#tma-tab-media .tma-media-grid{flex:1}
 ';
 	}
 
 	// =========================================================================
 	// Helpers
 	// =========================================================================
+
+	/**
+	* Build a list of every active pro toolkit along with its human-readable
+	* label, the WordPress post-type names it registers, and the tool slugs it
+	* contributes – so the /content and /tools endpoints can group and annotate
+	* their responses.
+	*
+	* Each entry in the returned array has the shape:
+	*   [
+	*     'key'        => 'enable_ecommerce_toolkit',   // wp_mcp_ai_settings key
+	*     'label'      => 'E-commerce Toolkit',
+	*     'post_types' => [ 'mcp_ai_product', … ],
+	*     'tool_slugs' => [ 'woo_products', 'woo_orders', … ],
+	*   ]
+	*
+	* @since 1.0.0
+	*
+	* @return array Active toolkits. Empty array when the Pro addon is absent.
+	*/
+	public function get_active_toolkits() {
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return array();
+		}
+
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$is_base  = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+
+		/*
+		 * Master toolkit registry.
+		 *
+		 * Format: setting_key => [ label, always, post_types[], tool_slugs[] ]
+		 * post_types  – CPTs the toolkit registers (show_ui=true types only).
+		 * tool_slugs  – Tool slugs the toolkit adds to the registry.
+		 *
+		 * Only the Password Vault uses always=true (always loaded by the Pro plugin).
+		 * All other toolkits are controlled via the wp_mcp_ai_settings option.
+		 */
+		$toolkit_registry = array(
+			// ── Always-on (Password Vault is loaded unconditionally by Pro) ───
+			'_always_vault'    => array(
+				'label'      => __( 'Password Vault', 'mcp-ai-wpoos-pro' ),
+				'setting'    => '',
+				'always'     => true,
+				'post_types' => array(),
+				'tool_slugs' => array( 'get_vault_entry', 'create_vault_entry', 'update_vault_entry', 'delete_vault_entry', 'list_vault_entries' ),
+			),
+
+			// ── Media Toolkit (file always loaded, activated via setting) ──────
+			'_always_media'    => array(
+				'label'      => __( 'Media Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_media_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_media_collection', 'mcp_ai_media_template' ),
+				'tool_slugs' => array(
+					'analyze_image', 'generate_image_alt_text', 'generate_image_caption',
+					'extract_image_text', 'convert_image_format', 'remove_background',
+					'rotate_image', 'resize_image', 'vectorize_image',
+					'generate_gemini_image', 'edit_gemini_image', 'generate_openai_image',
+				),
+			),
+
+			// ── Setting-gated toolkits ─────────────────────────────────────────
+			'enable_ecommerce_toolkit'              => array(
+				'label'      => __( 'E-commerce Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_ecommerce_toolkit',
+				'always'     => false,
+				'post_types' => array(),
+				'tool_slugs' => array( 'woo_products', 'woo_orders', 'product_actualization', 'lookup_product_price', 'create_woo_product', 'create_woo_variable_product' ),
+			),
+			'enable_social_media_toolkit'           => array(
+				'label'      => __( 'Social Media Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_social_media_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_social_post' ),
+				'tool_slugs' => array( 'schedule_social_post', 'get_social_analytics', 'publish_social_post' ),
+			),
+			'enable_analytics_toolkit'              => array(
+				'label'      => __( 'Analytics Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_analytics_toolkit',
+				'always'     => false,
+				'post_types' => array(),
+				'tool_slugs' => array( 'get_site_analytics', 'get_traffic_report', 'get_conversion_report' ),
+			),
+			'enable_multilingual_toolkit'           => array(
+				'label'      => __( 'Multilingual Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_multilingual_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_translation_memory', 'mcp_ai_glossary' ),
+				'tool_slugs' => array( 'translate_content', 'get_translation_memory', 'manage_glossary' ),
+			),
+			'enable_video_production_toolkit'       => array(
+				'label'      => __( 'Video Production Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_video_production_toolkit',
+				'always'     => false,
+				'post_types' => array(),
+				'tool_slugs' => array( 'generate_veo_video', 'generate_openai_video', 'analyze_video', 'check_video_status' ),
+			),
+			'enable_financial_planner_toolkit'      => array(
+				'label'      => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_financial_planner_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_financial_account', 'mcp_ai_budget' ),
+				'tool_slugs' => array( 'get_financial_account', 'create_budget', 'get_financial_report' ),
+			),
+			'enable_dj_management_toolkit'         => array(
+				'label'      => __( 'DJ Management Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_dj_management_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_dj_equipment', 'mcp_ai_dj_package' ),
+				'tool_slugs' => array(),
+			),
+			'enable_image_production_toolkit'       => array(
+				'label'      => __( 'Image Production Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_image_production_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_image_template' ),
+				'tool_slugs' => array( 'generate_image_from_template', 'batch_generate_images' ),
+			),
+			'enable_ai_tool_builder_toolkit'        => array(
+				'label'      => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_ai_tool_builder_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_custom_tool' ),
+				'tool_slugs' => array( 'create_custom_tool', 'test_custom_tool', 'deploy_custom_tool' ),
+			),
+			'enable_architect_agent_toolkit'        => array(
+				'label'      => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_architect_agent_toolkit',
+				'always'     => false,
+				'post_types' => array(),
+				'tool_slugs' => array( 'read_file', 'write_file', 'run_command', 'scaffold_component' ),
+			),
+			'enable_architectural_design_toolkit'   => array(
+				'label'      => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_architectural_design_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_architectural_project', 'mcp_ai_architectural_drawing', 'mcp_ai_architectural_specification' ),
+				'tool_slugs' => array(),
+			),
+			'enable_site_creator_toolkit'           => array(
+				'label'      => __( 'Site Creator Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_site_creator_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_site_template' ),
+				'tool_slugs' => array( 'scaffold_theme_structure', 'create_site_from_template' ),
+			),
+			'enable_document_generation_toolkit'    => array(
+				'label'      => __( 'Document Generation Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_document_generation_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_document_template' ),
+				'tool_slugs' => array( 'generate_document', 'import_products_from_excel', 'export_data_to_excel' ),
+			),
+			'enable_crm_toolkit'                    => array(
+				'label'      => __( 'CRM Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_crm_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_company', 'mcp_ai_contact' ),
+				'tool_slugs' => array( 'get_crm_contact', 'create_crm_contact', 'update_crm_contact' ),
+			),
+			'enable_regulatory_registration_toolkit' => array(
+				'label'      => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_regulatory_registration_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_regulatory_registration' ),
+				'tool_slugs' => array(),
+			),
+			'enable_chat_channels_toolkit'          => array(
+				'label'      => __( 'Chat Channels Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_chat_channels_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_channel_message', 'mcp_ai_channel_contact' ),
+				'tool_slugs' => array(
+					'send_telegram_message', 'get_telegram_updates', 'manage_telegram_webhook',
+					'add_telegram_message_reaction',
+				),
+			),
+			'enable_fantasy_football'               => array(
+				'label'      => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_fantasy_football',
+				'always'     => false,
+				'post_types' => array(),
+				'tool_slugs' => array( 'get_espn_fantasy_league', 'get_espn_fantasy_roster', 'get_espn_fantasy_scoreboard' ),
+			),
+			'enable_health_wellness_management'     => array(
+				'label'      => __( 'Health & Wellness Management', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_health_wellness_management',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_health_record', 'mcp_ai_wellness_plan' ),
+				'tool_slugs' => array(),
+			),
+			'enable_places_management'              => array(
+				'label'      => __( 'Places Management', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_places_management',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_place' ),
+				'tool_slugs' => array(),
+			),
+			'enable_eca_management'                 => array(
+				'label'      => __( 'ECA Management', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_eca_management',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_eca' ),
+				'tool_slugs' => array(),
+			),
+			'enable_quiz_system'                    => array(
+				'label'      => __( 'Quiz System', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_quiz_system',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_quiz', 'mcp_ai_question' ),
+				'tool_slugs' => array(),
+			),
+			'enable_project_management'             => array(
+				'label'      => __( 'Project Management', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_project_management',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_project', 'mcp_ai_task' ),
+				'tool_slugs' => array( 'create_project', 'get_project', 'update_project', 'delete_project' ),
+			),
+			'enable_calendar_booking_toolkit'       => array(
+				'label'      => __( 'Calendar & Booking Toolkit', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_calendar_booking_toolkit',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_event', 'mcp_ai_booking' ),
+				'tool_slugs' => array(),
+			),
+			'enable_webchat_integration'            => array(
+				'label'      => __( 'WebChat Integration', 'mcp-ai-wpoos-pro' ),
+				'setting'    => 'enable_webchat_integration',
+				'always'     => false,
+				'post_types' => array( 'mcp_ai_webchat' ),
+				'tool_slugs' => array(),
+			),
+		);
+
+		$active = array();
+
+		foreach ( $toolkit_registry as $key => $tk ) {
+			// Always-on toolkits with no setting gate.
+			if ( $tk['always'] ) {
+				$active[ $key ] = array(
+					'key'        => $key,
+					'label'      => $tk['label'],
+					'post_types' => $tk['post_types'],
+					'tool_slugs' => $tk['tool_slugs'],
+				);
+				continue;
+			}
+
+			// Media toolkit: always included in Pro unless base-only.
+			if ( '_always_media' === $key && ! $is_base ) {
+				if ( ! empty( $settings['enable_media_toolkit'] ) ) {
+					$active[ $key ] = array(
+						'key'        => $key,
+						'label'      => $tk['label'],
+						'post_types' => $tk['post_types'],
+						'tool_slugs' => $tk['tool_slugs'],
+					);
+				}
+				continue;
+			}
+
+			// Skip always-on sentinels that were processed above.
+			if ( 0 === strpos( $key, '_always_' ) ) {
+				continue;
+			}
+
+			// Setting-gated toolkit: only include when flag is enabled.
+			$setting_key = $tk['setting'];
+			if ( ! empty( $setting_key ) && ! empty( $settings[ $setting_key ] ) ) {
+				$active[ $key ] = array(
+					'key'        => $key,
+					'label'      => $tk['label'],
+					'post_types' => $tk['post_types'],
+					'tool_slugs' => $tk['tool_slugs'],
+				);
+			}
+		}
+
+		return $active;
+	}
 
 	/**
 	* Resolve the assistant identifier to use for the Mini App chat UI.
