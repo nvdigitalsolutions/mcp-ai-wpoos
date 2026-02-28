@@ -496,6 +496,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Each channel uses a channel-prefixed field name so that hidden form fields
 				// from other channel types do not conflict with the active one.
 				'require_mention' => (
+					( 'telegram' === $connection_type && ! empty( $_POST['telegram_require_mention'] ) ) ||
 					( 'slack' === $connection_type && ! empty( $_POST['slack_require_mention'] ) ) ||
 					( 'discord' === $connection_type && ! empty( $_POST['discord_require_mention'] ) ) ||
 					( 'microsoft_teams' === $connection_type && ! empty( $_POST['teams_require_mention'] ) ) ||
@@ -1764,6 +1765,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description">
 							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to your Telegram bot.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_require_mention" id="telegram_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for group chats where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
