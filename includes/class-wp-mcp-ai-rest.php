@@ -21,6 +21,8 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-teams-controll
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webapp-auth.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-telegram-webapp-controller.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -423,6 +425,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate teams routes to Teams Controller.
 			$teams_controller = new WP_MCP_AI_REST_Teams_Controller();
 			$teams_controller->register_routes();
+
+			// Delegate Telegram Mini App WebApp auth routes.
+			$telegram_webapp_controller = new WP_MCP_AI_REST_Telegram_WebApp_Controller();
+			$telegram_webapp_controller->register_routes();
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 
