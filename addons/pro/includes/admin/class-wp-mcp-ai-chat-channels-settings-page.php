@@ -842,7 +842,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<div class="code-snippet">messages, messaging_postbacks, messaging_optins, message_deliveries, message_reads, messaging_referrals, message_reactions</div>
 				<p style="margin-top:8px; font-size:13px;">
 					<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+					<code>pages_messaging</code>, <code>pages_show_list</code>
 				</p>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>

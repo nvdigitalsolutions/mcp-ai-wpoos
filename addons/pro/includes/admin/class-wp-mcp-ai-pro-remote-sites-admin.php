@@ -2539,7 +2539,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</ol>
 							<p style="margin: 0; font-size: 13px;">
 								<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
-								<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+								<code>pages_messaging</code>, <code>pages_show_list</code>
 							</p>
 						</div>
 					</td>
