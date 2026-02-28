@@ -114,9 +114,14 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the controller falls back to access token when app secret is missing.
+	 * Test that the controller returns empty string when app secret is missing (no fallback to access token).
+	 *
+	 * The Page Access Token (api_key) must NOT be used as a fallback for the App Secret.
+	 * Using api_key as the secret forces HMAC signature validation to be mandatory
+	 * even when the user hasn't configured an App Secret in the Meta Developer Dashboard,
+	 * causing every valid webhook to be rejected with "Missing X-Hub-Signature-256 header."
 	 */
-	public function test_get_app_secret_fallback_to_access_token() {
+	public function test_get_app_secret_returns_empty_when_only_access_token_configured() {
 		if ( ! $this->load_controller() ) {
 			return;
 		}
@@ -131,7 +136,7 @@ class Test_Messenger_Webhook_Controller extends WP_UnitTestCase {
 
 		$app_secret = $method->invoke( $controller );
 
-		$this->assertEquals( 'test_page_access_token_12345', $app_secret, 'Should fall back to access token when app secret is not set' );
+		$this->assertEquals( '', $app_secret, 'Should return empty string (not api_key) when api_secret is not configured, so signature validation is skipped' );
 	}
 
 	/**
