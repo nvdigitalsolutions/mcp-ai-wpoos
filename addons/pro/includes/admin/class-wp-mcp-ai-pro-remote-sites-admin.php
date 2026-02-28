@@ -458,10 +458,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Google Drive-specific fields.
 				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 				// Telegram-specific fields.
-				'bot_username'    => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
-				'secret_token'    => $telegram_secret_token,
-				'enable_web_login'         => ! empty( $_POST['telegram_enable_web_login'] ),
-				'web_login_redirect_url'   => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
+				'bot_username'         => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
+				'secret_token'         => $telegram_secret_token,
+				'enable_web_login'     => ! empty( $_POST['telegram_enable_web_login'] ),
+				'web_login_redirect_url' => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
+				'auto_create_wp_user'  => ! empty( $_POST['telegram_auto_create_wp_user'] ),
+				'new_user_role'        => isset( $_POST['telegram_new_user_role'] ) ? sanitize_key( wp_unslash( $_POST['telegram_new_user_role'] ) ) : 'subscriber',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -1851,6 +1853,43 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<code>show_avatar="1|0"</code>,
 							<code>lang="en"</code>.
 						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'WordPress Account Creation', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						// Default to enabled for new connections and for existing connections
+						// that pre-date this setting (backwards compatibility).
+						$tg_auto_create_checked = ! $is_edit
+							|| ! array_key_exists( 'auto_create_wp_user', $connection )
+							|| ! empty( $connection['auto_create_wp_user'] );
+						?>
+						<label>
+							<input type="checkbox" name="telegram_auto_create_wp_user" id="telegram_auto_create_wp_user" value="1" <?php checked( $tg_auto_create_checked ); ?>>
+							<?php esc_html_e( 'Automatically create a WordPress account for new Telegram users', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, a WordPress account is created automatically the first time a user signs in via the Telegram Login Widget or Telegram Mini App, using the role configured below. Disable to require manual account linking.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_new_user_role"><?php esc_html_e( 'New User Role', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_tg_role    = $is_edit && ! empty( $connection['new_user_role'] ) ? $connection['new_user_role'] : 'subscriber';
+						$wp_roles_obj     = wp_roles();
+						$all_role_names   = $wp_roles_obj->get_names();
+						?>
+						<select name="telegram_new_user_role" id="telegram_new_user_role">
+							<?php foreach ( $all_role_names as $role_key => $role_name ) : ?>
+								<option value="<?php echo esc_attr( $role_key ); ?>" <?php selected( $saved_tg_role, $role_key ); ?>><?php echo esc_html( translate_user_role( $role_name ) ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'WordPress role assigned to newly-created Telegram users. "Subscriber" is recommended for public-facing bots. Raise this for internal/team bots only.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

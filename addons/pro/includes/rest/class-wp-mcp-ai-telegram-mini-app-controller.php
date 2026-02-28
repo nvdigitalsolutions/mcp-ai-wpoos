@@ -1357,7 +1357,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		);
 
 		$wp_nonce   = null;
-		$wp_user_id = $this->find_or_create_wp_user( $auth_data );
+		$wp_user_id = $this->find_or_create_wp_user( $auth_data, $connection );
 
 		if ( ! is_wp_error( $wp_user_id ) ) {
 			wp_set_current_user( $wp_user_id );
@@ -2031,7 +2031,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	* @param array $auth_data Telegram user data (id, first_name, last_name, username, photo_url).
 	* @return int|WP_Error WordPress user ID, or WP_Error on failure.
 	*/
-	protected function find_or_create_wp_user( array $auth_data ) {
+	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
 		$telegram_id = ! empty( $auth_data['id'] ) ? (string) absint( $auth_data['id'] ) : '';
 		if ( '' === $telegram_id ) {
 			return new WP_Error(
@@ -2056,6 +2056,10 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			return (int) $user_ids[0];
 		}
 
+		// Determine auto-create setting: connection setting takes precedence over the
+		// filter default (true) when explicitly saved. New connections default to true.
+		$connection_auto_create = ! isset( $connection['auto_create_wp_user'] ) || ! empty( $connection['auto_create_wp_user'] );
+
 		/**
 		* Filters whether a new WordPress user should be created for an
 		* unrecognised Telegram Mini App identity.
@@ -2064,10 +2068,10 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		*
 		* @since 1.0.0
 		*
-		* @param bool  $auto_create Whether to create a new user. Default true.
+		* @param bool  $auto_create Whether to create a new user. Connection admin setting used as default.
 		* @param array $auth_data   Telegram user data from verified initData.
 		*/
-		if ( ! apply_filters( 'wp_mcp_ai_telegram_mini_app_auto_create_user', true, $auth_data ) ) {
+		if ( ! apply_filters( 'wp_mcp_ai_telegram_mini_app_auto_create_user', $connection_auto_create, $auth_data ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_telegram_mini_app_user_not_found',
 				__( 'No WordPress account is linked to this Telegram identity.', 'mcp-ai-wpoos-pro' ),
@@ -2096,6 +2100,9 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 		// follows the IANA-reserved `.invalid` domain convention.
 		$placeholder_email = sanitize_email( $telegram_id . '@telegram.users.invalid' );
 
+		// Role: connection admin setting takes precedence; filter allows code override.
+		$connection_role = ! empty( $connection['new_user_role'] ) ? sanitize_key( $connection['new_user_role'] ) : 'subscriber';
+
 		$user_data = array(
 			'user_login'   => $login,
 			'user_pass'    => wp_generate_password( 32, true, true ),
@@ -2108,10 +2115,10 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			*
 			* @since 1.0.0
 			*
-			* @param string $role      Default role ('subscriber').
+			* @param string $role      Role slug. Connection admin setting used as default.
 			* @param array  $auth_data Telegram user data from verified initData.
 			*/
-			'role'         => apply_filters( 'wp_mcp_ai_telegram_mini_app_new_user_role', 'subscriber', $auth_data ),
+			'role'         => apply_filters( 'wp_mcp_ai_telegram_mini_app_new_user_role', $connection_role, $auth_data ),
 		);
 
 		$user_id = wp_insert_user( $user_data );

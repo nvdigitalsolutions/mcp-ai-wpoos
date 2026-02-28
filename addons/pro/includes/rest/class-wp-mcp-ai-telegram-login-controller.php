@@ -219,7 +219,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		do_action( 'wp_mcp_ai_telegram_login_verified', $auth_data, $connection );
 
 		// Auto-create or locate the WordPress user and establish a login session.
-		$wp_user_id = $this->find_or_create_wp_user( $auth_data );
+		$wp_user_id = $this->find_or_create_wp_user( $auth_data, $connection );
 		if ( ! is_wp_error( $wp_user_id ) ) {
 			wp_set_current_user( $wp_user_id );
 			wp_set_auth_cookie( $wp_user_id, false );
@@ -546,7 +546,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 	 * @param array $auth_data Verified Telegram auth data.
 	 * @return int|WP_Error WordPress user ID, or WP_Error on failure.
 	 */
-	protected function find_or_create_wp_user( array $auth_data ) {
+	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
 		$telegram_id = ! empty( $auth_data['id'] ) ? (string) absint( $auth_data['id'] ) : '';
 		if ( '' === $telegram_id ) {
 			return new WP_Error(
@@ -571,6 +571,10 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			return (int) $user_ids[0];
 		}
 
+		// Determine auto-create setting: connection setting takes precedence over the
+		// filter default (true) when explicitly saved. New connections default to true.
+		$connection_auto_create = ! isset( $connection['auto_create_wp_user'] ) || ! empty( $connection['auto_create_wp_user'] );
+
 		/**
 		 * Filters whether a new WordPress user should be created for an
 		 * unrecognised Telegram identity.
@@ -580,10 +584,10 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param bool  $auto_create Whether to create a new user. Default true.
+		 * @param bool  $auto_create Whether to create a new user. Connection admin setting used as default.
 		 * @param array $auth_data   Verified Telegram auth data.
 		 */
-		if ( ! apply_filters( 'wp_mcp_ai_telegram_login_auto_create_user', true, $auth_data ) ) {
+		if ( ! apply_filters( 'wp_mcp_ai_telegram_login_auto_create_user', $connection_auto_create, $auth_data ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_telegram_login_user_not_found',
 				__( 'No WordPress account is linked to this Telegram identity.', 'mcp-ai-wpoos-pro' ),
@@ -612,6 +616,9 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		// follows the IANA-reserved `.invalid` domain convention.
 		$placeholder_email = sanitize_email( $telegram_id . '@telegram.users.invalid' );
 
+		// Role: connection admin setting takes precedence; filter allows code override.
+		$connection_role = ! empty( $connection['new_user_role'] ) ? sanitize_key( $connection['new_user_role'] ) : 'subscriber';
+
 		$user_data = array(
 			'user_login'   => $login,
 			'user_pass'    => wp_generate_password( 32, true, true ),
@@ -624,10 +631,10 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			 *
 			 * @since 1.0.0
 			 *
-			 * @param string $role      Default role ('subscriber').
+			 * @param string $role      Role slug. Connection admin setting used as default.
 			 * @param array  $auth_data Verified Telegram auth data.
 			 */
-			'role'         => apply_filters( 'wp_mcp_ai_telegram_login_new_user_role', 'subscriber', $auth_data ),
+			'role'         => apply_filters( 'wp_mcp_ai_telegram_login_new_user_role', $connection_role, $auth_data ),
 		);
 
 		$user_id = wp_insert_user( $user_data );
