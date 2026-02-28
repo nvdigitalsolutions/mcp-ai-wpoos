@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-messenger-chat-error',
-        'version' => 'dev-copilot/fix-messenger-chat-error',
-        'reference' => '78092ca91765bbf35436b9c88ea87256146c9392',
+        'pretty_version' => 'dev-copilot/fix-chat-channel-assistant-issue',
+        'version' => 'dev-copilot/fix-chat-channel-assistant-issue',
+        'reference' => 'f2df0b6b86740f4ad8d0f83b536e770e5077f315',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-messenger-chat-error',
-            'version' => 'dev-copilot/fix-messenger-chat-error',
-            'reference' => '78092ca91765bbf35436b9c88ea87256146c9392',
+            'pretty_version' => 'dev-copilot/fix-chat-channel-assistant-issue',
+            'version' => 'dev-copilot/fix-chat-channel-assistant-issue',
+            'reference' => 'f2df0b6b86740f4ad8d0f83b536e770e5077f315',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
