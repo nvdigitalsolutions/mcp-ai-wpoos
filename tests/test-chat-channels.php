@@ -545,6 +545,39 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		);
 	}
 
+	/** Messenger get-conversations slug must equal 'get_messenger_conversations'. */
+	public function test_chat_channels_messenger_conversations_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations',
+			'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations();
+		$this->assertSame( 'get_messenger_conversations', $tool->get_slug() );
+	}
+
+	/** Messenger get-conversations returns WP_Error when access_token is missing. */
+	public function test_chat_channels_messenger_conversations_execute_missing_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations',
+			'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations();
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_messenger_token', $result->get_error_code() );
+
+		wp_set_current_user( 0 );
+	}
+
 	/** Messenger send-message tool must be loadable. */
 	public function test_chat_channels_tool_send_messenger_message_loadable() {
 		$this->assert_chat_channels_tool_loadable(

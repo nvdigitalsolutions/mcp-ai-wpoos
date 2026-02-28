@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-imessage-dropdown-issue',
-        'version' => 'dev-copilot/fix-imessage-dropdown-issue',
-        'reference' => 'e6beaf1e065fbe181a684f44640f745a22e0ed75',
+        'pretty_version' => 'dev-copilot/fix-messenger-chat-error',
+        'version' => 'dev-copilot/fix-messenger-chat-error',
+        'reference' => '78092ca91765bbf35436b9c88ea87256146c9392',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-imessage-dropdown-issue',
-            'version' => 'dev-copilot/fix-imessage-dropdown-issue',
-            'reference' => 'e6beaf1e065fbe181a684f44640f745a22e0ed75',
+            'pretty_version' => 'dev-copilot/fix-messenger-chat-error',
+            'version' => 'dev-copilot/fix-messenger-chat-error',
+            'reference' => '78092ca91765bbf35436b9c88ea87256146c9392',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
