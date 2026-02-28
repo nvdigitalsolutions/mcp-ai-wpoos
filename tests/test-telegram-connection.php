@@ -726,6 +726,105 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that auto_create_wp_user and new_user_role fields persist.
+	 */
+	public function test_telegram_auto_create_wp_user_fields_persist() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'                => 'Telegram Auto-Create Test',
+			'url'                 => 'https://api.telegram.org',
+			'connection_type'     => 'telegram',
+			'auth_type'           => 'none',
+			'enabled'             => true,
+			'api_key'             => '7777777777:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+			'auto_create_wp_user' => true,
+			'new_user_role'       => 'editor',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertTrue( (bool) $saved['auto_create_wp_user'], 'auto_create_wp_user should be stored as true' );
+		$this->assertEquals( 'editor', $saved['new_user_role'], 'new_user_role should persist' );
+	}
+
+	/**
+	 * Test that auto_create_wp_user and new_user_role are preserved on update
+	 * when not provided in the update data.
+	 */
+	public function test_telegram_auto_create_wp_user_fields_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Create initial connection with auto-create enabled and custom role.
+		$connection_data = array(
+			'name'                => 'Telegram Auto-Create Preserve',
+			'url'                 => 'https://api.telegram.org',
+			'connection_type'     => 'telegram',
+			'auth_type'           => 'none',
+			'enabled'             => true,
+			'api_key'             => '6666666666:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+			'auto_create_wp_user' => true,
+			'new_user_role'       => 'author',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Update without providing auto-create fields.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Telegram Auto-Create Preserve — Renamed',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertTrue( (bool) $updated['auto_create_wp_user'], 'auto_create_wp_user should be preserved on update' );
+		$this->assertEquals( 'author', $updated['new_user_role'], 'new_user_role should be preserved on update' );
+	}
+
+	/**
+	 * Test that auto_create_wp_user defaults to false and new_user_role defaults
+	 * to subscriber when not provided.
+	 */
+	public function test_telegram_auto_create_wp_user_defaults() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Telegram Default Test',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => '5555555555:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertFalse( (bool) $saved['auto_create_wp_user'], 'auto_create_wp_user should default to false' );
+		$this->assertEquals( 'subscriber', $saved['new_user_role'], 'new_user_role should default to subscriber' );
+	}
+
+	/**
 	 * Test that get_active_web_login_connection() returns only connections with Web Login enabled.
 	 */
 	public function test_get_active_web_login_connection_returns_correct_connection() {

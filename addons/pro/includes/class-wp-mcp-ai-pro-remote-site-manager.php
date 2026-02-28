@@ -188,6 +188,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['web_login_redirect_url'] = $existing_connection['web_login_redirect_url'];
 			}
 
+			// Preserve existing auto_create_wp_user (Telegram) if not provided.
+			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
+				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
+			}
+
+			// Preserve existing new_user_role (Telegram) if not provided.
+			if ( ! isset( $connection_data['new_user_role'] ) && isset( $existing_connection['new_user_role'] ) ) {
+				$connection_data['new_user_role'] = $existing_connection['new_user_role'];
+			}
+
 			// Preserve existing WhatsApp-specific fields if not provided.
 			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
 				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
@@ -373,6 +383,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Telegram Web Login feature flag and after-login redirect URL.
 			'enable_web_login'       => ! empty( $connection_data['enable_web_login'] ),
 			'web_login_redirect_url' => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
+			// Telegram WordPress account creation for new Telegram users.
+			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
+			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
