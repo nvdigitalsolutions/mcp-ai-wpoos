@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-channel-assistant-issue',
-        'version' => 'dev-copilot/fix-chat-channel-assistant-issue',
-        'reference' => 'f2df0b6b86740f4ad8d0f83b536e770e5077f315',
+        'pretty_version' => 'dev-copilot/fix-facebook-messenger-connection-again',
+        'version' => 'dev-copilot/fix-facebook-messenger-connection-again',
+        'reference' => '0f75345a0ab46e965208585419222348c74835ea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-channel-assistant-issue',
-            'version' => 'dev-copilot/fix-chat-channel-assistant-issue',
-            'reference' => 'f2df0b6b86740f4ad8d0f83b536e770e5077f315',
+            'pretty_version' => 'dev-copilot/fix-facebook-messenger-connection-again',
+            'version' => 'dev-copilot/fix-facebook-messenger-connection-again',
+            'reference' => '0f75345a0ab46e965208585419222348c74835ea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

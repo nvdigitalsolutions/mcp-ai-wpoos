@@ -6472,8 +6472,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	/**
 	 * AJAX handler: test a Facebook Messenger connection using credentials posted directly from the form.
 	 *
-	 * Verifies the access token by calling GET /me or GET /{page-id} on the Meta Graph API
-	 * and returns page name, category, and follower count on success.
+	 * Verifies the access token by calling GET /me on the Meta Graph API and returns page name
+	 * on success. Using /me avoids querying /{page-id} directly, which requires the
+	 * pages_read_engagement permission, Page Public Content Access, or Page Public Metadata Access
+	 * features. When a page_id is supplied the returned id is compared against it to confirm
+	 * the token belongs to the expected page.
 	 *
 	 * Accepts: access_token, page_id (optional), api_version, nonce (POST).
 	 * Returns JSON with page details on success, or error message on failure.
@@ -6503,15 +6506,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		// If a page ID is provided, query that page directly; otherwise query /me (app token).
-		// Requesting id, name, and category — fields available with standard page access token
-		// permissions. fan_count is intentionally excluded as it requires the pages_read_engagement
-		// permission which is a restricted permission not available to all apps.
-		$target   = ! empty( $page_id ) ? rawurlencode( $page_id ) : 'me';
+		// Always query /me — a Page Access Token returns the page's own data without requiring
+		// pages_read_engagement, Page Public Content Access, or Page Public Metadata Access.
+		// Requesting only id and name to stay within standard token permissions.
 		$endpoint = sprintf(
-			'https://graph.facebook.com/%s/%s?fields=id,name,category',
-			$api_version,
-			$target
+			'https://graph.facebook.com/%s/me?fields=id,name',
+			$api_version
 		);
 
 		$response = wp_remote_get(
@@ -6554,16 +6554,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		$returned_id = isset( $body['id'] ) ? $body['id'] : '';
+		$token_type  = ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' );
+
 		$result = array(
 			'page_name'  => isset( $body['name'] ) ? $body['name'] : '',
-			'page_id'    => isset( $body['id'] ) ? $body['id'] : '',
-			'category'   => isset( $body['category'] ) ? $body['category'] : '',
-			'token_type' => ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' ),
+			'page_id'    => $returned_id,
+			'token_type' => $token_type,
 			'message'    => __( 'Messenger connection successful! Credentials are valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// Warn when an App Access Token is used — it can verify identity but cannot send messages.
-		if ( empty( $page_id ) ) {
+		if ( ! empty( $page_id ) && $returned_id !== $page_id ) {
+			// Token is valid but represents a different page (or an App Access Token).
+			$result['warning'] = __( 'The token is valid but the Page ID returned by the API does not match the Page ID entered. Ensure you are using a Page Access Token for the correct page.', 'mcp-ai-wpoos-pro' );
+		} elseif ( empty( $page_id ) ) {
+			// Warn when an App Access Token is used — it can verify identity but cannot send messages.
 			$result['warning'] = __( 'App Access Token detected. To send messages via Messenger, obtain a Page Access Token with pages_messaging permission from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' );
 		}
 
