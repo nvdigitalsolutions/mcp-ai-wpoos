@@ -67,6 +67,16 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	const INIT_DATA_MAX_AGE = 86400;
 
 	/**
+	* User meta key that stores the linked Telegram user ID.
+	*/
+	const META_TELEGRAM_ID = '_wp_mcp_ai_telegram_id';
+
+	/**
+	* User meta key that stores the Telegram username (without '@').
+	*/
+	const META_TELEGRAM_USERNAME = '_wp_mcp_ai_telegram_username';
+
+	/**
 	* Constructor – registers REST routes.
 	*/
 	public function __construct() {
@@ -945,18 +955,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   /* ── initData server-side validation ── */
   function validateInitData() {
-    if (!twa || !twa.initData || !TMA_VALIDATE_URL) return;
-    fetch(TMA_VALIDATE_URL, {
-      method  : \'POST\',
-      headers : { \'Content-Type\': \'application/json\' },
-      body    : JSON.stringify({ init_data: twa.initData }),
+    if (!twa || !twa.initData || !TMA_VALIDATE_URL) return Promise.resolve();
+    return fetch(TMA_VALIDATE_URL, {
+      method      : \'POST\',
+      credentials : \'same-origin\',
+      headers     : { \'Content-Type\': \'application/json\' },
+      body        : JSON.stringify({ init_data: twa.initData }),
     })
       .then(function (r) { return r.json(); })
       .then(function (json) {
         if (json && json.valid) {
+          /* Update the REST nonce so Content/Tools/Media requests are authenticated. */
+          if (json.wp_nonce) { TMA_NONCE = json.wp_nonce; }
           var statusEl = document.getElementById(\'tma-header-status\');
-          if (statusEl && statusEl.textContent === \'Content Manager\') {
-            statusEl.textContent = \'✓ Verified\';
+          if (statusEl) {
+            statusEl.textContent = json.wp_nonce ? \'✓ Signed In\' : \'✓ Verified\';
           }
         }
       })
@@ -981,7 +994,6 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       applyTheme();
       updateViewport();
       renderUserInfo();
-      validateInitData();
 
       twa.onEvent(\'themeChanged\',    applyTheme);
       twa.onEvent(\'viewportChanged\', updateViewport);
@@ -994,9 +1006,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       if (twa.MainButton) {
         twa.MainButton.hide();
       }
+      /* Validate initData first so the WP auth cookie and nonce are ready
+         before the Content/Tools/Media tab API calls are made. */
+      validateInitData().then(loadContent).catch(loadContent);
+    } else {
+      /* No Telegram WebApp context (e.g. direct browser access). */
+      loadContent();
     }
-    /* Load the default Content tab immediately */
-    loadContent();
   }
 
   if (document.readyState === \'loading\') {
@@ -1328,11 +1344,43 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Return the parsed user data (safe to expose – hash already verified).
+		// Also find/create the WordPress user and establish a session so the
+		// Mini App can use the returned nonce for Content/Tools/Media API calls.
+		$tg_user   = isset( $result['user'] ) ? $result['user'] : array();
+		$auth_data = array(
+			'id'         => isset( $tg_user['id'] ) ? $tg_user['id'] : '',
+			'first_name' => isset( $tg_user['first_name'] ) ? $tg_user['first_name'] : '',
+			'last_name'  => isset( $tg_user['last_name'] ) ? $tg_user['last_name'] : '',
+			'username'   => isset( $tg_user['username'] ) ? $tg_user['username'] : '',
+			'photo_url'  => isset( $tg_user['photo_url'] ) ? $tg_user['photo_url'] : '',
+			'auth_date'  => isset( $result['auth_date'] ) ? $result['auth_date'] : '',
+		);
+
+		$wp_nonce   = null;
+		$wp_user_id = $this->find_or_create_wp_user( $auth_data, $connection );
+
+		if ( ! is_wp_error( $wp_user_id ) ) {
+			wp_set_current_user( $wp_user_id );
+			wp_set_auth_cookie( $wp_user_id, false );
+			$wp_nonce = wp_create_nonce( 'wp_rest' );
+
+			/**
+			* Fires after a Telegram Mini App user has been authenticated as a WordPress user.
+			*
+			* @since 1.0.0
+			*
+			* @param int   $wp_user_id WordPress user ID.
+			* @param array $auth_data  Telegram user data from verified initData.
+			*/
+			do_action( 'wp_mcp_ai_telegram_mini_app_wp_user_logged_in', $wp_user_id, $auth_data );
+		}
+
 		return rest_ensure_response(
 			array(
 				'valid'     => true,
-				'user'      => isset( $result['user'] ) ? $result['user'] : null,
+				'user'      => $tg_user ? $tg_user : null,
 				'auth_date' => isset( $result['auth_date'] ) ? (int) $result['auth_date'] : null,
+				'wp_nonce'  => $wp_nonce,
 			)
 		);
 	}
@@ -1969,6 +2017,171 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	*/
 	public static function get_mini_app_url() {
 		return rest_url( 'mcp-ai/v1/telegram-mini-app' );
+	}
+
+	/**
+	* Find an existing WordPress user by Telegram ID, or create one.
+	*
+	* Shares the same meta key (_wp_mcp_ai_telegram_id) as the Login Widget
+	* controller so that a user linked via either auth method is recognised
+	* by both. Mirrors the pattern used by the Auth0/GitHub integration.
+	*
+	* @since 1.0.0
+	*
+	* @param array $auth_data Telegram user data (id, first_name, last_name, username, photo_url).
+	* @return int|WP_Error WordPress user ID, or WP_Error on failure.
+	*/
+	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
+		$telegram_id = ! empty( $auth_data['id'] ) ? (string) absint( $auth_data['id'] ) : '';
+		if ( '' === $telegram_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_mini_app_no_id',
+				__( 'Telegram user ID is missing.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// 1. Look up by stored Telegram ID meta.
+		$user_ids = get_users(
+			array(
+				'meta_key'   => self::META_TELEGRAM_ID,
+				'meta_value' => $telegram_id,
+				'fields'     => 'ids',
+				'number'     => 1,
+			)
+		);
+
+		if ( ! empty( $user_ids ) ) {
+			$this->sync_telegram_user_meta( (int) $user_ids[0], $auth_data );
+			return (int) $user_ids[0];
+		}
+
+		// Determine auto-create setting: connection setting takes precedence over the
+		// filter default (true) when explicitly saved. New connections default to true.
+		$connection_auto_create = ! isset( $connection['auto_create_wp_user'] ) || ! empty( $connection['auto_create_wp_user'] );
+
+		/**
+		* Filters whether a new WordPress user should be created for an
+		* unrecognised Telegram Mini App identity.
+		*
+		* Return false to prevent automatic account creation.
+		*
+		* @since 1.0.0
+		*
+		* @param bool  $auto_create Whether to create a new user. Connection admin setting used as default.
+		* @param array $auth_data   Telegram user data from verified initData.
+		*/
+		if ( ! apply_filters( 'wp_mcp_ai_telegram_mini_app_auto_create_user', $connection_auto_create, $auth_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_mini_app_user_not_found',
+				__( 'No WordPress account is linked to this Telegram identity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// 2. Generate a unique username: telegram_{id}.
+		$base_login = 'telegram_' . $telegram_id;
+		$login      = $base_login;
+		$suffix     = 1;
+		while ( username_exists( $login ) ) {
+			$login = $base_login . '_' . $suffix;
+			++$suffix;
+		}
+
+		// 3. Build display name from Telegram first/last name.
+		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
+		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$display_name = trim( $first_name . ' ' . $last_name );
+		if ( '' === $display_name ) {
+			$display_name = $login;
+		}
+
+		// Telegram does not expose user e-mail addresses; use a placeholder that
+		// follows the IANA-reserved `.invalid` domain convention.
+		$placeholder_email = sanitize_email( $telegram_id . '@telegram.users.invalid' );
+
+		// Role: connection admin setting takes precedence; filter allows code override.
+		$connection_role = ! empty( $connection['new_user_role'] ) ? sanitize_key( $connection['new_user_role'] ) : 'subscriber';
+
+		$user_data = array(
+			'user_login'   => $login,
+			'user_pass'    => wp_generate_password( 32, true, true ),
+			'user_email'   => $placeholder_email,
+			'display_name' => $display_name,
+			'first_name'   => $first_name,
+			'last_name'    => $last_name,
+			/**
+			* Filters the WordPress role assigned to newly-created Mini App users.
+			*
+			* @since 1.0.0
+			*
+			* @param string $role      Role slug. Connection admin setting used as default.
+			* @param array  $auth_data Telegram user data from verified initData.
+			*/
+			'role'         => apply_filters( 'wp_mcp_ai_telegram_mini_app_new_user_role', $connection_role, $auth_data ),
+		);
+
+		$user_id = wp_insert_user( $user_data );
+
+		if ( is_wp_error( $user_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_mini_app_user_creation_failed',
+				$user_id->get_error_message(),
+				array( 'status' => 500 )
+			);
+		}
+
+		$this->sync_telegram_user_meta( (int) $user_id, $auth_data );
+
+		/**
+		* Fires after a new WordPress user has been created for a Telegram Mini App identity.
+		*
+		* @since 1.0.0
+		*
+		* @param int   $user_id   Newly-created WordPress user ID.
+		* @param array $auth_data Telegram user data from verified initData.
+		*/
+		do_action( 'wp_mcp_ai_telegram_wp_user_created', (int) $user_id, $auth_data );
+
+		return (int) $user_id;
+	}
+
+	/**
+	* Persist Telegram identity metadata on the WordPress user record.
+	*
+	* @since 1.0.0
+	*
+	* @param int   $user_id   WordPress user ID.
+	* @param array $auth_data Telegram user data.
+	*/
+	protected function sync_telegram_user_meta( $user_id, array $auth_data ) {
+		if ( ! empty( $auth_data['id'] ) ) {
+			update_user_meta( $user_id, self::META_TELEGRAM_ID, (string) absint( $auth_data['id'] ) );
+		}
+		if ( ! empty( $auth_data['username'] ) ) {
+			update_user_meta( $user_id, self::META_TELEGRAM_USERNAME, sanitize_text_field( $auth_data['username'] ) );
+		}
+		if ( ! empty( $auth_data['photo_url'] ) ) {
+			update_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url', esc_url_raw( $auth_data['photo_url'] ) );
+		}
+
+		// Keep display name in sync when it has changed.
+		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
+		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$display_name = trim( $first_name . ' ' . $last_name );
+		if ( '' !== $display_name ) {
+			$user = get_userdata( $user_id );
+			if ( $user instanceof WP_User && $user->display_name !== $display_name ) {
+				wp_update_user(
+					array(
+						'ID'           => $user_id,
+						'display_name' => $display_name,
+						'first_name'   => $first_name,
+						'last_name'    => $last_name,
+					)
+				);
+			}
+		}
 	}
 }
 

@@ -52,6 +52,16 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 	const AUTH_DATE_MAX_AGE = 86400;
 
 	/**
+	 * User meta key that stores the linked Telegram user ID.
+	 */
+	const META_TELEGRAM_ID = '_wp_mcp_ai_telegram_id';
+
+	/**
+	 * User meta key that stores the Telegram username (without '@').
+	 */
+	const META_TELEGRAM_USERNAME = '_wp_mcp_ai_telegram_username';
+
+	/**
 	 * Constructor – registers routes and the [mcp_ai_telegram_login] shortcode.
 	 */
 	public function __construct() {
@@ -207,6 +217,41 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		 * @param array  $connection Active Telegram connection settings.
 		 */
 		do_action( 'wp_mcp_ai_telegram_login_verified', $auth_data, $connection );
+
+		// Auto-create or locate the WordPress user and establish a login session.
+		$wp_user_id = $this->find_or_create_wp_user( $auth_data, $connection );
+		if ( ! is_wp_error( $wp_user_id ) ) {
+			wp_set_current_user( $wp_user_id );
+			wp_set_auth_cookie( $wp_user_id, false );
+			$user = get_userdata( $wp_user_id );
+			if ( $user instanceof WP_User ) {
+				do_action( 'wp_login', $user->user_login, $user );
+			}
+
+			/**
+			 * Fires after a Telegram Web Login user has been authenticated as a WordPress user.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int   $wp_user_id WordPress user ID.
+			 * @param array $auth_data  Verified Telegram auth data.
+			 */
+			do_action( 'wp_mcp_ai_telegram_wp_user_logged_in', $wp_user_id, $auth_data );
+
+			WP_MCP_AI_Logger::log_event(
+				'telegram_web_login_wp_login',
+				'Telegram Web Login: WordPress user authenticated.',
+				array(
+					'wp_user_id'  => $wp_user_id,
+					'telegram_id' => $auth_data['id'],
+				)
+			);
+		} else {
+			WP_MCP_AI_Logger::log_warning(
+				'Telegram Web Login: could not find or create WordPress user.',
+				array( 'code' => $wp_user_id->get_error_code() )
+			);
+		}
 
 		/**
 		 * Filters the URL to redirect to after a successful Telegram Web Login.
@@ -485,6 +530,174 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		}
 
 		return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+	}
+
+	/**
+	 * Find an existing WordPress user by Telegram ID, or create one.
+	 *
+	 * Mirrors the pattern used by the Auth0/GitHub integration:
+	 *   1. Search for a user with the matching _wp_mcp_ai_telegram_id meta.
+	 *   2. If found, sync metadata and return the user ID.
+	 *   3. If not found and auto-creation is enabled, create a new subscriber
+	 *      and persist the Telegram identity meta.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $auth_data Verified Telegram auth data.
+	 * @return int|WP_Error WordPress user ID, or WP_Error on failure.
+	 */
+	protected function find_or_create_wp_user( array $auth_data, array $connection = array() ) {
+		$telegram_id = ! empty( $auth_data['id'] ) ? (string) absint( $auth_data['id'] ) : '';
+		if ( '' === $telegram_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_no_id',
+				__( 'Telegram user ID is missing.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// 1. Look up by stored Telegram ID meta.
+		$user_ids = get_users(
+			array(
+				'meta_key'   => self::META_TELEGRAM_ID,
+				'meta_value' => $telegram_id,
+				'fields'     => 'ids',
+				'number'     => 1,
+			)
+		);
+
+		if ( ! empty( $user_ids ) ) {
+			$this->sync_telegram_user_meta( (int) $user_ids[0], $auth_data );
+			return (int) $user_ids[0];
+		}
+
+		// Determine auto-create setting: connection setting takes precedence over the
+		// filter default (true) when explicitly saved. New connections default to true.
+		$connection_auto_create = ! isset( $connection['auto_create_wp_user'] ) || ! empty( $connection['auto_create_wp_user'] );
+
+		/**
+		 * Filters whether a new WordPress user should be created for an
+		 * unrecognised Telegram identity.
+		 *
+		 * Return false to prevent automatic account creation and require
+		 * users to link their Telegram account to an existing WordPress account.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool  $auto_create Whether to create a new user. Connection admin setting used as default.
+		 * @param array $auth_data   Verified Telegram auth data.
+		 */
+		if ( ! apply_filters( 'wp_mcp_ai_telegram_login_auto_create_user', $connection_auto_create, $auth_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_user_not_found',
+				__( 'No WordPress account is linked to this Telegram identity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// 2. Generate a unique username: telegram_{id}.
+		$base_login = 'telegram_' . $telegram_id;
+		$login      = $base_login;
+		$suffix     = 1;
+		while ( username_exists( $login ) ) {
+			$login = $base_login . '_' . $suffix;
+			++$suffix;
+		}
+
+		// 3. Build display name from Telegram first/last name.
+		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
+		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$display_name = trim( $first_name . ' ' . $last_name );
+		if ( '' === $display_name ) {
+			$display_name = $login;
+		}
+
+		// Telegram does not expose user e-mail addresses; use a placeholder that
+		// follows the IANA-reserved `.invalid` domain convention.
+		$placeholder_email = sanitize_email( $telegram_id . '@telegram.users.invalid' );
+
+		// Role: connection admin setting takes precedence; filter allows code override.
+		$connection_role = ! empty( $connection['new_user_role'] ) ? sanitize_key( $connection['new_user_role'] ) : 'subscriber';
+
+		$user_data = array(
+			'user_login'   => $login,
+			'user_pass'    => wp_generate_password( 32, true, true ),
+			'user_email'   => $placeholder_email,
+			'display_name' => $display_name,
+			'first_name'   => $first_name,
+			'last_name'    => $last_name,
+			/**
+			 * Filters the WordPress role assigned to newly-created Telegram login users.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $role      Role slug. Connection admin setting used as default.
+			 * @param array  $auth_data Verified Telegram auth data.
+			 */
+			'role'         => apply_filters( 'wp_mcp_ai_telegram_login_new_user_role', $connection_role, $auth_data ),
+		);
+
+		$user_id = wp_insert_user( $user_data );
+
+		if ( is_wp_error( $user_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_login_user_creation_failed',
+				$user_id->get_error_message(),
+				array( 'status' => 500 )
+			);
+		}
+
+		$this->sync_telegram_user_meta( (int) $user_id, $auth_data );
+
+		/**
+		 * Fires after a new WordPress user has been created for a Telegram identity.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int   $user_id   Newly-created WordPress user ID.
+		 * @param array $auth_data Verified Telegram auth data.
+		 */
+		do_action( 'wp_mcp_ai_telegram_wp_user_created', (int) $user_id, $auth_data );
+
+		return (int) $user_id;
+	}
+
+	/**
+	 * Persist Telegram identity metadata on the WordPress user record.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $user_id   WordPress user ID.
+	 * @param array $auth_data Verified Telegram auth data.
+	 */
+	protected function sync_telegram_user_meta( $user_id, array $auth_data ) {
+		if ( ! empty( $auth_data['id'] ) ) {
+			update_user_meta( $user_id, self::META_TELEGRAM_ID, (string) absint( $auth_data['id'] ) );
+		}
+		if ( ! empty( $auth_data['username'] ) ) {
+			update_user_meta( $user_id, self::META_TELEGRAM_USERNAME, sanitize_text_field( $auth_data['username'] ) );
+		}
+		if ( ! empty( $auth_data['photo_url'] ) ) {
+			update_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url', esc_url_raw( $auth_data['photo_url'] ) );
+		}
+
+		// Keep display name in sync when it has changed.
+		$first_name   = ! empty( $auth_data['first_name'] ) ? sanitize_text_field( $auth_data['first_name'] ) : '';
+		$last_name    = ! empty( $auth_data['last_name'] )  ? sanitize_text_field( $auth_data['last_name'] )  : '';
+		$display_name = trim( $first_name . ' ' . $last_name );
+		if ( '' !== $display_name ) {
+			$user = get_userdata( $user_id );
+			if ( $user instanceof WP_User && $user->display_name !== $display_name ) {
+				wp_update_user(
+					array(
+						'ID'           => $user_id,
+						'display_name' => $display_name,
+						'first_name'   => $first_name,
+						'last_name'    => $last_name,
+					)
+				);
+			}
+		}
 	}
 }
 

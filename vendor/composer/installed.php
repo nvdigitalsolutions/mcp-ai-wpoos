@@ -1,15 +1,36 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-telegram-login-integration',
+        'version' => 'dev-copilot/fix-telegram-login-integration',
+        'reference' => 'cc1f9a98ed6fa6283d32aa3cb9e11198a8fca312',
         'pretty_version' => 'dev-copilot/fix-chat-channel-connection',
         'version' => 'dev-copilot/fix-chat-channel-connection',
         'reference' => '48aff6d55b17824438106c2c3a055b65cd4b77cc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => false,
+        'dev' => true,
     ),
     'versions' => array(
+        'cweagans/composer-configurable-plugin' => array(
+            'pretty_version' => '2.0.0',
+            'version' => '2.0.0.0',
+            'reference' => '15433906511a108a1806710e988629fd24b89974',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../cweagans/composer-configurable-plugin',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
+        'cweagans/composer-patches' => array(
+            'pretty_version' => '2.0.0',
+            'version' => '2.0.0.0',
+            'reference' => 'bfa6018a5f864653d9ed899b902ea72f858a2cf7',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../cweagans/composer-patches',
+            'aliases' => array(),
+            'dev_requirement' => true,
+        ),
         'guzzlehttp/guzzle' => array(
             'pretty_version' => '7.10.0',
             'version' => '7.10.0.0',
@@ -47,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-telegram-login-integration',
+            'version' => 'dev-copilot/fix-telegram-login-integration',
+            'reference' => 'cc1f9a98ed6fa6283d32aa3cb9e11198a8fca312',
             'pretty_version' => 'dev-copilot/fix-chat-channel-connection',
             'version' => 'dev-copilot/fix-chat-channel-connection',
             'reference' => '48aff6d55b17824438106c2c3a055b65cd4b77cc',
