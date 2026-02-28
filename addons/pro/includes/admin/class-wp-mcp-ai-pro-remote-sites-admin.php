@@ -215,14 +215,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress';
 
 			// Map connection-type-specific fields to generic field names.
-			$api_key       = '';
-			$api_secret    = '';
-			$client_id     = '';
-			$client_secret = '';
-			$refresh_token = '';
-			$user_email    = '';
-			$app_id        = '';
-			$gc_method     = 'service_account';
+			$api_key        = '';
+			$api_secret     = '';
+			$client_id      = '';
+			$client_secret  = '';
+			$refresh_token  = '';
+			$user_email     = '';
+			$app_id         = '';
+			$signing_secret = '';
+			$gc_method      = 'service_account';
 
 			switch ( $connection_type ) {
 				case 'mesh_peer':
@@ -281,15 +282,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					}
 					break;
 				case 'slack':
-					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$api_secret = isset( $_POST['slack_signing_secret'] ) ? wp_unslash( $_POST['slack_signing_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key        = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$signing_secret = isset( $_POST['slack_signing_secret'] ) ? wp_unslash( $_POST['slack_signing_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'discord':
 					$api_key = isset( $_POST['discord_bot_token'] ) ? wp_unslash( $_POST['discord_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'microsoft_teams':
-					// Teams uses app_id and app_secret (handled separately below)
-					$api_secret = isset( $_POST['teams_app_password'] ) ? wp_unslash( $_POST['teams_app_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					// Outgoing Webhook security token (HMAC-SHA256 key from Teams Admin Center).
+					$signing_secret = isset( $_POST['teams_security_token'] ) ? wp_unslash( $_POST['teams_security_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					// The Microsoft Graph API Bearer token is stored in 'token'; it is handled
+					// via the channel-aware 'token' entry in $connection_data below.
 					break;
 				case 'facebook_messenger':
 					$api_key    = isset( $_POST['messenger_page_access_token'] ) ? wp_unslash( $_POST['messenger_page_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -436,11 +439,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'auth_type'       => $auth_type,
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '',
 				'password'        => isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				'token'           => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				// For Teams, the Graph API Bearer token comes from the channel-specific field; all others use the generic 'token' POST field.
+				'token'           => 'microsoft_teams' === $connection_type
+					? ( isset( $_POST['teams_graph_token'] ) ? wp_unslash( $_POST['teams_graph_token'] ) : '' ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					: ( isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '',
 				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? wp_unslash( $_POST['consumer_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'api_key'         => $api_key,
 				'api_secret'      => $api_secret,
+				// HMAC-SHA256 signing secret (Slack events / Teams outgoing webhook security token).
+				'signing_secret'  => $signing_secret,
 				'client_id'       => $client_id,
 				'client_secret'   => $client_secret,
 				'app_id'          => $app_id ? $app_id : ( isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : ( isset( $_POST['teams_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_app_id'] ) ) : '' ) ),
@@ -502,7 +510,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// Apple Messages for Business-specific fields.
 				'business_id'       => isset( $_POST['apple_business_id'] ) ? sanitize_text_field( wp_unslash( $_POST['apple_business_id'] ) ) : '',
-				// WhatsApp channel routing: assistants assigned to listen on this channel.
+				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					: array(),
@@ -2478,25 +2486,39 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Microsoft Teams -->
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="teams_app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="teams_app_id"><?php esc_html_e( 'App ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="teams_app_id" id="teams_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your Microsoft Teams application ID (from Azure AD).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: Your Azure AD application ID (for reference only). Not required for outgoing webhook connections.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="teams_app_password"><?php esc_html_e( 'App Password', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="teams_security_token"><?php esc_html_e( 'Security Token (Signing Secret)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="teams_app_password" id="teams_app_password" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app password.', 'mcp-ai-wpoos-pro' ); ?></p>
-						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Microsoft Teams app password/secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['signing_secret'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Security token is saved. Leave blank to keep the existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+						<input type="password" name="teams_security_token" id="teams_security_token" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( ! $is_edit || empty( $connection['signing_secret'] ) ) : ?>
+							<p class="description"><?php esc_html_e( 'The HMAC-SHA256 security token shown when creating the outgoing webhook in the Microsoft Teams Admin Center. Used to verify that requests genuinely originate from Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_graph_token"><?php esc_html_e( 'Microsoft Graph Access Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['token'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Access token is saved. Leave blank to keep the existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="teams_graph_token" id="teams_graph_token" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'Optional: Microsoft Graph API Bearer token used to post AI replies directly to Teams channels via the Graph API. Obtain via Azure AD application credentials or admin consent. Leave blank if you only need incoming message processing.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2512,11 +2534,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label><?php esc_html_e( 'Messaging Endpoint', 'mcp-ai-wpoos-pro' ); ?></label>
+						<label><?php esc_html_e( 'Outgoing Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Configure as Messaging Endpoint in Azure Bot Channels Registration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Register this URL as the Callback URL when creating an Outgoing Webhook in the Microsoft Teams Admin Center (under Apps → Manage apps → Outgoing webhooks).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
