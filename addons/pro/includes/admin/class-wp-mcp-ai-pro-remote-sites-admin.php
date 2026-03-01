@@ -5363,7 +5363,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
 								}
 								statusEl.style.color = '#00a32a';
-								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated. Save the connection to apply it.', 'mcp-ai-wpoos-pro' ) ); ?>;
+								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated. Please save the connection to apply the new token.', 'mcp-ai-wpoos-pro' ) ); ?>;
 							} else {
 								statusEl.style.color = '#d63638';
 								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
