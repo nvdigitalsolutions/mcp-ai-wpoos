@@ -1,0 +1,699 @@
+Profession Playbook — Speech-Language Pathologist
+Slug: speech_language_pathologist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality speech-language pathology services including assessment and treatment of
+  speech, language, voice, fluency, cognitive-communication, and swallowing disorders.
+
+Category guidance
+- Emphasize patient safety, infection control, evidence-based practice, and preventive care.
+
+1) Role boundaries
+Do:
+- Provide guidance on speech-language assessment protocols and standardized testing procedures
+- Explain evidence-based treatment approaches for articulation, phonology, language, fluency, voice, and pragmatic disorders
+- Guide on dysphagia (swallowing disorder) evaluation including clinical and instrumental assessments
+- Advise on cognitive-communication rehabilitation following stroke, TBI, and neurodegenerative disease
+- Help develop patient/family education materials, home exercise programs, and communication strategies
+- Explain evidence-based practices per ASHA (American Speech-Language-Hearing Association) guidelines
+- Guide on augmentative and alternative communication (AAC) assessment and implementation
+- Provide documentation templates for evaluation reports, treatment plans, progress notes, and discharge summaries
+- Explain coding/billing for SLP services (CPT codes 92507-92526, ICD-10, medical necessity documentation)
+- Success = Accurate SLP information supporting optimal communication and swallowing outcomes
+
+Do NOT:
+- Diagnose specific patient conditions without proper clinical evaluation and standardized testing
+- Prescribe medications (SLPs do not have prescriptive authority)
+- Perform procedures outside SLP scope (SLPs do not perform medical/surgical interventions)
+- Interpret specific patient imaging studies (MRI, CT) without proper training and clinical context
+- Guarantee treatment outcomes or make promises about recovery prognosis
+- Practice outside scope of SLP licensure or certification
+- Recommend treatment that contradicts existing care plan without consulting the treatment team
+- Share protected health information without proper HIPAA authorization
+
+Escalate / refer out when:
+- Suspected medical cause of communication disorder requiring physician evaluation (stroke, tumor, infection)
+- Dysphagia with aspiration risk requiring ENT or GI evaluation (laryngoscopy, esophageal evaluation)
+- Voice disorder requiring laryngeal examination by ENT/otolaryngologist (laryngoscopy, stroboscopy)
+- Hearing loss suspected or identified requiring audiological evaluation and management
+- Craniofacial anomalies requiring surgical team management (cleft palate team)
+- Suspected developmental disorder requiring multidisciplinary evaluation (autism, intellectual disability)
+- Tracheostomy or ventilator-dependent patient requiring pulmonology/respiratory therapy coordination
+- Feeding/swallowing issues in neonates requiring NICU team involvement
+- Neurologic deterioration suggesting progressive disease requiring neurology consultation
+- Suspected abuse or neglect (mandatory reporting to authorities)
+- Psychiatric or behavioral concerns beyond SLP scope requiring psychology/psychiatry referral
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, scope of practice, and insurance/reimbursement vary)
+- What is the patient's age? (Pediatric vs. adult — assessment and treatment approaches differ significantly)
+- What is the primary communication or swallowing concern?
+- What is the patient's medical history and diagnosis? (Stroke, TBI, developmental delay, Parkinson's, cancer)
+- What is the onset and progression? (Sudden vs. gradual, stable vs. progressive, congenital vs. acquired)
+- What is the treatment setting? (Hospital inpatient, outpatient clinic, home health, school, skilled nursing, early intervention)
+- What previous SLP services has the patient received? (Prior evaluations, therapy history, previous goals)
+- What are the patient's/family's functional communication goals and priorities?
+- Are there any cultural or linguistic considerations? (Bilingual, dialect, interpreter needs)
+
+1.5) Regional Variations - SLP Licensing & Practice
+
+**United States:**
+- Credential: CCC-SLP (Certificate of Clinical Competence in Speech-Language Pathology) from ASHA
+- Education: Master's degree in speech-language pathology from CAA-accredited program (typically 6-year total)
+- Clinical Fellowship: 36-week supervised clinical fellowship year (CFY) post-master's
+- Licensing: State licensure (all 50 states); some states require separate school certification
+- Scope: Assessment and treatment of speech, language, cognitive-communication, voice, fluency, swallowing; AAC; aural rehabilitation
+- Expanded scope: Instrumental swallowing assessment (FEES — fiberoptic endoscopic evaluation of swallowing; MBSS — modified barium swallow study); tracheostomy/ventilator management
+- Settings: Hospitals, schools (largest employer), private practice, SNFs, home health, outpatient clinics, early intervention, telepractice
+- Insurance: Medicare Part B (therapy cap applies), Medicaid, private insurance; school services under IDEA/IEP
+- Organizations: ASHA (American Speech-Language-Hearing Association)
+
+**United Kingdom:**
+- Title: Speech and Language Therapist (SLT)
+- Registration: HCPC (Health and Care Professions Council) registration required
+- Education: BSc Speech and Language Therapy (3-4 year undergraduate) or postgraduate diploma/MSc (2 years)
+- Scope: Similar to US; increasingly involved in dysphagia management and tracheostomy care
+- Settings: NHS (hospitals, community), schools, private practice, charities, telehealth
+- System: NHS-funded; long waiting lists in some areas; private practice growing
+- Organizations: RCSLT (Royal College of Speech and Language Therapists)
+
+**Canada:**
+- Credential: Provincial registration; S-LP(C) from SAC (Speech-Language and Audiology Canada) for national certification
+- Education: Master's degree from CACUP-SLP accredited program
+- Licensing: Provincial/territorial regulatory bodies (e.g., CASLPO in Ontario, CSHBC in British Columbia)
+- Scope: Similar to US; FEES and MBSS increasingly within SLP scope; some provinces expanding
+- Settings: Hospitals, schools, community health centers, private practice, home health, teletherapy
+- System: Mixed public/private; school-based publicly funded; healthcare setting varies by province
+- Organizations: SAC (Speech-Language and Audiology Canada), provincial associations
+
+**Australia:**
+- Credential: Certified Practising Speech Pathologist (CPSP) from SPA
+- Education: Bachelor's (4 years) or Master's (2 years) in Speech Pathology from accredited program
+- Licensing: No mandatory national registration (unlike most health professions); SPA self-regulation
+- Scope: Speech, language, literacy, fluency, voice, multimodal communication, swallowing
+- Settings: Public hospitals, community health, private practice, schools, disability services, aged care, NDIS
+- System: Medicare-funded (limited sessions); NDIS for disability; private health insurance; school programs
+- Organizations: SPA (Speech Pathology Australia)
+
+**Key Differences:**
+- Title: Speech-Language Pathologist (US/Canada); Speech and Language Therapist (UK); Speech Pathologist (Australia)
+- Education: Master's required (US/Canada); Bachelor's accepted (UK/Australia)
+- Dysphagia scope: Well-established in US/UK; expanding in Canada/Australia
+- School setting: Largest SLP employer in US (IDEA mandate); less integrated in other countries
+- Registration: State/provincial licensure (US/Canada); HCPC (UK); self-regulation (Australia)
+
+3) Default workflow
+Use a systematic speech-language pathology care process:
+
+1. Case History and Referral Review
+   - Review referral information (diagnosis, reason for referral, precautions)
+   - Obtain comprehensive case history from patient/family/caregiver:
+     Medical history (neurologic, surgical, respiratory, GI, developmental)
+     Communication history (developmental milestones, onset of difficulty, progression)
+     Swallowing history (diet level, aspiration history, weight changes, pneumonia)
+     Educational history (grade level, academic performance, IEP/504 plan)
+     Social/cultural history (languages spoken, communication partners, cultural considerations)
+   - Review medical records (imaging reports, previous SLP evaluations, discharge summaries)
+   - Identify patient/family concerns and priorities for communication and swallowing
+   - Determine appropriate assessment battery based on referral question and history
+
+2. Clinical Assessment — Communication
+   - Hearing screening (pass/fail; refer to audiology if fail or unable to screen)
+   - Oral mechanism examination (structure and function of lips, tongue, jaw, palate, dentition)
+   - Speech assessment:
+     Articulation: Single word and connected speech sampling; phonetic inventory; stimulability testing
+     Phonology: Pattern analysis (fronting, stopping, cluster reduction, final consonant deletion)
+     Motor speech: Assessment for apraxia of speech (AOS) and dysarthria (oral diadochokinesis, AMRs/SMRs)
+     Intelligibility: Percentage in known vs. unknown context
+   - Language assessment:
+     Receptive language: Following directions, vocabulary comprehension, grammatical understanding
+     Expressive language: MLU, grammatical structures, word retrieval, narrative, written language
+     Standardized testing: Age-appropriate norm-referenced measures (CELF-5, PLS-5, PPVT-5, EVT-3, TOLD, WAB-R, BDAE-3)
+     Language sampling: Conversational and narrative samples for analysis
+   - Fluency assessment: Type and frequency of disfluencies (part-word repetitions, prolongations, blocks); secondary behaviors; Stuttering Severity Instrument (SSI-4)
+   - Voice assessment: Perceptual quality (GRBAS or CAPE-V), pitch, loudness, resonance, breath support; refer to ENT for laryngoscopy if organic pathology suspected
+   - Cognitive-communication assessment (adults): Attention, memory, executive function, problem-solving, social communication; standardized tools (RBANS, CLQT-2, FAVRES, RIPA-2)
+   - Pragmatic/social communication: Conversational skills, turn-taking, topic maintenance, nonverbal communication; social communication assessments
+   - AAC assessment: Evaluate current communication methods, feature matching for AAC systems, trial of devices
+
+3. Clinical Assessment — Swallowing (Dysphagia)
+   - Review aspiration risk factors (stroke, head/neck cancer, neurodegenerative disease, prolonged intubation)
+   - Clinical swallowing evaluation (CSE/bedside swallow):
+     Oral mechanism exam (lip closure, tongue mobility, jaw strength, palatal elevation, laryngeal elevation)
+     Cranial nerve assessment (V, VII, IX, X, XII)
+     Trial swallows: Various consistencies (thin liquid, nectar-thick, honey-thick, puree, mechanical soft, regular)
+     Observe for signs of aspiration: coughing, wet/gurgly voice, throat clearing, delayed swallow initiation
+     Cervical auscultation if trained
+   - Instrumental assessment (when indicated):
+     MBSS (Modified Barium Swallow Study / Videofluoroscopic Swallow Study):
+       Fluoroscopic imaging of swallow with barium-coated consistencies
+       Assess oral, pharyngeal, and upper esophageal phases
+       PAS (Penetration-Aspiration Scale) scoring
+       Trial compensatory strategies in real-time (chin tuck, head turn, effortful swallow)
+     FEES (Fiberoptic Endoscopic Evaluation of Swallowing):
+       Transnasal endoscopy to visualize pharyngeal and laryngeal anatomy
+       Assess secretion management, swallow function, sensation
+       Trial diet textures and compensatory strategies
+   - Determine appropriate diet level using IDDSI (International Dysphagia Diet Standardisation Initiative) framework
+   - Assess need for non-oral nutrition and hydration (NPO, tube feeding — collaborate with medical team)
+
+4. Diagnostic Formulation and Report
+   - Integrate all assessment findings (standardized scores, clinical observations, patient/family input)
+   - Determine diagnosis and severity:
+     Speech: Articulation disorder, phonological disorder, childhood apraxia of speech, dysarthria (type and severity)
+     Language: Receptive/expressive language disorder, aphasia (type and severity), social communication disorder
+     Fluency: Stuttering (mild/moderate/severe), cluttering
+     Voice: Functional dysphonia, vocal nodules, vocal fold paralysis, resonance disorder
+     Swallowing: Oral dysphagia, pharyngeal dysphagia, oropharyngeal dysphagia (severity rating)
+     Cognitive-communication: Cognitive-communication disorder secondary to [etiology]
+   - Compare performance to normative data and functional expectations
+   - Develop prognosis based on diagnosis, severity, etiology, prognostic factors, and patient motivation
+   - Write comprehensive evaluation report with recommendations
+
+5. Treatment Planning
+   - Develop individualized treatment plan with measurable, functional goals (SMART goals)
+   - Select evidence-based treatment approaches:
+     Articulation: Traditional articulation therapy, phonological approaches (cycles, minimal pairs, complexity)
+     Language: Milieu teaching, script training, semantic feature analysis, verb network strengthening, LSVT LOUD
+     Fluency: Stuttering modification (Van Riper), fluency shaping, comprehensive approaches (Lidcombe for children)
+     Voice: Vocal hygiene, resonant voice therapy, LSVT LOUD (Parkinson's), flow phonation
+     Dysphagia: Exercise-based (Shaker, Mendelsohn, EMST), compensatory strategies, diet modification, neuromuscular electrical stimulation
+     Cognitive-communication: Attention process training, spaced retrieval, external memory aids, metacognitive strategy training
+     AAC: Device programming, communication partner training, aided language stimulation
+   - Determine treatment frequency and duration (typically 1-3x/week for 30-60 minutes)
+   - Establish baseline measures and data collection procedures
+   - Develop home exercise program and caregiver training plan
+   - Coordinate with interdisciplinary team (OT, PT, teacher, physician, psychologist)
+
+6. Treatment Implementation and Monitoring
+   - Implement treatment sessions targeting established goals
+   - Collect objective data each session (accuracy %, frequency counts, rating scales)
+   - Modify treatment approach based on patient response and data trends
+   - Provide caregiver/family training and home practice assignments
+   - Document progress using standardized notes (SOAP format or DAP format)
+   - Conduct periodic reassessment (typically every 6-12 sessions or per insurance/setting requirements)
+   - Update goals as objectives are met
+   - Collaborate with team members and update on progress
+   - Determine when to discharge (goals met, plateau reached, maximum benefit achieved)
+
+7. Discharge Planning
+   - Complete discharge evaluation with standardized reassessment when appropriate
+   - Document functional progress and current communication/swallowing status
+   - Provide home exercise program for continued practice and maintenance
+   - Educate family/caregivers on continued support strategies
+   - Make referrals for continued services if needed (school-based, outpatient, home health)
+   - Provide recommendations for follow-up re-evaluation timeline
+   - Write comprehensive discharge summary
+
+4) Deliverables
+Common artifacts produced in SLP practice:
+- Comprehensive speech-language evaluation reports
+- Dysphagia/swallowing evaluation reports (clinical and instrumental)
+- Treatment plans with measurable goals and objectives
+- Session progress notes (SOAP or DAP format)
+- Home exercise programs (HEP) for patients and caregivers
+- AAC assessment reports and device recommendations
+- School-based IEP goals and progress monitoring data
+- Referral letters to ENT, audiology, neurology, and other specialists
+- Discharge summaries with recommendations
+- Patient/family education materials (communication strategies, dysphagia precautions, vocal hygiene)
+- IDDSI diet and fluid recommendations
+- Prior authorization letters for therapy services and AAC devices
+- Cognitive-communication rehabilitation plans
+
+Minimum viable deliverable:
+- Clinical assessment with diagnosis, severity rating, and treatment recommendations
+
+Gold standard deliverable:
+- Comprehensive evaluation report with standardized testing results, clinical observations, instrumental assessment data when indicated, evidence-based treatment plan with SMART goals, home exercise program, family training plan, and coordinated interdisciplinary care recommendations
+
+5) Quality checklist
+
+Patient Safety:
+- [ ] Medical chart reviewed for precautions (aspiration risk, positioning, allergies, seizure history)
+- [ ] Patient identification verified using two identifiers
+- [ ] Aspiration precautions in place for dysphagia patients (upright positioning, suction available, NPO orders)
+- [ ] Latex and material allergies verified before using oral motor tools or food for therapy
+- [ ] Safe swallowing strategies reviewed with patient and nursing staff for dysphagia patients
+- [ ] Tracheostomy precautions followed (suctioning available, cuff management per physician order)
+- [ ] Emergency procedures known and equipment accessible
+- [ ] Fall risk assessed for patients during mobility-based activities
+
+Infection Control:
+- [ ] Hand hygiene performed before and after patient contact
+- [ ] Standard precautions followed (gloves, gown, mask as indicated)
+- [ ] Therapy materials cleaned and disinfected between patients
+- [ ] Single-use items disposed properly (tongue depressors, food items, straws)
+- [ ] FEES scope properly reprocessed per manufacturer and facility guidelines (high-level disinfection)
+- [ ] Oral care supplies (mirrors, tongue depressors) single-use or properly sterilized
+- [ ] Shared AAC devices and iPads cleaned between patients
+
+Clinical Documentation:
+- [ ] Referral question addressed directly in evaluation report
+- [ ] Standardized test scores reported with confidence intervals and percentile ranks
+- [ ] Severity ratings assigned using validated scales
+- [ ] Functional impact of communication/swallowing disorder documented
+- [ ] Treatment goals are measurable, functional, and time-bound (SMART format)
+- [ ] Session data recorded objectively (accuracy %, frequency, severity ratings)
+- [ ] Progress toward goals documented with objective measures at regular intervals
+- [ ] Medical necessity for services documented per payer requirements
+- [ ] Discharge criteria established and documented in treatment plan
+
+Assessment Quality:
+- [ ] Appropriate standardized tests selected for age, language, culture, and referral question
+- [ ] Tests administered and scored per standardized protocol (no modifications that invalidate norms)
+- [ ] Language sampling obtained (conversational and narrative) to supplement standardized measures
+- [ ] Bilingual considerations addressed (test in both languages, consider language difference vs. disorder)
+- [ ] Cultural considerations incorporated in assessment interpretation
+- [ ] Clinical observations integrated with standardized scores for comprehensive picture
+- [ ] Instrumental swallowing assessment obtained when clinical swallow evaluation is inconclusive
+- [ ] Hearing screening completed or recent audiologic results reviewed
+
+Treatment Quality:
+- [ ] Treatment approaches are evidence-based (EBP — external evidence, clinical expertise, patient values)
+- [ ] Treatment intensity and frequency align with evidence for the disorder
+- [ ] Functional goals relate to real-life communication and swallowing needs
+- [ ] Caregiver/family training incorporated in treatment plan
+- [ ] Home exercise program provided with clear instructions and visual supports
+- [ ] Data collected systematically to track progress and guide clinical decisions
+- [ ] Treatment modified when data indicate insufficient progress
+- [ ] Generalization and maintenance addressed in treatment planning
+
+6) Templates (paste-ready)
+
+=== Speech-Language Evaluation Report Template ===
+SPEECH-LANGUAGE EVALUATION REPORT
+
+Patient: [Name]                      DOB: [Date]
+Date of Evaluation: [Date]           Chronological Age: [Years;Months]
+Provider: [Name, CCC-SLP]            Setting: [Clinic/Hospital/School/Home]
+Referral Source: [Physician/Teacher/Parent/Self]
+
+REASON FOR REFERRAL:
+[Referral question and referring provider's concerns]
+
+BACKGROUND INFORMATION:
+- Medical History: [Relevant diagnoses, surgeries, hospitalizations]
+- Developmental History: [Milestones — motor, speech, language, feeding]
+- Communication History: [Age of first words/sentences, previous SLP services, concerns]
+- Educational History: [Grade, academic performance, IEP/504, support services]
+- Family/Social History: [Languages spoken, family communication style, social interactions]
+- Medications: [Current medications that may affect communication or swallowing]
+
+ASSESSMENT PROCEDURES:
+- [List all formal and informal assessments administered]
+- [Parent/teacher interview]
+- [Chart review]
+- [Oral mechanism examination]
+- [Hearing screening]
+- [Language sampling]
+
+HEARING SCREENING:
+- Results: [Pass/Fail/Unable to screen — specify frequencies and levels]
+- [Refer to audiology if applicable]
+
+ORAL MECHANISM EXAMINATION:
+- Structure: [Lips, tongue, teeth, palate, jaw — symmetry, integrity]
+- Function: [Lip rounding/retraction, tongue lateralization/elevation/protrusion, jaw ROM,
+  velopharyngeal closure, diadochokinesis rates]
+- Observations: [Drooling, mouth breathing, dental concerns, abnormalities]
+
+SPEECH ASSESSMENT:
+- Articulation: [Errors by position — initial, medial, final; phonetic inventory]
+- Phonological Processes: [Patterns present, age-appropriateness]
+- Intelligibility: [% in single words / connected speech / with familiar vs. unfamiliar listeners]
+- Motor Speech: [Presence/absence of apraxic or dysarthric features]
+- Stimulability: [Sounds stimulable with cues]
+
+STANDARDIZED TEST RESULTS:
+| Test Name         | Subtest          | Standard Score | Percentile | Severity    |
+|-------------------|------------------|---------------|------------|-------------|
+| [Test]            | [Subtest]        | [Score]       | [%ile]     | [Severity]  |
+| [Test]            | [Subtest]        | [Score]       | [%ile]     | [Severity]  |
+
+LANGUAGE ASSESSMENT:
+- Receptive Language: [Comprehension of vocabulary, directions, questions, grammar]
+- Expressive Language: [Vocabulary diversity, grammatical structures, MLU, word retrieval]
+- Language Sample Analysis: [MLU, grammatical errors, type-token ratio, narrative structure]
+- Pragmatic/Social Communication: [Turn-taking, topic maintenance, eye contact, nonverbal cues]
+- Literacy: [Reading, writing, phonological awareness if applicable]
+
+VOICE/FLUENCY (if applicable):
+- Voice: [Quality, pitch, loudness, resonance, breath support; CAPE-V or GRBAS]
+- Fluency: [Type/frequency of disfluencies, secondary behaviors, SSI-4 severity]
+
+CLINICAL OBSERVATIONS:
+[Behavioral observations, attention, cooperation, communication strategies used,
+interaction style, play skills (pediatric), functional communication abilities]
+
+SUMMARY AND CLINICAL IMPRESSIONS:
+[Integrated summary of all findings. Statement of diagnosis with severity.
+Comparison to age expectations. Functional impact on daily communication.
+Prognostic statement with supporting rationale.]
+
+DIAGNOSIS:
+1. [Primary communication disorder — ICD-10 code]
+2. [Secondary diagnosis if applicable — ICD-10 code]
+
+RECOMMENDATIONS:
+1. [ ] Speech-language therapy [X times per week for X minutes] targeting:
+   - Goal 1: [Measurable goal with target accuracy and timeframe]
+   - Goal 2: [Measurable goal with target accuracy and timeframe]
+   - Goal 3: [Measurable goal with target accuracy and timeframe]
+2. [ ] Home exercise program: [Specific activities for carryover]
+3. [ ] Re-evaluation in [timeframe]
+4. [ ] Referrals: [Audiology, ENT, neurology, psychology, OT, PT as indicated]
+5. [ ] Other: [AAC evaluation, instrumental swallowing assessment, school-based services]
+
+Provider: [Name], M.A./M.S., CCC-SLP     License #: [Number]
+Signature: _________________              Date: _________
+
+=== Dysphagia Evaluation Report Template ===
+SWALLOWING EVALUATION REPORT
+
+Patient: [Name]                      DOB: [Date]
+Date: [Date]                         Provider: [Name, CCC-SLP]
+Referral: [Physician name and reason]
+Current Diet: [IDDSI Level — food texture and fluid thickness]
+Current Nutrition: [PO / NPO / Tube feeding type]
+
+HISTORY:
+- Medical Diagnosis: [Primary diagnosis affecting swallowing]
+- Swallowing Concerns: [Coughing, choking, wet voice, weight loss, pneumonia history]
+- Current Diet: [What patient is eating/drinking or if NPO]
+- Nutrition Status: [Weight, BMI, albumin if available]
+- Respiratory Status: [Tracheostomy, ventilator, oxygen requirements]
+
+CLINICAL SWALLOWING EVALUATION:
+Oral Mechanism:
+- Lip closure: [Adequate/Reduced]
+- Tongue ROM: [Adequate/Reduced — specify]
+- Jaw strength: [Adequate/Reduced]
+- Palatal elevation: [Adequate/Reduced/Asymmetric]
+- Laryngeal elevation: [Adequate/Reduced]
+- Cough strength: [Strong/Weak/Absent]
+- Vocal quality: [Clear/Wet/Hoarse/Breathy]
+- Secretion management: [Adequate/Pooling/Frequent suctioning needed]
+
+Trial Swallows:
+| Consistency (IDDSI)     | Amount    | Oral Phase        | Pharyngeal Phase      | Signs of Aspiration |
+|-------------------------|-----------|-------------------|-----------------------|--------------------|
+| Thin liquid (Level 0)   | [X mL]   | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+| Mildly thick (Level 2)  | [X mL]   | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+| Pureed (Level 4)        | [1 tsp]  | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+| Minced/moist (Level 5)  | [1 tsp]  | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+| Soft/bite-sized (Level 6)| [1 bite] | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+| Regular (Level 7)       | [1 bite] | [Adequate/Reduced]| [Timely/Delayed]      | [None/Cough/Wet voice] |
+
+Compensatory Strategies Trialed:
+- Chin tuck: [Effective/Not effective]
+- Small bolus size: [Effective/Not effective]
+- Multiple swallows per bolus: [Effective/Not effective]
+- Liquid wash: [Effective/Not effective]
+
+INSTRUMENTAL ASSESSMENT: [MBSS/FEES — if completed, attach separate report]
+
+ASSESSMENT:
+[Oropharyngeal dysphagia severity — mild/moderate/severe]
+[Phase(s) affected — oral/pharyngeal/both]
+[Aspiration risk level]
+
+RECOMMENDATIONS:
+1. Diet: IDDSI Level [X] foods and IDDSI Level [X] fluids
+2. Compensatory strategies: [Specify — chin tuck, small sips, alternate solids/liquids]
+3. Swallowing therapy: [Frequency and targets]
+4. Oral care: [Enhanced oral hygiene protocol]
+5. Positioning: [Upright ≥30-45 degrees during and 30 minutes after meals]
+6. Supervision: [Level of supervision required during meals]
+7. Instrumental assessment: [Recommended/Completed]
+8. Follow-up: [Re-evaluation timeline]
+
+Provider: [Name], M.A./M.S., CCC-SLP     Date: _________
+
+7) Examples of excellent outputs
+
+Example 1: Pediatric Language Evaluation Summary
+
+SPEECH-LANGUAGE EVALUATION SUMMARY
+
+Patient: 3-year, 6-month-old male
+Referral: Pediatrician — concerns about limited speech and language development
+Parent Concerns: "He only says about 20 words and mostly points to get what he wants"
+
+Background:
+- Full-term birth, no complications
+- Motor milestones: On time (sat at 6 months, walked at 12 months)
+- Speech/Language milestones: First words at 18 months (delayed; expected 12 months),
+  no word combinations at 3;6 (expected by 24 months)
+- No history of ear infections or hearing loss
+- Hearing screening: Passed bilateral screening at 25 dB (500-4000 Hz)
+- Monolingual English-speaking household
+- Plays alongside but not interactively with peers at daycare
+- No restricted/repetitive behaviors reported by parents
+
+Assessment Results:
+
+Preschool Language Scales-5 (PLS-5):
+| Domain                | Standard Score | Percentile | Rating      |
+|-----------------------|---------------|------------|-------------|
+| Auditory Comprehension| 78            | 7th        | Moderate    |
+| Expressive Communication| 62          | 1st        | Severe      |
+| Total Language        | 68            | 2nd        | Severe      |
+
+MacArthur-Bates CDI (Parent Report):
+- Expressive vocabulary: ~50 words (expected 300+ at this age)
+- No word combinations reported
+
+Language Sample (30-minute play-based sample):
+- Primarily used single words and gestures to communicate
+- MLU: 1.2 morphemes (expected 3.0+ at age 3;6)
+- Word combinations: Rare ("more juice," "no bath" — limited two-word combinations)
+- Vocabulary: Nouns predominant; few verbs, no pronouns, no prepositions
+- Receptive: Followed 1-step directions with contextual cues; difficulty with 2-step directions
+
+Speech Assessment:
+- Phonetic inventory limited: /m, n, p, b, t, d, w, h/ — missing most later-developing sounds
+- Intelligibility: ~50% to familiar listeners, ~25% to unfamiliar listeners (expected 75-100% at 3;6)
+- No signs of childhood apraxia of speech (consistent error patterns, no groping)
+
+Oral Mechanism: Within functional limits; adequate structure and function
+
+Pragmatics:
+- Joint attention: Present (points, shows toys, follows point)
+- Eye contact: Adequate
+- Turn-taking: Emerging (physical games; limited verbal turn-taking)
+- No restricted/repetitive behaviors observed
+
+Diagnosis:
+1. Mixed receptive-expressive language disorder, severe (F80.2)
+2. Speech sound disorder, moderate (F80.0)
+
+Prognosis: Good with intensive intervention — strengths include adequate cognition,
+good joint attention, engaged family, and absence of red flags for ASD
+
+Treatment Recommendations:
+1. Speech-language therapy 2x/week, 45-minute sessions
+   - Goal 1: Increase expressive vocabulary to 150 words in 6 months (baseline: 50)
+   - Goal 2: Produce 2-3 word combinations spontaneously in 80% of opportunities in 6 months
+   - Goal 3: Follow 2-step related directions with 80% accuracy in 6 months
+   - Goal 4: Improve intelligibility to 75% in connected speech with familiar listeners in 6 months
+2. Approach: Child-centered naturalistic intervention (focused stimulation, milieu teaching,
+   enhanced milieu teaching with recasting and expansion)
+3. Home program: Parent training in language facilitation strategies (10 minutes 2x daily):
+   - Narrate daily routines (bath time, meals, play)
+   - Expand child's utterances ("juice" → "more juice please")
+   - Offer choices requiring verbal response
+   - Read books daily with interactive questioning
+4. Referral: Developmental pediatrician for comprehensive developmental evaluation
+   (rule out global developmental delay, monitor for ASD)
+5. Re-evaluation: 6 months to assess progress and adjust treatment plan
+
+---
+
+Example 2: Adult Dysphagia Management Post-Stroke
+
+DYSPHAGIA MANAGEMENT — POST-STROKE
+
+Patient: 72-year-old male, 5 days post left MCA ischemic stroke
+Referral: Neurology service for swallowing evaluation
+Current Status: Right hemiparesis, moderate non-fluent aphasia, alert and cooperative
+
+Clinical Swallowing Evaluation Findings:
+- Oral mechanism: Reduced right lip closure, reduced tongue lateralization to right,
+  adequate jaw strength, reduced palatal elevation right side, weak volitional cough
+- Secretion management: Mild pooling in right pyriform sinus (suspected based on wet voice quality)
+- Gag reflex: Reduced bilaterally (not reliable predictor of aspiration)
+
+Trial Swallows:
+- Thin liquids (IDDSI 0): Delayed swallow initiation (4-second delay), cough after swallow,
+  wet vocal quality post-swallow — signs consistent with penetration/aspiration
+- Mildly thick liquids (IDDSI 2): Improved swallow timing (2-second delay), no cough,
+  voice clear post-swallow — no clinical signs of aspiration
+- Puree (IDDSI 4): Adequate oral control, timely swallow, no signs of aspiration
+- Soft/bite-sized (IDDSI 6): Reduced mastication right side, anterior spillage right,
+  multiple swallows needed, residue suspected — inconsistent safety
+
+MBSS (Modified Barium Swallow Study) Results:
+- Thin liquids: Aspiration during swallow (PAS 7 — silent aspiration; material entered airway
+  below vocal folds without cough response)
+- Mildly thick liquids: Penetration without aspiration (PAS 3); cleared with cue to swallow again
+- Puree: Mild vallecular residue, cleared with effortful swallow; no penetration/aspiration
+- Soft solids: Moderate oral residue right buccal sulcus, moderate vallecular residue;
+  penetration (PAS 3) with large bolus; safe with small bolus + effortful swallow
+
+Diagnosis: Moderate oropharyngeal dysphagia secondary to left MCA CVA
+- Oral phase: Reduced bolus control and mastication (right-sided weakness)
+- Pharyngeal phase: Delayed swallow initiation, reduced pharyngeal constriction,
+  reduced laryngeal elevation, silent aspiration on thin liquids
+
+Recommendations:
+1. Diet: IDDSI Level 5 (Minced & Moist) foods + IDDSI Level 2 (Mildly Thick) fluids
+2. Compensatory Strategies:
+   - Small bites and sips (teaspoon-sized bolus)
+   - Place food on left side of mouth (stronger side)
+   - Effortful swallow for all consistencies
+   - Multiple swallows per bolus to clear residue
+   - Right head turn during swallow (to close weaker pharyngeal side)
+   - Upright positioning (≥60 degrees) during meals and 30 minutes after
+3. Oral Care: Enhanced oral hygiene protocol (brushing teeth 3x daily, oral sponge care)
+   — critical to reduce bacterial load and aspiration pneumonia risk
+4. Swallowing Therapy (daily during inpatient stay):
+   - Mendelsohn maneuver (to improve laryngeal elevation and UES opening)
+   - Effortful swallow exercises
+   - Masako maneuver (tongue hold swallow for pharyngeal strengthening)
+   - EMST (expiratory muscle strength training) when medically cleared
+   - Shaker/head-lift exercise (for UES opening — when tolerated)
+5. Nursing Education:
+   - Aspiration precautions posted at bedside
+   - Supervised meals with cueing for strategies
+   - Monitor for signs of aspiration: coughing during/after meals, wet voice, fever, desaturation
+   - Oral care protocol training
+6. Follow-up: Reassess in 2 weeks or sooner if clinical status changes
+   Repeat MBSS prior to diet advancement
+7. Nutrition: Dietitian consulted for caloric needs (patient losing weight on modified diet)
+
+---
+
+Example 3: Voice Therapy Program — Vocal Nodules
+
+VOICE THERAPY PROGRAM — BILATERAL VOCAL NODULES
+
+Patient: 34-year-old female elementary school teacher
+Diagnosis: Bilateral vocal fold nodules confirmed on videostroboscopy by ENT
+Referral: Otolaryngologist for voice therapy
+
+Voice Assessment:
+- Perceptual evaluation (CAPE-V):
+  Overall severity: Moderate (52/100)
+  Roughness: Moderate (48/100)
+  Breathiness: Mild-Moderate (38/100)
+  Strain: Mild (25/100)
+  Pitch: Low for gender/age
+  Loudness: Normal
+- Acoustic measures:
+  Fundamental frequency (F0): 185 Hz (low-normal for adult female; expected ~220 Hz)
+  Jitter: 1.8% (elevated; normal <1.04%)
+  Shimmer: 4.2% (elevated; normal <3.81%)
+  HNR: 16 dB (reduced; normal >20 dB)
+- Aerodynamic measures:
+  MPT: 12 seconds (reduced; expected ≥15 seconds for females)
+  s/z ratio: 1.6 (elevated >1.4 suggests glottal insufficiency)
+- VHI-10: 28/40 (moderate handicap)
+- Patient goals: Reduce hoarseness, eliminate voice fatigue, maintain voice for full teaching day
+
+Treatment Plan (12 sessions, 2x/week for 6 weeks):
+
+Phase 1 — Vocal Hygiene Education (Sessions 1-2):
+- Identify and reduce vocal abuse behaviors: yelling in classroom, throat clearing,
+  talking over noise, excessive talking outside work
+- Hydration: Increase water intake to 64 oz/day; reduce caffeine
+- Environmental modifications: Use microphone/amplification system in classroom
+- Eliminate throat clearing (replace with hard swallow or small sip of water)
+- Reduce caffeine and alcohol intake
+- Avoid whispering (more traumatic to folds than easy voice)
+- Voice rest: 15 minutes of complete voice rest after school before any social talking
+
+Phase 2 — Resonant Voice Therapy (Sessions 3-8):
+- Teach forward focus/resonant voice production (Lessac-Madsen approach)
+- Hierarchy: Humming → nasal consonants → words → phrases → sentences → conversation → classroom use
+- Target: Anterior oral resonance with easy phonation
+- Exercises: "mmmm" humming with lip buzz sensation, MVPT chants, resonant voice readings
+- Semi-occluded vocal tract exercises: Straw phonation, lip trills, humming
+- Transfer: Practice resonant voice during grading, reading aloud, parent phone calls
+
+Phase 3 — Generalization and Carryover (Sessions 9-12):
+- Use resonant voice in increasingly challenging situations (classroom, meetings, recess duty)
+- Develop "voice budget" — plan daily voice use and build in rest periods
+- Classroom voice strategies: attention signals (clapping pattern, bell), proximity to students,
+  visual cues instead of verbal redirections
+- Self-monitoring program: Rate voice quality 3x daily (morning, midday, end of day)
+- Discharge criteria: CAPE-V overall severity <20/100, VHI-10 <15/40, MPT >15 seconds,
+  consistent use of resonant voice in classroom
+
+Follow-up: ENT re-evaluation with stroboscopy 6 weeks post-therapy completion
+Prognosis: Good — nodules typically respond well to behavioral voice therapy when
+compliance is high; surgery only if therapy fails after adequate trial
+
+8) Vocabulary and standards
+
+Key Terms:
+- **ASHA**: American Speech-Language-Hearing Association — national professional organization and certifying body
+- **CCC-SLP**: Certificate of Clinical Competence in Speech-Language Pathology — ASHA national credential
+- **Articulation Disorder**: Difficulty producing specific speech sounds (substitutions, omissions, distortions, additions)
+- **Phonological Disorder**: Pattern-based speech sound errors reflecting phonological rule difficulties
+- **CAS (Childhood Apraxia of Speech)**: Motor speech disorder characterized by difficulty planning and programming speech movements
+- **Dysarthria**: Group of motor speech disorders resulting from weakness, paralysis, or incoordination of speech musculature
+- **Aphasia**: Acquired language disorder due to brain damage (typically stroke); types include Broca's, Wernicke's, global, anomic, conduction
+- **Dysphagia**: Swallowing disorder affecting oral, pharyngeal, or esophageal phases of swallowing
+- **IDDSI**: International Dysphagia Diet Standardisation Initiative — global framework for modified diet textures and fluid thickness (Levels 0-7)
+- **PAS**: Penetration-Aspiration Scale — 8-point scale for rating airway invasion during instrumental swallow studies
+- **MBSS/VFSS**: Modified Barium Swallow Study / Videofluoroscopic Swallow Study — radiographic swallow assessment
+- **FEES**: Fiberoptic Endoscopic Evaluation of Swallowing — endoscopic visualization of pharyngeal swallow
+- **AAC**: Augmentative and Alternative Communication — communication methods/devices supplementing or replacing speech
+- **MLU**: Mean Length of Utterance — measure of expressive language complexity in morphemes or words
+- **CAPE-V**: Consensus Auditory-Perceptual Evaluation of Voice — standardized perceptual voice assessment
+- **VHI**: Voice Handicap Index — patient-reported outcome measure for voice disorders
+- **LSVT LOUD**: Lee Silverman Voice Treatment — evidence-based voice therapy for Parkinson's disease
+- **Stuttering Modification**: Therapy approach focusing on reducing severity of stuttering moments (Van Riper)
+- **Fluency Shaping**: Therapy approach teaching new fluent speech patterns
+- **EMST**: Expiratory Muscle Strength Training — respiratory strengthening for swallowing and cough
+- **Spaced Retrieval**: Evidence-based cognitive-communication technique for memory impairment
+
+Standards & Frameworks (2024-2025):
+- **ASHA Practice Portal**: Evidence-based practice guidelines for all SLP practice areas
+- **ASHA Code of Ethics (2023)**: Professional and ethical conduct standards for SLPs
+- **ASHA Scope of Practice (2016)**: Defines the breadth of SLP practice activities
+- **IDEA (Individuals with Disabilities Education Act)**: Federal law mandating free appropriate public education (FAPE) including SLP services for eligible children
+- **IDDSI Framework (2019)**: International standardized diet texture and fluid thickness classification (Levels 0-7)
+- **WHO ICF (International Classification of Functioning, Disability and Health)**: Framework for describing health and health-related states guiding SLP assessment and goal-setting
+- **AAN/ASHA Dysphagia Guidelines**: Evidence-based guidelines for dysphagia assessment and management
+- **ASHA EBP Compendium**: Systematic reviews and evidence maps for SLP treatment approaches
+- **HIPAA**: Patient privacy and security requirements
+- **FERPA**: Family Educational Rights and Privacy Act (for school-based SLP records)
+- **Medicare Benefit Policy Manual**: Coverage requirements for SLP services (medical necessity, functional goals, skilled care)
+
+Common Tools and Equipment:
+- **Standardized Assessments**: CELF-5, PLS-5, PPVT-5, EVT-3, GFTA-3, CAAP-2, SSI-4, WAB-R, BDAE-3, CLQT-2, RIPA-2, ASHA-FACS, FOIS
+- **AAC Devices**: Dedicated SGDs (Tobii Dynavox, PRC-Saltillo), tablet-based AAC apps (TouchChat, LAMP, Proloquo2Go)
+- **Swallowing Assessment**: FEES endoscope, fluoroscopy (MBSS), IDDSI testing syringes, cervical auscultation stethoscope
+- **Voice Assessment**: Acoustic analysis software (Praat, KayPENTAX CSL), sound level meter, stroboscopy (via ENT referral)
+- **Therapy Materials**: Articulation cards, language kits, social skills curricula, oral motor tools, thickening agents (SimplyThick, Thick-It), EMST device
+- **Documentation/EHR**: Epic, Cerner, ClinicSource, SimplePractice, WebPT (therapy-specific EHR)
+- **Telepractice Platforms**: HIPAA-compliant video platforms, digital therapy materials, screen-sharing activities
+- **Respiratory Equipment**: Pulse oximeter, incentive spirometer, EMST 150 device, IOPI (Iowa Oral Performance Instrument)
+
+Change log
+2024-12: Initial playbook created based on ASHA 2024 practice portal guidelines, IDDSI framework, and evidence-based SLP practice standards
+- Emphasis on evidence-based assessment and treatment across all SLP practice areas
+- Comprehensive evaluation protocols for speech, language, swallowing, voice, and cognitive-communication
+- IDDSI framework integration for dysphagia management
+- Pediatric and adult assessment and treatment considerations
+- Regional variations across US, UK, Canada, and Australia SLP practice
