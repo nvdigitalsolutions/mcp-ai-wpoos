@@ -113,12 +113,10 @@ class WP_MCP_AI_Pro_Tool_List_OneDrive_Files implements WP_MCP_AI_Tool_Interface
 			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $folder_path . ':/children';
 		}
 
-		$top = isset( $arguments['top'] ) ? absint( $arguments['top'] ) : 0;
+		$top = isset( $arguments['top'] ) ? absint( $arguments['top'] ) : 25;
+		$top = max( 1, min( $top, 100 ) );
 
-		if ( $top > 0 ) {
-			$top      = min( $top, 100 );
-			$endpoint = add_query_arg( '$top', $top, $endpoint );
-		}
+		$endpoint = add_query_arg( '$top', $top, $endpoint );
 
 		WP_MCP_AI_Logger::log_event(
 			'onedrive_list_files_request',
