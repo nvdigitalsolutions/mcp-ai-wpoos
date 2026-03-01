@@ -795,6 +795,8 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<li><?php esc_html_e( 'Add the required Microsoft Graph API permissions listed below', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Grant admin consent for the added permissions', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Configure the Outlook webhook URL below to receive new mail notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Test Connection" on the connection edit page to verify your credentials with Microsoft Graph', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Assign AI Assistants and use "Test Auto-Reply" to simulate incoming email responses', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
 				<table class="form-table">
@@ -847,6 +849,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<li><strong><?php esc_html_e( 'Upload OneDrive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Upload files to OneDrive', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ul>
 
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'After adding an Office 365 connection in the Remote Site Manager, use the following features on the connection edit page:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies your Azure AD credentials by requesting an access token from the Microsoft identity platform and querying the Graph API.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming Outlook email and generates an AI-powered reply using the first assigned assistant. Optionally sends the reply to a specified email address.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview" target="_blank"><?php esc_html_e( 'Microsoft Graph Mail API', 'mcp-ai-wpoos-pro' ); ?></a></li>
@@ -876,6 +885,8 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<li><?php esc_html_e( 'Obtain the gateway API URL and authentication credentials', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Configure the signing secret for webhook signature verification', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Set up the webhook URL in your gateway to receive file change notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Test Connection" on the connection edit page to verify gateway connectivity', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Assign AI Assistants and use "Test Auto-Reply" to simulate incoming file event responses', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
 				<table class="form-table">
@@ -922,6 +933,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<li><code>file_modified</code> — <?php esc_html_e( 'Existing file changed', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><code>file_deleted</code> — <?php esc_html_e( 'File removed', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><code>file_shared</code> — <?php esc_html_e( 'File sharing event', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'After adding an iCloud Drive connection in the Remote Site Manager, use the following features on the connection edit page:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies your gateway credentials by sending a request to the iCloud gateway API URL and confirming connectivity.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming file event and generates an AI-powered reply using the first assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ul>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
