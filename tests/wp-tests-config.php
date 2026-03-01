@@ -10,11 +10,11 @@ if ( ! defined( 'DB_NAME' ) ) {
 }
 
 if ( ! defined( 'DB_USER' ) ) {
-	define( 'DB_USER', 'wordpress' );
+	define( 'DB_USER', 'wordpress_test' );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
-	define( 'DB_PASSWORD', 'wordpress' );
+	define( 'DB_PASSWORD', 'wordpress_test' );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
