@@ -1874,5 +1874,107 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertEquals( 8355775408, $result['user']['id'] );
 		$this->assertEquals( 'NV Digital Solutions', $result['user']['first_name'] );
 	}
+
+	/**
+	 * Test that authenticate_via_tma_token() returns user ID when a valid TMA
+	 * session token is present in the HTTP headers.
+	 *
+	 * This covers the core fix for the Telegram WebView 403 issue: the
+	 * determine_current_user hook must authenticate the user before WordPress's
+	 * rest_cookie_check_errors runs so that the user-specific nonce (returned
+	 * by /validate) passes verification even when the auth cookie is absent.
+	 */
+	public function test_authenticate_via_tma_token_returns_user_id_for_valid_token() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Create a subscriber user to link to the token.
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Simulate what handle_validate_init_data() does when creating a token.
+		$raw_token  = bin2hex( random_bytes( 20 ) );
+		$token_hash = hash( 'sha256', $raw_token );
+		set_transient( 'wp_mcp_ai_tma_' . $token_hash, $user_id, HOUR_IN_SECONDS );
+
+		// Simulate the HTTP header that authFetch() sends.
+		$_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] = $raw_token;
+
+		$result = $controller->authenticate_via_tma_token( false );
+
+		// Clean up.
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+		delete_transient( 'wp_mcp_ai_tma_' . $token_hash );
+
+		$this->assertEquals( $user_id, $result, 'authenticate_via_tma_token() should return the linked user ID' );
+	}
+
+	/**
+	 * Test that authenticate_via_tma_token() returns false (unchanged) when no
+	 * TMA token header is present.
+	 */
+	public function test_authenticate_via_tma_token_returns_false_without_header() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+
+		$result = $controller->authenticate_via_tma_token( false );
+
+		$this->assertFalse( $result, 'authenticate_via_tma_token() should return false when no token header is set' );
+	}
+
+	/**
+	 * Test that authenticate_via_tma_token() returns false when the token does
+	 * not match any stored transient (e.g. expired or forged token).
+	 */
+	public function test_authenticate_via_tma_token_returns_false_for_unknown_token() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] = bin2hex( random_bytes( 20 ) );
+
+		$result = $controller->authenticate_via_tma_token( false );
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+
+		$this->assertFalse( $result, 'authenticate_via_tma_token() should return false for an unknown token' );
+	}
+
+	/**
+	 * Test that authenticate_via_tma_token() does not override an already
+	 * authenticated user (non-zero $user_id passed in).
+	 */
+	public function test_authenticate_via_tma_token_does_not_override_existing_user() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$existing_user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Even if a valid TMA token is present, it must not override.
+		$other_user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$raw_token     = bin2hex( random_bytes( 20 ) );
+		$token_hash    = hash( 'sha256', $raw_token );
+		set_transient( 'wp_mcp_ai_tma_' . $token_hash, $other_user_id, HOUR_IN_SECONDS );
+		$_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] = $raw_token;
+
+		$result = $controller->authenticate_via_tma_token( $existing_user_id );
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+		delete_transient( 'wp_mcp_ai_tma_' . $token_hash );
+
+		$this->assertEquals(
+			$existing_user_id,
+			$result,
+			'authenticate_via_tma_token() must not override an already-authenticated user'
+		);
+	}
 }
 

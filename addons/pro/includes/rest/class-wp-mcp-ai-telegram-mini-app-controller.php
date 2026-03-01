@@ -81,6 +81,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	*/
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		// Authenticate via TMA session token early so that WordPress's nonce
+		// verification (rest_cookie_check_errors) sees the correct current user.
+		// Without this hook the user-specific nonce returned by /validate is
+		// rejected (403) when the auth cookie does not persist across fetch()
+		// calls in Telegram's built-in WebView.
+		add_filter( 'determine_current_user', array( $this, 'authenticate_via_tma_token' ), 20 );
 	}
 
 	/**
@@ -223,6 +229,56 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
+	* Authenticate the current user via the TMA session token.
+	*
+	* Hooked into `determine_current_user` (priority 20) so that WordPress
+	* resolves the correct user *before* the REST cookie/nonce check runs via
+	* `rest_cookie_check_errors`.  Without this, the user-specific nonce
+	* returned by /validate is rejected with a 403 when Telegram's built-in
+	* WebView does not persist the auth cookie that was set during the
+	* /validate call.  By identifying the user here, the nonce—which was
+	* created for that user—passes verification and the subsequent
+	* `check_permission` call returns true via `current_user_can('read')`.
+	*
+	* @since 1.0.0
+	*
+	* @param int|false $user_id Currently resolved user ID, or false.
+	* @return int|false Authenticated user ID, or the original value.
+	*/
+	public function authenticate_via_tma_token( $user_id ) {
+		// Do not override an already-authenticated user.
+		if ( $user_id ) {
+			return $user_id;
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
+			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
+			: '';
+
+		if ( '' === $raw_token ) {
+			return $user_id;
+		}
+
+		$sanitized  = sanitize_text_field( $raw_token );
+
+		// The token is always a 40-character lowercase hex string produced by
+		// bin2hex(random_bytes(20)).  Reject anything that doesn't match.
+		if ( ! preg_match( '/^[0-9a-f]{40}$/', $sanitized ) ) {
+			return $user_id;
+		}
+
+		$token_hash = hash( 'sha256', $sanitized );
+
+		$stored_user_id = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
+		if ( $stored_user_id ) {
+			return (int) $stored_user_id;
+		}
+
+		return $user_id;
+	}
+
+	/**
 	* Check that the current user can read content.
 	*
 	* Used as the permission_callback for the /content, /tools, and /media
@@ -248,11 +304,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// where cookies from REST responses may not persist.
 		$tma_token = $request->get_header( 'X-WP-MCP-AI-TMA-Token' );
 		if ( ! empty( $tma_token ) ) {
-			$sanitized  = sanitize_text_field( $tma_token );
-			$token_hash = hash( 'sha256', $sanitized );
-			// Transient keys are prefixed; the hash is always 64 hex chars.
-			if ( 64 === strlen( $token_hash ) ) {
-				$user_id = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
+			$sanitized = sanitize_text_field( $tma_token );
+			// Tokens are 40-character lowercase hex strings (bin2hex(random_bytes(20))).
+			if ( preg_match( '/^[0-9a-f]{40}$/', $sanitized ) ) {
+				$token_hash = hash( 'sha256', $sanitized );
+				$user_id    = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
 				if ( $user_id ) {
 					wp_set_current_user( (int) $user_id );
 					return current_user_can( 'read' );
