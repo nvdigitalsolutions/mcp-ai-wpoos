@@ -433,7 +433,7 @@ class Test_Remote_Connection_Messenger_Fields extends WP_UnitTestCase {
 		$exact_input = str_repeat( 'B', 2000 );
 		$result      = $this->truncate_messenger_body( $exact_input );
 		$this->assertSame( 2000, mb_strlen( $result ) );
-		$this->assertStringEndsNotWith( '...', $result );
+		$this->assertNotSame( '...', substr( $result, -3 ) );
 	}
 
 	// =========================================================================
