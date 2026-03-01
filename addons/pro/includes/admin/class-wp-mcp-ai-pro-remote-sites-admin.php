@@ -538,6 +538,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'gateway_api_url'   => isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : '',
 				// Office 365 / iCloud: per-service toggles (e.g. outlook_mail, onedrive, icloud_drive).
 				'enabled_services'  => $this->resolve_enabled_services( $connection_type ),
+				// Office 365 per-service settings.
+				'outlook_mailbox_folder' => isset( $_POST['outlook_mailbox_folder'] ) ? sanitize_text_field( wp_unslash( $_POST['outlook_mailbox_folder'] ) ) : '',
+				'onedrive_folder_path'   => isset( $_POST['onedrive_folder_path'] ) ? sanitize_text_field( wp_unslash( $_POST['onedrive_folder_path'] ) ) : '',
+				// iCloud per-service settings.
+				'icloud_default_folder_id' => isset( $_POST['icloud_default_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['icloud_default_folder_id'] ) ) : '',
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -3620,6 +3625,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Outlook Mail service settings -->
+				<tr class="office365-only-field office365-service-outlook_mail" style="display: none;">
+					<th scope="row">
+						<label for="outlook_mailbox_folder"><?php esc_html_e( 'Outlook — Mailbox Folder', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="outlook_mailbox_folder" id="outlook_mailbox_folder" class="regular-text" value="<?php echo $is_edit && isset( $connection['outlook_mailbox_folder'] ) ? esc_attr( $connection['outlook_mailbox_folder'] ) : ''; ?>" placeholder="inbox" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default mailbox folder for reading messages (e.g. inbox, sentitems, drafts). Leave blank to default to inbox.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- OneDrive service settings -->
+				<tr class="office365-only-field office365-service-onedrive" style="display: none;">
+					<th scope="row">
+						<label for="onedrive_folder_path"><?php esc_html_e( 'OneDrive — Default Folder Path', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="onedrive_folder_path" id="onedrive_folder_path" class="regular-text" value="<?php echo $is_edit && isset( $connection['onedrive_folder_path'] ) ? esc_attr( $connection['onedrive_folder_path'] ) : ''; ?>" placeholder="Documents/Projects" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder path for file operations (e.g. Documents/Projects). Leave blank for the root of OneDrive.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<tr class="office365-only-field" style="display: none;">
 					<th scope="row">
 						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
@@ -3698,6 +3725,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endforeach; ?>
 						</fieldset>
 						<p class="description"><?php esc_html_e( 'Select which iCloud services to enable for this connection. Only the selected services will have their AI tools activated.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- iCloud Drive service settings -->
+				<tr class="icloud-only-field icloud-service-icloud_drive" style="display: none;">
+					<th scope="row">
+						<label for="icloud_default_folder_id"><?php esc_html_e( 'iCloud Drive — Default Folder ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="icloud_default_folder_id" id="icloud_default_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['icloud_default_folder_id'] ) ? esc_attr( $connection['icloud_default_folder_id'] ) : ''; ?>" placeholder="" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder ID for file operations. Leave blank to list files from the root of iCloud Drive.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -4117,6 +4155,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('office365');
 			} else if (connectionType === 'icloud') {
 				icloudFields.forEach(function(field) {
 					field.style.display = 'table-row';
@@ -4126,7 +4166,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('icloud');
 			}
+		}
+
+		/**
+		 * Show/hide per-service settings rows based on service checkbox state.
+		 *
+		 * Rows carry a CSS class like "office365-service-outlook_mail" or "icloud-service-icloud_drive".
+		 * When the corresponding service checkbox is checked the row is visible; otherwise hidden.
+		 */
+		function toggleServiceSettings(platform) {
+			var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+			checkboxes.forEach(function(cb) {
+				var rows = document.querySelectorAll('.' + platform + '-service-' + cb.value);
+				rows.forEach(function(row) {
+					row.style.display = cb.checked ? 'table-row' : 'none';
+				});
+			});
 		}
 
 		// Initialize on page load
@@ -4140,6 +4198,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// Add event listener for connection type changes
 			document.getElementById('connection_type').addEventListener('change', function() {
 				toggleConnectionTypeFields(this.value);
+			});
+
+			// Office 365 / iCloud service checkboxes: toggle per-service settings on change.
+			['office365', 'icloud'].forEach(function(platform) {
+				var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+				checkboxes.forEach(function(cb) {
+					cb.addEventListener('change', function() {
+						toggleServiceSettings(platform);
+					});
+				});
 			});
 
 			// WhatsApp Cloud API version change: update the URL field accordingly
