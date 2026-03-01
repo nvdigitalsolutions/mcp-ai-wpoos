@@ -1701,7 +1701,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	 * Instead of a hard 403 the endpoint now returns an empty list so the Mini
 	 * App client does not misinterpret it as an auth failure and enter a retry loop.
 	 */
-	public function test_handle_media_returns_error_for_insufficient_permissions() {
+	public function test_handle_media_returns_empty_for_insufficient_permissions() {
 		$controller = $this->load_telegram_mini_app_controller();
 		if ( null === $controller ) {
 			return;

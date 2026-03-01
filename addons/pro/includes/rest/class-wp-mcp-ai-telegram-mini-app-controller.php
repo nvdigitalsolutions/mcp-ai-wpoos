@@ -1360,9 +1360,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		// Build the list of all accessible CPTs, enriched with active-toolkit info.
-		$all_types       = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$all_types      = get_post_types( array( 'show_ui' => true ), 'objects' );
 		$active_toolkits = $this->get_active_toolkits();
-		$cpt_list        = array();
+		$cpt_list       = array();
 
 		foreach ( $all_types as $type ) {
 			if ( ! current_user_can( $type->cap->edit_posts ) ) {
@@ -1378,7 +1378,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				}
 			}
 
-			$counts     = wp_count_posts( $type->name );
+			$counts    = wp_count_posts( $type->name );
 			$cpt_list[] = array(
 				'name'    => $type->name,
 				'label'   => $type->label,
