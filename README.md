@@ -391,9 +391,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
-**Production-Ready: 9 chat platforms + collaborative rooms with AI assistants**
+**Production-Ready: 11 platforms + collaborative rooms with AI assistants**
 
-**Chat Channels Toolkit (39 Tools):**
+**Chat Channels Toolkit (47 Tools):**
 - **Telegram (4)**: Send messages, get updates, manage webhooks, add message reactions
 - **WhatsApp (4)**: Send template/interactive/media messages, get message history
 - **Slack (4)**: Send messages, get channels/messages, create channels
@@ -401,11 +401,14 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - **Microsoft Teams (3)**: Send messages, get channels/messages
 - **Facebook Messenger (3)**: Send messages, get conversations, create broadcasts
 - **Apple Messages for Business (4)**: Send text/interactive/group messages, retrieve conversation history
-- **Google Chat / Spaces (7)**: Send messages, list/create spaces, manage members, retrieve history ⭐ **NEW**
-- **Twitter/X (3)**: Send/receive Direct Messages, manage Account Activity webhooks ⭐ **NEW**
+- **Google Chat / Spaces (7)**: Send messages, list/create spaces, manage members, retrieve history
+- **Twitter/X (3)**: Send/receive Direct Messages, manage Account Activity webhooks
+- **Office 365 – Outlook (2)** ⭐ **NEW**: Send and retrieve Outlook mail via Microsoft Graph API
+- **Office 365 – OneDrive (3)** ⭐ **NEW**: List, download, and upload OneDrive files via Microsoft Graph API
+- **iCloud Drive (3)** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway
 - **WebChat (1)**: `send_webchat_message` - Send to P2P WebChat rooms
 - **Unified Hub (1)**: `unified_channel_broadcast` - Simultaneous multi-platform messaging
-- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit
+- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit, including Office 365 and iCloud Drive configuration
 - [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
 
 **WebChat Rooms:**
@@ -799,7 +802,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
-- 💬 **Chat Channels Toolkit (39 Tools)**: Integrate with 9 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X
+- 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
+- 📧 **Office 365 Integration** ⭐ **NEW**: Send and retrieve Outlook mail, list/download/upload OneDrive files via Microsoft Graph API (5 tools)
+- ☁️ **iCloud Drive Integration** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway service (3 tools)
 - 🌐 **Unified Broadcasting**: Send messages across multiple platforms simultaneously with `unified_channel_broadcast` tool
 - 🏠 **WebChat Rooms**: Custom post type for real-time collaborative chat rooms with AI assistant assignment
 - 📝 **Message Persistence**: JetEngine CCT integration for permanent message history

@@ -2,8 +2,8 @@
 
 **Comprehensive Guide to Multi-Platform Chat Channel Management**
 
-Version: 2.0.0  
-Last Updated: February 2026  
+Version: 3.0.0  
+Last Updated: March 2026  
 Research Credit: Built on OpenClaw.ai's extensive multi-platform chat integration experience
 
 ---
@@ -23,6 +23,8 @@ Research Credit: Built on OpenClaw.ai's extensive multi-platform chat integratio
    - [Apple Messages for Business Setup](#apple-messages-for-business-setup)
    - [Google Chat / Google Spaces Setup](#google-chat--google-spaces-setup)
    - [Twitter/X Setup](#twitterx-setup)
+   - [Office 365 Setup](#office-365-setup)
+   - [iCloud Drive Setup](#icloud-drive-setup)
 5. [Usage Examples](#usage-examples)
 6. [Webhook Configuration](#webhook-configuration)
 7. [Security & Authentication](#security--authentication)
@@ -50,6 +52,9 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
 | **Apple Messages for Business** | MSP REST API | iOS/macOS customer engagement | List pickers, time pickers, rich links, Apple Pay, group conversations |
 | **Google Chat / Spaces** | Chat API v1 | Google Workspace team messaging | Spaces, direct messages, space management, member management, incoming webhooks, OIDC bot events |
 | **Twitter/X** | API v2 | Direct messaging, social notifications | Direct messages, Account Activity API webhooks |
+| **Office 365 – Outlook** | Microsoft Graph API | Email communication | Send mail, retrieve inbox/folder messages, HTML/plain-text, CC support |
+| **Office 365 – OneDrive** | Microsoft Graph API | File storage and sharing | List, download, and upload files and folders |
+| **iCloud Drive** | Gateway / CloudKit API | Apple ecosystem file management | List, download, and upload files via configurable HTTPS gateway |
 
 ### Key Capabilities
 
@@ -74,7 +79,7 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │              NV oOS Plugin Core                        │  │
 │  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │     Chat Channels Toolkit (21 Tools)            │  │  │
+│  │  │     Chat Channels Toolkit (47 Tools)            │  │  │
 │  │  │                                                   │  │  │
 │  │  │  ┌──────────────┐    ┌──────────────┐          │  │  │
 │  │  │  │   Platform   │    │   Webhook    │          │  │  │
@@ -100,9 +105,9 @@ The **Chat Channels Integration Toolkit** provides enterprise-grade integration 
         │  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌──────────────┐  │
         │  │  Teams   │ │Messenger │ │Apple │ │ Google Chat  │  │
         │  └──────────┘ └──────────┘ └──────┘ └──────────────┘  │
-        │  ┌──────────┐                                           │
-        │  │Twitter/X │                                           │
-        │  └──────────┘                                           │
+        │  ┌──────────┐ ┌──────────────┐ ┌──────────────────┐   │
+        │  │Twitter/X │ │  Office 365  │ │  iCloud Drive    │   │
+        │  └──────────┘ └──────────────┘ └──────────────────┘   │
         └─────────────────────────────────────────────────────────┘
 ```
 
@@ -133,7 +138,7 @@ class WP_MCP_AI_Tool_Chat_Action extends WP_MCP_AI_Tool_Base {
 
 ## Tools Reference
 
-> **Version 2.0 Tool Inventory:** The Chat Channels Toolkit now contains **39 platform-specific tools** across 9 platforms. The section below lists the complete set of tool slugs you use in assistant tool calls, organized by platform. The detailed conceptual tools (send_chat_message, etc.) that follow describe the general patterns — see each Platform Setup Guide for platform-specific parameter details.
+> **Version 3.0 Tool Inventory:** The Chat Channels Toolkit now contains **47 platform-specific tools** across 11 platforms. The section below lists the complete set of tool slugs you use in assistant tool calls, organized by platform. The detailed conceptual tools (send_chat_message, etc.) that follow describe the general patterns — see each Platform Setup Guide for platform-specific parameter details.
 
 ### Complete Tool Inventory
 
@@ -177,6 +182,14 @@ class WP_MCP_AI_Tool_Chat_Action extends WP_MCP_AI_Tool_Base {
 | **Twitter/X** | `get_twitter_dms` | Retrieve recent Direct Message events |
 | **Twitter/X** | `send_twitter_dm` | Send a Direct Message to a user |
 | **Twitter/X** | `manage_twitter_webhook` | Register/remove Account Activity webhooks |
+| **Office 365 – Outlook** | `send_outlook_mail` | Send an email via Microsoft Outlook (Microsoft Graph API) |
+| **Office 365 – Outlook** | `get_outlook_messages` | Retrieve messages from an Outlook mail folder |
+| **Office 365 – OneDrive** | `list_onedrive_files` | List files and folders in a OneDrive drive |
+| **Office 365 – OneDrive** | `get_onedrive_file` | Download a file from OneDrive |
+| **Office 365 – OneDrive** | `upload_onedrive_file` | Upload a file to a OneDrive folder |
+| **iCloud Drive** | `list_icloud_drive_files` | List files and folders via an iCloud gateway API |
+| **iCloud Drive** | `get_icloud_drive_file` | Download a file via the iCloud gateway API |
+| **iCloud Drive** | `upload_icloud_drive_file` | Upload a file via the iCloud gateway API |
 | **Multi-Platform** | `unified_channel_broadcast` | Broadcast a message to multiple platforms simultaneously |
 | **WebChat** | `send_webchat_message` | Send a message to a WebChat P2P room |
 
@@ -1429,6 +1442,149 @@ To receive incoming DMs, register a webhook using the `manage_twitter_webhook` t
 | `get_twitter_dms` | Retrieve recent Direct Message events via API v2 |
 | `send_twitter_dm` | Send a Direct Message to a Twitter/X user |
 | `manage_twitter_webhook` | Register or remove Account Activity API webhooks |
+
+---
+
+### Office 365 Setup
+
+NV oOS integrates with Office 365 via the **Microsoft Graph API**, enabling Outlook email management and OneDrive file operations directly from AI assistants.
+
+> **Prerequisites:** A Microsoft Azure Active Directory (Entra ID) app registration with the following Microsoft Graph permissions: `Mail.Send`, `Mail.Read`, and `Files.ReadWrite` (which also grants read access; alternatively grant `Files.Read.All` and `Files.ReadWrite` separately for explicit read/write separation). An access token obtained via OAuth 2.0 authorization code flow or client credentials flow.
+
+#### Step 1: Register an Azure App
+
+1. Go to [Azure Portal → App registrations](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade).
+2. Click **New registration**, enter a name, and set the redirect URI.
+3. Under **API permissions**, add the following Microsoft Graph permissions:
+   - `Mail.Read` – read Outlook messages
+   - `Mail.Send` – send Outlook email
+   - `Files.Read.All` – list and download OneDrive files
+   - `Files.ReadWrite` – upload files to OneDrive
+4. Click **Grant admin consent**.
+5. Under **Certificates & secrets**, create a new client secret.
+
+#### Step 2: Add to Remote Site Connections
+
+1. Go to **NV oOS → Remote Sites → Add Connection**.
+2. Set **Connection Type** to **Office 365 (Chat Channel)**.
+3. Enter your **Tenant ID**, **Client ID**, and **Client Secret**.
+4. Click **Save**.
+
+The toolkit tools accept a bearer **access token** directly as a parameter. Obtain the token via the [Microsoft identity platform OAuth 2.0 flows](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow) or your application's token cache.
+
+#### Step 3: Configure the Settings Page
+
+Navigate to **NV oOS → Chat Channels Toolkit** and expand the **Office 365** section. Enter your app credentials; the plugin stores them securely.
+
+#### Office 365 Tools
+
+**Outlook (email):**
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `send_outlook_mail` | Send an email via Microsoft Outlook; supports `text` or `html` body, CC |
+| `get_outlook_messages` | Retrieve messages from inbox, sent items, drafts, or a custom folder ID |
+
+**Example – send an Outlook email:**
+
+```json
+{
+  "tool": "send_outlook_mail",
+  "arguments": {
+    "token": "eyJ...<Graph API bearer token>",
+    "to_email": "recipient@example.com",
+    "subject": "Hello from NV oOS",
+    "body": "<b>This email was sent by an AI assistant.</b>",
+    "content_type": "html"
+  }
+}
+```
+
+**OneDrive (file storage):**
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `list_onedrive_files` | List files and folders in the authenticated user's OneDrive |
+| `get_onedrive_file` | Download a OneDrive file by its item ID |
+| `upload_onedrive_file` | Upload content to a OneDrive folder |
+
+#### Security Notes
+
+- Bearer tokens must be obtained by your application through a secure OAuth 2.0 flow. Never hard-code tokens.
+- Tokens are passed as tool arguments and are not stored by the plugin.
+- The `send_outlook_mail` and `get_outlook_messages` tools require `manage_options` capability by default; use the `wp_mcp_ai_send_outlook_mail_capability` / `wp_mcp_ai_get_outlook_messages_capability` filters to adjust.
+
+---
+
+### iCloud Drive Setup
+
+NV oOS communicates with iCloud Drive via a **user-configured HTTPS gateway service**. Apple does not expose a public third-party REST API for iCloud Drive; instead, you run (or subscribe to) a gateway that bridges requests to Apple's **CloudKit** or iCloud services.
+
+> **References:** [Apple CloudKit documentation](https://developer.apple.com/documentation/cloudkit) | [Apple iCloud developer resources](https://developer.apple.com/icloud/)
+
+#### What Is an iCloud Gateway?
+
+A gateway is an HTTPS service that:
+1. Accepts standard REST requests from the NV oOS plugin.
+2. Translates them into CloudKit Web Services API or proprietary iCloud Drive calls using your Apple Developer credentials.
+3. Returns a normalised JSON response.
+
+You can build your own gateway (e.g. using Apple's [CloudKit JS](https://developer.apple.com/documentation/cloudkitjs) or [CloudKit Web Services](https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/index.html)) or use a compatible self-hosted proxy. A minimal gateway must expose three REST endpoints that the iCloud tools call:
+
+| HTTP Method | Path (example) | Purpose |
+|-------------|----------------|---------|
+| `GET` | `/api/files?folderId=&limit=&offset=` | List files/folders |
+| `GET` | `/api/files/{fileId}` | Download a file |
+| `PUT` / `POST` | `/api/files/{folderId}/upload` | Upload a file |
+
+The gateway should accept a `Bearer` token via the `Authorization` header and return JSON responses. Failed requests should return a non-2xx HTTP status code with a JSON body containing a `message`, `error`, `errorMessage`, or `detail` key describing the error.
+
+#### Step 1: Configure Your Gateway
+
+1. Deploy an HTTPS gateway that exposes endpoints compatible with the iCloud tools (list files, get file, upload file).
+2. Secure the gateway with an API key or bearer token.
+3. Ensure the gateway URL is accessible from your WordPress server.
+
+#### Step 2: Configure the Settings Page
+
+1. Go to **NV oOS → Chat Channels Toolkit** and expand the **iCloud Drive** section.
+2. Enter your **gateway URL** and **API key**.
+3. Click **Save**.
+
+#### Step 3: Use the Tools
+
+All iCloud Drive tools accept a `gateway_url` (HTTPS) and `api_key` parameter.
+
+#### iCloud Drive Tools
+
+| Tool Slug | Description |
+|-----------|-------------|
+| `list_icloud_drive_files` | List files and folders (supports `folder_id`, `limit`, pagination cursor) |
+| `get_icloud_drive_file` | Download a file by its identifier |
+| `upload_icloud_drive_file` | Upload content to a folder |
+
+**Example – list root files:**
+
+```json
+{
+  "tool": "list_icloud_drive_files",
+  "arguments": {
+    "gateway_url": "https://my-icloud-gateway.example.com/api/files",
+    "api_key": "sk-...",
+    "limit": 25
+  }
+}
+```
+
+#### Security Notes
+
+- The `gateway_url` must be a valid **HTTPS** URL; HTTP is rejected.
+- `api_key` / bearer tokens are passed as tool arguments and are not stored by the plugin.
+- All iCloud tools require `manage_options` capability by default; use the `wp_mcp_ai_list_icloud_drive_files_capability` / `wp_mcp_ai_get_icloud_drive_file_capability` / `wp_mcp_ai_upload_icloud_drive_file_capability` filters to adjust.
+
+---
+
+## Usage Examples
 
 ### Example 1: Customer Support Bot
 

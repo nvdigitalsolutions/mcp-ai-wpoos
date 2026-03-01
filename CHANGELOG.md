@@ -30,6 +30,26 @@
 
 ## [Unreleased]
 
+### Added - March 2026
+- **Office 365 and iCloud Drive Connection Types (March 2026)**: Added new chat channel connection types for Office 365 and iCloud Drive (PR #3971)
+  - **Office 365 – Outlook (2 tools)**:
+    - `send_outlook_mail` - Send email via Microsoft Outlook using the Microsoft Graph API; supports plain text and HTML body, CC recipients
+    - `get_outlook_messages` - Retrieve messages from any Outlook mail folder (inbox, sent, drafts, or custom) with OData filter support
+  - **Office 365 – OneDrive (3 tools)**:
+    - `list_onedrive_files` - List files and folders in a OneDrive drive via Microsoft Graph API
+    - `get_onedrive_file` - Download a OneDrive file and return its contents
+    - `upload_onedrive_file` - Upload a file to a OneDrive folder
+  - **iCloud Drive (3 tools)** (via configurable gateway):
+    - `list_icloud_drive_files` - List files and folders via an HTTPS iCloud gateway API
+    - `get_icloud_drive_file` - Download a file from iCloud Drive via the gateway
+    - `upload_icloud_drive_file` - Upload a file to iCloud Drive via the gateway
+  - **New REST webhook controllers**:
+    - `WP_MCP_AI_Outlook_Webhook_Controller` - Handles Office 365 Outlook subscription notifications
+    - `WP_MCP_AI_iCloud_Webhook_Controller` - Handles iCloud Drive gateway push notifications
+  - **Admin settings**: Office 365 and iCloud Drive configuration panels added to NV oOS → Chat Channels Toolkit settings page
+  - **Chat Channels Toolkit**: Updated tool count from 39 to 47 tools across 11 platforms
+  - **Security**: All tools validate bearer tokens, enforce HTTPS gateway URLs for iCloud, require `manage_options` capability (filterable), and log via `WP_MCP_AI_Logger`
+
 ### Added - February 2026
 - **JetEngine CPT/Taxonomy AI Integration (February 12, 2026)**: Comprehensive AI assistance for all JetEngine custom post types and taxonomies
   - **AI Assistant Metaboxes**: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens

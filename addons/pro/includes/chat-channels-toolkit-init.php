@@ -122,10 +122,8 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_ad
  *
  * Registers chat channel tools for all supported platforms: WebChat, Google
  * Chat, Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Office 365
- * (Outlook, OneDrive), Facebook Messenger, Twitter/X, iCloud Drive, and
- * the unified broadcast tool.
- * Registers chat channel tools including WebChat, Google Chat, Twitter/X,
- * Apple Messages for Business (iMessage), and iCloud Drive tools.
+ * (Outlook, OneDrive), Facebook Messenger, Twitter/X, Apple Messages for
+ * Business (iMessage), iCloud Drive, and the unified broadcast tool.
  *
  * @since 1.0.0
  */
