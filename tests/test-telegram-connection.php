@@ -1735,5 +1735,144 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		wp_set_current_user( 0 );
 	}
+
+	/**
+	 * Test that sanitize_init_data() preserves percent-encoded characters
+	 * required for HMAC-SHA256 verification of Telegram initData.
+	 *
+	 * sanitize_text_field() strips %XX sequences, corrupting the URL-encoded
+	 * query string and causing hash verification to always fail. The custom
+	 * sanitize_init_data() callback must preserve these sequences.
+	 */
+	public function test_sanitize_init_data_preserves_url_encoded_chars() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$user_json = wp_json_encode(
+			array(
+				'id'         => 8355775408,
+				'first_name' => 'NV Digital Solutions',
+				'username'   => 'testuser',
+			)
+		);
+		$auth_date = (string) time();
+
+		// Build a realistic URL-encoded initData string.
+		$init_data = http_build_query(
+			array(
+				'auth_date' => $auth_date,
+				'user'      => $user_json,
+				'hash'      => str_repeat( 'a', 64 ),
+			)
+		);
+
+		// Verify the string contains percent-encoded characters.
+		$this->assertMatchesRegularExpression( '/%[0-9a-fA-F]{2}/', $init_data, 'Test input should contain percent-encoded characters' );
+
+		$result = $controller->sanitize_init_data( $init_data );
+
+		// The sanitized output must still contain percent-encoded characters.
+		$this->assertMatchesRegularExpression( '/%[0-9a-fA-F]{2}/', $result, 'sanitize_init_data() must preserve percent-encoded characters' );
+
+		// The sanitized output should be identical to the input for valid initData.
+		$this->assertEquals( $init_data, $result, 'sanitize_init_data() should not alter a valid initData string' );
+	}
+
+	/**
+	 * Test that sanitize_init_data() strips null bytes for security.
+	 */
+	public function test_sanitize_init_data_strips_null_bytes() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$input = "auth_date=123\x00&hash=abc";
+		$result = $controller->sanitize_init_data( $input );
+
+		$this->assertStringNotContainsString( "\x00", $result, 'sanitize_init_data() should strip null bytes' );
+		$this->assertEquals( 'auth_date=123&hash=abc', $result );
+	}
+
+	/**
+	 * Test that sanitize_init_data() strips HTML tags for security.
+	 */
+	public function test_sanitize_init_data_strips_html_tags() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$input = 'auth_date=123&user=<script>alert(1)</script>&hash=abc';
+		$result = $controller->sanitize_init_data( $input );
+
+		$this->assertStringNotContainsString( '<script>', $result, 'sanitize_init_data() should strip HTML tags' );
+	}
+
+	/**
+	 * Test that verify_init_data() succeeds when initData is passed through
+	 * sanitize_init_data() instead of sanitize_text_field().
+	 *
+	 * This is the end-to-end regression test for the mini app auto-login fix.
+	 */
+	public function test_verify_init_data_succeeds_after_sanitize_init_data() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$bot_token = 'TestBotToken9876:ABCDEFGHIJKLMNOPQRabcdefghijklmno';
+		$auth_date = (string) time();
+		$user_json = wp_json_encode(
+			array(
+				'id'         => 8355775408,
+				'first_name' => 'NV Digital Solutions',
+				'username'   => 'nvdigital',
+			)
+		);
+
+		// Build the data-check string exactly as Telegram specifies.
+		$pairs = array(
+			'auth_date' => $auth_date,
+			'user'      => $user_json,
+		);
+		$check_pairs = array();
+		foreach ( $pairs as $k => $v ) {
+			$check_pairs[] = $k . '=' . $v;
+		}
+		sort( $check_pairs );
+		$data_check_string = implode( "\n", $check_pairs );
+
+		// Compute hash.
+		$hmac_secret_raw = hash_hmac( 'sha256', $bot_token, 'WebAppData', true );
+		$expected_hash   = hash_hmac( 'sha256', $data_check_string, $hmac_secret_raw );
+
+		// Assemble a URL-encoded initData string (as Telegram provides it).
+		$init_data = http_build_query(
+			array(
+				'auth_date' => $auth_date,
+				'user'      => $user_json,
+				'hash'      => $expected_hash,
+			)
+		);
+
+		// Verify that sanitize_text_field would break this (the original bug).
+		$corrupted = sanitize_text_field( $init_data );
+		$this->assertNotEquals( $init_data, $corrupted, 'sanitize_text_field should corrupt URL-encoded initData' );
+
+		// Verify that sanitize_init_data preserves it.
+		$sanitized = $controller->sanitize_init_data( $init_data );
+		$this->assertEquals( $init_data, $sanitized, 'sanitize_init_data should preserve URL-encoded initData' );
+
+		// Verify that HMAC verification succeeds with the sanitized data.
+		$result = $controller->verify_init_data( $sanitized, $bot_token );
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'verify_init_data() should succeed after sanitize_init_data()' );
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'user', $result );
+		$this->assertEquals( 8355775408, $result['user']['id'] );
+		$this->assertEquals( 'NV Digital Solutions', $result['user']['first_name'] );
+	}
 }
 

@@ -123,7 +123,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					'init_data' => array(
 						'required'          => true,
 						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
+						'sanitize_callback' => array( $this, 'sanitize_init_data' ),
 						'description'       => __( 'Raw initData string from window.Telegram.WebApp.initData.', 'mcp-ai-wpoos-pro' ),
 					),
 				),
@@ -1538,6 +1538,31 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'tma_token' => $tma_token,
 			)
 		);
+	}
+
+	/**
+	* Sanitize the initData parameter for the /validate endpoint.
+	*
+	* Unlike sanitize_text_field(), this callback preserves percent-encoded
+	* characters (e.g. %7B, %22, %3A) that are part of the URL-encoded query
+	* string. Stripping them would corrupt the payload and cause HMAC-SHA256
+	* verification to fail because the data-check string would no longer match
+	* what Telegram originally signed.
+	*
+	* @since 1.0.0
+	*
+	* @param string $value Raw initData string from window.Telegram.WebApp.initData.
+	* @return string Sanitized initData with URL encoding intact.
+	*/
+	public function sanitize_init_data( $value ) {
+		$value = (string) $value;
+		$value = wp_check_invalid_utf8( $value );
+		// Strip null bytes only; percent-encoded sequences must remain intact
+		// for the HMAC-SHA256 verification in verify_init_data().
+		$value = preg_replace( '/\x00/', '', $value );
+		// Remove any HTML/PHP tags as a safety measure.
+		$value = wp_strip_all_tags( $value );
+		return $value;
 	}
 
 	/**
