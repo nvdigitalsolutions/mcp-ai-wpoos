@@ -496,6 +496,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var allTools          = [];
   var allSlashCmds      = [];
   var searchTimeout     = null;
+  var authRetried       = false;
 
   /* ── Public: switch tabs ── */
   window.tmaSwitchTab = function (tabName) {
@@ -611,7 +612,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
     authFetch(url)
       .then(function (r) {
-        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'content\'); return null; }
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadContent(); }).catch(function () { showLoginFallback(\'content\'); });
+          }
+          showLoginPrompt(\'content\'); return null;
+        }
+        authRetried = false;
         return r.json();
       })
       .then(function (data) {
@@ -721,7 +729,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
     authFetch(TMA_TOOLS_URL)
       .then(function (r) {
-        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'tools\'); return null; }
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadTools(); }).catch(function () { showLoginFallback(\'tools\'); });
+          }
+          showLoginPrompt(\'tools\'); return null;
+        }
+        authRetried = false;
         return r.json();
       })
       .then(function (data) {
@@ -827,7 +842,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
     authFetch(url)
       .then(function (r) {
-        if (r.status === 401 || r.status === 403) { showLoginPrompt(\'media\'); return null; }
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadMedia(); }).catch(function () { showLoginFallback(\'media\'); });
+          }
+          showLoginPrompt(\'media\'); return null;
+        }
+        authRetried = false;
         return r.json();
       })
       .then(function (data) {
@@ -921,12 +943,70 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   function showLoginPrompt(tabName) {
     var el = document.getElementById(\'tma-tab-\' + tabName);
     if (!el) return;
+    /* Inside Telegram: show inline retry button instead of wp-login.php link */
+    if (twa && twa.initData) {
+      el.innerHTML = \'<div class="tma-login-prompt">\' +
+        \'<div class="tma-login-icon">🔐</div>\' +
+        \'<div class="tma-login-title">Authenticating…</div>\' +
+        \'<div class="tma-login-sub">Signing you in with Telegram.</div>\' +
+      \'</div>\';
+      tmaRetryAuth(tabName);
+      return;
+    }
+    /* Fallback for direct browser access (no Telegram context) */
     el.innerHTML = \'<div class="tma-login-prompt">\' +
       \'<div class="tma-login-icon">🔒</div>\' +
       \'<div class="tma-login-title">Login Required</div>\' +
       \'<div class="tma-login-sub">Sign in to manage your content.</div>\' +
       \'<a class="tma-login-btn" href="\' + escHtml(TMA_LOGIN_URL) + \'" target="_blank">Sign In</a>\' +
     \'</div>\';
+  }
+
+  /* ── Inline Telegram re-authentication ── */
+  function tmaRetryAuth(tabName) {
+    validateInitData()
+      .then(function () {
+        if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
+        else if (tabName === \'tools\')  { toolsLoaded = false; loadTools(); }
+        else if (tabName === \'media\')  { mediaLoaded = false; loadMedia(); }
+      })
+      .catch(function () {
+        showLoginFallback(tabName);
+      });
+  }
+
+  window.tmaRetryAuthClick = function (tabName) {
+    haptic(\'light\');
+    authRetried = false;
+    var el = document.getElementById(\'tma-tab-\' + tabName);
+    if (el) {
+      el.innerHTML = \'<div class="tma-login-prompt">\' +
+        \'<div class="tma-login-icon">🔐</div>\' +
+        \'<div class="tma-login-title">Authenticating…</div>\' +
+        \'<div class="tma-login-sub">Signing you in with Telegram.</div>\' +
+      \'</div>\';
+    }
+    tmaRetryAuth(tabName);
+  };
+
+  function showLoginFallback(tabName) {
+    var el = document.getElementById(\'tma-tab-\' + tabName);
+    if (!el) return;
+    if (twa && twa.initData) {
+      el.innerHTML = \'<div class="tma-login-prompt">\' +
+        \'<div class="tma-login-icon">🔒</div>\' +
+        \'<div class="tma-login-title">Authentication Failed</div>\' +
+        \'<div class="tma-login-sub">Could not sign in automatically. Please try again.</div>\' +
+        \'<button class="tma-login-btn" onclick="tmaRetryAuthClick(\\\'\' + escHtml(tabName) + \'\\\')">Retry</button>\' +
+      \'</div>\';
+    } else {
+      el.innerHTML = \'<div class="tma-login-prompt">\' +
+        \'<div class="tma-login-icon">🔒</div>\' +
+        \'<div class="tma-login-title">Login Required</div>\' +
+        \'<div class="tma-login-sub">Sign in to manage your content.</div>\' +
+        \'<a class="tma-login-btn" href="\' + escHtml(TMA_LOGIN_URL) + \'" target="_blank">Sign In</a>\' +
+      \'</div>\';
+    }
   }
 
   /* ── User info from initDataUnsafe ── */
