@@ -339,11 +339,11 @@
 			}, retryOptions || {});
 
 			handlers = handlers || {};
-			var self = this;
+			const self = this;
 
 			return new Promise(function(resolve, reject) {
 				function attempt(attemptNum) {
-					var xhr = self.request(options, {
+					const xhr = self.request(options, {
 						success: function(response, textStatus, jqXHR) {
 							if (handlers.success) {
 								handlers.success.call(this, response, textStatus, jqXHR);
@@ -352,11 +352,11 @@
 						},
 						error: function(error, jqXHR) {
 							// Determine if the error is retriable
-							var isRetriable = self.isRetriableError(error);
+							const isRetriable = self.isRetriableError(error);
 
 							if (isRetriable && attemptNum < retryOptions.maxRetries) {
 								// Calculate delay with exponential backoff + jitter
-								var delay = Math.min(
+								let delay = Math.min(
 									retryOptions.baseDelay * Math.pow(2, attemptNum),
 									retryOptions.maxDelay
 								);

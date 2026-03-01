@@ -374,7 +374,7 @@
 			}
 
 			// Check cache freshness
-			var timestamp = this.cacheTimestamps[containerId] || 0;
+			const timestamp = this.cacheTimestamps[containerId] || 0;
 			if (Date.now() - timestamp > this.cacheMaxAge) {
 				// Cache expired, clean up
 				delete this.cache[containerId];

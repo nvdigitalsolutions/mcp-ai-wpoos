@@ -763,10 +763,10 @@ class WP_MCP_AI_Job_Notifier {
 			$url,
 			array(
 				'headers' => array(
-					'Content-Type'                => 'application/json',
-					'User-Agent'                  => 'WP-MCP-AI-Webhook/1.0',
-					'X-WP-MCP-AI-Signature'       => $signature,
-					'X-WP-MCP-AI-Signature-Algo'  => 'sha256',
+					'Content-Type'               => 'application/json',
+					'User-Agent'                 => 'WP-MCP-AI-Webhook/1.0',
+					'X-WP-MCP-AI-Signature'      => $signature,
+					'X-WP-MCP-AI-Signature-Algo' => 'sha256',
 				),
 				'body'    => $body,
 				'timeout' => 10,
