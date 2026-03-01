@@ -1052,5 +1052,441 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 
 		$this->assertSame( 32, WP_MCP_AI_Pro_Tool_Send_Apple_Message_Group::MAX_PARTICIPANTS );
 	}
+
+	// =========================================================================
+	// Office 365 – Outlook Tools
+	// =========================================================================
+
+	/** Outlook send-mail tool must be loadable. */
+	public function test_chat_channels_tool_send_outlook_mail_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+	}
+
+	/** Outlook send-mail slug must equal 'send_outlook_mail'. */
+	public function test_send_outlook_mail_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
+		$this->assertSame( 'send_outlook_mail', $tool->get_slug() );
+	}
+
+	/** Outlook send-mail is_available() returns true. */
+	public function test_send_outlook_mail_tool_is_available() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+
+		$this->assertTrue( WP_MCP_AI_Pro_Tool_Send_Outlook_Mail::is_available() );
+	}
+
+	/** Outlook send-mail returns WP_Error for missing token. */
+	public function test_send_outlook_mail_tool_returns_error_without_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
+		$result = $tool->execute(
+			array(
+				'to_email' => 'test@example.com',
+				'subject'  => 'Test Subject',
+				'body'     => 'Test body content',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_outlook_token', $result->get_error_code() );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** Outlook send-mail returns WP_Error for invalid email. */
+	public function test_send_outlook_mail_tool_returns_error_for_invalid_email() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
+		$result = $tool->execute(
+			array(
+				'access_token' => 'test-token',
+				'to_email'     => 'not-an-email',
+				'subject'      => 'Test Subject',
+				'body'         => 'Test body content',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_to_email', $result->get_error_code() );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** Outlook send-mail capability flags include 'pro' and 'write'. */
+	public function test_send_outlook_mail_tool_capability_flags() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail',
+			'class-wp-mcp-ai-pro-tool-send-outlook-mail.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Send_Outlook_Mail();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'pro', $flags );
+		$this->assertContains( 'write', $flags );
+	}
+
+	/** Outlook get-messages tool must be loadable. */
+	public function test_chat_channels_tool_get_outlook_messages_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages',
+			'class-wp-mcp-ai-pro-tool-get-outlook-messages.php'
+		);
+	}
+
+	/** Outlook get-messages slug must equal 'get_outlook_messages'. */
+	public function test_get_outlook_messages_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages',
+			'class-wp-mcp-ai-pro-tool-get-outlook-messages.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Outlook_Messages();
+		$this->assertSame( 'get_outlook_messages', $tool->get_slug() );
+	}
+
+	/** Outlook get-messages capability flags include 'read-only'. */
+	public function test_get_outlook_messages_tool_capability_flags_include_read_only() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages',
+			'class-wp-mcp-ai-pro-tool-get-outlook-messages.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Get_Outlook_Messages();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'read-only', $flags );
+		$this->assertContains( 'pro', $flags );
+	}
+
+	/** Outlook get-messages returns WP_Error for missing token. */
+	public function test_get_outlook_messages_tool_returns_error_without_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages',
+			'class-wp-mcp-ai-pro-tool-get-outlook-messages.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Outlook_Messages();
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_outlook_token', $result->get_error_code() );
+
+		wp_delete_user( $admin_id );
+	}
+
+	// =========================================================================
+	// Office 365 – OneDrive Tools
+	// =========================================================================
+
+	/** OneDrive list-files tool must be loadable. */
+	public function test_chat_channels_tool_list_onedrive_files_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_List_Onedrive_Files',
+			'class-wp-mcp-ai-pro-tool-list-onedrive-files.php'
+		);
+	}
+
+	/** OneDrive list-files slug must equal 'list_onedrive_files'. */
+	public function test_list_onedrive_files_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_List_Onedrive_Files',
+			'class-wp-mcp-ai-pro-tool-list-onedrive-files.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_List_Onedrive_Files();
+		$this->assertSame( 'list_onedrive_files', $tool->get_slug() );
+	}
+
+	/** OneDrive list-files returns WP_Error for missing token. */
+	public function test_list_onedrive_files_tool_returns_error_without_token() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_List_Onedrive_Files',
+			'class-wp-mcp-ai-pro-tool-list-onedrive-files.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Onedrive_Files();
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'wp_mcp_ai_missing_outlook_token', $result->get_error_code() );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** OneDrive get-file tool must be loadable. */
+	public function test_chat_channels_tool_get_onedrive_file_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-get-onedrive-file.php'
+		);
+	}
+
+	/** OneDrive get-file slug must equal 'get_onedrive_file'. */
+	public function test_get_onedrive_file_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-get-onedrive-file.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Onedrive_File();
+		$this->assertSame( 'get_onedrive_file', $tool->get_slug() );
+	}
+
+	/** OneDrive get-file returns WP_Error when neither item_id nor file_path is provided. */
+	public function test_get_onedrive_file_tool_returns_error_without_identifier() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-get-onedrive-file.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Onedrive_File();
+		$result = $tool->execute(
+			array(
+				'access_token' => 'test-token',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** OneDrive upload-file tool must be loadable. */
+	public function test_chat_channels_tool_upload_onedrive_file_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Upload_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php'
+		);
+	}
+
+	/** OneDrive upload-file slug must equal 'upload_onedrive_file'. */
+	public function test_upload_onedrive_file_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Upload_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Upload_Onedrive_File();
+		$this->assertSame( 'upload_onedrive_file', $tool->get_slug() );
+	}
+
+	/** OneDrive upload-file capability flags include 'write'. */
+	public function test_upload_onedrive_file_tool_capability_flags() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Upload_Onedrive_File',
+			'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Upload_Onedrive_File();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'write', $flags );
+		$this->assertContains( 'pro', $flags );
+	}
+
+	// =========================================================================
+	// iCloud Drive Tools
+	// =========================================================================
+
+	/** iCloud list-files tool must be loadable. */
+	public function test_chat_channels_tool_list_icloud_drive_files_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
+			'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php'
+		);
+	}
+
+	/** iCloud list-files slug must equal 'list_icloud_drive_files'. */
+	public function test_list_icloud_drive_files_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
+			'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files();
+		$this->assertSame( 'list_icloud_drive_files', $tool->get_slug() );
+	}
+
+	/** iCloud list-files returns WP_Error for missing gateway URL. */
+	public function test_list_icloud_drive_files_tool_returns_error_without_gateway_url() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
+			'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files();
+		$result = $tool->execute(
+			array(
+				'session_token' => 'test-token',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** iCloud list-files rejects non-HTTPS gateway URL. */
+	public function test_list_icloud_drive_files_tool_rejects_http_url() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files',
+			'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_List_Icloud_Drive_Files();
+		$result = $tool->execute(
+			array(
+				'gateway_url'   => 'http://insecure.example.com/drive',
+				'session_token' => 'test-token',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+
+		wp_delete_user( $admin_id );
+	}
+
+	/** iCloud get-file tool must be loadable. */
+	public function test_chat_channels_tool_get_icloud_drive_file_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php'
+		);
+	}
+
+	/** iCloud get-file slug must equal 'get_icloud_drive_file'. */
+	public function test_get_icloud_drive_file_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File();
+		$this->assertSame( 'get_icloud_drive_file', $tool->get_slug() );
+	}
+
+	/** iCloud get-file capability flags include 'read-only'. */
+	public function test_get_icloud_drive_file_tool_capability_flags_include_read_only() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Get_Icloud_Drive_File();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'read-only', $flags );
+		$this->assertContains( 'pro', $flags );
+	}
+
+	/** iCloud upload-file tool must be loadable. */
+	public function test_chat_channels_tool_upload_icloud_drive_file_loadable() {
+		$this->assert_chat_channels_tool_loadable(
+			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php'
+		);
+	}
+
+	/** iCloud upload-file slug must equal 'upload_icloud_drive_file'. */
+	public function test_upload_icloud_drive_file_tool_get_slug() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php'
+		);
+
+		$tool = new WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File();
+		$this->assertSame( 'upload_icloud_drive_file', $tool->get_slug() );
+	}
+
+	/** iCloud upload-file capability flags include 'write'. */
+	public function test_upload_icloud_drive_file_tool_capability_flags() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php'
+		);
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File();
+		$flags = $tool->get_capability_flags();
+
+		$this->assertContains( 'write', $flags );
+		$this->assertContains( 'pro', $flags );
+	}
+
+	/** iCloud upload-file returns WP_Error for missing gateway URL. */
+	public function test_upload_icloud_drive_file_tool_returns_error_without_gateway_url() {
+		$this->load_channel_tool(
+			'WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File',
+			'class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php'
+		);
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Upload_Icloud_Drive_File();
+		$result = $tool->execute(
+			array(
+				'session_token' => 'test-token',
+				'file_name'     => 'test.txt',
+				'file_content'  => 'Hello World',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+
+		wp_delete_user( $admin_id );
+	}
 }
 
