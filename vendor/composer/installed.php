@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-authentication-issue',
-        'version' => 'dev-copilot/fix-authentication-issue',
-        'reference' => '84520f8ff03f622239610734255fed89f2fbd6bc',
+        'pretty_version' => 'dev-copilot/extend-chat-channel-settings',
+        'version' => 'dev-copilot/extend-chat-channel-settings',
+        'reference' => '42158a3ad5bf121f3abfc9fefdf57012b6d78bcd',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-authentication-issue',
-            'version' => 'dev-copilot/fix-authentication-issue',
-            'reference' => '84520f8ff03f622239610734255fed89f2fbd6bc',
+            'pretty_version' => 'dev-copilot/extend-chat-channel-settings',
+            'version' => 'dev-copilot/extend-chat-channel-settings',
+            'reference' => '42158a3ad5bf121f3abfc9fefdf57012b6d78bcd',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
