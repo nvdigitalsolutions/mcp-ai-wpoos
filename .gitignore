@@ -177,7 +177,6 @@ addons/pro/assets/vendor/**/*.map
 # Exclude canvas native binaries (platform-specific, must be compiled via npm install)
 addons/pro/assets/vendor/canvas/build/
 
-tests/wp-tests-config.php
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html
