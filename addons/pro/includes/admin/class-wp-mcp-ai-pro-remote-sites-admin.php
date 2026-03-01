@@ -9133,6 +9133,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					);
 
 					if ( false !== $mail_body ) {
+						// Graph API: /users/{userPrincipalName}/sendMail sends FROM that
+						// user's mailbox (requires Mail.Send application permission).
+						// The test_recipient email doubles as the sender UPN, creating a
+						// self-addressed test email — a common pattern for verifying the
+						// end-to-end mail flow without requiring a separate "from" address.
 						$send_result = wp_remote_post(
 							'https://graph.microsoft.com/v1.0/users/' . rawurlencode( $test_recipient ) . '/sendMail',
 							array(
