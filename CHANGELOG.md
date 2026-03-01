@@ -49,6 +49,63 @@
   - **Admin settings**: Office 365 and iCloud Drive configuration panels added to NV oOS → Chat Channels Toolkit settings page
   - **Chat Channels Toolkit**: Updated tool count from 39 to 47 tools across 11 platforms
   - **Security**: All tools validate bearer tokens, enforce HTTPS gateway URLs for iCloud, require `manage_options` capability (filterable), and log via `WP_MCP_AI_Logger`
+- **Telegram Mini App Authentication Fix (March 1, 2026)**: Fixed Mini App stuck on "Authenticating" screen in Telegram WebView
+  - Added TMA session token mechanism as auth fallback when `wp_set_auth_cookie()` cookies don't persist in Telegram WebView
+  - Changed `check_permission()` from `edit_posts` to `read` for GET endpoints so subscriber-level Telegram users can access the app
+  - Fixed `validateInitData()` infinite loop: function now rejects on failure and limits auto-retry attempts (PR #3971)
+
+### Added - Late February 2026 (February 19 – March 1)
+- **Telegram Mini App CMS Overhaul (February 28, 2026)**: Transformed Telegram Mini App from a basic chat shell into a full WordPress CMS interface (PR #3959)
+  - Added REST endpoints for WordPress CPTs, tools, and media management within the Telegram WebView
+  - Completely redesigned Mini App UI with navigation panels for content management
+  - Users can now browse and manage WordPress content types directly from Telegram
+- **Elementor Telegram Login Widget (February 27, 2026)**: New Elementor widget wrapping the `[mcp_ai_telegram_login]` shortcode (PR #3940)
+  - Drag-and-drop Telegram Login button integration for Elementor-built pages
+  - All shortcode settings exposed as Elementor widget controls
+- **Discord/Telegram Reactions + Discord Voice Channel Members (February 27, 2026)**: OpenClaw Feb 2026 parity additions
+  - Added `add_discord_message_reaction` tool – add emoji reactions to Discord messages
+  - Added `add_telegram_message_reaction` tool – add emoji reactions to Telegram messages (Bot API 7.0+)
+  - Added `get_discord_voice_channel_members` tool – list users currently in a Discord voice channel
+  - Fixed `chat-channels-toolkit-init.php` to register all platform tools; added tests
+
+### Fixed - Late February 2026 (February 19 – March 1)
+- **WhatsApp Test Connection 403 Errors (February 20, 2026)**: Fixed multiple WhatsApp API 403 permission failures (PR #3818, #3819)
+  - Isolated `quality_rating` field request into a non-fatal optional step; core connection test succeeds without it
+  - Fixed field-permission error when verifying WhatsApp Business Account token
+- **WhatsApp Auto-Reply Error #133010 + Messenger Enhancements (February 22, 2026)** (PR #3840)
+  - Fixed WhatsApp Cloud API error `#133010` (message sending failure) in auto-reply flow
+  - Enhanced Facebook Messenger chat channel settings: added App ID field, token generation, "Test Connection" button, API version dropdown, and more
+- **WhatsApp/Messenger Webhook Processing Without App Secret (February 22, 2026)** (PR #3841)
+  - Fixed assistant not responding to real messages when App Secret is not yet configured
+  - Webhook processing now proceeds when `verify_webhook_signatures` is disabled or App Secret is blank
+- **WhatsApp Group Routing (February 23, 2026)** (PR #3859)
+  - AI auto-replies to WhatsApp group messages now route to the group thread instead of the individual sender
+  - Implemented `group_id` routing logic in the webhook handler
+- **Inbox CCT Registration Fix (February 23, 2026)** (PR #3860)
+  - Fixed `channel_messages` and `channel_contacts` JetEngine Custom Content Types never being registered
+  - Inbox messages now correctly stored and displayed after this fix
+- **Embedded Chat Client System Prompt Fixes (February 23–25, 2026)** (PR #3878, #3880, #3899)
+  - Fixed embedded LLM client not sending the system prompt and professional roles to the AI
+  - Fixed stored system prompt not being injected when the caller omits it
+  - Fixed system prompt silently dropped when `wp_kses_post()` preserves HTML tags inside the prompt; replaced `textarea.innerHTML` decode with `div.textContent` to correctly strip tags in all browsers
+- **Google Chat HTTP 404 Test Connection + OAuth UX (February 24, 2026)** (PR #3879)
+  - Fixed HTTP 404 error when testing Google Chat connection (wrong endpoint path)
+  - Added missing service account key upload indicator in the admin UI
+  - Improved OAuth button UX and feedback messaging
+- **Google Chat Auto-Reply Improvements (February 25, 2026)** (PR #3898)
+  - Bypassed native `@mention` check that was silently dropping AI auto-replies in Google Chat spaces
+  - Added support for thread replies so bot responses appear in the correct conversation thread
+  - Fixed OAuth welcome message not being sent on first bot installation
+  - Added `send_reply` handler and OAuth support for test auto-reply scenarios
+- **Google Chat Audience URL Clearable (February 27, 2026)**
+  - Fixed Google Chat Audience URL field that could not be cleared due to the `verify_token` preservation logic
+- **OpenAI File Attachment Errors (February 26, 2026)** (PR #3919)
+  - Fixed `Unknown parameter: 'url'` and `Unknown parameter: 'file_name'` errors for file attachments in the OpenAI Responses API
+  - Added full PDF file support in the attachment handling layer
+  - Fixed `sse_tool_fatal_error` crash when using the Analyze Video tool with OpenAI provider
+  - Removed unsupported `fps` parameter from the Sora video generation API payload
+- **Facebook Messenger Connection Test Fix (February 28, 2026)** (PR #3958)
+  - Fixed "Test Connection" button failure on the Messenger chat channel settings page
 
 ### Added - February 2026
 - **JetEngine CPT/Taxonomy AI Integration (February 12, 2026)**: Comprehensive AI assistance for all JetEngine custom post types and taxonomies

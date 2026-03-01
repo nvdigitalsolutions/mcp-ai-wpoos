@@ -13,7 +13,7 @@
 
 **Version:** 1.1.2  
 **Release Date:** 2026-02-16 (February 2026 update with WordPress.org compliance fixes, pro integration settings architecture)  
-**Latest Updates:** February 2026 - WordPress.org compliance, JetEngine integration, package pre-bundling, Product Research fixes  
+**Latest Updates:** March 2026 - Office 365 & iCloud Drive connection types, Telegram Mini App CMS, Discord/Telegram reactions, WhatsApp group routing, Google Chat auto-reply, embedded chat client fixes, Facebook Messenger enhancements  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (January & February 2026)](#-latest-updates-january-february-2026)
+- [🆕 Latest Updates (February & March 2026)](#-latest-updates-februarymarch-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -265,9 +265,54 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (January-February 2026)
+## 🆕 Latest Updates (February–March 2026)
 
-### WordPress.org Compliance Fixes (February 16, 2026) ⭐ **NEW**
+### Office 365 & iCloud Drive Connection Types (March 1, 2026) ⭐ **NEW**
+
+**8 new tools across 3 new integration platforms (PR #3971)**
+
+- ✅ **Outlook Mail**: `send_outlook_mail` (HTML/plain-text, CC support) + `get_outlook_messages` (any folder, OData filter)
+- ✅ **OneDrive**: `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` via Microsoft Graph API
+- ✅ **iCloud Drive**: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via HTTPS gateway
+- ✅ **Admin UI**: New Office 365 and iCloud Drive config panels in NV oOS → Chat Channels Toolkit
+- ✅ Chat Channels Toolkit grows to **47 tools across 11 platforms**
+- [Setup Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md#office-365-setup)
+
+### Telegram Mini App CMS (February 28, 2026) ⭐ **NEW**
+
+**PR #3959 – Transformed Telegram Mini App from chat shell into full WordPress CMS**
+
+- ✅ New REST endpoints for WordPress CPTs, tools, and media within the Telegram WebView
+- ✅ Redesigned Mini App UI with navigation panels for content management
+- ✅ Fixed Mini App stuck on "Authenticating": session token fallback auth, infinite-loop prevention, subscriber-level permission (PR #3971)
+- [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
+
+### Discord/Telegram Reactions + Discord Voice (February 27, 2026) ⭐ **NEW**
+
+**OpenClaw Feb 2026 parity – 3 new tools**
+
+- ✅ `add_discord_message_reaction` – add emoji reactions to Discord messages
+- ✅ `add_telegram_message_reaction` – add emoji reactions to Telegram messages (Bot API 7.0+)
+- ✅ `get_discord_voice_channel_members` – list users currently in a Discord voice channel
+- ✅ **Elementor Telegram Login Widget** (PR #3940) – drag-and-drop `[mcp_ai_telegram_login]` shortcode integration
+
+### Chat Channel Connection Fixes (February 19–28, 2026)
+
+**Comprehensive stabilization sprint across WhatsApp, Messenger, Google Chat, and inbox storage**
+
+- ✅ **WhatsApp** (PR #3818, #3819): Fixed 403 field-permission errors on test connection
+- ✅ **WhatsApp** (PR #3840): Fixed auto-reply error #133010
+- ✅ **WhatsApp** (PR #3841): Fixed assistant silently ignoring real messages when App Secret not configured
+- ✅ **WhatsApp** (PR #3859): AI auto-replies to group messages now route to the group thread
+- ✅ **Messenger** (PR #3840): Added App ID, token generator, Test Connection, API version dropdown
+- ✅ **Messenger** (PR #3958): Fixed Test Connection button failure in Messenger settings
+- ✅ **Google Chat** (PR #3879): Fixed HTTP 404 on test connection, improved OAuth UX, service account key indicator
+- ✅ **Google Chat** (PR #3898): Fixed auto-reply silently dropped, added thread replies, fixed OAuth welcome message
+- ✅ **Google Chat**: Fixed Audience URL field not clearable (verify_token preservation bug)
+- ✅ **Inbox CCT** (PR #3860): Fixed `channel_messages` / `channel_contacts` CCTs never registering — inbox messages now persist and display correctly
+- ✅ **Embedded Client** (PR #3878, #3880, #3899): Fixed system prompt + professional roles not sent to LLM; fixed HTML-in-prompt silently dropping entire prompt
+
+
 
 **Version 1.1.2 Released: Critical WordPress.org compliance updates**
 
