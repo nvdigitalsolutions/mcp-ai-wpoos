@@ -2017,6 +2017,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
+		// The PHP file contains escaped single quotes (\') inside echo'd JS;
+		// file_get_contents reads these as literal backslash-quote characters.
 		$this->assertStringContainsString(
 			"Promise.reject(typeof err === \\'string\\' ? err : \\'network_error\\')",
 			$source,

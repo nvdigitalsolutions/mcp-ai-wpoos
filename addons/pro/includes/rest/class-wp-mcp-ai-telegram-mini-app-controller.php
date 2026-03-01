@@ -1033,7 +1033,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     var el = document.getElementById(\'tma-tab-\' + tabName);
     if (!el) return;
     /* Inside Telegram: attempt one automatic sign-in, then show manual retry.
-       A global retry cap prevents infinite loops when auth repeatedly fails. */
+       tmaAuthAttempts is a per-tab counter (reset by tmaRetryAuth on success)
+       that allows one auto-retry per tab switch.  tmaGlobalRetries is a
+       session-wide cap that prevents infinite loops when auth keeps failing
+       because tmaRetryAuth resets the per-tab counter on every cycle. */
     if (twa && twa.initData) {
       if (tmaAuthAttempts < 1 && tmaGlobalRetries < TMA_MAX_AUTO_RETRIES) {
         ++tmaAuthAttempts;
