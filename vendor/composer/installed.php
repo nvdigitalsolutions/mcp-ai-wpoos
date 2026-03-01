@@ -3,11 +3,11 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/extend-chat-channel-settings',
         'version' => 'dev-copilot/extend-chat-channel-settings',
-        'reference' => '599ba49e18885cbecc895194854ff789fdfae2d1',
+        'reference' => '7c141e9373089653199875b1b3d94605419fd3d5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'cweagans/composer-configurable-plugin' => array(
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/extend-chat-channel-settings',
             'version' => 'dev-copilot/extend-chat-channel-settings',
-            'reference' => '599ba49e18885cbecc895194854ff789fdfae2d1',
+            'reference' => '7c141e9373089653199875b1b3d94605419fd3d5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -691,15 +691,6 @@
             'reference' => '15fd216bf6516670d8d07b938675925bfa5c15b0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wp-phpunit/wp-phpunit',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'yoast/phpunit-polyfills' => array(
-            'pretty_version' => '4.0.0',
-            'version' => '4.0.0.0',
-            'reference' => '134921bfca9b02d8f374c48381451da1d98402f9',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../yoast/phpunit-polyfills',
             'aliases' => array(),
             'dev_requirement' => true,
         ),

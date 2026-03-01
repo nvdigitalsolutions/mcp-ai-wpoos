@@ -639,7 +639,7 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		if ( isset( $payload['text'] ) && is_string( $payload['text'] ) ) {
 			// Strip the bot @mention before stripping HTML tags so the
 			// display-name inside <at>…</at> is removed entirely.
-			$text = preg_replace( '/<at>[^<]*<\/at>\s*/i', '', $payload['text'] );
+			$text = preg_replace( '/<at>.*?<\/at>\s*/i', '', $payload['text'] );
 			$text = trim( wp_strip_all_tags( $text ) );
 			return sanitize_textarea_field( trim( $text ) );
 		}
