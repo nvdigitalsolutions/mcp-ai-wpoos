@@ -307,4 +307,164 @@ class Test_Remote_Connection_Messenger_Fields extends WP_UnitTestCase {
 		$result    = $this->resolve_token( $app_token, '', 'conn_abc123' );
 		$this->assertSame( $app_token, $result, 'App Access Token must be used when no saved token exists.' );
 	}
+
+	// =========================================================================
+	// Messenger auto-reply: Send API endpoint construction.
+	// =========================================================================
+
+	/**
+	 * Helper: builds the Messenger Send API endpoint URL.
+	 *
+	 * Mirrors the URL construction in ajax_test_messenger_auto_reply.
+	 *
+	 * @param string $graph_api_version The Graph API version.
+	 * @return string The Send API endpoint URL.
+	 */
+	private function build_messenger_send_endpoint( $graph_api_version ) {
+		return sprintf(
+			'https://graph.facebook.com/%s/me/messages',
+			rawurlencode( $graph_api_version )
+		);
+	}
+
+	/**
+	 * The Messenger Send API endpoint must use the /me/messages path.
+	 */
+	public function test_messenger_auto_reply_endpoint_uses_me_messages() {
+		$endpoint = $this->build_messenger_send_endpoint( 'v21.0' );
+		$this->assertStringContainsString( '/me/messages', $endpoint );
+		$this->assertStringContainsString( 'v21.0', $endpoint );
+	}
+
+	/**
+	 * Verify a different API version produces the correct endpoint.
+	 */
+	public function test_messenger_auto_reply_endpoint_with_different_version() {
+		$endpoint = $this->build_messenger_send_endpoint( 'v20.0' );
+		$this->assertStringContainsString( 'v20.0', $endpoint );
+		$this->assertStringContainsString( '/me/messages', $endpoint );
+	}
+
+	// =========================================================================
+	// Messenger auto-reply: message payload construction.
+	// =========================================================================
+
+	/**
+	 * Helper: builds the Messenger Send API payload.
+	 *
+	 * Mirrors the payload construction in ajax_test_messenger_auto_reply.
+	 *
+	 * @param string $recipient_id The PSID of the recipient.
+	 * @param string $message_text The message text.
+	 * @return array The payload array.
+	 */
+	private function build_messenger_send_payload( $recipient_id, $message_text ) {
+		return array(
+			'recipient' => array( 'id' => $recipient_id ),
+			'message'   => array( 'text' => $message_text ),
+		);
+	}
+
+	/**
+	 * The payload must contain the correct recipient structure and message text.
+	 */
+	public function test_messenger_auto_reply_payload_structure() {
+		$payload = $this->build_messenger_send_payload( '123456789', 'Hello World' );
+
+		$this->assertArrayHasKey( 'recipient', $payload );
+		$this->assertArrayHasKey( 'message', $payload );
+		$this->assertSame( '123456789', $payload['recipient']['id'] );
+		$this->assertSame( 'Hello World', $payload['message']['text'] );
+	}
+
+	/**
+	 * The payload must JSON-encode successfully.
+	 */
+	public function test_messenger_auto_reply_payload_json_encodes() {
+		$payload = $this->build_messenger_send_payload( '987654321', 'Test reply' );
+		$json    = wp_json_encode( $payload );
+
+		$this->assertNotFalse( $json, 'Messenger auto-reply payload must encode to JSON.' );
+		$decoded = json_decode( $json, true );
+		$this->assertSame( '987654321', $decoded['recipient']['id'] );
+	}
+
+	// =========================================================================
+	// Messenger auto-reply: message body truncation.
+	// =========================================================================
+
+	/**
+	 * Helper: mirrors the message truncation logic in ajax_test_messenger_auto_reply.
+	 *
+	 * @param string $content Raw AI reply (may contain HTML).
+	 * @return string Plain-text body capped at 2000 characters.
+	 */
+	private function truncate_messenger_body( $content ) {
+		$body = wp_strip_all_tags( $content );
+		$body = html_entity_decode( $body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( mb_strlen( $body ) > 2000 ) {
+			$body = mb_substr( $body, 0, 1997 ) . '...';
+		}
+		return $body;
+	}
+
+	/**
+	 * Short messages must pass through unchanged (minus HTML).
+	 */
+	public function test_messenger_auto_reply_short_message_unchanged() {
+		$result = $this->truncate_messenger_body( '<b>Hello</b> World' );
+		$this->assertSame( 'Hello World', $result );
+	}
+
+	/**
+	 * Messages exceeding 2000 characters must be truncated to 2000 chars total.
+	 */
+	public function test_messenger_auto_reply_long_message_truncated() {
+		$long_input = str_repeat( 'A', 2500 );
+		$result     = $this->truncate_messenger_body( $long_input );
+		$this->assertSame( 2000, mb_strlen( $result ), 'Truncated message must be exactly 2000 characters.' );
+		$this->assertStringEndsWith( '...', $result );
+	}
+
+	/**
+	 * Exactly 2000 characters must not be truncated.
+	 */
+	public function test_messenger_auto_reply_exact_limit_not_truncated() {
+		$exact_input = str_repeat( 'B', 2000 );
+		$result      = $this->truncate_messenger_body( $exact_input );
+		$this->assertSame( 2000, mb_strlen( $result ) );
+		$this->assertNotSame( '...', substr( $result, -3 ) );
+	}
+
+	// =========================================================================
+	// Messenger auto-reply: Graph API version fallback.
+	// =========================================================================
+
+	/**
+	 * Helper: mirrors the Graph API version resolution in ajax_test_messenger_auto_reply.
+	 *
+	 * @param array $connection The connection settings array.
+	 * @return string Resolved Graph API version.
+	 */
+	private function resolve_messenger_graph_api_version( $connection ) {
+		return isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+			? sanitize_text_field( $connection['graph_api_version'] )
+			: 'v21.0';
+	}
+
+	/**
+	 * When graph_api_version is set in the connection, it must be used.
+	 */
+	public function test_messenger_auto_reply_uses_saved_api_version() {
+		$version = $this->resolve_messenger_graph_api_version( array( 'graph_api_version' => 'v22.0' ) );
+		$this->assertSame( 'v22.0', $version );
+	}
+
+	/**
+	 * When graph_api_version is empty or missing, the default v21.0 must be used.
+	 */
+	public function test_messenger_auto_reply_falls_back_to_default_api_version() {
+		$this->assertSame( 'v21.0', $this->resolve_messenger_graph_api_version( array() ) );
+		$this->assertSame( 'v21.0', $this->resolve_messenger_graph_api_version( array( 'graph_api_version' => '' ) ) );
+	}
 }

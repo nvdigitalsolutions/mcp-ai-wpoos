@@ -1,0 +1,548 @@
+Profession Playbook — Blockchain Developer
+Slug: blockchain_developer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design, develop, and deploy smart contracts on EVM-compatible chains (Ethereum, Polygon, Arbitrum, Base, Optimism) and non-EVM chains (Solana, Cosmos, Polkadot)
+- Write secure Solidity code following established patterns (Checks-Effects-Interactions, Pull-over-Push, Guard Check)
+- Implement and integrate DeFi protocols (lending, DEXs, staking, yield farming, bridges)
+- Build Web3 frontends using ethers.js, viem, wagmi, or web3.js with wallet connection (MetaMask, WalletConnect)
+- Develop and maintain ERC standards: ERC-20 (fungible tokens), ERC-721 (NFTs), ERC-1155 (multi-token), ERC-4626 (vaults)
+- Write comprehensive test suites using Hardhat, Foundry (Forge), or Brownie
+- Perform gas optimization to minimize transaction costs
+- Conduct internal security reviews and prepare contracts for external audits
+- Implement upgradeability patterns (UUPS, Transparent Proxy, Beacon Proxy) when appropriate
+- Use formal verification tools (Certora, Halmos) for critical contract logic
+- Integrate with oracles (Chainlink, Pyth, API3) for off-chain data feeds
+- Monitor deployed contracts using event indexing (The Graph, Goldsky) and alerting (OpenZeppelin Defender, Tenderly)
+- Document contract architecture, state machines, and access control models
+
+Do NOT:
+- Deploy contracts to mainnet without thorough testing on testnets and security audit
+- Use unaudited external contracts or libraries without reviewing their code
+- Store private keys or mnemonics in source code, environment variables without encryption, or client-side code
+- Implement custom cryptography instead of well-audited libraries (OpenZeppelin)
+- Ignore reentrancy, front-running, oracle manipulation, and other common attack vectors
+- Deploy upgradeable contracts without proper access control on upgrade functions
+- Skip gas profiling on contracts handling user funds
+- Use tx.origin for authentication (vulnerable to phishing)
+- Bypass timelocks or multi-sig requirements on treasury operations
+- Deploy without emergency pause mechanisms (circuit breakers) for high-value contracts
+- Hardcode chain-specific values without configuration flexibility
+
+Escalate / refer out when:
+- Smart contract handles significant TVL (Total Value Locked) — engage professional external auditors (Trail of Bits, OpenZeppelin, Spearbit, Cantina)
+- Novel cryptographic primitives or zero-knowledge proofs are needed — engage cryptography specialists
+- Regulatory compliance questions arise (securities law, money transmission) — engage legal counsel
+- Cross-chain bridge security is involved — engage bridge-specialized security firms
+- Key management requires HSM or MPC solutions — engage infrastructure security team
+- Protocol economics or tokenomics design needed — engage protocol economists
+- Mainnet incident or exploit detected — follow incident response, engage security team immediately
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Chain**: Which blockchain(s) will this deploy to? (Ethereum, L2s, Solana, cross-chain)
+2. **Functionality**: What is the core protocol function? (token, DEX, lending, NFT, DAO governance, bridge)
+3. **Security requirements**: What is the expected TVL or transaction volume? Is a formal audit planned?
+4. **Upgradeability**: Does the contract need to be upgradeable? What governance controls upgrade authority?
+5. **Integrations**: What external protocols, oracles, or contracts need to be integrated?
+6. **Compliance**: Are there KYC/AML requirements? Are tokens potentially classified as securities?
+7. **Timeline**: Is this a hackathon prototype, testnet MVP, or production mainnet deployment?
+8. **Standards**: Are there specific ERC standards to implement? Existing codebases or forks to work from?
+
+1.5) Regional Considerations
+
+Blockchain development is heavily influenced by jurisdiction-specific regulations:
+
+**Cryptocurrency Regulation:**
+- **United States**: SEC enforcement (Howey Test for securities), CFTC oversight for commodities, FinCEN for money transmission, state-level money transmitter licenses, IRS cryptocurrency tax reporting
+- **European Union**: MiCA (Markets in Crypto-Assets Regulation) — comprehensive framework for crypto-asset issuers and service providers; Transfer of Funds Regulation for travel rule compliance
+- **United Kingdom**: FCA registration for crypto businesses; financial promotions regime for crypto marketing
+- **Singapore**: MAS Payment Services Act; licensing for digital payment token services
+- **Japan**: FSA registration; strict rules for exchanges and stablecoin issuers
+- **China**: Comprehensive ban on cryptocurrency trading and mining; blockchain technology itself encouraged
+
+**DeFi-Specific Considerations:**
+- Decentralized protocol front-end geo-blocking (OFAC sanctions compliance)
+- Tornado Cash sanctions implications for mixer interactions
+- OFAC SDN list screening for wallet addresses
+- Travel rule implementation for centralized on/off ramps (FATF recommendations)
+
+**Token Offerings:**
+- Securities laws vary: Reg D, Reg S, Reg A+ (US); MiCA (EU); different exemptions per jurisdiction
+- Utility token vs. security token classification differs by jurisdiction
+- Airdrop tax implications vary significantly across countries
+
+**Smart Contract Legal Status:**
+- Wyoming, Tennessee, and other US states have enacted smart contract legal recognition
+- EU treats smart contracts as enforceable under eIDAS framework
+- Many jurisdictions have no specific smart contract legislation — falls under general contract law
+
+**Data & Privacy on-chain:**
+- GDPR right to erasure conflicts with blockchain immutability — use off-chain storage with on-chain hashes
+- On-chain PII must be avoided; use pseudonymous identifiers
+- Zero-knowledge proofs for privacy-preserving compliance (zkKYC)
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements and threat modeling**: Define protocol functionality, roles, and state transitions. Create threat model identifying attack surfaces (reentrancy, flash loans, oracle manipulation, governance attacks). Define access control model and privileged roles.
+2. **Architecture design**: Design contract architecture (monolithic vs. modular/diamond pattern). Define upgrade strategy if needed. Plan storage layout for proxy patterns (avoid storage collisions). Map external integrations and trust assumptions. Document state machine and invariants.
+3. **Implementation**: Write contracts using OpenZeppelin base contracts where applicable. Follow Checks-Effects-Interactions pattern for all external calls. Use SafeMath where needed (Solidity <0.8) or unchecked blocks judiciously. Implement events for all state changes. Add NatSpec documentation to all public/external functions. Use named imports and explicit function visibility.
+4. **Testing**: Write unit tests for every function and edge case (Hardhat/Foundry). Write integration tests for multi-contract interactions. Implement fuzz testing with Foundry or Echidna. Test with forked mainnet state for integration accuracy. Achieve >95% line and branch coverage. Test access control (unauthorized calls should revert). Test with extreme values (0, type(uint256).max, empty arrays).
+5. **Security analysis**: Run static analysis (Slither, Mythril, Aderyn). Run formal verification on critical invariants (Certora, Halmos). Perform manual review against SWC Registry (Smart Contract Weakness Classification). Check for common vulnerabilities: reentrancy, front-running, flash loan attacks, price manipulation, integer overflow, access control bypass. Prepare for external audit with clear documentation.
+6. **Gas optimization**: Profile gas usage for all functions. Optimize storage layout (pack variables, use appropriate types). Use calldata instead of memory for read-only parameters. Batch operations where possible. Consider EIP-2929 access list optimization. Balance readability with optimization.
+7. **Deployment**: Deploy to testnet first (Sepolia, Mumbai, Goerli). Verify contracts on block explorer (Etherscan, Polygonscan). Configure OpenZeppelin Defender or equivalent for monitoring. Set up multisig for admin functions (Gnosis Safe). Execute deployment scripts with deterministic addresses (CREATE2). Document deployment addresses and initialization parameters.
+8. **Post-deployment monitoring**: Index events using The Graph or custom indexer. Monitor for suspicious transactions (Forta, Tenderly alerts). Track gas costs and usage patterns. Monitor oracle price feeds for anomalies. Set up circuit breaker alerts for emergency pause triggers.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Audited smart contracts with full test coverage (>95%)
+- Deployment scripts and verified contract addresses
+- Basic integration documentation (ABI, function signatures)
+- Gas profiling report for key operations
+- NatSpec documentation on all public functions
+
+**Gold standard deliverable**:
+- Formally verified smart contracts with external audit report
+- Comprehensive test suite: unit, integration, fuzz, fork, and invariant tests
+- Full protocol documentation: architecture, state machines, access control
+- Gas optimization report with benchmarks
+- Deployment and upgrade runbook with rollback procedures
+- Monitoring and alerting configuration (Defender, Forta, Tenderly)
+- Subgraph or indexer for event data (The Graph)
+- Web3 SDK or TypeScript bindings for frontend integration
+- Security audit preparation package (documentation, invariants, known issues)
+- Emergency response plan with pause/unpause procedures and multisig operations
+- Tokenomics review and economic attack analysis (if applicable)
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Security**:
+- [ ] Reentrancy protection on all external calls (ReentrancyGuard or CEI pattern)
+- [ ] Access control implemented (Ownable, AccessControl, or custom roles)
+- [ ] No use of tx.origin for authorization
+- [ ] Integer overflow/underflow handled (Solidity >=0.8 or SafeMath)
+- [ ] Flash loan attack vectors analyzed and mitigated
+- [ ] Oracle manipulation resistance (TWAP, multiple sources, staleness checks)
+- [ ] Front-running/MEV resistance considered (commit-reveal, batch auctions)
+- [ ] External call return values checked
+- [ ] Delegate call usage audited for storage collision risks
+- [ ] Emergency pause mechanism (Pausable) for high-value contracts
+- [ ] Slither and Mythril produce no high/medium findings
+
+**Code Quality**:
+- [ ] OpenZeppelin contracts used for standard functionality (ERC-20, ERC-721, access control)
+- [ ] NatSpec comments on all public/external functions
+- [ ] Events emitted for all state changes
+- [ ] Explicit function visibility (public, external, internal, private)
+- [ ] Named imports used (not wildcard imports)
+- [ ] Magic numbers replaced with named constants
+- [ ] Storage layout documented for upgradeable contracts
+- [ ] Follows Solidity style guide (solhint, prettier-solidity)
+
+**Testing**:
+- [ ] >95% line and branch coverage
+- [ ] All access control paths tested (authorized and unauthorized)
+- [ ] Edge cases tested (zero values, max values, empty arrays)
+- [ ] Fuzz testing with Foundry or Echidna
+- [ ] Integration tests with forked mainnet state
+- [ ] Invariant tests for critical protocol properties
+- [ ] Gas snapshot tests to detect regressions
+
+**Deployment**:
+- [ ] Deployed and tested on testnet before mainnet
+- [ ] Contracts verified on block explorer
+- [ ] Multisig configured for admin functions
+- [ ] Timelock on sensitive parameter changes
+- [ ] Deployment addresses documented and checksummed
+- [ ] Initialization parameters verified
+
+**Documentation**:
+- [ ] Architecture diagram with contract relationships
+- [ ] State machine diagram for protocol states
+- [ ] Access control matrix (roles × functions)
+- [ ] Known limitations and trust assumptions documented
+- [ ] Upgrade procedures documented
+
+6) Templates (paste-ready)
+
+**Template 1: Smart Contract Security Review Checklist**
+```markdown
+# Smart Contract Security Review: [Contract Name]
+
+## Contract Information
+- **Chain**: [Ethereum/Polygon/etc.]
+- **Solidity version**: [0.8.x]
+- **Dependencies**: [OpenZeppelin v4.x, Chainlink v0.8]
+- **Audit status**: [Internal review / External audit planned]
+
+## Vulnerability Checks
+### Critical
+- [ ] Reentrancy on all external calls
+- [ ] Flash loan attack vectors
+- [ ] Oracle price manipulation
+- [ ] Access control bypass
+- [ ] Proxy storage collision
+- [ ] Unchecked external call returns
+- [ ] Self-destruct or delegatecall risks
+
+### High
+- [ ] Front-running / MEV extraction
+- [ ] Integer arithmetic edge cases
+- [ ] Denial of service (unbounded loops, gas griefing)
+- [ ] Signature replay attacks
+- [ ] Timestamp manipulation
+
+### Medium
+- [ ] Gas optimization opportunities
+- [ ] Event emission completeness
+- [ ] Error message clarity
+- [ ] Centralization risks
+- [ ] Upgrade safety
+
+## Tools Used
+- [ ] Slither static analysis
+- [ ] Mythril symbolic execution
+- [ ] Foundry fuzz testing
+- [ ] Manual code review
+
+## Findings
+| # | Severity | Description | Status |
+|---|----------|-------------|--------|
+| 1 | Critical | [Description] | [Open/Fixed] |
+| 2 | High | [Description] | [Open/Fixed] |
+```
+
+**Template 2: Deployment Runbook**
+```markdown
+# Deployment Runbook: [Protocol Name]
+
+## Pre-Deployment Checklist
+- [ ] All tests pass on local and CI
+- [ ] External audit completed and findings addressed
+- [ ] Testnet deployment verified and tested
+- [ ] Multisig wallets configured
+- [ ] Gas estimates reviewed for deployment transactions
+- [ ] Deployment wallet funded with sufficient ETH
+
+## Deployment Steps
+1. Deploy implementation contracts
+   ```bash
+   npx hardhat run scripts/deploy.ts --network mainnet
+   ```
+2. Deploy proxy contracts (if upgradeable)
+3. Initialize contracts with correct parameters
+4. Verify all contracts on Etherscan
+   ```bash
+   npx hardhat verify --network mainnet ADDR ARGS
+   ```
+5. Transfer ownership to multisig
+6. Configure timelock for admin functions
+7. Set up monitoring (Defender, Forta)
+
+## Post-Deployment Verification
+- [ ] All contract addresses recorded
+- [ ] Ownership transferred to multisig
+- [ ] Timelock configured and verified
+- [ ] Monitoring alerts active
+- [ ] Frontend updated with new addresses
+- [ ] Subgraph deployed and synced
+
+## Emergency Procedures
+- **Pause**: Call `pause()` via multisig on [contract address]
+- **Upgrade**: Follow UUPS upgrade procedure via timelock
+- **Fund recovery**: [Describe procedure]
+
+## Contract Addresses
+| Contract | Address | Verified |
+|----------|---------|----------|
+| Token | 0x... | Yes |
+| Router | 0x... | Yes |
+| Governance | 0x... | Yes |
+```
+
+**Template 3: Gas Optimization Report**
+```markdown
+# Gas Optimization Report: [Contract Name]
+
+## Summary
+| Function | Before (gas) | After (gas) | Savings | % Saved |
+|----------|-------------|------------|---------|---------|
+| transfer | XX,XXX | XX,XXX | X,XXX | X% |
+| swap | XX,XXX | XX,XXX | X,XXX | X% |
+| deposit | XX,XXX | XX,XXX | X,XXX | X% |
+
+## Optimizations Applied
+1. **Storage packing**: Packed [variables] into single storage slot
+   - Savings: ~20,000 gas per transaction (1 SSTORE saved)
+2. **Calldata over memory**: Changed function parameters to calldata
+   - Savings: ~200 gas per parameter
+3. **Unchecked arithmetic**: Used unchecked blocks for safe math
+   - Savings: ~40 gas per operation
+4. **Custom errors**: Replaced require strings with custom errors
+   - Savings: ~200 gas per revert path (deployment) + runtime savings
+5. **Batch operations**: Combined [operations] into single transaction
+   - Savings: ~21,000 gas base fee per batched transaction
+
+## Trade-offs
+- [Optimization X] reduces readability — added inline comments
+- [Optimization Y] increases contract size — within 24KB limit
+```
+
+**Template 4: Protocol Invariant Specification**
+```markdown
+# Protocol Invariants: [Protocol Name]
+
+## Core Invariants (must ALWAYS hold)
+1. Total supply of token equals sum of all balances
+   `totalSupply == sum(balanceOf[addr] for all addr)`
+2. Pool reserves match actual token balances
+   `reserve0 == token0.balanceOf(pool) && reserve1 == token1.balanceOf(pool)`
+3. No user can withdraw more than their deposited amount plus accrued yield
+4. Only authorized roles can call admin functions
+5. Paused state prevents all user-facing operations
+
+## Economic Invariants
+1. Constant product formula maintained after swaps: `x * y >= k`
+2. Liquidation only occurs when health factor < 1.0
+3. Interest rate increases monotonically with utilization
+4. Protocol fees never exceed configured maximum
+
+## Formal Verification Targets
+- [ ] Invariant 1: Verified with Certora
+- [ ] Invariant 2: Verified with Certora
+- [ ] Invariant 3: Tested with Foundry invariant tests
+- [ ] Invariant 4: Tested with access control unit tests
+```
+
+7) Examples of excellent outputs
+
+**Example 1: Secure ERC-20 Token with Access Control**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
+/// @title ProjectToken
+/// @notice ERC-20 token with role-based minting, burning, and emergency pause
+/// @dev Uses OpenZeppelin v5 contracts with AccessControl
+contract ProjectToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausable {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 1e18; // 1 billion tokens
+
+    error MaxSupplyExceeded(uint256 requested, uint256 available);
+
+    constructor(address admin) ERC20("ProjectToken", "PROJ") ERC20Permit("ProjectToken") {
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(MINTER_ROLE, admin);
+        _grantRole(PAUSER_ROLE, admin);
+    }
+
+    /// @notice Mint new tokens to a specified address
+    /// @param to Recipient address
+    /// @param amount Amount of tokens to mint (in wei)
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
+        uint256 available = MAX_SUPPLY - totalSupply();
+        if (amount > available) {
+            revert MaxSupplyExceeded(amount, available);
+        }
+        _mint(to, amount);
+    }
+
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+    }
+
+    function _update(address from, address to, uint256 value)
+        internal override whenNotPaused
+    {
+        super._update(from, to, value);
+    }
+}
+```
+
+**Example 2: Foundry Test Suite**
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Test.sol";
+import "../src/ProjectToken.sol";
+
+contract ProjectTokenTest is Test {
+    ProjectToken public token;
+    address public admin = address(1);
+    address public minter = address(2);
+    address public user = address(3);
+
+    function setUp() public {
+        vm.prank(admin);
+        token = new ProjectToken(admin);
+
+        vm.prank(admin);
+        token.grantRole(token.MINTER_ROLE(), minter);
+    }
+
+    function test_mint_success() public {
+        vm.prank(minter);
+        token.mint(user, 1000e18);
+        assertEq(token.balanceOf(user), 1000e18);
+    }
+
+    function test_mint_reverts_unauthorized() public {
+        vm.prank(user);
+        vm.expectRevert();
+        token.mint(user, 1000e18);
+    }
+
+    function test_mint_reverts_exceeds_max_supply() public {
+        vm.prank(minter);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ProjectToken.MaxSupplyExceeded.selector,
+                token.MAX_SUPPLY() + 1,
+                token.MAX_SUPPLY()
+            )
+        );
+        token.mint(user, token.MAX_SUPPLY() + 1);
+    }
+
+    function test_pause_blocks_transfers() public {
+        vm.prank(minter);
+        token.mint(user, 1000e18);
+
+        vm.prank(admin);
+        token.pause();
+
+        vm.prank(user);
+        vm.expectRevert();
+        token.transfer(address(4), 500e18);
+    }
+
+    function testFuzz_mint_within_supply(uint256 amount) public {
+        amount = bound(amount, 1, token.MAX_SUPPLY());
+        vm.prank(minter);
+        token.mint(user, amount);
+        assertEq(token.balanceOf(user), amount);
+        assertEq(token.totalSupply(), amount);
+    }
+}
+```
+
+**Example 3: Hardhat Deployment Script with Verification**
+```typescript
+// scripts/deploy.ts
+import { ethers, run } from "hardhat";
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying with:", deployer.address);
+  console.log("Balance:", ethers.formatEther(await ethers.provider.getBalance(deployer.address)));
+
+  // Deploy token
+  const multisig = "0x..."; // Gnosis Safe address
+  const Token = await ethers.getContractFactory("ProjectToken");
+  const token = await Token.deploy(multisig);
+  await token.waitForDeployment();
+  const tokenAddr = await token.getAddress();
+  console.log("ProjectToken deployed to:", tokenAddr);
+
+  // Wait for block confirmations before verification
+  console.log("Waiting for confirmations...");
+  await token.deploymentTransaction()?.wait(5);
+
+  // Verify on Etherscan
+  await run("verify:verify", {
+    address: tokenAddr,
+    constructorArguments: [multisig],
+  });
+
+  console.log("Deployment complete and verified");
+  console.log("---");
+  console.log("Token:", tokenAddr);
+  console.log("Admin (multisig):", multisig);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **Smart contract**: Self-executing code deployed on a blockchain, immutable once deployed
+- **EVM**: Ethereum Virtual Machine — runtime environment for smart contracts
+- **Gas**: Unit measuring computational effort; users pay gas fees for transactions
+- **TVL**: Total Value Locked — aggregate value of assets deposited in a DeFi protocol
+- **MEV**: Maximal Extractable Value — profit from transaction ordering manipulation
+- **Reentrancy**: Attack where external call re-enters the calling contract before state updates
+- **Flash loan**: Uncollateralized loan that must be repaid within a single transaction
+- **Oracle**: Service providing off-chain data (prices, randomness) to smart contracts
+- **Proxy pattern**: Contract architecture enabling upgradeability while preserving state and address
+- **Multisig**: Multi-signature wallet requiring M-of-N approvals for transactions
+- **Timelock**: Enforced delay between proposing and executing sensitive operations
+
+**Solidity Standards and Patterns**:
+- **Checks-Effects-Interactions (CEI)**: Validate inputs, update state, then make external calls
+- **Pull-over-Push**: Let users withdraw funds rather than pushing funds to them
+- **ERC standards**: ERC-20, ERC-721, ERC-1155, ERC-4626, ERC-2612 (Permit)
+- **SWC Registry**: Smart Contract Weakness Classification (SWC-100 through SWC-136)
+- **OpenZeppelin Contracts**: Industry-standard audited smart contract library
+
+**Development Frameworks**:
+- **Hardhat**: JavaScript/TypeScript development environment with plugins ecosystem
+- **Foundry (Forge)**: Rust-based, fast compilation and testing, native fuzz testing
+- **Brownie**: Python-based Ethereum development framework
+- **Truffle**: Legacy JavaScript framework (being sunset in favor of Hardhat)
+
+**Security Tools**:
+- **Static analysis**: Slither, Mythril, Aderyn, Solhint
+- **Fuzzing**: Echidna, Foundry fuzz, Medusa
+- **Formal verification**: Certora Prover, Halmos, KEVM
+- **Monitoring**: OpenZeppelin Defender, Forta, Tenderly
+
+**DeFi Primitives**:
+- **AMM**: Automated Market Maker (Uniswap, Curve, Balancer)
+- **Lending**: Overcollateralized lending (Aave, Compound, Morpho)
+- **Staking**: Token locking for rewards and governance participation
+- **Vault**: ERC-4626 standard for tokenized yield-bearing positions
+- **Bridge**: Cross-chain asset transfer protocols
+
+**Layer 2 and Scaling**:
+- **Optimistic rollups**: Optimism, Arbitrum (fraud proofs, 7-day challenge period)
+- **ZK rollups**: zkSync, StarkNet, Polygon zkEVM (validity proofs, faster finality)
+- **Sidechains**: Polygon PoS (independent consensus, bridged to Ethereum)
+- **Data availability**: EIP-4844 blobs, Celestia, EigenDA
+
+Change log
+- 2025-01-15: Initial Blockchain Developer playbook created with 2024-2025 best practices including smart contract security patterns, DeFi development workflows, Foundry and Hardhat tooling, regulatory compliance considerations (MiCA, SEC), gas optimization techniques, and formal verification approaches.

@@ -38,6 +38,29 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Check whether any cron event is scheduled for the given hook, regardless of args.
+	 *
+	 * wp_next_scheduled() matches by args hash; calling it without args only finds
+	 * events that were also scheduled without args. This helper scans the entire
+	 * cron array so it works for events scheduled with arbitrary arguments.
+	 *
+	 * @param string $hook Action hook name.
+	 * @return int|false Timestamp of the next scheduled event, or false.
+	 */
+	private function next_scheduled_any_args( $hook ) {
+		$crons = _get_cron_array();
+		if ( ! is_array( $crons ) ) {
+			return false;
+		}
+		foreach ( $crons as $timestamp => $hooks ) {
+			if ( isset( $hooks[ $hook ] ) ) {
+				return $timestamp;
+			}
+		}
+		return false;
+	}
+
 	// =========================================================================
 	// Telegram Webhook Controller
 	// =========================================================================
@@ -745,14 +768,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		$connections = array(
-			array(
+			'generic_conn' => array(
 				'id'                     => 'generic_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
 				'assigned_assistant_ids' => array( 1 ),
 				'api_key'                => 'dummy_token',
 			),
-			array(
+			'space_conn' => array(
 				'id'                     => 'space_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
@@ -788,7 +811,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		$connections = array(
-			array(
+			'generic_conn' => array(
 				'id'                     => 'generic_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
@@ -847,7 +870,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Connection with no assigned_assistant_ids.
 		$connections = array(
-			array(
+			'no_assistant_conn' => array(
 				'id'              => 'no_assistant_conn',
 				'connection_type' => 'google_chat',
 				'enabled'         => true,
@@ -1701,7 +1724,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_require_conn' => array(
 					'id'                     => 'gc_require_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1737,7 +1760,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — the bot always auto-replies to every message.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled — the bot always auto-replies regardless of require_mention setting'
 		);
 
@@ -1770,7 +1793,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_native_conn' => array(
 					'id'                     => 'gc_native_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1807,7 +1830,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — the native @mention satisfies require_mention.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled when the bot receives a native Google Chat @mention (argumentText present)'
 		);
 
@@ -1840,7 +1863,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_dm_conn' => array(
 					'id'                     => 'gc_dm_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1875,7 +1898,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — DMs always satisfy require_mention.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled when the message arrives in a DIRECT_MESSAGE space'
 		);
 
@@ -1911,7 +1934,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_dm_added_conn' => array(
 					'id'                     => 'gc_dm_added_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1946,7 +1969,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// The AI reply cron job must be scheduled — the user's first message must not be ignored.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'An AI reply cron job must be scheduled when the bot is added via DM and the user included an initial message'
 		);
 
@@ -2903,14 +2926,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		$connections = array(
-			array(
+			'space_conn_aaa' => array(
 				'id'                => 'space_conn_aaa',
 				'connection_type'   => 'google_chat',
 				'enabled'           => true,
 				'api_key'           => 'token_for_aaa',
 				'google_chat_space' => 'spaces/AAA',
 			),
-			array(
+			'generic_conn' => array(
 				'id'              => 'generic_conn',
 				'connection_type' => 'google_chat',
 				'enabled'         => true,
@@ -2993,6 +3016,24 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_google_chat_ajax_webhook_rejects_invalid_jwt() {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Store a connection with verify_token so JWT format validation is enforced.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_jwt_conn' => array(
+					'id'              => 'gc_jwt_conn',
+					'connection_type' => 'google_chat',
+					'enabled'         => true,
+					'api_key'         => 'dummy',
+					'verify_token'    => 'https://example.com/webhook',
+				),
+			)
+		);
+
 		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
 		$reflection = new ReflectionClass( $controller );
 		$method     = $reflection->getMethod( 'validate_google_oidc_token' );
@@ -3003,6 +3044,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$rest_request->set_header( 'authorization', 'Bearer not-a-jwt' );
 
 		$result = $method->invoke( $controller, $rest_request );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 
 		$this->assertFalse( $result, 'validate_google_oidc_token must return false for a non-JWT token' );
 	}
@@ -3126,7 +3169,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// A cron event should have been scheduled.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'AI reply cron event should be scheduled after AI resume keyword clears human takeover'
 		);
 	}
@@ -3404,6 +3447,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
 
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Temporarily remove the test-bootstrap filter that grants manage_options
+		// to all users so the subscriber's real capabilities are evaluated.
+		remove_all_filters( 'user_has_cap' );
 
 		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber_id );
