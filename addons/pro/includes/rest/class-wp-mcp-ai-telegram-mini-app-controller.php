@@ -1559,7 +1559,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$value = wp_check_invalid_utf8( $value );
 		// Strip null bytes only; percent-encoded sequences must remain intact
 		// for the HMAC-SHA256 verification in verify_init_data().
-		$value = preg_replace( '/[\x00]/', '', $value );
+		$value = preg_replace( '/\x00/', '', $value );
 		// Remove any HTML/PHP tags as a safety measure.
 		$value = wp_strip_all_tags( $value );
 		return $value;
