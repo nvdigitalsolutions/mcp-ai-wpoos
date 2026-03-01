@@ -5,6 +5,12 @@
  * Provides comprehensive research about a blog post topic including
  * title, content, SEO metadata, and format ready for creation.
  *
+ * Supports four template formats:
+ * - block-editor: Gutenberg/Block Editor with wp:* block comments and semantic HTML5
+ * - classic-editor: Classic Editor (TinyMCE) with clean, simple HTML
+ * - elementor: Elementor page builder with section-oriented plain text
+ * - custom: Custom format (e.g., Telegram Mini App, headless CMS, REST API consumer)
+ *
  * @package WP_MCP_AI_Pro
  */
 
@@ -81,7 +87,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about a blog post topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, excerpt, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, or Elementor).', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about a blog post topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, excerpt, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -115,18 +121,22 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					'maximum'     => 5000,
 					'default'     => 1000,
 				),
-				'template'    => array(
+				'template'                  => array(
 					'type'        => 'string',
-					'description' => __( 'Template format for content', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'block-editor', 'classic-editor', 'elementor' ),
+					'description' => __( 'Template format for content. Use "custom" for non-standard formats like Telegram Mini App, headless CMS, or REST API consumers.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'block-editor', 'classic-editor', 'elementor', 'custom' ),
 					'default'     => 'block-editor',
 				),
-				'include_seo' => array(
+				'custom_format_description' => array(
+					'type'        => 'string',
+					'description' => __( 'Description of the custom format when template is "custom" (e.g., "Telegram Mini App", "Headless CMS JSON", "React component"). Ignored unless template is "custom".', 'mcp-ai-wpoos-pro' ),
+				),
+				'include_seo'              => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include SEO metadata (meta description, keywords)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'tone'        => array(
+				'tone'                     => array(
 					'type'        => 'string',
 					'description' => __( 'Tone of voice for the content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'professional', 'casual', 'friendly', 'authoritative', 'conversational' ),
@@ -194,15 +204,16 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$topic       = sanitize_text_field( $arguments['topic'] );
-		$depth       = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
-		$focus_areas = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
+		$topic                    = sanitize_text_field( $arguments['topic'] );
+		$depth                    = isset( $arguments['depth'] ) ? sanitize_text_field( $arguments['depth'] ) : 'standard';
+		$focus_areas              = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] )
 			? array_map( 'sanitize_text_field', $arguments['focus_areas'] )
 			: array();
-		$word_count  = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 1000;
-		$template    = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
-		$include_seo = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
-		$tone        = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
+		$word_count               = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 1000;
+		$template                 = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
+		$custom_format_description = isset( $arguments['custom_format_description'] ) ? sanitize_text_field( $arguments['custom_format_description'] ) : '';
+		$include_seo              = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
+		$tone                     = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
 
 		// Validate depth parameter.
 		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
@@ -215,7 +226,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Validate template.
-		if ( ! in_array( $template, array( 'block-editor', 'classic-editor', 'elementor' ), true ) ) {
+		if ( ! in_array( $template, array( 'block-editor', 'classic-editor', 'elementor', 'custom' ), true ) ) {
 			$template = 'block-editor';
 		}
 
@@ -225,7 +236,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check cache first.
-		$cache_key = 'post_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $word_count . '_' . $template . '_' . $tone );
+		$cache_key = 'post_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $word_count . '_' . $template . '_' . $custom_format_description . '_' . $tone );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_post_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -238,12 +249,13 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'post_research_started',
 			'Starting post research',
 			array(
-				'topic'       => $topic,
-				'depth'       => $depth,
-				'focus_areas' => $focus_areas,
-				'word_count'  => $word_count,
-				'template'    => $template,
-				'user_id'     => $user_id,
+				'topic'                    => $topic,
+				'depth'                    => $depth,
+				'focus_areas'              => $focus_areas,
+				'word_count'               => $word_count,
+				'template'                 => $template,
+				'custom_format_description' => $custom_format_description,
+				'user_id'                  => $user_id,
 			)
 		);
 
@@ -268,7 +280,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Step 2: Build research prompt with gathered information.
-		$prompt = $this->build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $include_seo, $tone );
+		$prompt = $this->build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $include_seo, $tone );
 
 		// Step 3: Use AI to research the topic and generate content.
 		$research_result = $this->perform_ai_research( $prompt, $context );
@@ -495,18 +507,24 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $depth          Research depth.
 	 * @param array  $focus_areas    Focus areas.
 	 * @param array  $search_results Search results from web search.
-	 * @param int    $word_count     Target word count.
-	 * @param string $template       Template format.
-	 * @param bool   $include_seo    Whether to include SEO.
-	 * @param string $tone           Tone of voice.
+	 * @param int    $word_count               Target word count.
+	 * @param string $template                 Template format.
+	 * @param string $custom_format_description Description for custom template format.
+	 * @param bool   $include_seo              Whether to include SEO.
+	 * @param string $tone                     Tone of voice.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $include_seo, $tone ) {
+	protected function build_research_prompt( $topic, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $include_seo, $tone ) {
+		$template_label = $template;
+		if ( 'custom' === $template && ! empty( $custom_format_description ) ) {
+			$template_label = 'custom (' . $custom_format_description . ')';
+		}
+
 		$prompt = sprintf(
 			"Research and write a comprehensive blog post about the following topic:\n\n**Topic:** %s\n**Word Count:** %d words\n**Template:** %s\n**Tone:** %s\n\n",
 			$topic,
 			$word_count,
-			$template,
+			$template_label,
 			$tone
 		);
 
@@ -556,25 +574,53 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		switch ( $template ) {
 			case 'block-editor':
 				$prompt .= "- Format content for Gutenberg/Block Editor\n";
-				$prompt .= "- Use HTML5 elements: <h2>, <h3>, <p>, <ul>, <ol>, <blockquote>\n";
+				$prompt .= "- Use semantic HTML5 elements: <h2>, <h3>, <p>, <ul>, <ol>, <blockquote>\n";
 				$prompt .= "- Include <!-- wp:paragraph --> and <!-- wp:heading --> block comments where appropriate\n";
 				$prompt .= "- Structure with clear headings and subheadings\n";
 				$prompt .= "- Use bullet points and numbered lists where relevant\n";
+				$prompt .= "- Use reusable block patterns where content repeats\n";
+				$prompt .= "- Ensure accessibility: proper heading hierarchy (h2 → h3 → h4), alt text placeholders for images\n";
 				break;
 
 			case 'classic-editor':
 				$prompt .= "- Format content for Classic Editor (TinyMCE)\n";
-				$prompt .= "- Use simple HTML: <h2>, <h3>, <p>, <ul>, <ol>, <strong>, <em>\n";
-				$prompt .= "- Keep formatting straightforward and clean\n";
-				$prompt .= "- Structure with clear headings\n";
+				$prompt .= "- Use simple, clean HTML: <h2>, <h3>, <p>, <ul>, <ol>, <strong>, <em>\n";
+				$prompt .= "- Avoid inline styles; rely on theme CSS for visual styling\n";
+				$prompt .= "- Structure with clear headings and logical reading order\n";
+				$prompt .= "- Keep markup portable and compatible with any WordPress theme\n";
 				break;
 
 			case 'elementor':
 				$prompt .= "- Format content for Elementor page builder\n";
 				$prompt .= "- Use minimal HTML - primarily plain text with clear line breaks\n";
-				$prompt .= "- Separate sections with clear headings (marked with **)\n";
+				$prompt .= "- Separate sections with clear headings (marked with **) for easy mapping to Elementor sections/widgets\n";
 				$prompt .= "- Note: Content will be added to Elementor sections/widgets\n";
 				$prompt .= "- Keep formatting simple for easy widget insertion\n";
+				$prompt .= "- Consider global widget reuse for repeated elements (headers, CTAs)\n";
+				break;
+
+			case 'custom':
+				$prompt .= "- Format content for a custom rendering context\n";
+				$prompt .= "- Use clean, semantic HTML5 structure with <section>, <article>, <header>, <main> elements\n";
+				$prompt .= "- Ensure mobile-first, responsive-ready content structure\n";
+				$prompt .= "- Keep markup minimal and framework-agnostic for maximum portability\n";
+				$prompt .= "- Use structured data attributes where helpful (data-section, data-component)\n";
+				$prompt .= "- Content should work well when consumed via REST API or rendered in non-WordPress contexts\n";
+				if ( ! empty( $custom_format_description ) ) {
+					$prompt .= sprintf( "- **Target platform:** %s\n", $custom_format_description );
+					$custom_lower = strtolower( $custom_format_description );
+					if ( false !== strpos( $custom_lower, 'telegram' ) ) {
+						$prompt .= "- Optimize for Telegram Mini App: mobile-viewport-friendly, concise sections, touch-friendly navigation\n";
+						$prompt .= "- Use Telegram theme-compatible styling (avoid fixed colors; use CSS custom properties)\n";
+						$prompt .= "- Structure content in card-like sections suitable for vertical scrolling\n";
+					} elseif ( false !== strpos( $custom_lower, 'headless' ) || false !== strpos( $custom_lower, 'api' ) || false !== strpos( $custom_lower, 'json' ) ) {
+						$prompt .= "- Structure content as clearly delineated sections with identifiable headings\n";
+						$prompt .= "- Use predictable HTML structure that can be easily parsed into structured data\n";
+					} elseif ( false !== strpos( $custom_lower, 'react' ) || false !== strpos( $custom_lower, 'vue' ) || false !== strpos( $custom_lower, 'angular' ) ) {
+						$prompt .= "- Use component-friendly markup with clear section boundaries\n";
+						$prompt .= "- Avoid inline event handlers; keep content purely declarative\n";
+					}
+				}
 				break;
 		}
 
@@ -866,18 +912,19 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Build post data structure compatible with create_post tool.
 		$post_data = array(
-			'success'           => true,
-			'topic'             => $topic,
-			'title'             => sanitize_text_field( $data['title'] ),
-			'content'           => wp_kses_post( $data['content'] ),
-			'excerpt'           => isset( $data['excerpt'] ) ? sanitize_textarea_field( $data['excerpt'] ) : '',
-			'post_type'         => 'post',
-			'status'            => 'draft',
-			'template'          => $template,
-			'sources'           => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
-			'researched_at'     => current_time( 'mysql' ),
-			'research_model'    => $research_result['model'],
-			'research_provider' => $research_result['provider'],
+			'success'                   => true,
+			'topic'                     => $topic,
+			'title'                     => sanitize_text_field( $data['title'] ),
+			'content'                   => wp_kses_post( $data['content'] ),
+			'excerpt'                   => isset( $data['excerpt'] ) ? sanitize_textarea_field( $data['excerpt'] ) : '',
+			'post_type'                 => 'post',
+			'status'                    => 'draft',
+			'template'                  => $template,
+			'custom_format_description' => isset( $data['custom_format_description'] ) ? sanitize_text_field( $data['custom_format_description'] ) : '',
+			'sources'                   => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+			'researched_at'             => current_time( 'mysql' ),
+			'research_model'            => $research_result['model'],
+			'research_provider'         => $research_result['provider'],
 		);
 
 		// Add SEO metadata if present.
@@ -928,6 +975,9 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Template format.
 		if ( ! empty( $post_data['template'] ) ) {
 			$template_name = ucwords( str_replace( '-', ' ', $post_data['template'] ) );
+			if ( 'custom' === $post_data['template'] && ! empty( $post_data['custom_format_description'] ) ) {
+				$template_name .= ' (' . $post_data['custom_format_description'] . ')';
+			}
 			$report       .= "**Template:** " . esc_html( $template_name ) . "\n\n";
 		}
 
