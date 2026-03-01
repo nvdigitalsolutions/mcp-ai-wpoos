@@ -223,18 +223,40 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	// =========================================================================
 
 	/**
-	* Check that the current user can edit posts.
+	* Check that the current user can read content.
 	*
 	* Used as the permission_callback for the /content, /tools, and /media
-	* sub-endpoints. This mirrors the minimum capability required by the base
-	* WordPress editor role.
+	* sub-endpoints. These are read-only GET endpoints so the 'read'
+	* capability is sufficient.  When the request originates from inside
+	* Telegram's WebView the auth cookie set by wp_set_auth_cookie() during
+	* the /validate call may not persist across fetch() requests.  In that
+	* case we fall back to a short-lived TMA session token returned by the
+	* /validate endpoint and sent via the X-WP-MCP-AI-TMA-Token header.
 	*
 	* @since 1.0.0
 	*
-	* @return bool True when the current user has the 'edit_posts' capability.
+	* @param WP_REST_Request $request Current REST request.
+	* @return bool True when the current user has the 'read' capability.
 	*/
-	public function check_permission() {
-		return current_user_can( 'edit_posts' );
+	public function check_permission( $request ) {
+		// Standard cookie + nonce auth.
+		if ( current_user_can( 'read' ) ) {
+			return true;
+		}
+
+		// Fallback: Telegram Mini App session token for WebView environments
+		// where cookies from REST responses may not persist.
+		$tma_token = $request->get_header( 'X-WP-MCP-AI-TMA-Token' );
+		if ( ! empty( $tma_token ) ) {
+			$token_hash = hash( 'sha256', sanitize_text_field( $tma_token ) );
+			$user_id    = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
+			if ( $user_id ) {
+				wp_set_current_user( (int) $user_id );
+				return current_user_can( 'read' );
+			}
+		}
+
+		return false;
 	}
 
 	// =========================================================================
@@ -447,6 +469,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
   var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
+  var TMA_SESSION_TOKEN  = null;
   var TMA_STORAGE_PREFIX = \'wp_mcp_ai_chat_\';
 
   /* ── Telegram WebApp SDK ── */
@@ -541,9 +564,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   /* ── Authenticated fetch helper ── */
   function authFetch(url) {
+    var h = { \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
     return fetch(url, {
       credentials : \'same-origin\',
-      headers     : { \'X-WP-Nonce\': TMA_NONCE },
+      headers     : h,
     });
   }
 
@@ -940,17 +965,25 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   /* =========================================================
      AUTH / LOGIN PROMPT
      ========================================================= */
+  var tmaAuthAttempts = 0;
+
   function showLoginPrompt(tabName) {
     var el = document.getElementById(\'tma-tab-\' + tabName);
     if (!el) return;
-    /* Inside Telegram: show inline retry button instead of wp-login.php link */
+    /* Inside Telegram: attempt one automatic sign-in, then show manual retry. */
     if (twa && twa.initData) {
-      el.innerHTML = \'<div class="tma-login-prompt">\' +
-        \'<div class="tma-login-icon">🔐</div>\' +
-        \'<div class="tma-login-title">Authenticating…</div>\' +
-        \'<div class="tma-login-sub">Signing you in with Telegram.</div>\' +
-      \'</div>\';
-      tmaRetryAuth(tabName);
+      if (tmaAuthAttempts < 1) {
+        ++tmaAuthAttempts;
+        el.innerHTML = \'<div class="tma-login-prompt">\' +
+          \'<div class="tma-login-icon">🔐</div>\' +
+          \'<div class="tma-login-title">Authenticating…</div>\' +
+          \'<div class="tma-login-sub">Signing you in with Telegram.</div>\' +
+        \'</div>\';
+        tmaRetryAuth(tabName);
+        return;
+      }
+      /* Already attempted – go straight to the manual-retry fallback. */
+      showLoginFallback(tabName);
       return;
     }
     /* Fallback for direct browser access (no Telegram context) */
@@ -966,6 +999,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   function tmaRetryAuth(tabName) {
     validateInitData()
       .then(function () {
+        tmaAuthAttempts = 0;
+        authRetried = false;
         if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
         else if (tabName === \'tools\')  { toolsLoaded = false; loadTools(); }
         else if (tabName === \'media\')  { mediaLoaded = false; loadMedia(); }
@@ -978,6 +1013,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   window.tmaRetryAuthClick = function (tabName) {
     haptic(\'light\');
     authRetried = false;
+    tmaAuthAttempts = 0;
     var el = document.getElementById(\'tma-tab-\' + tabName);
     if (el) {
       el.innerHTML = \'<div class="tma-login-prompt">\' +
@@ -1047,13 +1083,25 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         if (json && json.valid) {
           /* Update the REST nonce so Content/Tools/Media requests are authenticated. */
           if (json.wp_nonce) { TMA_NONCE = json.wp_nonce; }
+          /* Store session token for WebView environments where cookies may not persist. */
+          if (json.tma_token) { TMA_SESSION_TOKEN = json.tma_token; }
           var statusEl = document.getElementById(\'tma-header-status\');
           if (statusEl) {
-            statusEl.textContent = json.wp_nonce ? \'✓ Signed In\' : \'✓ Verified\';
+            statusEl.textContent = (json.wp_nonce || json.tma_token) ? \'✓ Signed In\' : \'✓ Verified\';
           }
+          if (!json.wp_nonce && !json.tma_token) {
+            return Promise.reject(\'auth_incomplete\');
+          }
+        } else {
+          return Promise.reject(json && json.message ? json.message : \'validation_failed\');
         }
       })
-      .catch(function () { /* silent – validation is best-effort */ });
+      .catch(function (err) {
+        if (typeof err === \'string\') {
+          return Promise.reject(err);
+        }
+        /* Network or parse errors are non-fatal. */
+      });
   }
 
   /* ── Haptic helper ── */
@@ -1436,13 +1484,23 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			'auth_date'  => isset( $result['auth_date'] ) ? $result['auth_date'] : '',
 		);
 
-		$wp_nonce   = null;
+		$wp_nonce  = null;
+		$tma_token = null;
+
 		$wp_user_id = $this->find_or_create_wp_user( $auth_data, $connection );
 
 		if ( ! is_wp_error( $wp_user_id ) ) {
 			wp_set_current_user( $wp_user_id );
 			wp_set_auth_cookie( $wp_user_id, false );
 			$wp_nonce = wp_create_nonce( 'wp_rest' );
+
+			// Generate a short-lived session token so that subsequent
+			// Content / Tools / Media requests can authenticate even
+			// when the auth cookie does not persist in Telegram's WebView.
+			$raw_token = wp_generate_password( 40, false );
+			$token_hash = hash( 'sha256', $raw_token );
+			set_transient( 'wp_mcp_ai_tma_' . $token_hash, $wp_user_id, HOUR_IN_SECONDS );
+			$tma_token = $raw_token;
 
 			/**
 			* Fires after a Telegram Mini App user has been authenticated as a WordPress user.
@@ -1453,6 +1511,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			* @param array $auth_data  Telegram user data from verified initData.
 			*/
 			do_action( 'wp_mcp_ai_telegram_mini_app_wp_user_logged_in', $wp_user_id, $auth_data );
+		} else {
+			// Log the failure so site operators can diagnose auth issues.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Telegram Mini App: could not find or create WordPress user.',
+					array(
+						'code'        => $wp_user_id->get_error_code(),
+						'message'     => $wp_user_id->get_error_message(),
+						'telegram_id' => isset( $auth_data['id'] ) ? $auth_data['id'] : '',
+					)
+				);
+			}
 		}
 
 		return rest_ensure_response(
@@ -1461,6 +1531,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'user'      => $tg_user ? $tg_user : null,
 				'auth_date' => isset( $result['auth_date'] ) ? (int) $result['auth_date'] : null,
 				'wp_nonce'  => $wp_nonce,
+				'tma_token' => $tma_token,
 			)
 		);
 	}
