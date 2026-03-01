@@ -248,11 +248,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// where cookies from REST responses may not persist.
 		$tma_token = $request->get_header( 'X-WP-MCP-AI-TMA-Token' );
 		if ( ! empty( $tma_token ) ) {
-			$token_hash = hash( 'sha256', sanitize_text_field( $tma_token ) );
-			$user_id    = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
-			if ( $user_id ) {
-				wp_set_current_user( (int) $user_id );
-				return current_user_can( 'read' );
+			$sanitized  = sanitize_text_field( $tma_token );
+			$token_hash = hash( 'sha256', $sanitized );
+			// Transient keys are prefixed; the hash is always 64 hex chars.
+			if ( 64 === strlen( $token_hash ) ) {
+				$user_id = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
+				if ( $user_id ) {
+					wp_set_current_user( (int) $user_id );
+					return current_user_can( 'read' );
+				}
 			}
 		}
 
@@ -1497,7 +1501,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			// Generate a short-lived session token so that subsequent
 			// Content / Tools / Media requests can authenticate even
 			// when the auth cookie does not persist in Telegram's WebView.
-			$raw_token = wp_generate_password( 40, false );
+			$raw_token = bin2hex( random_bytes( 20 ) );
 			$token_hash = hash( 'sha256', $raw_token );
 			set_transient( 'wp_mcp_ai_tma_' . $token_hash, $wp_user_id, HOUR_IN_SECONDS );
 			$tma_token = $raw_token;
