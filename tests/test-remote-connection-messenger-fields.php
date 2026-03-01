@@ -226,4 +226,85 @@ class Test_Remote_Connection_Messenger_Fields extends WP_UnitTestCase {
 
 		$this->assertSame( 'v20.0', $api_version );
 	}
+
+	// =========================================================================
+	// Saved-token fallback logic (mirrors ajax_test_messenger_live).
+	// =========================================================================
+
+	/**
+	 * Helper: mirrors the saved-token fallback in ajax_test_messenger_live.
+	 *
+	 * When a connection_id is provided and the form value is empty or is an App
+	 * Access Token, the handler should prefer the saved token if it differs.
+	 *
+	 * @param string $form_token    Token value from the form field.
+	 * @param string $saved_token   Decrypted token stored in the database (empty if none).
+	 * @param string $connection_id Connection ID (empty when adding a new connection).
+	 * @return string The token that should actually be used for the test.
+	 */
+	private function resolve_token( $form_token, $saved_token, $connection_id ) {
+		$access_token = trim( $form_token );
+
+		if ( ! empty( $connection_id ) ) {
+			$is_form_app_token = (bool) preg_match( '/^\d+\|[A-Za-z0-9_\-]+$/', $access_token );
+			if ( empty( $access_token ) || $is_form_app_token ) {
+				if ( ! empty( $saved_token ) && $saved_token !== $access_token ) {
+					$access_token = $saved_token;
+				}
+			}
+		}
+
+		return $access_token;
+	}
+
+	/**
+	 * When the form field is empty and a saved Page Access Token exists,
+	 * the saved token must be used.
+	 */
+	public function test_saved_token_used_when_form_field_empty() {
+		$saved  = 'EAABwzLixnjYBO2ZCZBQerxyz1234567890';
+		$result = $this->resolve_token( '', $saved, 'conn_abc123' );
+		$this->assertSame( $saved, $result, 'Saved Page Access Token must be used when form field is empty.' );
+	}
+
+	/**
+	 * When the form field contains an App Access Token and a saved Page
+	 * Access Token exists, the saved Page token must be preferred.
+	 */
+	public function test_saved_token_preferred_over_app_token_in_form() {
+		$saved  = 'EAABwzLixnjYBO2ZCZBQerxyz1234567890';
+		$result = $this->resolve_token( '1704482943846642|EVQCBBJ0mXtyjMW6Z4fGgZkGrVA', $saved, 'conn_abc123' );
+		$this->assertSame( $saved, $result, 'Saved Page Access Token must be preferred over App Access Token in form.' );
+	}
+
+	/**
+	 * When the form field contains a Page Access Token (not App format),
+	 * the form value must be used even if a saved token exists.
+	 */
+	public function test_form_page_token_used_over_saved_token() {
+		$form_token = 'EAANewPageTokenFromUser';
+		$saved      = 'EAAOldSavedToken';
+		$result     = $this->resolve_token( $form_token, $saved, 'conn_abc123' );
+		$this->assertSame( $form_token, $result, 'Form Page Access Token must be used when user explicitly enters one.' );
+	}
+
+	/**
+	 * Without a connection_id (new connection), the form token must always
+	 * be used even if it looks like an App Access Token.
+	 */
+	public function test_no_fallback_without_connection_id() {
+		$app_token = '1704482943846642|EVQCBBJ0mXtyjMW6Z4fGgZkGrVA';
+		$result    = $this->resolve_token( $app_token, 'EAASavedToken', '' );
+		$this->assertSame( $app_token, $result, 'No fallback must occur without a connection_id.' );
+	}
+
+	/**
+	 * When the form has an App Access Token but no saved token exists,
+	 * the App Access Token must be used as-is.
+	 */
+	public function test_app_token_used_when_no_saved_token() {
+		$app_token = '1704482943846642|EVQCBBJ0mXtyjMW6Z4fGgZkGrVA';
+		$result    = $this->resolve_token( $app_token, '', 'conn_abc123' );
+		$this->assertSame( $app_token, $result, 'App Access Token must be used when no saved token exists.' );
+	}
 }

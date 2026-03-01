@@ -5029,15 +5029,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						.then(function(result) {
 							msngGenerateTokenBtn.disabled = false;
 							if (result.success) {
-								var tokenInput = document.getElementById('messenger_page_access_token');
-								tokenInput.value = result.data.access_token;
-								tokenInput.type = 'text';
-								if (msngTokenToggleBtn) {
-									msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-									msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+								var tokenInput  = document.getElementById('messenger_page_access_token');
+								var connIdField = document.querySelector('input[name="connection_id"]');
+
+								// In edit mode (saved connection exists), do not overwrite the Page
+								// Access Token field — the user may already have a saved Page token.
+								if (connIdField && connIdField.value) {
+									statusEl.style.color = '#00a32a';
+									statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated successfully. Your existing saved Page Access Token is preserved.', 'mcp-ai-wpoos-pro' ) ); ?>;
+								} else {
+									tokenInput.value = result.data.access_token;
+									tokenInput.type = 'text';
+									if (msngTokenToggleBtn) {
+										msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+										msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
+									}
+									statusEl.style.color = '#00a32a';
+									statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
 								}
-								statusEl.style.color = '#00a32a';
-								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
 							} else {
 								statusEl.style.color = '#d63638';
 								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
@@ -5057,11 +5066,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var msngTestResult  = document.getElementById('messenger_test_result');
 			if (msngTestBtn) {
 				msngTestBtn.addEventListener('click', function() {
-					var accessToken = document.getElementById('messenger_page_access_token').value.trim();
-					var pageId      = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
-					var apiVersion  = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
+					var accessToken  = document.getElementById('messenger_page_access_token').value.trim();
+					var pageId       = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
+					var apiVersion   = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
+					var connIdField  = document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdField ? connIdField.value : '';
 
-					if (!accessToken) {
+					// Allow empty field when editing — the server will use the saved token.
+					if (!accessToken && !connectionId) {
 						if (msngTestResult) {
 							msngTestResult.style.display = 'block';
 							msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Page Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
@@ -5077,6 +5089,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('action', 'wp_mcp_ai_test_messenger_live');
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_live' ) ); ?>);
 					data.append('access_token', accessToken);
+					if (connectionId) { data.append('connection_id', connectionId); }
 					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
 					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 					data.append('page_id', pageId);
@@ -6751,7 +6764,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * features. When a page_id is supplied the returned id is compared against it to confirm
 	 * the token belongs to the expected page.
 	 *
-	 * Accepts: access_token, page_id (optional), api_version, nonce (POST).
+	 * Accepts: access_token, page_id (optional), api_version, connection_id (optional), nonce (POST).
+	 * When connection_id is provided and the access_token is empty or is an App Access Token,
+	 * the handler falls back to the saved Page Access Token stored in the database.
 	 * Returns JSON with page details on success, or error message on failure.
 	 *
 	 * @since 1.0.0
@@ -6764,14 +6779,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
-		$access_token = trim( (string) $access_token );
-		$page_id      = isset( $_POST['page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
-		$api_version  = isset( $_POST['api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['api_version'] ) ) : 'v21.0';
+		$access_token  = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token  = trim( (string) $access_token );
+		$page_id       = isset( $_POST['page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
+		$api_version   = isset( $_POST['api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['api_version'] ) ) : 'v21.0';
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 
 		// Validate API version format.
 		if ( ! preg_match( '/^v\d+\.\d+$/', $api_version ) ) {
 			$api_version = 'v21.0';
+		}
+
+		// When editing an existing connection and the form field is empty (or contains an
+		// App Access Token from the "Generate" button), fall back to the saved Page Access
+		// Token stored in the database so the test reflects the actual saved credentials.
+		if ( ! empty( $connection_id ) ) {
+			$is_form_app_token = (bool) preg_match( '/^\d+\|[A-Za-z0-9_\-]+$/', $access_token );
+			if ( empty( $access_token ) || $is_form_app_token ) {
+				$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $saved_connection && ! empty( $saved_connection['api_key'] ) ) {
+					$saved_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $saved_connection['api_key'] );
+					if ( ! empty( $saved_token ) && $saved_token !== $access_token ) {
+						$access_token = $saved_token;
+					}
+				}
+			}
 		}
 
 		if ( empty( $access_token ) ) {
