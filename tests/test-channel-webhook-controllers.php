@@ -3933,6 +3933,203 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		delete_option( 'wp_mcp_ai_settings' );
 	}
+
+	// =========================================================================
+	// Outlook Webhook Controller
+	// =========================================================================
+
+	/** Test CONVERSATION_HISTORY_TTL constant equals 86400. */
+	public function test_outlook_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Outlook_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Outlook CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/** Test DEDUP_TRANSIENT_TTL constant equals 60. */
+	public function test_outlook_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Outlook_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Outlook DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/** Test GRAPH_API_BASE constant is correct. */
+	public function test_outlook_graph_api_base_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			'https://graph.microsoft.com/v1.0',
+			WP_MCP_AI_Outlook_Webhook_Controller::GRAPH_API_BASE
+		);
+	}
+
+	/** Test get_conversation_history_key is deterministic and scoped to sender+connection. */
+	public function test_outlook_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'sender@example.com', 'conn_xyz' );
+		$key2 = $method->invoke( $controller, 'sender@example.com', 'conn_xyz' );
+		$key3 = $method->invoke( $controller, 'other@example.com', 'conn_xyz' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_ol_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/** Test that different connection IDs produce different keys. */
+	public function test_outlook_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'sender@example.com', 'conn_1' );
+		$key2 = $method->invoke( $controller, 'sender@example.com', 'conn_2' );
+
+		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
+	}
+
+	/** Test validate_outlook_signature allows through when no client_state is set. */
+	public function test_outlook_validation_passes_without_client_state() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/outlook' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( array( 'value' => array( array( 'changeType' => 'created' ) ) ) ) );
+
+		$result = $controller->validate_outlook_signature( $request );
+
+		$this->assertTrue( $result, 'Validation should pass when no client state is configured' );
+	}
+
+	/** Test handle_webhook returns validation token for Graph subscription validation. */
+	public function test_outlook_webhook_returns_validation_token() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/outlook' );
+		$request->set_query_params( array( 'validationToken' => 'abc123token' ) );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 'abc123token', $response->get_data() );
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers );
+		$this->assertSame( 'text/plain', $headers['Content-Type'] );
+	}
+
+	// =========================================================================
+	// iCloud Webhook Controller
+	// =========================================================================
+
+	/** Test CONVERSATION_HISTORY_TTL constant equals 86400. */
+	public function test_icloud_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_iCloud_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'iCloud CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/** Test DEDUP_TRANSIENT_TTL constant equals 60. */
+	public function test_icloud_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_iCloud_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'iCloud DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/** Test get_conversation_history_key is deterministic and scoped to user+connection. */
+	public function test_icloud_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'user_abc', 'conn_xyz' );
+		$key2 = $method->invoke( $controller, 'user_abc', 'conn_xyz' );
+		$key3 = $method->invoke( $controller, 'user_def', 'conn_xyz' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different user produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_ic_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/** Test that different connection IDs produce different keys. */
+	public function test_icloud_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'user_abc', 'conn_1' );
+		$key2 = $method->invoke( $controller, 'user_abc', 'conn_2' );
+
+		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
+	}
+
+	/** Test validate_webhook_signature allows through when no signing secret is set. */
+	public function test_icloud_validation_passes_without_signing_secret() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/icloud' );
+		$request->set_body( '{"event_type":"file_created","file_id":"abc"}' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook should pass validation when no signing secret is configured' );
+	}
+
+	/** Test handle_webhook acknowledges payload without event_type gracefully. */
+	public function test_icloud_webhook_acknowledges_missing_event_type() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/icloud' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( array( 'file_id' => 'abc' ) ) );
+
+		$response = $controller->handle_webhook( $request );
+		$data     = rest_ensure_response( $response )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'ok', $data );
+		$this->assertTrue( $data['ok'], 'iCloud webhook should acknowledge payloads missing event_type without error' );
+	}
 }
 
 

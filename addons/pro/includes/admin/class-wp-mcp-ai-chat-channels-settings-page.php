@@ -234,7 +234,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<h2><?php esc_html_e( 'Chat Channels Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'Enterprise-grade chat channel integration toolkit with 21 specialized tools for managing communications across Telegram, WhatsApp, Slack, Discord, Microsoft Teams, and Facebook Messenger.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Enterprise-grade chat channel integration toolkit with specialized tools for managing communications across Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Office 365 (Outlook, OneDrive), and iCloud Drive.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<p><strong><?php esc_html_e( 'Built with research from OpenClaw.ai\'s extensive multi-platform chat integration experience.', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 			</div>
 
@@ -275,6 +275,14 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<h4 style="margin-top: 0;">📘 Facebook Messenger</h4>
 					<p><?php esc_html_e( 'Page messaging with quick replies and persistent menus', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
+				<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+					<h4 style="margin-top: 0;">📧 Office 365</h4>
+					<p><?php esc_html_e( 'Outlook mail, OneDrive files, and Office document integration via Microsoft Graph API', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+				<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+					<h4 style="margin-top: 0;">☁️ iCloud</h4>
+					<p><?php esc_html_e( 'iCloud Drive file management via a configurable gateway service', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 			</div>
 
 			<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -303,8 +311,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_slack_config(); ?>
 			<?php $this->render_discord_config(); ?>
 			<?php $this->render_teams_config(); ?>
+			<?php $this->render_office365_config(); ?>
 			<?php $this->render_messenger_config(); ?>
 			<?php $this->render_twitter_config(); ?>
+			<?php $this->render_icloud_config(); ?>
 		</div>
 
 		<style>
@@ -761,6 +771,163 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<ul>
 					<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/" target="_blank"><?php esc_html_e( 'Microsoft Teams Developer Platform', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview" target="_blank"><?php esc_html_e( 'Microsoft Graph Teams API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Office 365 configuration section
+	 */
+	protected function render_office365_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>📧 <?php esc_html_e( 'Office 365 Configuration (Outlook, OneDrive)', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'Office 365 integration provides Outlook mail, OneDrive file management, and Office document access via the Microsoft Graph API. Uses the same Azure AD application as Microsoft Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Use the same Azure AD application configured for Microsoft Teams (or register a new one in the Azure Portal)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the required Microsoft Graph API permissions listed below', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Grant admin consent for the added permissions', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Configure the Outlook webhook URL below to receive new mail notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Application (Client) ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" name="office365_client_id" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD application ID (can be the same as Microsoft Teams)', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Client Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="office365_client_secret" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD client secret', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Tenant ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" name="office365_tenant_id" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD tenant ID', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Outlook Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Use this URL as the notificationUrl when creating a Microsoft Graph subscription for mail changes.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Client State (Webhook Secret)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="office365_client_state" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Optional shared secret sent with change notifications for signature validation. Set this value when creating the Graph subscription.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'Required API Permissions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<div class="code-snippet">Mail.Read, Mail.Send, Files.Read.All, Files.ReadWrite.All, User.Read</div>
+
+				<h4><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'Send Outlook Mail', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Send emails via Microsoft Outlook', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get Outlook Messages', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve inbox or folder messages', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'List OneDrive Files', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Browse files and folders in OneDrive', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get OneDrive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve file metadata and download URL', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Upload OneDrive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Upload files to OneDrive', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview" target="_blank"><?php esc_html_e( 'Microsoft Graph Mail API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/onedrive" target="_blank"><?php esc_html_e( 'Microsoft Graph OneDrive API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/webhooks" target="_blank"><?php esc_html_e( 'Microsoft Graph Webhooks (Change Notifications)', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render iCloud configuration section
+	 */
+	protected function render_icloud_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>☁️ <?php esc_html_e( 'iCloud Drive Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'iCloud Drive integration enables file management via a configured gateway service. Since Apple does not provide a direct third-party REST API for iCloud, this channel communicates through a gateway that bridges to Apple CloudKit or iCloud services.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Set up an iCloud gateway service that provides REST API access to iCloud Drive (e.g. via Apple CloudKit JS or a server-side CloudKit integration)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Obtain the gateway API URL and authentication credentials', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Configure the signing secret for webhook signature verification', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Set up the webhook URL in your gateway to receive file change notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Gateway API URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="url" name="icloud_gateway_url" class="regular-text" placeholder="https://your-gateway.example.com/api/icloud" />
+							<p class="description"><?php esc_html_e( 'Base URL of your iCloud gateway REST API (must be HTTPS)', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="icloud_api_key" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'API key or bearer token for authenticating with your iCloud gateway', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook Signing Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="icloud_signing_secret" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Shared HMAC-SHA256 signing secret for validating incoming webhook payloads from the gateway', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Configure this URL in your iCloud gateway to receive file change notifications', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'List iCloud Drive Files', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Browse files and folders in iCloud Drive', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get iCloud Drive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve file metadata and download information', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Upload iCloud Drive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Upload files to iCloud Drive', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Supported Webhook Events', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><code>file_created</code> — <?php esc_html_e( 'New file uploaded', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_modified</code> — <?php esc_html_e( 'Existing file changed', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_deleted</code> — <?php esc_html_e( 'File removed', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_shared</code> — <?php esc_html_e( 'File sharing event', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://developer.apple.com/documentation/cloudkit" target="_blank"><?php esc_html_e( 'Apple CloudKit Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developer.apple.com/icloud/" target="_blank"><?php esc_html_e( 'Apple iCloud Developer Resources', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>

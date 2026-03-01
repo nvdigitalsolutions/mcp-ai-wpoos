@@ -4,8 +4,8 @@
  *
  * Loads the Chat Channels Toolkit system for unified multi-platform
  * messaging across Telegram, WhatsApp, Slack, Discord, Microsoft Teams,
- * Facebook Messenger, Apple Messages for Business (iMessage), and other
- * major chat platforms.
+ * Facebook Messenger, Apple Messages for Business (iMessage), Office 365
+ * (Outlook, OneDrive), iCloud Drive, and other major chat platforms.
  *
  * This toolkit provides comprehensive chat channel integration following
  * industry best practices for multi-platform messaging.
@@ -54,6 +54,22 @@ if ( $is_enabled && ! $is_base ) {
 		new WP_MCP_AI_Apple_Messages_Webhook_Controller();
 	}
 	unset( $_apple_rest );
+
+	// --- REST API: Office 365 Outlook webhook controller ---
+	$_outlook_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php';
+	if ( file_exists( $_outlook_rest ) && ! class_exists( 'WP_MCP_AI_Outlook_Webhook_Controller' ) ) {
+		require_once $_outlook_rest;
+		new WP_MCP_AI_Outlook_Webhook_Controller();
+	}
+	unset( $_outlook_rest );
+
+	// --- REST API: iCloud Drive webhook controller ---
+	$_icloud_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
+	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_iCloud_Webhook_Controller' ) ) {
+		require_once $_icloud_rest;
+		new WP_MCP_AI_iCloud_Webhook_Controller();
+	}
+	unset( $_icloud_rest );
 
 	// --- Admin: top-level Chat Channels menu (Dashboard, Inbox, Contacts, Automation) ---
 	if ( is_admin() ) {
@@ -105,10 +121,11 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_ad
  * Load and register Chat Channels Toolkit tools.
  *
  * Registers chat channel tools for all supported platforms: WebChat, Google
- * Chat, Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook
- * Messenger, Twitter/X, and the unified broadcast tool.
+ * Chat, Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Office 365
+ * (Outlook, OneDrive), Facebook Messenger, Twitter/X, iCloud Drive, and
+ * the unified broadcast tool.
  * Registers chat channel tools including WebChat, Google Chat, Twitter/X,
- * and Apple Messages for Business (iMessage) tools.
+ * Apple Messages for Business (iMessage), and iCloud Drive tools.
  *
  * @since 1.0.0
  */
@@ -169,6 +186,15 @@ function wp_mcp_ai_load_chat_channels_tools() {
 		'WP_MCP_AI_Pro_Tool_Get_Teams_Messages' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-teams-messages.php',
 		'WP_MCP_AI_Pro_Tool_Send_Teams_Message' => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-teams-message.php',
 
+		// Office 365 – Outlook mail tools.
+		'WP_MCP_AI_Pro_Tool_Send_Outlook_Mail'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-outlook-mail.php',
+		'WP_MCP_AI_Pro_Tool_Get_Outlook_Messages' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-outlook-messages.php',
+
+		// Office 365 – OneDrive file tools.
+		'WP_MCP_AI_Pro_Tool_List_OneDrive_Files'  => $tools_dir . 'class-wp-mcp-ai-pro-tool-list-onedrive-files.php',
+		'WP_MCP_AI_Pro_Tool_Get_OneDrive_File'    => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-onedrive-file.php',
+		'WP_MCP_AI_Pro_Tool_Upload_OneDrive_File' => $tools_dir . 'class-wp-mcp-ai-pro-tool-upload-onedrive-file.php',
+
 		// Facebook Messenger tools.
 		'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => $tools_dir . 'class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
 		'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'      => $tools_dir . 'class-wp-mcp-ai-pro-tool-send-messenger-message.php',
@@ -216,6 +242,32 @@ function wp_mcp_ai_load_chat_channels_tools() {
 	);
 
 	foreach ( $apple_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
+
+	// iCloud Drive tools.
+	$icloud_tools_dir = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/';
+	$icloud_tools     = array(
+		'WP_MCP_AI_Pro_Tool_List_iCloud_Drive_Files'  => $icloud_tools_dir . 'class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php',
+		'WP_MCP_AI_Pro_Tool_Get_iCloud_Drive_File'    => $icloud_tools_dir . 'class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php',
+		'WP_MCP_AI_Pro_Tool_Upload_iCloud_Drive_File' => $icloud_tools_dir . 'class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php',
+	);
+
+	foreach ( $icloud_tools as $class => $file ) {
 		if ( file_exists( $file ) ) {
 			require_once $file;
 
