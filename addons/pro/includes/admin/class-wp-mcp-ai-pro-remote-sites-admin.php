@@ -308,6 +308,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key    = isset( $_POST['apple_msp_api_key'] ) ? wp_unslash( $_POST['apple_msp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret = isset( $_POST['apple_webhook_secret'] ) ? wp_unslash( $_POST['apple_webhook_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'office365':
+					$client_id     = isset( $_POST['office365_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['office365_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['office365_client_secret'] ) ? wp_unslash( $_POST['office365_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'icloud':
+					$api_key = isset( $_POST['icloud_api_key'] ) ? wp_unslash( $_POST['icloud_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -393,6 +400,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'apple_messages' === $connection_type ) {
 				// The MSP API URL is entered by the user (varies per MSP provider).
 				$url       = isset( $_POST['apple_msp_api_url'] ) ? esc_url_raw( wp_unslash( $_POST['apple_msp_api_url'] ) ) : $url;
+				$auth_type = 'none';
+			}
+
+			if ( 'office365' === $connection_type ) {
+				$url       = 'https://graph.microsoft.com/v1.0';
+				$auth_type = 'none'; // Office 365 uses OAuth via Azure AD
+			}
+
+			if ( 'icloud' === $connection_type ) {
+				// The gateway API URL is entered by the user (varies per gateway).
+				$url       = isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : $url;
 				$auth_type = 'none';
 			}
 
@@ -489,8 +507,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'application_id'  => isset( $_POST['discord_application_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_application_id'] ) ) : '',
 				'guild_id'        => isset( $_POST['discord_guild_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_guild_id'] ) ) : '',
 				'public_key'      => isset( $_POST['discord_public_key'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_public_key'] ) ) : '',
-				// Microsoft Teams-specific fields.
-				'tenant_id'       => isset( $_POST['teams_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_tenant_id'] ) ) : '',
+				// Microsoft Teams / Office 365-specific fields.
+				'tenant_id'       => 'office365' === $connection_type
+					? ( isset( $_POST['office365_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['office365_tenant_id'] ) ) : '' )
+					: ( isset( $_POST['teams_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_tenant_id'] ) ) : '' ),
 				// Facebook Messenger-specific fields.
 				'page_id'         => isset( $_POST['messenger_page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_page_id'] ) ) : '',
 				// Chat-channel setting: only reply when the assistant is @mentioned.
@@ -514,6 +534,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
 				// Apple Messages for Business-specific fields.
 				'business_id'       => isset( $_POST['apple_business_id'] ) ? sanitize_text_field( wp_unslash( $_POST['apple_business_id'] ) ) : '',
+				// iCloud Drive-specific fields.
+				'gateway_api_url'   => isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : '',
+				// Office 365 / iCloud: per-service toggles (e.g. outlook_mail, onedrive, icloud_drive).
+				'enabled_services'  => $this->resolve_enabled_services( $connection_type ),
+				// Office 365 per-service settings.
+				'outlook_mailbox_folder' => isset( $_POST['outlook_mailbox_folder'] ) ? sanitize_text_field( wp_unslash( $_POST['outlook_mailbox_folder'] ) ) : '',
+				'onedrive_folder_path'   => isset( $_POST['onedrive_folder_path'] ) ? sanitize_text_field( wp_unslash( $_POST['onedrive_folder_path'] ) ) : '',
+				// iCloud per-service settings.
+				'icloud_default_folder_id' => isset( $_POST['icloud_default_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['icloud_default_folder_id'] ) ) : '',
 				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -765,6 +794,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'google_chat'        => __( 'Google Chat', 'mcp-ai-wpoos-pro' ),
 									'twitter'            => __( 'Twitter / X', 'mcp-ai-wpoos-pro' ),
 									'apple_messages'     => __( 'Apple Messages for Business', 'mcp-ai-wpoos-pro' ),
+									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
+									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
 									);
 
 								$type_colors = array(
@@ -788,6 +819,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'google_chat'        => '#1a73e8', // Google Chat blue
 									'twitter'            => '#000000', // X (formerly Twitter) black
 									'apple_messages'     => '#555555', // Apple dark grey
+									'office365'          => '#d83b01', // Microsoft Office orange
+									'icloud'             => '#3693f5', // iCloud blue
 									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -1093,6 +1126,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="apple_messages" <?php selected( $connection_type, 'apple_messages' ); ?>>
 								<?php esc_html_e( 'Apple Messages for Business / iMessage (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="office365" <?php selected( $connection_type, 'office365' ); ?>>
+								<?php esc_html_e( 'Office 365 (Outlook / OneDrive)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="icloud" <?php selected( $connection_type, 'icloud' ); ?>>
+								<?php esc_html_e( 'iCloud Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -3527,6 +3566,211 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Office 365 (Outlook / OneDrive) -->
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_client_id"><?php esc_html_e( 'Application (Client) ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="office365_client_id" id="office365_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Azure AD application (client) ID. Can be the same as Microsoft Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_client_secret"><?php esc_html_e( 'Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['client_secret'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Client secret is saved. Leave blank to keep the existing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="office365_client_secret" id="office365_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'Your Azure AD client secret for authenticating Microsoft Graph API requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_tenant_id"><?php esc_html_e( 'Tenant ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="office365_tenant_id" id="office365_tenant_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['tenant_id'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['tenant_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Azure AD tenant ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$o365_saved_services = $is_edit && isset( $connection['enabled_services'] ) && is_array( $connection['enabled_services'] ) ? $connection['enabled_services'] : array( 'outlook_mail', 'onedrive' );
+						$o365_services       = array(
+							'outlook_mail' => __( 'Outlook Mail — send and read emails (Mail.ReadWrite, Mail.Send)', 'mcp-ai-wpoos-pro' ),
+							'onedrive'     => __( 'OneDrive — list, read, and upload files (Files.ReadWrite.All)', 'mcp-ai-wpoos-pro' ),
+						);
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></span></legend>
+							<?php foreach ( $o365_services as $service_key => $service_label ) : ?>
+								<label style="display: block; margin-bottom: 6px;">
+									<input type="checkbox" name="office365_enabled_services[]" value="<?php echo esc_attr( $service_key ); ?>" <?php checked( in_array( $service_key, $o365_saved_services, true ) ); ?>>
+									<?php echo esc_html( $service_label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Select which Office 365 services to enable for this connection. Only the selected services will have their AI tools activated. Each service requires the listed Microsoft Graph API permissions.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Outlook Mail service settings -->
+				<tr class="office365-only-field office365-service-outlook_mail" style="display: none;">
+					<th scope="row">
+						<label for="outlook_mailbox_folder"><?php esc_html_e( 'Outlook — Mailbox Folder', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="outlook_mailbox_folder" id="outlook_mailbox_folder" class="regular-text" value="<?php echo $is_edit && isset( $connection['outlook_mailbox_folder'] ) ? esc_attr( $connection['outlook_mailbox_folder'] ) : ''; ?>" placeholder="inbox" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default mailbox folder for reading messages (e.g. inbox, sentitems, drafts). Leave blank to default to inbox.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- OneDrive service settings -->
+				<tr class="office365-only-field office365-service-onedrive" style="display: none;">
+					<th scope="row">
+						<label for="onedrive_folder_path"><?php esc_html_e( 'OneDrive — Default Folder Path', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="onedrive_folder_path" id="onedrive_folder_path" class="regular-text" value="<?php echo $is_edit && isset( $connection['onedrive_folder_path'] ) ? esc_attr( $connection['onedrive_folder_path'] ) : ''; ?>" placeholder="Documents/Projects" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder path for file operations (e.g. Documents/Projects). Leave blank for the root of OneDrive.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Register this URL with Microsoft Graph subscriptions to receive new mail notifications.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #d83b01; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Register an application in the Azure Portal (or reuse the one from Microsoft Teams).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Add Microsoft Graph API permissions for each enabled service above and grant admin consent.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter your Application (Client) ID, Client Secret, and Tenant ID above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then configure a Microsoft Graph subscription with the webhook URL above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to auto-reply to incoming Outlook emails.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for iCloud Drive -->
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label for="icloud_gateway_url"><?php esc_html_e( 'Gateway API URL', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="url" name="icloud_gateway_url" id="icloud_gateway_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['gateway_api_url'] ) && 'icloud' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['gateway_api_url'] ) : ''; ?>" placeholder="https://gateway.example.com/api/icloud" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Base URL of your iCloud Drive gateway/proxy service endpoint.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label for="icloud_api_key"><?php esc_html_e( 'Gateway API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'icloud' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'API key is saved. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="icloud_api_key" id="icloud_api_key" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'API key for authenticating with the iCloud Drive gateway service.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$icloud_saved_services = $is_edit && isset( $connection['enabled_services'] ) && is_array( $connection['enabled_services'] ) ? $connection['enabled_services'] : array( 'icloud_drive' );
+						$icloud_services       = array(
+							'icloud_drive' => __( 'iCloud Drive — list, read, and upload files', 'mcp-ai-wpoos-pro' ),
+						);
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></span></legend>
+							<?php foreach ( $icloud_services as $service_key => $service_label ) : ?>
+								<label style="display: block; margin-bottom: 6px;">
+									<input type="checkbox" name="icloud_enabled_services[]" value="<?php echo esc_attr( $service_key ); ?>" <?php checked( in_array( $service_key, $icloud_saved_services, true ) ); ?>>
+									<?php echo esc_html( $service_label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Select which iCloud services to enable for this connection. Only the selected services will have their AI tools activated.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- iCloud Drive service settings -->
+				<tr class="icloud-only-field icloud-service-icloud_drive" style="display: none;">
+					<th scope="row">
+						<label for="icloud_default_folder_id"><?php esc_html_e( 'iCloud Drive — Default Folder ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="icloud_default_folder_id" id="icloud_default_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['icloud_default_folder_id'] ) ? esc_attr( $connection['icloud_default_folder_id'] ) : ''; ?>" placeholder="" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder ID for file operations. Leave blank to list files from the root of iCloud Drive.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Register this URL with your iCloud gateway to receive file change notifications.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #3693f5; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Deploy or configure your iCloud Drive gateway/proxy service.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter the Gateway API URL and API Key above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection to get a channel-specific webhook URL for file change notifications.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to auto-reply on file events.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
@@ -3638,6 +3882,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var googleChatFields = document.querySelectorAll('.google_chat-only-field');
 			var twitterFields = document.querySelectorAll('.twitter-only-field');
 			var appleMessagesFields = document.querySelectorAll('.apple_messages-only-field');
+			var office365Fields = document.querySelectorAll('.office365-only-field');
+			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -3703,6 +3949,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			appleMessagesFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			office365Fields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			icloudFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -3893,7 +4145,46 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+			} else if (connectionType === 'office365') {
+				office365Fields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Office 365 uses Microsoft Graph API
+				urlField.value = 'https://graph.microsoft.com/v1.0';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('office365');
+			} else if (connectionType === 'icloud') {
+				icloudFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// iCloud Drive — gateway API URL is entered by the user
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('icloud');
 			}
+		}
+
+		/**
+		 * Show/hide per-service settings rows based on service checkbox state.
+		 *
+		 * Rows carry a CSS class like "office365-service-outlook_mail" or "icloud-service-icloud_drive".
+		 * When the corresponding service checkbox is checked the row is visible; otherwise hidden.
+		 */
+		function toggleServiceSettings(platform) {
+			var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+			checkboxes.forEach(function(cb) {
+				var rows = document.querySelectorAll('.' + platform + '-service-' + cb.value);
+				rows.forEach(function(row) {
+					row.style.display = cb.checked ? 'table-row' : 'none';
+				});
+			});
 		}
 
 		// Initialize on page load
@@ -3907,6 +4198,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// Add event listener for connection type changes
 			document.getElementById('connection_type').addEventListener('change', function() {
 				toggleConnectionTypeFields(this.value);
+			});
+
+			// Office 365 / iCloud service checkboxes: toggle per-service settings on change.
+			['office365', 'icloud'].forEach(function(platform) {
+				var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+				checkboxes.forEach(function(cb) {
+					cb.addEventListener('change', function() {
+						toggleServiceSettings(platform);
+					});
+				});
 			});
 
 			// WhatsApp Cloud API version change: update the URL field accordingly
@@ -8528,6 +8829,37 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Resolve enabled_services from POST data based on connection type.
+	 *
+	 * Office 365 connections use office365_enabled_services[] and iCloud connections
+	 * use icloud_enabled_services[]. Each value is validated against the known service
+	 * keys for the respective connection type.
+	 *
+	 * @param string $connection_type The connection type being saved.
+	 * @return array Sanitised list of enabled service keys, or empty array if not applicable.
+	 */
+	private function resolve_enabled_services( $connection_type ) {
+		$allowed = array();
+		$field   = '';
+
+		if ( 'office365' === $connection_type ) {
+			$allowed = array( 'outlook_mail', 'onedrive' );
+			$field   = 'office365_enabled_services';
+		} elseif ( 'icloud' === $connection_type ) {
+			$allowed = array( 'icloud_drive' );
+			$field   = 'icloud_enabled_services';
+		}
+
+		if ( empty( $field ) || ! isset( $_POST[ $field ] ) || ! is_array( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return array();
+		}
+
+		$raw = array_map( 'sanitize_key', wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		return array_values( array_intersect( $raw, $allowed ) );
 	}
 }
 
