@@ -1624,6 +1624,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			// token and subsequent requests that carry the auth cookie fail
 			// rest_cookie_check_errors with rest_cookie_invalid_nonce (403).
 			$sync_cookie = function ( $value ) {
+				// The value originates from wp_generate_auth_cookie() inside
+				// wp_set_auth_cookie(); it must be stored verbatim so that
+				// wp_get_session_token() extracts the same session token the
+				// browser will send.  sanitize_text_field() would corrupt it.
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 				$_COOKIE[ LOGGED_IN_COOKIE ] = $value;
 			};
