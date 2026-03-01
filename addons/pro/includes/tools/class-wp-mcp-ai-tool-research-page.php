@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about a WordPress page topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App). Accepts reference template files (Elementor JSON, Block Editor patterns, or custom JSON layouts) to guide content structure. Optimized for static pages like About, Contact, Services, etc.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about a WordPress page topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App). Accepts reference template files (Elementor JSON, Block Editor patterns, or custom JSON layouts) to guide content structure — auto-detects template type and extracts structural summary for smarter AI prompts. Supports output_format option to export research as PDF or Word document. Optimized for static pages like About, Contact, Services, etc.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -146,7 +146,13 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 				'template_data'            => array(
 					'type'        => 'string',
-					'description' => __( 'Reference template structure as a JSON string. Accepts Elementor template JSON, Block Editor (Gutenberg) block pattern JSON, or any structured JSON layout. The AI will use this as a structural guide when generating content. Maximum 10 000 characters.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Reference template structure as a JSON string. Accepts Elementor template JSON, Block Editor (Gutenberg) block pattern JSON, or any structured JSON layout. The AI will use this as a structural guide when generating content. Template type is auto-detected from JSON structure. Maximum 10 000 characters.', 'mcp-ai-wpoos-pro' ),
+				),
+				'output_format'            => array(
+					'type'        => 'string',
+					'description' => __( 'Output format for the research results. "json" returns structured data (default). "pdf" generates a downloadable PDF document. "docx" generates a Word document.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'json', 'pdf', 'docx' ),
+					'default'     => 'json',
 				),
 				'include_seo'              => array(
 					'type'        => 'boolean',
@@ -231,6 +237,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$template                 = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
 		$custom_format_description = isset( $arguments['custom_format_description'] ) ? sanitize_text_field( $arguments['custom_format_description'] ) : '';
 		$template_data            = isset( $arguments['template_data'] ) ? $arguments['template_data'] : '';
+		$output_format            = isset( $arguments['output_format'] ) ? sanitize_key( $arguments['output_format'] ) : 'json';
 		$include_seo              = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
 		$tone                     = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
 
@@ -250,6 +257,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Validate and sanitize template_data (JSON string, max 10 000 chars).
+		$template_analysis = array();
 		if ( ! empty( $template_data ) ) {
 			if ( ! is_string( $template_data ) ) {
 				$template_data = wp_json_encode( $template_data );
@@ -260,7 +268,15 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$decoded = json_decode( $template_data, true );
 			if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
 				$template_data = '';
+			} else {
+				// Auto-detect template type and extract structural summary.
+				$template_analysis = $this->analyze_template_data( $decoded );
 			}
+		}
+
+		// Validate output format.
+		if ( ! in_array( $output_format, array( 'json', 'pdf', 'docx' ), true ) ) {
+			$output_format = 'json';
 		}
 
 		// Validate page type.
@@ -296,6 +312,8 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'template'                 => $template,
 				'custom_format_description' => $custom_format_description,
 				'has_template_data'        => ! empty( $template_data ),
+				'template_type_detected'   => ! empty( $template_analysis['detected_type'] ) ? $template_analysis['detected_type'] : '',
+				'output_format'            => $output_format,
 				'user_id'                  => $user_id,
 			)
 		);
@@ -321,7 +339,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Step 2: Build research prompt with gathered information.
-		$prompt = $this->build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $include_seo, $tone );
+		$prompt = $this->build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $template_analysis, $include_seo, $tone );
 
 		// Step 3: Use AI to research the topic and generate content.
 		$research_result = $this->perform_ai_research( $prompt, $context );
@@ -340,9 +358,12 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Parse and validate the research results.
 		$page_data = $this->parse_research_results( $research_result, $topic, $page_type, $template, $custom_format_description );
 
-		// Flag whether a reference template was used.
+		// Flag whether a reference template was used and include analysis metadata.
 		if ( ! is_wp_error( $page_data ) && ! empty( $template_data ) ) {
 			$page_data['has_template_data'] = true;
+			if ( ! empty( $template_analysis['detected_type'] ) ) {
+				$page_data['template_type_detected'] = $template_analysis['detected_type'];
+			}
 		}
 
 		if ( is_wp_error( $page_data ) ) {
@@ -373,6 +394,14 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'title'         => isset( $page_data['title'] ) ? $page_data['title'] : '',
 			)
 		);
+
+		// Export to document format if requested.
+		if ( 'json' !== $output_format && ! empty( $page_data['content'] ) ) {
+			$export_result = $this->export_research_document( $page_data, $output_format );
+			if ( ! is_wp_error( $export_result ) ) {
+				$page_data['document'] = $export_result;
+			}
+		}
 
 		return $page_data;
 	}
@@ -575,11 +604,12 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $template                 Template format.
 	 * @param string $custom_format_description Description for custom template format.
 	 * @param string $template_data            Reference template JSON structure.
+	 * @param array  $template_analysis        Analyzed template data (detected type, summary).
 	 * @param bool   $include_seo              Whether to include SEO.
 	 * @param string $tone                     Tone of voice.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $include_seo, $tone ) {
+	protected function build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $template_analysis, $include_seo, $tone ) {
 		$template_label = $template;
 		if ( 'custom' === $template && ! empty( $custom_format_description ) ) {
 			$template_label = 'custom (' . $custom_format_description . ')';
@@ -753,9 +783,44 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Add reference template data if provided.
 		if ( ! empty( $template_data ) ) {
 			$prompt .= "\n**Reference Template Structure:**\n";
-			$prompt .= "The following JSON represents a reference template structure (e.g., Elementor template, Block Editor pattern, or custom layout). ";
-			$prompt .= "Use this as a structural guide for organizing the content — match the section layout, widget types, and content hierarchy:\n\n";
-			$prompt .= "```json\n" . $template_data . "\n```\n\n";
+
+			// Include auto-detected template type info if analysis is available.
+			if ( ! empty( $template_analysis['detected_type'] ) ) {
+				$prompt .= sprintf( "Detected template type: **%s**\n", $template_analysis['detected_type'] );
+			}
+
+			// Include structured summary if available (more efficient than raw JSON).
+			if ( ! empty( $template_analysis['summary'] ) ) {
+				$prompt .= "Template structure summary:\n" . $template_analysis['summary'] . "\n\n";
+			}
+
+			// Include template-type-specific guidance.
+			if ( ! empty( $template_analysis['detected_type'] ) ) {
+				switch ( $template_analysis['detected_type'] ) {
+					case 'elementor':
+						$prompt .= "This is an Elementor template. Match content to the Elementor section/widget layout:\n";
+						$prompt .= "- Map headings to Elementor Heading widgets\n";
+						$prompt .= "- Map body text to Elementor Text Editor widgets\n";
+						$prompt .= "- Map images to Elementor Image widgets with placeholder alt text\n";
+						$prompt .= "- Preserve the section nesting structure (container → column → widget)\n";
+						break;
+
+					case 'block-editor':
+						$prompt .= "This is a Block Editor (Gutenberg) template. Match content to the block pattern:\n";
+						$prompt .= "- Preserve <!-- wp:* --> block comment structure\n";
+						$prompt .= "- Map content to the block types in the pattern (paragraph, heading, image, columns, etc.)\n";
+						$prompt .= "- Maintain block attributes (alignment, className, etc.) from the pattern\n";
+						break;
+
+					default:
+						$prompt .= "Use this as a structural guide for organizing the content — match the section layout and content hierarchy:\n";
+						break;
+				}
+			} else {
+				$prompt .= "Use this as a structural guide for organizing the content — match the section layout, widget types, and content hierarchy:\n";
+			}
+
+			$prompt .= "\n```json\n" . $template_data . "\n```\n\n";
 			$prompt .= "Adapt the generated content to fit the sections and structure defined in this template.\n";
 		}
 
@@ -792,6 +857,38 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				break;
 		}
 
+		// Industry best practices (2025/2026 standards).
+		$prompt .= "\n**Quality & Standards Guidelines:**\n";
+		$prompt .= "- **Readability:** Target Flesch Reading Ease score of 60-70 (grade 8-10 level). Use short sentences, active voice, and clear language\n";
+		$prompt .= "- **E-E-A-T:** Demonstrate Experience, Expertise, Authoritativeness, and Trust — cite credible sources, include specific data points, avoid vague claims\n";
+		$prompt .= "- **Accessibility (WCAG 2.1 AA):** Use proper heading hierarchy (h2→h3→h4, never skip levels), include alt text placeholders for images ([alt: description]), use semantic HTML elements\n";
+		$prompt .= "- **Performance:** Avoid inline styles; no unnecessary wrapper elements; keep DOM depth shallow\n";
+
+		// Schema markup guidance based on page type.
+		if ( $include_seo ) {
+			$prompt .= "\n**Schema Markup (JSON-LD):**\n";
+			switch ( $page_type ) {
+				case 'faq':
+					$prompt .= "- Generate FAQPage schema markup (JSON-LD) for the FAQ content\n";
+					$prompt .= "- Each question/answer pair should map to a Question/Answer entity\n";
+					break;
+
+				case 'services':
+				case 'landing':
+					$prompt .= "- Generate Service schema markup (JSON-LD) with provider, serviceType, and description\n";
+					break;
+
+				case 'about':
+					$prompt .= "- Generate Organization schema markup (JSON-LD) with name, description, and foundingDate if mentioned\n";
+					break;
+
+				default:
+					$prompt .= "- Generate WebPage schema markup (JSON-LD) with name and description\n";
+					break;
+			}
+			$prompt .= "- Include the schema markup as a valid JSON-LD script in the 'schema_markup' field of the response\n";
+		}
+
 		$prompt .= "\n**IMPORTANT**: Return the information in the following JSON format:\n\n";
 		$prompt .= "```json\n";
 		$prompt .= "{\n";
@@ -800,9 +897,11 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$prompt .= '  "content": "Full page content with proper HTML formatting based on template...",';
 		$prompt .= "\n";
 		if ( $include_seo ) {
-			$prompt .= '  "meta_description": "SEO meta description...",';
+			$prompt .= '  "meta_description": "SEO meta description (155-160 chars)...",';
 			$prompt .= "\n";
 			$prompt .= '  "keywords": ["keyword1", "keyword2", "keyword3"],';
+			$prompt .= "\n";
+			$prompt .= '  "schema_markup": "<script type=application/ld+json>...</script>",';
 			$prompt .= "\n";
 		}
 		$prompt .= '  "page_type": "' . $page_type . '",';
@@ -846,7 +945,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$messages = array(
 			array(
 				'role'    => 'system',
-				'content' => 'You are an expert web content writer specializing in WordPress pages. You create high-quality, professional page content that is clear, informative, and appropriate for static pages. Always respond with valid JSON matching the requested format.',
+				'content' => 'You are an expert web content writer specializing in WordPress pages. You follow 2025/2026 industry standards: E-E-A-T principles (Experience, Expertise, Authoritativeness, Trust), WCAG 2.1 AA accessibility, semantic HTML5, and SEO best practices including JSON-LD schema markup. You create high-quality, professional page content that is clear, informative, and appropriate for static pages. Always respond with valid JSON matching the requested format.',
 			),
 			array(
 				'role'    => 'user',
@@ -1068,6 +1167,11 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$page_data['keywords'] = array_map( 'sanitize_text_field', $data['keywords'] );
 		}
 
+		// Add schema markup if present.
+		if ( isset( $data['schema_markup'] ) && is_string( $data['schema_markup'] ) ) {
+			$page_data['schema_markup'] = $data['schema_markup'];
+		}
+
 		return $page_data;
 	}
 
@@ -1120,10 +1224,20 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Reference template indicator.
 		if ( ! empty( $page_data['has_template_data'] ) ) {
-			$report .= "**Reference Template:** ✓ Provided (content structured to match template layout)\n";
+			$detected = ! empty( $page_data['template_type_detected'] ) ? $page_data['template_type_detected'] : '';
+			$label    = '✓ Provided';
+			if ( ! empty( $detected ) ) {
+				$label .= ' (auto-detected: ' . ucwords( str_replace( '-', ' ', $detected ) ) . ')';
+			}
+			$report .= "**Reference Template:** " . esc_html( $label ) . "\n";
 		}
 
 		$report .= "\n";
+
+		// Schema markup indicator.
+		if ( ! empty( $page_data['schema_markup'] ) ) {
+			$report .= "**Schema Markup:** ✓ JSON-LD structured data included\n";
+		}
 
 		// Content sections/structure.
 		if ( ! empty( $page_data['content'] ) ) {
@@ -1206,5 +1320,499 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$report .= "*Research completed successfully. Use the `create_page` tool to publish this content to your WordPress site.*";
 
 		return $report;
+	}
+
+	/**
+	 * Analyze template_data JSON to detect template type and extract structural summary.
+	 *
+	 * Supports auto-detection of:
+	 * - Elementor templates (elType, widgetType, elements keys)
+	 * - Block Editor / Gutenberg patterns (blockName, attrs, innerBlocks keys)
+	 * - Generic JSON structures
+	 *
+	 * @param array $decoded Decoded JSON template data.
+	 * @return array Analysis results with 'detected_type' and 'summary' keys.
+	 */
+	protected function analyze_template_data( $decoded ) {
+		$analysis = array(
+			'detected_type' => 'generic',
+			'summary'       => '',
+			'sections'      => array(),
+			'widget_types'  => array(),
+		);
+
+		if ( empty( $decoded ) || ! is_array( $decoded ) ) {
+			return $analysis;
+		}
+
+		// Detect Elementor template structure.
+		if ( $this->is_elementor_template( $decoded ) ) {
+			$analysis['detected_type'] = 'elementor';
+			$analysis['widget_types']  = $this->extract_elementor_widgets( $decoded );
+			$analysis['sections']      = $this->extract_elementor_sections( $decoded );
+			$analysis['summary']       = $this->build_elementor_summary( $analysis );
+			return $analysis;
+		}
+
+		// Detect Block Editor (Gutenberg) pattern structure.
+		if ( $this->is_block_editor_template( $decoded ) ) {
+			$analysis['detected_type'] = 'block-editor';
+			$analysis['widget_types']  = $this->extract_block_types( $decoded );
+			$analysis['sections']      = $this->extract_block_sections( $decoded );
+			$analysis['summary']       = $this->build_block_editor_summary( $analysis );
+			return $analysis;
+		}
+
+		// Generic JSON — extract top-level keys as sections.
+		$analysis['sections'] = array_keys( $decoded );
+		$section_list         = implode( ', ', array_slice( $analysis['sections'], 0, 10 ) );
+		$analysis['summary']  = sprintf( "Generic JSON structure with %d top-level keys: %s", count( $analysis['sections'] ), $section_list );
+
+		return $analysis;
+	}
+
+	/**
+	 * Check if decoded JSON is an Elementor template.
+	 *
+	 * @param array $data Decoded JSON data.
+	 * @return bool True if Elementor template structure detected.
+	 */
+	protected function is_elementor_template( $data ) {
+		// Elementor templates are arrays of elements with elType.
+		if ( isset( $data[0] ) && is_array( $data[0] ) ) {
+			$first = $data[0];
+			if ( isset( $first['elType'] ) || isset( $first['widgetType'] ) || isset( $first['elements'] ) ) {
+				return true;
+			}
+		}
+
+		// Single element structure.
+		if ( isset( $data['elType'] ) || isset( $data['widgetType'] ) ) {
+			return true;
+		}
+
+		// Elementor export format with content key.
+		if ( isset( $data['content'] ) && is_array( $data['content'] ) ) {
+			$content = $data['content'];
+			if ( isset( $content[0]['elType'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if decoded JSON is a Block Editor (Gutenberg) template.
+	 *
+	 * @param array $data Decoded JSON data.
+	 * @return bool True if Block Editor pattern structure detected.
+	 */
+	protected function is_block_editor_template( $data ) {
+		// Array of blocks.
+		if ( isset( $data[0] ) && is_array( $data[0] ) ) {
+			$first = $data[0];
+			if ( isset( $first['blockName'] ) || isset( $first['attrs'] ) || isset( $first['innerBlocks'] ) ) {
+				return true;
+			}
+		}
+
+		// Single block structure.
+		if ( isset( $data['blockName'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract widget types from Elementor template data recursively.
+	 *
+	 * @param array $elements Elementor elements array.
+	 * @return array Unique widget type names.
+	 */
+	protected function extract_elementor_widgets( $elements ) {
+		$widgets = array();
+
+		// Handle export format with content key.
+		if ( isset( $elements['content'] ) && is_array( $elements['content'] ) ) {
+			$elements = $elements['content'];
+		}
+
+		if ( ! isset( $elements[0] ) ) {
+			$elements = array( $elements );
+		}
+
+		foreach ( $elements as $element ) {
+			if ( ! is_array( $element ) ) {
+				continue;
+			}
+
+			if ( ! empty( $element['widgetType'] ) ) {
+				$widgets[] = $element['widgetType'];
+			} elseif ( ! empty( $element['elType'] ) ) {
+				$widgets[] = $element['elType'];
+			}
+
+			if ( ! empty( $element['elements'] ) && is_array( $element['elements'] ) ) {
+				$widgets = array_merge( $widgets, $this->extract_elementor_widgets( $element['elements'] ) );
+			}
+		}
+
+		return array_unique( $widgets );
+	}
+
+	/**
+	 * Extract section structure from Elementor template data.
+	 *
+	 * @param array $elements Elementor elements array.
+	 * @return array Section descriptions.
+	 */
+	protected function extract_elementor_sections( $elements ) {
+		$sections = array();
+
+		// Handle export format with content key.
+		if ( isset( $elements['content'] ) && is_array( $elements['content'] ) ) {
+			$elements = $elements['content'];
+		}
+
+		if ( ! isset( $elements[0] ) ) {
+			$elements = array( $elements );
+		}
+
+		foreach ( $elements as $element ) {
+			if ( ! is_array( $element ) ) {
+				continue;
+			}
+
+			$el_type = isset( $element['elType'] ) ? $element['elType'] : '';
+			if ( in_array( $el_type, array( 'section', 'container' ), true ) ) {
+				$child_count = ! empty( $element['elements'] ) ? count( $element['elements'] ) : 0;
+				$sections[]  = sprintf( '%s (%d children)', ucfirst( $el_type ), $child_count );
+			}
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Build a human-readable summary of an Elementor template analysis.
+	 *
+	 * @param array $analysis Analysis results.
+	 * @return string Summary text.
+	 */
+	protected function build_elementor_summary( $analysis ) {
+		$parts = array();
+		if ( ! empty( $analysis['sections'] ) ) {
+			$parts[] = sprintf( '%d section(s): %s', count( $analysis['sections'] ), implode( ', ', array_slice( $analysis['sections'], 0, 5 ) ) );
+		}
+		if ( ! empty( $analysis['widget_types'] ) ) {
+			$parts[] = sprintf( 'Widget types: %s', implode( ', ', array_slice( $analysis['widget_types'], 0, 10 ) ) );
+		}
+
+		return 'Elementor template — ' . implode( '. ', $parts );
+	}
+
+	/**
+	 * Extract block types from Block Editor pattern data recursively.
+	 *
+	 * @param array $blocks Block Editor blocks array.
+	 * @return array Unique block type names.
+	 */
+	protected function extract_block_types( $blocks ) {
+		$types = array();
+
+		if ( ! isset( $blocks[0] ) ) {
+			$blocks = array( $blocks );
+		}
+
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+
+			if ( ! empty( $block['blockName'] ) ) {
+				$types[] = $block['blockName'];
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+				$types = array_merge( $types, $this->extract_block_types( $block['innerBlocks'] ) );
+			}
+		}
+
+		return array_unique( $types );
+	}
+
+	/**
+	 * Extract section-level blocks from Block Editor pattern data.
+	 *
+	 * @param array $blocks Block Editor blocks array.
+	 * @return array Section descriptions.
+	 */
+	protected function extract_block_sections( $blocks ) {
+		$sections = array();
+
+		if ( ! isset( $blocks[0] ) ) {
+			$blocks = array( $blocks );
+		}
+
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) || empty( $block['blockName'] ) ) {
+				continue;
+			}
+
+			$inner_count = ! empty( $block['innerBlocks'] ) ? count( $block['innerBlocks'] ) : 0;
+			$sections[]  = sprintf( '%s (%d inner)', $block['blockName'], $inner_count );
+		}
+
+		return $sections;
+	}
+
+	/**
+	 * Build a human-readable summary of a Block Editor template analysis.
+	 *
+	 * @param array $analysis Analysis results.
+	 * @return string Summary text.
+	 */
+	protected function build_block_editor_summary( $analysis ) {
+		$parts = array();
+		if ( ! empty( $analysis['sections'] ) ) {
+			$parts[] = sprintf( '%d top-level block(s): %s', count( $analysis['sections'] ), implode( ', ', array_slice( $analysis['sections'], 0, 5 ) ) );
+		}
+		if ( ! empty( $analysis['widget_types'] ) ) {
+			$parts[] = sprintf( 'Block types: %s', implode( ', ', array_slice( $analysis['widget_types'], 0, 10 ) ) );
+		}
+
+		return 'Block Editor pattern — ' . implode( '. ', $parts );
+	}
+
+	/**
+	 * Export research results as a document (PDF or Word).
+	 *
+	 * Uses DomPDF for PDF generation and PhpWord for Word document generation,
+	 * both available from the pro vendor packages.
+	 *
+	 * @param array  $page_data     Parsed research page data.
+	 * @param string $output_format Output format ('pdf' or 'docx').
+	 * @return array|WP_Error Document export result with attachment info or error.
+	 */
+	protected function export_research_document( $page_data, $output_format ) {
+		$title   = ! empty( $page_data['title'] ) ? sanitize_text_field( $page_data['title'] ) : __( 'Research', 'mcp-ai-wpoos-pro' );
+		$content = ! empty( $page_data['content'] ) ? $page_data['content'] : '';
+
+		if ( empty( $content ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_content',
+				__( 'No content available for document export.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( 'pdf' === $output_format ) {
+			return $this->export_as_pdf( $title, $content, $page_data );
+		}
+
+		if ( 'docx' === $output_format ) {
+			return $this->export_as_docx( $title, $content, $page_data );
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_unsupported_format',
+			sprintf(
+				/* translators: %s: output format */
+				__( 'Unsupported output format: %s', 'mcp-ai-wpoos-pro' ),
+				$output_format
+			)
+		);
+	}
+
+	/**
+	 * Export research content as PDF using DomPDF.
+	 *
+	 * @param string $title     Document title.
+	 * @param string $content   HTML content.
+	 * @param array  $page_data Full page data for metadata.
+	 * @return array|WP_Error Export result or error.
+	 */
+	protected function export_as_pdf( $title, $content, $page_data ) {
+		if ( ! class_exists( 'Dompdf\\Dompdf' ) ) {
+			// Attempt to load pro vendor autoloader.
+			$autoloader = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+			if ( file_exists( $autoloader ) ) {
+				require_once $autoloader;
+			}
+		}
+
+		if ( ! class_exists( 'Dompdf\\Dompdf' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_dompdf_unavailable',
+				__( 'DomPDF library is not available. PDF export requires the Pro addon with DomPDF installed.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		try {
+			$html  = '<!DOCTYPE html><html><head><meta charset="utf-8">';
+			$html .= '<style>body{font-family:DejaVu Sans,sans-serif;font-size:12px;line-height:1.6;margin:40px;}';
+			$html .= 'h1{font-size:24px;margin-bottom:20px;color:#333;}h2{font-size:18px;margin-top:20px;color:#444;}';
+			$html .= 'h3{font-size:15px;margin-top:15px;color:#555;}p{margin-bottom:10px;}';
+			$html .= 'ul,ol{margin-bottom:10px;padding-left:20px;}</style>';
+			$html .= '</head><body>';
+			$html .= '<h1>' . esc_html( $title ) . '</h1>';
+			$html .= wp_kses_post( $content );
+
+			// Add metadata footer.
+			if ( ! empty( $page_data['sources'] ) ) {
+				$html .= '<hr><h3>' . esc_html__( 'Sources', 'mcp-ai-wpoos-pro' ) . '</h3><ul>';
+				foreach ( array_slice( $page_data['sources'], 0, 10 ) as $source ) {
+					$html .= '<li>' . esc_html( $source ) . '</li>';
+				}
+				$html .= '</ul>';
+			}
+
+			$html .= '</body></html>';
+
+			$dompdf = new \Dompdf\Dompdf();
+			$dompdf->loadHtml( $html );
+			$dompdf->setPaper( 'A4', 'portrait' );
+			$dompdf->render();
+
+			$pdf_content = $dompdf->output();
+			$filename    = sanitize_file_name( $title ) . '.pdf';
+
+			// Save to WordPress uploads.
+			$upload = wp_upload_bits( $filename, null, $pdf_content );
+			if ( ! empty( $upload['error'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_upload_error', $upload['error'] );
+			}
+
+			// Create attachment.
+			$attachment = array(
+				'post_title'     => $title,
+				'post_mime_type' => 'application/pdf',
+				'post_status'    => 'inherit',
+			);
+
+			$attachment_id = wp_insert_attachment( $attachment, $upload['file'] );
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
+
+			return array(
+				'format'        => 'pdf',
+				'attachment_id' => $attachment_id,
+				'url'           => $upload['url'],
+				'file_name'     => $filename,
+			);
+		} catch ( \Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_pdf_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'PDF generation failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
+	}
+
+	/**
+	 * Export research content as Word document using PhpWord.
+	 *
+	 * @param string $title     Document title.
+	 * @param string $content   HTML content.
+	 * @param array  $page_data Full page data for metadata.
+	 * @return array|WP_Error Export result or error.
+	 */
+	protected function export_as_docx( $title, $content, $page_data ) {
+		if ( ! class_exists( 'PhpOffice\\PhpWord\\PhpWord' ) ) {
+			// Attempt to load pro vendor autoloader.
+			$autoloader = WP_MCP_AI_PRO_PATH . 'vendor/autoload.php';
+			if ( file_exists( $autoloader ) ) {
+				require_once $autoloader;
+			}
+		}
+
+		if ( ! class_exists( 'PhpOffice\\PhpWord\\PhpWord' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_phpword_unavailable',
+				__( 'PhpWord library is not available. Word export requires the Pro addon with PhpWord installed.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		try {
+			$phpword = new \PhpOffice\PhpWord\PhpWord();
+
+			// Document properties.
+			$properties = $phpword->getDocInfo();
+			$properties->setTitle( $title );
+			$properties->setCreator( 'NV oOS Research Tool' );
+
+			$section = $phpword->addSection();
+
+			// Title.
+			$section->addTitle( $title, 1 );
+
+			// Convert HTML content to Word elements.
+			\PhpOffice\PhpWord\Shared\Html::addHtml( $section, $content, false, false );
+
+			// Add sources section if available.
+			if ( ! empty( $page_data['sources'] ) ) {
+				$section->addTextBreak();
+				$section->addTitle( __( 'Sources', 'mcp-ai-wpoos-pro' ), 2 );
+				foreach ( array_slice( $page_data['sources'], 0, 10 ) as $source ) {
+					$section->addListItem( $source, 0 );
+				}
+			}
+
+			// Save to temp file then upload.
+			$temp_file = wp_tempnam( 'research_' );
+			$writer    = \PhpOffice\PhpWord\IOFactory::createWriter( $phpword, 'Word2007' );
+			$writer->save( $temp_file );
+
+			$filename    = sanitize_file_name( $title ) . '.docx';
+			$file_content = file_get_contents( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			wp_delete_file( $temp_file );
+
+			if ( false === $file_content ) {
+				return new WP_Error( 'wp_mcp_ai_file_error', __( 'Failed to read generated Word document.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$upload = wp_upload_bits( $filename, null, $file_content );
+			if ( ! empty( $upload['error'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_upload_error', $upload['error'] );
+			}
+
+			$attachment = array(
+				'post_title'     => $title,
+				'post_mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+				'post_status'    => 'inherit',
+			);
+
+			$attachment_id = wp_insert_attachment( $attachment, $upload['file'] );
+			if ( is_wp_error( $attachment_id ) ) {
+				return $attachment_id;
+			}
+
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
+
+			return array(
+				'format'        => 'docx',
+				'attachment_id' => $attachment_id,
+				'url'           => $upload['url'],
+				'file_name'     => $filename,
+			);
+		} catch ( \Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_docx_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Word document generation failed: %s', 'mcp-ai-wpoos-pro' ),
+					$e->getMessage()
+				)
+			);
+		}
 	}
 }
