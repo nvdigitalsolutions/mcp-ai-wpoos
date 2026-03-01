@@ -87,6 +87,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// rejected (403) when the auth cookie does not persist across fetch()
 		// calls in Telegram's built-in WebView.
 		add_filter( 'determine_current_user', array( $this, 'authenticate_via_tma_token' ), 20 );
+
+		// Safety net: when Telegram's WebView *does* persist the auth cookie
+		// but the nonce verification fails (e.g. session-token mismatch),
+		// rest_cookie_check_errors (priority 100) returns a WP_Error with code
+		// 'rest_cookie_invalid_nonce'.  This filter (priority 101) runs right
+		// after and clears the error when a valid TMA session token is present.
+		add_filter( 'rest_authentication_errors', array( $this, 'allow_tma_token_auth' ), 101 );
 	}
 
 	/**
@@ -276,6 +283,58 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		return $user_id;
+	}
+
+	/**
+	* Clear a cookie-nonce authentication error when a valid TMA token is present.
+	*
+	* WordPress's `rest_cookie_check_errors` (priority 100) returns a WP_Error
+	* with code `rest_cookie_invalid_nonce` when the auth cookie is present but
+	* the X-WP-Nonce header does not pass `wp_verify_nonce()`.  This can happen
+	* in Telegram's WebView when the browser persists the auth cookie set by
+	* the /validate endpoint but the nonce was generated before the cookie's
+	* session token was written to `$_COOKIE`.  Rather than blocking the
+	* request, we validate the TMA session token and, if it resolves a valid
+	* user, clear the error so the request proceeds.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_Error|mixed $result Current authentication result.
+	* @return true|WP_Error|mixed Cleared result on success, or passthrough.
+	*/
+	public function allow_tma_token_auth( $result ) {
+		if ( ! is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( 'rest_cookie_invalid_nonce' !== $result->get_error_code() ) {
+			return $result;
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_token = isset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
+			? wp_unslash( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] )
+			: '';
+
+		if ( '' === $raw_token ) {
+			return $result;
+		}
+
+		$sanitized = sanitize_text_field( $raw_token );
+
+		if ( ! preg_match( '/^[0-9a-f]{40}$/', $sanitized ) ) {
+			return $result;
+		}
+
+		$token_hash = hash( 'sha256', $sanitized );
+		$user_id    = get_transient( 'wp_mcp_ai_tma_' . $token_hash );
+
+		if ( ! $user_id ) {
+			return $result;
+		}
+
+		wp_set_current_user( (int) $user_id );
+		return true;
 	}
 
 	/**
@@ -1558,7 +1617,24 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		if ( ! is_wp_error( $wp_user_id ) ) {
 			wp_set_current_user( $wp_user_id );
+
+			// Sync the logged-in cookie into $_COOKIE so that the
+			// wp_create_nonce() call below uses the correct session token.
+			// Without this, the nonce is created with an empty/stale session
+			// token and subsequent requests that carry the auth cookie fail
+			// rest_cookie_check_errors with rest_cookie_invalid_nonce (403).
+			$sync_cookie = function ( $value ) {
+				// The value originates from wp_generate_auth_cookie() inside
+				// wp_set_auth_cookie(); it must be stored verbatim so that
+				// wp_get_session_token() extracts the same session token the
+				// browser will send.  sanitize_text_field() would corrupt it.
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+				$_COOKIE[ LOGGED_IN_COOKIE ] = $value;
+			};
+			add_action( 'set_logged_in_cookie', $sync_cookie );
 			wp_set_auth_cookie( $wp_user_id, false );
+			remove_action( 'set_logged_in_cookie', $sync_cookie );
+
 			$wp_nonce = wp_create_nonce( 'wp_rest' );
 
 			// Generate a short-lived session token so that subsequent
