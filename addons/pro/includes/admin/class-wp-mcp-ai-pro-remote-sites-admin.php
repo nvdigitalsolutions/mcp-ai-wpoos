@@ -5030,7 +5030,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							msngGenerateTokenBtn.disabled = false;
 							if (result.success) {
 								var tokenInput  = document.getElementById('messenger_page_access_token');
-								var connIdField = document.querySelector('input[name="connection_id"]');
+								var connIdField = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 
 								// In edit mode (saved connection exists), do not overwrite the Page
 								// Access Token field — the user may already have a saved Page token.
@@ -5069,7 +5069,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var accessToken  = document.getElementById('messenger_page_access_token').value.trim();
 					var pageId       = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
 					var apiVersion   = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
-					var connIdField  = document.querySelector('input[name="connection_id"]');
+					var connIdField  = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					var connectionId = connIdField ? connIdField.value : '';
 
 					// Allow empty field when editing — the server will use the saved token.
