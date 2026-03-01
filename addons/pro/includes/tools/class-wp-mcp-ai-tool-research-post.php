@@ -297,7 +297,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Parse and validate the research results.
-		$post_data = $this->parse_research_results( $research_result, $topic, $template );
+		$post_data = $this->parse_research_results( $research_result, $topic, $template, $custom_format_description );
 
 		if ( is_wp_error( $post_data ) ) {
 			WP_MCP_AI_Logger::log_error(
@@ -867,12 +867,13 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Parse the AI research results into post data format.
 	 *
-	 * @param array  $research_result AI research results.
-	 * @param string $topic           Original topic.
-	 * @param string $template        Template format.
+	 * @param array  $research_result          AI research results.
+	 * @param string $topic                    Original topic.
+	 * @param string $template                 Template format.
+	 * @param string $custom_format_description User-provided custom format description.
 	 * @return array|WP_Error Parsed post data or error.
 	 */
-	protected function parse_research_results( $research_result, $topic, $template ) {
+	protected function parse_research_results( $research_result, $topic, $template, $custom_format_description = '' ) {
 		$content = $research_result['content'];
 
 		// Extract JSON from markdown code blocks if present.
@@ -920,7 +921,7 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'post_type'                 => 'post',
 			'status'                    => 'draft',
 			'template'                  => $template,
-			'custom_format_description' => isset( $data['custom_format_description'] ) ? sanitize_text_field( $data['custom_format_description'] ) : '',
+			'custom_format_description' => $custom_format_description,
 			'sources'                   => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
 			'researched_at'             => current_time( 'mysql' ),
 			'research_model'            => $research_result['model'],
