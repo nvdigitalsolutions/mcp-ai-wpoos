@@ -288,17 +288,23 @@
 		// Second pass: if still over limit, remove oldest entries
 		const remainingKeys = Object.keys(this.cache);
 		if (remainingKeys.length > MAX_CACHE_SIZE) {
-			// Sort by updatedAt ascending (oldest first)
-			remainingKeys.sort(function (a, b) {
-				const aTime = this.cache[a] ? this.cache[a].updatedAt : 0;
-				const bTime = this.cache[b] ? this.cache[b].updatedAt : 0;
-				return aTime - bTime;
-			}.bind(this));
+			// Pre-compute timestamps for sorting efficiency
+			const entries = [];
+			for (let i = 0; i < remainingKeys.length; i++) {
+				const key = remainingKeys[i];
+				const entry = this.cache[key];
+				entries.push({ key: key, time: entry ? entry.updatedAt : 0 });
+			}
+
+			// Sort by timestamp ascending (oldest first)
+			entries.sort(function (a, b) {
+				return a.time - b.time;
+			});
 
 			// Remove oldest entries until we're at the limit
-			const toRemove = remainingKeys.length - MAX_CACHE_SIZE;
+			const toRemove = entries.length - MAX_CACHE_SIZE;
 			for (let i = 0; i < toRemove; i++) {
-				delete this.cache[remainingKeys[i]];
+				delete this.cache[entries[i].key];
 			}
 		}
 	};

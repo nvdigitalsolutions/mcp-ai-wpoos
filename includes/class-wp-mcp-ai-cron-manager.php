@@ -183,11 +183,6 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			}
 			$retention_hours = absint( $retention_hours );
 
-			// Ensure minimum retention of 1 hour to prevent accidental immediate deletion.
-			if ( $retention_hours > 0 && $retention_hours < 1 ) {
-				$retention_hours = 1;
-			}
-
 			// If retention is 0, jobs are removed immediately when not scheduled.
 			$retention_period = $retention_hours > 0 ? $retention_hours * HOUR_IN_SECONDS : 0;
 

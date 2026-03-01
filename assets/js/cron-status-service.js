@@ -33,6 +33,11 @@
 		maxPollingInterval: 300000,
 
 		/**
+		 * Backoff multiplier applied to polling interval on empty responses
+		 */
+		backoffMultiplier: 1.5,
+
+		/**
 		 * Maximum number of consecutive REST polling attempts before stopping
 		 */
 		maxPollingAttempts: 60,
@@ -310,7 +315,7 @@
 					} else {
 						// Increase interval on empty response (exponential backoff with cap)
 						self.pollingIntervals[containerId] = Math.min(
-							currentInterval * 1.5,
+							currentInterval * self.backoffMultiplier,
 							self.maxPollingInterval
 						);
 					}
