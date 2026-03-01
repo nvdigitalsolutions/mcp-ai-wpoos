@@ -2087,5 +2087,129 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'init() should NOT call loadContent() on auth failure (causes stuck UI)'
 		);
 	}
+
+	// =========================================================================
+	// allow_tma_token_auth: rest_authentication_errors safety net
+	// =========================================================================
+
+	/**
+	 * Test that allow_tma_token_auth clears a cookie-nonce error when a valid
+	 * TMA token is present.
+	 */
+	public function test_allow_tma_token_auth_clears_nonce_error_with_valid_token() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Create a user and a valid TMA token.
+		$user_id    = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$raw_token  = bin2hex( random_bytes( 20 ) );
+		$token_hash = hash( 'sha256', $raw_token );
+		set_transient( 'wp_mcp_ai_tma_' . $token_hash, $user_id, HOUR_IN_SECONDS );
+
+		$_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] = $raw_token;
+
+		$error  = new WP_Error( 'rest_cookie_invalid_nonce', 'Cookie check failed', array( 'status' => 403 ) );
+		$result = $controller->allow_tma_token_auth( $error );
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+		delete_transient( 'wp_mcp_ai_tma_' . $token_hash );
+
+		$this->assertTrue( $result, 'allow_tma_token_auth() should return true when a valid TMA token clears the nonce error' );
+		$this->assertEquals( $user_id, get_current_user_id(), 'Current user should be set to the TMA-linked user' );
+	}
+
+	/**
+	 * Test that allow_tma_token_auth passes through non-nonce errors untouched.
+	 */
+	public function test_allow_tma_token_auth_ignores_other_errors() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$error  = new WP_Error( 'rest_forbidden', 'Access denied', array( 'status' => 403 ) );
+		$result = $controller->allow_tma_token_auth( $error );
+
+		$this->assertWPError( $result, 'Non-nonce errors should be passed through unchanged' );
+		$this->assertEquals( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that allow_tma_token_auth passes through when no TMA token header.
+	 */
+	public function test_allow_tma_token_auth_passes_through_without_token() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+
+		$error  = new WP_Error( 'rest_cookie_invalid_nonce', 'Cookie check failed', array( 'status' => 403 ) );
+		$result = $controller->allow_tma_token_auth( $error );
+
+		$this->assertWPError( $result, 'Nonce error should pass through when no TMA token is present' );
+	}
+
+	/**
+	 * Test that allow_tma_token_auth passes through for invalid/unknown token.
+	 */
+	public function test_allow_tma_token_auth_passes_through_for_invalid_token() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Use a well-formed but unknown token.
+		$_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] = bin2hex( random_bytes( 20 ) );
+
+		$error  = new WP_Error( 'rest_cookie_invalid_nonce', 'Cookie check failed', array( 'status' => 403 ) );
+		$result = $controller->allow_tma_token_auth( $error );
+
+		unset( $_SERVER['HTTP_X_WP_MCP_AI_TMA_TOKEN'] );
+
+		$this->assertWPError( $result, 'Nonce error should persist when the TMA token is unknown' );
+	}
+
+	/**
+	 * Test that allow_tma_token_auth returns non-error results unchanged.
+	 */
+	public function test_allow_tma_token_auth_returns_non_error_unchanged() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertNull( $controller->allow_tma_token_auth( null ), 'null should pass through' );
+		$this->assertTrue( $controller->allow_tma_token_auth( true ), 'true should pass through' );
+	}
+
+	// =========================================================================
+	// Cookie sync: $_COOKIE update during /validate
+	// =========================================================================
+
+	/**
+	 * Test that the controller source contains the set_logged_in_cookie hook
+	 * to sync $_COOKIE before wp_create_nonce().
+	 */
+	public function test_validate_handler_syncs_logged_in_cookie() {
+		$source = $this->get_mini_app_inline_js_source();
+		if ( null === $source ) {
+			return;
+		}
+
+		$this->assertStringContainsString(
+			'set_logged_in_cookie',
+			$source,
+			'handle_validate_init_data should hook into set_logged_in_cookie to sync $_COOKIE'
+		);
+		$this->assertStringContainsString(
+			'LOGGED_IN_COOKIE',
+			$source,
+			'handle_validate_init_data should write to $_COOKIE[LOGGED_IN_COOKIE]'
+		);
+	}
 }
 
