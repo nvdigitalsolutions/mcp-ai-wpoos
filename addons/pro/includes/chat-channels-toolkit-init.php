@@ -55,6 +55,22 @@ if ( $is_enabled && ! $is_base ) {
 	}
 	unset( $_apple_rest );
 
+	// --- REST API: Office 365 Outlook webhook controller ---
+	$_outlook_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php';
+	if ( file_exists( $_outlook_rest ) && ! class_exists( 'WP_MCP_AI_Outlook_Webhook_Controller' ) ) {
+		require_once $_outlook_rest;
+		new WP_MCP_AI_Outlook_Webhook_Controller();
+	}
+	unset( $_outlook_rest );
+
+	// --- REST API: iCloud Drive webhook controller ---
+	$_icloud_rest = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php';
+	if ( file_exists( $_icloud_rest ) && ! class_exists( 'WP_MCP_AI_iCloud_Webhook_Controller' ) ) {
+		require_once $_icloud_rest;
+		new WP_MCP_AI_iCloud_Webhook_Controller();
+	}
+	unset( $_icloud_rest );
+
 	// --- Admin: top-level Chat Channels menu (Dashboard, Inbox, Contacts, Automation) ---
 	if ( is_admin() ) {
 		$_cc_menu = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-menu.php';
