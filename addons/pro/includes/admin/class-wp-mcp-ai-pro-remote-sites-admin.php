@@ -33,6 +33,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_auto_reply', array( $this, 'ajax_test_whatsapp_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_auto_reply', array( $this, 'ajax_test_messenger_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
@@ -2818,6 +2819,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="messenger_test_auto_reply_recipient_id" class="regular-text" placeholder="<?php esc_attr_e( 'PSID e.g. 123456789 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Recipient PSID (optional — if provided, the AI reply will be sent via Messenger)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="messenger_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="messenger_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="messenger_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="messenger_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for WebChat -->
 				<tr class="webchat-only-field" style="display: none;">
 					<th scope="row">
@@ -5135,6 +5159,76 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (msngTestResult) {
 								msngTestResult.style.display = 'block';
 								msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Messenger: Test Auto-Reply button.
+			var msngAutoReplyBtn     = document.getElementById('messenger_test_auto_reply_btn');
+			var msngAutoReplySpinner = document.getElementById('messenger_test_auto_reply_spinner');
+			var msngAutoReplyResult  = document.getElementById('messenger_test_auto_reply_result');
+			if (msngAutoReplyBtn) {
+				msngAutoReplyBtn.addEventListener('click', function() {
+					var msgEl         = document.getElementById('messenger_test_auto_reply_msg');
+					var recipientIdEl = document.getElementById('messenger_test_auto_reply_recipient_id');
+					var msg           = msgEl         ? msgEl.value.trim()         : '';
+					var recipientId   = recipientIdEl ? recipientIdEl.value.trim() : '';
+
+					if (!msg) {
+						if (msngAutoReplyResult) {
+							msngAutoReplyResult.style.display = 'block';
+							msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					msngAutoReplyBtn.disabled = true;
+					if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'inline-block'; }
+					if (msngAutoReplyResult)  { msngAutoReplyResult.style.display = 'none'; msngAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_messenger_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (recipientId) { data.append('test_recipient_id', recipientId); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							msngAutoReplyBtn.disabled = false;
+							if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'none'; }
+							if (!msngAutoReplyResult) { return; }
+							msngAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #0084ff;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the recipient via Messenger.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+								} else if (recipientId && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Messenger failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+								}
+								html += '</div>';
+								msngAutoReplyResult.innerHTML = html;
+							} else {
+								msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							msngAutoReplyBtn.disabled = false;
+							if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'none'; }
+							if (msngAutoReplyResult) {
+								msngAutoReplyResult.style.display = 'block';
+								msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -7815,6 +7909,163 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$result['send_error'] = isset( $send_error_body['error']['message'] )
 						? $send_error_body['error']['message']
 						: ( is_wp_error( $send_result ) ? $send_result->get_error_message() : __( 'Unknown send error.', 'mcp-ai-wpoos-pro' ) );
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: test the Facebook Messenger auto-reply flow.
+	 *
+	 * Sends the supplied test message to the first assigned assistant via the
+	 * internal chat REST endpoint and returns the AI-generated reply. Optionally
+	 * delivers the reply to a Messenger recipient (PSID) using the Send API.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_messenger_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_messenger_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id    = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message     = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_recipient   = isset( $_POST['test_recipient_id'] ) ? sanitize_text_field( wp_unslash( $_POST['test_recipient_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		// Call the internal chat REST endpoint using an admin user context.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		// Extract the assistant reply text from the chat endpoint response.
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a recipient PSID was provided, send the reply via the Messenger Send API.
+		if ( ! empty( $test_recipient ) && ! empty( $connection['api_key'] ) ) {
+			$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+			if ( '' !== $access_token ) {
+				$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+					? sanitize_text_field( $connection['graph_api_version'] )
+					: 'v21.0';
+
+				// Messenger does not render HTML; strip tags and cap at 2000 characters.
+				$msng_body = wp_strip_all_tags( $ai_reply );
+				$msng_body = html_entity_decode( $msng_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				if ( mb_strlen( $msng_body ) > 2000 ) {
+					$msng_body = mb_substr( $msng_body, 0, 1997 ) . '...';
+				}
+
+				$endpoint = sprintf(
+					'https://graph.facebook.com/%s/me/messages',
+					rawurlencode( $graph_api_version )
+				);
+
+				$payload = array(
+					'recipient' => array( 'id' => $test_recipient ),
+					'message'   => array( 'text' => $msng_body ),
+				);
+
+				$body = wp_json_encode( $payload );
+				if ( false !== $body ) {
+					$send_result = wp_remote_post(
+						add_query_arg( 'access_token', $access_token, $endpoint ),
+						array(
+							'headers' => array( 'Content-Type' => 'application/json' ),
+							'timeout' => 20,
+							'body'    => $body,
+						)
+					);
+
+					if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+						$result['sent'] = true;
+					} else {
+						$send_body          = is_wp_error( $send_result ) ? '' : wp_remote_retrieve_body( $send_result );
+						$send_error_decoded = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+						$result['send_error'] = is_wp_error( $send_result )
+							? $send_result->get_error_message()
+							: ( isset( $send_error_decoded['error']['message'] ) ? $send_error_decoded['error']['message'] : $send_body );
+					}
 				}
 			}
 		}

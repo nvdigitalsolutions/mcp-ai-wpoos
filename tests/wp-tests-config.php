@@ -18,7 +18,7 @@ if ( ! defined( 'DB_PASSWORD' ) ) {
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
-	define( 'DB_HOST', 'localhost' );
+	define( 'DB_HOST', '127.0.0.1' );
 }
 
 if ( ! defined( 'DB_CHARSET' ) ) {
