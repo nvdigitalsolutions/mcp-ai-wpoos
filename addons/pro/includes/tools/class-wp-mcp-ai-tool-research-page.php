@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Research comprehensive information about a WordPress page topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App). Optimized for static pages like About, Contact, Services, etc.', 'mcp-ai-wpoos-pro' );
+		return __( 'Research comprehensive information about a WordPress page topic using multi-stage web search and AI analysis. Supports configurable research depth (basic/standard/comprehensive) and focus areas for targeted research. Returns title, content, SEO metadata, and formatting instructions based on the selected template (Classic Editor, Block Editor, Elementor, or Custom formats like Telegram Mini App). Accepts reference template files (Elementor JSON, Block Editor patterns, or custom JSON layouts) to guide content structure. Optimized for static pages like About, Contact, Services, etc.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -136,6 +136,10 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'custom_format_description' => array(
 					'type'        => 'string',
 					'description' => __( 'Description of the custom format when template is "custom" (e.g., "Telegram Mini App", "Headless CMS JSON", "React component"). Ignored unless template is "custom".', 'mcp-ai-wpoos-pro' ),
+				),
+				'template_data'            => array(
+					'type'        => 'string',
+					'description' => __( 'Reference template structure as a JSON string. Accepts Elementor template JSON, Block Editor (Gutenberg) block pattern JSON, or any structured JSON layout. The AI will use this as a structural guide when generating content. Maximum 10 000 characters.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_seo'              => array(
 					'type'        => 'boolean',
@@ -219,6 +223,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$word_count               = isset( $arguments['word_count'] ) ? absint( $arguments['word_count'] ) : 800;
 		$template                 = isset( $arguments['template'] ) ? sanitize_key( $arguments['template'] ) : 'block-editor';
 		$custom_format_description = isset( $arguments['custom_format_description'] ) ? sanitize_text_field( $arguments['custom_format_description'] ) : '';
+		$template_data            = isset( $arguments['template_data'] ) ? $arguments['template_data'] : '';
 		$include_seo              = isset( $arguments['include_seo'] ) ? (bool) $arguments['include_seo'] : true;
 		$tone                     = isset( $arguments['tone'] ) ? sanitize_key( $arguments['tone'] ) : 'professional';
 
@@ -237,6 +242,20 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$template = 'block-editor';
 		}
 
+		// Validate and sanitize template_data (JSON string, max 10 000 chars).
+		if ( ! empty( $template_data ) ) {
+			if ( ! is_string( $template_data ) ) {
+				$template_data = wp_json_encode( $template_data );
+			}
+			// Enforce maximum length to stay within token budgets.
+			$template_data = substr( $template_data, 0, 10000 );
+			// Validate it is parseable JSON.
+			$decoded = json_decode( $template_data, true );
+			if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
+				$template_data = '';
+			}
+		}
+
 		// Validate page type.
 		$valid_page_types = array( 'about', 'contact', 'services', 'privacy-policy', 'terms-conditions', 'faq', 'landing', 'custom' );
 		if ( ! in_array( $page_type, $valid_page_types, true ) ) {
@@ -249,7 +268,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check cache first.
-		$cache_key = 'page_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $page_type . '_' . $word_count . '_' . $template . '_' . $custom_format_description . '_' . $tone );
+		$cache_key = 'page_research_' . md5( $topic . '_' . $depth . '_' . implode( '_', $focus_areas ) . '_' . $page_type . '_' . $word_count . '_' . $template . '_' . $custom_format_description . '_' . md5( $template_data ) . '_' . $tone );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_page_research' );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -269,6 +288,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'word_count'               => $word_count,
 				'template'                 => $template,
 				'custom_format_description' => $custom_format_description,
+				'has_template_data'        => ! empty( $template_data ),
 				'user_id'                  => $user_id,
 			)
 		);
@@ -294,7 +314,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Step 2: Build research prompt with gathered information.
-		$prompt = $this->build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $include_seo, $tone );
+		$prompt = $this->build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $include_seo, $tone );
 
 		// Step 3: Use AI to research the topic and generate content.
 		$research_result = $this->perform_ai_research( $prompt, $context );
@@ -312,6 +332,11 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Parse and validate the research results.
 		$page_data = $this->parse_research_results( $research_result, $topic, $page_type, $template, $custom_format_description );
+
+		// Flag whether a reference template was used.
+		if ( ! is_wp_error( $page_data ) && ! empty( $template_data ) ) {
+			$page_data['has_template_data'] = true;
+		}
 
 		if ( is_wp_error( $page_data ) ) {
 			WP_MCP_AI_Logger::log_error(
@@ -542,11 +567,12 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param int    $word_count               Target word count.
 	 * @param string $template                 Template format.
 	 * @param string $custom_format_description Description for custom template format.
+	 * @param string $template_data            Reference template JSON structure.
 	 * @param bool   $include_seo              Whether to include SEO.
 	 * @param string $tone                     Tone of voice.
 	 * @return string Research prompt.
 	 */
-	protected function build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $include_seo, $tone ) {
+	protected function build_research_prompt( $topic, $page_type, $depth, $focus_areas, $search_results, $word_count, $template, $custom_format_description, $template_data, $include_seo, $tone ) {
 		$template_label = $template;
 		if ( 'custom' === $template && ! empty( $custom_format_description ) ) {
 			$template_label = 'custom (' . $custom_format_description . ')';
@@ -715,6 +741,15 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					}
 				}
 				break;
+		}
+
+		// Add reference template data if provided.
+		if ( ! empty( $template_data ) ) {
+			$prompt .= "\n**Reference Template Structure:**\n";
+			$prompt .= "The following JSON represents a reference template structure (e.g., Elementor template, Block Editor pattern, or custom layout). ";
+			$prompt .= "Use this as a structural guide for organizing the content — match the section layout, widget types, and content hierarchy:\n\n";
+			$prompt .= "```json\n" . $template_data . "\n```\n\n";
+			$prompt .= "Adapt the generated content to fit the sections and structure defined in this template.\n";
 		}
 
 		$prompt .= "\n**Tone Guidelines:**\n";
@@ -1073,8 +1108,15 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( 'custom' === $page_data['template'] && ! empty( $page_data['custom_format_description'] ) ) {
 				$template_name .= ' (' . $page_data['custom_format_description'] . ')';
 			}
-			$report       .= "**Template:** " . esc_html( $template_name ) . "\n\n";
+			$report       .= "**Template:** " . esc_html( $template_name ) . "\n";
 		}
+
+		// Reference template indicator.
+		if ( ! empty( $page_data['has_template_data'] ) ) {
+			$report .= "**Reference Template:** ✓ Provided (content structured to match template layout)\n";
+		}
+
+		$report .= "\n";
 
 		// Content sections/structure.
 		if ( ! empty( $page_data['content'] ) ) {

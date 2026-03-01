@@ -180,4 +180,66 @@ class WP_MCP_AI_Research_Tool_Template_Support_Test extends WP_UnitTestCase {
 		$template_desc = $schema['properties']['template']['description'];
 		$this->assertStringContainsString( 'custom', $template_desc );
 	}
+
+	/**
+	 * Test that research_page tool schema includes template_data parameter.
+	 */
+	public function test_research_page_schema_includes_template_data() {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Research_Page' ) ) {
+			$this->markTestSkipped( 'Research Page tool class not loaded (Pro only).' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Research_Page();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'template_data', $schema['properties'] );
+		$this->assertSame( 'string', $schema['properties']['template_data']['type'] );
+	}
+
+	/**
+	 * Test that research_post tool schema includes template_data parameter.
+	 */
+	public function test_research_post_schema_includes_template_data() {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Research_Post' ) ) {
+			$this->markTestSkipped( 'Research Post tool class not loaded (Pro only).' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Research_Post();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'template_data', $schema['properties'] );
+		$this->assertSame( 'string', $schema['properties']['template_data']['type'] );
+	}
+
+	/**
+	 * Test that template_data is not a required field.
+	 */
+	public function test_template_data_is_optional() {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Research_Page' ) ) {
+			$this->markTestSkipped( 'Research Page tool class not loaded (Pro only).' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Research_Page();
+		$schema = $tool->get_parameters_schema();
+
+		$required = isset( $schema['required'] ) ? $schema['required'] : array();
+		$this->assertNotContains( 'template_data', $required );
+	}
+
+	/**
+	 * Test that template_data description mentions JSON and Elementor.
+	 */
+	public function test_template_data_description_mentions_supported_formats() {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Research_Page' ) ) {
+			$this->markTestSkipped( 'Research Page tool class not loaded (Pro only).' );
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Research_Page();
+		$schema = $tool->get_parameters_schema();
+
+		$desc = $schema['properties']['template_data']['description'];
+		$this->assertStringContainsString( 'Elementor', $desc );
+		$this->assertStringContainsString( 'JSON', $desc );
+		$this->assertStringContainsString( 'Block Editor', $desc );
+	}
 }
