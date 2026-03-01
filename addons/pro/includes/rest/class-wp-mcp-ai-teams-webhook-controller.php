@@ -637,9 +637,10 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function extract_message_text( array $payload ) {
 		if ( isset( $payload['text'] ) && is_string( $payload['text'] ) ) {
-			// Strip the bot @mention if present (Teams prefixes messages with the bot display name).
-			$text = trim( wp_strip_all_tags( $payload['text'] ) );
-			$text = preg_replace( '/^<at>[^<]+<\/at>\s*/i', '', $text );
+			// Strip the bot @mention before stripping HTML tags so the
+			// display-name inside <at>…</at> is removed entirely.
+			$text = preg_replace( '/<at>[^<]*<\/at>\s*/i', '', $payload['text'] );
+			$text = trim( wp_strip_all_tags( $text ) );
 			return sanitize_textarea_field( trim( $text ) );
 		}
 
