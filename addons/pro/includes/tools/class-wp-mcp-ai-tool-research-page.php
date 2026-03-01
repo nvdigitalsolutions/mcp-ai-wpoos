@@ -49,6 +49,13 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	const MAX_DISPLAYED_SOURCES = 5;
 
 	/**
+	 * Maximum length for template_data JSON input (characters).
+	 *
+	 * @var int
+	 */
+	const MAX_TEMPLATE_DATA_LENGTH = 10000;
+
+	/**
 	 * Number of queries for basic depth research.
 	 *
 	 * @var int
@@ -248,7 +255,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$template_data = wp_json_encode( $template_data );
 			}
 			// Enforce maximum length to stay within token budgets.
-			$template_data = substr( $template_data, 0, 10000 );
+			$template_data = substr( $template_data, 0, self::MAX_TEMPLATE_DATA_LENGTH );
 			// Validate it is parseable JSON.
 			$decoded = json_decode( $template_data, true );
 			if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
