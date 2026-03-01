@@ -1976,5 +1976,114 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'authenticate_via_tma_token() must not override an already-authenticated user'
 		);
 	}
+
+	// =========================================================================
+	// Telegram Mini App inline JS: infinite-loop prevention & fallback tests
+	// =========================================================================
+
+	/**
+	 * Helper: capture the full HTML output of handle_mini_app().
+	 *
+	 * Because the handler calls exit(), we invoke it inside a
+	 * separate PHP process via output buffering + shutdown function
+	 * simulation.  As a simpler alternative we just read the source
+	 * file and assert against the embedded JavaScript literals.
+	 *
+	 * @return string|null Inline JavaScript source or null if not available.
+	 */
+	private function get_mini_app_inline_js_source() {
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return null;
+		}
+		$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+		if ( ! file_exists( $file ) ) {
+			$this->markTestSkipped( 'Telegram Mini App Controller file not available' );
+			return null;
+		}
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		return file_get_contents( $file );
+	}
+
+	/**
+	 * Test that validateInitData() always rejects on errors (no silent resolve).
+	 *
+	 * The original bug allowed non-string errors (network/parse failures)
+	 * to silently resolve the promise, which caused an infinite auth loop.
+	 */
+	public function test_validate_init_data_js_rejects_on_network_error() {
+		$source = $this->get_mini_app_inline_js_source();
+		if ( null === $source ) {
+			return;
+		}
+
+		$this->assertStringContainsString(
+			"Promise.reject(typeof err === \\'string\\' ? err : \\'network_error\\')",
+			$source,
+			'validateInitData() catch handler should always reject, mapping non-string errors to network_error'
+		);
+	}
+
+	/**
+	 * Test that the global retry limit variable is defined.
+	 */
+	public function test_mini_app_js_defines_global_retry_limit() {
+		$source = $this->get_mini_app_inline_js_source();
+		if ( null === $source ) {
+			return;
+		}
+
+		$this->assertStringContainsString(
+			'tmaGlobalRetries',
+			$source,
+			'Mini App JS should define a global retry counter to prevent infinite loops'
+		);
+		$this->assertStringContainsString(
+			'TMA_MAX_AUTO_RETRIES',
+			$source,
+			'Mini App JS should define a maximum auto-retry constant'
+		);
+	}
+
+	/**
+	 * Test that showLoginPrompt checks the global retry limit.
+	 */
+	public function test_show_login_prompt_checks_global_retry_limit() {
+		$source = $this->get_mini_app_inline_js_source();
+		if ( null === $source ) {
+			return;
+		}
+
+		$this->assertStringContainsString(
+			'tmaGlobalRetries < TMA_MAX_AUTO_RETRIES',
+			$source,
+			'showLoginPrompt should check the global retry limit before auto-retrying'
+		);
+	}
+
+	/**
+	 * Test that init falls back to Chat tab when validation fails.
+	 */
+	public function test_init_falls_back_to_chat_tab_on_auth_failure() {
+		$source = $this->get_mini_app_inline_js_source();
+		if ( null === $source ) {
+			return;
+		}
+
+		// The init function should switch to the Chat tab on auth failure
+		// instead of trying to load Content (which requires auth).
+		$this->assertStringContainsString(
+			"tmaSwitchTab(\\'chat\\')",
+			$source,
+			'init() should fall back to Chat tab when validateInitData() fails'
+		);
+
+		// Ensure the old pattern (catch → loadContent) is NOT present in init.
+		$this->assertStringNotContainsString(
+			'validateInitData().then(loadContent).catch(loadContent)',
+			$source,
+			'init() should NOT call loadContent() on auth failure (causes stuck UI)'
+		);
+	}
 }
 
