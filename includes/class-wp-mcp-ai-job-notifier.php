@@ -753,14 +753,22 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param array  $payload Payload to send.
 	 */
 	public static function send_webhook( $url, $payload ) {
+		$body = wp_json_encode( $payload );
+
+		// Generate HMAC-SHA256 signature for webhook integrity verification.
+		$webhook_secret = self::get_webhook_secret();
+		$signature      = hash_hmac( 'sha256', $body, $webhook_secret );
+
 		$response = wp_remote_post(
 			$url,
 			array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
-					'User-Agent'   => 'WP-MCP-AI-Webhook/1.0',
+					'Content-Type'                => 'application/json',
+					'User-Agent'                  => 'WP-MCP-AI-Webhook/1.0',
+					'X-WP-MCP-AI-Signature'       => $signature,
+					'X-WP-MCP-AI-Signature-Algo'  => 'sha256',
 				),
-				'body'    => wp_json_encode( $payload ),
+				'body'    => $body,
 				'timeout' => 10,
 			)
 		);
@@ -858,18 +866,53 @@ class WP_MCP_AI_Job_Notifier {
 	}
 
 	/**
+	 * Get or generate the webhook signing secret.
+	 *
+	 * The secret is stored as a WordPress option and auto-generated on first use.
+	 * Used for HMAC-SHA256 signing of outbound webhook payloads.
+	 *
+	 * @return string Webhook signing secret.
+	 */
+	protected static function get_webhook_secret() {
+		$secret = get_option( 'wp_mcp_ai_webhook_secret', '' );
+
+		if ( empty( $secret ) ) {
+			$secret = wp_generate_password( 64, true, true );
+			update_option( 'wp_mcp_ai_webhook_secret', $secret, false );
+		}
+
+		return $secret;
+	}
+
+	/**
+	 * Maximum recursion depth for data normalization.
+	 *
+	 * @var int
+	 */
+	const MAX_NORMALIZE_DEPTH = 20;
+
+	/**
 	 * Recursively normalize data structures to ensure JSON serializability.
 	 *
 	 * Walks through arrays and objects to convert any WP_Error instances
 	 * to serializable array format. This prevents JSON encoding failures
 	 * when sending data through SSE streams or REST API responses.
 	 *
+	 * Enforces a maximum recursion depth to prevent stack overflow from
+	 * deeply nested or circular data structures.
+	 *
 	 * @since 1.1.0
 	 *
-	 * @param mixed $data Data to normalize, can be any type.
+	 * @param mixed $data  Data to normalize, can be any type.
+	 * @param int   $depth Current recursion depth (internal use).
 	 * @return mixed Normalized data with all WP_Error objects converted to arrays.
 	 */
-	protected static function normalize_data_recursive( $data ) {
+	protected static function normalize_data_recursive( $data, $depth = 0 ) {
+		// Guard against excessive recursion depth.
+		if ( $depth >= self::MAX_NORMALIZE_DEPTH ) {
+			return '[max recursion depth reached]';
+		}
+
 		// Handle WP_Error directly.
 		if ( is_wp_error( $data ) ) {
 			$error_data  = $data->get_error_data();
@@ -890,7 +933,7 @@ class WP_MCP_AI_Job_Notifier {
 		if ( is_array( $data ) ) {
 			$normalized = array();
 			foreach ( $data as $key => $value ) {
-				$normalized[ $key ] = self::normalize_data_recursive( $value );
+				$normalized[ $key ] = self::normalize_data_recursive( $value, $depth + 1 );
 			}
 			return $normalized;
 		}
@@ -898,7 +941,7 @@ class WP_MCP_AI_Job_Notifier {
 		// Handle objects - convert to array and recurse.
 		// Note: WP_Error is already handled above via is_wp_error() check.
 		if ( is_object( $data ) ) {
-			return self::normalize_data_recursive( (array) $data );
+			return self::normalize_data_recursive( (array) $data, $depth + 1 );
 		}
 
 		// Scalars pass through unchanged.

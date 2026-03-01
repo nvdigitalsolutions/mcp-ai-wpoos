@@ -23,9 +23,19 @@
 	 */
 	const CronStatusService = {
 		/**
-		 * Fallback polling interval in milliseconds (30 seconds)
+		 * Initial fallback polling interval in milliseconds (30 seconds)
 		 */
 		fallbackPollingInterval: 30000,
+
+		/**
+		 * Maximum polling interval in milliseconds (5 minutes)
+		 */
+		maxPollingInterval: 300000,
+
+		/**
+		 * Maximum number of consecutive REST polling attempts before stopping
+		 */
+		maxPollingAttempts: 60,
 
 		/**
 		 * Active SSE connections by container ID
@@ -38,9 +48,29 @@
 		fallbackPollers: {},
 
 		/**
+		 * Current polling interval per container (for exponential backoff)
+		 */
+		pollingIntervals: {},
+
+		/**
+		 * Polling attempt counters per container
+		 */
+		pollingAttempts: {},
+
+		/**
 		 * Cached status data by container ID
 		 */
 		cache: {},
+
+		/**
+		 * Cache timestamps by container ID
+		 */
+		cacheTimestamps: {},
+
+		/**
+		 * Maximum cache age in milliseconds (2 minutes)
+		 */
+		cacheMaxAge: 120000,
 
 		/**
 		 * Fetch cron job status from REST API (fallback method)
@@ -206,7 +236,7 @@
 		},
 
 		/**
-		 * Start fallback REST polling
+		 * Start fallback REST polling with exponential backoff
 		 * 
 		 * @param {string} containerId - Chat container ID
 		 * @param {string} endpoint - REST API endpoint URL
@@ -218,10 +248,15 @@
 		startFallbackPolling: function (containerId, endpoint, nonce, callback, assistantId, guestToken) {
 			const self = this;
 
+			// Initialize polling state for this container
+			this.pollingIntervals[containerId] = this.fallbackPollingInterval;
+			this.pollingAttempts[containerId] = 0;
+
 			// Fetch immediately
 			this.fetchStatusREST(endpoint, nonce, 10, assistantId, guestToken).then(function (data) {
 				if (data) {
 					self.cache[containerId] = data;
+					self.cacheTimestamps[containerId] = Date.now();
 					if (callback && typeof callback === 'function') {
 						callback(data);
 					}
@@ -230,19 +265,60 @@
 				}
 			});
 
-			// Set up polling interval
-			this.fallbackPollers[containerId] = setInterval(function () {
+			// Set up polling with exponential backoff
+			this.scheduleNextPoll(containerId, endpoint, nonce, callback, assistantId, guestToken);
+		},
+
+		/**
+		 * Schedule next REST polling attempt with exponential backoff
+		 * 
+		 * @param {string} containerId - Chat container ID
+		 * @param {string} endpoint - REST API endpoint URL
+		 * @param {string} nonce - WordPress REST nonce
+		 * @param {Function} callback - Callback function to handle status updates
+		 * @param {number} assistantId - Optional assistant ID for filtering
+		 * @param {string} guestToken - Optional guest token for public chat surfaces
+		 */
+		scheduleNextPoll: function (containerId, endpoint, nonce, callback, assistantId, guestToken) {
+			const self = this;
+			const currentInterval = this.pollingIntervals[containerId] || this.fallbackPollingInterval;
+
+			this.fallbackPollers[containerId] = setTimeout(function () {
+				// Check max attempts
+				self.pollingAttempts[containerId] = (self.pollingAttempts[containerId] || 0) + 1;
+
+				if (self.pollingAttempts[containerId] >= self.maxPollingAttempts) {
+					if (window.console && console.warn) {
+						console.warn('[NV oOS] Max polling attempts (' + self.maxPollingAttempts + ') reached for', containerId);
+					}
+					self.stopFallbackPolling(containerId);
+					return;
+				}
+
 				self.fetchStatusREST(endpoint, nonce, 10, assistantId, guestToken).then(function (data) {
 					if (data) {
 						self.cache[containerId] = data;
+						self.cacheTimestamps[containerId] = Date.now();
 						if (callback && typeof callback === 'function') {
 							callback(data);
 						}
 						// Emit job updates through event bus for REST polling too
 						self.emitJobUpdates(data);
+
+						// Reset backoff on successful response with data
+						self.pollingIntervals[containerId] = self.fallbackPollingInterval;
+					} else {
+						// Increase interval on empty response (exponential backoff with cap)
+						self.pollingIntervals[containerId] = Math.min(
+							currentInterval * 1.5,
+							self.maxPollingInterval
+						);
 					}
+
+					// Schedule next poll
+					self.scheduleNextPoll(containerId, endpoint, nonce, callback, assistantId, guestToken);
 				});
-			}, this.fallbackPollingInterval);
+			}, currentInterval);
 		},
 
 		/**
@@ -267,9 +343,11 @@
 		 */
 		stopFallbackPolling: function (containerId) {
 			if (this.fallbackPollers[containerId]) {
-				clearInterval(this.fallbackPollers[containerId]);
+				clearTimeout(this.fallbackPollers[containerId]);
 				delete this.fallbackPollers[containerId];
 			}
+			delete this.pollingIntervals[containerId];
+			delete this.pollingAttempts[containerId];
 		},
 
 		/**
@@ -285,11 +363,26 @@
 		/**
 		 * Get cached status for a container
 		 * 
+		 * Returns null if cache entry has expired (older than cacheMaxAge).
+		 * 
 		 * @param {string} containerId - Chat container ID
 		 * @return {Object|null} Cached status data or null
 		 */
 		getCached: function (containerId) {
-			return this.cache[containerId] || null;
+			if (!this.cache[containerId]) {
+				return null;
+			}
+
+			// Check cache freshness
+			var timestamp = this.cacheTimestamps[containerId] || 0;
+			if (Date.now() - timestamp > this.cacheMaxAge) {
+				// Cache expired, clean up
+				delete this.cache[containerId];
+				delete this.cacheTimestamps[containerId];
+				return null;
+			}
+
+			return this.cache[containerId];
 		},
 
 		/**
@@ -300,6 +393,9 @@
 		clearCache: function (containerId) {
 			if (this.cache[containerId]) {
 				delete this.cache[containerId];
+			}
+			if (this.cacheTimestamps[containerId]) {
+				delete this.cacheTimestamps[containerId];
 			}
 		},
 

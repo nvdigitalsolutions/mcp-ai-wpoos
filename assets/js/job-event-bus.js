@@ -105,17 +105,28 @@
 	}
 
 	/**
+	 * Maximum number of jobs to keep in cache (LRU eviction)
+	 */
+	const MAX_CACHE_SIZE = 100;
+
+	/**
+	 * Maximum age for cached entries in milliseconds (30 minutes)
+	 */
+	const CACHE_MAX_AGE_MS = 1800000;
+
+	/**
 	 * Job Event Bus - Extended event emitter for job status coordination
 	 *
 	 * Extends the base mitt-compatible API with job-specific features:
-	 * - Job status caching
+	 * - Job status caching with LRU eviction
 	 * - Promise-based job watching
 	 * - Automatic status normalization
+	 * - Cache size limits to prevent memory leaks
 	 */
 	const JobEventBus = createEventBus();
 
 	/**
-	 * Cache of job statuses for quick access
+	 * Cache of job statuses for quick access (bounded by MAX_CACHE_SIZE)
 	 */
 	JobEventBus.cache = {};
 
@@ -130,6 +141,9 @@
 		if (!jobId || !data) {
 			return;
 		}
+
+		// Evict oldest entries if cache exceeds max size
+		this.evictStaleCache();
 
 		// Update cache
 		this.cache[jobId] = {
@@ -251,6 +265,42 @@
 				self.on('job:progress', progressHandler);
 			}
 		});
+	};
+
+	/**
+	 * Evict stale and oldest entries from cache to prevent unbounded growth
+	 *
+	 * Removes entries older than CACHE_MAX_AGE_MS first, then evicts
+	 * the oldest entries if cache still exceeds MAX_CACHE_SIZE.
+	 */
+	JobEventBus.evictStaleCache = function () {
+		const keys = Object.keys(this.cache);
+		const now = Date.now();
+
+		// First pass: remove entries older than max age
+		for (let i = 0; i < keys.length; i++) {
+			const entry = this.cache[keys[i]];
+			if (entry && (now - entry.updatedAt) > CACHE_MAX_AGE_MS) {
+				delete this.cache[keys[i]];
+			}
+		}
+
+		// Second pass: if still over limit, remove oldest entries
+		const remainingKeys = Object.keys(this.cache);
+		if (remainingKeys.length > MAX_CACHE_SIZE) {
+			// Sort by updatedAt ascending (oldest first)
+			remainingKeys.sort(function (a, b) {
+				const aTime = this.cache[a] ? this.cache[a].updatedAt : 0;
+				const bTime = this.cache[b] ? this.cache[b].updatedAt : 0;
+				return aTime - bTime;
+			}.bind(this));
+
+			// Remove oldest entries until we're at the limit
+			const toRemove = remainingKeys.length - MAX_CACHE_SIZE;
+			for (let i = 0; i < toRemove; i++) {
+				delete this.cache[remainingKeys[i]];
+			}
+		}
 	};
 
 	/**

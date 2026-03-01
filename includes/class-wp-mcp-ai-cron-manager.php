@@ -183,6 +183,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			}
 			$retention_hours = absint( $retention_hours );
 
+			// Ensure minimum retention of 1 hour to prevent accidental immediate deletion.
+			if ( $retention_hours > 0 && $retention_hours < 1 ) {
+				$retention_hours = 1;
+			}
+
 			// If retention is 0, jobs are removed immediately when not scheduled.
 			$retention_period = $retention_hours > 0 ? $retention_hours * HOUR_IN_SECONDS : 0;
 
@@ -247,6 +252,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$raw_jobs = get_option( self::OPTION_NAME, array() );
 
 			if ( ! is_array( $raw_jobs ) ) {
+				// Option data is corrupted - log and reset.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Cron manager jobs option is corrupted, resetting',
+						array(
+							'type'  => gettype( $raw_jobs ),
+							'value' => is_string( $raw_jobs ) ? substr( $raw_jobs, 0, 100 ) : 'non-string',
+						)
+					);
+				}
 				$raw_jobs = array();
 			}
 
