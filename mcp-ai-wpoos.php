@@ -1879,6 +1879,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			set_transient( 'wp_mcp_ai_install_default_assistants', true, HOUR_IN_SECONDS );
 		}
 
+		// Install bundled Anthropic Agent Skills on activation.
+		// Deferred to init hook to ensure the uploads directory is accessible.
+		// Skills that are already installed in uploads will be skipped.
+		set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
+
 		// Trigger optional components download (vectorizer & knowledge base).
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
@@ -1979,6 +1984,33 @@ add_action(
 		}
 	},
 	100 // Run late to ensure CPT is registered.
+);
+
+/**
+ * Install bundled Anthropic Agent Skills on init if activation transient is set.
+ *
+ * Copies pre-packaged SKILL.md files from the plugin's bundled-skills directory
+ * to the uploads skill storage. Already-installed skills are skipped.
+ *
+ * @since 1.7.1
+ */
+add_action(
+	'init',
+	function () {
+		if ( get_transient( 'wp_mcp_ai_install_bundled_skills' ) ) {
+			delete_transient( 'wp_mcp_ai_install_bundled_skills' );
+
+			$registry = WP_MCP_AI_Skill_Registry::instance();
+			$result   = $registry->install_bundled_skills();
+
+			// Log any errors for debugging.
+			if ( ! empty( $result['errors'] ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
+				error_log( 'WP_MCP_AI: Bundled skills install errors: ' . implode( '; ', $result['errors'] ) );
+			}
+		}
+	},
+	100
 );
 
 if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {
