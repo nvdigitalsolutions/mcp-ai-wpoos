@@ -16181,36 +16181,52 @@
                         item.appendChild(meta);
                     }
                 } else {
-                    // Render as download link (existing behavior)
+                    // Render as file-type card with icon, name, type label and download link
+                    const fileName = attachment.downloadName || attachment.label || '';
+                    const fileExt = getFileExtension(fileName);
+                    const svc = window.wpMcpAiChatAttachments;
+                    const typeInfo = (svc && svc.getFileTypeInfo) ? svc.getFileTypeInfo(fileExt) : { label: 'File', icon: '📄' };
+
+                    const card = document.createElement('div');
+                    card.className = 'wp-mcp-ai-chat__file-card';
+
+                    const iconEl = document.createElement('span');
+                    iconEl.className = 'wp-mcp-ai-chat__file-card-icon';
+                    iconEl.textContent = typeInfo.icon;
+                    card.appendChild(iconEl);
+
+                    const details = document.createElement('div');
+                    details.className = 'wp-mcp-ai-chat__file-card-details';
+
+                    const nameEl = document.createElement('span');
+                    nameEl.className = 'wp-mcp-ai-chat__file-card-name';
+                    nameEl.textContent = fileName || getString('downloadAttachment', 'Download attachment');
+                    details.appendChild(nameEl);
+
+                    const typeLabel = document.createElement('span');
+                    typeLabel.className = 'wp-mcp-ai-chat__file-card-type';
+                    let typeLabelText = typeInfo.label;
+                    if (attachment.meta) {
+                        typeLabelText += ' • ' + attachment.meta;
+                    }
+                    typeLabel.textContent = typeLabelText;
+                    details.appendChild(typeLabel);
+
+                    card.appendChild(details);
+
                     const link = document.createElement('a');
                     link.href = attachment.url;
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
-                    link.textContent = attachment.label;
+                    link.className = 'wp-mcp-ai-chat__file-card-link';
+                    link.textContent = getString('downloadAttachment', 'Download');
 
                     if (attachment.downloadName) {
                         link.download = attachment.downloadName;
                     }
 
-                    item.appendChild(link);
-
-                    if (attachment.meta || attachment.url) {
-                        const meta = document.createElement('span');
-                        meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                        
-                        // Build metadata string with URL
-                        let metaText = '';
-                        if (attachment.meta) {
-                            metaText = attachment.meta;
-                        }
-                        if (attachment.url) {
-                            metaText += (metaText ? ' • URL: ' : 'URL: ') + attachment.url;
-                        }
-                        
-                        meta.textContent = metaText;
-                        item.appendChild(document.createTextNode(' – '));
-                        item.appendChild(meta);
-                    }
+                    card.appendChild(link);
+                    item.appendChild(card);
                 }
 
                 container.appendChild(item);

@@ -434,6 +434,155 @@
             const safeName = filename.replace(/[^\w\s.-]/g, '_');
             return 'attachment; filename="' + safeName + '"';
         },
+
+        /**
+         * Get file type information (label and icon) for a given file extension.
+         *
+         * Maps 40+ common document types to human-readable labels and emoji icons.
+         * Returns a default "File" entry for unrecognised extensions.
+         *
+         * @param {string} ext - File extension (without dot), e.g. "pdf", "docx".
+         * @return {Object} Object with `label` (string) and `icon` (string) properties.
+         */
+        getFileTypeInfo: function(ext) {
+            if (!ext || typeof ext !== 'string') {
+                return { label: 'File', icon: '📄' };
+            }
+
+            const map = {
+                // Documents
+                pdf:  { label: 'PDF Document', icon: '📕' },
+                doc:  { label: 'Word Document', icon: '📝' },
+                docx: { label: 'Word Document', icon: '📝' },
+                odt:  { label: 'OpenDocument Text', icon: '📝' },
+                rtf:  { label: 'Rich Text', icon: '📝' },
+                txt:  { label: 'Text File', icon: '📄' },
+                md:   { label: 'Markdown', icon: '📄' },
+                // Spreadsheets
+                xls:  { label: 'Excel Spreadsheet', icon: '📊' },
+                xlsx: { label: 'Excel Spreadsheet', icon: '📊' },
+                ods:  { label: 'OpenDocument Spreadsheet', icon: '📊' },
+                csv:  { label: 'CSV File', icon: '📊' },
+                tsv:  { label: 'TSV File', icon: '📊' },
+                // Presentations
+                ppt:  { label: 'PowerPoint', icon: '📽️' },
+                pptx: { label: 'PowerPoint', icon: '📽️' },
+                odp:  { label: 'OpenDocument Presentation', icon: '📽️' },
+                key:  { label: 'Keynote', icon: '📽️' },
+                // Data / config
+                json: { label: 'JSON', icon: '🔧' },
+                xml:  { label: 'XML', icon: '🔧' },
+                yaml: { label: 'YAML', icon: '🔧' },
+                yml:  { label: 'YAML', icon: '🔧' },
+                toml: { label: 'TOML', icon: '🔧' },
+                ini:  { label: 'INI Config', icon: '🔧' },
+                env:  { label: 'Environment', icon: '🔧' },
+                // Archives
+                zip:  { label: 'ZIP Archive', icon: '🗜️' },
+                rar:  { label: 'RAR Archive', icon: '🗜️' },
+                '7z': { label: '7-Zip Archive', icon: '🗜️' },
+                tar:  { label: 'TAR Archive', icon: '🗜️' },
+                gz:   { label: 'GZip Archive', icon: '🗜️' },
+                bz2:  { label: 'BZip2 Archive', icon: '🗜️' },
+                // Code
+                js:   { label: 'JavaScript', icon: '💻' },
+                ts:   { label: 'TypeScript', icon: '💻' },
+                py:   { label: 'Python', icon: '💻' },
+                php:  { label: 'PHP', icon: '💻' },
+                rb:   { label: 'Ruby', icon: '💻' },
+                java: { label: 'Java', icon: '💻' },
+                c:    { label: 'C', icon: '💻' },
+                cpp:  { label: 'C++', icon: '💻' },
+                cs:   { label: 'C#', icon: '💻' },
+                go:   { label: 'Go', icon: '💻' },
+                rs:   { label: 'Rust', icon: '💻' },
+                swift:{ label: 'Swift', icon: '💻' },
+                html: { label: 'HTML', icon: '🌐' },
+                css:  { label: 'CSS', icon: '🎨' },
+                scss: { label: 'SCSS', icon: '🎨' },
+                less: { label: 'LESS', icon: '🎨' },
+                sql:  { label: 'SQL', icon: '🗃️' },
+                sh:   { label: 'Shell Script', icon: '💻' },
+                bat:  { label: 'Batch Script', icon: '💻' },
+                // Images (for completeness)
+                jpg:  { label: 'JPEG Image', icon: '🖼️' },
+                jpeg: { label: 'JPEG Image', icon: '🖼️' },
+                png:  { label: 'PNG Image', icon: '🖼️' },
+                gif:  { label: 'GIF Image', icon: '🖼️' },
+                svg:  { label: 'SVG Image', icon: '🖼️' },
+                webp: { label: 'WebP Image', icon: '🖼️' },
+                bmp:  { label: 'BMP Image', icon: '🖼️' },
+                ico:  { label: 'Icon', icon: '🖼️' },
+                // Audio
+                mp3:  { label: 'MP3 Audio', icon: '🎵' },
+                wav:  { label: 'WAV Audio', icon: '🎵' },
+                ogg:  { label: 'OGG Audio', icon: '🎵' },
+                flac: { label: 'FLAC Audio', icon: '🎵' },
+                aac:  { label: 'AAC Audio', icon: '🎵' },
+                m4a:  { label: 'M4A Audio', icon: '🎵' },
+                wma:  { label: 'WMA Audio', icon: '🎵' },
+                // Video
+                mp4:  { label: 'MP4 Video', icon: '🎬' },
+                webm: { label: 'WebM Video', icon: '🎬' },
+                mov:  { label: 'MOV Video', icon: '🎬' },
+                avi:  { label: 'AVI Video', icon: '🎬' },
+                mkv:  { label: 'MKV Video', icon: '🎬' },
+                flv:  { label: 'FLV Video', icon: '🎬' },
+                wmv:  { label: 'WMV Video', icon: '🎬' },
+                // Fonts
+                ttf:  { label: 'TrueType Font', icon: '🔤' },
+                otf:  { label: 'OpenType Font', icon: '🔤' },
+                woff: { label: 'Web Font', icon: '🔤' },
+                woff2:{ label: 'Web Font 2', icon: '🔤' },
+                // eBook
+                epub: { label: 'ePub', icon: '📚' },
+                mobi: { label: 'Mobi eBook', icon: '📚' },
+            };
+
+            var key = ext.toLowerCase();
+            return map[key] || { label: 'File', icon: '📄' };
+        },
+
+        /**
+         * Check if attachment is an audio file based on MIME type or file extension.
+         *
+         * @param {Object} attachment - Attachment object.
+         * @return {boolean} True if attachment is audio.
+         */
+        isAudioAttachment: function(attachment) {
+            if (!attachment) {
+                return false;
+            }
+
+            // Check MIME type first
+            if (attachment.type && typeof attachment.type === 'string') {
+                if (attachment.type.indexOf('audio/') === 0) {
+                    return true;
+                }
+            }
+
+            // Fallback to file extension check
+            var name = attachment.name || attachment.file_name || attachment.label || '';
+            if (name) {
+                var ext = this.getFileExtension(name);
+                var audioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi'];
+                return audioExtensions.indexOf(ext) !== -1;
+            }
+
+            // Check URL for audio extensions
+            var url = attachment.url || '';
+            if (url && typeof url === 'string') {
+                var urlPath = url.toLowerCase().split('?')[0].split('#')[0];
+                var audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma'];
+                for (var i = 0; i < audioExts.length; i++) {
+                    if (urlPath.lastIndexOf(audioExts[i]) === urlPath.length - audioExts[i].length) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        },
     };
 
     // Expose service globally

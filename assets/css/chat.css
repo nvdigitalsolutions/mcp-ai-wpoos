@@ -1580,6 +1580,82 @@
     text-decoration: none;
 }
 
+/* Document / file-type attachment cards */
+.wp-mcp-ai-chat__file-card {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background: var(--wp-mcp-ai-color-file-card-bg, rgba(255, 255, 255, 0.1));
+    border: 1px solid var(--wp-mcp-ai-color-file-card-border, rgba(255, 255, 255, 0.15));
+}
+
+.wp-mcp-ai-chat__file-card-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat__file-card-details {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.wp-mcp-ai-chat__file-card-name {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+}
+
+.wp-mcp-ai-chat__file-card-type {
+    font-size: 0.6875rem;
+    opacity: 0.75;
+    color: inherit;
+}
+
+.wp-mcp-ai-chat__file-card-link {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-decoration: none;
+    background: var(--wp-mcp-ai-color-button-background, #2563eb);
+    color: var(--wp-mcp-ai-color-button-text, #fff);
+    transition: background 0.2s ease;
+}
+
+.wp-mcp-ai-chat__file-card-link:hover,
+.wp-mcp-ai-chat__file-card-link:focus {
+    background: var(--wp-mcp-ai-color-button-hover-background, #1d4ed8);
+    text-decoration: none;
+}
+
+/* Compact file cards on small screens */
+@media (max-width: 480px) {
+    .wp-mcp-ai-chat__file-card {
+        gap: 0.5rem;
+        padding: 0.375rem 0.5rem;
+        min-height: 2.75rem;
+    }
+
+    .wp-mcp-ai-chat__file-card-name {
+        font-size: 0.75rem;
+    }
+
+    .wp-mcp-ai-chat__file-card-type {
+        font-size: 0.625rem;
+    }
+}
+
 /* Markdown images in chat messages */
 .wp-mcp-ai-chat__image {
     max-width: 100%;
