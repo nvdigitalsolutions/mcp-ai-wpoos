@@ -2895,6 +2895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Get config data.
 			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$config = wp_mcp_ai_sanitize_recursive( $config );
 
 			if ( empty( $config ) ) {
 				wp_send_json_error( __( 'Configuration data is required.', 'mcp-ai-wpoos' ) );
