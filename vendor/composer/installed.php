@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-chat-tab-to-settings-page',
-        'version' => 'dev-copilot/update-chat-tab-to-settings-page',
-        'reference' => '0bbdd4ea747d3a4684c6e56ad2a435103e484ca3',
+        'pretty_version' => 'dev-copilot/integrate-skills-into-plugin',
+        'version' => 'dev-copilot/integrate-skills-into-plugin',
+        'reference' => 'f2a8556b187e1ebc0f6b90b4fe512bd7c101313c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-chat-tab-to-settings-page',
-            'version' => 'dev-copilot/update-chat-tab-to-settings-page',
-            'reference' => '0bbdd4ea747d3a4684c6e56ad2a435103e484ca3',
+            'pretty_version' => 'dev-copilot/integrate-skills-into-plugin',
+            'version' => 'dev-copilot/integrate-skills-into-plugin',
+            'reference' => 'f2a8556b187e1ebc0f6b90b4fe512bd7c101313c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
