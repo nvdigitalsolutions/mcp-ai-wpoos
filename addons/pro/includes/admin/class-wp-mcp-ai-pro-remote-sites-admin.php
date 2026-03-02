@@ -5425,23 +5425,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							msngGenerateTokenBtn.disabled = false;
 							if (result.success) {
 								var tokenInput  = document.getElementById('messenger_page_access_token');
-								var connIdField = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 
-								// In edit mode (saved connection exists), do not overwrite the Page
-								// Access Token field — the user may already have a saved Page token.
-								if (connIdField && connIdField.value) {
-									statusEl.style.color = '#00a32a';
-									statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated successfully. Your existing saved Page Access Token is preserved.', 'mcp-ai-wpoos-pro' ) ); ?>;
-								} else {
-									tokenInput.value = result.data.access_token;
-									tokenInput.type = 'text';
-									if (msngTokenToggleBtn) {
-										msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-										msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-									}
-									statusEl.style.color = '#00a32a';
-									statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
+								tokenInput.value = result.data.access_token;
+								tokenInput.type = 'text';
+								if (msngTokenToggleBtn) {
+									msngTokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
+									msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
 								}
+								statusEl.style.color = '#00a32a';
+								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated. Please save the connection to apply the new token.', 'mcp-ai-wpoos-pro' ) ); ?>;
 							} else {
 								statusEl.style.color = '#d63638';
 								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
