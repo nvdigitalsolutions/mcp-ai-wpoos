@@ -1811,13 +1811,24 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     var html = \'\';
     items.forEach(function (item) {
       var isImg  = item.mime_type && item.mime_type.indexOf(\'image/\') === 0;
-      var thumb  = isImg && item.thumb ? \'<img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy">\' :
-                   \'<div class="tma-media-icon">\' + mimeIcon(item.mime_type) + \'</div>\';
+      var isVid  = item.mime_type && item.mime_type.indexOf(\'video/\') === 0;
+      var thumb;
+      if (isImg && item.thumb) {
+        thumb = \'<img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy">\';
+      } else if (isVid && item.thumb) {
+        thumb = \'<div class="tma-media-icon-wrap"><img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy"><span class="tma-media-play-badge">▶</span></div>\';
+      } else {
+        thumb = \'<div class="tma-media-icon">\' + mimeIcon(item.mime_type) + \'</div>\';
+      }
+      var typeLabel = mimeLabel(item.mime_type);
+      var metaParts = [];
+      if (typeLabel) metaParts.push(typeLabel);
+      if (item.filesize) metaParts.push(item.filesize);
       html += \'<div class="tma-media-item" onclick="tmaOpenMedia(\\\'\' + escHtml(item.url) + \'\\\')">\' +
         thumb +
         \'<div class="tma-media-info">\' +
           \'<div class="tma-media-title">\' + escHtml(item.title || \'(untitled)\') + \'</div>\' +
-          \'<div class="tma-media-meta">\' + escHtml(item.filesize || \'\') + \'</div>\' +
+          \'<div class="tma-media-meta">\' + escHtml(metaParts.join(\' • \')) + \'</div>\' +
         \'</div>\' +
       \'</div>\';
     });
@@ -1857,9 +1868,59 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     if (mime.indexOf(\'image/\') === 0)       return \'🖼️\';
     if (mime.indexOf(\'video/\') === 0)       return \'🎬\';
     if (mime.indexOf(\'audio/\') === 0)       return \'🎵\';
-    if (mime.indexOf(\'application/pdf\') === 0) return \'📕\';
-    if (mime.indexOf(\'application/\') === 0) return \'📦\';
+    if (mime.indexOf(\'application/pdf\') === 0)             return \'📕\';
+    if (mime.indexOf(\'application/msword\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.wordprocessingml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.text\') === 0)   return \'📝\';
+    if (mime.indexOf(\'application/vnd.ms-excel\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.spreadsheetml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.spreadsheet\') === 0 ||
+        mime.indexOf(\'text/csv\') === 0)                     return \'📊\';
+    if (mime.indexOf(\'application/vnd.ms-powerpoint\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.presentationml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.presentation\') === 0) return \'📽️\';
+    if (mime.indexOf(\'application/zip\') === 0 ||
+        mime.indexOf(\'application/x-rar\') === 0 ||
+        mime.indexOf(\'application/x-7z\') === 0 ||
+        mime.indexOf(\'application/gzip\') === 0 ||
+        mime.indexOf(\'application/x-tar\') === 0)            return \'🗜️\';
+    if (mime.indexOf(\'application/json\') === 0 ||
+        mime.indexOf(\'application/xml\') === 0 ||
+        mime.indexOf(\'text/xml\') === 0)                     return \'🔧\';
+    if (mime.indexOf(\'text/html\') === 0)                    return \'🌐\';
+    if (mime.indexOf(\'text/css\') === 0)                     return \'🎨\';
+    if (mime.indexOf(\'text/javascript\') === 0 ||
+        mime.indexOf(\'application/javascript\') === 0 ||
+        mime.indexOf(\'text/x-python\') === 0 ||
+        mime.indexOf(\'application/x-httpd-php\') === 0)      return \'💻\';
+    if (mime.indexOf(\'text/plain\') === 0)                   return \'📄\';
+    if (mime.indexOf(\'font/\') === 0 ||
+        mime.indexOf(\'application/font\') === 0)             return \'🔤\';
+    if (mime.indexOf(\'application/epub\') === 0)             return \'📚\';
+    if (mime.indexOf(\'application/\') === 0)                 return \'📦\';
     return \'📄\';
+  }
+
+  function mimeLabel(mime) {
+    if (!mime) return \'File\';
+    if (mime.indexOf(\'image/\') === 0)       return \'Image\';
+    if (mime.indexOf(\'video/\') === 0)       return \'Video\';
+    if (mime.indexOf(\'audio/\') === 0)       return \'Audio\';
+    if (mime.indexOf(\'application/pdf\') === 0)             return \'PDF\';
+    if (mime.indexOf(\'application/msword\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.wordprocessingml\') === 0) return \'Word\';
+    if (mime.indexOf(\'application/vnd.ms-excel\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.spreadsheetml\') === 0)   return \'Excel\';
+    if (mime.indexOf(\'application/vnd.ms-powerpoint\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.presentationml\') === 0)  return \'PowerPoint\';
+    if (mime.indexOf(\'text/csv\') === 0)                     return \'CSV\';
+    if (mime.indexOf(\'application/json\') === 0)             return \'JSON\';
+    if (mime.indexOf(\'application/xml\') === 0 || mime.indexOf(\'text/xml\') === 0) return \'XML\';
+    if (mime.indexOf(\'application/zip\') === 0)              return \'ZIP\';
+    if (mime.indexOf(\'text/plain\') === 0)                   return \'Text\';
+    if (mime.indexOf(\'text/html\') === 0)                    return \'HTML\';
+    if (mime.indexOf(\'application/\') === 0)                 return \'Document\';
+    return \'File\';
   }
 
   /* =========================================================
@@ -4044,10 +4105,13 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-tool-result-pre{background:var(--tma-secondary-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;font-size:12px;color:var(--tma-text);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;font-family:monospace}
 /* Media grid */
 .tma-media-grid{padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
-.tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition)}
+.tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition);min-height:60px}
 .tma-media-item:active{opacity:.7}
 .tma-media-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block}
 .tma-media-icon{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--tma-secondary-bg)}
+.tma-media-icon-wrap{position:relative;width:100%;aspect-ratio:1}
+.tma-media-icon-wrap .tma-media-thumb{width:100%;height:100%;object-fit:cover}
+.tma-media-play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
 .tma-media-info{padding:6px 8px}
 .tma-media-title{font-size:11px;font-weight:500;color:var(--tma-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tma-media-meta{font-size:10px;color:var(--tma-hint)}

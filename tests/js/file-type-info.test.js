@@ -312,3 +312,81 @@ describe( 'getFileTypeInfo', () => {
 		expect( result.label.length ).toBeGreaterThan( 0 );
 	} );
 } );
+
+describe( 'isAudioAttachment helper', () => {
+	let isAudioAttachment;
+
+	beforeEach( () => {
+		const getFileExtension = function( file ) {
+			let name = '';
+			if ( file && typeof file === 'object' && file.name ) {
+				name = file.name;
+			} else if ( typeof file === 'string' ) {
+				name = file;
+			}
+			if ( ! name ) return '';
+			const lastDot = name.lastIndexOf( '.' );
+			if ( lastDot === -1 || lastDot === name.length - 1 ) return '';
+			return name.substring( lastDot + 1 ).toLowerCase();
+		};
+
+		isAudioAttachment = function( attachment ) {
+			if ( ! attachment ) return false;
+
+			if ( attachment.type && typeof attachment.type === 'string' ) {
+				if ( attachment.type.indexOf( 'audio/' ) === 0 ) return true;
+			}
+
+			const name = attachment.name || attachment.file_name || attachment.label || '';
+			if ( name ) {
+				const ext = getFileExtension( name );
+				const audioExtensions = [ 'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi' ];
+				return audioExtensions.indexOf( ext ) !== -1;
+			}
+
+			const url = attachment.url || '';
+			if ( url && typeof url === 'string' ) {
+				const urlPath = url.toLowerCase().split( '?' )[ 0 ].split( '#' )[ 0 ];
+				const audioExts = [ '.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma' ];
+				for ( let i = 0; i < audioExts.length; i++ ) {
+					if ( urlPath.lastIndexOf( audioExts[ i ] ) === urlPath.length - audioExts[ i ].length ) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		};
+	} );
+
+	test( 'detects audio from MIME type', () => {
+		expect( isAudioAttachment( { type: 'audio/mpeg' } ) ).toBe( true );
+		expect( isAudioAttachment( { type: 'audio/wav' } ) ).toBe( true );
+	} );
+
+	test( 'detects audio from file name extension', () => {
+		expect( isAudioAttachment( { name: 'song.mp3' } ) ).toBe( true );
+		expect( isAudioAttachment( { name: 'track.flac' } ) ).toBe( true );
+		expect( isAudioAttachment( { name: 'voice.m4a' } ) ).toBe( true );
+	} );
+
+	test( 'detects audio from URL extension', () => {
+		expect( isAudioAttachment( { url: 'https://example.com/audio.mp3' } ) ).toBe( true );
+		expect( isAudioAttachment( { url: 'https://example.com/file.wav?dl=1' } ) ).toBe( true );
+	} );
+
+	test( 'returns false for non-audio files', () => {
+		expect( isAudioAttachment( { type: 'image/png', name: 'photo.png' } ) ).toBe( false );
+		expect( isAudioAttachment( { type: 'video/mp4', name: 'clip.mp4' } ) ).toBe( false );
+		expect( isAudioAttachment( { name: 'document.pdf' } ) ).toBe( false );
+	} );
+
+	test( 'returns false for null/undefined input', () => {
+		expect( isAudioAttachment( null ) ).toBe( false );
+		expect( isAudioAttachment( undefined ) ).toBe( false );
+	} );
+
+	test( 'returns false for empty attachment object', () => {
+		expect( isAudioAttachment( {} ) ).toBe( false );
+	} );
+} );

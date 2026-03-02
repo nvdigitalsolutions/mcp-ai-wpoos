@@ -240,6 +240,47 @@
         },
 
         /**
+         * Check if attachment is an audio file based on MIME type or file extension.
+         *
+         * @param {Object} attachment - Attachment object.
+         * @return {boolean} True if attachment is audio.
+         */
+        isAudioAttachment: function(attachment) {
+            if (!attachment) {
+                return false;
+            }
+
+            // Check MIME type first
+            if (attachment.type && typeof attachment.type === 'string') {
+                if (attachment.type.indexOf('audio/') === 0) {
+                    return true;
+                }
+            }
+
+            // Fallback to file extension check
+            var name = attachment.name || attachment.file_name || attachment.label || '';
+            if (name) {
+                var ext = this.getFileExtension(name);
+                var audioExtensions = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus', 'mid', 'midi'];
+                return audioExtensions.indexOf(ext) !== -1;
+            }
+
+            // Check URL for audio extensions
+            var url = attachment.url || '';
+            if (url && typeof url === 'string') {
+                var urlPath = url.toLowerCase().split('?')[0].split('#')[0];
+                var audioExts = ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma'];
+                for (var i = 0; i < audioExts.length; i++) {
+                    if (urlPath.lastIndexOf(audioExts[i]) === urlPath.length - audioExts[i].length) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        },
+
+        /**
          * Normalize upload response from server.
          *
          * @param {Object} data - Response data from upload endpoint.
