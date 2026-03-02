@@ -159,7 +159,7 @@
 
             // PowerPoint presentations
             if (mime.indexOf('presentationml') !== -1 || mime.indexOf('ms-powerpoint') !== -1 || mime === 'application/vnd.ms-powerpoint' || ['ppt', 'pptx', 'pptm', 'ppsx', 'odp'].indexOf(ext) !== -1) {
-                return { icon: '\uD83D\uDCBB', label: 'Presentation' }; // 📊 (using 💻 for presentation)
+                return { icon: '\uD83D\uDCFD\uFE0F', label: 'Presentation' }; // 📽️
             }
 
             // Markdown
