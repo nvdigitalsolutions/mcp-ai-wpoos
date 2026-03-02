@@ -1,10 +1,37 @@
 # Telegram Mini App Enhancement Proposal
 
 **Date:** March 2, 2026
-**Version:** 1.0
-**Status:** 📋 Proposal
+**Version:** 1.1
+**Status:** 🚧 Implementation In Progress
 **Priority:** HIGH
 **Estimated Effort:** 160–240 hours across 4 phases
+
+---
+
+## Implementation Status (v1.1.3)
+
+### ✅ Completed Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Content Tab Inline Editing** | ✅ Done | Create/edit posts of any CPT directly within the Mini App via an inline editor overlay |
+| **Content Visibility Settings** | ✅ Done | Per-CPT enable/disable toggles in Settings → Content Display |
+| **Tool Execution** | ✅ Done | Execute any tool from the Mini App with dynamic parameter forms generated from `get_parameters_schema()` |
+| **Shop Tab** | ✅ Done | Stars balance display, 4 pricing tiers, purchase flow, recent transaction history |
+| **Inline Query Handler** | ✅ Done | `@botname` searches published posts and returns inline article results |
+| **Payment Handlers** | ✅ Done | `pre_checkout_query` validation + `successful_payment` balance crediting with history |
+| **Deep Linking** | ✅ Done | `/start tool_SLUG`, `/start content_TYPE`, `/start shop`, `/start balance` |
+| **New Bot Commands** | ✅ Done | `/tools` (list tools), `/balance` (show credits), `/app` (open Mini App button) |
+| **6 Mini App Tabs** | ✅ Done | Home, Content, Tools, Media, Shop, Settings |
+
+### 🔲 Remaining (Future Work)
+
+- Per-toolkit sub-views (drill into toolkit → CPTs → records)
+- Telegram Stars invoice creation flow (via bot API `createInvoiceLink`)
+- Subscription management
+- Third-party payment provider integration
+- Full-screen Mini App mode
+- Toolkit-specific widgets (e.g. CRM contact cards, WooCommerce order detail)
 
 ---
 

@@ -822,4 +822,275 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		delete_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history' );
 	}
+
+	// =========================================================================
+	// Content Update Endpoint Tests
+	// =========================================================================
+
+	/**
+	 * Test handle_update_content creates a new post when id=0.
+	 */
+	public function test_handle_update_content_creates_post() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'id', 0 );
+		$request->set_param( 'post_type', 'post' );
+		$request->set_param( 'title', 'Test Mini App Post' );
+		$request->set_param( 'content', '<p>Hello from the Mini App</p>' );
+		$request->set_param( 'status', 'draft' );
+
+		$response = $this->controller->handle_update_content( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertGreaterThan( 0, $data['id'] );
+
+		$post = get_post( $data['id'] );
+		$this->assertEquals( 'Test Mini App Post', $post->post_title );
+		$this->assertEquals( 'draft', $post->post_status );
+		$this->assertStringContainsString( 'Hello from the Mini App', $post->post_content );
+
+		wp_delete_post( $data['id'], true );
+	}
+
+	/**
+	 * Test handle_update_content updates an existing post.
+	 */
+	public function test_handle_update_content_updates_post() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user );
+
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'   => 'Original Title',
+				'post_content' => 'Original content',
+				'post_status'  => 'draft',
+				'post_author'  => $user,
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'id', $post_id );
+		$request->set_param( 'post_type', 'post' );
+		$request->set_param( 'title', 'Updated Title' );
+		$request->set_param( 'content', '<p>Updated content</p>' );
+		$request->set_param( 'status', 'publish' );
+
+		$response = $this->controller->handle_update_content( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$this->assertEquals( $post_id, $data['id'] );
+
+		$post = get_post( $post_id );
+		$this->assertEquals( 'Updated Title', $post->post_title );
+		$this->assertEquals( 'publish', $post->post_status );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test handle_update_content rejects invalid status.
+	 */
+	public function test_handle_update_content_sanitizes_status() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'id', 0 );
+		$request->set_param( 'post_type', 'post' );
+		$request->set_param( 'title', 'Status Test' );
+		$request->set_param( 'content', '' );
+		$request->set_param( 'status', 'private' ); // Not in allowed list.
+
+		$response = $this->controller->handle_update_content( $request );
+		$data     = $response->get_data();
+
+		$this->assertTrue( $data['success'] );
+		$post = get_post( $data['id'] );
+		$this->assertEquals( 'draft', $post->post_status ); // Falls back to draft.
+
+		wp_delete_post( $data['id'], true );
+	}
+
+	// =========================================================================
+	// Content Visibility Tests
+	// =========================================================================
+
+	/**
+	 * Test enabled_post_types preference can be saved and loaded.
+	 */
+	public function test_enabled_post_types_preference() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$prefs = array(
+			'language'           => 'en',
+			'notifications'      => true,
+			'compact_mode'       => false,
+			'enabled_post_types' => array( 'post', 'page', 'mcp_ai_contact' ),
+		);
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', $prefs );
+
+		$stored = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		$this->assertIsArray( $stored['enabled_post_types'] );
+		$this->assertCount( 3, $stored['enabled_post_types'] );
+		$this->assertContains( 'post', $stored['enabled_post_types'] );
+		$this->assertContains( 'mcp_ai_contact', $stored['enabled_post_types'] );
+
+		delete_user_meta( $user_id, '_wp_mcp_ai_tma_preferences' );
+	}
+
+	/**
+	 * Test null enabled_post_types means show all (default).
+	 */
+	public function test_enabled_post_types_null_shows_all() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$prefs = array(
+			'language'      => 'auto',
+			'notifications' => true,
+			'compact_mode'  => false,
+		);
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', $prefs );
+
+		$stored = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		$this->assertArrayNotHasKey( 'enabled_post_types', $stored );
+
+		delete_user_meta( $user_id, '_wp_mcp_ai_tma_preferences' );
+	}
+
+	// =========================================================================
+	// Shop Balance Endpoint Tests
+	// =========================================================================
+
+	/**
+	 * Test handle_shop_balance returns balance and pricing data.
+	 */
+	public function test_handle_shop_balance() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user );
+
+		update_user_meta( $user, '_wp_mcp_ai_tma_stars_balance', 250 );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/shop/balance' );
+		$response = $this->controller->handle_shop_balance( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 250, $data['balance'] );
+		$this->assertIsArray( $data['pricing'] );
+		$this->assertGreaterThanOrEqual( 1, count( $data['pricing'] ) );
+		$this->assertIsArray( $data['recent_payments'] );
+
+		delete_user_meta( $user, '_wp_mcp_ai_tma_stars_balance' );
+	}
+
+	/**
+	 * Test shop balance returns zero for new users.
+	 */
+	public function test_handle_shop_balance_default_zero() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/shop/balance' );
+		$response = $this->controller->handle_shop_balance( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( 0, $data['balance'] );
+	}
+
+	// =========================================================================
+	// Webhook New Commands Tests
+	// =========================================================================
+
+	/**
+	 * Test get_default_commands includes new commands.
+	 */
+	public function test_default_commands_include_new_ones() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller unavailable.' );
+		}
+
+		$commands     = WP_MCP_AI_Telegram_Webhook_Controller::get_default_commands();
+		$command_list = wp_list_pluck( $commands, 'command' );
+
+		$this->assertContains( 'tools', $command_list );
+		$this->assertContains( 'balance', $command_list );
+		$this->assertContains( 'app', $command_list );
+		// Original commands still present.
+		$this->assertContains( 'start', $command_list );
+		$this->assertContains( 'help', $command_list );
+		$this->assertContains( 'settings', $command_list );
+		$this->assertContains( 'status', $command_list );
+		$this->assertContains( 'cancel', $command_list );
+	}
+
+	/**
+	 * Test resolve_wp_user_from_telegram_id helper.
+	 */
+	public function test_resolve_wp_user_from_telegram_id() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller unavailable.' );
+		}
+
+		$user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user, '_wp_mcp_ai_telegram_id', '123456789' );
+
+		// Use reflection to call the protected method.
+		$method = new ReflectionMethod( $this->webhook_controller, 'resolve_wp_user_from_telegram_id' );
+		$method->setAccessible( true );
+
+		$resolved = $method->invoke( $this->webhook_controller, '123456789' );
+		$this->assertEquals( $user, $resolved );
+
+		$not_found = $method->invoke( $this->webhook_controller, '999999999' );
+		$this->assertNull( $not_found );
+
+		delete_user_meta( $user, '_wp_mcp_ai_telegram_id' );
+	}
+
+	/**
+	 * Test Stars balance is stored and retrieved correctly.
+	 */
+	public function test_stars_balance_storage() {
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		// Initial balance should be 0.
+		$balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+		$this->assertEquals( 0, $balance );
+
+		// Credit the user.
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', 500 );
+		$balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+		$this->assertEquals( 500, $balance );
+
+		// Add more credits.
+		$current = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', $current + 200 );
+		$balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+		$this->assertEquals( 700, $balance );
+
+		delete_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance' );
+	}
 }

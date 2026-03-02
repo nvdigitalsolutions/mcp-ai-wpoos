@@ -2526,7 +2526,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 			// When the user has configured an enabled_post_types allowlist, skip
 			// any post type not explicitly included.
-			if ( null !== $enabled_cpt && ! in_array( $type->name, $enabled_cpt, true ) ) {
+			if ( null !== $enabled_post_types && ! in_array( $type->name, $enabled_post_types, true ) ) {
 				continue;
 			}
 
