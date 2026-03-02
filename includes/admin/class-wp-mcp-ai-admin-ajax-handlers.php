@@ -86,6 +86,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_seed_task_templates'    => 'handle_seed_task_templates',
 				'wp_ajax_wp_mcp_ai_seed_orchestration'     => 'handle_seed_orchestration',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
+				'wp_ajax_wp_mcp_ai_refresh_skills'         => 'handle_refresh_skills',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
@@ -3196,6 +3197,110 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $message,
+				)
+			);
+		}
+
+		/**
+		 * Handle Skills refresh AJAX request.
+		 *
+		 * Supports 'refresh' (rescan disk index) and 'install_bundled'
+		 * (install or force-reinstall bundled skills shipped with the plugin).
+		 *
+		 * @since 1.9.0
+		 */
+		private function handle_refresh_skills() {
+			check_ajax_referer( 'wp_mcp_ai_refresh_skills', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Get action type: 'refresh', 'install_bundled', or 'force_install_bundled'.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action_type = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'refresh';
+
+			if ( ! in_array( $action_type, array( 'refresh', 'install_bundled', 'force_install_bundled' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Load skill registry.
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
+			}
+
+			$registry = WP_MCP_AI_Skill_Registry::instance();
+
+			if ( 'refresh' === $action_type ) {
+				// Force rescan of the skills directory.
+				$skills = $registry->load_skills( true );
+
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %d: Number of skills found */
+							__( 'Skills index refreshed. Found %d installed skills.', 'mcp-ai-wpoos' ),
+							count( $skills )
+						),
+						'count'   => count( $skills ),
+					)
+				);
+				return;
+			}
+
+			// install_bundled or force_install_bundled.
+			$force = ( 'force_install_bundled' === $action_type );
+
+			if ( $force ) {
+				// Remove existing installed bundled skills to force reinstall.
+				$bundled_dir = $registry->get_bundled_skills_dir();
+				if ( is_dir( $bundled_dir ) ) {
+					$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
+					if ( is_array( $dirs ) ) {
+						foreach ( $dirs as $dir ) {
+							$skill_name = basename( $dir );
+							$registry->uninstall_skill( $skill_name );
+						}
+					}
+				}
+			}
+
+			$result = $registry->install_bundled_skills();
+
+			$message = sprintf(
+				/* translators: 1: Number installed, 2: Number skipped */
+				__( 'Bundled skills processed. Installed: %1$d, Skipped: %2$d', 'mcp-ai-wpoos' ),
+				$result['installed'],
+				$result['skipped']
+			);
+
+			if ( ! empty( $result['errors'] ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: Number of errors */
+					__( 'Errors: %d', 'mcp-ai-wpoos' ),
+					count( $result['errors'] )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message'   => $message,
+					'installed' => $result['installed'],
+					'skipped'   => $result['skipped'],
+					'errors'    => count( $result['errors'] ),
 				)
 			);
 		}

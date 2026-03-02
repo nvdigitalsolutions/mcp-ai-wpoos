@@ -53,6 +53,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_seed_task_templates',
 		'wp_ajax_wp_mcp_ai_seed_orchestration',
 		'wp_ajax_wp_mcp_ai_migrate_gemini_costs',
+		'wp_ajax_wp_mcp_ai_refresh_skills',
 		'wp_ajax_wp_mcp_ai_get_models_for_provider',
 		'wp_ajax_wp_mcp_ai_regenerate_playbook',
 		'wp_ajax_wp_mcp_ai_sync_all_playbooks',
