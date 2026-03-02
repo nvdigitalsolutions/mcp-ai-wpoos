@@ -6375,6 +6375,17 @@
             const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__attachments-item';
 
+            // Add file type icon
+            var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+            if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
+                fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo(attachment);
+            }
+            const icon = document.createElement('span');
+            icon.className = 'wp-mcp-ai-chat__file-icon';
+            icon.textContent = fileInfo.icon;
+            icon.setAttribute('aria-hidden', 'true');
+            item.appendChild(icon);
+
             const info = document.createElement('div');
             info.className = 'wp-mcp-ai-chat__attachments-info';
 
@@ -6395,10 +6406,16 @@
                     metaText: metaText
                 });
             }
+
+            // Prepend file type label to metadata
+            var fullMeta = fileInfo.label || '';
             if (metaText) {
+                fullMeta += (fullMeta ? ' • ' : '') + metaText;
+            }
+            if (fullMeta) {
                 const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                meta.textContent = metaText;
+                meta.textContent = fullMeta;
                 info.appendChild(meta);
             }
 
@@ -16181,36 +16198,53 @@
                         item.appendChild(meta);
                     }
                 } else {
-                    // Render as download link (existing behavior)
+                    // Render as file attachment card with icon
+                    item.classList.add('wp-mcp-ai-chat__bubble-attachment--file');
+
+                    // Get file type info for icon display
+                    var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+                    if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
+                        fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo({
+                            type: attachment.meta || '',
+                            name: attachment.downloadName || attachment.label || ''
+                        });
+                    }
+
+                    const fileIcon = document.createElement('span');
+                    fileIcon.className = 'wp-mcp-ai-chat__file-icon';
+                    fileIcon.textContent = fileInfo.icon;
+                    fileIcon.setAttribute('aria-hidden', 'true');
+                    item.appendChild(fileIcon);
+
+                    const fileBody = document.createElement('div');
+                    fileBody.className = 'wp-mcp-ai-chat__file-body';
+
                     const link = document.createElement('a');
                     link.href = attachment.url;
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
+                    link.className = 'wp-mcp-ai-chat__file-name';
                     link.textContent = attachment.label;
 
                     if (attachment.downloadName) {
                         link.download = attachment.downloadName;
                     }
 
-                    item.appendChild(link);
+                    fileBody.appendChild(link);
 
-                    if (attachment.meta || attachment.url) {
+                    // Build metadata with file type label
+                    if (attachment.meta || fileInfo.label) {
                         const meta = document.createElement('span');
                         meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                        
-                        // Build metadata string with URL
-                        let metaText = '';
+                        let metaText = fileInfo.label || '';
                         if (attachment.meta) {
-                            metaText = attachment.meta;
+                            metaText += (metaText ? ' • ' : '') + attachment.meta;
                         }
-                        if (attachment.url) {
-                            metaText += (metaText ? ' • URL: ' : 'URL: ') + attachment.url;
-                        }
-                        
                         meta.textContent = metaText;
-                        item.appendChild(document.createTextNode(' – '));
-                        item.appendChild(meta);
+                        fileBody.appendChild(meta);
                     }
+
+                    item.appendChild(fileBody);
                 }
 
                 container.appendChild(item);
