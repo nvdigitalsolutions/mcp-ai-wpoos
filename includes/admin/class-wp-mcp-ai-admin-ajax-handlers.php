@@ -3266,13 +3266,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			if ( $force ) {
 				// Remove existing installed bundled skills to force reinstall.
-				$bundled_dir = $registry->get_bundled_skills_dir();
+				$bundled_dir      = $registry->get_bundled_skills_dir();
+				$uninstall_errors = array();
 				if ( is_dir( $bundled_dir ) ) {
 					$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 					if ( is_array( $dirs ) ) {
 						foreach ( $dirs as $dir ) {
-							$skill_name = basename( $dir );
-							$registry->uninstall_skill( $skill_name );
+							$skill_name      = basename( $dir );
+							$uninstall_result = $registry->uninstall_skill( $skill_name );
+							if ( is_wp_error( $uninstall_result ) ) {
+								$uninstall_errors[] = $skill_name;
+							}
 						}
 					}
 				}
@@ -3292,6 +3296,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					/* translators: %d: Number of errors */
 					__( 'Errors: %d', 'mcp-ai-wpoos' ),
 					count( $result['errors'] )
+				);
+			}
+
+			if ( $force && ! empty( $uninstall_errors ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: Number of skills that failed to uninstall */
+					__( 'Failed to uninstall: %d', 'mcp-ai-wpoos' ),
+					count( $uninstall_errors )
 				);
 			}
 
