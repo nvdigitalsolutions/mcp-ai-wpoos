@@ -205,6 +205,21 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$this->process_membership_update( $payload['my_chat_member'] );
 		}
 
+		// Handle inline query updates (user types @botname in any chat).
+		if ( isset( $payload['inline_query'] ) && is_array( $payload['inline_query'] ) ) {
+			$this->process_inline_query( $payload['inline_query'] );
+		}
+
+		// Handle pre-checkout query (Telegram Stars payment validation).
+		if ( isset( $payload['pre_checkout_query'] ) && is_array( $payload['pre_checkout_query'] ) ) {
+			$this->process_pre_checkout_query( $payload['pre_checkout_query'] );
+		}
+
+		// Handle successful payment notification (Telegram Stars).
+		if ( isset( $payload['message']['successful_payment'] ) && is_array( $payload['message']['successful_payment'] ) ) {
+			$this->process_successful_payment( $payload['message'] );
+		}
+
 		// Always return 200 so Telegram does not retry.
 		return rest_ensure_response( array( 'ok' => true ) );
 	}
@@ -1012,6 +1027,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			case 'cancel':
 				$this->cmd_cancel( $chat_id, $from_id, $message );
 				return true;
+
+			case 'tools':
+				$this->cmd_tools( $chat_id, $args, $message );
+				return true;
+
+			case 'balance':
+				$this->cmd_balance( $chat_id, $message );
+				return true;
+
+			case 'app':
+				$this->cmd_app( $chat_id, $message );
+				return true;
 		}
 
 		/**
@@ -1040,7 +1067,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	protected function cmd_start( $chat_id, $args, array $message ) {
 		$site_name = get_bloginfo( 'name' );
 		$text      = sprintf(
-			"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
+			"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
 			$site_name
 		);
 
@@ -1055,9 +1082,23 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		 */
 		if ( '' !== $args ) {
 			do_action( 'wp_mcp_ai_telegram_start_deeplink', $args, $chat_id, $message );
+
+			// Handle built-in deep links: tool_SLUG, content_TYPE, shop, balance.
+			if ( 0 === strpos( $args, 'tool_' ) ) {
+				$tool_slug = sanitize_text_field( substr( $args, 5 ) );
+				$text = "🔧 Opening tool: `$tool_slug`\n\nUse the Mini App to execute this tool with a full parameter form.\n\n/app – Open Mini App";
+			} elseif ( 0 === strpos( $args, 'content_' ) ) {
+				$content_type = sanitize_text_field( substr( $args, 8 ) );
+				$text = "📝 Content type: `$content_type`\n\nOpen the Mini App to browse and edit your content.\n\n/app – Open Mini App";
+			} elseif ( 'shop' === $args ) {
+				$text = "🛒 Open the Mini App to visit the Shop and purchase credits.\n\n/app – Open Mini App";
+			} elseif ( 'balance' === $args ) {
+				$this->cmd_balance( $chat_id, $message );
+				return;
+			}
 		}
 
-		$this->send_command_reply( $chat_id, $text, $message );
+		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
 	}
 
 	/**
@@ -1072,6 +1113,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			"📖 *Available Commands*\n",
 			'/start – Start the bot & see welcome message',
 			'/help – Show this help message',
+			'/tools – Browse and run AI tools',
+			'/balance – Check your credits balance',
+			'/app – Open the Mini App',
 			'/settings – Open the Mini App settings',
 			'/status – Check bot connection status',
 			'/cancel – Reset your conversation history',
@@ -1157,6 +1201,408 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$this->send_command_reply( $chat_id, '🔄 Conversation history cleared. Send a new message to start fresh!', $message );
+	}
+
+	/**
+	 * Handle /tools – list available tools or run a tool by name.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param string $args    Optional tool slug to run.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_tools( $chat_id, $args, array $message ) {
+		if ( ! function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			$this->send_command_reply( $chat_id, '🔧 Tool registry is not available.', $message );
+			return;
+		}
+
+		$registry = wp_mcp_ai_get_tool_registry();
+		if ( ! $registry ) {
+			$this->send_command_reply( $chat_id, '🔧 Tool registry is not available.', $message );
+			return;
+		}
+
+		$all_tools = $registry->get_all_tools();
+		$count     = is_array( $all_tools ) ? count( $all_tools ) : 0;
+
+		$text  = "🔧 *Available Tools* ($count)\n\n";
+		$text .= "Use the Mini App to browse and execute tools with full parameter forms.\n\n";
+
+		$i = 0;
+		foreach ( $all_tools as $slug => $tool ) {
+			if ( $i >= 20 ) {
+				$text .= "\n_… and " . ( $count - 20 ) . " more. Open the Mini App to see all._";
+				break;
+			}
+			$name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
+			$text .= "• `$slug` – $name\n";
+			++$i;
+		}
+
+		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
+	}
+
+	/**
+	 * Handle /balance – show user's credits balance.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_balance( $chat_id, array $message ) {
+		$from    = isset( $message['from'] ) ? $message['from'] : array();
+		$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
+		$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
+
+		if ( ! $user_id ) {
+			$this->send_command_reply( $chat_id, "💰 Please link your WordPress account first using /settings.", $message );
+			return;
+		}
+
+		$balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+
+		$text  = "💰 *Your Balance*\n\n";
+		$text .= "⭐ Stars: $balance\n\n";
+		$text .= "_Use the Mini App Shop tab to purchase more credits._";
+
+		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
+	}
+
+	/**
+	 * Handle /app – send a button to open the Mini App.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_app( $chat_id, array $message ) {
+		$connection = $this->get_active_telegram_connection();
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $bot_token ) {
+			return;
+		}
+
+		$mini_app_url = rest_url( 'mcp-ai/v1/telegram-mini-app' );
+		$endpoint     = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $bot_token ) );
+
+		$payload = array(
+			'chat_id'      => $chat_id,
+			'text'         => '📱 Tap the button below to open the Mini App:',
+			'reply_markup' => array(
+				'inline_keyboard' => array(
+					array(
+						array(
+							'text'    => '📱 Open Mini App',
+							'web_app' => array( 'url' => $mini_app_url ),
+						),
+					),
+				),
+			),
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 15,
+				'body'    => $body,
+			)
+		);
+	}
+
+	/**
+	 * Process an incoming inline query from Telegram.
+	 *
+	 * When a user types @botname in any chat, this returns matching tools
+	 * and recent content as inline results.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param array $inline_query The inline_query object from Telegram.
+	 */
+	protected function process_inline_query( array $inline_query ) {
+		$query_id = isset( $inline_query['id'] ) ? (string) $inline_query['id'] : '';
+		$query    = isset( $inline_query['query'] ) ? sanitize_text_field( $inline_query['query'] ) : '';
+
+		if ( empty( $query_id ) ) {
+			return;
+		}
+
+		$connection = $this->get_active_telegram_connection();
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $bot_token ) {
+			return;
+		}
+
+		$results = array();
+
+		// Search published posts matching the query.
+		if ( strlen( $query ) >= 2 ) {
+			$posts = get_posts(
+				array(
+					'post_type'      => 'any',
+					'post_status'    => 'publish',
+					's'              => $query,
+					'posts_per_page' => 10,
+					'orderby'        => 'relevance',
+				)
+			);
+
+			foreach ( $posts as $post ) {
+				$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 30, '…' );
+				$url     = get_permalink( $post->ID );
+
+				$results[] = array(
+					'type'                  => 'article',
+					'id'                    => 'post_' . $post->ID,
+					'title'                 => get_the_title( $post ),
+					'description'           => $excerpt,
+					'url'                   => $url,
+					'input_message_content' => array(
+						'message_text' => get_the_title( $post ) . "\n" . $url,
+					),
+				);
+			}
+		}
+
+		// Answer the inline query.
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/answerInlineQuery', rawurlencode( $bot_token ) );
+
+		$payload = array(
+			'inline_query_id' => $query_id,
+			'results'         => $results,
+			'cache_time'      => 60,
+			'is_personal'     => true,
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 15,
+				'body'    => $body,
+			)
+		);
+	}
+
+	/**
+	 * Process a pre-checkout query for Telegram Stars payments.
+	 *
+	 * Validates the payment request and responds with approval. Telegram requires
+	 * a response within 10 seconds or the payment will be cancelled.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param array $pre_checkout_query The pre_checkout_query object from Telegram.
+	 */
+	protected function process_pre_checkout_query( array $pre_checkout_query ) {
+		$query_id = isset( $pre_checkout_query['id'] ) ? (string) $pre_checkout_query['id'] : '';
+
+		if ( empty( $query_id ) ) {
+			return;
+		}
+
+		$connection = $this->get_active_telegram_connection();
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( '' === $bot_token ) {
+			return;
+		}
+
+		/**
+		 * Filters whether to approve a Telegram Stars pre-checkout query.
+		 *
+		 * Return a non-empty string to reject the payment with that error message.
+		 * Return empty string or false to approve.
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param string $error_message    Error message (empty = approve).
+		 * @param array  $pre_checkout_query The pre_checkout_query data.
+		 */
+		$error = apply_filters( 'wp_mcp_ai_telegram_pre_checkout_validation', '', $pre_checkout_query );
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/answerPreCheckoutQuery', rawurlencode( $bot_token ) );
+
+		$payload = array( 'pre_checkout_query_id' => $query_id );
+
+		if ( ! empty( $error ) ) {
+			$payload['ok']            = false;
+			$payload['error_message'] = sanitize_text_field( (string) $error );
+		} else {
+			$payload['ok'] = true;
+		}
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 10,
+				'body'    => $body,
+			)
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_pre_checkout',
+			'Pre-checkout query processed.',
+			array(
+				'query_id' => $query_id,
+				'approved' => empty( $error ),
+			)
+		);
+	}
+
+	/**
+	 * Process a successful Telegram Stars payment.
+	 *
+	 * Credits the user's balance and logs the transaction.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param array $message The message containing successful_payment data.
+	 */
+	protected function process_successful_payment( array $message ) {
+		$payment = isset( $message['successful_payment'] ) ? $message['successful_payment'] : array();
+		$from    = isset( $message['from'] ) ? $message['from'] : array();
+		$chat_id = isset( $message['chat']['id'] ) ? (string) $message['chat']['id'] : '';
+		$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
+
+		$currency       = isset( $payment['currency'] ) ? sanitize_text_field( $payment['currency'] ) : '';
+		$total_amount   = isset( $payment['total_amount'] ) ? absint( $payment['total_amount'] ) : 0;
+		$invoice_payload = isset( $payment['invoice_payload'] ) ? sanitize_text_field( $payment['invoice_payload'] ) : '';
+		$charge_id      = isset( $payment['telegram_payment_charge_id'] ) ? sanitize_text_field( $payment['telegram_payment_charge_id'] ) : '';
+		$provider_id    = isset( $payment['provider_payment_charge_id'] ) ? sanitize_text_field( $payment['provider_payment_charge_id'] ) : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_payment_received',
+			'Telegram Stars payment received.',
+			array(
+				'telegram_id'    => $tg_id,
+				'currency'       => $currency,
+				'amount'         => $total_amount,
+				'payload'        => $invoice_payload,
+				'charge_id'      => $charge_id,
+				'provider_id'    => $provider_id,
+			)
+		);
+
+		// Resolve the WordPress user from Telegram ID.
+		$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
+
+		if ( $user_id ) {
+			// Credit the user's stars balance.
+			$current_balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+			update_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', $current_balance + $total_amount );
+
+			// Append to payment history.
+			$history = get_user_meta( $user_id, '_wp_mcp_ai_tma_payment_history', true );
+			if ( ! is_array( $history ) ) {
+				$history = array();
+			}
+			$history[] = array(
+				'date'       => gmdate( 'Y-m-d H:i:s' ),
+				'currency'   => $currency,
+				'amount'     => $total_amount,
+				'payload'    => $invoice_payload,
+				'charge_id'  => $charge_id,
+			);
+			// Keep last 100 entries.
+			if ( count( $history ) > 100 ) {
+				$history = array_slice( $history, -100 );
+			}
+			update_user_meta( $user_id, '_wp_mcp_ai_tma_payment_history', $history );
+		}
+
+		/**
+		 * Fires after a successful Telegram Stars payment is processed.
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param array    $payment Payment data from Telegram.
+		 * @param int|null $user_id WordPress user ID or null.
+		 * @param array    $message Full Telegram message.
+		 */
+		do_action( 'wp_mcp_ai_telegram_payment_received', $payment, $user_id, $message );
+
+		// Send confirmation to the user.
+		if ( ! empty( $chat_id ) ) {
+			$text = "✅ *Payment Received!*\n\n";
+			$text .= "⭐ Amount: $total_amount $currency\n";
+			if ( $user_id ) {
+				$new_balance = (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true );
+				$text .= "💰 New Balance: $new_balance Stars\n";
+			}
+			$text .= "\nThank you for your purchase!";
+
+			$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
+		}
+	}
+
+	/**
+	 * Resolve a WordPress user ID from a Telegram user ID.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $telegram_id Telegram user ID.
+	 * @return int|null WordPress user ID or null.
+	 */
+	protected function resolve_wp_user_from_telegram_id( $telegram_id ) {
+		if ( empty( $telegram_id ) ) {
+			return null;
+		}
+
+		$users = get_users(
+			array(
+				'meta_key'   => '_wp_mcp_ai_telegram_id',
+				'meta_value' => $telegram_id,
+				'number'     => 1,
+				'fields'     => 'ID',
+			)
+		);
+
+		return ! empty( $users ) ? (int) $users[0] : null;
 	}
 
 	/**
@@ -1255,6 +1701,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'command'     => 'cancel',
 				'description' => 'Clear conversation history',
+			),
+			array(
+				'command'     => 'tools',
+				'description' => 'Browse and run AI tools',
+			),
+			array(
+				'command'     => 'balance',
+				'description' => 'Check your credits balance',
+			),
+			array(
+				'command'     => 'app',
+				'description' => 'Open the Mini App',
 			),
 		);
 
