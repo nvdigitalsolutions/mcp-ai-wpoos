@@ -551,9 +551,41 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
+**22. Mubert Music API**
+* **Purpose:** AI-generated music and audio track creation
+* **Data Sent:** Music generation parameters (tempo, genre, duration), API key
+* **When:** When music generation tools are used
+* **Service URL:** https://music-api.mubert.com/api/v3/public/tracks
+* **Terms of Service:** https://mubert.com/corporate/terms
+* **Privacy Policy:** https://mubert.com/corporate/privacy
+
+**23. GDACS (Global Disaster Alert and Coordination System)**
+* **Purpose:** Global disaster and emergency event data retrieval
+* **Data Sent:** None (read-only public data retrieval)
+* **When:** When the GDACS disaster events tool is used
+* **Service URL:** https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP
+* **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
+* **Privacy Policy:** https://www.gdacs.org/About/privacy.aspx
+
+**24. Google Maps Platform API**
+* **Purpose:** Geocoding, place search, place details, and autocomplete
+* **Data Sent:** Location queries, coordinates, place IDs, API key
+* **When:** When location/mapping tools are used
+* **Service URL:** https://maps.googleapis.com/maps/api/
+* **Terms of Service:** https://cloud.google.com/maps-platform/terms
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**25. Meta / Facebook Graph API**
+* **Purpose:** OAuth authentication and social media integration
+* **Data Sent:** OAuth tokens, user queries, content data
+* **When:** When Meta/Facebook integration is configured and used
+* **Service URL:** https://graph.facebook.com/v18.0/
+* **Terms of Service:** https://www.facebook.com/legal/terms
+* **Privacy Policy:** https://www.facebook.com/privacy/policy/
+
 = Plugin Services (NV Digital Solutions) =
 
-**22. NV Digital Solutions Activation Tracking**
+**26. NV Digital Solutions Activation Tracking**
 * **Purpose:** Anonymous plugin activation/deactivation analytics to understand usage patterns
 * **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
 * **When:** On plugin activation and deactivation (opt-out available via settings or filter)
@@ -562,7 +594,7 @@ These services are only contacted when specific tools/features are used:
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
 
-**23. NV Digital Solutions License Server**
+**27. NV Digital Solutions License Server**
 * **Purpose:** Optional license validation for future premium add-on support
 * **Data Sent:** License key, site URL, product identifier
 * **When:** Only when a user manually enters and activates a license key
@@ -574,7 +606,7 @@ These services are only contacted when specific tools/features are used:
 
 These services are only used if you explicitly configure OAuth integrations:
 
-**24. GitHub API**
+**28. GitHub API**
 * **Purpose:** Repository management, code search, issue tracking
 * **Data Sent:** OAuth tokens, repository queries, commit data
 * **When:** When GitHub tools are used after OAuth setup
@@ -582,7 +614,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
-**25. Cloudways API**
+**29. Cloudways API**
 * **Purpose:** Server management for Cloudways hosting customers
 * **Data Sent:** OAuth tokens, server management commands
 * **When:** When Cloudways tools are used after OAuth setup
@@ -590,7 +622,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://www.cloudways.com/en/terms-of-service.php
 * **Privacy Policy:** https://www.cloudways.com/en/privacy-policy.php
 
-**26. QuickBooks API (Intuit)**
+**30. QuickBooks API (Intuit)**
 * **Purpose:** Accounting and financial data integration
 * **Data Sent:** OAuth tokens, financial queries
 * **When:** When QuickBooks tools are used after OAuth setup
@@ -598,7 +630,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
 * **Privacy Policy:** https://www.intuit.com/privacy/statement/
 
-**27. Mailjet API**
+**31. Mailjet API**
 * **Purpose:** Email marketing and transactional email
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
@@ -613,7 +645,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * File uploads (AI providers only)
 * Search queries (when using search/weather tools)
 * OAuth credentials (when using optional integrations)
-* Anonymous activation data (opt-out available; see service #22 above)
+* Anonymous activation data (opt-out available; see service #26 above)
 
 **What is NOT sent:**
 * WordPress admin credentials

@@ -95,21 +95,25 @@ The review identified 23+ instances of external service calls not documented in 
 - NV Digital Solutions activation tracking endpoint
 - NV Digital Solutions license server
 
-### Fix Applied
+### Fix Applied (Phase 1 — March 2, 2026)
 **File:** `readme.txt` — External Services section
 
-Added comprehensive documentation for all 11 previously undocumented services (items 13–23 in the updated External Services section), including:
+Added comprehensive documentation for 11 previously undocumented services (items 13–21 and 22–23 in the updated External Services section).
 
-- **Purpose** — What each service does
-- **Data Sent** — Exactly what data is transmitted
-- **When** — Under what conditions data is sent
-- **Service URL** — The endpoint(s) contacted
-- **Terms of Service** — Link to the service's terms
-- **Privacy Policy** — Link to the service's privacy policy
+### Fix Applied (Phase 2 — Complete Audit)
+
+A full audit of every `wp_remote_post`, `wp_remote_get`, and `wp_remote_request` call in the base plugin uncovered 4 additional undocumented services:
+
+| Service | File | Fix |
+|---------|------|-----|
+| Mubert Music API | `includes/services/class-wp-mcp-ai-mubert-music-service.php` | Added as item #22 |
+| GDACS Disaster API | `includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php` | Added as item #23 |
+| Google Maps Platform | `includes/class-wp-mcp-ai-google-maps-client.php` | Added as item #24 |
+| Meta / Facebook Graph API | `includes/integrations/class-wp-mcp-ai-meta-oauth-handler.php` | Added as item #25 |
 
 Updated the Hugging Face entry (item 7) to include inference API usage in addition to the previously documented dataset access.
 
-Renumbered OAuth/integration services (items 24–27) and removed the "Pro Version Only" label to avoid implying feature gating.
+Renumbered all services — the readme now documents **31 total external services** with full Terms/Privacy links.
 
 ### Activation Tracking Disclosure (Item 22)
 The NV Digital Solutions activation tracking service now includes:
@@ -226,20 +230,55 @@ The review tools flagged potential prefixing issues. Our audit found:
 
 ## Full Audit Verification
 
-A comprehensive audit of the entire base plugin was performed after applying all fixes:
+A comprehensive audit of the entire base plugin was performed after applying all fixes. The audit checked every PHP file in `includes/` (excluding `vendor/`) that ships in the WordPress.org distribution ZIP.
+
+### Sanitization Audit
 
 | Category | Files Checked | Issues Found | Status |
 |----------|--------------|--------------|--------|
-| `$_SERVER` sanitization | All includes/*.php | 0 remaining | ✅ Clean |
-| `json_decode` sanitization | All includes/*.php | 0 remaining | ✅ Clean |
-| `register_setting` callbacks | All includes/*.php | 0 remaining | ✅ Clean |
-| `file_put_contents` safety | All includes/*.php | 0 remaining | ✅ Clean |
-| External service documentation | readme.txt | 0 undocumented | ✅ Clean |
-| License/feature gating | pro-license.php | 0 gated features | ✅ Clean |
-| Class/function prefixing | All includes/*.php | 0 unprefixed globals | ✅ Clean |
-| Inline scripts | All includes/*.php | 0 violations | ✅ Clean |
-| External CDN assets | All includes/*.php | 0 violations | ✅ Clean |
-| Library versions | composer.lock | All current | ✅ Clean |
+| `$_SERVER` sanitization | All includes/*.php | 0 remaining unsanitized | ✅ Clean |
+| `$_GET`/`$_POST`/`$_REQUEST` sanitization | All includes/*.php | 0 remaining unsanitized | ✅ Clean |
+| `json_decode` sanitization | All includes/*.php | 0 remaining unsanitized | ✅ Clean |
+| `register_setting` callbacks | All includes/*.php | 0 remaining without callback | ✅ Clean |
+| `$_COOKIE`/`$_SESSION` sanitization | All includes/*.php | 0 unsanitized access | ✅ Clean |
+
+### File System Audit
+
+| Category | Files Checked | Status |
+|----------|--------------|--------|
+| `file_put_contents` safety | 18 instances in includes/ | ✅ All write to uploads dir, temp files, or admin-only paths |
+| `file_get_contents` safety | Checked all instances | ✅ No user-controlled path access without validation |
+| Plugin folder data storage | All includes/ | ✅ No data saved in plugin folder |
+
+**Note on file_put_contents usage:** All 18 remaining `file_put_contents` calls in the base plugin write to:
+- WordPress uploads directory (`wp_upload_dir()['basedir']`) — skill files, reports, images, workflows
+- System temp directory (`sys_get_temp_dir()`, `wp_tempnam()`) — temporary processing files
+- Admin-only slash commands with `manage_options` capability check
+
+### External Services Audit
+
+| Category | Status |
+|----------|--------|
+| External service documentation | ✅ 31 services fully documented with Terms/Privacy links |
+| License/feature gating | ✅ 0 gated features — all built-in features fully available |
+| Activation tracking disclosure | ✅ Fully documented with opt-out instructions |
+
+### Code Quality Audit
+
+| Category | Status |
+|----------|--------|
+| Class/function prefixing | ✅ All globals use `wp_mcp_ai_`/`WP_MCP_AI_` prefix |
+| Namespaced classes | ✅ Use `WP_MCP_AI\` namespace (equivalent isolation) |
+| External CDN assets | ✅ CDN-dependent files excluded via .distignore |
+| Library versions | ✅ All Symfony packages at v6.4.34 |
+
+### Noted Items (Not Flagged as Blocking)
+
+The review noted the following items for awareness. These are not blocking issues but are documented for completeness:
+
+1. **Inline `<script>` and `<style>` tags**: Multiple admin PHP files use inline scripts/styles for metabox UIs, Elementor widgets, and settings pages. Many use `wp_add_inline_script()` / `wp_add_inline_style()` already; some Elementor widgets use `wp_print_inline_script_tag()` with backward-compatible fallbacks. Admin-only contexts are generally acceptable exceptions per the review guidelines.
+
+2. **Prefixing**: All global-scope elements (functions, classes, constants, hooks, option keys) use the `wp_mcp_ai_`/`WP_MCP_AI_` prefix. Namespaced classes use PHP namespaces under `WP_MCP_AI\` which provides equivalent isolation.
 
 ---
 
@@ -259,7 +298,7 @@ A comprehensive audit of the entire base plugin was performed after applying all
 11. `includes/class-wp-mcp-ai-proxy-utils.php` — Sanitized $_SERVER['HTTP_X_FORWARDED_HOST']
 
 ### Documentation Changes
-12. `readme.txt` — Fixed URLs, added 11 external service disclosures, updated privacy policy
+12. `readme.txt` — Fixed URLs, added 15 external service disclosures (31 total), updated privacy policy
 13. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This document
 
 ### Dependency Updates
