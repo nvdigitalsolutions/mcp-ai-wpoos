@@ -419,6 +419,99 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * Install bundled skills that ship with the plugin.
+	 *
+	 * Copies SKILL.md files from the plugin's bundled-skills directory
+	 * to the uploads skill storage. Skips skills that are already installed.
+	 *
+	 * @since 1.7.1
+	 * @return array Array with 'installed' and 'skipped' counts plus any 'errors'.
+	 */
+	public function install_bundled_skills() {
+		$bundled_dir = defined( 'WP_MCP_AI_PATH' )
+			? trailingslashit( WP_MCP_AI_PATH ) . 'includes/bundled-skills'
+			: '';
+
+		if ( empty( $bundled_dir ) || ! is_dir( $bundled_dir ) ) {
+			return array(
+				'installed' => 0,
+				'skipped'   => 0,
+				'errors'    => array( __( 'Bundled skills directory not found.', 'mcp-ai-wpoos' ) ),
+			);
+		}
+
+		$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
+		if ( ! is_array( $dirs ) || empty( $dirs ) ) {
+			return array(
+				'installed' => 0,
+				'skipped'   => 0,
+				'errors'    => array(),
+			);
+		}
+
+		$installed = 0;
+		$skipped   = 0;
+		$errors    = array();
+
+		foreach ( $dirs as $dir ) {
+			$skill_file = $dir . '/SKILL.md';
+			if ( ! file_exists( $skill_file ) ) {
+				continue;
+			}
+
+			$skill_name = basename( $dir );
+
+			// Skip if already installed in uploads.
+			$target_dir = trailingslashit( $this->get_skills_dir() ) . $skill_name;
+			if ( is_dir( $target_dir ) && file_exists( $target_dir . '/SKILL.md' ) ) {
+				++$skipped;
+				continue;
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+			$content = file_get_contents( $skill_file );
+			if ( false === $content ) {
+				$errors[] = sprintf(
+					/* translators: %s: skill name */
+					__( 'Failed to read bundled skill: %s', 'mcp-ai-wpoos' ),
+					$skill_name
+				);
+				continue;
+			}
+
+			$result = $this->install_skill( $content );
+			if ( is_wp_error( $result ) ) {
+				$errors[] = sprintf(
+					/* translators: 1: skill name, 2: error message */
+					__( 'Failed to install %1$s: %2$s', 'mcp-ai-wpoos' ),
+					$skill_name,
+					$result->get_error_message()
+				);
+			} else {
+				++$installed;
+			}
+		}
+
+		return array(
+			'installed' => $installed,
+			'skipped'   => $skipped,
+			'errors'    => $errors,
+		);
+	}
+
+	/**
+	 * Get the path to the bundled skills directory.
+	 *
+	 * @since 1.7.1
+	 * @return string Absolute path to the bundled skills directory.
+	 */
+	public function get_bundled_skills_dir() {
+		return defined( 'WP_MCP_AI_PATH' )
+			? trailingslashit( WP_MCP_AI_PATH ) . 'includes/bundled-skills'
+			: '';
+	}
+
+	/**
 	 * Reset the singleton instance (for testing purposes).
 	 *
 	 * @since 1.7.0
