@@ -338,6 +338,17 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Shop balance endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/shop/balance',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_shop_balance' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
 	}
 
 	// =========================================================================
@@ -549,6 +560,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
 		$settings_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
 		$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+		$shop_url      = rest_url( $this->namespace . '/' . $this->rest_base . '/shop/balance' );
 		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
@@ -700,6 +712,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <div class="tma-pagination" id="tma-media-pagination"></div>
     </div>
 
+    <!-- Shop tab -->
+    <div class="tma-tab-pane" id="tma-tab-shop">
+      <div class="tma-shop-wrap" id="tma-shop-wrap">
+        <div class="tma-empty">Loading shop…</div>
+      </div>
+    </div>
+
     <!-- Settings tab -->
     <div class="tma-tab-pane" id="tma-tab-settings">
       <div class="tma-settings-wrap" id="tma-settings-wrap">
@@ -727,6 +746,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       <span class="tma-nav-label">Media</span>
     </button>
+    <button class="tma-nav-btn" id="tma-nav-shop" data-tab="shop" onclick="tmaSwitchTab(\'shop\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="tma-nav-label">Shop</span>
+    </button>
     <button class="tma-nav-btn" id="tma-nav-settings" data-tab="settings" onclick="tmaSwitchTab(\'settings\')">
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span class="tma-nav-label">Settings</span>
@@ -753,6 +776,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
   var TMA_SETTINGS_URL   = ' . wp_json_encode( $settings_url ) . ';
   var TMA_ANALYTICS_URL  = ' . wp_json_encode( $analytics_url ) . ';
+  var TMA_SHOP_URL       = ' . wp_json_encode( $shop_url ) . ';
   var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
   var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
@@ -830,6 +854,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     if (tabName === \'content\') loadContent();
     if (tabName === \'tools\')   loadTools();
     if (tabName === \'media\')   loadMedia();
+    if (tabName === \'shop\')    loadShop();
     if (tabName === \'settings\') loadSettings();
     /* Reset search bar context */
     clearSearch();
@@ -1776,6 +1801,113 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   /* =========================================================
+     SHOP TAB
+     ========================================================= */
+  var shopLoaded = false;
+
+  function loadShop() {
+    if (shopLoaded) return;
+    var wrap = document.getElementById(\'tma-shop-wrap\');
+    if (!wrap) return;
+    wrap.innerHTML = \'<div class="tma-empty">Loading shop…</div>\';
+
+    authFetch(TMA_SHOP_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadShop(); }).catch(function () { showLoginFallback(\'shop\'); });
+          }
+          showLoginPrompt(\'shop\'); return null;
+        }
+        authRetried = false;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        shopLoaded = true;
+        renderShop(data);
+      })
+      .catch(function () {
+        if (wrap) wrap.innerHTML = \'<div class="tma-empty tma-error">Failed to load shop.</div>\';
+      });
+  }
+
+  function renderShop(data) {
+    var wrap = document.getElementById(\'tma-shop-wrap\');
+    if (!wrap) return;
+    var html = \'\';
+
+    /* ── Balance Card ── */
+    html += \'<div class="tma-shop-balance-card">\';
+    html += \'<div class="tma-shop-balance-icon">⭐</div>\';
+    html += \'<div class="tma-shop-balance-amount">\' + escHtml(String(data.balance || 0)) + \'</div>\';
+    html += \'<div class="tma-shop-balance-label">Stars Balance</div>\';
+    html += \'</div>\';
+
+    /* ── Pricing Cards ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Purchase Stars</div>\';
+    html += \'<div class="tma-shop-pricing">\';
+
+    var packs = data.pricing || [
+      { stars: 50, label: \'Starter\', description: \'Good for trying out\' },
+      { stars: 200, label: \'Standard\', description: \'Most popular\' },
+      { stars: 500, label: \'Pro\', description: \'Best value\' },
+      { stars: 1000, label: \'Enterprise\', description: \'For power users\' },
+    ];
+
+    packs.forEach(function (pack) {
+      var popular = pack.label === \'Standard\' ? \' tma-shop-popular\' : \'\';
+      html += \'<div class="tma-shop-price-card\' + popular + \'">\';
+      if (popular) html += \'<div class="tma-shop-popular-badge">Popular</div>\';
+      html += \'<div class="tma-shop-price-stars">⭐ \' + escHtml(String(pack.stars)) + \'</div>\';
+      html += \'<div class="tma-shop-price-label">\' + escHtml(pack.label) + \'</div>\';
+      html += \'<div class="tma-shop-price-desc">\' + escHtml(pack.description) + \'</div>\';
+      html += \'<button class="tma-shop-buy-btn" onclick="tmaBuyStars(\' + pack.stars + \')">Purchase</button>\';
+      html += \'</div>\';
+    });
+
+    html += \'</div></div>\';
+
+    /* ── Recent Transactions ── */
+    if (data.recent_payments && data.recent_payments.length) {
+      html += \'<div class="tma-settings-section">\';
+      html += \'<div class="tma-settings-section-title">Recent Transactions</div>\';
+      html += \'<div class="tma-settings-card">\';
+      data.recent_payments.forEach(function (tx) {
+        var date = tx.date ? new Date(tx.date).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
+        html += \'<div class="tma-settings-item">\';
+        html += \'<div class="tma-settings-item-icon">💳</div>\';
+        html += \'<div class="tma-settings-item-body">\';
+        html += \'<div class="tma-settings-item-label">⭐ +\' + escHtml(String(tx.amount || 0)) + \'</div>\';
+        html += \'<div class="tma-settings-item-value">\' + escHtml(date) + \'</div>\';
+        html += \'</div></div>\';
+      });
+      html += \'</div></div>\';
+    }
+
+    /* ── Info ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-card">\';
+    html += \'<div class="tma-settings-help">Stars are used for premium AI tool executions and content generation. Purchases are processed securely via Telegram Stars.</div>\';
+    html += \'</div></div>\';
+
+    wrap.innerHTML = html;
+  }
+
+  window.tmaBuyStars = function (amount) {
+    haptic(\'light\');
+    /* Telegram Stars payments require invoking the Telegram WebApp payment API.
+       This sends the user to the bot chat with a pre-configured invoice. */
+    if (twa && twa.openTelegramLink && TMA_BOT_USERNAME) {
+      twa.openTelegramLink(\'https://t.me/\' + TMA_BOT_USERNAME + \'?start=buy_\' + amount);
+    } else {
+      showToast(\'Open the bot chat to purchase Stars\', true);
+    }
+  };
+
+  /* =========================================================
      SETTINGS TAB
      ========================================================= */
   var settingsLoaded = false;
@@ -2236,6 +2368,69 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 </html>';
 		// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 		exit;
+	}
+
+	// =========================================================================
+	// Shop / balance data endpoints
+	// =========================================================================
+
+	/**
+	 * Return the current user's Stars balance, pricing packs, and recent payments.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function handle_shop_balance( $request ) {
+		$user_id = get_current_user_id();
+		$balance = $user_id ? (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true ) : 0;
+
+		// Load recent payment history.
+		$history = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_payment_history', true ) : array();
+		if ( ! is_array( $history ) ) {
+			$history = array();
+		}
+		// Return the 10 most recent.
+		$recent = array_slice( array_reverse( $history ), 0, 10 );
+
+		// Configurable pricing packs from settings.
+		$settings       = get_option( 'wp_mcp_ai_settings', array() );
+		$pricing_config = isset( $settings['telegram_stars_pricing'] ) ? $settings['telegram_stars_pricing'] : array();
+
+		// Default packs if not configured.
+		if ( empty( $pricing_config ) || ! is_array( $pricing_config ) ) {
+			$pricing_config = array(
+				array(
+					'stars'       => 50,
+					'label'       => __( 'Starter', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Good for trying out', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 200,
+					'label'       => __( 'Standard', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Most popular', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 500,
+					'label'       => __( 'Pro', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Best value', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 1000,
+					'label'       => __( 'Enterprise', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'For power users', 'mcp-ai-wpoos-pro' ),
+				),
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'balance'         => $balance,
+				'pricing'         => $pricing_config,
+				'recent_payments' => $recent,
+			)
+		);
 	}
 
 	// =========================================================================
@@ -3631,6 +3826,21 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-media-info{padding:6px 8px}
 .tma-media-title{font-size:11px;font-weight:500;color:var(--tma-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tma-media-meta{font-size:10px;color:var(--tma-hint)}
+/* Shop tab */
+.tma-shop-wrap{padding:12px}
+.tma-shop-balance-card{background:linear-gradient(135deg,var(--tma-btn),var(--tma-accent,var(--tma-btn)));border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;color:var(--tma-btn-text)}
+.tma-shop-balance-icon{font-size:36px;margin-bottom:4px}
+.tma-shop-balance-amount{font-size:42px;font-weight:700;line-height:1.2}
+.tma-shop-balance-label{font-size:13px;opacity:.85;margin-top:4px}
+.tma-shop-pricing{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:4px 0}
+.tma-shop-price-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:16px 12px;text-align:center;position:relative}
+.tma-shop-popular{border-color:var(--tma-btn);box-shadow:0 0 0 1px var(--tma-btn)}
+.tma-shop-popular-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--tma-btn);color:var(--tma-btn-text);font-size:10px;font-weight:600;padding:2px 10px;border-radius:8px}
+.tma-shop-price-stars{font-size:22px;font-weight:700;color:var(--tma-text)}
+.tma-shop-price-label{font-size:14px;font-weight:600;color:var(--tma-text);margin:4px 0 2px}
+.tma-shop-price-desc{font-size:11px;color:var(--tma-hint);margin-bottom:10px}
+.tma-shop-buy-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+.tma-shop-buy-btn:active{opacity:.7}
 /* Pagination */
 .tma-pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;flex-shrink:0;border-top:1px solid var(--tma-border)}
 .tma-page-btn{padding:5px 14px;border-radius:var(--tma-radius);border:1px solid var(--tma-border);background:var(--tma-section-bg);color:var(--tma-text);font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
