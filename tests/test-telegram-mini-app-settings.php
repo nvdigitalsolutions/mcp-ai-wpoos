@@ -1422,4 +1422,151 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			'Home tab should have a Usage by Toolkit chart title'
 		);
 	}
+
+	// =========================================================================
+	// require_mention default – group reply behaviour
+	// =========================================================================
+
+	/**
+	 * Test that require_mention defaults to false (bot replies to every group
+	 * message out of the box when enable_groups is on).
+	 *
+	 * The webhook controller evaluates:
+	 *   $require_mention_in_group = $is_group && ! empty( $connection['require_mention'] );
+	 *
+	 * When require_mention is not set on the connection, the gate must be
+	 * OPEN so the bot processes all group messages.
+	 */
+	public function test_require_mention_defaults_to_false() {
+		// Connection without require_mention key at all.
+		$connection_no_key = array(
+			'enable_groups' => true,
+		);
+		$result = ! empty( $connection_no_key['require_mention'] );
+		$this->assertFalse( $result, 'require_mention should default to false when not set' );
+
+		// Connection with require_mention explicitly false.
+		$connection_false = array(
+			'enable_groups'   => true,
+			'require_mention' => false,
+		);
+		$result_false = ! empty( $connection_false['require_mention'] );
+		$this->assertFalse( $result_false, 'require_mention should be false when explicitly set to false' );
+
+		// Connection with require_mention explicitly true.
+		$connection_true = array(
+			'enable_groups'   => true,
+			'require_mention' => true,
+		);
+		$result_true = ! empty( $connection_true['require_mention'] );
+		$this->assertTrue( $result_true, 'require_mention should be true when explicitly set to true' );
+	}
+
+	// =========================================================================
+	// message_mentions_bot – entity-based detection
+	// =========================================================================
+
+	/**
+	 * Test message_mentions_bot uses Telegram mention entities when
+	 * bot_username is known.
+	 */
+	public function test_message_mentions_bot_via_entities() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'message_mentions_bot' );
+		$method->setAccessible( true );
+
+		$connection = array( 'bot_username' => '@test_bot' );
+
+		$message_with_entity = array(
+			'text'     => '@test_bot how are you?',
+			'entities' => array(
+				array(
+					'type'   => 'mention',
+					'offset' => 0,
+					'length' => 9,
+				),
+			),
+		);
+
+		$this->assertTrue(
+			$method->invoke( $this->webhook_controller, '@test_bot how are you?', $connection, $message_with_entity ),
+			'Should detect bot mention via entities when bot_username matches'
+		);
+	}
+
+	/**
+	 * Test message_mentions_bot detects bot mention from entities even when
+	 * bot_username is not configured on the connection (entity fallback).
+	 */
+	public function test_message_mentions_bot_entity_fallback_without_username() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'message_mentions_bot' );
+		$method->setAccessible( true );
+
+		// No bot_username on the connection.
+		$connection = array();
+
+		$message_with_bot_entity = array(
+			'text'     => '@my_test_bot hello!',
+			'entities' => array(
+				array(
+					'type'   => 'mention',
+					'offset' => 0,
+					'length' => 13,
+				),
+			),
+		);
+
+		$this->assertTrue(
+			$method->invoke( $this->webhook_controller, '@my_test_bot hello!', $connection, $message_with_bot_entity ),
+			'Should detect bot mention from entity whose username ends with "bot"'
+		);
+
+		// Entity mentioning a non-bot user (no "bot" suffix).
+		$message_with_user_entity = array(
+			'text'     => '@some_user hello!',
+			'entities' => array(
+				array(
+					'type'   => 'mention',
+					'offset' => 0,
+					'length' => 10,
+				),
+			),
+		);
+
+		$this->assertFalse(
+			$method->invoke( $this->webhook_controller, '@some_user hello!', $connection, $message_with_user_entity ),
+			'Should not detect non-bot mention when bot_username is not set'
+		);
+	}
+
+	/**
+	 * Test message_mentions_bot returns false when no entities and no
+	 * bot_username is configured.
+	 */
+	public function test_message_mentions_bot_no_username_no_entities() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'message_mentions_bot' );
+		$method->setAccessible( true );
+
+		$connection = array();
+		$message    = array( 'text' => 'Hello world' );
+
+		$this->assertFalse(
+			$method->invoke( $this->webhook_controller, 'Hello world', $connection, $message ),
+			'Should return false when no bot_username and no mention entities'
+		);
+	}
 }

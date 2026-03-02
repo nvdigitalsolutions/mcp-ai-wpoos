@@ -228,9 +228,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * Process a Telegram message object and dispatch an AI reply if applicable.
 	 *
 	 * Supports private chats, groups, and supergroups. In group contexts the
-	 * bot only replies when explicitly addressed via @bot_username mention or
-	 * when the message is a direct reply to one of the bot's messages, unless
-	 * the connection has require_mention disabled (privacy mode off).
+	 * bot replies to every message by default. When the connection has
+	 * require_mention enabled, the bot only replies when explicitly addressed
+	 * via @bot_username mention, when the message is a direct reply to one
+	 * of the bot's messages, or when an assigned assistant @slug is mentioned.
 	 *
 	 * @since 1.0.0
 	 *
@@ -290,11 +291,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// In groups, only reply when the bot is mentioned or the message is a
-		// reply to one of the bot's own messages – unless require_mention is
-		// explicitly disabled for this connection.
-		$require_mention_in_group = $is_group && ( ! isset( $connection['require_mention'] ) || ! empty( $connection['require_mention'] ) );
+		// reply to one of the bot's own messages – but only when require_mention
+		// is explicitly enabled for this connection. Defaults to off so the bot
+		// responds to every group message out of the box.
+		$require_mention_in_group = $is_group && ! empty( $connection['require_mention'] );
 		if ( $require_mention_in_group ) {
-			$bot_mentioned  = $this->message_mentions_bot( $text, $connection );
+			$bot_mentioned  = $this->message_mentions_bot( $text, $connection, $message );
 			$reply_to_bot   = $this->is_reply_to_bot( $message, $connection );
 
 			if ( ! $bot_mentioned && ! $reply_to_bot ) {
@@ -1128,7 +1130,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
 		if ( $is_group ) {
-			$lines[] = "\n💡 *Tip:* In groups, mention me with @bot\\_username or reply to my messages to get a response.";
+			$connection = $this->get_active_telegram_connection();
+			if ( $connection && ! empty( $connection['require_mention'] ) ) {
+				$lines[] = "\n💡 *Tip:* In groups, mention me with @bot\\_username or reply to my messages to get a response.";
+			} else {
+				$lines[] = "\n💡 *Tip:* I respond to every message in this group. You can also mention me with @bot\\_username or reply to my messages.";
+			}
 		}
 
 		$lines[] = "\nYou can also type any question and I'll respond using AI.";
@@ -1772,26 +1779,63 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * Check whether the message text contains an @bot_username mention.
 	 *
 	 * Used in group chats to determine if the bot is being addressed directly.
-	 * Telegram sends mentions as @botname entities in the text, so a simple
-	 * case-insensitive substring check suffices.
+	 * First checks message entities (reliable, provided by Telegram), then
+	 * falls back to a case-insensitive regex match against bot_username.
+	 *
+	 * When the optional $message array is provided and bot_username is not
+	 * configured on the connection, the method inspects Telegram `mention`
+	 * entities and accepts any bot mention (entity whose extracted text ends
+	 * with "bot", which is a Telegram naming requirement for bots).
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string     $text       Message text.
 	 * @param array|null $connection Active Telegram connection.
+	 * @param array      $message    Optional full Telegram message object for entity-based detection.
 	 * @return bool True if the bot's username is mentioned.
 	 */
-	protected function message_mentions_bot( $text, $connection ) {
-		if ( ! $connection || empty( $connection['bot_username'] ) ) {
-			return false;
+	protected function message_mentions_bot( $text, $connection, array $message = array() ) {
+		$bot_username = '';
+		if ( $connection && ! empty( $connection['bot_username'] ) ) {
+			$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
 		}
 
-		$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
-		if ( '' === $bot_username ) {
-			return false;
+		// Strategy 1: regex match when bot_username is known.
+		if ( '' !== $bot_username ) {
+			if ( preg_match( '/@' . preg_quote( $bot_username, '/' ) . '(?:[^a-zA-Z0-9_]|$)/i', $text ) ) {
+				return true;
+			}
 		}
 
-		return (bool) preg_match( '/@' . preg_quote( $bot_username, '/' ) . '(?:[^a-zA-Z0-9_]|$)/i', $text );
+		// Strategy 2: inspect Telegram mention entities from the message.
+		// This helps when bot_username is not stored in the connection but
+		// the user did @mention the bot in the chat.
+		if ( ! empty( $message['entities'] ) && is_array( $message['entities'] ) ) {
+			foreach ( $message['entities'] as $entity ) {
+				if ( ! isset( $entity['type'] ) || 'mention' !== $entity['type'] ) {
+					continue;
+				}
+
+				$offset        = isset( $entity['offset'] ) ? (int) $entity['offset'] : 0;
+				$length        = isset( $entity['length'] ) ? (int) $entity['length'] : 0;
+				$mention_text  = mb_substr( $text, $offset, $length );
+				$mentioned_name = strtolower( ltrim( $mention_text, '@' ) );
+
+				// If we know the bot_username, match exactly.
+				if ( '' !== $bot_username && strtolower( $bot_username ) === $mentioned_name ) {
+					return true;
+				}
+
+				// If bot_username is unknown, accept any mention whose name
+				// ends with "bot" – Telegram requires all bot usernames to
+				// end with "bot".
+				if ( '' === $bot_username && 'bot' === substr( $mentioned_name, -3 ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
