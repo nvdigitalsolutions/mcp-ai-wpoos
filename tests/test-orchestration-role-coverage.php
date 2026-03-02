@@ -211,8 +211,13 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 		$total       = 0;
 
 		foreach ( $json_files as $file ) {
-			$data = json_decode( file_get_contents( $file ), true );
-			if ( ! is_array( $data ) || ! isset( $data['professions'] ) ) {
+			$contents = file_get_contents( $file );
+			$this->assertNotFalse( $contents, sprintf( 'Failed to read file: %s', $file ) );
+
+			$data = json_decode( $contents, true );
+			$this->assertNotNull( $data, sprintf( 'Failed to parse JSON in file: %s', $file ) );
+
+			if ( ! isset( $data['professions'] ) ) {
 				continue;
 			}
 
@@ -272,8 +277,13 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 		);
 
 		foreach ( $json_files as $file ) {
-			$data = json_decode( file_get_contents( $file ), true );
-			if ( ! is_array( $data ) || ! isset( $data['professions'] ) ) {
+			$contents = file_get_contents( $file );
+			$this->assertNotFalse( $contents, sprintf( 'Failed to read file: %s', $file ) );
+
+			$data = json_decode( $contents, true );
+			$this->assertNotNull( $data, sprintf( 'Failed to parse JSON in file: %s', $file ) );
+
+			if ( ! isset( $data['professions'] ) ) {
 				continue;
 			}
 
