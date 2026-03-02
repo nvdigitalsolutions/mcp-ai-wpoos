@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/integrate-skills-into-plugin',
-        'version' => 'dev-copilot/integrate-skills-into-plugin',
-        'reference' => 'f2a8556b187e1ebc0f6b90b4fe512bd7c101313c',
+        'pretty_version' => 'dev-copilot/add-pre-installed-skills',
+        'version' => 'dev-copilot/add-pre-installed-skills',
+        'reference' => 'b1b47586822661dede968a4d6e55b27c536cb6cb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/integrate-skills-into-plugin',
-            'version' => 'dev-copilot/integrate-skills-into-plugin',
-            'reference' => 'f2a8556b187e1ebc0f6b90b4fe512bd7c101313c',
+            'pretty_version' => 'dev-copilot/add-pre-installed-skills',
+            'version' => 'dev-copilot/add-pre-installed-skills',
+            'reference' => 'b1b47586822661dede968a4d6e55b27c536cb6cb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
