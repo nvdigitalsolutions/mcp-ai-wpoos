@@ -132,6 +132,148 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// Telegram markdown_to_telegram_html
+	// =========================================================================
+
+	/**
+	 * Helper: invoke the protected markdown_to_telegram_html method.
+	 *
+	 * @param string $markdown Input Markdown.
+	 * @return string Telegram-compatible HTML.
+	 */
+	private function invoke_markdown_to_telegram_html( $markdown ) {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'markdown_to_telegram_html' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $controller, $markdown );
+	}
+
+	/**
+	 * Test empty and non-string inputs return empty string.
+	 */
+	public function test_telegram_markdown_to_html_empty_input() {
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( '' ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( null ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( false ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( 42 ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( array() ) );
+	}
+
+	/**
+	 * Test bold Markdown converts to <b> tags.
+	 */
+	public function test_telegram_markdown_to_html_bold() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is **bold** text.' );
+		$this->assertStringContainsString( '<b>bold</b>', $result );
+	}
+
+	/**
+	 * Test italic Markdown converts to <i> tags.
+	 */
+	public function test_telegram_markdown_to_html_italic() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is *italic* text.' );
+		$this->assertStringContainsString( '<i>italic</i>', $result );
+	}
+
+	/**
+	 * Test strikethrough Markdown converts to <s> tags.
+	 */
+	public function test_telegram_markdown_to_html_strikethrough() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is ~~deleted~~ text.' );
+		$this->assertStringContainsString( '<s>deleted</s>', $result );
+	}
+
+	/**
+	 * Test inline code converts to <code> tags.
+	 */
+	public function test_telegram_markdown_to_html_inline_code() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Use `echo hello` here.' );
+		$this->assertStringContainsString( '<code>echo hello</code>', $result );
+	}
+
+	/**
+	 * Test fenced code blocks convert to <pre> tags.
+	 */
+	public function test_telegram_markdown_to_html_code_block() {
+		$md     = "```php\necho 'hello';\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringContainsString( '<pre><code class="language-php">', $result );
+		$this->assertStringContainsString( 'echo &#039;hello&#039;;', $result );
+		$this->assertStringContainsString( '</code></pre>', $result );
+	}
+
+	/**
+	 * Test fenced code block without language.
+	 */
+	public function test_telegram_markdown_to_html_code_block_no_lang() {
+		$md     = "```\nsome code\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringContainsString( '<pre>some code</pre>', $result );
+		$this->assertStringNotContainsString( '<code', $result );
+	}
+
+	/**
+	 * Test Markdown links convert to <a> tags.
+	 */
+	public function test_telegram_markdown_to_html_links() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Visit [Google](https://google.com) now.' );
+		$this->assertStringContainsString( '<a href="https://google.com">Google</a>', $result );
+	}
+
+	/**
+	 * Test headings convert to bold text.
+	 */
+	public function test_telegram_markdown_to_html_headings() {
+		$result = $this->invoke_markdown_to_telegram_html( "# Main Title\n\nSome text." );
+		$this->assertStringContainsString( '<b>Main Title</b>', $result );
+		$this->assertStringNotContainsString( '#', $result );
+	}
+
+	/**
+	 * Test blockquotes convert to <blockquote>.
+	 */
+	public function test_telegram_markdown_to_html_blockquotes() {
+		$result = $this->invoke_markdown_to_telegram_html( "> This is a quote\n> continued" );
+		$this->assertStringContainsString( '<blockquote>', $result );
+		$this->assertStringContainsString( 'This is a quote', $result );
+	}
+
+	/**
+	 * Test that special HTML characters are escaped in plain text.
+	 */
+	public function test_telegram_markdown_to_html_escapes_special_chars() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Use a < b & c > d.' );
+		$this->assertStringContainsString( '&lt;', $result );
+		$this->assertStringContainsString( '&amp;', $result );
+		$this->assertStringContainsString( '&gt;', $result );
+	}
+
+	/**
+	 * Test code block content is not processed for bold/italic and is properly wrapped.
+	 */
+	public function test_telegram_markdown_to_html_code_block_not_processed() {
+		$md     = "```\n**not bold** *not italic*\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringNotContainsString( '<b>not bold</b>', $result );
+		$this->assertStringNotContainsString( '<i>not italic</i>', $result );
+		$this->assertStringContainsString( '<pre>', $result );
+		$this->assertStringContainsString( '</pre>', $result );
+		$this->assertStringContainsString( '**not bold**', $result );
+	}
+
+	/**
+	 * Test plain text without Markdown passes through with HTML escaping only.
+	 */
+	public function test_telegram_markdown_to_html_plain_text() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Hello world, no formatting here.' );
+		$this->assertSame( 'Hello world, no formatting here.', $result );
+	}
+
+	// =========================================================================
 	// Slack Event Controller
 	// =========================================================================
 
