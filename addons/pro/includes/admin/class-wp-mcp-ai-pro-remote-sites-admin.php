@@ -1821,6 +1821,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Allow the bot to respond in group and supergroup chats', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'When enabled, the bot will process and reply to messages in Telegram groups and supergroups. When disabled, the bot only responds in private (direct) chats.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><strong><?php esc_html_e( 'Privacy Mode:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'You may need to disable Privacy Mode via @BotFather (/setprivacy → Disable) so Telegram delivers all group messages to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -1829,9 +1830,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<label>
 							<input type="checkbox" name="telegram_require_mention" id="telegram_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
-							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'Only reply when the bot is @mentioned or the message is a reply to the bot', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for group chats where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'When unchecked (default), the bot replies to every message in the group. When checked, the bot only auto-replies when explicitly @mentioned, when an assigned assistant @slug is mentioned, or when the message is a direct reply to one of the bot\'s own messages. Fill in the Bot Username above for reliable mention detection.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

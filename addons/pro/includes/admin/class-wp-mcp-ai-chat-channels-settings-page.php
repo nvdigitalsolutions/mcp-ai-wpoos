@@ -433,13 +433,26 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				</table>
 
 				<h4><?php esc_html_e( 'Group & Community Chat', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<p><?php esc_html_e( 'To allow your bot to respond in Telegram groups and supergroups, enable the "Enable Group Chats" option on the Telegram connection in the Remote Site Manager. You can also configure whether the bot requires an @mention before replying in groups using the "Require Mention" setting.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'To allow your bot to respond in Telegram groups and supergroups, enable the "Enable Group Chats" option on the Telegram connection in the Remote Site Manager. By default the bot responds to every message in the group. Optionally enable "Require Mention" so the bot only replies when @mentioned or when a message is a reply to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<ol>
 					<li><?php esc_html_e( 'Go to the Remote Site Manager and edit your Telegram connection', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Check "Enable Group Chats" to allow the bot to respond in groups', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Optionally check "Require Mention" so the bot only replies when @mentioned', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter the Bot Username (e.g. @mybot) so mention detection works correctly', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'Add the bot to your Telegram group and send it a message', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
+
+				<div class="notice notice-info inline" style="margin: 12px 0;">
+					<p><strong><?php esc_html_e( 'Important: Telegram Bot Privacy Mode', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<p><?php esc_html_e( 'By default Telegram bots run in Privacy Mode, which means the bot only receives messages that directly @mention it, replies to its messages, or commands (messages starting with /). To allow the bot to receive and respond to ALL messages in a group:', 'mcp-ai-wpoos-pro' ); ?></p>
+					<ol>
+						<li><?php esc_html_e( 'Open Telegram and message @BotFather', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Send /setprivacy', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Select your bot', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Choose "Disable" to turn off Privacy Mode', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ol>
+					<p><?php esc_html_e( 'After disabling Privacy Mode, remove and re-add the bot to existing groups for the change to take effect.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
