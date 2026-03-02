@@ -44,6 +44,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_google_chat_incoming_trigger', array( $this, 'ajax_test_google_chat_incoming_trigger' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_live', array( $this, 'ajax_test_telegram_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_auto_reply', array( $this, 'ajax_test_telegram_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_send_group', array( $this, 'ajax_test_telegram_send_group' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_set_telegram_webhook', array( $this, 'ajax_set_telegram_webhook' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_telegram_webhook_info', array( $this, 'ajax_get_telegram_webhook_info' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_slack_live', array( $this, 'ajax_test_slack_live' ) );
@@ -1859,8 +1860,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
 							<div style="flex: 1; min-width: 200px;">
-								<input type="text" id="telegram_test_auto_reply_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '123456789 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
-								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Chat ID (optional — if provided, the AI reply will be sent via Telegram)', 'mcp-ai-wpoos-pro' ); ?></p>
+								<input type="text" id="telegram_test_auto_reply_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '123456789 or -1001234567890 or @channelname (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Chat ID, group ID, or @channel username (optional — if provided, the AI reply will be sent to this private chat, group, or channel via Telegram)', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
 							<div style="flex: 2; min-width: 250px;">
 								<textarea id="telegram_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
@@ -1874,6 +1875,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</div>
 						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<div id="telegram_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Send to Group/Channel', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="telegram_test_group_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '-1001234567890 or @channelname', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Group/supergroup ID (negative number) or @channel username', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="telegram_test_group_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message to send…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="telegram_test_group_send_btn" class="button button-secondary">
+								<?php esc_html_e( 'Send Test Message', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="telegram_test_group_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Send a direct message to a Telegram group, supergroup, or channel to verify outgoing message delivery. Requires the connection to be saved with a valid bot token. The bot must be a member of the group/channel.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="telegram_test_group_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -4591,7 +4615,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #229ED9;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
 								}
 								if (d && d.sent) {
-									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test chat via Telegram.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test chat/group/channel via Telegram.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
 								} else if (chatId && d && !d.sent) {
 									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
 									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Telegram failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
@@ -4608,6 +4632,80 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (tgAutoReplyResult) {
 								tgAutoReplyResult.style.display = 'block';
 								tgAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Telegram: Test Send to Group/Channel button.
+			var tgGroupSendBtn     = document.getElementById('telegram_test_group_send_btn');
+			var tgGroupSendSpinner = document.getElementById('telegram_test_group_spinner');
+			var tgGroupSendResult  = document.getElementById('telegram_test_group_result');
+			if (tgGroupSendBtn) {
+				tgGroupSendBtn.addEventListener('click', function() {
+					var chatIdEl = document.getElementById('telegram_test_group_chat_id');
+					var msgEl    = document.getElementById('telegram_test_group_msg');
+					var chatId   = chatIdEl ? chatIdEl.value.trim() : '';
+					var msg      = msgEl    ? msgEl.value.trim()    : '';
+
+					if (!chatId) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a group/channel chat ID or @username.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					if (!msg) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					tgGroupSendBtn.disabled = true;
+					if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'inline-block'; }
+					if (tgGroupSendResult)  { tgGroupSendResult.style.display = 'none'; tgGroupSendResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_telegram_send_group');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_telegram_send_group' ) ); ?>);
+					data.append('test_chat_id', chatId);
+					data.append('test_message', msg);
+					var connIdEl2 = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl2) { data.append('connection_id', connIdEl2.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							tgGroupSendBtn.disabled = false;
+							if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'none'; }
+							if (!tgGroupSendResult) { return; }
+							tgGroupSendResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Message sent successfully!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.chat_title) {
+									html += '<p style="margin:6px 0 0;">' + <?php echo wp_json_encode( __( 'Delivered to:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <strong>' + d.chat_title.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</strong>';
+									if (d.chat_type) { html += ' (' + d.chat_type + ')'; }
+									html += '</p>';
+								}
+								html += '</div>';
+								tgGroupSendResult.innerHTML = html;
+							} else {
+								tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to send message.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							tgGroupSendBtn.disabled = false;
+							if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'none'; }
+							if (tgGroupSendResult) {
+								tgGroupSendResult.style.display = 'block';
+								tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -9354,6 +9452,125 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Send a test message directly to a Telegram group, supergroup, or channel.
+	 *
+	 * Accepts (POST): connection_id, test_chat_id, test_message, nonce.
+	 * The chat ID can be a numeric group/supergroup ID (negative number) or an @channel username.
+	 */
+	public function ajax_test_telegram_send_group() {
+		check_ajax_referer( 'wp_mcp_ai_test_telegram_send_group', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_chat_id  = isset( $_POST['test_chat_id'] ) ? sanitize_text_field( wp_unslash( $_POST['test_chat_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $test_chat_id ) ) {
+			wp_send_json_error( __( 'Please enter a group/channel chat ID or @username.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $connection['api_key'] ) ) {
+			wp_send_json_error( __( 'No bot token found for this connection. Save the connection with a valid bot token first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Could not decrypt bot token.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Telegram enforces a 4096-character limit for text messages.
+		$tg_body = wp_strip_all_tags( $test_message );
+		$tg_body = html_entity_decode( $tg_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( mb_strlen( $tg_body ) > 4096 ) {
+			$tg_body = mb_substr( $tg_body, 0, 4093 ) . '...';
+		}
+
+		$endpoint = 'https://api.telegram.org/bot' . rawurlencode( $bot_token ) . '/sendMessage';
+
+		$payload = array(
+			'chat_id' => $test_chat_id,
+			'text'    => $tg_body,
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			wp_send_json_error( __( 'Failed to encode message payload.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$send_result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $send_result ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$send_result->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$status_code   = (int) wp_remote_retrieve_response_code( $send_result );
+		$response_body = json_decode( wp_remote_retrieve_body( $send_result ), true );
+
+		if ( 200 !== $status_code || empty( $response_body['ok'] ) ) {
+			$description = isset( $response_body['description'] ) ? $response_body['description'] : __( 'Unknown Telegram API error.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		$result_data = isset( $response_body['result'] ) ? $response_body['result'] : array();
+		$chat_info   = isset( $result_data['chat'] ) ? $result_data['chat'] : array();
+
+		wp_send_json_success(
+			array(
+				'chat_title' => isset( $chat_info['title'] ) ? $chat_info['title'] : '',
+				'chat_type'  => isset( $chat_info['type'] ) ? $chat_info['type'] : '',
+				'message_id' => isset( $result_data['message_id'] ) ? $result_data['message_id'] : '',
+			)
+		);
 	}
 
 	/**

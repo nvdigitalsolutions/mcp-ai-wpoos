@@ -1,6 +1,6 @@
 <?php
 /**
- * Test Slack, Discord, and Microsoft Teams chat channel test handler registration.
+ * Test Slack, Discord, Microsoft Teams, and Telegram chat channel test handler registration.
  *
  * Verifies that AJAX handlers and admin UI elements for testing incoming/outgoing
  * messages to groups and channels are properly registered.
@@ -9,7 +9,7 @@
  */
 
 /**
- * Test class for Slack, Discord, and Teams test handler registration.
+ * Test class for Slack, Discord, Teams, and Telegram test handler registration.
  */
 class Test_Chat_Channel_Test_Handlers extends WP_UnitTestCase {
 
@@ -206,6 +206,36 @@ class Test_Chat_Channel_Test_Handlers extends WP_UnitTestCase {
 		$this->assertTrue(
 			method_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin', 'ajax_test_teams_auto_reply' ),
 			'WP_MCP_AI_Pro_Remote_Sites_Admin should have ajax_test_teams_auto_reply method'
+		);
+	}
+
+	/**
+	 * Test that the Telegram send group AJAX action is registered.
+	 */
+	public function test_telegram_send_group_ajax_action_is_registered() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->assertNotFalse(
+			has_action( 'wp_ajax_wp_mcp_ai_test_telegram_send_group' ),
+			'The wp_ajax_wp_mcp_ai_test_telegram_send_group action should be registered'
+		);
+	}
+
+	/**
+	 * Test that the admin class has the ajax_test_telegram_send_group method.
+	 */
+	public function test_admin_class_has_telegram_send_group_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI_Pro_Remote_Sites_Admin', 'ajax_test_telegram_send_group' ),
+			'WP_MCP_AI_Pro_Remote_Sites_Admin should have ajax_test_telegram_send_group method'
 		);
 	}
 
