@@ -121,8 +121,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 				$header = (string) $request->get_header( 'Authorization' );
 			}
 
-			if ( ! $header && isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				$header = (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( ! $header && isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
+				$header = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
 			}
 
 			if ( '' === $header ) {

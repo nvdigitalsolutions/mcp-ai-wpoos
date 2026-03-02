@@ -334,7 +334,15 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 				}
 
 				if ( $allowed_ips ) {
-					$server_helper = new \SimpleJWTLogin\Helpers\ServerHelper( isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : array() );
+					// Sanitize relevant $_SERVER values before passing to third-party library.
+					$sanitized_server = array();
+					$server_keys      = array( 'REMOTE_ADDR', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP' );
+					foreach ( $server_keys as $key ) {
+						if ( isset( $_SERVER[ $key ] ) ) {
+							$sanitized_server[ $key ] = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+						}
+					}
+					$server_helper = new \SimpleJWTLogin\Helpers\ServerHelper( $sanitized_server );
 
 					if ( ! $server_helper->isClientIpInList( $allowed_ips ) ) {
 						return new WP_Error(

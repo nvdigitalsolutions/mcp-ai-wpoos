@@ -215,7 +215,8 @@ class WP_MCP_AI_Workflow_Editor_Page {
 
 		$name = isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '';
 		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( $_POST['description'] ) : '';
-		$steps = isset( $_POST['steps'] ) ? json_decode( stripslashes( $_POST['steps'] ), true ) : array();
+		$steps = isset( $_POST['steps'] ) ? json_decode( stripslashes( $_POST['steps'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$steps = is_array( $steps ) ? wp_mcp_ai_sanitize_recursive( $steps ) : array();
 
 		if ( empty( $name ) || empty( $steps ) ) {
 			wp_send_json_error( array( 'message' => __( 'Name and steps are required.', 'mcp-ai-wpoos' ) ) );
@@ -293,7 +294,8 @@ class WP_MCP_AI_Workflow_Editor_Page {
 		}
 
 		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( $_POST['workflow'] ) : '';
-		$params = isset( $_POST['params'] ) ? json_decode( stripslashes( $_POST['params'] ), true ) : array();
+		$params = isset( $_POST['params'] ) ? json_decode( stripslashes( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$params = is_array( $params ) ? wp_mcp_ai_sanitize_recursive( $params ) : array();
 
 		if ( empty( $workflow_slug ) ) {
 			wp_send_json_error( array( 'message' => __( 'Workflow slug required.', 'mcp-ai-wpoos' ) ) );

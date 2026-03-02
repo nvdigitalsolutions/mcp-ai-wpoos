@@ -5744,8 +5744,8 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'created'     => current_time( 'mysql' ),
 				'created_by'  => get_current_user_id(),
 				'metadata'    => array(
-					'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-					'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+					'ip_address' => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown',
+					'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : 'unknown',
 				),
 			);
 
@@ -7166,7 +7166,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$memory_peak = memory_get_peak_usage( true );
 
 			// Execution time.
-			$execution_time = microtime( true ) - $_SERVER['REQUEST_TIME_FLOAT'];
+			$execution_time = microtime( true ) - (float) ( $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime( true ) );
 
 			// Check for common performance issues.
 			$recommendations = array();
@@ -7318,8 +7318,16 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				return $this->error_response( __( 'Valid file path is required.', 'mcp-ai-wpoos' ) );
 			}
 
+			// Restrict file operations to the uploads directory for safety.
+			$upload_dir = wp_upload_dir();
+			$uploads_basedir = realpath( $upload_dir['basedir'] );
+			$real_file = realpath( $file );
+			if ( false === $uploads_basedir || false === $real_file || 0 !== strpos( $real_file, $uploads_basedir ) ) {
+				return $this->error_response( __( 'File operations are restricted to the uploads directory.', 'mcp-ai-wpoos' ) );
+			}
+
 			// Basic formatting fixes.
-			$content = file_get_contents( $file );
+			$content = file_get_contents( $real_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 			$original_content = $content;
 			
 			if ( $fix ) {
@@ -7329,8 +7337,13 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				// Fix spacing around operators.
 				$content = preg_replace( '/([a-zA-Z0-9_\])])([=<>!]+)([a-zA-Z0-9_\[\(])/', '$1 $2 $3', $content );
 				
-				// Write back to file.
-				file_put_contents( $file, $content );
+				// Write back to file within uploads directory.
+				global $wp_filesystem;
+				if ( ! function_exists( 'WP_Filesystem' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/file.php';
+				}
+				WP_Filesystem();
+				$wp_filesystem->put_contents( $real_file, $content, FS_CHMOD_FILE );
 			}
 
 			$result = array(
