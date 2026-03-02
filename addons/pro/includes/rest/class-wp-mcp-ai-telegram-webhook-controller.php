@@ -8,8 +8,12 @@
  * - Per-user conversation history respecting max_history_messages
  * - AI auto-reply via WordPress cron (async, no timeout risk)
  * - Message deduplication via transient cache
+ * - Group & supergroup support with @mention detection and reply threading
+ * - Channel post handling (channel_post, edited_channel_post)
+ * - Bot membership change events (my_chat_member)
  *
  * @see https://core.telegram.org/bots/api#setwebhook
+ * @see https://core.telegram.org/bots/api#update
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
@@ -141,6 +145,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Handle incoming Telegram webhook update.
 	 *
+	 * Supports private messages, group messages, channel posts, and
+	 * membership change events (my_chat_member) per Telegram Bot API
+	 * best practices.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -177,9 +185,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			set_transient( 'wp_mcp_ai_tg_dedup_' . $update_id, 1, self::DEDUP_TRANSIENT_TTL );
 		}
 
-		// Handle text message updates.
+		// Handle text message updates (private, group, supergroup).
 		if ( isset( $payload['message'] ) && is_array( $payload['message'] ) ) {
 			$this->process_message( $payload['message'] );
+		}
+
+		// Handle channel post updates.
+		if ( isset( $payload['channel_post'] ) && is_array( $payload['channel_post'] ) ) {
+			$this->process_channel_post( $payload['channel_post'] );
+		}
+
+		// Handle edited channel posts (re-process like a new post).
+		if ( isset( $payload['edited_channel_post'] ) && is_array( $payload['edited_channel_post'] ) ) {
+			$this->process_channel_post( $payload['edited_channel_post'], true );
+		}
+
+		// Handle bot membership changes (added/removed from groups/channels).
+		if ( isset( $payload['my_chat_member'] ) && is_array( $payload['my_chat_member'] ) ) {
+			$this->process_membership_update( $payload['my_chat_member'] );
 		}
 
 		// Always return 200 so Telegram does not retry.
@@ -189,10 +212,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Process a Telegram message object and dispatch an AI reply if applicable.
 	 *
-	 * Mirrors the WhatsApp auto-reply logic: checks automation rules for human
-	 * takeover / AI resume keywords, enforces the human takeover gate, falls back
-	 * to the global default assistant when no per-connection assistant is assigned,
-	 * and exposes a filter so site developers can override the decision.
+	 * Supports private chats, groups, and supergroups. In group contexts the
+	 * bot only replies when explicitly addressed via @bot_username mention or
+	 * when the message is a direct reply to one of the bot's messages, unless
+	 * the connection has require_mention disabled (privacy mode off).
 	 *
 	 * @since 1.0.0
 	 *
@@ -204,13 +227,58 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$text    = (string) $message['text'];
-		$chat_id = isset( $message['chat']['id'] ) ? (string) $message['chat']['id'] : '';
-		$from_id = isset( $message['from']['id'] ) ? (string) $message['from']['id'] : '';
+		$text      = (string) $message['text'];
+		$chat_id   = isset( $message['chat']['id'] ) ? (string) $message['chat']['id'] : '';
+		$from_id   = isset( $message['from']['id'] ) ? (string) $message['from']['id'] : '';
+		$chat_type = isset( $message['chat']['type'] ) ? (string) $message['chat']['type'] : 'private';
 
 		if ( '' === $chat_id ) {
 			return;
 		}
+
+		// Resolve the Telegram connection early so group/channel settings are available.
+		$connection = $this->get_active_telegram_connection();
+
+		if ( ! $connection ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook: no active Telegram connection found.'
+			);
+			return;
+		}
+
+		// ── Group / supergroup gate ──
+		// When in a group context, respect the connection's enable_groups setting.
+		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
+		if ( $is_group && empty( $connection['enable_groups'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_group_message_ignored',
+				'Group message ignored: group support not enabled on this connection.',
+				array( 'chat_type' => $chat_type )
+			);
+			return;
+		}
+
+		// In groups, only reply when the bot is mentioned or the message is a
+		// reply to one of the bot's own messages – unless require_mention is
+		// explicitly disabled for this connection.
+		$require_mention_in_group = $is_group && ( ! isset( $connection['require_mention'] ) || ! empty( $connection['require_mention'] ) );
+		if ( $require_mention_in_group ) {
+			$bot_mentioned  = $this->message_mentions_bot( $text, $connection );
+			$reply_to_bot   = $this->is_reply_to_bot( $message, $connection );
+
+			if ( ! $bot_mentioned && ! $reply_to_bot ) {
+				// Also check for assistant @slug mentions.
+				$automation_rules      = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+				$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
+				if ( ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+					return; // Not addressed to the bot; stay silent.
+				}
+			}
+		}
+
+		// Strip the @bot_username mention from the text before processing so the
+		// AI receives a clean prompt without the trigger prefix.
+		$text = $this->strip_bot_mention( $text, $connection );
 
 		// --- Automation keyword checks (mirrors WhatsApp maybe_auto_reply) ---
 		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
@@ -274,32 +342,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 
-		// Resolve the Telegram connection.
-		$connection = $this->get_active_telegram_connection();
-
-		if ( ! $connection ) {
-			WP_MCP_AI_Logger::log_error(
-				'Telegram webhook: no active Telegram connection found.'
-			);
-			return;
-		}
-
-		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
-			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
-			: array();
-
-		// Fall back to the global default assistant from automation settings.
-		if ( empty( $assigned_assistant_ids ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
-			$assigned_assistant_ids = array( absint( $automation_rules['default_assistant_id'] ) );
-		}
-
-		// Final fallback: use any published assistant so all messages get a reply.
-		if ( empty( $assigned_assistant_ids ) ) {
-			$any_id = $this->get_any_assistant_id();
-			if ( $any_id ) {
-				$assigned_assistant_ids = array( $any_id );
-			}
-		}
+		$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
 
 		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
 
@@ -307,9 +350,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// When the connection requires an @slug mention, only reply if the message
-		// explicitly addresses an assigned assistant by its WordPress post slug.
-		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+		// In private chats, when the connection has require_mention enabled,
+		// only reply if the message addresses an assigned assistant by @slug.
+		// (In groups, mention checks were already performed above.)
+		if ( ! $is_group && ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
 			return;
 		}
 
@@ -321,11 +365,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param bool  $auto_reply       Whether to auto-reply.
-		 * @param array $message          Telegram message object.
-		 * @param array $automation_rules Saved automation rule settings.
+		 * @param bool   $auto_reply       Whether to auto-reply.
+		 * @param array  $message          Telegram message object.
+		 * @param array  $automation_rules Saved automation rule settings.
+		 * @param string $chat_type        Chat type: private, group, supergroup, or channel.
 		 */
-		$should_reply = apply_filters( 'wp_mcp_ai_telegram_should_auto_reply', ! empty( $assigned_assistant_ids ), $message, $automation_rules );
+		$should_reply = apply_filters( 'wp_mcp_ai_telegram_should_auto_reply', ! empty( $assigned_assistant_ids ), $message, $automation_rules, $chat_type );
 
 		if ( ! $should_reply ) {
 			return;
@@ -373,13 +418,17 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				);
 			}
 
+			$reply_to_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
+
 			$job_args = array(
 				array(
-					'assistant_id'  => $assigned_assistant_ids[0],
-					'message_text'  => $text,
-					'chat_id'       => $chat_id,
-					'from_id'       => '' !== $from_id ? $from_id : $chat_id,
-					'connection_id' => $connection_id,
+					'assistant_id'       => $assigned_assistant_ids[0],
+					'message_text'       => $text,
+					'chat_id'            => $chat_id,
+					'from_id'            => '' !== $from_id ? $from_id : $chat_id,
+					'connection_id'      => $connection_id,
+					'chat_type'          => $chat_type,
+					'reply_to_message_id' => $is_group ? $reply_to_message_id : '',
 				),
 			);
 
@@ -407,9 +456,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		$assistant_id  = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
 		$message_text  = isset( $args['message_text'] ) ? (string) $args['message_text'] : '';
-		$chat_id       = isset( $args['chat_id'] ) ? (string) $args['chat_id'] : '';
-		$from_id       = isset( $args['from_id'] ) ? (string) $args['from_id'] : $chat_id;
-		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$chat_id              = isset( $args['chat_id'] ) ? (string) $args['chat_id'] : '';
+		$from_id              = isset( $args['from_id'] ) ? (string) $args['from_id'] : $chat_id;
+		$connection_id        = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		$chat_type            = isset( $args['chat_type'] ) ? (string) $args['chat_type'] : 'private';
+		$reply_to_message_id  = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -535,6 +586,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'chat_id' => $chat_id,
 			'text'    => $content,
 		);
+
+		// In group/supergroup chats, reply to the original message to keep the
+		// conversation threaded and make it clear which message is being answered.
+		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
+			$payload['reply_to_message_id'] = (int) $reply_to_message_id;
+		}
 
 		$body = wp_json_encode( $payload );
 
@@ -803,6 +860,264 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 		return false;
 	}
+
+	// =========================================================================
+	// Group & channel support helpers
+	// =========================================================================
+
+	/**
+	 * Resolve the list of assistant IDs for the given connection, falling back
+	 * to automation rules and then any published assistant.
+	 *
+	 * Extracted from process_message() so the same resolution logic can be
+	 * reused by channel-post and membership handlers.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection       Active Telegram connection.
+	 * @param array $automation_rules Saved automation rule settings.
+	 * @return int[] Array of assistant post IDs (may be empty).
+	 */
+	protected function resolve_assistant_ids( array $connection, array $automation_rules = array() ) {
+		$assigned = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned ) && ! empty( $automation_rules['default_assistant_id'] ) ) {
+			$assigned = array( absint( $automation_rules['default_assistant_id'] ) );
+		}
+
+		if ( empty( $assigned ) ) {
+			$any_id = $this->get_any_assistant_id();
+			if ( $any_id ) {
+				$assigned = array( $any_id );
+			}
+		}
+
+		return $assigned;
+	}
+
+	/**
+	 * Check whether the message text contains an @bot_username mention.
+	 *
+	 * Used in group chats to determine if the bot is being addressed directly.
+	 * Telegram sends mentions as @botname entities in the text, so a simple
+	 * case-insensitive substring check suffices.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string     $text       Message text.
+	 * @param array|null $connection Active Telegram connection.
+	 * @return bool True if the bot's username is mentioned.
+	 */
+	protected function message_mentions_bot( $text, $connection ) {
+		if ( ! $connection || empty( $connection['bot_username'] ) ) {
+			return false;
+		}
+
+		$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
+		if ( '' === $bot_username ) {
+			return false;
+		}
+
+		return (bool) preg_match( '/@' . preg_quote( $bot_username, '/' ) . '(?:[^a-zA-Z0-9_]|$)/i', $text );
+	}
+
+	/**
+	 * Check whether the incoming message is a reply to one of the bot's own messages.
+	 *
+	 * Telegram includes a `reply_to_message.from.is_bot` flag and the user ID
+	 * of the original sender. When the original sender is a bot with the same
+	 * username as our connection, this message is considered a reply to the bot.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array      $message    Telegram message object.
+	 * @param array|null $connection Active Telegram connection.
+	 * @return bool True if the message is a reply to the bot.
+	 */
+	protected function is_reply_to_bot( array $message, $connection ) {
+		if ( ! isset( $message['reply_to_message']['from']['is_bot'] ) ) {
+			return false;
+		}
+
+		if ( true !== $message['reply_to_message']['from']['is_bot'] ) {
+			return false;
+		}
+
+		// If we know the bot username, verify it matches. Otherwise accept any bot reply.
+		if ( $connection && ! empty( $connection['bot_username'] ) ) {
+			$expected = strtolower( ltrim( sanitize_text_field( $connection['bot_username'] ), '@' ) );
+			$actual   = isset( $message['reply_to_message']['from']['username'] )
+				? strtolower( (string) $message['reply_to_message']['from']['username'] )
+				: '';
+
+			return '' !== $expected && $expected === $actual;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Strip the @bot_username mention from the message text.
+	 *
+	 * Removing the trigger mention produces a cleaner prompt for the AI model.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string     $text       Message text.
+	 * @param array|null $connection Active Telegram connection.
+	 * @return string Text with the bot mention removed.
+	 */
+	protected function strip_bot_mention( $text, $connection ) {
+		if ( ! $connection || empty( $connection['bot_username'] ) ) {
+			return $text;
+		}
+
+		$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
+		if ( '' === $bot_username ) {
+			return $text;
+		}
+
+		return trim( preg_replace( '/@' . preg_quote( $bot_username, '/' ) . '(?=[^a-zA-Z0-9_]|$)/i', '', $text ) );
+	}
+
+	/**
+	 * Process a Telegram channel_post or edited_channel_post update.
+	 *
+	 * Channels behave differently from groups: messages come from the channel
+	 * itself (no `from` field for forwarded posts) and the bot must be an
+	 * admin of the channel. This handler logs the post and optionally dispatches
+	 * an AI reply when the connection has enable_channels turned on.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $post   Telegram channel post/message object.
+	 * @param bool  $edited Whether this is an edited channel post.
+	 */
+	protected function process_channel_post( array $post, $edited = false ) {
+		$chat_id   = isset( $post['chat']['id'] ) ? (string) $post['chat']['id'] : '';
+		$chat_title = isset( $post['chat']['title'] ) ? sanitize_text_field( $post['chat']['title'] ) : '';
+
+		if ( '' === $chat_id ) {
+			return;
+		}
+
+		$connection = $this->get_active_telegram_connection();
+
+		if ( ! $connection ) {
+			return;
+		}
+
+		// Only process channel posts when channel support is enabled.
+		if ( empty( $connection['enable_channels'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_channel_post_ignored',
+				'Channel post ignored: channel support not enabled on this connection.',
+				array( 'chat_id' => substr( $chat_id, 0, 4 ) . '***' )
+			);
+			return;
+		}
+
+		$text = isset( $post['text'] ) ? (string) $post['text'] : '';
+
+		// Log the channel post.
+		WP_MCP_AI_Logger::log_event(
+			$edited ? 'telegram_channel_post_edited' : 'telegram_channel_post_received',
+			$edited ? 'Edited channel post received.' : 'Channel post received.',
+			array(
+				'chat_id'    => substr( $chat_id, 0, 4 ) . '***',
+				'chat_title' => $chat_title,
+				'has_text'   => '' !== $text,
+			)
+		);
+
+		// Persist to Channel Messages CCT.
+		if ( '' !== $text && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+			$message_id    = isset( $post['message_id'] ) ? (string) $post['message_id'] : '';
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'telegram',
+					'channel_contact_id' => $chat_id,
+					'direction'          => 'inbound',
+					'message_id'         => $message_id,
+					'message_type'       => 'channel_post',
+					'content'            => $text,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $chat_id,
+					'timestamp'          => isset( $post['date'] ) ? absint( $post['date'] ) : time(),
+					'reply_sent'         => 0,
+				)
+			);
+		}
+
+		/**
+		 * Fires when a channel post is received from Telegram.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $post       Telegram channel post object.
+		 * @param bool   $edited     Whether this is an edited post.
+		 * @param array  $connection Active Telegram connection.
+		 */
+		do_action( 'wp_mcp_ai_telegram_channel_post', $post, $edited, $connection );
+	}
+
+	/**
+	 * Process a my_chat_member update (bot added/removed from group or channel).
+	 *
+	 * This is called when the bot's membership status changes in a chat – for
+	 * example when a user adds or removes the bot from a group or channel.
+	 * The handler logs the event and fires an action hook so other code can
+	 * react (e.g. send a welcome message, clean up data).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $update The my_chat_member update object from Telegram.
+	 */
+	protected function process_membership_update( array $update ) {
+		$chat      = isset( $update['chat'] ) ? $update['chat'] : array();
+		$chat_id   = isset( $chat['id'] ) ? (string) $chat['id'] : '';
+		$chat_type = isset( $chat['type'] ) ? (string) $chat['type'] : '';
+		$chat_title = isset( $chat['title'] ) ? sanitize_text_field( $chat['title'] ) : '';
+
+		$old_status = isset( $update['old_chat_member']['status'] ) ? (string) $update['old_chat_member']['status'] : '';
+		$new_status = isset( $update['new_chat_member']['status'] ) ? (string) $update['new_chat_member']['status'] : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_membership_change',
+			'Bot membership status changed.',
+			array(
+				'chat_id'    => substr( $chat_id, 0, 4 ) . '***',
+				'chat_type'  => $chat_type,
+				'chat_title' => $chat_title,
+				'old_status' => $old_status,
+				'new_status' => $new_status,
+			)
+		);
+
+		// Determine if the bot was added or removed.
+		$left_statuses  = array( 'left', 'kicked' );
+		$joined_statuses = array( 'member', 'administrator', 'creator' );
+
+		$was_added   = in_array( $old_status, $left_statuses, true ) && in_array( $new_status, $joined_statuses, true );
+		$was_removed = in_array( $old_status, $joined_statuses, true ) && in_array( $new_status, $left_statuses, true );
+
+		/**
+		 * Fires when the bot's membership status changes in a group or channel.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $update     Full my_chat_member update object.
+		 * @param string $chat_type  Chat type: group, supergroup, or channel.
+		 * @param bool   $was_added  True if the bot was just added.
+		 * @param bool   $was_removed True if the bot was just removed.
+		 */
+		do_action( 'wp_mcp_ai_telegram_membership_change', $update, $chat_type, $was_added, $was_removed );
+	}
+
 	/**
 	 * Return the ID of any published AI assistant as a last-resort fallback.
 	 *

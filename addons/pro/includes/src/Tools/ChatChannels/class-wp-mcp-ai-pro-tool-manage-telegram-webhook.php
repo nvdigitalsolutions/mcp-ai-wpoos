@@ -156,6 +156,14 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 		$payload = array(
 			'url'             => $url,
 			'max_connections' => $max_connections,
+			'allowed_updates' => array(
+				'message',
+				'edited_message',
+				'channel_post',
+				'edited_channel_post',
+				'my_chat_member',
+				'chat_member',
+			),
 		);
 
 		$body = wp_json_encode( $payload );

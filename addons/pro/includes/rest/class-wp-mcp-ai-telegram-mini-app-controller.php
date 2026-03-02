@@ -423,23 +423,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	*/
 	public function handle_mini_app( $request ) {
 		// Resolve the active Telegram connection once; used both for assistant
-		// lookup and for extracting the bot username shown in the About tab.
+		// lookup and for extracting the bot username shown in the Settings tab.
 		$connection = $this->get_active_telegram_connection();
 
-		// Resolve the assistant to use, honouring the explicit query parameter
-		// first, then per-connection settings, then the global automation default.
-		$assistant_slug = $this->resolve_mini_app_assistant( $request, $connection );
-
-		// Build the shortcode so the existing chat UI is rendered inside the Mini App.
-		$shortcode = '[mcp_ai_chat';
-		if ( ! empty( $assistant_slug ) ) {
-			$shortcode .= ' assistant="' . esc_attr( $assistant_slug ) . '"';
-		}
-		$shortcode .= ' allow_guests="true" enable_streaming="true"]';
-
-		$chat_html = do_shortcode( $shortcode );
-
-		// Collect styles and scripts enqueued by the shortcode.
+		// Collect styles and scripts enqueued by WordPress.
 		ob_start();
 		wp_head();
 		$head_output = ob_get_clean();
@@ -1914,6 +1901,278 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'pages' => (int) $query->max_num_pages,
 			)
 		);
+	}
+
+	// =========================================================================
+	// Settings endpoints
+	// =========================================================================
+
+	/**
+	* Return the current user's Mini App settings, account link status,
+	* preferences, and contextual information for the Settings tab.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response
+	*/
+	public function handle_get_settings( $request ) {
+		$user_id = get_current_user_id();
+		$user    = get_userdata( $user_id );
+
+		// Check if a Telegram ID is linked.
+		$telegram_id = get_user_meta( $user_id, self::META_TELEGRAM_ID, true );
+		$wp_linked   = ! empty( $telegram_id );
+
+		// User preferences stored as user meta.
+		$preferences = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		if ( ! is_array( $preferences ) ) {
+			$preferences = array(
+				'language'      => 'auto',
+				'notifications' => true,
+				'compact_mode'  => false,
+			);
+		}
+
+		// Resolve the active assistant name.
+		$connection     = $this->get_active_telegram_connection();
+		$assistant_slug = $this->resolve_mini_app_assistant( new WP_REST_Request(), $connection );
+		$assistant_name = '';
+		if ( ! empty( $assistant_slug ) ) {
+			if ( is_numeric( $assistant_slug ) ) {
+				$assistant_post = get_post( (int) $assistant_slug );
+				if ( $assistant_post ) {
+					$assistant_name = $assistant_post->post_title;
+				}
+			} else {
+				$assistant_name = $assistant_slug;
+			}
+		}
+
+		// Group & channel settings for this connection.
+		$group_settings = array(
+			'enable_groups'   => ! empty( $connection['enable_groups'] ),
+			'enable_channels' => ! empty( $connection['enable_channels'] ),
+			'require_mention' => ! empty( $connection['required_mention'] ),
+		);
+
+		return rest_ensure_response(
+			array(
+				'wp_linked'       => $wp_linked,
+				'wp_username'     => $user ? $user->user_login : '',
+				'wp_display_name' => $user ? $user->display_name : '',
+				'wp_email'        => $user ? $user->user_email : '',
+				'preferences'     => $preferences,
+				'assistant_name'  => $assistant_name,
+				'group_settings'  => $group_settings,
+			)
+		);
+	}
+
+	/**
+	* Handle settings write operations: save preferences, link/unlink accounts.
+	*
+	* The `action` parameter determines which operation to perform:
+	*   - `save_preferences` – Persist user preferences (language, notifications, etc.).
+	*   - `link_account`     – Link the current Telegram identity to an existing WP user.
+	*   - `unlink_account`   – Remove the Telegram↔WP link for the current user.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object. Expects JSON body with 'action' plus action-specific fields.
+	* @return WP_REST_Response|WP_Error
+	*/
+	public function handle_save_settings( $request ) {
+		$action  = $request->get_param( 'action' );
+		$user_id = get_current_user_id();
+
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_not_authenticated',
+				__( 'You must be authenticated to change settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		switch ( $action ) {
+			case 'save_preferences':
+				return $this->handle_save_preferences( $request, $user_id );
+
+			case 'link_account':
+				return $this->handle_link_account( $request, $user_id );
+
+			case 'unlink_account':
+				return $this->handle_unlink_account( $user_id );
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_tma_invalid_action',
+					__( 'Invalid settings action.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+		}
+	}
+
+	/**
+	* Save user preferences.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request with 'preferences' JSON object.
+	* @param int             $user_id Current WordPress user ID.
+	* @return WP_REST_Response
+	*/
+	protected function handle_save_preferences( $request, $user_id ) {
+		$incoming = $request->get_param( 'preferences' );
+		if ( ! is_array( $incoming ) ) {
+			$incoming = array();
+		}
+
+		$existing = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		if ( ! is_array( $existing ) ) {
+			$existing = array(
+				'language'      => 'auto',
+				'notifications' => true,
+				'compact_mode'  => false,
+			);
+		}
+
+		// Whitelist and sanitize allowed preference keys.
+		$allowed = array( 'language', 'notifications', 'compact_mode' );
+		foreach ( $allowed as $key ) {
+			if ( array_key_exists( $key, $incoming ) ) {
+				if ( 'language' === $key ) {
+					$existing[ $key ] = sanitize_text_field( (string) $incoming[ $key ] );
+				} else {
+					$existing[ $key ] = (bool) $incoming[ $key ];
+				}
+			}
+		}
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', $existing );
+
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	/**
+	* Link the current Telegram-provisioned WP user to an existing WordPress
+	* account by verifying the target account's credentials.
+	*
+	* After verification the Telegram meta keys are moved from the
+	* auto-created user to the target account and the auto-created user is
+	* cleaned up to avoid orphaned records.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request with 'username' and 'password'.
+	* @param int             $user_id Current WordPress user ID (auto-created Telegram user).
+	* @return WP_REST_Response|WP_Error
+	*/
+	protected function handle_link_account( $request, $user_id ) {
+		$username = sanitize_user( (string) $request->get_param( 'username' ) );
+		$password = (string) $request->get_param( 'password' );
+
+		if ( empty( $username ) || empty( $password ) ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'Username and password are required.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Authenticate the target WordPress user.
+		$target_user = wp_authenticate( $username, $password );
+
+		if ( is_wp_error( $target_user ) ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'Invalid username or password.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Prevent linking to the same user that is already linked.
+		$existing_tg_id = get_user_meta( $target_user->ID, self::META_TELEGRAM_ID, true );
+		$current_tg_id  = get_user_meta( $user_id, self::META_TELEGRAM_ID, true );
+
+		if ( ! empty( $existing_tg_id ) && $existing_tg_id !== $current_tg_id ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'This WordPress account is already linked to a different Telegram user.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Move Telegram meta from the auto-created user to the target user.
+		if ( $target_user->ID !== $user_id && ! empty( $current_tg_id ) ) {
+			$tg_username = get_user_meta( $user_id, self::META_TELEGRAM_USERNAME, true );
+			$tg_photo    = get_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url', true );
+
+			update_user_meta( $target_user->ID, self::META_TELEGRAM_ID, $current_tg_id );
+			if ( $tg_username ) {
+				update_user_meta( $target_user->ID, self::META_TELEGRAM_USERNAME, $tg_username );
+			}
+			if ( $tg_photo ) {
+				update_user_meta( $target_user->ID, '_wp_mcp_ai_telegram_photo_url', $tg_photo );
+			}
+
+			// Clean up the auto-created user's Telegram meta.
+			delete_user_meta( $user_id, self::META_TELEGRAM_ID );
+			delete_user_meta( $user_id, self::META_TELEGRAM_USERNAME );
+			delete_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url' );
+		} elseif ( $target_user->ID === $user_id ) {
+			// Already the same user – just ensure the meta is set.
+			if ( ! empty( $current_tg_id ) ) {
+				update_user_meta( $target_user->ID, self::META_TELEGRAM_ID, $current_tg_id );
+			}
+		}
+
+		/**
+		* Fires after a Telegram identity has been linked to an existing WordPress user.
+		*
+		* @since 1.0.0
+		*
+		* @param int    $target_user_id WordPress user the Telegram account was linked to.
+		* @param int    $old_user_id    Original auto-created WordPress user (may be the same).
+		* @param string $telegram_id    Telegram user ID.
+		*/
+		do_action( 'wp_mcp_ai_telegram_account_linked', $target_user->ID, $user_id, $current_tg_id );
+
+		return rest_ensure_response(
+			array(
+				'success'         => true,
+				'wp_user_id'      => $target_user->ID,
+				'wp_display_name' => $target_user->display_name,
+			)
+		);
+	}
+
+	/**
+	* Remove the Telegram↔WordPress account link.
+	*
+	* @since 1.0.0
+	*
+	* @param int $user_id Current WordPress user ID.
+	* @return WP_REST_Response
+	*/
+	protected function handle_unlink_account( $user_id ) {
+		delete_user_meta( $user_id, self::META_TELEGRAM_ID );
+		delete_user_meta( $user_id, self::META_TELEGRAM_USERNAME );
+		delete_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url' );
+
+		/**
+		* Fires after a Telegram identity has been unlinked from a WordPress user.
+		*
+		* @since 1.0.0
+		*
+		* @param int $user_id WordPress user whose Telegram link was removed.
+		*/
+		do_action( 'wp_mcp_ai_telegram_account_unlinked', $user_id );
+
+		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	// =========================================================================
