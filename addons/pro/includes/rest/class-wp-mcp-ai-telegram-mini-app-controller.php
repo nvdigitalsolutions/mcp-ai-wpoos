@@ -1380,7 +1380,6 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         filtered.forEach(function (t) {
           var tk = t.toolkit ? \'<span class="tma-card-badge">\' + escHtml(t.toolkit) + \'</span>\' : \'\';
           var gr = t.group ? \'<span class="tma-card-group">\' + escHtml(t.group) + \'</span>\' : \'\';
-          var hasParams = t.parameters && t.parameters.properties && Object.keys(t.parameters.properties).length > 0;
           html += \'<div class="tma-tool-card">\' +
             \'<div class="tma-card-title">\' + escHtml(t.name) + tk + \'</div>\' +
             (t.description ? \'<div class="tma-card-desc">\' + escHtml(t.description) + \'</div>\' : \'\') +
