@@ -108,6 +108,109 @@
         },
 
         /**
+         * Get file type information (icon and label) for an attachment.
+         *
+         * Returns an object with `icon` (emoji) and `label` (human-readable type)
+         * based on the file's MIME type or extension. Supports documents, spreadsheets,
+         * presentations, text files, code, audio, video, images, and archives.
+         *
+         * @param {Object} attachment - Attachment object with optional type/name/file_name.
+         * @return {Object} Object with `icon` and `label` properties.
+         */
+        getFileTypeInfo: function(attachment) {
+            var fallback = { icon: '\uD83D\uDCC4', label: 'File' }; // 📄
+
+            if (!attachment) {
+                return fallback;
+            }
+
+            var mime = (attachment.type || attachment.mime || attachment.mime_type || '').toLowerCase();
+            var ext = this.getFileExtension(attachment.name || attachment.file_name || '');
+
+            // Image types
+            if (mime.indexOf('image/') === 0 || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'heic', 'heif', 'ico', 'tiff', 'tif', 'avif'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDDBC\uFE0F', label: 'Image' }; // 🖼️
+            }
+
+            // Video types
+            if (mime.indexOf('video/') === 0 || ['mp4', 'webm', 'ogg', 'ogv', 'mov', 'avi', 'mkv', 'flv', 'wmv'].indexOf(ext) !== -1) {
+                return { icon: '\uD83C\uDFA5', label: 'Video' }; // 🎥
+            }
+
+            // Audio types
+            if (mime.indexOf('audio/') === 0 || ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus', 'wma', 'aiff'].indexOf(ext) !== -1) {
+                return { icon: '\uD83C\uDFB5', label: 'Audio' }; // 🎵
+            }
+
+            // PDF
+            if (mime === 'application/pdf' || ext === 'pdf') {
+                return { icon: '\uD83D\uDCC4', label: 'PDF' }; // 📄
+            }
+
+            // Word documents
+            if (mime.indexOf('wordprocessingml') !== -1 || mime.indexOf('ms-word') !== -1 || mime === 'application/msword' || ['doc', 'docx', 'docm', 'dotx', 'dotm', 'odt'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCD8', label: 'Word Document' }; // 📘
+            }
+
+            // Excel spreadsheets
+            if (mime.indexOf('spreadsheetml') !== -1 || mime.indexOf('ms-excel') !== -1 || ['xls', 'xlsx', 'xlsm', 'xlsb', 'xltx', 'xltm', 'ods'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCCA', label: 'Spreadsheet' }; // 📊
+            }
+
+            // PowerPoint presentations
+            if (mime.indexOf('presentationml') !== -1 || mime.indexOf('ms-powerpoint') !== -1 || mime === 'application/vnd.ms-powerpoint' || ['ppt', 'pptx', 'pptm', 'ppsx', 'odp'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCBB', label: 'Presentation' }; // 📊 (using 💻 for presentation)
+            }
+
+            // Markdown
+            if (mime === 'text/markdown' || ['md', 'markdown'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCDD', label: 'Markdown' }; // 📝
+            }
+
+            // CSV / TSV
+            if (mime === 'text/csv' || mime === 'text/tab-separated-values' || ['csv', 'tsv'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCC8', label: 'Data File' }; // 📈
+            }
+
+            // Plain text
+            if (mime === 'text/plain' || ext === 'txt') {
+                return { icon: '\uD83D\uDCC3', label: 'Text File' }; // 📃
+            }
+
+            // HTML
+            if (mime === 'text/html' || ['html', 'htm'].indexOf(ext) !== -1) {
+                return { icon: '\uD83C\uDF10', label: 'HTML' }; // 🌐
+            }
+
+            // JSON / NDJSON / JSONL
+            if (mime === 'application/json' || mime === 'application/x-ndjson' || mime === 'application/jsonl' || ['json', 'jsonl', 'ndjson'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDD27', label: 'JSON' }; // 🔧
+            }
+
+            // XML
+            if (mime === 'application/xml' || mime === 'text/xml' || ext === 'xml') {
+                return { icon: '\uD83D\uDD27', label: 'XML' }; // 🔧
+            }
+
+            // Code files
+            if (['js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'php', 'java', 'c', 'cpp', 'cs', 'go', 'rs', 'swift', 'kt', 'sh', 'bash', 'sql', 'r', 'yml', 'yaml', 'toml', 'ini', 'cfg', 'conf'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCBB', label: 'Code' }; // 💻
+            }
+
+            // Archive files
+            if (mime.indexOf('zip') !== -1 || mime.indexOf('compressed') !== -1 || mime.indexOf('archive') !== -1 || ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tgz'].indexOf(ext) !== -1) {
+                return { icon: '\uD83D\uDCE6', label: 'Archive' }; // 📦
+            }
+
+            // Other text/* types
+            if (mime.indexOf('text/') === 0) {
+                return { icon: '\uD83D\uDCC3', label: 'Text File' }; // 📃
+            }
+
+            return fallback;
+        },
+
+        /**
          * Check if attachment is a video based on MIME type or file extension.
          *
          * @param {Object} attachment - Attachment object.
