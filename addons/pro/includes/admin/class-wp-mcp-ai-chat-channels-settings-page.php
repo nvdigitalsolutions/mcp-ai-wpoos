@@ -520,6 +520,15 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							url = 'https://t.me/' + val;
 						}
 
+						// Validate URL scheme — only allow https (and http for local dev).
+						if (!/^https?:\/\//i.test(url)) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Invalid URL. Only http and https links are supported.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+
 						if (resultDiv) {
 							resultDiv.style.display = 'block';
 							resultDiv.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p><?php echo esc_js( __( 'Opening group link in a new tab…', 'mcp-ai-wpoos-pro' ) ); ?> <a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer">' + url.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</a></p></div>';

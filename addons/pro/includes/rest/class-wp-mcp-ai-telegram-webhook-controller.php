@@ -647,8 +647,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// allow_sending_without_reply prevents failures when the original message
 		// is unavailable (e.g. deleted, or migrated in supergroups).
 		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
-			$payload['reply_to_message_id']          = (int) $reply_to_message_id;
-			$payload['allow_sending_without_reply']   = true;
+			$payload['reply_to_message_id']        = (int) $reply_to_message_id;
+			$payload['allow_sending_without_reply'] = true;
 		}
 
 		$body = wp_json_encode( $payload );
