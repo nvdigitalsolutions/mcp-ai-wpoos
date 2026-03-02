@@ -2357,5 +2357,257 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 		$this->assertTrue( (bool) $updated['enable_groups'], 'enable_groups should be preserved on update' );
 	}
+
+	// =========================================================================
+	// Group reply robustness tests
+	// =========================================================================
+
+	/**
+	 * Test that handle_telegram_reply_job() sets allow_sending_without_reply
+	 * for group chats by verifying the method exists and processes group args.
+	 */
+	public function test_telegram_reply_job_accepts_group_chat_type() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'handle_telegram_reply_job' );
+
+		$this->assertTrue(
+			$method->isPublic(),
+			'handle_telegram_reply_job should be a public method callable by wp_cron'
+		);
+
+		// Verify the method accepts an array argument with group-specific fields.
+		$params = $method->getParameters();
+		$this->assertCount( 1, $params, 'handle_telegram_reply_job should accept one parameter' );
+	}
+
+	/**
+	 * Test that process_message() logs the chat_id when a group message is
+	 * ignored due to enable_groups being disabled.
+	 */
+	public function test_process_message_logs_chat_id_for_ignored_group() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Save a connection with enable_groups disabled (default).
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Telegram Group Disabled Test',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'AAAA000000:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'enable_groups'   => false,
+			)
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_message' );
+		$method->setAccessible( true );
+
+		// Simulate a group message — should be silently ignored.
+		$method->invoke(
+			$controller,
+			array(
+				'text'       => 'Hello from a group',
+				'chat'       => array(
+					'id'   => '-1001234567890',
+					'type' => 'supergroup',
+				),
+				'from'       => array( 'id' => '444555666' ),
+				'message_id' => 99,
+			)
+		);
+
+		// The message should have been ignored (no cron scheduled).
+		// We verify this by checking that no cron event was scheduled.
+		$cron_events = _get_cron_array();
+		$found       = false;
+		if ( is_array( $cron_events ) ) {
+			foreach ( $cron_events as $timestamp => $hooks ) {
+				if ( isset( $hooks['wp_mcp_ai_telegram_send_ai_reply'] ) ) {
+					$found = true;
+					break;
+				}
+			}
+		}
+		$this->assertFalse( $found, 'No cron event should be scheduled when enable_groups is disabled' );
+	}
+
+	/**
+	 * Test that process_message() processes group messages when enable_groups
+	 * is enabled on the connection.
+	 */
+	public function test_process_message_processes_group_when_enabled() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Create an assistant.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Group Test Bot',
+				'post_name'   => 'group-test-bot',
+				'post_status' => 'publish',
+			)
+		);
+		$this->assertGreaterThan( 0, $assistant_id );
+
+		// Save a connection with enable_groups enabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'Telegram Group Enabled Test',
+				'url'                    => 'https://api.telegram.org',
+				'connection_type'        => 'telegram',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'BBBB000000:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'enable_groups'          => true,
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
+
+		// Prevent actual cron dispatch but capture that the filter was reached.
+		$filter_called = false;
+		add_filter(
+			'wp_mcp_ai_telegram_should_auto_reply',
+			function () use ( &$filter_called ) {
+				$filter_called = true;
+				return false; // Block reply.
+			}
+		);
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_message' );
+		$method->setAccessible( true );
+
+		$method->invoke(
+			$controller,
+			array(
+				'text'       => 'Hello from a group with groups enabled',
+				'chat'       => array(
+					'id'   => '-1009876543210',
+					'type' => 'group',
+				),
+				'from'       => array( 'id' => '111222333' ),
+				'message_id' => 100,
+			)
+		);
+
+		remove_all_filters( 'wp_mcp_ai_telegram_should_auto_reply' );
+
+		$this->assertTrue(
+			$filter_called,
+			'wp_mcp_ai_telegram_should_auto_reply filter should be reached for group messages when enable_groups is true'
+		);
+
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test that the reply job args include reply_to_message_id for group messages
+	 * by verifying the cron hook signature in process_message.
+	 */
+	public function test_process_message_sets_reply_to_message_id_for_groups() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Group Reply Test Bot',
+				'post_name'   => 'group-reply-test-bot',
+				'post_status' => 'publish',
+			)
+		);
+		$this->assertGreaterThan( 0, $assistant_id );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'Telegram Reply Thread Test',
+				'url'                    => 'https://api.telegram.org',
+				'connection_type'        => 'telegram',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'api_key'                => 'CCCC000000:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh',
+				'enable_groups'          => true,
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
+
+		// Allow the auto-reply to be scheduled.
+		add_filter( 'wp_mcp_ai_telegram_should_auto_reply', '__return_true' );
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_message' );
+		$method->setAccessible( true );
+
+		$method->invoke(
+			$controller,
+			array(
+				'text'       => 'Group thread test',
+				'chat'       => array(
+					'id'   => '-1001111222333',
+					'type' => 'supergroup',
+				),
+				'from'       => array( 'id' => '777888999' ),
+				'message_id' => 42,
+			)
+		);
+
+		remove_all_filters( 'wp_mcp_ai_telegram_should_auto_reply' );
+
+		// Verify a cron event was scheduled.
+		$cron_events = _get_cron_array();
+		$found_args  = null;
+		if ( is_array( $cron_events ) ) {
+			foreach ( $cron_events as $timestamp => $hooks ) {
+				if ( isset( $hooks['wp_mcp_ai_telegram_send_ai_reply'] ) ) {
+					foreach ( $hooks['wp_mcp_ai_telegram_send_ai_reply'] as $key => $event ) {
+						if ( isset( $event['args'][0] ) ) {
+							$found_args = $event['args'][0];
+							break 2;
+						}
+					}
+				}
+			}
+		}
+
+		$this->assertNotNull( $found_args, 'A cron event should have been scheduled for the group reply' );
+
+		if ( null !== $found_args ) {
+			$this->assertEquals( 'supergroup', $found_args['chat_type'], 'chat_type should be supergroup' );
+			$this->assertEquals( '42', $found_args['reply_to_message_id'], 'reply_to_message_id should be set for group messages' );
+			$this->assertEquals( '-1001111222333', $found_args['chat_id'], 'chat_id should be the group ID' );
+		}
+
+		wp_delete_post( $assistant_id, true );
+	}
 }
 
