@@ -491,6 +491,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Telegram-specific fields.
 				'bot_username'         => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				'secret_token'         => $telegram_secret_token,
+				'enable_groups'        => ! empty( $_POST['telegram_enable_groups'] ),
 				'enable_web_login'     => ! empty( $_POST['telegram_enable_web_login'] ),
 				'web_login_redirect_url' => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
 				'auto_create_wp_user'  => ! empty( $_POST['telegram_auto_create_wp_user'] ),
@@ -1809,6 +1810,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description">
 							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to your Telegram bot.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Enable Group Chats', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_enable_groups" id="telegram_enable_groups" value="1" <?php checked( $is_edit && ! empty( $connection['enable_groups'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Allow the bot to respond in group and supergroup chats', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot will process and reply to messages in Telegram groups and supergroups. When disabled, the bot only responds in private (direct) chats.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
