@@ -255,6 +255,8 @@ A comprehensive audit of the entire base plugin was performed after applying all
 - System temp directory (`sys_get_temp_dir()`, `wp_tempnam()`) — temporary processing files
 - Admin-only slash commands with `manage_options` capability check
 
+These calls use `file_put_contents` rather than `WP_Filesystem` because they operate within WordPress-managed directories (uploads/temp) and are invoked from admin-only contexts where `WP_Filesystem` initialization may not be available. Each call is guarded by capability checks and writes only to safe, controlled paths. The specifically flagged instance in `handle_code_format` was converted to `WP_Filesystem` as that was the one with user-controlled paths.
+
 ### External Services Audit
 
 | Category | Status |
