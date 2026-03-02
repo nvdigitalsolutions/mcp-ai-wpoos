@@ -778,7 +778,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   function renderCptBar(types) {
     var scroll = document.getElementById(\'tma-cpt-scroll\');
-    if (!scroll || !types.length) return;
+    if (!scroll) return;
+    if (!types.length) {
+      scroll.innerHTML = \'<div class="tma-empty">No content types available.</div>\';
+      return;
+    }
     var html = \'\';
     types.forEach(function (t) {
       var active = t.name === contentPostType ? \' tma-active\' : \'\';
@@ -1311,44 +1315,48 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		$post_type_obj = get_post_type_object( $post_type );
-		if ( ! $post_type_obj || ! current_user_can( $post_type_obj->cap->edit_posts ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_telegram_forbidden',
-				__( 'Insufficient permissions for this post type.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 403 )
-			);
-		}
 
-		$query_args = array(
-			'post_type'      => $post_type,
-			'post_status'    => array( 'publish', 'draft', 'pending' ),
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
-			'orderby'        => 'modified',
-			'order'          => 'DESC',
-		);
-
-		if ( ! empty( $search ) ) {
-			$query_args['s'] = $search;
-		}
-
-		$query = new WP_Query( $query_args );
+		// When the current user cannot edit the requested post type, return an
+		// empty post list instead of a hard 403 so that the Mini App client does
+		// not misinterpret it as an authentication failure and enter a retry loop.
+		// The CPT bar (built below) is already filtered by capability, so the UI
+		// will show "No content found" rather than getting stuck.
 		$posts = array();
+		$query = null;
 
-		foreach ( $query->posts as $post ) {
-			$excerpt  = $post->post_excerpt;
-			if ( empty( $excerpt ) ) {
-				$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 20, '…' );
-			}
-			$posts[] = array(
-				'id'       => $post->ID,
-				'title'    => get_the_title( $post ),
-				'status'   => $post->post_status,
-				'date'     => $post->post_date,
-				'modified' => $post->post_modified,
-				'link'     => (string) get_edit_post_link( $post->ID, 'raw' ),
-				'excerpt'  => $excerpt,
+		if ( $post_type_obj && current_user_can( $post_type_obj->cap->edit_posts ) ) {
+			$query_args = array(
+				'post_type'      => $post_type,
+				'post_status'    => array( 'publish', 'draft', 'pending' ),
+				'posts_per_page' => $per_page,
+				'paged'          => $page,
+				'orderby'        => 'modified',
+				'order'          => 'DESC',
 			);
+
+			if ( ! empty( $search ) ) {
+				$query_args['s'] = $search;
+			}
+
+			$query = new WP_Query( $query_args );
+		}
+
+		if ( $query ) {
+			foreach ( $query->posts as $post ) {
+				$excerpt = $post->post_excerpt;
+				if ( empty( $excerpt ) ) {
+					$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 20, '…' );
+				}
+				$posts[] = array(
+					'id'       => $post->ID,
+					'title'    => get_the_title( $post ),
+					'status'   => $post->post_status,
+					'date'     => $post->post_date,
+					'modified' => $post->post_modified,
+					'link'     => (string) get_edit_post_link( $post->ID, 'raw' ),
+					'excerpt'  => $excerpt,
+				);
+			}
 		}
 
 		// Build the list of all accessible CPTs, enriched with active-toolkit info.
@@ -1382,8 +1390,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		return rest_ensure_response(
 			array(
 				'posts'      => $posts,
-				'total'      => (int) $query->found_posts,
-				'pages'      => (int) $query->max_num_pages,
+				'total'      => $query ? (int) $query->found_posts : 0,
+				'pages'      => $query ? (int) $query->max_num_pages : 0,
 				'post_types' => $cpt_list,
 			)
 		);
@@ -1462,14 +1470,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	* @since 1.0.0
 	*
 	* @param WP_REST_Request $request Request object.
-	* @return WP_REST_Response|WP_Error
+	* @return WP_REST_Response
 	*/
 	public function handle_media( $request ) {
+		// Return an empty list when the user lacks upload_files instead of a
+		// hard 403 that the Mini App client would misinterpret as an auth failure.
 		if ( ! current_user_can( 'upload_files' ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_telegram_forbidden',
-				__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ),
-				array( 'status' => 403 )
+			return rest_ensure_response(
+				array(
+					'items' => array(),
+					'total' => 0,
+					'pages' => 0,
+				)
 			);
 		}
 

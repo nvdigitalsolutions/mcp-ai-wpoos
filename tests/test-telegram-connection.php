@@ -1652,9 +1652,56 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test handle_media() returns WP_Error when user lacks upload_files capability.
+	 * Test handle_content() returns empty results for a subscriber who cannot
+	 * edit posts, instead of a hard 403 that triggers a retry loop.
 	 */
-	public function test_handle_media_returns_error_for_insufficient_permissions() {
+	public function test_handle_content_returns_empty_for_subscriber() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		// Create a post that the subscriber should NOT see.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_status' => 'publish',
+				'post_title'  => 'Invisible to subscriber',
+			)
+		);
+
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/telegram-mini-app/content' );
+		$request->set_param( 'post_type', 'post' );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'per_page', 20 );
+		$request->set_param( 'search', '' );
+
+		$result = $controller->handle_content( $request );
+
+		// Must be a valid REST response (not WP_Error / 403) so the Mini App
+		// client renders "No content found" instead of entering a retry loop.
+		$this->assertInstanceOf( 'WP_REST_Response', $result, 'Subscriber should get a valid response, not WP_Error' );
+		$data = $result->get_data();
+		$this->assertArrayHasKey( 'posts', $data );
+		$this->assertEmpty( $data['posts'], 'Posts should be empty for subscriber' );
+		$this->assertEquals( 0, $data['total'] );
+		$this->assertArrayHasKey( 'post_types', $data );
+		$this->assertEmpty( $data['post_types'], 'Post types should be empty for subscriber' );
+
+		wp_delete_post( $post_id, true );
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Test handle_media() returns empty items when user lacks upload_files capability.
+	 *
+	 * Instead of a hard 403 the endpoint now returns an empty list so the Mini
+	 * App client does not misinterpret it as an auth failure and enter a retry loop.
+	 */
+	public function test_handle_media_returns_empty_for_insufficient_permissions() {
 		$controller = $this->load_telegram_mini_app_controller();
 		if ( null === $controller ) {
 			return;
@@ -1672,8 +1719,12 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		$result = $controller->handle_media( $request );
 
-		$this->assertInstanceOf( 'WP_Error', $result, 'Subscriber should get WP_Error from handle_media()' );
-		$this->assertEquals( 'wp_mcp_ai_telegram_forbidden', $result->get_error_code() );
+		$this->assertInstanceOf( 'WP_REST_Response', $result, 'Subscriber should get an empty WP_REST_Response from handle_media()' );
+		$data = $result->get_data();
+		$this->assertArrayHasKey( 'items', $data );
+		$this->assertEmpty( $data['items'], 'Items should be empty for subscriber' );
+		$this->assertEquals( 0, $data['total'] );
+		$this->assertEquals( 0, $data['pages'] );
 
 		wp_set_current_user( 0 );
 	}
