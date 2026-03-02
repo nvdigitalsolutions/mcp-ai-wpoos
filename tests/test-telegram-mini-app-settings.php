@@ -1093,4 +1093,333 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		delete_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance' );
 	}
+
+	/**
+	 * Test that the local Chart.js vendor file exists.
+	 */
+	public function test_local_chart_js_file_exists() {
+		$chart_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+		$this->assertFileExists( $chart_path, 'Local Chart.js vendor file should exist at assets/js/vendor/chart.min.js' );
+	}
+
+	/**
+	 * Return the controller source for static analysis tests.
+	 *
+	 * @return string
+	 */
+	private function get_controller_source() {
+		static $source = null;
+		if ( null === $source ) {
+			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+			$source = file_exists( $file ) ? file_get_contents( $file ) : '';
+		}
+		return $source;
+	}
+
+	/**
+	 * Test that handle_mini_app references local Chart.js URL instead of CDN.
+	 *
+	 * The Telegram WebView can block CDN requests or fail SRI checks, so
+	 * Chart.js must be served from the plugin's own assets directory.
+	 */
+	public function test_mini_app_uses_local_chart_js() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringNotContainsString(
+			'cdnjs.cloudflare.com/ajax/libs/Chart.js',
+			$source,
+			'Mini App controller should not load Chart.js from the CDN'
+		);
+
+		$this->assertStringContainsString(
+			'assets/js/vendor/chart.min.js',
+			$source,
+			'Mini App controller should reference the local Chart.js file'
+		);
+	}
+
+	/**
+	 * Test that handle_mini_app sets no-cache headers to prevent Telegram
+	 * WebView from serving stale versions of the Mini App shell.
+	 */
+	public function test_mini_app_sets_cache_control_headers() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'no-store',
+			$source,
+			'Mini App should set no-store Cache-Control directive to prevent stale caching'
+		);
+
+		$this->assertStringContainsString(
+			'no-cache',
+			$source,
+			'Mini App should set no-cache directive'
+		);
+
+		$this->assertStringContainsString(
+			'Pragma',
+			$source,
+			'Mini App should set Pragma header for legacy proxy compatibility'
+		);
+	}
+
+	/**
+	 * Test that Chart.js fallback message is shown when library is unavailable.
+	 */
+	public function test_mini_app_has_chart_js_fallback_message() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'Chart library unavailable',
+			$source,
+			'Mini App should display a user-visible message when Chart.js fails to load'
+		);
+	}
+
+	// =========================================================================
+	// Commands tab separation tests
+	// =========================================================================
+
+	/**
+	 * Test that the mini app has a separate Commands tab.
+	 */
+	public function test_mini_app_has_commands_tab() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'tma-tab-commands',
+			$source,
+			'Mini App should have a separate Commands tab pane'
+		);
+
+		$this->assertStringContainsString(
+			'tma-nav-commands',
+			$source,
+			'Mini App should have a Commands nav button'
+		);
+
+		$this->assertStringContainsString(
+			'loadCommands',
+			$source,
+			'Mini App should have a loadCommands function for lazy-loading'
+		);
+
+		$this->assertStringContainsString(
+			'renderSlashCommands',
+			$source,
+			'Mini App should have a renderSlashCommands function'
+		);
+	}
+
+	// =========================================================================
+	// Analytics date range tests
+	// =========================================================================
+
+	/**
+	 * Test that analytics endpoint supports up to 90 days.
+	 */
+	public function test_analytics_endpoint_supports_90_days() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			"'maximum'  => 90",
+			$source,
+			'Analytics endpoint should allow up to 90 days'
+		);
+
+		// The handler should also validate up to 90.
+		$this->assertStringContainsString(
+			'> 90',
+			$source,
+			'Analytics handler should validate up to 90 days'
+		);
+	}
+
+	/**
+	 * Test that the mini app has a date range picker in the Home tab.
+	 */
+	public function test_mini_app_has_date_range_picker() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'tma-date-range-bar',
+			$source,
+			'Mini App should have a date range picker bar'
+		);
+
+		$this->assertStringContainsString(
+			'tmaSetDateRange',
+			$source,
+			'Mini App should have a tmaSetDateRange function'
+		);
+
+		$this->assertStringContainsString(
+			'tmaExportAnalytics',
+			$source,
+			'Mini App should have an export analytics function'
+		);
+	}
+
+	// =========================================================================
+	// Content editing enhancement tests
+	// =========================================================================
+
+	/**
+	 * Test that the content update endpoint supports 'future' status and 'date'.
+	 */
+	public function test_content_update_supports_future_status() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			"'future'",
+			$source,
+			'Content update should support future status for scheduling'
+		);
+	}
+
+	/**
+	 * Test that the mini app editor has a schedule date field.
+	 */
+	public function test_mini_app_editor_has_schedule_field() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'tma-editor-schedule-date',
+			$source,
+			'Editor should have a schedule date input'
+		);
+
+		$this->assertStringContainsString(
+			'datetime-local',
+			$source,
+			'Schedule date should use datetime-local input type'
+		);
+	}
+
+	/**
+	 * Test that the mini app editor has a fullscreen toggle.
+	 */
+	public function test_mini_app_editor_has_fullscreen_toggle() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'tmaToggleFullscreen',
+			$source,
+			'Editor should have a fullscreen toggle function'
+		);
+
+		$this->assertStringContainsString(
+			'tma-editor-fullscreen',
+			$source,
+			'Editor should have a fullscreen button CSS class'
+		);
+	}
+
+	// =========================================================================
+	// Per-toolkit CPT filtering tests
+	// =========================================================================
+
+	/**
+	 * Test that the Content tab has per-toolkit CPT filtering.
+	 */
+	public function test_content_tab_has_toolkit_filtering() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'contentToolkitFilter',
+			$source,
+			'Content tab should have a toolkit filter variable'
+		);
+
+		$this->assertStringContainsString(
+			'tmaContentToolkitFilter',
+			$source,
+			'Content tab should have a toolkit filter function'
+		);
+
+		$this->assertStringContainsString(
+			'tma-toolkit-pills',
+			$source,
+			'Content tab should render toolkit filter pills'
+		);
+	}
+
+	// =========================================================================
+	// Per-toolkit analytics breakdown test
+	// =========================================================================
+
+	/**
+	 * Test that the Home tab includes per-toolkit usage breakdown.
+	 */
+	public function test_home_tab_has_toolkit_usage_breakdown() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'tma-chart-toolkit',
+			$source,
+			'Home tab should have a per-toolkit usage chart canvas'
+		);
+
+		$this->assertStringContainsString(
+			'Usage by Toolkit',
+			$source,
+			'Home tab should have a Usage by Toolkit chart title'
+		);
+	}
 }
