@@ -158,6 +158,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	public function test_telegram_markdown_to_html_empty_input() {
 		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( '' ) );
 		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( null ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( false ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( 42 ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( array() ) );
 	}
 
 	/**
@@ -250,13 +253,16 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test code block content is not processed for bold/italic.
+	 * Test code block content is not processed for bold/italic and is properly wrapped.
 	 */
 	public function test_telegram_markdown_to_html_code_block_not_processed() {
 		$md     = "```\n**not bold** *not italic*\n```";
 		$result = $this->invoke_markdown_to_telegram_html( $md );
 		$this->assertStringNotContainsString( '<b>not bold</b>', $result );
 		$this->assertStringNotContainsString( '<i>not italic</i>', $result );
+		$this->assertStringContainsString( '<pre>', $result );
+		$this->assertStringContainsString( '</pre>', $result );
+		$this->assertStringContainsString( '**not bold**', $result );
 	}
 
 	/**

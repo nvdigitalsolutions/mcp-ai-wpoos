@@ -1567,7 +1567,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// 1. Extract fenced code blocks and replace with placeholders so that
 		//    content inside them is not processed by other regex rules.
 		$code_blocks  = array();
-		$placeholder  = "\x00CB";  // Null-byte-based placeholder unlikely to appear in text.
+		$placeholder  = "\x07TGCB:";  // BEL-based placeholder safe from Markdown pattern matching.
 		$block_index  = 0;
 
 		$text = preg_replace_callback(
@@ -1582,7 +1582,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				$tag     = '' !== $lang
 					? '<pre><code class="language-' . htmlspecialchars( $lang, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $code . '</code></pre>'
 					: '<pre>' . $code . '</pre>';
-				$key     = $placeholder . $block_index . $placeholder;
+				$key     = $placeholder . $block_index . "\x07";
 				$code_blocks[ $key ] = $tag;
 				++$block_index;
 				return $key;
@@ -1593,13 +1593,13 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		// 2. Extract inline code spans and replace with placeholders.
 		$inline_codes = array();
 		$ic_index     = 0;
-		$ic_ph        = "\x00IC";
+		$ic_ph        = "\x07TGIC:";
 
 		$text = preg_replace_callback(
 			'/`([^`\n]+?)`/',
 			function ( $m ) use ( &$inline_codes, &$ic_index, $ic_ph ) {
 				$code = htmlspecialchars( $m[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
-				$key  = $ic_ph . $ic_index . $ic_ph;
+				$key  = $ic_ph . $ic_index . "\x07";
 				$inline_codes[ $key ] = '<code>' . $code . '</code>';
 				++$ic_index;
 				return $key;
