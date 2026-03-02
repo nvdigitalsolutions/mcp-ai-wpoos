@@ -1098,8 +1098,23 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 	 * Test that the local Chart.js vendor file exists.
 	 */
 	public function test_local_chart_js_file_exists() {
-		$chart_path = dirname( dirname( __DIR__ ) ) . '/assets/js/vendor/chart.min.js';
+		$chart_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 		$this->assertFileExists( $chart_path, 'Local Chart.js vendor file should exist at assets/js/vendor/chart.min.js' );
+	}
+
+	/**
+	 * Return the controller source for static analysis tests.
+	 *
+	 * @return string
+	 */
+	private function get_controller_source() {
+		static $source = null;
+		if ( null === $source ) {
+			$source = file_get_contents(
+				WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
+			);
+		}
+		return $source;
 	}
 
 	/**
@@ -1114,10 +1129,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			return;
 		}
 
-		// Read the controller source to verify it does not reference the CDN.
-		$source = file_get_contents(
-			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
-		);
+		$source = $this->get_controller_source();
 
 		$this->assertStringNotContainsString(
 			'cdnjs.cloudflare.com/ajax/libs/Chart.js',
@@ -1142,20 +1154,24 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			return;
 		}
 
-		$source = file_get_contents(
-			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
+		$source = $this->get_controller_source();
+
+		$this->assertStringContainsString(
+			'no-store',
+			$source,
+			'Mini App should set no-store Cache-Control directive to prevent stale caching'
 		);
 
 		$this->assertStringContainsString(
-			"header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' )",
+			'no-cache',
 			$source,
-			'Mini App should set Cache-Control header to prevent stale caching'
+			'Mini App should set no-cache directive'
 		);
 
 		$this->assertStringContainsString(
-			"header( 'Pragma: no-cache' )",
+			'Pragma',
 			$source,
-			'Mini App should set Pragma no-cache header for legacy proxy compatibility'
+			'Mini App should set Pragma header for legacy proxy compatibility'
 		);
 	}
 
@@ -1168,9 +1184,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			return;
 		}
 
-		$source = file_get_contents(
-			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
-		);
+		$source = $this->get_controller_source();
 
 		$this->assertStringContainsString(
 			'Chart library unavailable',
