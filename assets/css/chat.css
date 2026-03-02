@@ -1581,6 +1581,7 @@
 }
 
 /* Document / file-type attachment cards */
+/* min-height ensures icon + two text lines are never squashed (icon 1.5rem + padding ≈ 3.25rem) */
 .wp-mcp-ai-chat__file-card {
     display: flex;
     align-items: center;
