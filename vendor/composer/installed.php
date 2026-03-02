@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-login-issue',
-        'version' => 'dev-copilot/fix-telegram-login-issue',
-        'reference' => 'cacab77639934d02f5347488872bbadb0a437daf',
+        'pretty_version' => 'dev-copilot/update-chat-tab-to-settings-page',
+        'version' => 'dev-copilot/update-chat-tab-to-settings-page',
+        'reference' => '0bbdd4ea747d3a4684c6e56ad2a435103e484ca3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-login-issue',
-            'version' => 'dev-copilot/fix-telegram-login-issue',
-            'reference' => 'cacab77639934d02f5347488872bbadb0a437daf',
+            'pretty_version' => 'dev-copilot/update-chat-tab-to-settings-page',
+            'version' => 'dev-copilot/update-chat-tab-to-settings-page',
+            'reference' => '0bbdd4ea747d3a4684c6e56ad2a435103e484ca3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

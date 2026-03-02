@@ -229,6 +229,52 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// User settings endpoint (GET for loading, POST for saving).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/settings',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_get_settings' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'handle_save_settings' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'action' => array(
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+							'description'       => __( 'Settings action: save_preferences, link_account, or unlink_account.', 'mcp-ai-wpoos-pro' ),
+						),
+					),
+				),
+			)
+		);
+
+		// Analytics endpoint for Home tab dashboard (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/analytics',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_analytics' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'days' => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 7,
+						'minimum'  => 1,
+						'maximum'  => 30,
+					),
+				),
+			)
+		);
 	}
 
 	// =========================================================================
@@ -397,23 +443,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	*/
 	public function handle_mini_app( $request ) {
 		// Resolve the active Telegram connection once; used both for assistant
-		// lookup and for extracting the bot username shown in the About tab.
+		// lookup and for extracting the bot username shown in the Settings tab.
 		$connection = $this->get_active_telegram_connection();
 
-		// Resolve the assistant to use, honouring the explicit query parameter
-		// first, then per-connection settings, then the global automation default.
-		$assistant_slug = $this->resolve_mini_app_assistant( $request, $connection );
-
-		// Build the shortcode so the existing chat UI is rendered inside the Mini App.
-		$shortcode = '[mcp_ai_chat';
-		if ( ! empty( $assistant_slug ) ) {
-			$shortcode .= ' assistant="' . esc_attr( $assistant_slug ) . '"';
-		}
-		$shortcode .= ' allow_guests="true" enable_streaming="true"]';
-
-		$chat_html = do_shortcode( $shortcode );
-
-		// Collect styles and scripts enqueued by the shortcode.
+		// Collect styles and scripts enqueued by WordPress.
 		ob_start();
 		wp_head();
 		$head_output = ob_get_clean();
@@ -451,7 +484,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$content_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/content' );
 		$tools_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
 		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
-		$login_url    = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
+		$settings_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
+		$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
@@ -465,6 +500,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 <meta name="robots" content="noindex, nofollow">
 <title>' . esc_html( $page_title ) . '</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js" integrity="sha384-UPISyMBHSQG9TG98ClIRsRlDOGZeGYc7Y1B6bXWmLi1KQPOqmYOjEOkB50ofrIG" crossorigin="anonymous"></script>
 <style>' . $this->get_mini_app_css() . '</style>
 ' . $head_output . '
 </head>
@@ -498,8 +534,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   <!-- ── Tab content ──────────────────────────────────────────── -->
   <div class="tma-content">
 
-    <!-- Content tab (default) -->
-    <div class="tma-tab-pane tma-active" id="tma-tab-content">
+    <!-- Home tab (default) -->
+    <div class="tma-tab-pane tma-active" id="tma-tab-home">
+      <div class="tma-home-wrap" id="tma-home-wrap">
+        <div class="tma-empty">Loading analytics…</div>
+      </div>
+    </div>
+
+    <!-- Content tab -->
+    <div class="tma-tab-pane" id="tma-tab-content">
       <div class="tma-cpt-bar" id="tma-cpt-bar">
         <div class="tma-cpt-scroll" id="tma-cpt-scroll">
           <div class="tma-empty">Loading types…</div>
@@ -539,10 +582,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <div class="tma-pagination" id="tma-media-pagination"></div>
     </div>
 
-    <!-- Chat tab -->
-    <div class="tma-tab-pane" id="tma-tab-chat">
-      <div class="wp-mcp-ai-telegram-mini-app-wrapper">
-        ' . $chat_html . '
+    <!-- Settings tab -->
+    <div class="tma-tab-pane" id="tma-tab-settings">
+      <div class="tma-settings-wrap" id="tma-settings-wrap">
+        <div class="tma-empty">Loading settings…</div>
       </div>
     </div>
 
@@ -550,7 +593,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   <!-- ── Bottom navigation ────────────────────────────────────── -->
   <nav class="tma-nav" role="navigation" aria-label="Tabs">
-    <button class="tma-nav-btn tma-active" id="tma-nav-content" data-tab="content" onclick="tmaSwitchTab(\'content\')">
+    <button class="tma-nav-btn tma-active" id="tma-nav-home" data-tab="home" onclick="tmaSwitchTab(\'home\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tma-nav-label">Home</span>
+    </button>
+    <button class="tma-nav-btn" id="tma-nav-content" data-tab="content" onclick="tmaSwitchTab(\'content\')">
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
       <span class="tma-nav-label">Content</span>
     </button>
@@ -562,9 +609,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       <span class="tma-nav-label">Media</span>
     </button>
-    <button class="tma-nav-btn" id="tma-nav-chat" data-tab="chat" onclick="tmaSwitchTab(\'chat\')">
-      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span class="tma-nav-label">Chat</span>
+    <button class="tma-nav-btn" id="tma-nav-settings" data-tab="settings" onclick="tmaSwitchTab(\'settings\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="tma-nav-label">Settings</span>
     </button>
   </nav>
 
@@ -574,7 +621,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 <script>
 /* =========================================================
    NV oOS – Telegram Mini App Shell (CMS Edition)
-   Content, Tools, Media & Chat management for Telegram.
+   Content, Tools, Media & Settings management for Telegram.
    ========================================================= */
 (function () {
   \'use strict\';
@@ -585,6 +632,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_CONTENT_URL    = ' . wp_json_encode( $content_url ) . ';
   var TMA_TOOLS_URL      = ' . wp_json_encode( $tools_url ) . ';
   var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
+  var TMA_SETTINGS_URL   = ' . wp_json_encode( $settings_url ) . ';
+  var TMA_ANALYTICS_URL  = ' . wp_json_encode( $analytics_url ) . ';
   var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
   var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
@@ -627,7 +676,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   /* ── Tab state ── */
-  var activeTab         = \'content\';
+  var activeTab         = \'home\';
   var contentPage       = 1;
   var contentPostType   = \'post\';
   var contentSearch     = \'\';
@@ -658,9 +707,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     updateBackButton();
     updateMainButton();
     /* Lazy-load tab data on first visit */
+    if (tabName === \'home\')    loadHome();
     if (tabName === \'content\') loadContent();
     if (tabName === \'tools\')   loadTools();
     if (tabName === \'media\')   loadMedia();
+    if (tabName === \'settings\') loadSettings();
     /* Reset search bar context */
     clearSearch();
   };
@@ -668,7 +719,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   /* ── Back Button ── */
   function updateBackButton() {
     if (!twa || !twa.BackButton) return;
-    if (activeTab === \'content\') {
+    if (activeTab === \'home\') {
       twa.BackButton.hide();
     } else {
       twa.BackButton.show();
@@ -738,6 +789,189 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       }
     }, 300);
   };
+
+  /* =========================================================
+     HOME TAB – Analytics Dashboard
+     ========================================================= */
+  var homeLoaded  = false;
+  var homeCharts  = {};
+
+  function loadHome() {
+    if (homeLoaded) return;
+    var wrap = document.getElementById(\'tma-home-wrap\');
+    if (!wrap) return;
+    wrap.innerHTML = \'<div class="tma-empty">Loading analytics…</div>\';
+
+    authFetch(TMA_ANALYTICS_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadHome(); }).catch(function () { showLoginFallback(\'home\'); });
+          }
+          showLoginPrompt(\'home\'); return null;
+        }
+        authRetried = false;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        homeLoaded = true;
+        renderHome(data);
+      })
+      .catch(function () {
+        if (wrap) wrap.innerHTML = \'<div class="tma-empty tma-error">Failed to load analytics.</div>\';
+      });
+  }
+
+  function renderHome(data) {
+    var wrap = document.getElementById(\'tma-home-wrap\');
+    if (!wrap) return;
+    var s = data.summary || {};
+    var html = \'\';
+
+    /* ── KPI cards row ── */
+    html += \'<div class="tma-kpi-row">\';
+    html += kpiCard(\'🪙\', \'Tokens\', formatNum(s.total_tokens || 0));
+    html += kpiCard(\'💰\', \'Cost\', \'$\' + (s.total_cost || 0).toFixed(4));
+    html += kpiCard(\'🛠️\', \'Tools\', formatNum(s.tools_used || 0));
+    html += kpiCard(\'📨\', \'Requests\', formatNum(s.total_requests || 0));
+    html += \'</div>\';
+
+    /* ── Token usage trend chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Token Usage (7 days)</div>\';
+    html += \'<div class="tma-chart-wrap"><canvas id="tma-chart-tokens"></canvas></div>\';
+    html += \'</div>\';
+
+    /* ── Cost by provider chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Cost by Provider</div>\';
+    html += \'<div class="tma-chart-wrap tma-chart-doughnut"><canvas id="tma-chart-cost"></canvas></div>\';
+    html += \'</div>\';
+
+    /* ── Tool usage chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Top Tools</div>\';
+    html += \'<div class="tma-chart-wrap"><canvas id="tma-chart-tools"></canvas></div>\';
+    html += \'</div>\';
+
+    wrap.innerHTML = html;
+
+    /* ── Render charts with Chart.js ── */
+    setTimeout(function () { renderHomeCharts(data); }, 50);
+  }
+
+  function kpiCard(icon, label, value) {
+    return \'<div class="tma-kpi-card">\' +
+      \'<div class="tma-kpi-icon">\' + icon + \'</div>\' +
+      \'<div class="tma-kpi-value">\' + escHtml(value) + \'</div>\' +
+      \'<div class="tma-kpi-label">\' + escHtml(label) + \'</div>\' +
+    \'</div>\';
+  }
+
+  function formatNum(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + \'M\';
+    if (n >= 1000) return (n / 1000).toFixed(1) + \'K\';
+    return String(n);
+  }
+
+  function renderHomeCharts(data) {
+    if (typeof Chart === \'undefined\') return;
+    var tmaColors = {
+      primary  : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-btn\').trim() || \'#2481cc\',
+      accent   : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-accent\').trim() || \'#2481cc\',
+      text     : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-text\').trim() || \'#000\',
+      hint     : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-hint\').trim() || \'#999\',
+      border   : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-border\').trim() || \'rgba(0,0,0,.1)\',
+    };
+    var palette = [\'#4361ee\',\'#3a0ca3\',\'#7209b7\',\'#f72585\',\'#4cc9f0\',\'#06d6a0\',\'#ffd166\',\'#ef476f\'];
+    var chartDefaults = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false, labels: { color: tmaColors.text, font: { size: 11 } } } },
+      scales: {}
+    };
+
+    /* ── Token trend (line) ── */
+    var daily = data.daily || [];
+    var tokenCtx = document.getElementById(\'tma-chart-tokens\');
+    if (tokenCtx && daily.length) {
+      homeCharts.tokens = new Chart(tokenCtx.getContext(\'2d\'), {
+        type: \'line\',
+        data: {
+          labels: daily.map(function (d) { return d.label || d.date; }),
+          datasets: [{
+            label: \'Tokens\',
+            data: daily.map(function (d) { return d.total_tokens || 0; }),
+            borderColor: tmaColors.primary,
+            backgroundColor: tmaColors.primary + \'33\',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: tmaColors.primary,
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          scales: {
+            x: { ticks: { color: tmaColors.hint, font: { size: 10 } }, grid: { color: tmaColors.border } },
+            y: { beginAtZero: true, ticks: { color: tmaColors.hint, font: { size: 10 }, callback: function (v) { return formatNum(v); } }, grid: { color: tmaColors.border } }
+          }
+        })
+      });
+    }
+
+    /* ── Cost by provider (doughnut) ── */
+    var providers = data.by_provider || [];
+    var costCtx = document.getElementById(\'tma-chart-cost\');
+    if (costCtx && providers.length) {
+      homeCharts.cost = new Chart(costCtx.getContext(\'2d\'), {
+        type: \'doughnut\',
+        data: {
+          labels: providers.map(function (p) { return p.provider || \'Unknown\'; }),
+          datasets: [{
+            data: providers.map(function (p) { return parseFloat(p.total_cost) || 0; }),
+            backgroundColor: palette.slice(0, providers.length),
+            borderWidth: 1,
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue(\'--tma-section-bg\').trim() || \'#fff\',
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          plugins: { legend: { display: true, position: \'bottom\', labels: { color: tmaColors.text, font: { size: 10 }, boxWidth: 10, padding: 8 } } },
+          cutout: \'60%\',
+        })
+      });
+    } else if (costCtx) {
+      costCtx.parentNode.innerHTML = \'<div class="tma-empty" style="padding:16px">No cost data yet.</div>\';
+    }
+
+    /* ── Top tools (horizontal bar) ── */
+    var tools = (data.by_tool || []).slice(0, 8);
+    var toolCtx = document.getElementById(\'tma-chart-tools\');
+    if (toolCtx && tools.length) {
+      homeCharts.tools = new Chart(toolCtx.getContext(\'2d\'), {
+        type: \'bar\',
+        data: {
+          labels: tools.map(function (t) { return t.tool || \'—\'; }),
+          datasets: [{
+            label: \'Tokens\',
+            data: tools.map(function (t) { return t.total_tokens || 0; }),
+            backgroundColor: palette.slice(0, tools.length),
+            borderRadius: 4,
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          indexAxis: \'y\',
+          scales: {
+            x: { beginAtZero: true, ticks: { color: tmaColors.hint, font: { size: 10 }, callback: function (v) { return formatNum(v); } }, grid: { color: tmaColors.border } },
+            y: { ticks: { color: tmaColors.text, font: { size: 10 } }, grid: { display: false } }
+          }
+        })
+      });
+    } else if (toolCtx) {
+      toolCtx.parentNode.innerHTML = \'<div class="tma-empty" style="padding:16px">No tool usage yet.</div>\';
+    }
+  }
 
   /* =========================================================
      CONTENT TAB
@@ -1131,9 +1365,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       .then(function () {
         tmaAuthAttempts = 0;
         authRetried = false;
-        if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
+        if (tabName === \'home\')     { homeLoaded = false; loadHome(); }
+        else if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
         else if (tabName === \'tools\')  { toolsLoaded = false; loadTools(); }
         else if (tabName === \'media\')  { mediaLoaded = false; loadMedia(); }
+        else if (tabName === \'settings\') { settingsLoaded = false; loadSettings(); }
       })
       .catch(function () {
         showLoginFallback(tabName);
@@ -1231,6 +1467,354 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       });
   }
 
+  /* =========================================================
+     SETTINGS TAB
+     ========================================================= */
+  var settingsLoaded = false;
+  var settingsData   = {};
+
+  function loadSettings() {
+    if (settingsLoaded) return;
+    var wrap = document.getElementById(\'tma-settings-wrap\');
+    if (!wrap) return;
+    wrap.innerHTML = \'<div class="tma-empty">Loading settings…</div>\';
+
+    authFetch(TMA_SETTINGS_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadSettings(); }).catch(function () { showLoginFallback(\'settings\'); });
+          }
+          showLoginPrompt(\'settings\'); return null;
+        }
+        authRetried = false;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        settingsLoaded = true;
+        settingsData = data;
+        renderSettings(data);
+      })
+      .catch(function () {
+        if (wrap) wrap.innerHTML = \'<div class="tma-empty tma-error">Failed to load settings.</div>\';
+      });
+  }
+
+  function renderSettings(data) {
+    var wrap = document.getElementById(\'tma-settings-wrap\');
+    if (!wrap) return;
+    var html = \'\';
+
+    /* ── Account section ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Account</div>\';
+    html += \'<div class="tma-settings-card">\';
+
+    /* Telegram identity */
+    var tgUser = (twa && twa.initDataUnsafe && twa.initDataUnsafe.user) ? twa.initDataUnsafe.user : null;
+    if (tgUser) {
+      var tgName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(\' \');
+      html += \'<div class="tma-settings-item">\';
+      html += \'<div class="tma-settings-item-icon">✈️</div>\';
+      html += \'<div class="tma-settings-item-body">\';
+      html += \'<div class="tma-settings-item-label">Telegram</div>\';
+      html += \'<div class="tma-settings-item-value">\' + escHtml(tgName) + (tgUser.username ? \' (@\' + escHtml(tgUser.username) + \')\' : \'\') + \'</div>\';
+      html += \'</div></div>\';
+    }
+
+    /* WordPress link status */
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">🔗</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">WordPress Account</div>\';
+    if (data.wp_linked) {
+      html += \'<div class="tma-settings-item-value tma-linked">✓ Linked as \' + escHtml(data.wp_display_name || data.wp_username || \'\') + \'</div>\';
+      html += \'</div>\';
+      html += \'<button class="tma-settings-action tma-destructive-btn" onclick="tmaUnlinkAccount()">Unlink</button>\';
+    } else {
+      html += \'<div class="tma-settings-item-value tma-unlinked">Not linked</div>\';
+      html += \'</div>\';
+      html += \'<button class="tma-settings-action" onclick="tmaShowLinkAccount()">Link</button>\';
+    }
+    html += \'</div>\';
+
+    html += \'</div></div>\';
+
+    /* ── Account linking form (hidden by default) ── */
+    html += \'<div class="tma-settings-section tma-link-form" id="tma-link-form" style="display:none">\';
+    html += \'<div class="tma-settings-section-title">Link WordPress Account</div>\';
+    html += \'<div class="tma-settings-card">\';
+    html += \'<div class="tma-settings-help">Enter your WordPress username and password to connect your accounts. This links your Telegram identity with an existing WordPress user.</div>\';
+    html += \'<div class="tma-settings-field">\';
+    html += \'<label class="tma-settings-label" for="tma-link-username">WordPress Username</label>\';
+    html += \'<input type="text" id="tma-link-username" class="tma-settings-input" autocomplete="username" placeholder="your_username" />\';
+    html += \'</div>\';
+    html += \'<div class="tma-settings-field">\';
+    html += \'<label class="tma-settings-label" for="tma-link-password">Password</label>\';
+    html += \'<input type="password" id="tma-link-password" class="tma-settings-input" autocomplete="current-password" placeholder="••••••••" />\';
+    html += \'</div>\';
+    html += \'<div id="tma-link-error" class="tma-settings-error" style="display:none"></div>\';
+    html += \'<div class="tma-settings-actions">\';
+    html += \'<button class="tma-settings-btn tma-btn-secondary" onclick="tmaHideLinkAccount()">Cancel</button>\';
+    html += \'<button class="tma-settings-btn tma-btn-primary" id="tma-link-submit" onclick="tmaLinkAccount()">Link Account</button>\';
+    html += \'</div>\';
+    html += \'</div></div>\';
+
+    /* ── Preferences section ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Preferences</div>\';
+    html += \'<div class="tma-settings-card">\';
+
+    /* Theme */
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">🎨</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Theme</div>\';
+    html += \'<div class="tma-settings-item-value">\' + escHtml(twa && twa.colorScheme ? twa.colorScheme : \'system\') + \'</div>\';
+    html += \'</div></div>\';
+
+    /* Language preference */
+    var currentLang = (data.preferences && data.preferences.language) ? data.preferences.language : \'auto\';
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">🌐</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Language</div>\';
+    html += \'</div>\';
+    html += \'<select class="tma-settings-select" id="tma-pref-language" onchange="tmaSavePref(\\\'language\\\', this.value)">\';
+    html += \'<option value="auto"\' + (currentLang === \'auto\' ? \' selected\' : \'\') + \'>Auto-detect</option>\';
+    html += \'<option value="en"\' + (currentLang === \'en\' ? \' selected\' : \'\') + \'>English</option>\';
+    html += \'<option value="es"\' + (currentLang === \'es\' ? \' selected\' : \'\') + \'>Español</option>\';
+    html += \'<option value="fr"\' + (currentLang === \'fr\' ? \' selected\' : \'\') + \'>Français</option>\';
+    html += \'<option value="de"\' + (currentLang === \'de\' ? \' selected\' : \'\') + \'>Deutsch</option>\';
+    html += \'<option value="pt"\' + (currentLang === \'pt\' ? \' selected\' : \'\') + \'>Português</option>\';
+    html += \'<option value="ru"\' + (currentLang === \'ru\' ? \' selected\' : \'\') + \'>Русский</option>\';
+    html += \'<option value="zh"\' + (currentLang === \'zh\' ? \' selected\' : \'\') + \'>中文</option>\';
+    html += \'<option value="ja"\' + (currentLang === \'ja\' ? \' selected\' : \'\') + \'>日本語</option>\';
+    html += \'<option value="ar"\' + (currentLang === \'ar\' ? \' selected\' : \'\') + \'>العربية</option>\';
+    html += \'</select>\';
+    html += \'</div>\';
+
+    /* Notifications toggle */
+    var notifEnabled = data.preferences && data.preferences.notifications !== false;
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">🔔</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Notifications</div>\';
+    html += \'<div class="tma-settings-item-value">\' + (notifEnabled ? \'Enabled\' : \'Disabled\') + \'</div>\';
+    html += \'</div>\';
+    html += \'<label class="tma-toggle"><input type="checkbox" id="tma-pref-notifications"\' + (notifEnabled ? \' checked\' : \'\') + \' onchange="tmaSavePref(\\\'notifications\\\', this.checked)"><span class="tma-toggle-slider"></span></label>\';
+    html += \'</div>\';
+
+    /* Compact mode toggle */
+    var compactMode = data.preferences && data.preferences.compact_mode === true;
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">📐</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Compact Mode</div>\';
+    html += \'<div class="tma-settings-item-value">\' + (compactMode ? \'On\' : \'Off\') + \'</div>\';
+    html += \'</div>\';
+    html += \'<label class="tma-toggle"><input type="checkbox" id="tma-pref-compact"\' + (compactMode ? \' checked\' : \'\') + \' onchange="tmaSavePref(\\\'compact_mode\\\', this.checked)"><span class="tma-toggle-slider"></span></label>\';
+    html += \'</div>\';
+
+    html += \'</div></div>\';
+
+    /* ── About section ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">About</div>\';
+    html += \'<div class="tma-settings-card">\';
+
+    html += \'<div class="tma-settings-item" onclick="tmaShareBot()">\';
+    html += \'<div class="tma-settings-item-icon">📤</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Share this Bot</div>\';
+    html += \'<div class="tma-settings-item-value">\' + (TMA_BOT_USERNAME ? \'@\' + escHtml(TMA_BOT_USERNAME) : \'Share with friends\') + \'</div>\';
+    html += \'</div>\';
+    html += \'<span class="tma-settings-arrow">›</span>\';
+    html += \'</div>\';
+
+    html += \'<div class="tma-settings-item">\';
+    html += \'<div class="tma-settings-item-icon">🌐</div>\';
+    html += \'<div class="tma-settings-item-body">\';
+    html += \'<div class="tma-settings-item-label">Website</div>\';
+    html += \'<div class="tma-settings-item-value">\' + escHtml(TMA_SITE_NAME) + \'</div>\';
+    html += \'</div></div>\';
+
+    if (data.assistant_name) {
+      html += \'<div class="tma-settings-item">\';
+      html += \'<div class="tma-settings-item-icon">🤖</div>\';
+      html += \'<div class="tma-settings-item-body">\';
+      html += \'<div class="tma-settings-item-label">AI Assistant</div>\';
+      html += \'<div class="tma-settings-item-value">\' + escHtml(data.assistant_name) + \'</div>\';
+      html += \'</div></div>\';
+    }
+
+    html += \'</div></div>\';
+
+    /* ── Feedback indicator (hidden by default) ── */
+    html += \'<div class="tma-settings-toast" id="tma-settings-toast" style="display:none"></div>\';
+
+    wrap.innerHTML = html;
+  }
+
+  /* ── Save a preference ── */
+  window.tmaSavePref = function (key, value) {
+    haptic(\'light\');
+    var body = {};
+    body[key] = value;
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_SETTINGS_URL, {
+      method      : \'POST\',
+      credentials : \'same-origin\',
+      headers     : h,
+      body        : JSON.stringify({ action: \'save_preferences\', preferences: body }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (json && json.success) {
+          showToast(\'✓ Saved\');
+          haptic(\'notificationOccurred\', \'success\');
+        } else {
+          showToast(\'Failed to save\', true);
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () {
+        showToast(\'Network error\', true);
+      });
+  };
+
+  /* ── Show / Hide link account form ── */
+  window.tmaShowLinkAccount = function () {
+    haptic(\'light\');
+    var form = document.getElementById(\'tma-link-form\');
+    if (form) form.style.display = \'block\';
+    var inp = document.getElementById(\'tma-link-username\');
+    if (inp) inp.focus();
+  };
+
+  window.tmaHideLinkAccount = function () {
+    haptic(\'light\');
+    var form = document.getElementById(\'tma-link-form\');
+    if (form) form.style.display = \'none\';
+    var err = document.getElementById(\'tma-link-error\');
+    if (err) { err.style.display = \'none\'; err.textContent = \'\'; }
+  };
+
+  /* ── Link Telegram account to existing WordPress account ── */
+  window.tmaLinkAccount = function () {
+    haptic(\'light\');
+    var usernameEl = document.getElementById(\'tma-link-username\');
+    var passwordEl = document.getElementById(\'tma-link-password\');
+    var errorEl    = document.getElementById(\'tma-link-error\');
+    var submitEl   = document.getElementById(\'tma-link-submit\');
+    var username   = usernameEl ? usernameEl.value.trim() : \'\';
+    var password   = passwordEl ? passwordEl.value : \'\';
+
+    if (!username || !password) {
+      if (errorEl) { errorEl.textContent = \'Please enter both username and password.\'; errorEl.style.display = \'block\'; }
+      return;
+    }
+    if (errorEl) errorEl.style.display = \'none\';
+    if (submitEl) { submitEl.disabled = true; submitEl.textContent = \'Linking…\'; }
+
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_SETTINGS_URL, {
+      method      : \'POST\',
+      credentials : \'same-origin\',
+      headers     : h,
+      body        : JSON.stringify({ action: \'link_account\', username: username, password: password }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (submitEl) { submitEl.disabled = false; submitEl.textContent = \'Link Account\'; }
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          showToast(\'✓ Account linked!\');
+          /* Refresh settings UI */
+          settingsLoaded = false;
+          loadSettings();
+        } else {
+          haptic(\'notificationOccurred\', \'error\');
+          if (errorEl) { errorEl.textContent = (json && json.message) ? json.message : \'Failed to link account.\'; errorEl.style.display = \'block\'; }
+        }
+      })
+      .catch(function () {
+        if (submitEl) { submitEl.disabled = false; submitEl.textContent = \'Link Account\'; }
+        if (errorEl) { errorEl.textContent = \'Network error. Please try again.\'; errorEl.style.display = \'block\'; }
+      });
+  };
+
+  /* ── Unlink Telegram account from WordPress account ── */
+  window.tmaUnlinkAccount = function () {
+    haptic(\'light\');
+    if (twa && twa.showPopup) {
+      twa.showPopup({
+        title   : \'Unlink Account\',
+        message : \'Are you sure you want to unlink your WordPress account from Telegram?\',
+        buttons : [
+          { id: \'cancel\', type: \'cancel\', text: \'Cancel\' },
+          { id: \'unlink\', type: \'destructive\', text: \'Unlink\' }
+        ]
+      }, function (btnId) {
+        if (btnId === \'unlink\') doUnlink();
+      });
+    } else {
+      doUnlink();
+    }
+  };
+
+  function doUnlink() {
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_SETTINGS_URL, {
+      method      : \'POST\',
+      credentials : \'same-origin\',
+      headers     : h,
+      body        : JSON.stringify({ action: \'unlink_account\' }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          showToast(\'Account unlinked\');
+          settingsLoaded = false;
+          loadSettings();
+        } else {
+          haptic(\'notificationOccurred\', \'error\');
+          showToast((json && json.message) ? json.message : \'Failed to unlink\', true);
+        }
+      })
+      .catch(function () {
+        showToast(\'Network error\', true);
+      });
+  }
+
+  /* ── Share bot ── */
+  window.tmaShareBot = function () {
+    haptic(\'light\');
+    if (twa && twa.switchInlineQuery) {
+      twa.switchInlineQuery(\'Check out this bot!\', [\'users\', \'groups\']);
+    } else if (TMA_BOT_USERNAME) {
+      var url = \'https://t.me/\' + TMA_BOT_USERNAME;
+      if (twa && twa.openTelegramLink) { twa.openTelegramLink(url); }
+      else { window.open(url, \'_blank\'); }
+    }
+  };
+
+  /* ── Toast notification ── */
+  function showToast(msg, isError) {
+    var el = document.getElementById(\'tma-settings-toast\');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = \'tma-settings-toast\' + (isError ? \' tma-toast-error\' : \'\');
+    el.style.display = \'block\';
+    setTimeout(function () { el.style.display = \'none\'; }, 2500);
+  }
+
   /* ── Haptic helper ── */
   function haptic(type, style) {
     if (!twa || !twa.HapticFeedback) return;
@@ -1255,7 +1839,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
       if (twa.BackButton) {
         twa.BackButton.onClick(function () {
-          if (activeTab !== \'content\') tmaSwitchTab(\'content\');
+          if (activeTab !== \'home\') tmaSwitchTab(\'home\');
         });
       }
       if (twa.MainButton) {
@@ -1263,13 +1847,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       }
       /* Validate initData first so the WP auth cookie and nonce are ready
          before the Content/Tools/Media tab API calls are made. When
-         validation fails fall back to the Chat tab which allows guests. */
-      validateInitData().then(loadContent).catch(function () {
-        tmaSwitchTab(\'chat\');
+         validation fails fall back to the Settings tab which is always usable. */
+      validateInitData().then(loadHome).catch(function () {
+        tmaSwitchTab(\'settings\');
       });
     } else {
       /* No Telegram WebApp context (e.g. direct browser access). */
-      loadContent();
+      loadHome();
     }
   }
 
@@ -1534,6 +2118,422 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'items' => $items,
 				'total' => (int) $query->found_posts,
 				'pages' => (int) $query->max_num_pages,
+			)
+		);
+	}
+
+	// =========================================================================
+	// Settings endpoints
+	// =========================================================================
+
+	/**
+	* Return the current user's Mini App settings, account link status,
+	* preferences, and contextual information for the Settings tab.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response
+	*/
+	public function handle_get_settings( $request ) {
+		$user_id = get_current_user_id();
+		$user    = get_userdata( $user_id );
+
+		// Check if a Telegram ID is linked.
+		$telegram_id = get_user_meta( $user_id, self::META_TELEGRAM_ID, true );
+		$wp_linked   = ! empty( $telegram_id );
+
+		// User preferences stored as user meta.
+		$preferences = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		if ( ! is_array( $preferences ) ) {
+			$preferences = array(
+				'language'      => 'auto',
+				'notifications' => true,
+				'compact_mode'  => false,
+			);
+		}
+
+		// Resolve the active assistant name.
+		$connection     = $this->get_active_telegram_connection();
+		$assistant_slug = $this->resolve_mini_app_assistant( new WP_REST_Request(), $connection );
+		$assistant_name = '';
+		if ( ! empty( $assistant_slug ) ) {
+			if ( is_numeric( $assistant_slug ) ) {
+				$assistant_post = get_post( (int) $assistant_slug );
+				if ( $assistant_post ) {
+					$assistant_name = $assistant_post->post_title;
+				}
+			} else {
+				$assistant_name = $assistant_slug;
+			}
+		}
+
+		// Group & channel settings for this connection.
+		$group_settings = array(
+			'enable_groups'   => ! empty( $connection['enable_groups'] ),
+			'enable_channels' => ! empty( $connection['enable_channels'] ),
+			'require_mention' => ! empty( $connection['require_mention'] ),
+		);
+
+		return rest_ensure_response(
+			array(
+				'wp_linked'       => $wp_linked,
+				'wp_username'     => $user ? $user->user_login : '',
+				'wp_display_name' => $user ? $user->display_name : '',
+				'wp_email'        => $user ? $user->user_email : '',
+				'preferences'     => $preferences,
+				'assistant_name'  => $assistant_name,
+				'group_settings'  => $group_settings,
+			)
+		);
+	}
+
+	/**
+	* Handle settings write operations: save preferences, link/unlink accounts.
+	*
+	* The `action` parameter determines which operation to perform:
+	*   - `save_preferences` – Persist user preferences (language, notifications, etc.).
+	*   - `link_account`     – Link the current Telegram identity to an existing WP user.
+	*   - `unlink_account`   – Remove the Telegram↔WP link for the current user.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object. Expects JSON body with 'action' plus action-specific fields.
+	* @return WP_REST_Response|WP_Error
+	*/
+	public function handle_save_settings( $request ) {
+		$action  = $request->get_param( 'action' );
+		$user_id = get_current_user_id();
+
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_not_authenticated',
+				__( 'You must be authenticated to change settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		switch ( $action ) {
+			case 'save_preferences':
+				return $this->handle_save_preferences( $request, $user_id );
+
+			case 'link_account':
+				return $this->handle_link_account( $request, $user_id );
+
+			case 'unlink_account':
+				return $this->handle_unlink_account( $user_id );
+
+			default:
+				return new WP_Error(
+					'wp_mcp_ai_tma_invalid_action',
+					__( 'Invalid settings action.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+		}
+	}
+
+	/**
+	* Save user preferences.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request with 'preferences' JSON object.
+	* @param int             $user_id Current WordPress user ID.
+	* @return WP_REST_Response
+	*/
+	protected function handle_save_preferences( $request, $user_id ) {
+		$incoming = $request->get_param( 'preferences' );
+		if ( ! is_array( $incoming ) ) {
+			$incoming = array();
+		}
+
+		$existing = get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true );
+		if ( ! is_array( $existing ) ) {
+			$existing = array(
+				'language'      => 'auto',
+				'notifications' => true,
+				'compact_mode'  => false,
+			);
+		}
+
+		// Whitelist and sanitize allowed preference keys.
+		$allowed = array( 'language', 'notifications', 'compact_mode' );
+		foreach ( $allowed as $key ) {
+			if ( array_key_exists( $key, $incoming ) ) {
+				if ( 'language' === $key ) {
+					$existing[ $key ] = sanitize_text_field( (string) $incoming[ $key ] );
+				} else {
+					$existing[ $key ] = (bool) $incoming[ $key ];
+				}
+			}
+		}
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', $existing );
+
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	/**
+	* Link the current Telegram-provisioned WP user to an existing WordPress
+	* account by verifying the target account's credentials.
+	*
+	* After verification the Telegram meta keys are moved from the
+	* auto-created user to the target account and the auto-created user is
+	* cleaned up to avoid orphaned records.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request with 'username' and 'password'.
+	* @param int             $user_id Current WordPress user ID (auto-created Telegram user).
+	* @return WP_REST_Response|WP_Error
+	*/
+	protected function handle_link_account( $request, $user_id ) {
+		$username = sanitize_user( (string) $request->get_param( 'username' ) );
+		$password = (string) $request->get_param( 'password' );
+
+		if ( empty( $username ) || empty( $password ) ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'Username and password are required.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Authenticate the target WordPress user.
+		$target_user = wp_authenticate( $username, $password );
+
+		if ( is_wp_error( $target_user ) ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'Invalid username or password.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Prevent linking to the same user that is already linked.
+		$existing_tg_id = get_user_meta( $target_user->ID, self::META_TELEGRAM_ID, true );
+		$current_tg_id  = get_user_meta( $user_id, self::META_TELEGRAM_ID, true );
+
+		if ( ! empty( $existing_tg_id ) && $existing_tg_id !== $current_tg_id ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => __( 'This WordPress account is already linked to a different Telegram user.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Move Telegram meta from the auto-created user to the target user.
+		if ( $target_user->ID !== $user_id && ! empty( $current_tg_id ) ) {
+			$tg_username = get_user_meta( $user_id, self::META_TELEGRAM_USERNAME, true );
+			$tg_photo    = get_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url', true );
+
+			update_user_meta( $target_user->ID, self::META_TELEGRAM_ID, $current_tg_id );
+			if ( $tg_username ) {
+				update_user_meta( $target_user->ID, self::META_TELEGRAM_USERNAME, $tg_username );
+			}
+			if ( $tg_photo ) {
+				update_user_meta( $target_user->ID, '_wp_mcp_ai_telegram_photo_url', $tg_photo );
+			}
+
+			// Clean up the auto-created user's Telegram meta.
+			delete_user_meta( $user_id, self::META_TELEGRAM_ID );
+			delete_user_meta( $user_id, self::META_TELEGRAM_USERNAME );
+			delete_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url' );
+		} elseif ( $target_user->ID === $user_id ) {
+			// Already the same user – just ensure the meta is set.
+			if ( ! empty( $current_tg_id ) ) {
+				update_user_meta( $target_user->ID, self::META_TELEGRAM_ID, $current_tg_id );
+			}
+		}
+
+		/**
+		* Fires after a Telegram identity has been linked to an existing WordPress user.
+		*
+		* @since 1.0.0
+		*
+		* @param int    $target_user_id WordPress user the Telegram account was linked to.
+		* @param int    $old_user_id    Original auto-created WordPress user (may be the same).
+		* @param string $telegram_id    Telegram user ID.
+		*/
+		do_action( 'wp_mcp_ai_telegram_account_linked', $target_user->ID, $user_id, $current_tg_id );
+
+		return rest_ensure_response(
+			array(
+				'success'         => true,
+				'wp_user_id'      => $target_user->ID,
+				'wp_display_name' => $target_user->display_name,
+			)
+		);
+	}
+
+	/**
+	* Remove the Telegram↔WordPress account link.
+	*
+	* @since 1.0.0
+	*
+	* @param int $user_id Current WordPress user ID.
+	* @return WP_REST_Response
+	*/
+	protected function handle_unlink_account( $user_id ) {
+		delete_user_meta( $user_id, self::META_TELEGRAM_ID );
+		delete_user_meta( $user_id, self::META_TELEGRAM_USERNAME );
+		delete_user_meta( $user_id, '_wp_mcp_ai_telegram_photo_url' );
+
+		/**
+		* Fires after a Telegram identity has been unlinked from a WordPress user.
+		*
+		* @since 1.0.0
+		*
+		* @param int $user_id WordPress user whose Telegram link was removed.
+		*/
+		do_action( 'wp_mcp_ai_telegram_account_unlinked', $user_id );
+
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	// =========================================================================
+	// Analytics endpoint (Home tab dashboard)
+	// =========================================================================
+
+	/**
+	* Return aggregated analytics data for the Home tab dashboard.
+	*
+	* Queries the token tracking database for daily usage, cost breakdown
+	* by provider, and tool usage over the requested period. Falls back to
+	* user-meta totals when the database tracker is unavailable.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response
+	*/
+	public function handle_analytics( $request ) {
+		$user_id = get_current_user_id();
+		$days    = absint( $request->get_param( 'days' ) );
+		if ( $days < 1 || $days > 30 ) {
+			$days = 7;
+		}
+
+		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-' . $days . ' days' ) );
+		$end_date   = gmdate( 'Y-m-d H:i:s' );
+
+		$summary     = array(
+			'total_tokens'   => 0,
+			'total_cost'     => 0,
+			'tools_used'     => 0,
+			'total_requests' => 0,
+		);
+		$daily       = array();
+		$by_provider = array();
+		$by_tool     = array();
+
+		// Try the database tracker first (most detailed data).
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			$db = new WP_MCP_AI_Token_Tracking_Database();
+
+			if ( method_exists( $db, 'get_aggregated_by_date' ) ) {
+				$daily_raw = $db->get_aggregated_by_date( $start_date, $end_date );
+				if ( is_array( $daily_raw ) ) {
+					foreach ( $daily_raw as $row ) {
+						$date_label = isset( $row['date'] ) ? $row['date'] : '';
+						// Shorten to Mon/Tue style for mobile-friendly labels.
+						if ( $date_label ) {
+							$ts         = strtotime( $date_label . ' UTC' );
+							$date_label = $ts ? gmdate( 'D', $ts ) : $date_label;
+						}
+						$tokens = isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0;
+						$cost   = isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0;
+						$daily[] = array(
+							'date'         => isset( $row['date'] ) ? $row['date'] : '',
+							'label'        => $date_label,
+							'total_tokens' => $tokens,
+							'total_cost'   => $cost,
+						);
+						$summary['total_tokens'] += $tokens;
+						$summary['total_cost']   += $cost;
+					}
+				}
+			}
+
+			if ( method_exists( $db, 'get_aggregated_by_provider' ) ) {
+				$providers_raw = $db->get_aggregated_by_provider( $start_date, $end_date );
+				if ( is_array( $providers_raw ) ) {
+					foreach ( $providers_raw as $row ) {
+						$by_provider[] = array(
+							'provider'     => isset( $row['provider'] ) ? $row['provider'] : 'Unknown',
+							'total_tokens' => isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0,
+							'total_cost'   => isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0,
+						);
+					}
+				}
+			}
+
+			if ( method_exists( $db, 'get_aggregated_by_tool' ) ) {
+				$tools_raw = $db->get_aggregated_by_tool( $start_date, $end_date );
+				if ( is_array( $tools_raw ) ) {
+					foreach ( $tools_raw as $row ) {
+						$by_tool[] = array(
+							'tool'         => isset( $row['tool'] ) ? $row['tool'] : '—',
+							'total_tokens' => isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0,
+							'total_cost'   => isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0,
+						);
+						++$summary['tools_used'];
+					}
+				}
+			}
+
+			// Count total requests from user usage if available.
+			if ( method_exists( $db, 'get_user_usage' ) ) {
+				$user_rows = $db->get_user_usage( $user_id, $start_date, $end_date );
+				$summary['total_requests'] = is_array( $user_rows ) ? count( $user_rows ) : 0;
+			}
+		}
+
+		// Fallback to user meta totals when the DB tracker is empty.
+		if ( 0 === $summary['total_tokens'] && class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+			$usage_tracker = new WP_MCP_AI_Usage_Tracker();
+			if ( method_exists( $usage_tracker, 'get_usage_for_user' ) ) {
+				$usage = $usage_tracker->get_usage_for_user( $user_id );
+				if ( is_array( $usage ) ) {
+					foreach ( $usage as $provider => $models ) {
+						if ( ! is_array( $models ) ) {
+							continue;
+						}
+						$prov_tokens = 0;
+						$prov_reqs   = 0;
+						foreach ( $models as $model_data ) {
+							if ( ! is_array( $model_data ) ) {
+								continue;
+							}
+							$prov_tokens += isset( $model_data['total_tokens'] ) ? (int) $model_data['total_tokens'] : 0;
+							$prov_reqs   += isset( $model_data['requests'] ) ? (int) $model_data['requests'] : 0;
+						}
+						$summary['total_tokens']   += $prov_tokens;
+						$summary['total_requests'] += $prov_reqs;
+						if ( $prov_tokens > 0 ) {
+							$by_provider[] = array(
+								'provider'     => $provider,
+								'total_tokens' => $prov_tokens,
+								'total_cost'   => 0,
+							);
+						}
+					}
+				}
+			}
+			if ( method_exists( 'WP_MCP_AI_Usage_Tracker', 'calculate_user_total_cost' ) ) {
+				$summary['total_cost'] = (float) WP_MCP_AI_Usage_Tracker::calculate_user_total_cost( $user_id );
+			}
+		}
+
+		return rest_ensure_response(
+			array(
+				'summary'     => $summary,
+				'daily'       => $daily,
+				'by_provider' => $by_provider,
+				'by_tool'     => $by_tool,
 			)
 		);
 	}
@@ -1843,6 +2843,79 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-tab-pane.tma-active{opacity:1;pointer-events:auto;transform:translateX(0)}
 #tma-tab-chat{padding:0;overflow:hidden}
 #tma-tab-chat .wp-mcp-ai-telegram-mini-app-wrapper{height:100%;overflow:hidden}
+/* Home tab – analytics dashboard */
+#tma-tab-home{display:flex;flex-direction:column;overflow-y:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch}
+.tma-home-wrap{padding:0}
+.tma-kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 12px 4px}
+.tma-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);
+  padding:12px 10px;text-align:center;box-shadow:var(--tma-shadow)}
+.tma-kpi-icon{font-size:20px;margin-bottom:4px}
+.tma-kpi-value{font-size:18px;font-weight:700;color:var(--tma-text);line-height:1.2}
+.tma-kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tma-hint);margin-top:2px}
+.tma-chart-section{margin:8px 12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);
+  border-radius:var(--tma-radius);padding:12px;box-shadow:var(--tma-shadow)}
+.tma-chart-title{font-size:12px;font-weight:600;color:var(--tma-text);margin-bottom:8px}
+.tma-chart-wrap{position:relative;height:180px}
+.tma-chart-wrap.tma-chart-doughnut{height:200px}
+/* Settings tab */
+#tma-tab-settings{display:flex;flex-direction:column;overflow-y:auto;padding:0 0 20px}
+.tma-settings-wrap{padding:0}
+.tma-settings-section{margin:0 0 4px}
+.tma-settings-section-title{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--tma-section-header);padding:14px 16px 6px}
+.tma-settings-card{background:var(--tma-section-bg);border-top:1px solid var(--tma-border);
+  border-bottom:1px solid var(--tma-border)}
+.tma-settings-item{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-bottom:1px solid var(--tma-border);-webkit-tap-highlight-color:transparent;
+  transition:opacity var(--tma-transition)}
+.tma-settings-item:last-child{border-bottom:none}
+.tma-settings-item:active{opacity:.7}
+.tma-settings-item-icon{font-size:20px;width:32px;height:32px;border-radius:8px;
+  background:var(--tma-secondary-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tma-settings-item-body{flex:1;min-width:0}
+.tma-settings-item-label{font-size:14px;font-weight:500;color:var(--tma-text)}
+.tma-settings-item-value{font-size:12px;color:var(--tma-hint);margin-top:1px}
+.tma-settings-item-value.tma-linked{color:#34c759}
+.tma-settings-item-value.tma-unlinked{color:var(--tma-hint)}
+.tma-settings-arrow{color:var(--tma-hint);font-size:18px;font-weight:300;flex-shrink:0}
+.tma-settings-action{flex-shrink:0;padding:4px 14px;border-radius:8px;border:1px solid var(--tma-border);
+  background:var(--tma-btn);color:var(--tma-btn-text);font-size:12px;font-weight:600;cursor:pointer}
+.tma-destructive-btn{background:var(--tma-destructive);border-color:var(--tma-destructive);color:#fff}
+/* Toggle switch */
+.tma-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.tma-toggle input{opacity:0;width:0;height:0}
+.tma-toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+  background:var(--tma-hint);border-radius:24px;transition:var(--tma-transition)}
+.tma-toggle-slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:var(--tma-transition)}
+.tma-toggle input:checked+.tma-toggle-slider{background:var(--tma-btn)}
+.tma-toggle input:checked+.tma-toggle-slider::before{transform:translateX(20px)}
+/* Select dropdown */
+.tma-settings-select{flex-shrink:0;padding:4px 8px;border-radius:8px;border:1px solid var(--tma-border);
+  background:var(--tma-section-bg);color:var(--tma-text);font-size:12px;font-family:inherit;
+  appearance:auto;-webkit-appearance:auto;cursor:pointer}
+/* Link form */
+.tma-link-form .tma-settings-card{padding:12px 16px}
+.tma-settings-help{font-size:12px;color:var(--tma-hint);line-height:1.5;margin-bottom:12px}
+.tma-settings-field{margin-bottom:10px}
+.tma-settings-label{display:block;font-size:12px;font-weight:600;color:var(--tma-text);margin-bottom:4px}
+.tma-settings-input{width:100%;padding:8px 10px;border:1px solid var(--tma-border);border-radius:8px;
+  background:var(--tma-bg);color:var(--tma-text);font-size:14px;font-family:inherit;box-sizing:border-box}
+.tma-settings-input:focus{outline:none;border-color:var(--tma-btn)}
+.tma-settings-error{font-size:12px;color:var(--tma-destructive);padding:6px 0}
+.tma-settings-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.tma-settings-btn{padding:8px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit}
+.tma-btn-primary{background:var(--tma-btn);color:var(--tma-btn-text)}
+.tma-btn-primary:disabled{opacity:.5;cursor:default}
+.tma-btn-secondary{background:var(--tma-secondary-bg);color:var(--tma-text)}
+/* Toast */
+.tma-settings-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  padding:8px 20px;border-radius:20px;background:var(--tma-btn);color:var(--tma-btn-text);
+  font-size:13px;font-weight:600;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.2);
+  animation:tmaToastIn .3s ease}
+.tma-toast-error{background:var(--tma-destructive)}
+@keyframes tmaToastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 /* Nav */
 .tma-nav{display:flex;height:var(--tma-nav-height);background:var(--tma-secondary-bg);
   border-top:1px solid var(--tma-border);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0)}
