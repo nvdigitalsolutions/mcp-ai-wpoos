@@ -656,4 +656,150 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		// Verify action enum includes all three operations.
 		$this->assertEquals( array( 'set', 'delete', 'get' ), $schema['properties']['action']['enum'] );
 	}
+
+	// =========================================================================
+	// Telegram Stars / Payments / Inline settings schema
+	// =========================================================================
+
+	/**
+	 * Test that Telegram enhancement settings can be stored and retrieved.
+	 */
+	public function test_telegram_enhancement_settings_schema() {
+		$settings = array(
+			'stars_enabled'          => true,
+			'stars_pricing'          => array(
+				array( 'credits' => 1000, 'stars' => 100 ),
+				array( 'credits' => 10000, 'stars' => 500 ),
+				array( 'credits' => 100000, 'stars' => 2500 ),
+			),
+			'subscriptions_enabled'  => true,
+			'subscription_plans'     => array(
+				array(
+					'slug'   => 'single_toolkit',
+					'stars'  => 200,
+					'period' => 'monthly',
+				),
+				array(
+					'slug'   => 'pro_bundle',
+					'stars'  => 800,
+					'period' => 'monthly',
+				),
+			),
+			'inline_mode_enabled'    => true,
+			'inline_cache_time'      => 300,
+			'deep_linking_enabled'   => true,
+			'referral_enabled'       => false,
+			'referral_bonus_credits' => 500,
+			'payment_provider_token' => '',
+			'fullscreen_toolkits'    => array(
+				'document_generation',
+				'image_production',
+				'video_production',
+				'architectural_design',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_telegram_settings', $settings );
+		$saved = get_option( 'wp_mcp_ai_telegram_settings' );
+
+		$this->assertIsArray( $saved );
+		$this->assertTrue( $saved['stars_enabled'] );
+		$this->assertCount( 3, $saved['stars_pricing'] );
+		$this->assertEquals( 1000, $saved['stars_pricing'][0]['credits'] );
+		$this->assertEquals( 100, $saved['stars_pricing'][0]['stars'] );
+		$this->assertTrue( $saved['subscriptions_enabled'] );
+		$this->assertCount( 2, $saved['subscription_plans'] );
+		$this->assertEquals( 'single_toolkit', $saved['subscription_plans'][0]['slug'] );
+		$this->assertTrue( $saved['inline_mode_enabled'] );
+		$this->assertEquals( 300, $saved['inline_cache_time'] );
+		$this->assertTrue( $saved['deep_linking_enabled'] );
+		$this->assertFalse( $saved['referral_enabled'] );
+		$this->assertEquals( 500, $saved['referral_bonus_credits'] );
+		$this->assertEmpty( $saved['payment_provider_token'] );
+		$this->assertCount( 4, $saved['fullscreen_toolkits'] );
+		$this->assertContains( 'document_generation', $saved['fullscreen_toolkits'] );
+
+		delete_option( 'wp_mcp_ai_telegram_settings' );
+	}
+
+	/**
+	 * Test that Stars user meta fields can be stored per user.
+	 */
+	public function test_stars_user_meta_fields() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_stars_balance', 1250 );
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_plan', 'pro_bundle' );
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_expires', 1743552000 );
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_referral_code', 'REF_abc123' );
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_pinned_toolkits', array( 'crm', 'ecommerce', 'analytics' ) );
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_quick_actions', array(
+			'create_post',
+			'view_orders',
+			'generate_doc',
+			'search_contacts',
+			'check_analytics',
+			'manage_products',
+		) );
+
+		$this->assertEquals( 1250, (int) get_user_meta( $user_id, '_wp_mcp_ai_tg_stars_balance', true ) );
+		$this->assertEquals( 'pro_bundle', get_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_plan', true ) );
+		$this->assertEquals( 1743552000, (int) get_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_expires', true ) );
+		$this->assertEquals( 'REF_abc123', get_user_meta( $user_id, '_wp_mcp_ai_tg_referral_code', true ) );
+
+		$pinned = get_user_meta( $user_id, '_wp_mcp_ai_tg_pinned_toolkits', true );
+		$this->assertCount( 3, $pinned );
+		$this->assertContains( 'crm', $pinned );
+
+		$actions = get_user_meta( $user_id, '_wp_mcp_ai_tg_quick_actions', true );
+		$this->assertCount( 6, $actions );
+		$this->assertContains( 'create_post', $actions );
+
+		// Cleanup.
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_stars_balance' );
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_plan' );
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_expires' );
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_referral_code' );
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_pinned_toolkits' );
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_quick_actions' );
+	}
+
+	/**
+	 * Test that payment history can be stored and appended.
+	 */
+	public function test_payment_history_storage() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$history = array(
+			array(
+				'type'      => 'stars',
+				'amount'    => 500,
+				'credits'   => 10000,
+				'timestamp' => 1709352000,
+				'status'    => 'completed',
+			),
+		);
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', $history );
+
+		// Append a second payment.
+		$saved    = get_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', true );
+		$saved[]  = array(
+			'type'      => 'subscription',
+			'amount'    => 800,
+			'plan'      => 'pro_bundle',
+			'timestamp' => 1709438400,
+			'status'    => 'completed',
+		);
+		update_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', $saved );
+
+		$final = get_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', true );
+		$this->assertCount( 2, $final );
+		$this->assertEquals( 'stars', $final[0]['type'] );
+		$this->assertEquals( 'subscription', $final[1]['type'] );
+		$this->assertEquals( 10000, $final[0]['credits'] );
+		$this->assertEquals( 'pro_bundle', $final[1]['plan'] );
+
+		delete_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history' );
+	}
 }
