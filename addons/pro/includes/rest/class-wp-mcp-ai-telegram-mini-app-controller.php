@@ -255,6 +255,26 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Analytics endpoint for Home tab dashboard (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/analytics',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_analytics' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'days' => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 7,
+						'minimum'  => 1,
+						'maximum'  => 30,
+					),
+				),
+			)
+		);
 	}
 
 	// =========================================================================
@@ -464,8 +484,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$content_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/content' );
 		$tools_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
 		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
-		$settings_url = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
-		$login_url    = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
+		$settings_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
+		$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
@@ -479,6 +500,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 <meta name="robots" content="noindex, nofollow">
 <title>' . esc_html( $page_title ) . '</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
 <style>' . $this->get_mini_app_css() . '</style>
 ' . $head_output . '
 </head>
@@ -512,8 +534,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   <!-- ── Tab content ──────────────────────────────────────────── -->
   <div class="tma-content">
 
-    <!-- Content tab (default) -->
-    <div class="tma-tab-pane tma-active" id="tma-tab-content">
+    <!-- Home tab (default) -->
+    <div class="tma-tab-pane tma-active" id="tma-tab-home">
+      <div class="tma-home-wrap" id="tma-home-wrap">
+        <div class="tma-empty">Loading analytics…</div>
+      </div>
+    </div>
+
+    <!-- Content tab -->
+    <div class="tma-tab-pane" id="tma-tab-content">
       <div class="tma-cpt-bar" id="tma-cpt-bar">
         <div class="tma-cpt-scroll" id="tma-cpt-scroll">
           <div class="tma-empty">Loading types…</div>
@@ -564,7 +593,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
   <!-- ── Bottom navigation ────────────────────────────────────── -->
   <nav class="tma-nav" role="navigation" aria-label="Tabs">
-    <button class="tma-nav-btn tma-active" id="tma-nav-content" data-tab="content" onclick="tmaSwitchTab(\'content\')">
+    <button class="tma-nav-btn tma-active" id="tma-nav-home" data-tab="home" onclick="tmaSwitchTab(\'home\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="tma-nav-label">Home</span>
+    </button>
+    <button class="tma-nav-btn" id="tma-nav-content" data-tab="content" onclick="tmaSwitchTab(\'content\')">
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
       <span class="tma-nav-label">Content</span>
     </button>
@@ -600,6 +633,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_TOOLS_URL      = ' . wp_json_encode( $tools_url ) . ';
   var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
   var TMA_SETTINGS_URL   = ' . wp_json_encode( $settings_url ) . ';
+  var TMA_ANALYTICS_URL  = ' . wp_json_encode( $analytics_url ) . ';
   var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
   var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
@@ -642,7 +676,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   /* ── Tab state ── */
-  var activeTab         = \'content\';
+  var activeTab         = \'home\';
   var contentPage       = 1;
   var contentPostType   = \'post\';
   var contentSearch     = \'\';
@@ -673,6 +707,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     updateBackButton();
     updateMainButton();
     /* Lazy-load tab data on first visit */
+    if (tabName === \'home\')    loadHome();
     if (tabName === \'content\') loadContent();
     if (tabName === \'tools\')   loadTools();
     if (tabName === \'media\')   loadMedia();
@@ -684,7 +719,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   /* ── Back Button ── */
   function updateBackButton() {
     if (!twa || !twa.BackButton) return;
-    if (activeTab === \'content\') {
+    if (activeTab === \'home\') {
       twa.BackButton.hide();
     } else {
       twa.BackButton.show();
@@ -754,6 +789,189 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       }
     }, 300);
   };
+
+  /* =========================================================
+     HOME TAB – Analytics Dashboard
+     ========================================================= */
+  var homeLoaded  = false;
+  var homeCharts  = {};
+
+  function loadHome() {
+    if (homeLoaded) return;
+    var wrap = document.getElementById(\'tma-home-wrap\');
+    if (!wrap) return;
+    wrap.innerHTML = \'<div class="tma-empty">Loading analytics…</div>\';
+
+    authFetch(TMA_ANALYTICS_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadHome(); }).catch(function () { showLoginFallback(\'home\'); });
+          }
+          showLoginPrompt(\'home\'); return null;
+        }
+        authRetried = false;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        homeLoaded = true;
+        renderHome(data);
+      })
+      .catch(function () {
+        if (wrap) wrap.innerHTML = \'<div class="tma-empty tma-error">Failed to load analytics.</div>\';
+      });
+  }
+
+  function renderHome(data) {
+    var wrap = document.getElementById(\'tma-home-wrap\');
+    if (!wrap) return;
+    var s = data.summary || {};
+    var html = \'\';
+
+    /* ── KPI cards row ── */
+    html += \'<div class="tma-kpi-row">\';
+    html += kpiCard(\'🪙\', \'Tokens\', formatNum(s.total_tokens || 0));
+    html += kpiCard(\'💰\', \'Cost\', \'$\' + (s.total_cost || 0).toFixed(4));
+    html += kpiCard(\'🛠️\', \'Tools\', formatNum(s.tools_used || 0));
+    html += kpiCard(\'📨\', \'Requests\', formatNum(s.total_requests || 0));
+    html += \'</div>\';
+
+    /* ── Token usage trend chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Token Usage (7 days)</div>\';
+    html += \'<div class="tma-chart-wrap"><canvas id="tma-chart-tokens"></canvas></div>\';
+    html += \'</div>\';
+
+    /* ── Cost by provider chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Cost by Provider</div>\';
+    html += \'<div class="tma-chart-wrap tma-chart-doughnut"><canvas id="tma-chart-cost"></canvas></div>\';
+    html += \'</div>\';
+
+    /* ── Tool usage chart ── */
+    html += \'<div class="tma-chart-section">\';
+    html += \'<div class="tma-chart-title">Top Tools</div>\';
+    html += \'<div class="tma-chart-wrap"><canvas id="tma-chart-tools"></canvas></div>\';
+    html += \'</div>\';
+
+    wrap.innerHTML = html;
+
+    /* ── Render charts with Chart.js ── */
+    setTimeout(function () { renderHomeCharts(data); }, 50);
+  }
+
+  function kpiCard(icon, label, value) {
+    return \'<div class="tma-kpi-card">\' +
+      \'<div class="tma-kpi-icon">\' + icon + \'</div>\' +
+      \'<div class="tma-kpi-value">\' + escHtml(value) + \'</div>\' +
+      \'<div class="tma-kpi-label">\' + escHtml(label) + \'</div>\' +
+    \'</div>\';
+  }
+
+  function formatNum(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + \'M\';
+    if (n >= 1000) return (n / 1000).toFixed(1) + \'K\';
+    return String(n);
+  }
+
+  function renderHomeCharts(data) {
+    if (typeof Chart === \'undefined\') return;
+    var tmaColors = {
+      primary  : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-btn\').trim() || \'#2481cc\',
+      accent   : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-accent\').trim() || \'#2481cc\',
+      text     : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-text\').trim() || \'#000\',
+      hint     : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-hint\').trim() || \'#999\',
+      border   : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-border\').trim() || \'rgba(0,0,0,.1)\',
+    };
+    var palette = [\'#4361ee\',\'#3a0ca3\',\'#7209b7\',\'#f72585\',\'#4cc9f0\',\'#06d6a0\',\'#ffd166\',\'#ef476f\'];
+    var chartDefaults = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false, labels: { color: tmaColors.text, font: { size: 11 } } } },
+      scales: {}
+    };
+
+    /* ── Token trend (line) ── */
+    var daily = data.daily || [];
+    var tokenCtx = document.getElementById(\'tma-chart-tokens\');
+    if (tokenCtx && daily.length) {
+      homeCharts.tokens = new Chart(tokenCtx.getContext(\'2d\'), {
+        type: \'line\',
+        data: {
+          labels: daily.map(function (d) { return d.label || d.date; }),
+          datasets: [{
+            label: \'Tokens\',
+            data: daily.map(function (d) { return d.total_tokens || 0; }),
+            borderColor: tmaColors.primary,
+            backgroundColor: tmaColors.primary + \'33\',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: tmaColors.primary,
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          scales: {
+            x: { ticks: { color: tmaColors.hint, font: { size: 10 } }, grid: { color: tmaColors.border } },
+            y: { beginAtZero: true, ticks: { color: tmaColors.hint, font: { size: 10 }, callback: function (v) { return formatNum(v); } }, grid: { color: tmaColors.border } }
+          }
+        })
+      });
+    }
+
+    /* ── Cost by provider (doughnut) ── */
+    var providers = data.by_provider || [];
+    var costCtx = document.getElementById(\'tma-chart-cost\');
+    if (costCtx && providers.length) {
+      homeCharts.cost = new Chart(costCtx.getContext(\'2d\'), {
+        type: \'doughnut\',
+        data: {
+          labels: providers.map(function (p) { return p.provider || \'Unknown\'; }),
+          datasets: [{
+            data: providers.map(function (p) { return parseFloat(p.total_cost) || 0; }),
+            backgroundColor: palette.slice(0, providers.length),
+            borderWidth: 1,
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue(\'--tma-section-bg\').trim() || \'#fff\',
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          plugins: { legend: { display: true, position: \'bottom\', labels: { color: tmaColors.text, font: { size: 10 }, boxWidth: 10, padding: 8 } } },
+          cutout: \'60%\',
+        })
+      });
+    } else if (costCtx) {
+      costCtx.parentNode.innerHTML = \'<div class="tma-empty" style="padding:16px">No cost data yet.</div>\';
+    }
+
+    /* ── Top tools (horizontal bar) ── */
+    var tools = (data.by_tool || []).slice(0, 8);
+    var toolCtx = document.getElementById(\'tma-chart-tools\');
+    if (toolCtx && tools.length) {
+      homeCharts.tools = new Chart(toolCtx.getContext(\'2d\'), {
+        type: \'bar\',
+        data: {
+          labels: tools.map(function (t) { return t.tool || \'—\'; }),
+          datasets: [{
+            label: \'Tokens\',
+            data: tools.map(function (t) { return t.total_tokens || 0; }),
+            backgroundColor: palette.slice(0, tools.length),
+            borderRadius: 4,
+          }]
+        },
+        options: Object.assign({}, chartDefaults, {
+          indexAxis: \'y\',
+          scales: {
+            x: { beginAtZero: true, ticks: { color: tmaColors.hint, font: { size: 10 }, callback: function (v) { return formatNum(v); } }, grid: { color: tmaColors.border } },
+            y: { ticks: { color: tmaColors.text, font: { size: 10 } }, grid: { display: false } }
+          }
+        })
+      });
+    } else if (toolCtx) {
+      toolCtx.parentNode.innerHTML = \'<div class="tma-empty" style="padding:16px">No tool usage yet.</div>\';
+    }
+  }
 
   /* =========================================================
      CONTENT TAB
@@ -1147,7 +1365,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       .then(function () {
         tmaAuthAttempts = 0;
         authRetried = false;
-        if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
+        if (tabName === \'home\')     { homeLoaded = false; loadHome(); }
+        else if (tabName === \'content\')  { contentLoaded = false; loadContent(); }
         else if (tabName === \'tools\')  { toolsLoaded = false; loadTools(); }
         else if (tabName === \'media\')  { mediaLoaded = false; loadMedia(); }
         else if (tabName === \'settings\') { settingsLoaded = false; loadSettings(); }
@@ -1620,7 +1839,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
       if (twa.BackButton) {
         twa.BackButton.onClick(function () {
-          if (activeTab !== \'content\') tmaSwitchTab(\'content\');
+          if (activeTab !== \'home\') tmaSwitchTab(\'home\');
         });
       }
       if (twa.MainButton) {
@@ -1629,12 +1848,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       /* Validate initData first so the WP auth cookie and nonce are ready
          before the Content/Tools/Media tab API calls are made. When
          validation fails fall back to the Settings tab which is always usable. */
-      validateInitData().then(loadContent).catch(function () {
+      validateInitData().then(loadHome).catch(function () {
         tmaSwitchTab(\'settings\');
       });
     } else {
       /* No Telegram WebApp context (e.g. direct browser access). */
-      loadContent();
+      loadHome();
     }
   }
 
@@ -2176,6 +2395,150 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	// =========================================================================
+	// Analytics endpoint (Home tab dashboard)
+	// =========================================================================
+
+	/**
+	* Return aggregated analytics data for the Home tab dashboard.
+	*
+	* Queries the token tracking database for daily usage, cost breakdown
+	* by provider, and tool usage over the requested period. Falls back to
+	* user-meta totals when the database tracker is unavailable.
+	*
+	* @since 1.0.0
+	*
+	* @param WP_REST_Request $request Request object.
+	* @return WP_REST_Response
+	*/
+	public function handle_analytics( $request ) {
+		$user_id = get_current_user_id();
+		$days    = absint( $request->get_param( 'days' ) );
+		if ( $days < 1 || $days > 30 ) {
+			$days = 7;
+		}
+
+		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-' . $days . ' days' ) );
+		$end_date   = gmdate( 'Y-m-d H:i:s' );
+
+		$summary     = array(
+			'total_tokens'   => 0,
+			'total_cost'     => 0,
+			'tools_used'     => 0,
+			'total_requests' => 0,
+		);
+		$daily       = array();
+		$by_provider = array();
+		$by_tool     = array();
+
+		// Try the database tracker first (most detailed data).
+		if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			$db = new WP_MCP_AI_Token_Tracking_Database();
+
+			if ( method_exists( $db, 'get_aggregated_by_date' ) ) {
+				$daily_raw = $db->get_aggregated_by_date( $start_date, $end_date );
+				if ( is_array( $daily_raw ) ) {
+					foreach ( $daily_raw as $row ) {
+						$date_label = isset( $row['date'] ) ? $row['date'] : '';
+						// Shorten to Mon/Tue style for mobile-friendly labels.
+						if ( $date_label ) {
+							$ts         = strtotime( $date_label );
+							$date_label = $ts ? gmdate( 'D', $ts ) : $date_label;
+						}
+						$tokens = isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0;
+						$cost   = isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0;
+						$daily[] = array(
+							'date'         => isset( $row['date'] ) ? $row['date'] : '',
+							'label'        => $date_label,
+							'total_tokens' => $tokens,
+							'total_cost'   => $cost,
+						);
+						$summary['total_tokens'] += $tokens;
+						$summary['total_cost']   += $cost;
+					}
+				}
+			}
+
+			if ( method_exists( $db, 'get_aggregated_by_provider' ) ) {
+				$providers_raw = $db->get_aggregated_by_provider( $start_date, $end_date );
+				if ( is_array( $providers_raw ) ) {
+					foreach ( $providers_raw as $row ) {
+						$by_provider[] = array(
+							'provider'     => isset( $row['provider'] ) ? $row['provider'] : 'Unknown',
+							'total_tokens' => isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0,
+							'total_cost'   => isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0,
+						);
+					}
+				}
+			}
+
+			if ( method_exists( $db, 'get_aggregated_by_tool' ) ) {
+				$tools_raw = $db->get_aggregated_by_tool( $start_date, $end_date );
+				if ( is_array( $tools_raw ) ) {
+					foreach ( $tools_raw as $row ) {
+						$by_tool[] = array(
+							'tool'         => isset( $row['tool'] ) ? $row['tool'] : '—',
+							'total_tokens' => isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0,
+							'total_cost'   => isset( $row['total_cost'] ) ? (float) $row['total_cost'] : 0,
+						);
+						++$summary['tools_used'];
+					}
+				}
+			}
+
+			// Count total requests from user usage if available.
+			if ( method_exists( $db, 'get_user_usage' ) ) {
+				$user_rows = $db->get_user_usage( $user_id, $start_date, $end_date );
+				$summary['total_requests'] = is_array( $user_rows ) ? count( $user_rows ) : 0;
+			}
+		}
+
+		// Fallback to user meta totals when the DB tracker is empty.
+		if ( 0 === $summary['total_tokens'] && class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+			$usage_tracker = new WP_MCP_AI_Usage_Tracker();
+			if ( method_exists( $usage_tracker, 'get_usage_for_user' ) ) {
+				$usage = $usage_tracker->get_usage_for_user( $user_id );
+				if ( is_array( $usage ) ) {
+					foreach ( $usage as $provider => $models ) {
+						if ( ! is_array( $models ) ) {
+							continue;
+						}
+						$prov_tokens = 0;
+						$prov_reqs   = 0;
+						foreach ( $models as $model_data ) {
+							if ( ! is_array( $model_data ) ) {
+								continue;
+							}
+							$prov_tokens += isset( $model_data['total_tokens'] ) ? (int) $model_data['total_tokens'] : 0;
+							$prov_reqs   += isset( $model_data['requests'] ) ? (int) $model_data['requests'] : 0;
+						}
+						$summary['total_tokens']   += $prov_tokens;
+						$summary['total_requests'] += $prov_reqs;
+						if ( $prov_tokens > 0 ) {
+							$by_provider[] = array(
+								'provider'     => $provider,
+								'total_tokens' => $prov_tokens,
+								'total_cost'   => 0,
+							);
+						}
+					}
+				}
+			}
+			if ( method_exists( 'WP_MCP_AI_Usage_Tracker', 'calculate_user_total_cost' ) ) {
+				$summary['total_cost'] = (float) WP_MCP_AI_Usage_Tracker::calculate_user_total_cost( $user_id );
+			}
+		}
+
+		return rest_ensure_response(
+			array(
+				'summary'     => $summary,
+				'daily'       => $daily,
+				'by_provider' => $by_provider,
+				'by_tool'     => $by_tool,
+			)
+		);
+	}
+
+	// =========================================================================
 	// initData validation endpoint
 	// =========================================================================
 
@@ -2480,6 +2843,20 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-tab-pane.tma-active{opacity:1;pointer-events:auto;transform:translateX(0)}
 #tma-tab-chat{padding:0;overflow:hidden}
 #tma-tab-chat .wp-mcp-ai-telegram-mini-app-wrapper{height:100%;overflow:hidden}
+/* Home tab – analytics dashboard */
+#tma-tab-home{display:flex;flex-direction:column;overflow-y:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch}
+.tma-home-wrap{padding:0}
+.tma-kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 12px 4px}
+.tma-kpi-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);
+  padding:12px 10px;text-align:center;box-shadow:var(--tma-shadow)}
+.tma-kpi-icon{font-size:20px;margin-bottom:4px}
+.tma-kpi-value{font-size:18px;font-weight:700;color:var(--tma-text);line-height:1.2}
+.tma-kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tma-hint);margin-top:2px}
+.tma-chart-section{margin:8px 12px;background:var(--tma-section-bg);border:1px solid var(--tma-border);
+  border-radius:var(--tma-radius);padding:12px;box-shadow:var(--tma-shadow)}
+.tma-chart-title{font-size:12px;font-weight:600;color:var(--tma-text);margin-bottom:8px}
+.tma-chart-wrap{position:relative;height:180px}
+.tma-chart-wrap.tma-chart-doughnut{height:200px}
 /* Settings tab */
 #tma-tab-settings{display:flex;flex-direction:column;overflow-y:auto;padding:0 0 20px}
 .tma-settings-wrap{padding:0}
