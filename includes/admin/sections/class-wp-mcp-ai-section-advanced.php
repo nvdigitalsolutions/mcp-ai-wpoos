@@ -843,19 +843,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			foreach ( $roles as $role ) {
 				$query                = new WP_Query(
 					array(
-						'post_type'   => 'mcp_ai_profession',
-						'post_status' => 'publish',
-						'meta_query'  => array(
+						'post_type'      => 'mcp_ai_profession',
+						'post_status'    => 'publish',
+						'posts_per_page' => -1,
+						'meta_query'     => array(
 							array(
-								'key'     => '_wp_mcp_ai_profession_agent_role',
-								'value'   => $role,
-								'compare' => '=',
+								'key'   => '_wp_mcp_ai_profession_agent_role',
+								'value' => $role,
 							),
 						),
-						'fields'      => 'ids',
+						'fields'         => 'ids',
 					)
 				);
-				$role_counts[ $role ] = $query->post_count;
+				$role_counts[ $role ] = $query->found_posts;
 				wp_reset_postdata();
 			}
 			$total_with_roles = array_sum( $role_counts );
