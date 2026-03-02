@@ -590,6 +590,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Convert Markdown from the AI response to Telegram-compatible HTML
+		// so the reply renders with rich formatting (bold, italic, links, etc.).
+		$content = $this->markdown_to_telegram_html( $content );
+
 		// Enforce Telegram message length limit.
 		if ( mb_strlen( $content ) > self::MAX_MESSAGE_LENGTH ) {
 			$content = mb_substr( $content, 0, self::MAX_MESSAGE_LENGTH - 3 ) . '...';
@@ -599,8 +603,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $bot_token ) );
 
 		$payload = array(
-			'chat_id' => $chat_id,
-			'text'    => $content,
+			'chat_id'    => $chat_id,
+			'text'       => $content,
+			'parse_mode' => 'HTML',
 		);
 
 		// In group/supergroup chats, reply to the original message to keep the
@@ -1524,6 +1529,143 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		 * @param bool   $was_removed True if the bot was just removed.
 		 */
 		do_action( 'wp_mcp_ai_telegram_membership_change', $update, $chat_type, $was_added, $was_removed );
+	}
+
+	// =========================================================================
+	// Markdown → Telegram HTML conversion
+	// =========================================================================
+
+	/**
+	 * Convert Markdown produced by AI assistants to Telegram-compatible HTML.
+	 *
+	 * Telegram's Bot API supports a limited subset of HTML tags when
+	 * `parse_mode` is set to `HTML`. This method converts the most common
+	 * Markdown constructs emitted by GPT / Gemini / Ollama into that subset:
+	 *
+	 *   - Fenced code blocks (```lang … ```) → <pre><code class="language-X">…</code></pre>
+	 *   - Inline code (`…`)                  → <code>…</code>
+	 *   - Bold (**…** / __…__)               → <b>…</b>
+	 *   - Italic (*…* / _…_)                 → <i>…</i>
+	 *   - Strikethrough (~~…~~)              → <s>…</s>
+	 *   - Links ([text](url))                → <a href="url">text</a>
+	 *   - Headings (# … / ## … / etc.)       → <b>…</b> (Telegram has no heading tag)
+	 *   - Blockquotes (> …)                  → <blockquote>…</blockquote>
+	 *
+	 * Special characters (`<`, `>`, `&`) in non-tag text are escaped so they
+	 * do not break the HTML parse.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text Markdown text from the AI assistant.
+	 * @return string Telegram-compatible HTML.
+	 */
+	protected function markdown_to_telegram_html( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return '';
+		}
+
+		// 1. Extract fenced code blocks and replace with placeholders so that
+		//    content inside them is not processed by other regex rules.
+		$code_blocks  = array();
+		$placeholder  = "\x00CB";  // Null-byte-based placeholder unlikely to appear in text.
+		$block_index  = 0;
+
+		$text = preg_replace_callback(
+			'/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/',
+			function ( $m ) use ( &$code_blocks, &$block_index, $placeholder ) {
+				$lang    = trim( $m[1] );
+				$code    = $m[2];
+				// Remove one trailing newline if present (aesthetic).
+				$code    = rtrim( $code, "\n" );
+				// Escape HTML entities inside the code block.
+				$code    = htmlspecialchars( $code, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				$tag     = '' !== $lang
+					? '<pre><code class="language-' . htmlspecialchars( $lang, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $code . '</code></pre>'
+					: '<pre>' . $code . '</pre>';
+				$key     = $placeholder . $block_index . $placeholder;
+				$code_blocks[ $key ] = $tag;
+				++$block_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 2. Extract inline code spans and replace with placeholders.
+		$inline_codes = array();
+		$ic_index     = 0;
+		$ic_ph        = "\x00IC";
+
+		$text = preg_replace_callback(
+			'/`([^`\n]+?)`/',
+			function ( $m ) use ( &$inline_codes, &$ic_index, $ic_ph ) {
+				$code = htmlspecialchars( $m[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				$key  = $ic_ph . $ic_index . $ic_ph;
+				$inline_codes[ $key ] = '<code>' . $code . '</code>';
+				++$ic_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 3. Escape HTML special characters in the remaining text so that raw
+		//    `<`, `>`, and `&` do not break Telegram's HTML parser.
+		$text = htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+
+		// 4. Headings (# … through ######) → bold text on its own line.
+		$text = preg_replace( '/^#{1,6}\s+(.+)$/m', '<b>$1</b>', $text );
+
+		// 5. Bold: **text** or __text__ → <b>text</b>.
+		$text = preg_replace( '/\*\*(.+?)\*\*/', '<b>$1</b>', $text );
+		$text = preg_replace( '/__(.+?)__/', '<b>$1</b>', $text );
+
+		// 6. Italic: *text* or _text_ → <i>text</i>.
+		//    Use a negative lookbehind / lookahead to avoid matching mid-word underscores.
+		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/', '<i>$1</i>', $text );
+		$text = preg_replace( '/(?<![a-zA-Z0-9])_(?!_)(.+?)(?<!_)_(?![a-zA-Z0-9])/', '<i>$1</i>', $text );
+
+		// 7. Strikethrough: ~~text~~ → <s>text</s>.
+		$text = preg_replace( '/~~(.+?)~~/', '<s>$1</s>', $text );
+
+		// 8. Links: [text](url) → <a href="url">text</a>.
+		//    The URL was HTML-escaped in step 3; restore `&amp;` → `&` inside href
+		//    and apply esc_url for security.
+		$text = preg_replace_callback(
+			'/\[([^\]]+)\]\(([^)]+)\)/',
+			function ( $m ) {
+				$link_text = $m[1];
+				$url       = html_entity_decode( $m[2], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				$url       = esc_url( $url );
+				if ( '' === $url ) {
+					return $link_text;
+				}
+				return '<a href="' . htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $link_text . '</a>';
+			},
+			$text
+		);
+
+		// 9. Blockquotes: lines starting with > → <blockquote>…</blockquote>.
+		//    Collapse consecutive blockquote lines into a single element.
+		$text = preg_replace_callback(
+			'/(?:^&gt;\s?(.*)$\n?)+/m',
+			function ( $m ) {
+				// Remove the leading "&gt; " (escaped "> ") from each line.
+				$inner = preg_replace( '/^&gt;\s?/m', '', $m[0] );
+				return '<blockquote>' . trim( $inner ) . '</blockquote>';
+			},
+			$text
+		);
+
+		// 10. Restore inline code placeholders.
+		if ( ! empty( $inline_codes ) ) {
+			$text = str_replace( array_keys( $inline_codes ), array_values( $inline_codes ), $text );
+		}
+
+		// 11. Restore fenced code block placeholders.
+		if ( ! empty( $code_blocks ) ) {
+			$text = str_replace( array_keys( $code_blocks ), array_values( $code_blocks ), $text );
+		}
+
+		return trim( $text );
 	}
 
 	/**
