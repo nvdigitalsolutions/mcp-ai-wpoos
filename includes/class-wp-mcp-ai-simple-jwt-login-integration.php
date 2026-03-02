@@ -334,12 +334,18 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 				}
 
 				if ( $allowed_ips ) {
-					// Sanitize relevant $_SERVER values before passing to third-party library.
+					// Sanitize relevant $_SERVER IP values before passing to third-party library.
 					$sanitized_server = array();
 					$server_keys      = array( 'REMOTE_ADDR', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP' );
 					foreach ( $server_keys as $key ) {
 						if ( isset( $_SERVER[ $key ] ) ) {
-							$sanitized_server[ $key ] = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+							$raw_value = wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+							// For IP fields, validate as IP or sanitize as text for comma-separated lists.
+							if ( rest_is_ip_address( $raw_value ) ) {
+								$sanitized_server[ $key ] = $raw_value;
+							} else {
+								$sanitized_server[ $key ] = sanitize_text_field( $raw_value );
+							}
 						}
 					}
 					$server_helper = new \SimpleJWTLogin\Helpers\ServerHelper( $sanitized_server );

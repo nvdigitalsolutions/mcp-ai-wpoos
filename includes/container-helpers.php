@@ -71,7 +71,7 @@ function wp_mcp_ai_sanitize_recursive( $data ) {
 
 	$sanitized = array();
 	foreach ( $data as $key => $value ) {
-		$clean_key = sanitize_text_field( $key );
+		$clean_key = is_int( $key ) ? $key : sanitize_text_field( $key );
 
 		if ( is_array( $value ) ) {
 			$sanitized[ $clean_key ] = wp_mcp_ai_sanitize_recursive( $value );
@@ -81,6 +81,8 @@ function wp_mcp_ai_sanitize_recursive( $data ) {
 			$sanitized[ $clean_key ] = (int) $value;
 		} elseif ( is_float( $value ) ) {
 			$sanitized[ $clean_key ] = (float) $value;
+		} elseif ( is_null( $value ) ) {
+			$sanitized[ $clean_key ] = null;
 		} else {
 			$sanitized[ $clean_key ] = sanitize_text_field( (string) $value );
 		}

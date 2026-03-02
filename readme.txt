@@ -373,11 +373,9 @@ Initial release. Welcome to Open Operator System!
 
 == External Services ==
 
-**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. 
+**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. All external services used by this plugin are documented below.
 
-**📖 Complete Documentation:** For comprehensive details about all external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
-
-Below is a summary of the most commonly used services:
+**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 
@@ -557,7 +555,7 @@ These services are only contacted when specific tools/features are used:
 
 **22. NV Digital Solutions Activation Tracking**
 * **Purpose:** Anonymous plugin activation/deactivation analytics to understand usage patterns
-* **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
+* **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
 * **When:** On plugin activation and deactivation (opt-out available via settings or filter)
 * **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
 * **Terms of Service:** https://nvdigitalsolutions.com/terms

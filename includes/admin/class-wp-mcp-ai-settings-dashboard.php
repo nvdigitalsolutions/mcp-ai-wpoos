@@ -229,7 +229,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function sanitize_settings_callback( $input ) {
 			if ( ! is_array( $input ) ) {
-				return array();
+				// Preserve existing settings if input is invalid.
+				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				return is_array( $existing ) ? $existing : array();
 			}
 			return $this->sanitize_settings( $input );
 		}

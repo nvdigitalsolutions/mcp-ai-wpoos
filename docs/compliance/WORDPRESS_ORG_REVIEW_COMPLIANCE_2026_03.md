@@ -135,8 +135,9 @@ The NV Digital Solutions license server is now documented as:
 
 1. Added path restriction: File operations are now restricted to the WordPress uploads directory (`wp_upload_dir()['basedir']`). Paths outside uploads are rejected with an error message.
 2. Used `realpath()` to prevent directory traversal attacks.
-3. Replaced `file_put_contents()` with `WP_Filesystem::put_contents()` for WordPress-compatible file writing.
-4. Replaced `file_get_contents()` with the resolved `$real_file` path.
+3. Added `DIRECTORY_SEPARATOR` suffix check to prevent prefix-matching false positives (e.g., `/uploads_backup/` vs `/uploads/`).
+4. Replaced `file_put_contents()` with `WP_Filesystem::put_contents()` for WordPress-compatible file writing.
+5. Replaced `file_get_contents()` with `WP_Filesystem::get_contents()` for consistent WordPress file operations.
 
 ---
 

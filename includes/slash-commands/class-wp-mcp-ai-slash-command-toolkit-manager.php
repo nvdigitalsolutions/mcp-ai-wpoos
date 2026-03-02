@@ -7322,12 +7322,17 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$upload_dir = wp_upload_dir();
 			$uploads_basedir = realpath( $upload_dir['basedir'] );
 			$real_file = realpath( $file );
-			if ( false === $uploads_basedir || false === $real_file || 0 !== strpos( $real_file, $uploads_basedir ) ) {
+			if ( false === $uploads_basedir || false === $real_file || 0 !== strpos( $real_file, $uploads_basedir . DIRECTORY_SEPARATOR ) ) {
 				return $this->error_response( __( 'File operations are restricted to the uploads directory.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Basic formatting fixes.
-			$content = file_get_contents( $real_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			global $wp_filesystem;
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			WP_Filesystem();
+			$content = $wp_filesystem->get_contents( $real_file );
 			$original_content = $content;
 			
 			if ( $fix ) {
@@ -7338,11 +7343,6 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				$content = preg_replace( '/([a-zA-Z0-9_\])])([=<>!]+)([a-zA-Z0-9_\[\(])/', '$1 $2 $3', $content );
 				
 				// Write back to file within uploads directory.
-				global $wp_filesystem;
-				if ( ! function_exists( 'WP_Filesystem' ) ) {
-					require_once ABSPATH . 'wp-admin/includes/file.php';
-				}
-				WP_Filesystem();
 				$wp_filesystem->put_contents( $real_file, $content, FS_CHMOD_FILE );
 			}
 
