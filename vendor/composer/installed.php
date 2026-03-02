@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-telegram-mini-app',
+        'version' => 'dev-copilot/enhance-telegram-mini-app',
+        'reference' => '648e3afc6aaf2f6f47e08ac358b8021e255a3285',
         'pretty_version' => 'dev-copilot/add-pre-installed-skills',
         'version' => 'dev-copilot/add-pre-installed-skills',
         'reference' => 'b1b47586822661dede968a4d6e55b27c536cb6cb',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-telegram-mini-app',
+            'version' => 'dev-copilot/enhance-telegram-mini-app',
+            'reference' => '648e3afc6aaf2f6f47e08ac358b8021e255a3285',
             'pretty_version' => 'dev-copilot/add-pre-installed-skills',
             'version' => 'dev-copilot/add-pre-installed-skills',
             'reference' => 'b1b47586822661dede968a4d6e55b27c536cb6cb',

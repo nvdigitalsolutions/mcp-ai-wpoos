@@ -181,6 +181,46 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// Content update / create endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/content',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_update_content' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'id'           => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 0,
+					),
+					'post_type'    => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => 'post',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'title'        => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'content'      => array(
+						'required' => false,
+						'type'     => 'string',
+						'default'  => '',
+					),
+					'status'       => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => 'draft',
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
+
 		// Tools & slash-commands data endpoint (GET).
 		register_rest_route(
 			$this->namespace,
@@ -189,6 +229,29 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_tools' ),
 				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// Tool execution endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/tools/execute',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_execute_tool' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'slug'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'arguments' => array(
+						'required' => false,
+						'type'     => 'object',
+						'default'  => array(),
+					),
+				),
 			)
 		);
 
@@ -273,6 +336,17 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						'maximum'  => 30,
 					),
 				),
+			)
+		);
+
+		// Shop balance endpoint (GET).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/shop/balance',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_shop_balance' ),
+				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
 	}
@@ -486,6 +560,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$media_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/media' );
 		$settings_url  = rest_url( $this->namespace . '/' . $this->rest_base . '/settings' );
 		$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+		$shop_url      = rest_url( $this->namespace . '/' . $this->rest_base . '/shop/balance' );
 		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
 		header( 'Content-Type: text/html; charset=utf-8' );
@@ -548,10 +623,47 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
           <div class="tma-empty">Loading types…</div>
         </div>
       </div>
+      <div class="tma-content-actions" id="tma-content-actions">
+        <button class="tma-btn-new-post" onclick="tmaNewPost()">+ New</button>
+      </div>
       <div class="tma-post-list" id="tma-post-list">
         <div class="tma-empty">Loading content…</div>
       </div>
       <div class="tma-pagination" id="tma-content-pagination"></div>
+      <!-- Inline editor overlay -->
+      <div class="tma-editor-overlay" id="tma-editor-overlay" style="display:none">
+        <div class="tma-editor-panel">
+          <div class="tma-editor-header">
+            <button class="tma-editor-close" onclick="tmaCloseEditor()">✕</button>
+            <span class="tma-editor-title" id="tma-editor-heading">Edit Post</span>
+          </div>
+          <div class="tma-editor-body">
+            <input type="hidden" id="tma-editor-id" value="0" />
+            <input type="hidden" id="tma-editor-post-type" value="post" />
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-title">Title</label>
+              <input type="text" id="tma-editor-post-title" class="tma-editor-input" placeholder="Post title…" />
+            </div>
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-content">Content</label>
+              <textarea id="tma-editor-post-content" class="tma-editor-textarea" rows="8" placeholder="Write your content…"></textarea>
+            </div>
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-status">Status</label>
+              <select id="tma-editor-post-status" class="tma-editor-select">
+                <option value="draft">Draft</option>
+                <option value="publish">Published</option>
+                <option value="pending">Pending Review</option>
+              </select>
+            </div>
+            <div id="tma-editor-error" class="tma-editor-error" style="display:none"></div>
+            <div class="tma-editor-actions">
+              <button class="tma-settings-btn tma-btn-secondary" onclick="tmaCloseEditor()">Cancel</button>
+              <button class="tma-settings-btn tma-btn-primary" id="tma-editor-save" onclick="tmaSavePost()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Tools tab -->
@@ -564,6 +676,24 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <div class="tma-section-title tma-mt">Slash Commands</div>
       <div id="tma-slash-list" class="tma-cards-list">
         <div class="tma-empty">Loading commands…</div>
+      </div>
+      <!-- Tool execution overlay -->
+      <div class="tma-editor-overlay" id="tma-tool-exec-overlay" style="display:none">
+        <div class="tma-editor-panel">
+          <div class="tma-editor-header">
+            <button class="tma-editor-close" onclick="tmaCloseToolExec()">✕</button>
+            <span class="tma-editor-title" id="tma-tool-exec-heading">Execute Tool</span>
+          </div>
+          <div class="tma-editor-body">
+            <div id="tma-tool-exec-form"></div>
+            <div id="tma-tool-exec-error" class="tma-editor-error" style="display:none"></div>
+            <div class="tma-editor-actions">
+              <button class="tma-settings-btn tma-btn-secondary" onclick="tmaCloseToolExec()">Cancel</button>
+              <button class="tma-settings-btn tma-btn-primary" id="tma-tool-exec-run" onclick="tmaRunTool()">▶ Run</button>
+            </div>
+            <div id="tma-tool-exec-result" class="tma-tool-result" style="display:none"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -580,6 +710,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         <div class="tma-empty">Loading media…</div>
       </div>
       <div class="tma-pagination" id="tma-media-pagination"></div>
+    </div>
+
+    <!-- Shop tab -->
+    <div class="tma-tab-pane" id="tma-tab-shop">
+      <div class="tma-shop-wrap" id="tma-shop-wrap">
+        <div class="tma-empty">Loading shop…</div>
+      </div>
     </div>
 
     <!-- Settings tab -->
@@ -609,6 +746,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       <span class="tma-nav-label">Media</span>
     </button>
+    <button class="tma-nav-btn" id="tma-nav-shop" data-tab="shop" onclick="tmaSwitchTab(\'shop\')">
+      <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="tma-nav-label">Shop</span>
+    </button>
     <button class="tma-nav-btn" id="tma-nav-settings" data-tab="settings" onclick="tmaSwitchTab(\'settings\')">
       <svg class="tma-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span class="tma-nav-label">Settings</span>
@@ -631,9 +772,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_VALIDATE_URL   = ' . wp_json_encode( $validate_url ) . ';
   var TMA_CONTENT_URL    = ' . wp_json_encode( $content_url ) . ';
   var TMA_TOOLS_URL      = ' . wp_json_encode( $tools_url ) . ';
+  var TMA_TOOLS_EXEC_URL = ' . wp_json_encode( $tools_url . '/execute' ) . ';
   var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
   var TMA_SETTINGS_URL   = ' . wp_json_encode( $settings_url ) . ';
   var TMA_ANALYTICS_URL  = ' . wp_json_encode( $analytics_url ) . ';
+  var TMA_SHOP_URL       = ' . wp_json_encode( $shop_url ) . ';
   var TMA_LOGIN_URL      = ' . wp_json_encode( $login_url ) . ';
   var TMA_SITE_NAME      = ' . wp_json_encode( get_bloginfo( 'name' ) ) . ';
   var TMA_NONCE          = ' . wp_json_encode( wp_create_nonce( 'wp_rest' ) ) . ';
@@ -711,6 +854,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     if (tabName === \'content\') loadContent();
     if (tabName === \'tools\')   loadTools();
     if (tabName === \'media\')   loadMedia();
+    if (tabName === \'shop\')    loadShop();
     if (tabName === \'settings\') loadSettings();
     /* Reset search bar context */
     clearSearch();
@@ -1052,6 +1196,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     var pageEl  = document.getElementById(\'tma-content-pagination\');
     if (!listEl) return;
 
+    /* Cache posts so the editor can access post_content. */
+    contentPostsCache = posts;
+
     if (!posts.length) {
       listEl.innerHTML = \'<div class="tma-empty">No items found.</div>\';
       if (pageEl) pageEl.innerHTML = \'\';
@@ -1059,7 +1206,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     }
 
     var html = \'\';
-    posts.forEach(function (p) {
+    posts.forEach(function (p, idx) {
       var statusClass = p.status === \'publish\' ? \'tma-status-pub\' : \'tma-status-draft\';
       var statusText  = p.status === \'publish\' ? \'Published\' : (p.status === \'draft\' ? \'Draft\' : p.status);
       var date        = p.modified ? new Date(p.modified).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
@@ -1071,7 +1218,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         (p.excerpt ? \'<div class="tma-post-excerpt">\' + escHtml(p.excerpt) + \'</div>\' : \'\') +
         \'<div class="tma-post-meta">\' +
           \'<span>\' + escHtml(date) + \'</span>\' +
-          (p.link ? \'<a class="tma-post-edit" href="\' + escHtml(p.link) + \'" target="_blank">Edit ›</a>\' : \'\') +
+          \'<span class="tma-post-actions">\' +
+            \'<button class="tma-post-edit-btn" onclick="tmaEditPost(\' + idx + \')">✏️ Edit</button>\' +
+            (p.link ? \'<a class="tma-post-edit" href="\' + escHtml(p.link) + \'" target="_blank">Open ›</a>\' : \'\') +
+          \'</span>\' +
         \'</div>\' +
       \'</div>\';
     });
@@ -1090,6 +1240,85 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       pageEl.innerHTML = pHtml;
     }
   }
+
+  /* ── Content Editor Functions ── */
+  var contentPostsCache = [];
+
+  window.tmaNewPost = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-editor-id\').value = \'0\';
+    document.getElementById(\'tma-editor-post-type\').value = contentPostType;
+    document.getElementById(\'tma-editor-post-title\').value = \'\';
+    document.getElementById(\'tma-editor-post-content\').value = \'\';
+    document.getElementById(\'tma-editor-post-status\').value = \'draft\';
+    document.getElementById(\'tma-editor-heading\').textContent = \'New \' + contentPostType;
+    var errEl = document.getElementById(\'tma-editor-error\');
+    if (errEl) errEl.style.display = \'none\';
+    document.getElementById(\'tma-editor-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaEditPost = function (idx) {
+    haptic(\'light\');
+    var p = contentPostsCache[idx];
+    if (!p) return;
+    document.getElementById(\'tma-editor-id\').value = String(p.id);
+    document.getElementById(\'tma-editor-post-type\').value = contentPostType;
+    document.getElementById(\'tma-editor-post-title\').value = p.title || \'\';
+    document.getElementById(\'tma-editor-post-content\').value = p.post_content || \'\';
+    document.getElementById(\'tma-editor-post-status\').value = p.status || \'draft\';
+    document.getElementById(\'tma-editor-heading\').textContent = \'Edit: \' + escHtml(p.title || \'(no title)\');
+    var errEl = document.getElementById(\'tma-editor-error\');
+    if (errEl) errEl.style.display = \'none\';
+    document.getElementById(\'tma-editor-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaCloseEditor = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-editor-overlay\').style.display = \'none\';
+  };
+
+  window.tmaSavePost = function () {
+    haptic(\'light\');
+    var saveBtn = document.getElementById(\'tma-editor-save\');
+    var errEl   = document.getElementById(\'tma-editor-error\');
+    var title   = document.getElementById(\'tma-editor-post-title\').value.trim();
+    if (!title) {
+      if (errEl) { errEl.textContent = \'Title is required.\'; errEl.style.display = \'block\'; }
+      return;
+    }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = \'Saving…\'; }
+    var payload = {
+      id:        parseInt(document.getElementById(\'tma-editor-id\').value, 10) || 0,
+      post_type: document.getElementById(\'tma-editor-post-type\').value || contentPostType,
+      title:     title,
+      content:   document.getElementById(\'tma-editor-post-content\').value,
+      status:    document.getElementById(\'tma-editor-post-status\').value || \'draft\',
+    };
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_CONTENT_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = \'Save\'; }
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          tmaCloseEditor();
+          contentLoaded = false;
+          loadContent();
+        } else {
+          var msg = (json && json.message) ? json.message : \'Failed to save.\';
+          if (errEl) { errEl.textContent = msg; errEl.style.display = \'block\'; }
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = \'Save\'; }
+        if (errEl) { errEl.textContent = \'Network error.\'; errEl.style.display = \'block\'; }
+      });
+  };
 
   window.tmaContentPage = function (p) {
     haptic(\'light\');
@@ -1180,6 +1409,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
             \'<div class="tma-card-title">\' + escHtml(t.name) + tk + \'</div>\' +
             (t.description ? \'<div class="tma-card-desc">\' + escHtml(t.description) + \'</div>\' : \'\') +
             gr +
+            \'<div class="tma-card-actions"><button class="tma-tool-exec-btn" onclick="tmaOpenToolExec(\\\'\' + escHtml(t.slug) + \'\\\')">▶ Execute</button></div>\' +
           \'</div>\';
         });
         toolsEl.innerHTML = html;
@@ -1207,6 +1437,109 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       }
     }
   }
+
+  /* ── Tool Execution ── */
+  var currentToolSlug = \'\';
+  var currentToolParams = {};
+
+  window.tmaOpenToolExec = function (slug) {
+    haptic(\'light\');
+    var tool = allTools.find(function (t) { return t.slug === slug; });
+    if (!tool) return;
+    currentToolSlug = slug;
+    currentToolParams = (tool.parameters && tool.parameters.properties) ? tool.parameters.properties : {};
+    var required = (tool.parameters && tool.parameters.required) ? tool.parameters.required : [];
+    document.getElementById(\'tma-tool-exec-heading\').textContent = tool.name;
+    var formEl = document.getElementById(\'tma-tool-exec-form\');
+    var errEl  = document.getElementById(\'tma-tool-exec-error\');
+    var resEl  = document.getElementById(\'tma-tool-exec-result\');
+    if (errEl) errEl.style.display = \'none\';
+    if (resEl) { resEl.style.display = \'none\'; resEl.innerHTML = \'\'; }
+    var html = \'\';
+    var keys = Object.keys(currentToolParams);
+    if (!keys.length) {
+      html = \'<div class="tma-settings-help">This tool has no parameters. Click Run to execute.</div>\';
+    } else {
+      keys.forEach(function (key) {
+        var p = currentToolParams[key];
+        var label = key + (required.indexOf(key) >= 0 ? \' *\' : \'\');
+        var desc  = p.description ? \'<div class="tma-editor-label" style="font-weight:400;font-size:11px;color:var(--tma-hint)">\' + escHtml(p.description) + \'</div>\' : \'\';
+        html += \'<div class="tma-editor-field">\';
+        html += \'<label class="tma-editor-label">\' + escHtml(label) + \'</label>\';
+        if (p.enum && p.enum.length) {
+          html += \'<select class="tma-editor-select" data-tool-param="\' + escHtml(key) + \'">\';
+          p.enum.forEach(function (v) {
+            html += \'<option value="\' + escHtml(String(v)) + \'">\' + escHtml(String(v)) + \'</option>\';
+          });
+          html += \'</select>\';
+        } else if (p.type === \'boolean\') {
+          html += \'<label class="tma-toggle"><input type="checkbox" data-tool-param="\' + escHtml(key) + \'"><span class="tma-toggle-slider"></span></label>\';
+        } else if (p.type === \'integer\' || p.type === \'number\') {
+          html += \'<input type="number" class="tma-editor-input" data-tool-param="\' + escHtml(key) + \'" placeholder="\' + escHtml(p.description || key) + \'" />\';
+        } else {
+          html += \'<input type="text" class="tma-editor-input" data-tool-param="\' + escHtml(key) + \'" placeholder="\' + escHtml(p.description || key) + \'" />\';
+        }
+        html += desc;
+        html += \'</div>\';
+      });
+    }
+    formEl.innerHTML = html;
+    document.getElementById(\'tma-tool-exec-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaCloseToolExec = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-tool-exec-overlay\').style.display = \'none\';
+  };
+
+  window.tmaRunTool = function () {
+    haptic(\'light\');
+    var runBtn = document.getElementById(\'tma-tool-exec-run\');
+    var errEl  = document.getElementById(\'tma-tool-exec-error\');
+    var resEl  = document.getElementById(\'tma-tool-exec-result\');
+    if (errEl) errEl.style.display = \'none\';
+    if (resEl) { resEl.style.display = \'none\'; resEl.innerHTML = \'\'; }
+    if (runBtn) { runBtn.disabled = true; runBtn.textContent = \'Running…\'; }
+
+    var args = {};
+    document.querySelectorAll(\'[data-tool-param]\').forEach(function (el) {
+      var key = el.getAttribute(\'data-tool-param\');
+      var p   = currentToolParams[key];
+      if (el.type === \'checkbox\') {
+        args[key] = el.checked;
+      } else if (p && (p.type === \'integer\' || p.type === \'number\') && el.value !== \'\') {
+        args[key] = p.type === \'integer\' ? parseInt(el.value, 10) : parseFloat(el.value);
+      } else if (el.value !== \'\') {
+        args[key] = el.value;
+      }
+    });
+
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_TOOLS_EXEC_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify({ slug: currentToolSlug, arguments: args }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = \'▶ Run\'; }
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          if (resEl) {
+            resEl.style.display = \'block\';
+            resEl.innerHTML = \'<div class="tma-tool-result-header">✅ Result</div><pre class="tma-tool-result-pre">\' + escHtml(typeof json.result === \'string\' ? json.result : JSON.stringify(json.result, null, 2)) + \'</pre>\';
+          }
+        } else {
+          var msg = (json && json.message) ? json.message : \'Tool execution failed.\';
+          if (errEl) { errEl.textContent = msg; errEl.style.display = \'block\'; }
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = \'▶ Run\'; }
+        if (errEl) { errEl.textContent = \'Network error.\'; errEl.style.display = \'block\'; }
+      });
+  };
 
   /* =========================================================
      MEDIA TAB
@@ -1468,6 +1801,113 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   /* =========================================================
+     SHOP TAB
+     ========================================================= */
+  var shopLoaded = false;
+
+  function loadShop() {
+    if (shopLoaded) return;
+    var wrap = document.getElementById(\'tma-shop-wrap\');
+    if (!wrap) return;
+    wrap.innerHTML = \'<div class="tma-empty">Loading shop…</div>\';
+
+    authFetch(TMA_SHOP_URL)
+      .then(function (r) {
+        if (r.status === 401 || r.status === 403) {
+          if (!authRetried && twa && twa.initData) {
+            authRetried = true;
+            return validateInitData().then(function () { loadShop(); }).catch(function () { showLoginFallback(\'shop\'); });
+          }
+          showLoginPrompt(\'shop\'); return null;
+        }
+        authRetried = false;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        shopLoaded = true;
+        renderShop(data);
+      })
+      .catch(function () {
+        if (wrap) wrap.innerHTML = \'<div class="tma-empty tma-error">Failed to load shop.</div>\';
+      });
+  }
+
+  function renderShop(data) {
+    var wrap = document.getElementById(\'tma-shop-wrap\');
+    if (!wrap) return;
+    var html = \'\';
+
+    /* ── Balance Card ── */
+    html += \'<div class="tma-shop-balance-card">\';
+    html += \'<div class="tma-shop-balance-icon">⭐</div>\';
+    html += \'<div class="tma-shop-balance-amount">\' + escHtml(String(data.balance || 0)) + \'</div>\';
+    html += \'<div class="tma-shop-balance-label">Stars Balance</div>\';
+    html += \'</div>\';
+
+    /* ── Pricing Cards ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Purchase Stars</div>\';
+    html += \'<div class="tma-shop-pricing">\';
+
+    var packs = data.pricing || [
+      { stars: 50, label: \'Starter\', description: \'Good for trying out\' },
+      { stars: 200, label: \'Standard\', description: \'Most popular\' },
+      { stars: 500, label: \'Pro\', description: \'Best value\' },
+      { stars: 1000, label: \'Enterprise\', description: \'For power users\' },
+    ];
+
+    packs.forEach(function (pack) {
+      var popular = pack.label === \'Standard\' ? \' tma-shop-popular\' : \'\';
+      html += \'<div class="tma-shop-price-card\' + popular + \'">\';
+      if (popular) html += \'<div class="tma-shop-popular-badge">Popular</div>\';
+      html += \'<div class="tma-shop-price-stars">⭐ \' + escHtml(String(pack.stars)) + \'</div>\';
+      html += \'<div class="tma-shop-price-label">\' + escHtml(pack.label) + \'</div>\';
+      html += \'<div class="tma-shop-price-desc">\' + escHtml(pack.description) + \'</div>\';
+      html += \'<button class="tma-shop-buy-btn" onclick="tmaBuyStars(\' + pack.stars + \')">Purchase</button>\';
+      html += \'</div>\';
+    });
+
+    html += \'</div></div>\';
+
+    /* ── Recent Transactions ── */
+    if (data.recent_payments && data.recent_payments.length) {
+      html += \'<div class="tma-settings-section">\';
+      html += \'<div class="tma-settings-section-title">Recent Transactions</div>\';
+      html += \'<div class="tma-settings-card">\';
+      data.recent_payments.forEach(function (tx) {
+        var date = tx.date ? new Date(tx.date).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
+        html += \'<div class="tma-settings-item">\';
+        html += \'<div class="tma-settings-item-icon">💳</div>\';
+        html += \'<div class="tma-settings-item-body">\';
+        html += \'<div class="tma-settings-item-label">⭐ +\' + escHtml(String(tx.amount || 0)) + \'</div>\';
+        html += \'<div class="tma-settings-item-value">\' + escHtml(date) + \'</div>\';
+        html += \'</div></div>\';
+      });
+      html += \'</div></div>\';
+    }
+
+    /* ── Info ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-card">\';
+    html += \'<div class="tma-settings-help">Stars are used for premium AI tool executions and content generation. Purchases are processed securely via Telegram Stars.</div>\';
+    html += \'</div></div>\';
+
+    wrap.innerHTML = html;
+  }
+
+  window.tmaBuyStars = function (amount) {
+    haptic(\'light\');
+    /* Telegram Stars payments require invoking the Telegram WebApp payment API.
+       This sends the user to the bot chat with a pre-configured invoice. */
+    if (twa && twa.openTelegramLink && TMA_BOT_USERNAME) {
+      twa.openTelegramLink(\'https://t.me/\' + TMA_BOT_USERNAME + \'?start=buy_\' + amount);
+    } else {
+      showToast(\'Open the bot chat to purchase Stars\', true);
+    }
+  };
+
+  /* =========================================================
      SETTINGS TAB
      ========================================================= */
   var settingsLoaded = false;
@@ -1620,6 +2060,30 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
     html += \'</div></div>\';
 
+    /* ── Content Display section ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Content Display</div>\';
+    html += \'<div class="tma-settings-card">\';
+    html += \'<div class="tma-settings-help">Choose which post types appear in the Content tab. When none are selected, all available types are shown.</div>\';
+
+    var enabledCpts = (data.preferences && Array.isArray(data.preferences.enabled_post_types))
+                      ? data.preferences.enabled_post_types : null;
+    var availCpts   = data.available_post_types || [];
+    availCpts.forEach(function (cpt) {
+      var isOn = enabledCpts === null || enabledCpts.indexOf(cpt.name) !== -1;
+      var tkHint = cpt.toolkit ? \' <span class="tma-tk-dot" title="\' + escHtml(cpt.toolkit) + \'">● \' + escHtml(cpt.toolkit) + \'</span>\' : \'\';
+      html += \'<div class="tma-settings-item">\';
+      html += \'<div class="tma-settings-item-icon">📄</div>\';
+      html += \'<div class="tma-settings-item-body">\';
+      html += \'<div class="tma-settings-item-label">\' + escHtml(cpt.label) + tkHint + \'</div>\';
+      html += \'<div class="tma-settings-item-value">\' + escHtml(cpt.name) + \'</div>\';
+      html += \'</div>\';
+      html += \'<label class="tma-toggle"><input type="checkbox" data-cpt="\' + escHtml(cpt.name) + \'"\' + (isOn ? \' checked\' : \'\') + \' onchange="tmaSaveContentDisplay()"><span class="tma-toggle-slider"></span></label>\';
+      html += \'</div>\';
+    });
+
+    html += \'</div></div>\';
+
     /* ── About section ── */
     html += \'<div class="tma-settings-section">\';
     html += \'<div class="tma-settings-section-title">About</div>\';
@@ -1684,6 +2148,42 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       .catch(function () {
         showToast(\'Network error\', true);
       });
+  };
+
+  /* ── Save Content Display toggles ── */
+  window.tmaSaveContentDisplay = function () {
+    haptic(\'light\');
+    var checks = document.querySelectorAll(\'[data-cpt]\');
+    var selected = [];
+    var allChecked = true;
+    checks.forEach(function (cb) {
+      if (cb.checked) {
+        selected.push(cb.getAttribute(\'data-cpt\'));
+      } else {
+        allChecked = false;
+      }
+    });
+    /* When all are checked, store null (show all = default). */
+    var value = allChecked ? null : selected;
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_SETTINGS_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify({ action: \'save_preferences\', preferences: { enabled_post_types: value } }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (json && json.success) {
+          showToast(\'✓ Content display saved\');
+          haptic(\'notificationOccurred\', \'success\');
+          /* Force Content tab to reload with new filter. */
+          contentLoaded = false;
+        } else {
+          showToast(\'Failed to save\', true);
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () { showToast(\'Network error\', true); });
   };
 
   /* ── Show / Hide link account form ── */
@@ -1871,6 +2371,69 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	}
 
 	// =========================================================================
+	// Shop / balance data endpoints
+	// =========================================================================
+
+	/**
+	 * Return the current user's Stars balance, pricing packs, and recent payments.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function handle_shop_balance( $request ) {
+		$user_id = get_current_user_id();
+		$balance = $user_id ? (int) get_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance', true ) : 0;
+
+		// Load recent payment history.
+		$history = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_payment_history', true ) : array();
+		if ( ! is_array( $history ) ) {
+			$history = array();
+		}
+		// Return the 10 most recent.
+		$recent = array_slice( array_reverse( $history ), 0, 10 );
+
+		// Configurable pricing packs from settings.
+		$settings       = get_option( 'wp_mcp_ai_settings', array() );
+		$pricing_config = isset( $settings['telegram_stars_pricing'] ) ? $settings['telegram_stars_pricing'] : array();
+
+		// Default packs if not configured.
+		if ( empty( $pricing_config ) || ! is_array( $pricing_config ) ) {
+			$pricing_config = array(
+				array(
+					'stars'       => 50,
+					'label'       => __( 'Starter', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Good for trying out', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 200,
+					'label'       => __( 'Standard', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Most popular', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 500,
+					'label'       => __( 'Pro', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Best value', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'stars'       => 1000,
+					'label'       => __( 'Enterprise', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'For power users', 'mcp-ai-wpoos-pro' ),
+				),
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'balance'         => $balance,
+				'pricing'         => $pricing_config,
+				'recent_payments' => $recent,
+			)
+		);
+	}
+
+	// =========================================================================
 	// Content management data endpoints
 	// =========================================================================
 
@@ -1899,6 +2462,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		$post_type_obj = get_post_type_object( $post_type );
+
+		// Load the user's enabled_post_types preference to filter the CPT bar.
+		$user_id     = get_current_user_id();
+		$preferences = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true ) : array();
+		$enabled_post_types = ( is_array( $preferences ) && isset( $preferences['enabled_post_types'] ) && is_array( $preferences['enabled_post_types'] ) )
+			? $preferences['enabled_post_types']
+			: null; // null = show all (default).
 
 		// When the current user cannot edit the requested post type, return an
 		// empty post list instead of a hard 403 so that the Mini App client does
@@ -1932,13 +2502,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 20, '…' );
 				}
 				$posts[] = array(
-					'id'       => $post->ID,
-					'title'    => get_the_title( $post ),
-					'status'   => $post->post_status,
-					'date'     => $post->post_date,
-					'modified' => $post->post_modified,
-					'link'     => (string) get_edit_post_link( $post->ID, 'raw' ),
-					'excerpt'  => $excerpt,
+					'id'           => $post->ID,
+					'title'        => get_the_title( $post ),
+					'status'       => $post->post_status,
+					'date'         => $post->post_date,
+					'modified'     => $post->post_modified,
+					'link'         => (string) get_edit_post_link( $post->ID, 'raw' ),
+					'excerpt'      => $excerpt,
+					'post_content' => $post->post_content,
 				);
 			}
 		}
@@ -1950,6 +2521,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		foreach ( $all_types as $type ) {
 			if ( ! current_user_can( $type->cap->edit_posts ) ) {
+				continue;
+			}
+
+			// When the user has configured an enabled_post_types allowlist, skip
+			// any post type not explicitly included.
+			if ( null !== $enabled_post_types && ! in_array( $type->name, $enabled_post_types, true ) ) {
 				continue;
 			}
 
@@ -1977,6 +2554,116 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'total'      => $query ? (int) $query->found_posts : 0,
 				'pages'      => $query ? (int) $query->max_num_pages : 0,
 				'post_types' => $cpt_list,
+			)
+		);
+	}
+
+	/**
+	 * Create or update a post from the Mini App content editor.
+	 *
+	 * When `id` is 0 a new post is created; otherwise the existing post is updated.
+	 * The user must have the appropriate capability for the target post type.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request object with title, content, status, post_type, and optional id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_update_content( $request ) {
+		$post_id   = absint( $request->get_param( 'id' ) );
+		$post_type = $request->get_param( 'post_type' );
+		$title     = $request->get_param( 'title' );
+		$content   = $request->get_param( 'content' );
+		$status    = $request->get_param( 'status' );
+
+		// Validate post type.
+		if ( ! post_type_exists( $post_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_invalid_post_type',
+				__( 'Invalid post type.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$post_type_obj = get_post_type_object( $post_type );
+
+		// Sanitize status to an allowed value.
+		$allowed_statuses = array( 'draft', 'publish', 'pending' );
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
+			$status = 'draft';
+		}
+
+		// Creating a new post.
+		if ( 0 === $post_id ) {
+			if ( ! current_user_can( $post_type_obj->cap->create_posts ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_telegram_forbidden',
+					__( 'You do not have permission to create this content.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			$new_post_id = wp_insert_post(
+				array(
+					'post_type'    => $post_type,
+					'post_title'   => $title,
+					'post_content' => wp_kses_post( $content ),
+					'post_status'  => $status,
+					'post_author'  => get_current_user_id(),
+				),
+				true
+			);
+
+			if ( is_wp_error( $new_post_id ) ) {
+				return $new_post_id;
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'id'      => $new_post_id,
+					'message' => __( 'Content created successfully.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Updating an existing post.
+		$existing = get_post( $post_id );
+		if ( ! $existing || $existing->post_type !== $post_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_not_found',
+				__( 'Post not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_forbidden',
+				__( 'You do not have permission to edit this content.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$result = wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_title'   => $title,
+				'post_content' => wp_kses_post( $content ),
+				'post_status'  => $status,
+			),
+			true
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'id'      => $post_id,
+				'message' => __( 'Content updated successfully.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 	}
@@ -2018,12 +2705,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						}
 					}
 
+				$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
+
 					$result['tools'][] = array(
 						'slug'        => $slug,
 						'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
 						'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
 						'group'       => isset( $group_map[ $slug ] ) ? $group_map[ $slug ] : '',
 						'toolkit'     => $toolkit_label,
+						'parameters'  => $params,
 					);
 				}
 			}
@@ -2046,6 +2736,68 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Execute a tool from the Mini App and return the result.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request with 'slug' and optional 'arguments'.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_execute_tool( $request ) {
+		$slug      = $request->get_param( 'slug' );
+		$arguments = $request->get_param( 'arguments' );
+
+		if ( ! is_array( $arguments ) ) {
+			$arguments = array();
+		}
+
+		if ( ! function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_no_registry',
+				__( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$registry = wp_mcp_ai_get_tool_registry();
+		if ( ! $registry ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_no_registry',
+				__( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$tool = $registry->get_tool( $slug );
+		if ( ! $tool ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_tool_not_found',
+				__( 'Tool not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Build execution context.
+		$context = array(
+			'user_id' => get_current_user_id(),
+			'source'  => 'telegram_mini_app',
+		);
+
+		$result = $tool->execute( $arguments, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'result'  => $result,
+			)
+		);
 	}
 
 	/**
@@ -2175,6 +2927,29 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			'require_mention' => ! empty( $connection['require_mention'] ),
 		);
 
+		// Build the list of all accessible CPTs for the Content Display settings.
+		$all_types       = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$active_toolkits = $this->get_active_toolkits();
+		$available_cpts  = array();
+
+		foreach ( $all_types as $type ) {
+			if ( ! current_user_can( $type->cap->edit_posts ) ) {
+				continue;
+			}
+			$toolkit_label = '';
+			foreach ( $active_toolkits as $tk ) {
+				if ( in_array( $type->name, $tk['post_types'], true ) ) {
+					$toolkit_label = $tk['label'];
+					break;
+				}
+			}
+			$available_cpts[] = array(
+				'name'    => $type->name,
+				'label'   => $type->label,
+				'toolkit' => $toolkit_label,
+			);
+		}
+
 		return rest_ensure_response(
 			array(
 				'wp_linked'       => $wp_linked,
@@ -2184,6 +2959,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'preferences'     => $preferences,
 				'assistant_name'  => $assistant_name,
 				'group_settings'  => $group_settings,
+				'available_post_types' => $available_cpts,
 			)
 		);
 	}
@@ -2265,6 +3041,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				} else {
 					$existing[ $key ] = (bool) $incoming[ $key ];
 				}
+			}
+		}
+
+		// Handle enabled_post_types: array of post-type slugs or null (show all).
+		if ( array_key_exists( 'enabled_post_types', $incoming ) ) {
+			if ( is_array( $incoming['enabled_post_types'] ) ) {
+				$existing['enabled_post_types'] = array_values(
+					array_map( 'sanitize_key', $incoming['enabled_post_types'] )
+				);
+			} else {
+				// null or non-array resets to "show all".
+				unset( $existing['enabled_post_types'] );
 			}
 		}
 
@@ -2992,6 +3780,26 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-post-excerpt{font-size:12px;color:var(--tma-subtitle);line-height:1.4;margin-bottom:6px}
 .tma-post-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tma-hint)}
 .tma-post-edit{color:var(--tma-link);text-decoration:none;font-weight:500}
+.tma-post-actions{display:flex;align-items:center;gap:8px}
+.tma-post-edit-btn{background:none;border:1px solid var(--tma-btn);color:var(--tma-btn);font-size:11px;padding:2px 8px;border-radius:6px;cursor:pointer;font-weight:500}
+.tma-post-edit-btn:active{opacity:.7}
+.tma-content-actions{display:flex;justify-content:flex-end;padding:4px 12px 0}
+.tma-btn-new-post{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:6px 14px;border-radius:var(--tma-radius);font-size:13px;font-weight:600;cursor:pointer}
+.tma-btn-new-post:active{opacity:.7}
+/* Editor overlay */
+.tma-editor-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center}
+.tma-editor-panel{background:var(--tma-bg);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.tma-editor-header{display:flex;align-items:center;gap:10px;padding:14px 16px 8px;border-bottom:1px solid var(--tma-border)}
+.tma-editor-close{background:none;border:none;font-size:18px;color:var(--tma-hint);cursor:pointer;padding:0 4px}
+.tma-editor-title{font-size:16px;font-weight:600;color:var(--tma-text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tma-editor-body{padding:12px 16px 24px}
+.tma-editor-field{margin-bottom:12px}
+.tma-editor-label{display:block;font-size:12px;font-weight:600;color:var(--tma-hint);margin-bottom:4px}
+.tma-editor-input,.tma-editor-select,.tma-editor-textarea{width:100%;background:var(--tma-secondary-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--tma-text);box-sizing:border-box;font-family:inherit}
+.tma-editor-textarea{resize:vertical;min-height:100px;line-height:1.5}
+.tma-editor-input:focus,.tma-editor-select:focus,.tma-editor-textarea:focus{outline:none;border-color:var(--tma-btn)}
+.tma-editor-error{color:var(--tma-destructive);font-size:12px;padding:6px 0}
+.tma-editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 /* Tool cards */
 .tma-cards-list{padding:8px 12px;overflow-y:auto}
 .tma-tool-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-bottom:8px;box-shadow:var(--tma-shadow)}
@@ -3003,6 +3811,12 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-card-badge{font-size:10px;background:var(--tma-btn);color:var(--tma-btn-text);padding:1px 6px;border-radius:6px;font-weight:500}
 .tma-mono{font-family:monospace;color:var(--tma-btn)}
 .tma-mt{margin-top:8px}
+.tma-card-actions{margin-top:6px;display:flex;gap:6px}
+.tma-tool-exec-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.tma-tool-exec-btn:active{opacity:.7}
+.tma-tool-result{margin-top:12px;border-top:1px solid var(--tma-border);padding-top:12px}
+.tma-tool-result-header{font-size:13px;font-weight:600;color:var(--tma-text);margin-bottom:6px}
+.tma-tool-result-pre{background:var(--tma-secondary-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;font-size:12px;color:var(--tma-text);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;font-family:monospace}
 /* Media grid */
 .tma-media-grid{padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
 .tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition)}
@@ -3012,6 +3826,21 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-media-info{padding:6px 8px}
 .tma-media-title{font-size:11px;font-weight:500;color:var(--tma-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tma-media-meta{font-size:10px;color:var(--tma-hint)}
+/* Shop tab */
+.tma-shop-wrap{padding:12px}
+.tma-shop-balance-card{background:linear-gradient(135deg,var(--tma-btn),var(--tma-accent,var(--tma-btn)));border-radius:16px;padding:24px;text-align:center;margin-bottom:16px;color:var(--tma-btn-text)}
+.tma-shop-balance-icon{font-size:36px;margin-bottom:4px}
+.tma-shop-balance-amount{font-size:42px;font-weight:700;line-height:1.2}
+.tma-shop-balance-label{font-size:13px;opacity:.85;margin-top:4px}
+.tma-shop-pricing{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:4px 0}
+.tma-shop-price-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:16px 12px;text-align:center;position:relative}
+.tma-shop-popular{border-color:var(--tma-btn);box-shadow:0 0 0 1px var(--tma-btn)}
+.tma-shop-popular-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--tma-btn);color:var(--tma-btn-text);font-size:10px;font-weight:600;padding:2px 10px;border-radius:8px}
+.tma-shop-price-stars{font-size:22px;font-weight:700;color:var(--tma-text)}
+.tma-shop-price-label{font-size:14px;font-weight:600;color:var(--tma-text);margin:4px 0 2px}
+.tma-shop-price-desc{font-size:11px;color:var(--tma-hint);margin-bottom:10px}
+.tma-shop-buy-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+.tma-shop-buy-btn:active{opacity:.7}
 /* Pagination */
 .tma-pagination{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;flex-shrink:0;border-top:1px solid var(--tma-border)}
 .tma-page-btn{padding:5px 14px;border-radius:var(--tma-radius);border:1px solid var(--tma-border);background:var(--tma-section-bg);color:var(--tma-text);font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent}
