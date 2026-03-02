@@ -2262,5 +2262,100 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			'handle_validate_init_data should write to $_COOKIE[LOGGED_IN_COOKIE]'
 		);
 	}
+
+	// =========================================================================
+	// enable_groups persistence
+	// =========================================================================
+
+	/**
+	 * Test that the enable_groups field persists when saving a Telegram connection.
+	 */
+	public function test_telegram_enable_groups_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Telegram Enable Groups Test',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => '1111111111:ABCdefGHIjklMNOpqrsTUVwxyz_grouptest',
+			'enable_groups'   => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertTrue( (bool) $saved['enable_groups'], 'enable_groups should be stored as true' );
+	}
+
+	/**
+	 * Test that enable_groups defaults to false when not provided.
+	 */
+	public function test_telegram_enable_groups_defaults_false() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Telegram Groups Default Test',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => '2222222222:ABCdefGHIjklMNOpqrsTUVwxyz_groupdflt',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertEmpty( $saved['enable_groups'], 'enable_groups should default to empty/false when not provided' );
+	}
+
+	/**
+	 * Test that enable_groups is preserved when updating without providing it.
+	 */
+	public function test_telegram_enable_groups_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_data = array(
+			'name'            => 'Telegram Groups Preserve Test',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => '3333333333:ABCdefGHIjklMNOpqrsTUVwxyz_groupprsv',
+			'enable_groups'   => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Update without providing enable_groups.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Telegram Groups Preserve Test — Renamed',
+			'url'             => 'https://api.telegram.org',
+			'connection_type' => 'telegram',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+		);
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		$updated = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertTrue( (bool) $updated['enable_groups'], 'enable_groups should be preserved on update' );
+	}
 }
 

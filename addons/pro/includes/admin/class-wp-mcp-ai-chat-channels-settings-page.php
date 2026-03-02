@@ -432,6 +432,15 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					</tr>
 				</table>
 
+				<h4><?php esc_html_e( 'Group & Community Chat', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'To allow your bot to respond in Telegram groups and supergroups, enable the "Enable Group Chats" option on the Telegram connection in the Remote Site Manager. You can also configure whether the bot requires an @mention before replying in groups using the "Require Mention" setting.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ol>
+					<li><?php esc_html_e( 'Go to the Remote Site Manager and edit your Telegram connection', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Check "Enable Group Chats" to allow the bot to respond in groups', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Optionally check "Require Mention" so the bot only replies when @mentioned', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the bot to your Telegram group and send it a message', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://core.telegram.org/bots" target="_blank"><?php esc_html_e( 'Telegram Bot API Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
