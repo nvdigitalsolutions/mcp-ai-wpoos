@@ -563,8 +563,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$shop_url      = rest_url( $this->namespace . '/' . $this->rest_base . '/shop/balance' );
 		$login_url     = wp_login_url( rest_url( $this->namespace . '/' . $this->rest_base ) );
 
+		// Serve Chart.js from the local plugin bundle so the analytics
+		// dashboard works reliably inside Telegram's WebView where CDN
+		// requests can be blocked or fail SRI checks.
+		$chart_js_url = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+
 		header( 'Content-Type: text/html; charset=utf-8' );
 		header( 'X-Robots-Tag: noindex, nofollow' );
+		// Prevent Telegram WebView from caching stale versions of the Mini App
+		// shell.  Without these headers the WebView may continue to serve a
+		// previously fetched page even after the plugin has been updated.
+		header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+		header( 'Pragma: no-cache' );
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Standalone HTML page; individual values escaped inline.
 		echo '<!DOCTYPE html>
@@ -575,7 +585,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 <meta name="robots" content="noindex, nofollow">
 <title>' . esc_html( $page_title ) . '</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js" integrity="sha384-UPISyMBHSQG9TG98ClIRsRlDOGZeGYc7Y1B6bXWmLi1KQPOqmYOjEOkB50ofrIG" crossorigin="anonymous"></script>
+<script src="' . $chart_js_url . '"></script>
 <style>' . $this->get_mini_app_css() . '</style>
 ' . $head_output . '
 </head>
@@ -1021,7 +1031,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   }
 
   function renderHomeCharts(data) {
-    if (typeof Chart === \'undefined\') return;
+    if (typeof Chart === \'undefined\') {
+      document.querySelectorAll(\'.tma-chart-wrap\').forEach(function (el) {
+        el.innerHTML = \'<div class="tma-empty" style="padding:12px;font-size:12px">Chart library unavailable.</div>\';
+      });
+      return;
+    }
     var tmaColors = {
       primary  : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-btn\').trim() || \'#2481cc\',
       accent   : getComputedStyle(document.documentElement).getPropertyValue(\'--tma-accent\').trim() || \'#2481cc\',

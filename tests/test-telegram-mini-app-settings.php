@@ -1093,4 +1093,89 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		delete_user_meta( $user_id, '_wp_mcp_ai_tma_stars_balance' );
 	}
+
+	/**
+	 * Test that the local Chart.js vendor file exists.
+	 */
+	public function test_local_chart_js_file_exists() {
+		$chart_path = dirname( dirname( __DIR__ ) ) . '/assets/js/vendor/chart.min.js';
+		$this->assertFileExists( $chart_path, 'Local Chart.js vendor file should exist at assets/js/vendor/chart.min.js' );
+	}
+
+	/**
+	 * Test that handle_mini_app references local Chart.js URL instead of CDN.
+	 *
+	 * The Telegram WebView can block CDN requests or fail SRI checks, so
+	 * Chart.js must be served from the plugin's own assets directory.
+	 */
+	public function test_mini_app_uses_local_chart_js() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		// Read the controller source to verify it does not reference the CDN.
+		$source = file_get_contents(
+			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
+		);
+
+		$this->assertStringNotContainsString(
+			'cdnjs.cloudflare.com/ajax/libs/Chart.js',
+			$source,
+			'Mini App controller should not load Chart.js from the CDN'
+		);
+
+		$this->assertStringContainsString(
+			'assets/js/vendor/chart.min.js',
+			$source,
+			'Mini App controller should reference the local Chart.js file'
+		);
+	}
+
+	/**
+	 * Test that handle_mini_app sets no-cache headers to prevent Telegram
+	 * WebView from serving stale versions of the Mini App shell.
+	 */
+	public function test_mini_app_sets_cache_control_headers() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = file_get_contents(
+			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
+		);
+
+		$this->assertStringContainsString(
+			"header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' )",
+			$source,
+			'Mini App should set Cache-Control header to prevent stale caching'
+		);
+
+		$this->assertStringContainsString(
+			"header( 'Pragma: no-cache' )",
+			$source,
+			'Mini App should set Pragma no-cache header for legacy proxy compatibility'
+		);
+	}
+
+	/**
+	 * Test that Chart.js fallback message is shown when library is unavailable.
+	 */
+	public function test_mini_app_has_chart_js_fallback_message() {
+		if ( ! $this->controller ) {
+			$this->markTestSkipped( 'Mini App controller not available.' );
+			return;
+		}
+
+		$source = file_get_contents(
+			WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
+		);
+
+		$this->assertStringContainsString(
+			'Chart library unavailable',
+			$source,
+			'Mini App should display a user-visible message when Chart.js fails to load'
+		);
+	}
 }
