@@ -10422,6 +10422,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		$username = isset( $body['username'] ) ? $body['username'] : '';
+		// Discord migrated to unique usernames (2023+); discriminator '0' means the new system is in use.
 		$discriminator = isset( $body['discriminator'] ) && '0' !== $body['discriminator'] ? '#' . $body['discriminator'] : '';
 
 		wp_send_json_success(
