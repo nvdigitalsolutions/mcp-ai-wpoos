@@ -178,6 +178,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['bot_username'] = $existing_connection['bot_username'];
 			}
 
+			// Preserve existing enable_groups (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_groups'] ) && isset( $existing_connection['enable_groups'] ) ) {
+				$connection_data['enable_groups'] = $existing_connection['enable_groups'];
+			}
+
 			// Preserve existing enable_web_login (Telegram) if not provided.
 			if ( ! isset( $connection_data['enable_web_login'] ) && isset( $existing_connection['enable_web_login'] ) ) {
 				$connection_data['enable_web_login'] = $existing_connection['enable_web_login'];
@@ -380,6 +385,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
 			// Telegram-specific fields.
 			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			'enable_groups'   => ! empty( $connection_data['enable_groups'] ),
 			// Telegram Web Login feature flag and after-login redirect URL.
 			'enable_web_login'       => ! empty( $connection_data['enable_web_login'] ),
 			'web_login_redirect_url' => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
