@@ -2804,14 +2804,31 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			$status = 'draft';
 		}
 
-		$post_date     = '';
-		$post_date_gmt = '';
+		// Build the base post data array.
+		$post_data = array(
+			'post_type'    => $post_type,
+			'post_title'   => $title,
+			'post_content' => wp_kses_post( $content ),
+			'post_status'  => $status,
+		);
+
+		// Only set scheduling dates when status is 'future' and a valid date was provided.
 		if ( 'future' === $status ) {
 			$date_input = $request->get_param( 'date' );
 			if ( ! empty( $date_input ) ) {
-				// datetime-local input sends local time.
-				$post_date     = gmdate( 'Y-m-d H:i:s', strtotime( $date_input ) );
-				$post_date_gmt = get_gmt_from_date( $post_date );
+				// datetime-local input sends format 'YYYY-MM-DDTHH:MM'.
+				$dt = DateTime::createFromFormat( 'Y-m-d\TH:i', $date_input );
+				if ( ! $dt ) {
+					// Fall back to strtotime for other common formats.
+					$ts = strtotime( $date_input );
+					if ( $ts ) {
+						$dt = new DateTime( '@' . $ts );
+					}
+				}
+				if ( $dt ) {
+					$post_data['post_date']     = $dt->format( 'Y-m-d H:i:s' );
+					$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
+				}
 			}
 		}
 
@@ -2825,18 +2842,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				);
 			}
 
-			$new_post_id = wp_insert_post(
-				array(
-					'post_type'     => $post_type,
-					'post_title'    => $title,
-					'post_content'  => wp_kses_post( $content ),
-					'post_status'   => $status,
-					'post_author'   => get_current_user_id(),
-					'post_date'     => $post_date,
-					'post_date_gmt' => $post_date_gmt,
-				),
-				true
-			);
+			$post_data['post_author'] = get_current_user_id();
+			$new_post_id = wp_insert_post( $post_data, true );
 
 			if ( is_wp_error( $new_post_id ) ) {
 				return $new_post_id;
@@ -2869,17 +2876,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			);
 		}
 
-		$result = wp_update_post(
-			array(
-				'ID'            => $post_id,
-				'post_title'    => $title,
-				'post_content'  => wp_kses_post( $content ),
-				'post_status'   => $status,
-				'post_date'     => $post_date,
-				'post_date_gmt' => $post_date_gmt,
-			),
-			true
-		);
+		$post_data['ID'] = $post_id;
+		unset( $post_data['post_type'] ); // Cannot change post type on update.
+		$result = wp_update_post( $post_data, true );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;

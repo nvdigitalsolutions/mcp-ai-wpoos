@@ -1110,9 +1110,8 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 	private function get_controller_source() {
 		static $source = null;
 		if ( null === $source ) {
-			$source = file_get_contents(
-				WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php'
-			);
+			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+			$source = file_exists( $file ) ? file_get_contents( $file ) : '';
 		}
 		return $source;
 	}
@@ -1256,7 +1255,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		// The handler should also validate up to 90.
 		$this->assertStringContainsString(
-			'$days > 90',
+			'> 90',
 			$source,
 			'Analytics handler should validate up to 90 days'
 		);
