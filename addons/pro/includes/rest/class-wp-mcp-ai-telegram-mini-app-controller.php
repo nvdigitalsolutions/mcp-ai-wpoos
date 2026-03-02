@@ -181,6 +181,46 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// Content update / create endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/content',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_update_content' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'id'           => array(
+						'required' => false,
+						'type'     => 'integer',
+						'default'  => 0,
+					),
+					'post_type'    => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => 'post',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'title'        => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'content'      => array(
+						'required' => false,
+						'type'     => 'string',
+						'default'  => '',
+					),
+					'status'       => array(
+						'required'          => false,
+						'type'              => 'string',
+						'default'           => 'draft',
+						'sanitize_callback' => 'sanitize_key',
+					),
+				),
+			)
+		);
+
 		// Tools & slash-commands data endpoint (GET).
 		register_rest_route(
 			$this->namespace,
@@ -548,10 +588,47 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
           <div class="tma-empty">Loading types…</div>
         </div>
       </div>
+      <div class="tma-content-actions" id="tma-content-actions">
+        <button class="tma-btn-new-post" onclick="tmaNewPost()">+ New</button>
+      </div>
       <div class="tma-post-list" id="tma-post-list">
         <div class="tma-empty">Loading content…</div>
       </div>
       <div class="tma-pagination" id="tma-content-pagination"></div>
+      <!-- Inline editor overlay -->
+      <div class="tma-editor-overlay" id="tma-editor-overlay" style="display:none">
+        <div class="tma-editor-panel">
+          <div class="tma-editor-header">
+            <button class="tma-editor-close" onclick="tmaCloseEditor()">✕</button>
+            <span class="tma-editor-title" id="tma-editor-heading">Edit Post</span>
+          </div>
+          <div class="tma-editor-body">
+            <input type="hidden" id="tma-editor-id" value="0" />
+            <input type="hidden" id="tma-editor-post-type" value="post" />
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-title">Title</label>
+              <input type="text" id="tma-editor-post-title" class="tma-editor-input" placeholder="Post title…" />
+            </div>
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-content">Content</label>
+              <textarea id="tma-editor-post-content" class="tma-editor-textarea" rows="8" placeholder="Write your content…"></textarea>
+            </div>
+            <div class="tma-editor-field">
+              <label class="tma-editor-label" for="tma-editor-post-status">Status</label>
+              <select id="tma-editor-post-status" class="tma-editor-select">
+                <option value="draft">Draft</option>
+                <option value="publish">Published</option>
+                <option value="pending">Pending Review</option>
+              </select>
+            </div>
+            <div id="tma-editor-error" class="tma-editor-error" style="display:none"></div>
+            <div class="tma-editor-actions">
+              <button class="tma-settings-btn tma-btn-secondary" onclick="tmaCloseEditor()">Cancel</button>
+              <button class="tma-settings-btn tma-btn-primary" id="tma-editor-save" onclick="tmaSavePost()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Tools tab -->
@@ -1052,6 +1129,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     var pageEl  = document.getElementById(\'tma-content-pagination\');
     if (!listEl) return;
 
+    /* Cache posts so the editor can access post_content. */
+    contentPostsCache = posts;
+
     if (!posts.length) {
       listEl.innerHTML = \'<div class="tma-empty">No items found.</div>\';
       if (pageEl) pageEl.innerHTML = \'\';
@@ -1059,7 +1139,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     }
 
     var html = \'\';
-    posts.forEach(function (p) {
+    posts.forEach(function (p, idx) {
       var statusClass = p.status === \'publish\' ? \'tma-status-pub\' : \'tma-status-draft\';
       var statusText  = p.status === \'publish\' ? \'Published\' : (p.status === \'draft\' ? \'Draft\' : p.status);
       var date        = p.modified ? new Date(p.modified).toLocaleDateString(undefined, { month: \'short\', day: \'numeric\' }) : \'\';
@@ -1071,7 +1151,10 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         (p.excerpt ? \'<div class="tma-post-excerpt">\' + escHtml(p.excerpt) + \'</div>\' : \'\') +
         \'<div class="tma-post-meta">\' +
           \'<span>\' + escHtml(date) + \'</span>\' +
-          (p.link ? \'<a class="tma-post-edit" href="\' + escHtml(p.link) + \'" target="_blank">Edit ›</a>\' : \'\') +
+          \'<span class="tma-post-actions">\' +
+            \'<button class="tma-post-edit-btn" onclick="tmaEditPost(\' + idx + \')">✏️ Edit</button>\' +
+            (p.link ? \'<a class="tma-post-edit" href="\' + escHtml(p.link) + \'" target="_blank">Open ›</a>\' : \'\') +
+          \'</span>\' +
         \'</div>\' +
       \'</div>\';
     });
@@ -1090,6 +1173,85 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       pageEl.innerHTML = pHtml;
     }
   }
+
+  /* ── Content Editor Functions ── */
+  var contentPostsCache = [];
+
+  window.tmaNewPost = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-editor-id\').value = \'0\';
+    document.getElementById(\'tma-editor-post-type\').value = contentPostType;
+    document.getElementById(\'tma-editor-post-title\').value = \'\';
+    document.getElementById(\'tma-editor-post-content\').value = \'\';
+    document.getElementById(\'tma-editor-post-status\').value = \'draft\';
+    document.getElementById(\'tma-editor-heading\').textContent = \'New \' + contentPostType;
+    var errEl = document.getElementById(\'tma-editor-error\');
+    if (errEl) errEl.style.display = \'none\';
+    document.getElementById(\'tma-editor-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaEditPost = function (idx) {
+    haptic(\'light\');
+    var p = contentPostsCache[idx];
+    if (!p) return;
+    document.getElementById(\'tma-editor-id\').value = String(p.id);
+    document.getElementById(\'tma-editor-post-type\').value = contentPostType;
+    document.getElementById(\'tma-editor-post-title\').value = p.title || \'\';
+    document.getElementById(\'tma-editor-post-content\').value = p.post_content || \'\';
+    document.getElementById(\'tma-editor-post-status\').value = p.status || \'draft\';
+    document.getElementById(\'tma-editor-heading\').textContent = \'Edit: \' + escHtml(p.title || \'(no title)\');
+    var errEl = document.getElementById(\'tma-editor-error\');
+    if (errEl) errEl.style.display = \'none\';
+    document.getElementById(\'tma-editor-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaCloseEditor = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-editor-overlay\').style.display = \'none\';
+  };
+
+  window.tmaSavePost = function () {
+    haptic(\'light\');
+    var saveBtn = document.getElementById(\'tma-editor-save\');
+    var errEl   = document.getElementById(\'tma-editor-error\');
+    var title   = document.getElementById(\'tma-editor-post-title\').value.trim();
+    if (!title) {
+      if (errEl) { errEl.textContent = \'Title is required.\'; errEl.style.display = \'block\'; }
+      return;
+    }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = \'Saving…\'; }
+    var payload = {
+      id:        parseInt(document.getElementById(\'tma-editor-id\').value, 10) || 0,
+      post_type: document.getElementById(\'tma-editor-post-type\').value || contentPostType,
+      title:     title,
+      content:   document.getElementById(\'tma-editor-post-content\').value,
+      status:    document.getElementById(\'tma-editor-post-status\').value || \'draft\',
+    };
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_CONTENT_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = \'Save\'; }
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          tmaCloseEditor();
+          contentLoaded = false;
+          loadContent();
+        } else {
+          var msg = (json && json.message) ? json.message : \'Failed to save.\';
+          if (errEl) { errEl.textContent = msg; errEl.style.display = \'block\'; }
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = \'Save\'; }
+        if (errEl) { errEl.textContent = \'Network error.\'; errEl.style.display = \'block\'; }
+      });
+  };
 
   window.tmaContentPage = function (p) {
     haptic(\'light\');
@@ -1620,6 +1782,30 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
     html += \'</div></div>\';
 
+    /* ── Content Display section ── */
+    html += \'<div class="tma-settings-section">\';
+    html += \'<div class="tma-settings-section-title">Content Display</div>\';
+    html += \'<div class="tma-settings-card">\';
+    html += \'<div class="tma-settings-help">Choose which post types appear in the Content tab. When none are selected, all available types are shown.</div>\';
+
+    var enabledCpts = (data.preferences && Array.isArray(data.preferences.enabled_post_types))
+                      ? data.preferences.enabled_post_types : null;
+    var availCpts   = data.available_post_types || [];
+    availCpts.forEach(function (cpt) {
+      var isOn = enabledCpts === null || enabledCpts.indexOf(cpt.name) !== -1;
+      var tkHint = cpt.toolkit ? \' <span class="tma-tk-dot" title="\' + escHtml(cpt.toolkit) + \'">● \' + escHtml(cpt.toolkit) + \'</span>\' : \'\';
+      html += \'<div class="tma-settings-item">\';
+      html += \'<div class="tma-settings-item-icon">📄</div>\';
+      html += \'<div class="tma-settings-item-body">\';
+      html += \'<div class="tma-settings-item-label">\' + escHtml(cpt.label) + tkHint + \'</div>\';
+      html += \'<div class="tma-settings-item-value">\' + escHtml(cpt.name) + \'</div>\';
+      html += \'</div>\';
+      html += \'<label class="tma-toggle"><input type="checkbox" data-cpt="\' + escHtml(cpt.name) + \'"\' + (isOn ? \' checked\' : \'\') + \' onchange="tmaSaveContentDisplay()"><span class="tma-toggle-slider"></span></label>\';
+      html += \'</div>\';
+    });
+
+    html += \'</div></div>\';
+
     /* ── About section ── */
     html += \'<div class="tma-settings-section">\';
     html += \'<div class="tma-settings-section-title">About</div>\';
@@ -1684,6 +1870,42 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       .catch(function () {
         showToast(\'Network error\', true);
       });
+  };
+
+  /* ── Save Content Display toggles ── */
+  window.tmaSaveContentDisplay = function () {
+    haptic(\'light\');
+    var checks = document.querySelectorAll(\'[data-cpt]\');
+    var selected = [];
+    var allChecked = true;
+    checks.forEach(function (cb) {
+      if (cb.checked) {
+        selected.push(cb.getAttribute(\'data-cpt\'));
+      } else {
+        allChecked = false;
+      }
+    });
+    /* When all are checked, store null (show all = default). */
+    var value = allChecked ? null : selected;
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_SETTINGS_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify({ action: \'save_preferences\', preferences: { enabled_post_types: value } }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (json && json.success) {
+          showToast(\'✓ Content display saved\');
+          haptic(\'notificationOccurred\', \'success\');
+          /* Force Content tab to reload with new filter. */
+          contentLoaded = false;
+        } else {
+          showToast(\'Failed to save\', true);
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () { showToast(\'Network error\', true); });
   };
 
   /* ── Show / Hide link account form ── */
@@ -1900,6 +2122,13 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		$post_type_obj = get_post_type_object( $post_type );
 
+		// Load the user's enabled_post_types preference to filter the CPT bar.
+		$user_id     = get_current_user_id();
+		$preferences = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true ) : array();
+		$enabled_cpt = ( is_array( $preferences ) && isset( $preferences['enabled_post_types'] ) && is_array( $preferences['enabled_post_types'] ) )
+			? $preferences['enabled_post_types']
+			: null; // null = show all (default).
+
 		// When the current user cannot edit the requested post type, return an
 		// empty post list instead of a hard 403 so that the Mini App client does
 		// not misinterpret it as an authentication failure and enter a retry loop.
@@ -1932,13 +2161,14 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 20, '…' );
 				}
 				$posts[] = array(
-					'id'       => $post->ID,
-					'title'    => get_the_title( $post ),
-					'status'   => $post->post_status,
-					'date'     => $post->post_date,
-					'modified' => $post->post_modified,
-					'link'     => (string) get_edit_post_link( $post->ID, 'raw' ),
-					'excerpt'  => $excerpt,
+					'id'           => $post->ID,
+					'title'        => get_the_title( $post ),
+					'status'       => $post->post_status,
+					'date'         => $post->post_date,
+					'modified'     => $post->post_modified,
+					'link'         => (string) get_edit_post_link( $post->ID, 'raw' ),
+					'excerpt'      => $excerpt,
+					'post_content' => $post->post_content,
 				);
 			}
 		}
@@ -1950,6 +2180,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 		foreach ( $all_types as $type ) {
 			if ( ! current_user_can( $type->cap->edit_posts ) ) {
+				continue;
+			}
+
+			// When the user has configured an enabled_post_types allowlist, skip
+			// any post type not explicitly included.
+			if ( null !== $enabled_cpt && ! in_array( $type->name, $enabled_cpt, true ) ) {
 				continue;
 			}
 
@@ -1977,6 +2213,116 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'total'      => $query ? (int) $query->found_posts : 0,
 				'pages'      => $query ? (int) $query->max_num_pages : 0,
 				'post_types' => $cpt_list,
+			)
+		);
+	}
+
+	/**
+	 * Create or update a post from the Mini App content editor.
+	 *
+	 * When `id` is 0 a new post is created; otherwise the existing post is updated.
+	 * The user must have the appropriate capability for the target post type.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request object with title, content, status, post_type, and optional id.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_update_content( $request ) {
+		$post_id   = absint( $request->get_param( 'id' ) );
+		$post_type = $request->get_param( 'post_type' );
+		$title     = $request->get_param( 'title' );
+		$content   = $request->get_param( 'content' );
+		$status    = $request->get_param( 'status' );
+
+		// Validate post type.
+		if ( ! post_type_exists( $post_type ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_invalid_post_type',
+				__( 'Invalid post type.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$post_type_obj = get_post_type_object( $post_type );
+
+		// Sanitize status to an allowed value.
+		$allowed_statuses = array( 'draft', 'publish', 'pending' );
+		if ( ! in_array( $status, $allowed_statuses, true ) ) {
+			$status = 'draft';
+		}
+
+		// Creating a new post.
+		if ( 0 === $post_id ) {
+			if ( ! current_user_can( $post_type_obj->cap->create_posts ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_telegram_forbidden',
+					__( 'You do not have permission to create this content.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			$new_post_id = wp_insert_post(
+				array(
+					'post_type'    => $post_type,
+					'post_title'   => $title,
+					'post_content' => wp_kses_post( $content ),
+					'post_status'  => $status,
+					'post_author'  => get_current_user_id(),
+				),
+				true
+			);
+
+			if ( is_wp_error( $new_post_id ) ) {
+				return $new_post_id;
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'id'      => $new_post_id,
+					'message' => __( 'Content created successfully.', 'mcp-ai-wpoos-pro' ),
+				)
+			);
+		}
+
+		// Updating an existing post.
+		$existing = get_post( $post_id );
+		if ( ! $existing || $existing->post_type !== $post_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_not_found',
+				__( 'Post not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_telegram_forbidden',
+				__( 'You do not have permission to edit this content.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$result = wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_title'   => $title,
+				'post_content' => wp_kses_post( $content ),
+				'post_status'  => $status,
+			),
+			true
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'id'      => $post_id,
+				'message' => __( 'Content updated successfully.', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 	}
@@ -2175,6 +2521,29 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			'require_mention' => ! empty( $connection['require_mention'] ),
 		);
 
+		// Build the list of all accessible CPTs for the Content Display settings.
+		$all_types       = get_post_types( array( 'show_ui' => true ), 'objects' );
+		$active_toolkits = $this->get_active_toolkits();
+		$available_cpts  = array();
+
+		foreach ( $all_types as $type ) {
+			if ( ! current_user_can( $type->cap->edit_posts ) ) {
+				continue;
+			}
+			$toolkit_label = '';
+			foreach ( $active_toolkits as $tk ) {
+				if ( in_array( $type->name, $tk['post_types'], true ) ) {
+					$toolkit_label = $tk['label'];
+					break;
+				}
+			}
+			$available_cpts[] = array(
+				'name'    => $type->name,
+				'label'   => $type->label,
+				'toolkit' => $toolkit_label,
+			);
+		}
+
 		return rest_ensure_response(
 			array(
 				'wp_linked'       => $wp_linked,
@@ -2184,6 +2553,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'preferences'     => $preferences,
 				'assistant_name'  => $assistant_name,
 				'group_settings'  => $group_settings,
+				'available_post_types' => $available_cpts,
 			)
 		);
 	}
@@ -2265,6 +2635,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				} else {
 					$existing[ $key ] = (bool) $incoming[ $key ];
 				}
+			}
+		}
+
+		// Handle enabled_post_types: array of post-type slugs or null (show all).
+		if ( array_key_exists( 'enabled_post_types', $incoming ) ) {
+			if ( is_array( $incoming['enabled_post_types'] ) ) {
+				$existing['enabled_post_types'] = array_values(
+					array_map( 'sanitize_key', $incoming['enabled_post_types'] )
+				);
+			} else {
+				// null or non-array resets to "show all".
+				unset( $existing['enabled_post_types'] );
 			}
 		}
 
@@ -2992,6 +3374,26 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-post-excerpt{font-size:12px;color:var(--tma-subtitle);line-height:1.4;margin-bottom:6px}
 .tma-post-meta{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tma-hint)}
 .tma-post-edit{color:var(--tma-link);text-decoration:none;font-weight:500}
+.tma-post-actions{display:flex;align-items:center;gap:8px}
+.tma-post-edit-btn{background:none;border:1px solid var(--tma-btn);color:var(--tma-btn);font-size:11px;padding:2px 8px;border-radius:6px;cursor:pointer;font-weight:500}
+.tma-post-edit-btn:active{opacity:.7}
+.tma-content-actions{display:flex;justify-content:flex-end;padding:4px 12px 0}
+.tma-btn-new-post{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:6px 14px;border-radius:var(--tma-radius);font-size:13px;font-weight:600;cursor:pointer}
+.tma-btn-new-post:active{opacity:.7}
+/* Editor overlay */
+.tma-editor-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center}
+.tma-editor-panel{background:var(--tma-bg);border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.tma-editor-header{display:flex;align-items:center;gap:10px;padding:14px 16px 8px;border-bottom:1px solid var(--tma-border)}
+.tma-editor-close{background:none;border:none;font-size:18px;color:var(--tma-hint);cursor:pointer;padding:0 4px}
+.tma-editor-title{font-size:16px;font-weight:600;color:var(--tma-text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tma-editor-body{padding:12px 16px 24px}
+.tma-editor-field{margin-bottom:12px}
+.tma-editor-label{display:block;font-size:12px;font-weight:600;color:var(--tma-hint);margin-bottom:4px}
+.tma-editor-input,.tma-editor-select,.tma-editor-textarea{width:100%;background:var(--tma-secondary-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--tma-text);box-sizing:border-box;font-family:inherit}
+.tma-editor-textarea{resize:vertical;min-height:100px;line-height:1.5}
+.tma-editor-input:focus,.tma-editor-select:focus,.tma-editor-textarea:focus{outline:none;border-color:var(--tma-btn)}
+.tma-editor-error{color:var(--tma-destructive);font-size:12px;padding:6px 0}
+.tma-editor-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 /* Tool cards */
 .tma-cards-list{padding:8px 12px;overflow-y:auto}
 .tma-tool-card{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);padding:10px 12px;margin-bottom:8px;box-shadow:var(--tma-shadow)}

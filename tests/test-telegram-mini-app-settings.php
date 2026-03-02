@@ -350,7 +350,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		// Message is a reply to a bot with matching username.
 		$message_reply = array(
-			'text' => 'Thanks!',
+			'text'             => 'Thanks!',
 			'reply_to_message' => array(
 				'from' => array(
 					'is_bot'   => true,
@@ -362,7 +362,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		// Message is a reply to a different bot.
 		$message_other_bot = array(
-			'text' => 'Thanks!',
+			'text'             => 'Thanks!',
 			'reply_to_message' => array(
 				'from' => array(
 					'is_bot'   => true,
@@ -413,21 +413,23 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		// The handler should return 200 OK (no error) even for channel posts
 		// when no connection is configured.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/telegram' );
-		$request->set_body( wp_json_encode(
-			array(
-				'update_id'    => 999001,
-				'channel_post' => array(
-					'message_id' => 1,
-					'chat'       => array(
-						'id'    => -1001234567890,
-						'type'  => 'channel',
-						'title' => 'Test Channel',
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'update_id'    => 999001,
+					'channel_post' => array(
+						'message_id' => 1,
+						'chat'       => array(
+							'id'    => -1001234567890,
+							'type'  => 'channel',
+							'title' => 'Test Channel',
+						),
+						'date'       => time(),
+						'text'       => 'Hello from channel',
 					),
-					'date' => time(),
-					'text' => 'Hello from channel',
-				),
+				)
 			)
-		) );
+		);
 		$request->set_header( 'Content-Type', 'application/json' );
 
 		$response = $this->webhook_controller->handle_webhook( $request );
@@ -446,21 +448,26 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/telegram' );
-		$request->set_body( wp_json_encode(
-			array(
-				'update_id'      => 999002,
-				'my_chat_member' => array(
-					'chat' => array(
-						'id'    => -1001234567890,
-						'type'  => 'supergroup',
-						'title' => 'Test Group',
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'update_id'      => 999002,
+					'my_chat_member' => array(
+						'chat'            => array(
+							'id'    => -1001234567890,
+							'type'  => 'supergroup',
+							'title' => 'Test Group',
+						),
+						'from'            => array(
+							'id'         => 123,
+							'first_name' => 'Admin',
+						),
+						'old_chat_member' => array( 'status' => 'left' ),
+						'new_chat_member' => array( 'status' => 'member' ),
 					),
-					'from' => array( 'id' => 123, 'first_name' => 'Admin' ),
-					'old_chat_member' => array( 'status' => 'left' ),
-					'new_chat_member' => array( 'status' => 'member' ),
-				),
+				)
 			)
-		) );
+		);
 		$request->set_header( 'Content-Type', 'application/json' );
 
 		$response = $this->webhook_controller->handle_webhook( $request );
@@ -668,9 +675,18 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		$settings = array(
 			'stars_enabled'          => true,
 			'stars_pricing'          => array(
-				array( 'credits' => 1000, 'stars' => 100 ),
-				array( 'credits' => 10000, 'stars' => 500 ),
-				array( 'credits' => 100000, 'stars' => 2500 ),
+				array(
+					'credits' => 1000,
+					'stars'   => 100,
+				),
+				array(
+					'credits' => 10000,
+					'stars'   => 500,
+				),
+				array(
+					'credits' => 100000,
+					'stars'   => 2500,
+				),
 			),
 			'subscriptions_enabled'  => true,
 			'subscription_plans'     => array(
@@ -733,14 +749,18 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		update_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_expires', 1743552000 );
 		update_user_meta( $user_id, '_wp_mcp_ai_tg_referral_code', 'REF_abc123' );
 		update_user_meta( $user_id, '_wp_mcp_ai_tg_pinned_toolkits', array( 'crm', 'ecommerce', 'analytics' ) );
-		update_user_meta( $user_id, '_wp_mcp_ai_tg_quick_actions', array(
-			'create_post',
-			'view_orders',
-			'generate_doc',
-			'search_contacts',
-			'check_analytics',
-			'manage_products',
-		) );
+		update_user_meta(
+			$user_id,
+			'_wp_mcp_ai_tg_quick_actions',
+			array(
+				'create_post',
+				'view_orders',
+				'generate_doc',
+				'search_contacts',
+				'check_analytics',
+				'manage_products',
+			)
+		);
 
 		$this->assertEquals( 1250, (int) get_user_meta( $user_id, '_wp_mcp_ai_tg_stars_balance', true ) );
 		$this->assertEquals( 'pro_bundle', get_user_meta( $user_id, '_wp_mcp_ai_tg_subscription_plan', true ) );
@@ -783,8 +803,8 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		update_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', $history );
 
 		// Append a second payment.
-		$saved    = get_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', true );
-		$saved[]  = array(
+		$saved   = get_user_meta( $user_id, '_wp_mcp_ai_tg_payment_history', true );
+		$saved[] = array(
 			'type'      => 'subscription',
 			'amount'    => 800,
 			'plan'      => 'pro_bundle',
