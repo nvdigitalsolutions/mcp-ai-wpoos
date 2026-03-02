@@ -2125,7 +2125,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// Load the user's enabled_post_types preference to filter the CPT bar.
 		$user_id     = get_current_user_id();
 		$preferences = $user_id ? get_user_meta( $user_id, '_wp_mcp_ai_tma_preferences', true ) : array();
-		$enabled_cpt = ( is_array( $preferences ) && isset( $preferences['enabled_post_types'] ) && is_array( $preferences['enabled_post_types'] ) )
+		$enabled_post_types = ( is_array( $preferences ) && isset( $preferences['enabled_post_types'] ) && is_array( $preferences['enabled_post_types'] ) )
 			? $preferences['enabled_post_types']
 			: null; // null = show all (default).
 

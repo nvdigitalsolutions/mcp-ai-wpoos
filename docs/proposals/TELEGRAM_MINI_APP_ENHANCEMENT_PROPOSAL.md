@@ -149,7 +149,7 @@ The bot's chat interface and the Mini App are **complementary**: chat handles co
 ┌──────────────────────────────────────────┐
 │  NV oOS Mini App                         │
 │  ┌─────────────────────────────────────┐ │
-│  │  [Home] [Toolkits] [Shop] [⚙]      │ │
+│  │  [Home] [Content] [Toolkits] [Shop] [⚙] │
 │  └─────────────────────────────────────┘ │
 │                                          │
 │  HOME TAB                                │
@@ -165,6 +165,27 @@ The bot's chat interface and the Mini App are **complementary**: chat handles co
 │  │                                     │ │
 │  │  📈 Analytics Summary              │ │
 │  │  └─ Token usage, costs, top tools   │ │
+│  └─────────────────────────────────────┘ │
+│                                          │
+│  CONTENT TAB (✅ IMPLEMENTED)            │
+│  ┌─────────────────────────────────────┐ │
+│  │  📝 CPT Type Bar (scrollable)      │ │
+│  │  └─ [Posts] [Pages] [CRM Contacts]  │ │
+│  │                              [+ New] │ │
+│  │                                     │ │
+│  │  📋 Post List (editable)           │ │
+│  │  ├─ Title, status, date, excerpt    │ │
+│  │  ├─ [✏️ Edit] [Open ›] per card    │ │
+│  │  └─ Pagination                      │ │
+│  │                                     │ │
+│  │  ✏️ Inline Editor (overlay)        │ │
+│  │  ├─ Title input                     │ │
+│  │  ├─ Content textarea                │ │
+│  │  ├─ Status select (Draft/Pub/Pend)  │ │
+│  │  └─ [Cancel] [Save]                │ │
+│  │                                     │ │
+│  │  ⚙️ Visibility controlled from     │ │
+│  │  Settings > Content Display toggles │ │
 │  └─────────────────────────────────────┘ │
 │                                          │
 │  TOOLKITS TAB                            │
@@ -230,6 +251,11 @@ The bot's chat interface and the Mini App are **complementary**: chat handles co
 │  │  ├─ Compact mode                    │ │
 │  │  └─ Default assistant               │ │
 │  │                                     │ │
+│  │  📄 Content Display (✅ IMPL)      │ │
+│  │  ├─ Per-CPT on/off toggles          │ │
+│  │  ├─ Shows toolkit label per CPT     │ │
+│  │  └─ Filters Content tab CPT bar     │ │
+│  │                                     │ │
 │  │  🤖 Bot Configuration              │ │
 │  │  ├─ Group/channel settings          │ │
 │  │  ├─ Auto-reply toggle               │ │
@@ -240,7 +266,7 @@ The bot's chat interface and the Mini App are **complementary**: chat handles co
 │  └─────────────────────────────────────┘ │
 │                                          │
 │  ┌─────────────────────────────────────┐ │
-│  │  [🏠] [🧰] [🛒] [⚙️]              │ │
+│  │  [🏠] [📝] [🧰] [🛒] [⚙️]         │ │
 │  └─────────────────────────────────────┘ │
 └──────────────────────────────────────────┘
 ```
