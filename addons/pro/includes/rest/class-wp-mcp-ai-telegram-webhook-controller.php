@@ -1829,7 +1829,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				// If bot_username is unknown, accept any mention whose name
 				// ends with "bot" – Telegram requires all bot usernames to
 				// end with "bot".
-				if ( '' === $bot_username && 'bot' === substr( $mentioned_name, -3 ) ) {
+				if ( '' === $bot_username && 'bot' === mb_substr( $mentioned_name, -3 ) ) {
 					return true;
 				}
 			}

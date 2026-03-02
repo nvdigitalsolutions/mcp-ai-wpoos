@@ -1820,7 +1820,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<input type="checkbox" name="telegram_enable_groups" id="telegram_enable_groups" value="1" <?php checked( $is_edit && ! empty( $connection['enable_groups'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
 							<?php esc_html_e( 'Allow the bot to respond in group and supergroup chats', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'When enabled, the bot will process and reply to messages in Telegram groups and supergroups. When disabled, the bot only responds in private (direct) chats. Note: You may also need to disable Privacy Mode via @BotFather (/setprivacy → Disable) so Telegram delivers all group messages to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot will process and reply to messages in Telegram groups and supergroups. When disabled, the bot only responds in private (direct) chats.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><strong><?php esc_html_e( 'Privacy Mode:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'You may need to disable Privacy Mode via @BotFather (/setprivacy → Disable) so Telegram delivers all group messages to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
