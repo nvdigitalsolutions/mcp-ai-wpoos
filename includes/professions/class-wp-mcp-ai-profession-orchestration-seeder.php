@@ -26,7 +26,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	/**
 	 * Version of the seeder (for tracking migrations).
 	 */
-	const SEEDER_VERSION = '1.0.1';
+	const SEEDER_VERSION = '1.1.0';
 
 	/**
 	 * Option key for tracking seeder version.
@@ -206,6 +206,13 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 				'assessor',
 				'judge',
 				'critic',
+				// Investigation & Monitoring.
+				'investigator',
+				'air traffic controller',
+				// Law Enforcement & Corrections.
+				'police officer',
+				'correctional officer',
+				'probation officer',
 			)
 		) ||
 			$this->has_keywords(
@@ -224,6 +231,14 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'compliance',
 					'quality control',
 					'peer review',
+					// Investigation & Safety Monitoring.
+					'investigation',
+					'surveillance',
+					'law enforcement',
+					'criminal law',
+					'inmate supervision',
+					'risk assessment',
+					'air traffic control',
 				)
 			) ) {
 			$matched_roles[] = 'critic';
@@ -270,6 +285,26 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'regulatory affairs',
 					'compliance specialist',
 					'drug safety',
+					// Education & Academia.
+					'professor',
+					'tutor',
+					'teacher',
+					'counselor',
+					// Language & Translation.
+					'translator',
+					'interpreter',
+					// Domain Specialists.
+					'behaviorist',
+					'historian',
+					'philosopher',
+					'economist',
+					'agronomist',
+					'horticulturist',
+					'conservationist',
+					'epidemiologist',
+					'social worker',
+					'librarian',
+					'specialist',
 				)
 			) ||
 			$this->has_keywords(
@@ -291,6 +326,28 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'regulatory',
 					'compliance',
 					'pharmaceutical',
+					// Education & Training Expertise.
+					'curriculum',
+					'pedagogy',
+					'learning theory',
+					'child development',
+					'adolescent development',
+					'special education',
+					'language acquisition',
+					// Domain Expertise.
+					'soil science',
+					'marine ecosystems',
+					'wildlife ecology',
+					'environmental assessment',
+					'translation',
+					'interpretation',
+					'historical research',
+					'case management',
+					'crisis intervention',
+					'animal behavior',
+					'plant propagation',
+					'conservation',
+					'ecology',
 				)
 			) ) {
 			$matched_roles[] = 'specialist';
@@ -315,6 +372,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 				'coordinator',
 				'logistics coordinator',
 				'research coordinator',
+				'dispatcher',
 				// Architecture (system design, not implementation).
 				'architect',
 				'cloud architect',
@@ -346,6 +404,12 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'management',
 					'administration',
 					'leadership',
+					// Dispatch & Scheduling.
+					'schedule coordination',
+					'route planning',
+					'resource coordination',
+					'disaster response coordination',
+					'emergency preparedness',
 				)
 			) ||
 			'advisory' === $category ) {
@@ -390,6 +454,19 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'driver',
 					'pilot',
 					'captain',
+					// Service & Hands-on Trades.
+					'farmer',
+					'landscaper',
+					'bartender',
+					'chef',
+					'hairstylist',
+					'stylist',
+					'guard',
+					'firefighter',
+					'attendant',
+					'trainer',
+					'tour guide',
+					'customer service',
 				)
 			) ||
 			$this->has_keywords(
@@ -409,6 +486,20 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'installation',
 					'operations',
 					'execution',
+					// Service & Hands-on Expertise.
+					'culinary',
+					'cooking',
+					'fire suppression',
+					'rescue operations',
+					'crop cultivation',
+					'livestock',
+					'hair cutting',
+					'customer service',
+					'safety procedures',
+					'vehicle operation',
+					'equipment operation',
+					'fitness assessment',
+					'exercise programming',
 				)
 			) ) {
 			$matched_roles[] = 'executor';
@@ -1052,6 +1143,164 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 						'follow_up'     => 'resolve',
 					),
 					'tools'        => array( 'client_analyze_sentiment', 'client_question_answering', 'send_group_email' ),
+				),
+			),
+			// Healthcare Professions.
+			'doctor'                        => array(
+				'patient_consultation' => array(
+					'steps'         => array( 'review_history', 'assess_symptoms', 'diagnose', 'recommend_treatment' ),
+					'dependencies'  => array(
+						'assess_symptoms'     => 'review_history',
+						'diagnose'            => 'assess_symptoms',
+						'recommend_treatment' => 'diagnose',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'deep_research', 'create_post', 'save_post' ),
+				),
+			),
+			'pharmacist'                    => array(
+				'medication_management' => array(
+					'steps'         => array( 'review_prescription', 'check_interactions', 'dispense', 'counsel_patient' ),
+					'dependencies'  => array(
+						'check_interactions' => 'review_prescription',
+						'dispense'           => 'check_interactions',
+						'counsel_patient'    => 'dispense',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'create_post', 'save_post' ),
+				),
+			),
+			// Education Professions.
+			'college_professor'             => array(
+				'course_development' => array(
+					'steps'        => array( 'design_syllabus', 'create_lectures', 'prepare_assessments', 'deliver_course' ),
+					'dependencies' => array(
+						'create_lectures'     => 'design_syllabus',
+						'prepare_assessments' => 'create_lectures',
+						'deliver_course'      => 'prepare_assessments',
+					),
+					'tools'        => array( 'create_post', 'generate_gemini_image', 'create_chart', 'deep_research', 'save_post' ),
+				),
+			),
+			'instructional_designer'        => array(
+				'elearning_development' => array(
+					'steps'        => array( 'analyze_needs', 'design_curriculum', 'develop_content', 'evaluate' ),
+					'dependencies' => array(
+						'design_curriculum' => 'analyze_needs',
+						'develop_content'   => 'design_curriculum',
+						'evaluate'          => 'develop_content',
+					),
+					'tools'        => array( 'create_post', 'generate_gemini_image', 'create_chart', 'save_post' ),
+				),
+			),
+			// Science & Engineering Professions.
+			'environmental_scientist'       => array(
+				'environmental_assessment' => array(
+					'steps'        => array( 'collect_samples', 'analyze_data', 'assess_impact', 'prepare_report' ),
+					'dependencies' => array(
+						'analyze_data'   => 'collect_samples',
+						'assess_impact'  => 'analyze_data',
+						'prepare_report' => 'assess_impact',
+					),
+					'tools'        => array( 'web_search', 'create_chart', 'deep_research', 'save_post' ),
+				),
+			),
+			// Agricultural Professions.
+			'farmer'                        => array(
+				'crop_management' => array(
+					'steps'         => array( 'plan_planting', 'prepare_soil', 'cultivate', 'harvest' ),
+					'dependencies'  => array(
+						'prepare_soil' => 'plan_planting',
+						'cultivate'    => 'prepare_soil',
+						'harvest'      => 'cultivate',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'create_chart', 'create_cron_job', 'save_post' ),
+				),
+			),
+			// Transportation Professions.
+			'commercial_pilot'              => array(
+				'flight_operations' => array(
+					'steps'        => array( 'plan_flight', 'pre_flight_check', 'execute_flight', 'post_flight_report' ),
+					'dependencies' => array(
+						'pre_flight_check'  => 'plan_flight',
+						'execute_flight'    => 'pre_flight_check',
+						'post_flight_report' => 'execute_flight',
+					),
+					'tools'        => array( 'web_search', 'create_post', 'save_post' ),
+				),
+			),
+			// Law Enforcement Professions.
+			'police_officer'                => array(
+				'investigation_workflow' => array(
+					'steps'        => array( 'gather_evidence', 'interview_witnesses', 'analyze_findings', 'prepare_report' ),
+					'dependencies' => array(
+						'interview_witnesses' => 'gather_evidence',
+						'analyze_findings'    => 'interview_witnesses',
+						'prepare_report'      => 'analyze_findings',
+					),
+					'tools'        => array( 'web_search', 'deep_research', 'create_post', 'save_post' ),
+				),
+			),
+			// Financial Professions.
+			'financial_advisor'             => array(
+				'financial_planning' => array(
+					'steps'        => array( 'assess_situation', 'analyze_options', 'create_plan', 'monitor_progress' ),
+					'dependencies' => array(
+						'analyze_options'  => 'assess_situation',
+						'create_plan'      => 'analyze_options',
+						'monitor_progress' => 'create_plan',
+					),
+					'tools'        => array( 'create_chart', 'web_search', 'create_post', 'save_post' ),
+				),
+			),
+			// Service Industry Professions.
+			'chef'                          => array(
+				'menu_development' => array(
+					'steps'         => array( 'research_trends', 'design_menu', 'test_recipes', 'finalize_menu' ),
+					'dependencies'  => array(
+						'design_menu'   => 'research_trends',
+						'test_recipes'  => 'design_menu',
+						'finalize_menu' => 'test_recipes',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'create_post', 'generate_gemini_image', 'save_post' ),
+				),
+			),
+			// Trades Professions.
+			'electrician'                   => array(
+				'electrical_project' => array(
+					'steps'        => array( 'assess_requirements', 'plan_wiring', 'install_systems', 'test_inspect' ),
+					'dependencies' => array(
+						'plan_wiring'      => 'assess_requirements',
+						'install_systems'  => 'plan_wiring',
+						'test_inspect'     => 'install_systems',
+					),
+					'tools'        => array( 'create_post', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			// Social Work.
+			'social_worker'                 => array(
+				'case_management' => array(
+					'steps'        => array( 'assess_needs', 'develop_plan', 'coordinate_services', 'monitor_outcomes' ),
+					'dependencies' => array(
+						'develop_plan'        => 'assess_needs',
+						'coordinate_services' => 'develop_plan',
+						'monitor_outcomes'    => 'coordinate_services',
+					),
+					'tools'        => array( 'web_search', 'create_post', 'send_group_email', 'save_post' ),
+				),
+			),
+			// Real Estate.
+			'urban_planner'                 => array(
+				'community_planning' => array(
+					'steps'        => array( 'analyze_area', 'develop_proposal', 'engage_stakeholders', 'finalize_plan' ),
+					'dependencies' => array(
+						'develop_proposal'    => 'analyze_area',
+						'engage_stakeholders' => 'develop_proposal',
+						'finalize_plan'       => 'engage_stakeholders',
+					),
+					'tools'        => array( 'web_search', 'create_chart', 'generate_mermaid', 'search_places', 'save_post' ),
 				),
 			),
 		);
