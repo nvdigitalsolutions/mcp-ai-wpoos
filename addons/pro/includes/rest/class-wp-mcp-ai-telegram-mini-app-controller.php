@@ -232,6 +232,29 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// Tool execution endpoint (POST).
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/tools/execute',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_execute_tool' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'slug'      => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'arguments' => array(
+						'required' => false,
+						'type'     => 'object',
+						'default'  => array(),
+					),
+				),
+			)
+		);
+
 		// Media library data endpoint (GET).
 		register_rest_route(
 			$this->namespace,
@@ -642,6 +665,24 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       <div id="tma-slash-list" class="tma-cards-list">
         <div class="tma-empty">Loading commands…</div>
       </div>
+      <!-- Tool execution overlay -->
+      <div class="tma-editor-overlay" id="tma-tool-exec-overlay" style="display:none">
+        <div class="tma-editor-panel">
+          <div class="tma-editor-header">
+            <button class="tma-editor-close" onclick="tmaCloseToolExec()">✕</button>
+            <span class="tma-editor-title" id="tma-tool-exec-heading">Execute Tool</span>
+          </div>
+          <div class="tma-editor-body">
+            <div id="tma-tool-exec-form"></div>
+            <div id="tma-tool-exec-error" class="tma-editor-error" style="display:none"></div>
+            <div class="tma-editor-actions">
+              <button class="tma-settings-btn tma-btn-secondary" onclick="tmaCloseToolExec()">Cancel</button>
+              <button class="tma-settings-btn tma-btn-primary" id="tma-tool-exec-run" onclick="tmaRunTool()">▶ Run</button>
+            </div>
+            <div id="tma-tool-exec-result" class="tma-tool-result" style="display:none"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Media tab -->
@@ -708,6 +749,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
   var TMA_VALIDATE_URL   = ' . wp_json_encode( $validate_url ) . ';
   var TMA_CONTENT_URL    = ' . wp_json_encode( $content_url ) . ';
   var TMA_TOOLS_URL      = ' . wp_json_encode( $tools_url ) . ';
+  var TMA_TOOLS_EXEC_URL = ' . wp_json_encode( $tools_url . '/execute' ) . ';
   var TMA_MEDIA_URL      = ' . wp_json_encode( $media_url ) . ';
   var TMA_SETTINGS_URL   = ' . wp_json_encode( $settings_url ) . ';
   var TMA_ANALYTICS_URL  = ' . wp_json_encode( $analytics_url ) . ';
@@ -1338,10 +1380,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
         filtered.forEach(function (t) {
           var tk = t.toolkit ? \'<span class="tma-card-badge">\' + escHtml(t.toolkit) + \'</span>\' : \'\';
           var gr = t.group ? \'<span class="tma-card-group">\' + escHtml(t.group) + \'</span>\' : \'\';
+          var hasParams = t.parameters && t.parameters.properties && Object.keys(t.parameters.properties).length > 0;
           html += \'<div class="tma-tool-card">\' +
             \'<div class="tma-card-title">\' + escHtml(t.name) + tk + \'</div>\' +
             (t.description ? \'<div class="tma-card-desc">\' + escHtml(t.description) + \'</div>\' : \'\') +
             gr +
+            \'<div class="tma-card-actions"><button class="tma-tool-exec-btn" onclick="tmaOpenToolExec(\\\'\' + escHtml(t.slug) + \'\\\')">▶ Execute</button></div>\' +
           \'</div>\';
         });
         toolsEl.innerHTML = html;
@@ -1369,6 +1413,109 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       }
     }
   }
+
+  /* ── Tool Execution ── */
+  var currentToolSlug = \'\';
+  var currentToolParams = {};
+
+  window.tmaOpenToolExec = function (slug) {
+    haptic(\'light\');
+    var tool = allTools.find(function (t) { return t.slug === slug; });
+    if (!tool) return;
+    currentToolSlug = slug;
+    currentToolParams = (tool.parameters && tool.parameters.properties) ? tool.parameters.properties : {};
+    var required = (tool.parameters && tool.parameters.required) ? tool.parameters.required : [];
+    document.getElementById(\'tma-tool-exec-heading\').textContent = tool.name;
+    var formEl = document.getElementById(\'tma-tool-exec-form\');
+    var errEl  = document.getElementById(\'tma-tool-exec-error\');
+    var resEl  = document.getElementById(\'tma-tool-exec-result\');
+    if (errEl) errEl.style.display = \'none\';
+    if (resEl) { resEl.style.display = \'none\'; resEl.innerHTML = \'\'; }
+    var html = \'\';
+    var keys = Object.keys(currentToolParams);
+    if (!keys.length) {
+      html = \'<div class="tma-settings-help">This tool has no parameters. Click Run to execute.</div>\';
+    } else {
+      keys.forEach(function (key) {
+        var p = currentToolParams[key];
+        var label = key + (required.indexOf(key) >= 0 ? \' *\' : \'\');
+        var desc  = p.description ? \'<div class="tma-editor-label" style="font-weight:400;font-size:11px;color:var(--tma-hint)">\' + escHtml(p.description) + \'</div>\' : \'\';
+        html += \'<div class="tma-editor-field">\';
+        html += \'<label class="tma-editor-label">\' + escHtml(label) + \'</label>\';
+        if (p.enum && p.enum.length) {
+          html += \'<select class="tma-editor-select" data-tool-param="\' + escHtml(key) + \'">\';
+          p.enum.forEach(function (v) {
+            html += \'<option value="\' + escHtml(String(v)) + \'">\' + escHtml(String(v)) + \'</option>\';
+          });
+          html += \'</select>\';
+        } else if (p.type === \'boolean\') {
+          html += \'<label class="tma-toggle"><input type="checkbox" data-tool-param="\' + escHtml(key) + \'"><span class="tma-toggle-slider"></span></label>\';
+        } else if (p.type === \'integer\' || p.type === \'number\') {
+          html += \'<input type="number" class="tma-editor-input" data-tool-param="\' + escHtml(key) + \'" placeholder="\' + escHtml(p.description || key) + \'" />\';
+        } else {
+          html += \'<input type="text" class="tma-editor-input" data-tool-param="\' + escHtml(key) + \'" placeholder="\' + escHtml(p.description || key) + \'" />\';
+        }
+        html += desc;
+        html += \'</div>\';
+      });
+    }
+    formEl.innerHTML = html;
+    document.getElementById(\'tma-tool-exec-overlay\').style.display = \'flex\';
+  };
+
+  window.tmaCloseToolExec = function () {
+    haptic(\'light\');
+    document.getElementById(\'tma-tool-exec-overlay\').style.display = \'none\';
+  };
+
+  window.tmaRunTool = function () {
+    haptic(\'light\');
+    var runBtn = document.getElementById(\'tma-tool-exec-run\');
+    var errEl  = document.getElementById(\'tma-tool-exec-error\');
+    var resEl  = document.getElementById(\'tma-tool-exec-result\');
+    if (errEl) errEl.style.display = \'none\';
+    if (resEl) { resEl.style.display = \'none\'; resEl.innerHTML = \'\'; }
+    if (runBtn) { runBtn.disabled = true; runBtn.textContent = \'Running…\'; }
+
+    var args = {};
+    document.querySelectorAll(\'[data-tool-param]\').forEach(function (el) {
+      var key = el.getAttribute(\'data-tool-param\');
+      var p   = currentToolParams[key];
+      if (el.type === \'checkbox\') {
+        args[key] = el.checked;
+      } else if (p && (p.type === \'integer\' || p.type === \'number\') && el.value !== \'\') {
+        args[key] = p.type === \'integer\' ? parseInt(el.value, 10) : parseFloat(el.value);
+      } else if (el.value !== \'\') {
+        args[key] = el.value;
+      }
+    });
+
+    var h = { \'Content-Type\': \'application/json\', \'X-WP-Nonce\': TMA_NONCE };
+    if (TMA_SESSION_TOKEN) { h[\'X-WP-MCP-AI-TMA-Token\'] = TMA_SESSION_TOKEN; }
+    fetch(TMA_TOOLS_EXEC_URL, {
+      method: \'POST\', credentials: \'same-origin\', headers: h,
+      body: JSON.stringify({ slug: currentToolSlug, arguments: args }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = \'▶ Run\'; }
+        if (json && json.success) {
+          haptic(\'notificationOccurred\', \'success\');
+          if (resEl) {
+            resEl.style.display = \'block\';
+            resEl.innerHTML = \'<div class="tma-tool-result-header">✅ Result</div><pre class="tma-tool-result-pre">\' + escHtml(typeof json.result === \'string\' ? json.result : JSON.stringify(json.result, null, 2)) + \'</pre>\';
+          }
+        } else {
+          var msg = (json && json.message) ? json.message : \'Tool execution failed.\';
+          if (errEl) { errEl.textContent = msg; errEl.style.display = \'block\'; }
+          haptic(\'notificationOccurred\', \'error\');
+        }
+      })
+      .catch(function () {
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = \'▶ Run\'; }
+        if (errEl) { errEl.textContent = \'Network error.\'; errEl.style.display = \'block\'; }
+      });
+  };
 
   /* =========================================================
      MEDIA TAB
@@ -2364,12 +2511,15 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						}
 					}
 
+				$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
+
 					$result['tools'][] = array(
 						'slug'        => $slug,
 						'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
 						'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
 						'group'       => isset( $group_map[ $slug ] ) ? $group_map[ $slug ] : '',
 						'toolkit'     => $toolkit_label,
+						'parameters'  => $params,
 					);
 				}
 			}
@@ -2392,6 +2542,68 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Execute a tool from the Mini App and return the result.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request Request with 'slug' and optional 'arguments'.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_execute_tool( $request ) {
+		$slug      = $request->get_param( 'slug' );
+		$arguments = $request->get_param( 'arguments' );
+
+		if ( ! is_array( $arguments ) ) {
+			$arguments = array();
+		}
+
+		if ( ! function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_no_registry',
+				__( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$registry = wp_mcp_ai_get_tool_registry();
+		if ( ! $registry ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_no_registry',
+				__( 'Tool registry not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$tool = $registry->get_tool( $slug );
+		if ( ! $tool ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_tool_not_found',
+				__( 'Tool not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Build execution context.
+		$context = array(
+			'user_id' => get_current_user_id(),
+			'source'  => 'telegram_mini_app',
+		);
+
+		$result = $tool->execute( $arguments, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'result'  => $result,
+			)
+		);
 	}
 
 	/**
@@ -3405,6 +3617,12 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-card-badge{font-size:10px;background:var(--tma-btn);color:var(--tma-btn-text);padding:1px 6px;border-radius:6px;font-weight:500}
 .tma-mono{font-family:monospace;color:var(--tma-btn)}
 .tma-mt{margin-top:8px}
+.tma-card-actions{margin-top:6px;display:flex;gap:6px}
+.tma-tool-exec-btn{background:var(--tma-btn);color:var(--tma-btn-text);border:none;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.tma-tool-exec-btn:active{opacity:.7}
+.tma-tool-result{margin-top:12px;border-top:1px solid var(--tma-border);padding-top:12px}
+.tma-tool-result-header{font-size:13px;font-weight:600;color:var(--tma-text);margin-bottom:6px}
+.tma-tool-result-pre{background:var(--tma-secondary-bg);border:1px solid var(--tma-border);border-radius:8px;padding:10px;font-size:12px;color:var(--tma-text);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;font-family:monospace}
 /* Media grid */
 .tma-media-grid{padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
 .tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition)}
