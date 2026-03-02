@@ -454,6 +454,81 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<p><?php esc_html_e( 'After disabling Privacy Mode, remove and re-add the bot to existing groups for the change to take effect.', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
 
+				<h4><?php esc_html_e( 'Test Group Link', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'Paste a Telegram group invite link or @username below to quickly open the group and verify your bot is active. To send a test message from your bot, use the "Test Send to Group/Channel" feature on the connection edit page in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Group Link', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<div style="display: flex; gap: 8px; align-items: flex-start;">
+								<input type="text" id="wp-mcp-ai-tg-group-link" class="regular-text" placeholder="<?php esc_attr_e( 'https://t.me/+abc123 or https://t.me/groupname or @groupname', 'mcp-ai-wpoos-pro' ); ?>" style="flex: 1;" />
+								<button type="button" id="wp-mcp-ai-tg-open-group-btn" class="button button-secondary">
+									<?php esc_html_e( 'Open Group', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
+							<div id="wp-mcp-ai-tg-group-link-result" style="display: none; margin-top: 8px;"></div>
+							<p class="description">
+								<?php esc_html_e( 'Enter a Telegram group invite link (e.g. https://t.me/+abc123 or https://t.me/groupname) or an @username. Clicking "Open Group" will open the link in a new tab so you can verify the bot is a member and receiving messages.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p class="description" style="margin-top: 4px;">
+								<strong><?php esc_html_e( 'Tip:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'For private groups (links with +), you need the numeric chat ID (e.g. -1001234567890) to send test messages via the API. Open the group, send /start to your bot, then check the plugin logs for the chat ID.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+				<script>
+				(function() {
+					var openBtn   = document.getElementById('wp-mcp-ai-tg-open-group-btn');
+					var linkInput = document.getElementById('wp-mcp-ai-tg-group-link');
+					var resultDiv = document.getElementById('wp-mcp-ai-tg-group-link-result');
+					if (!openBtn || !linkInput) { return; }
+
+					openBtn.addEventListener('click', function() {
+						var val = linkInput.value.trim();
+						if (!val) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Please enter a Telegram group link or @username.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+
+						var url = '';
+
+						// Already a full URL.
+						if (/^https?:\/\//i.test(val)) {
+							url = val;
+						}
+						// @username format.
+						else if (/^@/.test(val)) {
+							url = 'https://t.me/' + val.replace(/^@/, '');
+						}
+						// Bare username (letters, digits, underscores, 5+ chars).
+						else if (/^[a-zA-Z][a-zA-Z0-9_]{4,}$/.test(val)) {
+							url = 'https://t.me/' + val;
+						}
+						// Numeric chat ID — cannot open directly; show guidance.
+						else if (/^-?\d+$/.test(val)) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-info inline" style="margin:0;"><p><?php echo esc_js( __( 'Numeric chat IDs cannot be opened as a link. Use the "Test Send to Group/Channel" feature on the connection edit page to send a test message to this chat ID.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+						else {
+							url = 'https://t.me/' + val;
+						}
+
+						if (resultDiv) {
+							resultDiv.style.display = 'block';
+							resultDiv.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p><?php echo esc_js( __( 'Opening group link in a new tab…', 'mcp-ai-wpoos-pro' ) ); ?> <a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer">' + url.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</a></p></div>';
+						}
+						window.open(url, '_blank', 'noopener,noreferrer');
+					});
+				})();
+				</script>
+
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://core.telegram.org/bots" target="_blank"><?php esc_html_e( 'Telegram Bot API Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>

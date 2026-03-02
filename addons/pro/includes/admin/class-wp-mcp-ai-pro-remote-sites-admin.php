@@ -1883,8 +1883,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
 							<div style="flex: 1; min-width: 200px;">
-								<input type="text" id="telegram_test_group_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '-1001234567890 or @channelname', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
-								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Group/supergroup ID (negative number) or @channel username', 'mcp-ai-wpoos-pro' ); ?></p>
+								<input type="text" id="telegram_test_group_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '-1001234567890, @channelname, or https://t.me/groupname', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Group/supergroup ID (negative number), @channel username, or a t.me link (e.g. https://t.me/groupname). Note: private invite links (t.me/+hash) cannot be used — use the numeric chat ID instead.', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
 							<div style="flex: 2; min-width: 250px;">
 								<textarea id="telegram_test_group_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message to send…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
@@ -4651,9 +4651,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (!chatId) {
 						if (tgGroupSendResult) {
 							tgGroupSendResult.style.display = 'block';
-							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a group/channel chat ID or @username.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a group/channel chat ID, @username, or t.me link.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 						}
 						return;
+					}
+
+					// Parse t.me links: extract @username from public links.
+					// Private invite links (t.me/+hash) cannot be resolved to a chat ID.
+					var tmeMatch = chatId.match(/^https?:\/\/t\.me\/\+/);
+					if (tmeMatch) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-warning inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Private invite links (t.me/+…) cannot be used to send messages via the API. Please use the numeric chat ID (e.g. -1001234567890) or a public @username instead. You can find the chat ID in the plugin logs after the bot receives a message in the group.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+					var tmePublicMatch = chatId.match(/^https?:\/\/t\.me\/([a-zA-Z][a-zA-Z0-9_]{4,})$/);
+					if (tmePublicMatch) {
+						chatId = '@' + tmePublicMatch[1];
 					}
 
 					if (!msg) {
