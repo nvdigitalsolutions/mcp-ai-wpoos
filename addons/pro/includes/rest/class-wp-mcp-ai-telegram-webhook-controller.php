@@ -236,6 +236,22 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// ── Bot command detection ──
+		// Parse bot_command entities from the Telegram message. When the first
+		// entity at offset 0 is a command, route it to the built-in handler
+		// before the AI auto-reply pipeline. This follows Telegram best
+		// practices: https://core.telegram.org/bots/features#commands
+		$parsed_command = $this->parse_bot_command( $message );
+
+		if ( null !== $parsed_command ) {
+			$handled = $this->handle_bot_command( $parsed_command, $message, $chat_id, $from_id, $chat_type );
+			if ( $handled ) {
+				return; // Command was handled; no AI reply needed.
+			}
+			// Command not recognised – fall through to AI pipeline so the
+			// assistant can handle it as a natural-language message.
+		}
+
 		// Resolve the Telegram connection early so group/channel settings are available.
 		$connection = $this->get_active_telegram_connection();
 
@@ -859,6 +875,398 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 		return false;
+	}
+
+	// =========================================================================
+	// Slash command parsing & routing
+	// =========================================================================
+
+	/**
+	 * Parse the first bot_command entity from a Telegram message.
+	 *
+	 * Telegram sends `bot_command` entities in the `entities` array. This
+	 * method extracts the command at offset 0 (the leading command) and
+	 * returns a normalised structure with the command name (without `/`)
+	 * and any arguments that follow.
+	 *
+	 * When no entities are present, falls back to checking if the text
+	 * starts with `/` as a simple heuristic.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $message Telegram message object.
+	 * @return array|null Array with 'command' and 'args' keys, or null.
+	 */
+	protected function parse_bot_command( array $message ) {
+		$text     = isset( $message['text'] ) ? (string) $message['text'] : '';
+		$entities = isset( $message['entities'] ) && is_array( $message['entities'] ) ? $message['entities'] : array();
+
+		// Strategy 1: Use Telegram's entity metadata for precision.
+		foreach ( $entities as $entity ) {
+			if ( ! isset( $entity['type'] ) || 'bot_command' !== $entity['type'] ) {
+				continue;
+			}
+			$offset = isset( $entity['offset'] ) ? (int) $entity['offset'] : -1;
+			$length = isset( $entity['length'] ) ? (int) $entity['length'] : 0;
+
+			// We only handle the first command at the very start of the message.
+			if ( 0 !== $offset || $length < 2 ) {
+				continue;
+			}
+
+			$raw_command = mb_substr( $text, 1, $length - 1 ); // strip leading '/'
+			// Remove @bot_username suffix (e.g. "/help@my_bot" → "help").
+			$parts   = explode( '@', $raw_command, 2 );
+			$command = strtolower( trim( $parts[0] ) );
+			$args    = trim( mb_substr( $text, $length ) );
+
+			return array(
+				'command' => $command,
+				'args'    => $args,
+			);
+		}
+
+		// Strategy 2: Fallback – simple prefix check when no entities are present.
+		if ( isset( $text[0] ) && '/' === $text[0] ) {
+			$space_pos = strpos( $text, ' ' );
+			$raw       = false !== $space_pos ? substr( $text, 1, $space_pos - 1 ) : substr( $text, 1 );
+			$parts     = explode( '@', $raw, 2 );
+			$command   = strtolower( trim( $parts[0] ) );
+			$args      = false !== $space_pos ? trim( substr( $text, $space_pos + 1 ) ) : '';
+
+			if ( '' !== $command ) {
+				return array(
+					'command' => $command,
+					'args'    => $args,
+				);
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Handle a parsed bot command and optionally send a reply.
+	 *
+	 * Built-in commands (/start, /help, /settings, /status, /cancel) are
+	 * handled directly. Unrecognised commands return false so the caller
+	 * can fall through to the AI auto-reply pipeline.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $parsed    Parsed command with 'command' and 'args'.
+	 * @param array  $message   Original Telegram message object.
+	 * @param string $chat_id   Chat ID.
+	 * @param string $from_id   Sender ID.
+	 * @param string $chat_type Chat type (private, group, supergroup).
+	 * @return bool True if the command was handled (reply sent or silenced).
+	 */
+	protected function handle_bot_command( array $parsed, array $message, $chat_id, $from_id, $chat_type ) {
+		$command = $parsed['command'];
+		$args    = $parsed['args'];
+
+		/**
+		 * Filters the built-in bot command response before the default handler.
+		 *
+		 * Return a non-null string to override the default reply for a command.
+		 * Return the boolean `true` to silently consume the command (no reply).
+		 * Return null to let the default handler or AI pipeline process it.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string|bool|null $response  Response text, true to silence, or null.
+		 * @param string           $command   Command name without leading '/'.
+		 * @param string           $args      Arguments after the command.
+		 * @param array            $message   Original Telegram message object.
+		 * @param string           $chat_type Chat type.
+		 */
+		$custom_response = apply_filters( 'wp_mcp_ai_telegram_bot_command_response', null, $command, $args, $message, $chat_type );
+
+		if ( true === $custom_response ) {
+			return true; // Silently consumed.
+		}
+
+		if ( is_string( $custom_response ) && '' !== $custom_response ) {
+			$this->send_command_reply( $chat_id, $custom_response, $message );
+			return true;
+		}
+
+		// Built-in command handlers.
+		switch ( $command ) {
+			case 'start':
+				$this->cmd_start( $chat_id, $args, $message );
+				return true;
+
+			case 'help':
+				$this->cmd_help( $chat_id, $chat_type, $message );
+				return true;
+
+			case 'settings':
+				$this->cmd_settings( $chat_id, $message );
+				return true;
+
+			case 'status':
+				$this->cmd_status( $chat_id, $message );
+				return true;
+
+			case 'cancel':
+				$this->cmd_cancel( $chat_id, $from_id, $message );
+				return true;
+		}
+
+		/**
+		 * Fires when an unrecognised bot command is received.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $command   Command name.
+		 * @param string $args      Arguments.
+		 * @param array  $message   Telegram message.
+		 * @param string $chat_type Chat type.
+		 */
+		do_action( 'wp_mcp_ai_telegram_unhandled_command', $command, $args, $message, $chat_type );
+
+		// Return false so the AI pipeline can handle the message.
+		return false;
+	}
+
+	/**
+	 * Handle /start – greet the user and introduce the bot's capabilities.
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param string $args    Deep-link parameter (if any).
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_start( $chat_id, $args, array $message ) {
+		$site_name = get_bloginfo( 'name' );
+		$text      = sprintf(
+			"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
+			$site_name
+		);
+
+		/**
+		 * Fires when /start is received with a deep-link parameter.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $args    Deep-link parameter.
+		 * @param string $chat_id Chat ID.
+		 * @param array  $message Telegram message.
+		 */
+		if ( '' !== $args ) {
+			do_action( 'wp_mcp_ai_telegram_start_deeplink', $args, $chat_id, $message );
+		}
+
+		$this->send_command_reply( $chat_id, $text, $message );
+	}
+
+	/**
+	 * Handle /help – list available commands, context-aware for groups.
+	 *
+	 * @param string $chat_id   Chat ID.
+	 * @param string $chat_type Chat type.
+	 * @param array  $message   Telegram message.
+	 */
+	protected function cmd_help( $chat_id, $chat_type, array $message ) {
+		$lines = array(
+			"📖 *Available Commands*\n",
+			'/start – Start the bot & see welcome message',
+			'/help – Show this help message',
+			'/settings – Open the Mini App settings',
+			'/status – Check bot connection status',
+			'/cancel – Reset your conversation history',
+		);
+
+		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
+		if ( $is_group ) {
+			$lines[] = "\n💡 *Tip:* In groups, mention me with @bot\\_username or reply to my messages to get a response.";
+		}
+
+		$lines[] = "\nYou can also type any question and I'll respond using AI.";
+
+		$this->send_command_reply( $chat_id, implode( "\n", $lines ), $message, 'Markdown' );
+	}
+
+	/**
+	 * Handle /settings – provide a link to the Mini App settings page.
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_settings( $chat_id, array $message ) {
+		$connection = $this->get_active_telegram_connection();
+		$bot_username = '';
+		if ( $connection && ! empty( $connection['bot_username'] ) ) {
+			$bot_username = ltrim( sanitize_text_field( $connection['bot_username'] ), '@' );
+		}
+
+		if ( '' !== $bot_username ) {
+			$text = sprintf(
+				"⚙️ Open the settings panel:\nhttps://t.me/%s?startapp=settings\n\nYou can manage your preferences, link your WordPress account, and configure notifications.",
+				$bot_username
+			);
+		} else {
+			$text = "⚙️ Settings are available through the bot's Mini App. Tap the menu button to open it.";
+		}
+
+		$this->send_command_reply( $chat_id, $text, $message );
+	}
+
+	/**
+	 * Handle /status – report the connection and assistant status.
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_status( $chat_id, array $message ) {
+		$connection = $this->get_active_telegram_connection();
+		$lines      = array( '📊 *Bot Status*' );
+
+		if ( $connection ) {
+			$lines[] = '✅ Connection: Active';
+			$automation_rules      = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
+			$lines[] = sprintf( '🤖 Assistants: %d configured', count( $assigned_assistant_ids ) );
+			$lines[] = sprintf( '👥 Groups: %s', ! empty( $connection['enable_groups'] ) ? 'Enabled' : 'Disabled' );
+			$lines[] = sprintf( '📢 Channels: %s', ! empty( $connection['enable_channels'] ) ? 'Enabled' : 'Disabled' );
+		} else {
+			$lines[] = '❌ Connection: Not configured';
+		}
+
+		$lines[] = sprintf( '🌐 Site: %s', get_bloginfo( 'name' ) );
+
+		$this->send_command_reply( $chat_id, implode( "\n", $lines ), $message, 'Markdown' );
+	}
+
+	/**
+	 * Handle /cancel – clear the user's conversation history.
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param string $from_id Sender ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_cancel( $chat_id, $from_id, array $message ) {
+		$connection = $this->get_active_telegram_connection();
+		$connection_id = ( $connection && isset( $connection['id'] ) ) ? sanitize_key( $connection['id'] ) : '';
+
+		$sender = '' !== $from_id ? $from_id : $chat_id;
+
+		if ( '' !== $connection_id ) {
+			$history_key = $this->get_conversation_history_key( $sender, $connection_id );
+			delete_transient( $history_key );
+		}
+
+		$this->send_command_reply( $chat_id, '🔄 Conversation history cleared. Send a new message to start fresh!', $message );
+	}
+
+	/**
+	 * Send a reply to a bot command via the Telegram Bot API.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string      $chat_id    Chat ID to reply in.
+	 * @param string      $text       Reply text.
+	 * @param array       $message    Original Telegram message (used for reply_to_message_id in groups).
+	 * @param string|null $parse_mode Optional parse_mode (Markdown, MarkdownV2, HTML).
+	 */
+	protected function send_command_reply( $chat_id, $text, array $message = array(), $parse_mode = null ) {
+		$connection = $this->get_active_telegram_connection();
+
+		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+
+		if ( '' === $bot_token ) {
+			return;
+		}
+
+		if ( mb_strlen( $text ) > self::MAX_MESSAGE_LENGTH ) {
+			$text = mb_substr( $text, 0, self::MAX_MESSAGE_LENGTH - 3 ) . '...';
+		}
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $bot_token ) );
+
+		$payload = array(
+			'chat_id' => $chat_id,
+			'text'    => $text,
+		);
+
+		if ( null !== $parse_mode ) {
+			$payload['parse_mode'] = $parse_mode;
+		}
+
+		// In group chats, reply to the original command message.
+		$chat_type = isset( $message['chat']['type'] ) ? (string) $message['chat']['type'] : 'private';
+		if ( in_array( $chat_type, array( 'group', 'supergroup' ), true ) && isset( $message['message_id'] ) ) {
+			$payload['reply_to_message_id'] = (int) $message['message_id'];
+		}
+
+		$body = wp_json_encode( $payload );
+
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 15,
+				'body'    => $body,
+			)
+		);
+	}
+
+	/**
+	 * Get the default set of bot commands to register with Telegram.
+	 *
+	 * These are the built-in commands the webhook controller handles.
+	 * Developers can filter this list to add or remove commands.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $scope_type The BotCommandScope type for context-aware commands.
+	 * @return array Array of command arrays with 'command' and 'description'.
+	 */
+	public static function get_default_commands( $scope_type = 'default' ) {
+		$commands = array(
+			array(
+				'command'     => 'start',
+				'description' => 'Start the bot and see welcome message',
+			),
+			array(
+				'command'     => 'help',
+				'description' => 'List available commands',
+			),
+			array(
+				'command'     => 'settings',
+				'description' => 'Open settings panel',
+			),
+			array(
+				'command'     => 'status',
+				'description' => 'Check bot connection status',
+			),
+			array(
+				'command'     => 'cancel',
+				'description' => 'Clear conversation history',
+			),
+		);
+
+		/**
+		 * Filters the default bot commands before registration with Telegram.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $commands   Array of command definitions.
+		 * @param string $scope_type BotCommandScope type for context.
+		 */
+		return apply_filters( 'wp_mcp_ai_telegram_default_commands', $commands, $scope_type );
 	}
 
 	// =========================================================================

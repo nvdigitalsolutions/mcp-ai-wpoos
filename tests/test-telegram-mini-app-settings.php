@@ -468,4 +468,192 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 
 		$this->assertTrue( $data['ok'] );
 	}
+
+	// =========================================================================
+	// Slash command parsing & routing
+	// =========================================================================
+
+	/**
+	 * Test parse_bot_command extracts command from entities.
+	 */
+	public function test_parse_bot_command_with_entities() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'parse_bot_command' );
+		$method->setAccessible( true );
+
+		$message = array(
+			'text'     => '/help some arguments',
+			'entities' => array(
+				array(
+					'type'   => 'bot_command',
+					'offset' => 0,
+					'length' => 5,
+				),
+			),
+		);
+
+		$result = $method->invoke( $this->webhook_controller, $message );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 'help', $result['command'] );
+		$this->assertEquals( 'some arguments', $result['args'] );
+	}
+
+	/**
+	 * Test parse_bot_command handles @bot_username suffix.
+	 */
+	public function test_parse_bot_command_strips_bot_username() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'parse_bot_command' );
+		$method->setAccessible( true );
+
+		$message = array(
+			'text'     => '/start@my_cool_bot deep_link_param',
+			'entities' => array(
+				array(
+					'type'   => 'bot_command',
+					'offset' => 0,
+					'length' => 20,
+				),
+			),
+		);
+
+		$result = $method->invoke( $this->webhook_controller, $message );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 'start', $result['command'] );
+		$this->assertEquals( 'deep_link_param', $result['args'] );
+	}
+
+	/**
+	 * Test parse_bot_command falls back to / prefix when no entities.
+	 */
+	public function test_parse_bot_command_fallback_prefix() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'parse_bot_command' );
+		$method->setAccessible( true );
+
+		$message = array( 'text' => '/cancel' );
+
+		$result = $method->invoke( $this->webhook_controller, $message );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 'cancel', $result['command'] );
+		$this->assertEquals( '', $result['args'] );
+	}
+
+	/**
+	 * Test parse_bot_command returns null for non-command messages.
+	 */
+	public function test_parse_bot_command_returns_null_for_text() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'parse_bot_command' );
+		$method->setAccessible( true );
+
+		$message = array( 'text' => 'Hello, how are you?' );
+
+		$result = $method->invoke( $this->webhook_controller, $message );
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Test parse_bot_command ignores commands not at offset 0.
+	 */
+	public function test_parse_bot_command_ignores_mid_text_commands() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$method = new ReflectionMethod( $this->webhook_controller, 'parse_bot_command' );
+		$method->setAccessible( true );
+
+		$message = array(
+			'text'     => 'Please try /help',
+			'entities' => array(
+				array(
+					'type'   => 'bot_command',
+					'offset' => 11,
+					'length' => 5,
+				),
+			),
+		);
+
+		$result = $method->invoke( $this->webhook_controller, $message );
+		$this->assertNull( $result );
+	}
+
+	/**
+	 * Test get_default_commands returns expected structure.
+	 */
+	public function test_get_default_commands() {
+		if ( ! $this->webhook_controller ) {
+			$this->markTestSkipped( 'Webhook controller not available.' );
+			return;
+		}
+
+		$commands = WP_MCP_AI_Telegram_Webhook_Controller::get_default_commands();
+
+		$this->assertIsArray( $commands );
+		$this->assertNotEmpty( $commands );
+
+		$command_names = array_column( $commands, 'command' );
+		$this->assertContains( 'start', $command_names );
+		$this->assertContains( 'help', $command_names );
+		$this->assertContains( 'settings', $command_names );
+		$this->assertContains( 'status', $command_names );
+		$this->assertContains( 'cancel', $command_names );
+
+		// Each command must have 'command' and 'description' keys.
+		foreach ( $commands as $cmd ) {
+			$this->assertArrayHasKey( 'command', $cmd );
+			$this->assertArrayHasKey( 'description', $cmd );
+			$this->assertNotEmpty( $cmd['description'] );
+		}
+	}
+
+	/**
+	 * Test that the manage_telegram_commands tool class exists.
+	 */
+	public function test_manage_telegram_commands_tool_exists() {
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-commands.php';
+
+		if ( ! file_exists( $tool_file ) ) {
+			$this->markTestSkipped( 'Manage Telegram commands tool file not found.' );
+			return;
+		}
+
+		require_once $tool_file;
+
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands' ) );
+
+		$tool = new WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands();
+		$this->assertEquals( 'manage_telegram_commands', $tool->get_slug() );
+
+		$schema = $tool->get_parameters_schema();
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'token', $schema['properties'] );
+		$this->assertArrayHasKey( 'action', $schema['properties'] );
+		$this->assertArrayHasKey( 'scope', $schema['properties'] );
+		$this->assertArrayHasKey( 'commands', $schema['properties'] );
+
+		// Verify action enum includes all three operations.
+		$this->assertEquals( array( 'set', 'delete', 'get' ), $schema['properties']['action']['enum'] );
+	}
 }
