@@ -500,7 +500,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 <meta name="robots" content="noindex, nofollow">
 <title>' . esc_html( $page_title ) . '</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.7/chart.umd.min.js" integrity="sha384-UPISyMBHSQG9TG98ClIRsRlDOGZeGYc7Y1B6bXWmLi1KQPOqmYOjEOkB50ofrIG" crossorigin="anonymous"></script>
 <style>' . $this->get_mini_app_css() . '</style>
 ' . $head_output . '
 </head>
@@ -2172,7 +2172,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		$group_settings = array(
 			'enable_groups'   => ! empty( $connection['enable_groups'] ),
 			'enable_channels' => ! empty( $connection['enable_channels'] ),
-			'require_mention' => ! empty( $connection['required_mention'] ),
+			'require_mention' => ! empty( $connection['require_mention'] ),
 		);
 
 		return rest_ensure_response(
@@ -2441,7 +2441,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						$date_label = isset( $row['date'] ) ? $row['date'] : '';
 						// Shorten to Mon/Tue style for mobile-friendly labels.
 						if ( $date_label ) {
-							$ts         = strtotime( $date_label );
+							$ts         = strtotime( $date_label . ' UTC' );
 							$date_label = $ts ? gmdate( 'D', $ts ) : $date_label;
 						}
 						$tokens = isset( $row['total_tokens'] ) ? (int) $row['total_tokens'] : 0;

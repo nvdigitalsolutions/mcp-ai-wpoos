@@ -400,7 +400,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Commands implements WP_MCP_AI_Tool_Inte
 		}
 
 		$scope = array(
-			'type' => 'bot_command_scope_' . $scope_type,
+			'type' => $scope_type,
 		);
 
 		$chat_scopes = array( 'chat', 'chat_administrators', 'chat_member' );
