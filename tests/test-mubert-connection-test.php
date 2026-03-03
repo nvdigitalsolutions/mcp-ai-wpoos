@@ -45,7 +45,7 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_mubert_test_button_renders_without_saved_key() {
 		// Clear any saved API key.
-		$settings                = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                   = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['mubert_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -122,14 +122,14 @@ class Test_Mubert_Connection_Test extends WP_UnitTestCase {
 	 * Test that Mubert is in the connections subtab groups.
 	 */
 	public function test_mubert_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'mubert', $subtab_groups, 'Mubert should be in subtab groups' );
-		
+
 		$mubert_group = $subtab_groups['mubert'];
 		$this->assertEquals( 'mubert', $mubert_group['id'] );
 		$this->assertContains( 'mubert_api_key', $mubert_group['fields'] );

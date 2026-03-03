@@ -27,7 +27,7 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Enable quiz system for tests by default (tests can override if needed).
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_quiz_system'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -216,7 +216,7 @@ class Test_Quiz_Admin_Pages extends WP_UnitTestCase {
 	 */
 	public function test_admin_pages_registered_when_disabled() {
 		// Disable the quiz system.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_quiz_system'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 

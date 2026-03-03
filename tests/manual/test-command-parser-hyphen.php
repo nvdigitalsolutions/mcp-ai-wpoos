@@ -23,15 +23,15 @@ echo "=== Command Parser Hyphen Fix Test ===\n\n";
 
 // Test cases.
 $test_cases = array(
-	'/optimize-perf'                       => 'optimize-perf',
-	'/optimize-perf --dry-run'             => 'optimize-perf',
-	'/clean-content --post-id=123'         => 'clean-content',
-	'/sync-docs'                           => 'sync-docs',
-	'/next-task --filter=drafts'           => 'next-task',
-	'/help'                                => 'help',
-	'/test_command'                        => 'test_command',
-	'/my-multi-word-command'               => 'my-multi-word-command',
-	'/test-123-command'                    => 'test-123-command',
+	'/optimize-perf'               => 'optimize-perf',
+	'/optimize-perf --dry-run'     => 'optimize-perf',
+	'/clean-content --post-id=123' => 'clean-content',
+	'/sync-docs'                   => 'sync-docs',
+	'/next-task --filter=drafts'   => 'next-task',
+	'/help'                        => 'help',
+	'/test_command'                => 'test_command',
+	'/my-multi-word-command'       => 'my-multi-word-command',
+	'/test-123-command'            => 'test-123-command',
 );
 
 $passed = 0;
@@ -39,27 +39,27 @@ $failed = 0;
 
 foreach ( $test_cases as $input => $expected_command ) {
 	$result = $parser->parse( $input );
-	
+
 	if ( is_wp_error( $result ) ) {
 		echo "❌ FAIL: $input\n";
-		echo "   Error: " . $result->get_error_message() . "\n";
-		$failed++;
+		echo '   Error: ' . $result->get_error_message() . "\n";
+		++$failed;
 	} elseif ( $result['command'] !== $expected_command ) {
 		echo "❌ FAIL: $input\n";
 		echo "   Expected: $expected_command\n";
-		echo "   Got: " . $result['command'] . "\n";
-		$failed++;
+		echo '   Got: ' . $result['command'] . "\n";
+		++$failed;
 	} else {
 		echo "✅ PASS: $input => {$result['command']}\n";
-		$passed++;
-		
+		++$passed;
+
 		// Show details for commands with arguments.
 		if ( ! empty( $result['flags'] ) || ! empty( $result['args'] ) ) {
 			if ( ! empty( $result['flags'] ) ) {
-				echo "   Flags: " . json_encode( $result['flags'] ) . "\n";
+				echo '   Flags: ' . json_encode( $result['flags'] ) . "\n";
 			}
 			if ( ! empty( $result['args'] ) ) {
-				echo "   Args: " . json_encode( $result['args'] ) . "\n";
+				echo '   Args: ' . json_encode( $result['args'] ) . "\n";
 			}
 		}
 	}
@@ -68,7 +68,7 @@ foreach ( $test_cases as $input => $expected_command ) {
 echo "\n=== Test Results ===\n";
 echo "Passed: $passed\n";
 echo "Failed: $failed\n";
-echo "Total:  " . ( $passed + $failed ) . "\n";
+echo 'Total:  ' . ( $passed + $failed ) . "\n";
 
 if ( $failed === 0 ) {
 	echo "\n✅ All tests passed!\n";
@@ -95,16 +95,16 @@ if ( ! class_exists( 'WP_Error' ) ) {
 	class WP_Error {
 		private $code;
 		private $message;
-		
+
 		public function __construct( $code, $message ) {
-			$this->code = $code;
+			$this->code    = $code;
 			$this->message = $message;
 		}
-		
+
 		public function get_error_code() {
 			return $this->code;
 		}
-		
+
 		public function get_error_message() {
 			return $this->message;
 		}

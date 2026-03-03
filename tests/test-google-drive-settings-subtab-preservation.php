@@ -28,12 +28,12 @@ class Test_Google_Drive_Settings_Subtab_Preservation extends WP_UnitTestCase {
 		// Simulate POST data from Google Drive connection page.
 		// Direct $_POST manipulation is intentional for isolated unit testing.
 		$_POST = array(
-			'wp_mcp_ai_settings' => array(),
-			'active_tab'         => 'tools',
-			'subtab'             => 'connections', // Explicit field from Tools section.
-			'subtab_tools'       => 'connections', // Section-specific field from Tools.
+			'wp_mcp_ai_settings'                 => array(),
+			'active_tab'                         => 'tools',
+			'subtab'                             => 'connections', // Explicit field from Tools section.
+			'subtab_tools'                       => 'connections', // Section-specific field from Tools.
 			'subtab_integrations_gmail_crawl4ai' => 'google_drive', // Section-specific from Integrations.
-			'connection'         => 'google_drive', // Connection parameter.
+			'connection'                         => 'google_drive', // Connection parameter.
 		);
 
 		// Simulate the logic from class-wp-mcp-ai-settings-dashboard.php.
@@ -71,9 +71,9 @@ class Test_Google_Drive_Settings_Subtab_Preservation extends WP_UnitTestCase {
 		// Simulate POST data without explicit subtab field.
 		// Direct $_POST manipulation is intentional for isolated unit testing.
 		$_POST = array(
-			'wp_mcp_ai_settings'       => array(),
-			'active_tab'               => 'providers',
-			'subtab_providers_openai'  => 'openai',
+			'wp_mcp_ai_settings'      => array(),
+			'active_tab'              => 'providers',
+			'subtab_providers_openai' => 'openai',
 		);
 
 		// Simulate the logic from class-wp-mcp-ai-settings-dashboard.php.

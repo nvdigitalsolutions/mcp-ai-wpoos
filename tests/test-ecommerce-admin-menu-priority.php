@@ -186,7 +186,7 @@ class WP_MCP_AI_Ecommerce_Admin_Menu_Priority_Test extends WP_UnitTestCase {
 
 		// Check if E-Commerce Toolkit menu exists.
 		$toolkit_menu_slug = 'wp-mcp-ai-ecommerce-toolkit';
-		
+
 		// Verify top-level menu exists.
 		$found_top_level_menu = false;
 		foreach ( $menu as $menu_item ) {

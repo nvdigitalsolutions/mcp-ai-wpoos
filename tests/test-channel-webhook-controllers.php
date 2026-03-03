@@ -917,7 +917,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				'assigned_assistant_ids' => array( 1 ),
 				'api_key'                => 'dummy_token',
 			),
-			'space_conn' => array(
+			'space_conn'   => array(
 				'id'                     => 'space_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
@@ -2758,7 +2758,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	 * @return string JWT string in header.payload.sig format.
 	 */
 	private function build_test_jwt( array $claims ) {
-		$header_b64  = $this->base64url_encode_test( wp_json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) );
+		$header_b64  = $this->base64url_encode_test(
+			wp_json_encode(
+				array(
+					'alg' => 'RS256',
+					'typ' => 'JWT',
+				)
+			)
+		);
 		$payload_b64 = $this->base64url_encode_test( wp_json_encode( $claims ) );
 		return $header_b64 . '.' . $payload_b64 . '.fakesig';
 	}
@@ -3075,7 +3082,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				'api_key'           => 'token_for_aaa',
 				'google_chat_space' => 'spaces/AAA',
 			),
-			'generic_conn' => array(
+			'generic_conn'   => array(
 				'id'              => 'generic_conn',
 				'connection_type' => 'google_chat',
 				'enabled'         => true,
@@ -4273,5 +4280,3 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertTrue( $data['ok'], 'iCloud webhook should acknowledge payloads missing event_type without error' );
 	}
 }
-
-

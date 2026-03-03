@@ -78,78 +78,78 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 	 * @return array Categorized tools.
 	 */
 	protected function get_categorized_tools() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 		$all_tools = $registry->get_all_tools();
-		
+
 		$categories = array(
-			'image' => array(
+			'image'         => array(
 				'label' => __( 'Image Tools', 'mcp-ai-wpoos' ),
-				'icon' => '🖼️',
+				'icon'  => '🖼️',
 				'tools' => array(),
 			),
-			'video' => array(
+			'video'         => array(
 				'label' => __( 'Video Tools', 'mcp-ai-wpoos' ),
-				'icon' => '🎬',
+				'icon'  => '🎬',
 				'tools' => array(),
 			),
-			'audio' => array(
+			'audio'         => array(
 				'label' => __( 'Audio & Music', 'mcp-ai-wpoos' ),
-				'icon' => '🎵',
+				'icon'  => '🎵',
 				'tools' => array(),
 			),
-			'content' => array(
+			'content'       => array(
 				'label' => __( 'Content Creation', 'mcp-ai-wpoos' ),
-				'icon' => '📝',
+				'icon'  => '📝',
 				'tools' => array(),
 			),
-			'seo' => array(
+			'seo'           => array(
 				'label' => __( 'SEO Tools', 'mcp-ai-wpoos' ),
-				'icon' => '🔍',
+				'icon'  => '🔍',
 				'tools' => array(),
 			),
-			'woocommerce' => array(
+			'woocommerce'   => array(
 				'label' => __( 'WooCommerce', 'mcp-ai-wpoos' ),
-				'icon' => '🛍️',
+				'icon'  => '🛍️',
 				'tools' => array(),
 			),
-			'email' => array(
+			'email'         => array(
 				'label' => __( 'Email & Newsletter', 'mcp-ai-wpoos' ),
-				'icon' => '📧',
+				'icon'  => '📧',
 				'tools' => array(),
 			),
-			'security' => array(
+			'security'      => array(
 				'label' => __( 'Security', 'mcp-ai-wpoos' ),
-				'icon' => '🔐',
+				'icon'  => '🔐',
 				'tools' => array(),
 			),
-			'analytics' => array(
+			'analytics'     => array(
 				'label' => __( 'Analytics & Charts', 'mcp-ai-wpoos' ),
-				'icon' => '📊',
+				'icon'  => '📊',
 				'tools' => array(),
 			),
-			'ai_models' => array(
+			'ai_models'     => array(
 				'label' => __( 'AI & Models', 'mcp-ai-wpoos' ),
-				'icon' => '🤖',
+				'icon'  => '🤖',
 				'tools' => array(),
 			),
-			'workflow' => array(
+			'workflow'      => array(
 				'label' => __( 'Workflow & Automation', 'mcp-ai-wpoos' ),
-				'icon' => '🔗',
+				'icon'  => '🔗',
 				'tools' => array(),
 			),
-			'web_data' => array(
+			'web_data'      => array(
 				'label' => __( 'Web & External Data', 'mcp-ai-wpoos' ),
-				'icon' => '🌐',
+				'icon'  => '🌐',
 				'tools' => array(),
 			),
 			'page_builders' => array(
 				'label' => __( 'Page Builders', 'mcp-ai-wpoos' ),
-				'icon' => '🗂️',
+				'icon'  => '🗂️',
 				'tools' => array(),
 			),
-			'utility' => array(
+			'utility'       => array(
 				'label' => __( 'Utilities', 'mcp-ai-wpoos' ),
-				'icon' => '🔧',
+				'icon'  => '🔧',
 				'tools' => array(),
 			),
 		);
@@ -157,8 +157,8 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 		// Categorize tools based on their slug patterns.
 		foreach ( $all_tools as $slug => $tool ) {
 			$tool_data = array(
-				'slug' => $slug,
-				'name' => $this->get_tool_display_name( $slug ),
+				'slug'        => $slug,
+				'name'        => $this->get_tool_display_name( $slug ),
 				'description' => $this->get_tool_description( $tool ),
 			);
 
@@ -243,12 +243,12 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 	 */
 	protected function get_category_options() {
 		$categories = $this->get_categorized_tools();
-		$options = array( '' => __( 'All Categories', 'mcp-ai-wpoos' ) );
-		
+		$options    = array( '' => __( 'All Categories', 'mcp-ai-wpoos' ) );
+
 		foreach ( $categories as $key => $category ) {
 			$options[ $key ] = $category['icon'] . ' ' . $category['label'] . ' (' . count( $category['tools'] ) . ')';
 		}
-		
+
 		return $options;
 	}
 
@@ -457,11 +457,11 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 	 * Render widget output on the frontend.
 	 */
 	protected function render() {
-		$settings = $this->get_settings_for_display();
+		$settings   = $this->get_settings_for_display();
 		$categories = $this->get_categorized_tools();
-		
+
 		$widget_id = 'wp-mcp-ai-quick-actions-' . $this->get_id();
-		
+
 		?>
 		<div class="wp-mcp-ai-quick-actions-widget" id="<?php echo esc_attr( $widget_id ); ?>">
 			<?php if ( ! empty( $settings['widget_title'] ) ) : ?>
@@ -516,14 +516,14 @@ class WP_MCP_AI_Elementor_Quick_Actions_Widget extends \Elementor\Widget_Base {
 			<?php endif; ?>
 			
 			<div class="wp-mcp-ai-tools-container <?php echo esc_attr( 'layout-' . $settings['layout'] ); ?>" 
-			     data-columns="<?php echo esc_attr( $settings['columns'] ); ?>">
+				data-columns="<?php echo esc_attr( $settings['columns'] ); ?>">
 				<?php foreach ( $categories as $category_key => $category ) : ?>
 					<div class="wp-mcp-ai-tools-category" data-category="<?php echo esc_attr( $category_key ); ?>">
 						<?php foreach ( $category['tools'] as $tool ) : ?>
 							<button type="button" 
-							        class="wp-mcp-ai-quick-action-btn" 
-							        data-tool="<?php echo esc_attr( $tool['slug'] ); ?>"
-							        data-category="<?php echo esc_attr( $category_key ); ?>">
+									class="wp-mcp-ai-quick-action-btn" 
+									data-tool="<?php echo esc_attr( $tool['slug'] ); ?>"
+									data-category="<?php echo esc_attr( $category_key ); ?>">
 								<?php if ( 'yes' === $settings['show_icons'] ) : ?>
 									<span class="wp-mcp-ai-tool-icon"><?php echo esc_html( $category['icon'] ); ?></span>
 								<?php endif; ?>

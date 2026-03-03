@@ -4810,7 +4810,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Build prompt from Agent Skills if assigned.
 			$skills = get_post_meta( $assistant_id, self::META_SKILLS, true );
 			if ( is_array( $skills ) && ! empty( $skills ) ) {
-				$registry     = WP_MCP_AI_Skill_Registry::instance();
+				$registry      = WP_MCP_AI_Skill_Registry::instance();
 				$skills_prompt = $registry->build_skills_prompt( $skills );
 				if ( ! empty( $skills_prompt ) ) {
 					if ( ! empty( $config['system_prompt'] ) ) {

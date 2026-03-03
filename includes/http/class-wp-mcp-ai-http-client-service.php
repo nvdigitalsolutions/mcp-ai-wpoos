@@ -91,9 +91,9 @@ class WP_MCP_AI_Http_Client_Service {
 	 */
 	private function create_client() {
 		$options = array(
-			'timeout'         => $this->default_timeout,
-			'max_redirects'   => 5,
-			'headers'         => array(
+			'timeout'       => $this->default_timeout,
+			'max_redirects' => 5,
+			'headers'       => array(
 				'User-Agent' => 'WP-MCP-AI/' . ( defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0' ),
 			),
 		);
@@ -182,7 +182,7 @@ class WP_MCP_AI_Http_Client_Service {
 	public function stream( $url, callable $callback, array $options = array(), $method = 'GET' ) {
 		try {
 			$response = $this->client->request( $method, $url, $options );
-			$first     = true;
+			$first    = true;
 
 			foreach ( $this->client->stream( $response ) as $chunk ) {
 				if ( $chunk->isTimeout() ) {

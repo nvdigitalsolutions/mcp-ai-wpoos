@@ -59,8 +59,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
-				'wp_ajax_wp_mcp_ai_test_plaid_connection' => 'handle_test_plaid_connection',
-				'wp_ajax_wp_mcp_ai_test_yahoo_connection' => 'handle_test_yahoo_connection',
+				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
+				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
 				'wp_ajax_wp_mcp_ai_test_removebg_connection' => 'handle_test_removebg_connection',
 				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
 				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
@@ -923,15 +923,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$body = wp_json_encode(
 				array(
-					'client_id'    => $client_id,
-					'secret'       => $secret,
-					'user'         => array(
+					'client_id'     => $client_id,
+					'secret'        => $secret,
+					'user'          => array(
 						'client_user_id' => 'test_user_' . uniqid(),
 					),
-					'client_name'  => get_bloginfo( 'name' ),
-					'products'     => array( 'transactions' ),
+					'client_name'   => get_bloginfo( 'name' ),
+					'products'      => array( 'transactions' ),
 					'country_codes' => array( 'US' ),
-					'language'     => 'en',
+					'language'      => 'en',
 				)
 			);
 
@@ -1124,7 +1124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Success - optionally include account info.
 			$success_message = __( 'Successfully connected to remove.bg API!', 'mcp-ai-wpoos' );
 			if ( isset( $data['data']['attributes']['credits']['total'] ) ) {
-				$credits = absint( $data['data']['attributes']['credits']['total'] );
+				$credits          = absint( $data['data']['attributes']['credits']['total'] );
 				$success_message .= ' ' . sprintf(
 					/* translators: %d: number of API credits */
 					__( 'Account has %d API credits remaining.', 'mcp-ai-wpoos' ),
@@ -2895,6 +2895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Get config data.
 			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$config = wp_mcp_ai_sanitize_recursive( $config );
 
 			if ( empty( $config ) ) {
 				wp_send_json_error( __( 'Configuration data is required.', 'mcp-ai-wpoos' ) );
@@ -3272,7 +3273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
 					if ( is_array( $dirs ) ) {
 						foreach ( $dirs as $dir ) {
-							$skill_name      = basename( $dir );
+							$skill_name       = basename( $dir );
 							$uninstall_result = $registry->uninstall_skill( $skill_name );
 							if ( is_wp_error( $uninstall_result ) ) {
 								$uninstall_errors[] = $skill_name;

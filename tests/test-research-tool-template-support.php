@@ -311,8 +311,8 @@ class WP_MCP_AI_Research_Tool_Template_Support_Test extends WP_UnitTestCase {
 				'elType'   => 'section',
 				'elements' => array(
 					array(
-						'elType'     => 'column',
-						'elements'   => array(
+						'elType'   => 'column',
+						'elements' => array(
 							array(
 								'elType'     => 'widget',
 								'widgetType' => 'heading',
@@ -385,9 +385,9 @@ class WP_MCP_AI_Research_Tool_Template_Support_Test extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$generic_data = array(
-			'header'  => array( 'title' => 'My Page' ),
-			'body'    => array( 'content' => 'Hello' ),
-			'footer'  => array( 'copyright' => '2026' ),
+			'header' => array( 'title' => 'My Page' ),
+			'body'   => array( 'content' => 'Hello' ),
+			'footer' => array( 'copyright' => '2026' ),
 		);
 
 		$result = $method->invoke( $tool, $generic_data );

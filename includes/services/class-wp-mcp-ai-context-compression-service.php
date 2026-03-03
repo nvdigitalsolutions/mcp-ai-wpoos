@@ -320,8 +320,8 @@ class WP_MCP_AI_Context_Compression_Service {
 		foreach ( $scores as $index => $score ) {
 			$sentence_tokens = $this->estimate_tokens( $sentences[ $index ] );
 			if ( $current_tokens + $sentence_tokens <= $target_tokens ) {
-				$selected_keys[]  = $index;
-				$current_tokens  += $sentence_tokens;
+				$selected_keys[] = $index;
+				$current_tokens += $sentence_tokens;
 			}
 
 			if ( $current_tokens >= $target_tokens * 0.9 ) {
@@ -410,8 +410,8 @@ class WP_MCP_AI_Context_Compression_Service {
 		);
 
 		if ( $result['success'] && $result['ratio'] < $target_ratio ) {
-			$context['data']['content']    = $result['compressed'];
-			$context['data']['compressed'] = true;
+			$context['data']['content']     = $result['compressed'];
+			$context['data']['compressed']  = true;
 			$context['data']['compression'] = array(
 				'method'          => $result['method'],
 				'original_tokens' => $result['original_tokens'],

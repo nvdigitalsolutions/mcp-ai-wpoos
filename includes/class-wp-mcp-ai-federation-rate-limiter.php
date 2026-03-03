@@ -70,11 +70,11 @@ class WP_MCP_AI_Federation_Rate_Limiter {
 					$window
 				),
 				array(
-					'status'         => 429,
-					'retry_after'    => $window,
-					'limit'          => $limit,
-					'window'         => $window,
-					'requests_made'  => $requests,
+					'status'        => 429,
+					'retry_after'   => $window,
+					'limit'         => $limit,
+					'window'        => $window,
+					'requests_made' => $requests,
 				)
 			);
 		}

@@ -100,7 +100,7 @@ class WP_MCP_AI_Metabox_Skills extends WP_MCP_AI_Metabox_Base {
 		}
 
 		// Get available skills from the registry.
-		$registry        = WP_MCP_AI_Skill_Registry::instance();
+		$registry         = WP_MCP_AI_Skill_Registry::instance();
 		$available_skills = $registry->get_all_skills();
 
 		?>

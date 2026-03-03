@@ -129,16 +129,16 @@ $severity_colors = array(
 			'wp-mcp-ai-analytics-anomalies',
 			'wpMcpAiAnomalyData',
 			array(
-				'anomalies'       => $anomalies,
-				'threshold'       => $threshold,
-				'severityColors'  => $severity_colors,
-				'labels'          => array(
-					'anomalies'          => __( 'Anomalies', 'mcp-ai-wpoos' ),
-					'thresholdPositive'  => __( 'Threshold (±3σ)', 'mcp-ai-wpoos' ),
-					'thresholdNegative'  => __( 'Threshold (-3σ)', 'mcp-ai-wpoos' ),
-					'chartTitle'         => __( 'Anomaly Detection (Z-Score Analysis)', 'mcp-ai-wpoos' ),
-					'yAxisTitle'         => __( 'Z-Score (Standard Deviations)', 'mcp-ai-wpoos' ),
-					'xAxisTitle'         => __( 'Anomaly Index', 'mcp-ai-wpoos' ),
+				'anomalies'      => $anomalies,
+				'threshold'      => $threshold,
+				'severityColors' => $severity_colors,
+				'labels'         => array(
+					'anomalies'         => __( 'Anomalies', 'mcp-ai-wpoos' ),
+					'thresholdPositive' => __( 'Threshold (±3σ)', 'mcp-ai-wpoos' ),
+					'thresholdNegative' => __( 'Threshold (-3σ)', 'mcp-ai-wpoos' ),
+					'chartTitle'        => __( 'Anomaly Detection (Z-Score Analysis)', 'mcp-ai-wpoos' ),
+					'yAxisTitle'        => __( 'Z-Score (Standard Deviations)', 'mcp-ai-wpoos' ),
+					'xAxisTitle'        => __( 'Anomaly Index', 'mcp-ai-wpoos' ),
 				),
 			)
 		);

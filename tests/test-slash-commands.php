@@ -106,7 +106,8 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$registered = $this->handler->register(
 			'test',
 			array(
-				'handler'     => function() { return 'test result'; },
+				'handler'     => function () {
+					return 'test result'; },
 				'description' => 'Test command',
 			)
 		);
@@ -122,7 +123,7 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$registered = $this->handler->register(
 			'invalid name',
 			array(
-				'handler' => function() {},
+				'handler' => function () {},
 			)
 		);
 
@@ -136,7 +137,7 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'test',
 			array(
-				'handler'    => function( $args, $flags ) {
+				'handler'    => function ( $args, $flags ) {
 					return 'test result';
 				},
 				'capability' => 'read',
@@ -163,8 +164,9 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'help',
 			array(
-				'handler'  => function() { return 'help text'; },
-				'aliases'  => array( 'h', '?' ),
+				'handler'    => function () {
+					return 'help text'; },
+				'aliases'    => array( 'h', '?' ),
 				'capability' => 'read',
 			)
 		);
@@ -183,7 +185,8 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'admin_only',
 			array(
-				'handler'    => function() { return 'admin result'; },
+				'handler'    => function () {
+					return 'admin result'; },
 				'capability' => 'manage_options',
 			)
 		);
@@ -203,7 +206,8 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'limited',
 			array(
-				'handler'    => function() { return 'ok'; },
+				'handler'    => function () {
+					return 'ok'; },
 				'capability' => 'read',
 			)
 		);
@@ -229,7 +233,8 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'logged',
 			array(
-				'handler'    => function() { return 'result'; },
+				'handler'    => function () {
+					return 'result'; },
 				'capability' => 'read',
 			)
 		);
@@ -252,7 +257,7 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'public',
 			array(
-				'handler'    => function() {},
+				'handler'    => function () {},
 				'capability' => 'read',
 			)
 		);
@@ -260,7 +265,7 @@ class Test_Slash_Commands extends WP_UnitTestCase {
 		$this->handler->register(
 			'admin',
 			array(
-				'handler'    => function() {},
+				'handler'    => function () {},
 				'capability' => 'manage_options',
 			)
 		);

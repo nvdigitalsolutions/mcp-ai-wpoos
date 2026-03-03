@@ -189,9 +189,9 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		// Calculate enhanced score.
 		$enhanced_score = $context_manager->calculate_enhanced_score( $context_record );
 
-		$result = $this->format_context_result( $context_record );
+		$result                   = $this->format_context_result( $context_record );
 		$result['enhanced_score'] = round( $enhanced_score, 3 );
-		$result['access_count'] = isset( $context_record['access_count'] ) ? $context_record['access_count'] : 0;
+		$result['access_count']   = isset( $context_record['access_count'] ) ? $context_record['access_count'] : 0;
 
 		return array(
 			'success'  => true,

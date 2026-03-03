@@ -13,7 +13,7 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$this->handler = $this->getMockBuilder( 'WP_MCP_AI_Slash_Command_Handler' )
+		$this->handler      = $this->getMockBuilder( 'WP_MCP_AI_Slash_Command_Handler' )
 			->disableOriginalConstructor()
 			->getMock();
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $this->handler );
@@ -48,12 +48,18 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 		// Mock handler to fail first 2 times, succeed on 3rd.
 		$call_count = 0;
 		$this->handler->method( 'execute' )->willReturnCallback(
-			function() use ( &$call_count ) {
+			function () use ( &$call_count ) {
 				$call_count++;
 				if ( $call_count < 3 ) {
-					return array( 'success' => false, 'error' => 'temp_failure' );
+					return array(
+						'success' => false,
+						'error'   => 'temp_failure',
+					);
 				}
-				return array( 'success' => true, 'data' => array( 'result' => 'ok' ) );
+				return array(
+					'success' => true,
+					'data'    => array( 'result' => 'ok' ),
+				);
 			}
 		);
 
@@ -92,15 +98,24 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 			array(
 				'name'  => 'Test State',
 				'steps' => array(
-					array( 'command' => 'step1', 'params' => array() ),
-					array( 'command' => 'step2', 'params' => array() ),
+					array(
+						'command' => 'step1',
+						'params'  => array(),
+					),
+					array(
+						'command' => 'step2',
+						'params'  => array(),
+					),
 				),
 			)
 		);
 
 		// Mock handler for execution.
 		$this->handler->method( 'execute' )->willReturn(
-			array( 'success' => true, 'data' => array() )
+			array(
+				'success' => true,
+				'data'    => array(),
+			)
 		);
 
 		// Execute with save_state.
@@ -125,7 +140,10 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 	public function test_continue_on_error() {
 		// Mock handler to fail.
 		$this->handler->method( 'execute' )->willReturn(
-			array( 'success' => false, 'error' => 'test_error' )
+			array(
+				'success' => false,
+				'error'   => 'test_error',
+			)
 		);
 
 		$this->orchestrator->create_workflow(
@@ -133,8 +151,14 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 			array(
 				'name'  => 'Test Continue',
 				'steps' => array(
-					array( 'command' => 'fail-step', 'params' => array() ),
-					array( 'command' => 'another-step', 'params' => array() ),
+					array(
+						'command' => 'fail-step',
+						'params'  => array(),
+					),
+					array(
+						'command' => 'another-step',
+						'params'  => array(),
+					),
 				),
 			)
 		);
@@ -143,7 +167,10 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 			'test_continue',
 			array(),
 			array(),
-			array( 'continue_on_error' => true, 'max_retries' => 0 )
+			array(
+				'continue_on_error' => true,
+				'max_retries'       => 0,
+			)
 		);
 
 		// Should succeed overall despite failed steps.
@@ -163,7 +190,10 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 	 */
 	public function test_execution_id_uniqueness() {
 		$this->handler->method( 'execute' )->willReturn(
-			array( 'success' => true, 'data' => array() )
+			array(
+				'success' => true,
+				'data'    => array(),
+			)
 		);
 
 		$this->orchestrator->create_workflow(
@@ -171,7 +201,10 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 			array(
 				'name'  => 'Test ID',
 				'steps' => array(
-					array( 'command' => 'test', 'params' => array() ),
+					array(
+						'command' => 'test',
+						'params'  => array(),
+					),
 				),
 			)
 		);
@@ -189,7 +222,10 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 	 */
 	public function test_resume_workflow() {
 		$this->handler->method( 'execute' )->willReturn(
-			array( 'success' => true, 'data' => array() )
+			array(
+				'success' => true,
+				'data'    => array(),
+			)
 		);
 
 		$this->orchestrator->create_workflow(
@@ -197,9 +233,18 @@ class Test_Slash_Commands_Workflow_Phase5 extends WP_UnitTestCase {
 			array(
 				'name'  => 'Test Resume',
 				'steps' => array(
-					array( 'command' => 'step1', 'params' => array() ),
-					array( 'command' => 'step2', 'params' => array() ),
-					array( 'command' => 'step3', 'params' => array() ),
+					array(
+						'command' => 'step1',
+						'params'  => array(),
+					),
+					array(
+						'command' => 'step2',
+						'params'  => array(),
+					),
+					array(
+						'command' => 'step3',
+						'params'  => array(),
+					),
 				),
 			)
 		);

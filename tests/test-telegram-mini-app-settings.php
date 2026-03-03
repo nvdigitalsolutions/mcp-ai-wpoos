@@ -1110,7 +1110,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 	private function get_controller_source() {
 		static $source = null;
 		if ( null === $source ) {
-			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+			$file   = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
 			$source = file_exists( $file ) ? file_get_contents( $file ) : '';
 		}
 		return $source;
@@ -1442,7 +1442,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		$connection_no_key = array(
 			'enable_groups' => true,
 		);
-		$result = ! empty( $connection_no_key['require_mention'] );
+		$result            = ! empty( $connection_no_key['require_mention'] );
 		$this->assertFalse( $result, 'require_mention should default to false when not set' );
 
 		// Connection with require_mention explicitly false.
@@ -1450,7 +1450,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			'enable_groups'   => true,
 			'require_mention' => false,
 		);
-		$result_false = ! empty( $connection_false['require_mention'] );
+		$result_false     = ! empty( $connection_false['require_mention'] );
 		$this->assertFalse( $result_false, 'require_mention should be false when explicitly set to false' );
 
 		// Connection with require_mention explicitly true.
@@ -1458,7 +1458,7 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 			'enable_groups'   => true,
 			'require_mention' => true,
 		);
-		$result_true = ! empty( $connection_true['require_mention'] );
+		$result_true     = ! empty( $connection_true['require_mention'] );
 		$this->assertTrue( $result_true, 'require_mention should be true when explicitly set to true' );
 	}
 
