@@ -258,7 +258,7 @@ class WP_MCP_AI_Skill_Registry_Test extends WP_UnitTestCase {
 	 * Test that invalid SKILL.md content is rejected during install.
 	 */
 	public function test_install_invalid_skill() {
-		$content = "No frontmatter here, just text.";
+		$content = 'No frontmatter here, just text.';
 
 		$registry = WP_MCP_AI_Skill_Registry::instance();
 		$result   = $registry->install_skill( $content );

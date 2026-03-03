@@ -59,15 +59,15 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 
 		// Compile results.
 		$results = array(
-			'success'      => true,
-			'url'          => $url,
-			'reachable'    => true,
-			'wellknown'    => ! is_wp_error( $wellknown ),
+			'success'       => true,
+			'url'           => $url,
+			'reachable'     => true,
+			'wellknown'     => ! is_wp_error( $wellknown ),
 			'authenticated' => ! empty( $api_key ) && ! is_wp_error( $mcp_auth ),
-			'site_name'    => ! is_wp_error( $wellknown ) && isset( $wellknown['site_name'] ) ? $wellknown['site_name'] : '',
-			'capabilities' => ! is_wp_error( $wellknown ) && isset( $wellknown['capabilities'] ) ? $wellknown['capabilities'] : array(),
-			'message'      => __( 'Connection test successful.', 'mcp-ai-wpoos' ),
-			'details'      => array(),
+			'site_name'     => ! is_wp_error( $wellknown ) && isset( $wellknown['site_name'] ) ? $wellknown['site_name'] : '',
+			'capabilities'  => ! is_wp_error( $wellknown ) && isset( $wellknown['capabilities'] ) ? $wellknown['capabilities'] : array(),
+			'message'       => __( 'Connection test successful.', 'mcp-ai-wpoos' ),
+			'details'       => array(),
 		);
 
 		// Add details about each test.
@@ -99,7 +99,7 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 					'status'  => 'error',
 					'message' => $mcp_auth->get_error_message(),
 				);
-				$results['authenticated'] = false;
+				$results['authenticated']             = false;
 			}
 		} else {
 			$results['details']['authentication'] = array(
@@ -250,13 +250,13 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 
 		if ( 401 === $status_code || 403 === $status_code ) {
 			$error_message = __( 'API key authentication failed. Please verify the API key is correct.', 'mcp-ai-wpoos' );
-			
+
 			// Try to get more specific error details from the response body.
 			$remote_error = self::extract_error_message( $response );
 			if ( ! empty( $remote_error ) ) {
 				$error_message = $remote_error;
 			}
-			
+
 			return new WP_Error(
 				'mcp_auth_invalid',
 				$error_message
@@ -276,13 +276,13 @@ class WP_MCP_AI_Mesh_Peer_Tester {
 			__( 'MCP endpoint returned status %d', 'mcp-ai-wpoos' ),
 			$status_code
 		);
-		
+
 		// Try to get more specific error details from the response body.
 		$remote_error = self::extract_error_message( $response );
 		if ( ! empty( $remote_error ) ) {
 			$error_message .= ': ' . $remote_error;
 		}
-		
+
 		return new WP_Error(
 			'mcp_error',
 			$error_message

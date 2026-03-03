@@ -420,7 +420,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->prepare( "SELECT ctime, fail, username, IP, blocked FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
+			$wpdb->prepare( 'SELECT ctime, fail, username, IP, blocked FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);
 
@@ -481,8 +481,8 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// Use the iThemes Security log API if available.
 		if ( class_exists( 'ITSEC_Log' ) && method_exists( 'ITSEC_Log', 'get_logs' ) ) {
 			$args = array(
-				'module'     => 'brute-force',
-				'after_time' => gmdate( 'Y-m-d H:i:s', $time_range['start'] ),
+				'module'      => 'brute-force',
+				'after_time'  => gmdate( 'Y-m-d H:i:s', $time_range['start'] ),
 				'before_time' => gmdate( 'Y-m-d H:i:s', $time_range['end'] ),
 			);
 			if ( ! empty( $username ) ) {
@@ -557,7 +557,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$wpdb->prepare( "SELECT timestamp, type, username, remote_ip, module FROM `" . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
+			$wpdb->prepare( 'SELECT timestamp, type, username, remote_ip, module FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);
 

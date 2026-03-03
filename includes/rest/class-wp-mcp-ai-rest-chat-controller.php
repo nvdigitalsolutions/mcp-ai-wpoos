@@ -307,7 +307,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'permission_callback' => array( $this, 'permissions_check' ),
 				'callback'            => array( $this, 'handle_embedded_client_config' ),
 				'args'                => array(
-					'assistant_id' => array(
+					'assistant_id'  => array(
 						'description'       => __( 'ID of the embedded assistant whose configuration to retrieve.', 'mcp-ai-wpoos' ),
 						'type'              => 'integer',
 						'required'          => true,
@@ -1681,7 +1681,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_embedded_client_config( WP_REST_Request $request ) {
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$assistant_id  = absint( $request->get_param( 'assistant_id' ) );
 		$profession_id = absint( $request->get_param( 'profession_id' ) );
 
 		if ( ! $assistant_id ) {
@@ -1745,22 +1745,22 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'embedded_client_config_fetched',
 				'Embedded client fetched fresh configuration from server',
 				array(
-					'assistant_id'           => $assistant_id,
-					'has_system_prompt'      => ! empty( $system_prompt ),
+					'assistant_id'            => $assistant_id,
+					'has_system_prompt'       => ! empty( $system_prompt ),
 					'has_professional_prompt' => ! empty( $professional_prompt ),
-					'tools_count'            => count( $tools ),
-					'has_knowledge'          => ! empty( $memory_files ) || ! empty( $vector_store ),
+					'tools_count'             => count( $tools ),
+					'has_knowledge'           => ! empty( $memory_files ) || ! empty( $vector_store ),
 				)
 			);
 		}
 
 		return rest_ensure_response(
 			array(
-				'system_prompt'      => $system_prompt,
+				'system_prompt'       => $system_prompt,
 				'professional_prompt' => $professional_prompt,
-				'tools'              => $tools,
-				'memory_files'       => $memory_files,
-				'vector_store_id'    => $vector_store,
+				'tools'               => $tools,
+				'memory_files'        => $memory_files,
+				'vector_store_id'     => $vector_store,
 			)
 		);
 	}

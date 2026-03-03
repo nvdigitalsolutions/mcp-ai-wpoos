@@ -228,7 +228,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) use ( &$captured_args ) {
 				$captured_args = $args;
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'body'     => wp_json_encode( array( 'name' => 'spaces/AAQApBZ2n3o/messages/abc123' ) ),
 					'headers'  => array(),
 					'cookies'  => array(),
@@ -293,7 +296,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 			'pre_http_request',
 			function () {
 				return array(
-					'response' => array( 'code' => 401, 'message' => 'Unauthorized' ),
+					'response' => array(
+						'code'    => 401,
+						'message' => 'Unauthorized',
+					),
 					'body'     => wp_json_encode(
 						array(
 							'error' => array(
@@ -534,7 +540,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 			'pre_http_request',
 			function () {
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'body'     => wp_json_encode( array( 'name' => 'spaces/AAA/members/123' ) ),
 					'headers'  => array(),
 					'cookies'  => array(),
@@ -574,7 +583,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 			function ( $preempt, $args ) use ( &$captured_body ) {
 				$captured_body = json_decode( $args['body'], true );
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'body'     => wp_json_encode( array( 'name' => 'spaces/AAA/members/group123' ) ),
 					'headers'  => array(),
 					'cookies'  => array(),
@@ -668,7 +680,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 			'pre_http_request',
 			function () {
 				return array(
-					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
 					'body'     => wp_json_encode( array() ),
 					'headers'  => array(),
 					'cookies'  => array(),
@@ -727,7 +742,10 @@ class Test_Google_Chat_Space_Tools extends WP_UnitTestCase {
 
 			$tool   = new $class_name();
 			$result = $tool->execute(
-				array( 'access_token' => 'fake', 'space' => 'spaces/AAA' ),
+				array(
+					'access_token' => 'fake',
+					'space'        => 'spaces/AAA',
+				),
 				array( 'user_id' => $subscriber )
 			);
 

@@ -21,9 +21,9 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_mesh'                => true,
+				'enable_mesh'                 => true,
 				'enable_federation_directory' => false,
-				'mesh_inbound_api_key'       => 'mesh_test123',
+				'mesh_inbound_api_key'        => 'mesh_test123',
 			)
 		);
 
@@ -142,10 +142,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_mesh'                => true,
+				'enable_mesh'                 => true,
 				'enable_federation_directory' => true,
-				'mesh_inbound_api_key'       => 'mesh_test123',
-				'mesh_peer_sites'            => array(),
+				'mesh_inbound_api_key'        => 'mesh_test123',
+				'mesh_peer_sites'             => array(),
 			)
 		);
 
@@ -170,10 +170,10 @@ class Test_Mesh_Peer_CPT_Creation extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_mesh'                => true,
+				'enable_mesh'                 => true,
 				'enable_federation_directory' => true,
-				'mesh_inbound_api_key'       => 'mesh_test123',
-				'mesh_peer_sites'            => array( $test_peer ),
+				'mesh_inbound_api_key'        => 'mesh_test123',
+				'mesh_peer_sites'             => array( $test_peer ),
 			)
 		);
 

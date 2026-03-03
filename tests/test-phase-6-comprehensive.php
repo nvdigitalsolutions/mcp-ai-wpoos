@@ -166,8 +166,8 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 * @group migration-guide
 	 */
 	public function test_migration_guide_exists() {
-		$migration_doc  = 'workflow-migration-guide.md';
-		$docs_dir       = dirname( __DIR__ ) . '/docs';
+		$migration_doc = 'workflow-migration-guide.md';
+		$docs_dir      = dirname( __DIR__ ) . '/docs';
 
 		$found          = false;
 		$possible_paths = array(
@@ -266,7 +266,7 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	 */
 	public function test_user_experience_requirements() {
 		// Test that chat integration exists.
-		$chat_js = dirname( __DIR__ ) . '/assets/js/chat.js';
+		$chat_js           = dirname( __DIR__ ) . '/assets/js/chat.js';
 		$slash_commands_js = dirname( __DIR__ ) . '/assets/js/slash-commands.js';
 
 		// At least one of these should exist.
@@ -284,10 +284,10 @@ class Test_Phase_6_Comprehensive extends WP_UnitTestCase {
 	public function test_launch_checklist_components_exist() {
 		// Verify key components exist.
 		$components = array(
-			'tests'        => __DIR__,
-			'docs'         => dirname( __DIR__ ) . '/docs',
-			'assets'       => dirname( __DIR__ ) . '/assets',
-			'includes'     => dirname( __DIR__ ) . '/includes',
+			'tests'    => __DIR__,
+			'docs'     => dirname( __DIR__ ) . '/docs',
+			'assets'   => dirname( __DIR__ ) . '/assets',
+			'includes' => dirname( __DIR__ ) . '/includes',
 		);
 
 		foreach ( $components as $component_name => $component_path ) {

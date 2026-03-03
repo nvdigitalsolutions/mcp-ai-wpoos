@@ -1489,4 +1489,3 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 		wp_delete_user( $admin_id );
 	}
 }
-

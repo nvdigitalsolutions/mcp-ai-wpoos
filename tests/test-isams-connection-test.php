@@ -45,7 +45,7 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_isams_test_button_renders() {
 		// Clear credentials.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                     = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['isams_api_url']    = '';
 		$settings['isams_api_key']    = '';
 		$settings['isams_api_secret'] = '';
@@ -121,14 +121,14 @@ class Test_ISAMS_Connection_Test extends WP_UnitTestCase {
 	 * Test that iSAMS is in the connections subtab groups.
 	 */
 	public function test_isams_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'isams', $subtab_groups, 'iSAMS should be in subtab groups' );
-		
+
 		$isams_group = $subtab_groups['isams'];
 		$this->assertEquals( 'isams', $isams_group['id'] );
 	}

@@ -167,7 +167,7 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 	 */
 	public function test_admin_pages_registered_when_disabled() {
 		// Disable the image production toolkit.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                                    = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_image_production_toolkit'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -259,21 +259,21 @@ class Test_Image_Template_Admin_Pages extends WP_UnitTestCase {
 		$settings_page = new WP_MCP_AI_Image_Production_Settings_Page();
 
 		// Test sanitization of image generator.
-		$input = array(
+		$input     = array(
 			'default_image_generator' => 'dalle',
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertSame( 'dalle', $sanitized['default_image_generator'], 'Default image generator should be sanitized correctly' );
 
 		// Test sanitization of output format.
-		$input = array(
+		$input     = array(
 			'default_output_format' => 'png',
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertSame( 'png', $sanitized['default_output_format'], 'Default output format should be sanitized correctly' );
 
 		// Test sanitization of max dimensions.
-		$input = array(
+		$input     = array(
 			'max_image_width'  => 2048,
 			'max_image_height' => 2048,
 		);

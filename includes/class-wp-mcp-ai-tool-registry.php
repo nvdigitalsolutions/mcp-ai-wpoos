@@ -274,10 +274,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$compensation_result = $this->compensate_for_provider_mismatch( $slug, $arguments, $context );
 			if ( ! is_wp_error( $compensation_result ) && is_array( $compensation_result ) ) {
 				// Provider compensation succeeded - update slug and arguments.
-				$slug = $compensation_result['slug'];
+				$slug      = $compensation_result['slug'];
 				$arguments = $compensation_result['arguments'];
-				$tool = $this->get_tool( $slug );
-				
+				$tool      = $this->get_tool( $slug );
+
 				if ( ! $tool ) {
 					return new WP_Error(
 						'wp_mcp_ai_tool_not_found',
@@ -318,7 +318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			if ( ! empty( $context['assistant_config']['provider'] ) ) {
 				$current_provider = $context['assistant_config']['provider'];
 			} elseif ( ! empty( $context['model'] ) ) {
-				$parts = explode( ':', $context['model'] );
+				$parts            = explode( ':', $context['model'] );
 				$current_provider = count( $parts ) > 1 ? $parts[0] : '';
 			}
 
@@ -371,17 +371,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					'provider_compensation',
 					sprintf( 'Provider compensation: routing "%s" to "%s" for provider "%s"', $slug, $target_slug, $current_provider ),
 					array(
-						'original_tool' => $slug,
-						'target_tool' => $target_slug,
-						'provider' => $current_provider,
-						'original_args' => $arguments,
+						'original_tool'   => $slug,
+						'target_tool'     => $target_slug,
+						'provider'        => $current_provider,
+						'original_args'   => $arguments,
 						'translated_args' => $translated_arguments,
 					)
 				);
 			}
 
 			return array(
-				'slug' => $target_slug,
+				'slug'      => $target_slug,
 				'arguments' => $translated_arguments,
 			);
 		}
@@ -397,18 +397,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$mapping = array(
 				// Image generation tools.
 				'generate_openai_image' => array(
-					'gemini' => 'generate_gemini_image',
+					'gemini'    => 'generate_gemini_image',
 					'anthropic' => 'generate_openai_image', // Anthropic doesn't have image generation (fallback).
 				),
 				'generate_gemini_image' => array(
-					'openai' => 'generate_openai_image',
+					'openai'    => 'generate_openai_image',
 					'anthropic' => 'generate_openai_image', // Use OpenAI as fallback.
 				),
 				// Image editing tools.
-				'edit_openai_image' => array(
+				'edit_openai_image'     => array(
 					'gemini' => 'edit_gemini_image',
 				),
-				'edit_gemini_image' => array(
+				'edit_gemini_image'     => array(
 					'openai' => 'edit_openai_image',
 				),
 			);
@@ -509,7 +509,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Try to compute aspect ratio from dimensions.
 			if ( preg_match( '/^(\d+)x(\d+)$/', $size, $matches ) ) {
-				$width = (int) $matches[1];
+				$width  = (int) $matches[1];
 				$height = (int) $matches[2];
 
 				if ( $width === $height ) {
@@ -539,13 +539,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		protected function convert_aspect_ratio_to_size( $aspect_ratio ) {
 			$aspect_to_size = array(
-				'1:1' => '1024x1024',
+				'1:1'  => '1024x1024',
 				'16:9' => '1792x1024',
 				'9:16' => '1024x1792',
-				'4:3' => '1024x768',
-				'3:4' => '768x1024',
-				'3:2' => '1536x1024',
-				'2:3' => '1024x1536',
+				'4:3'  => '1024x768',
+				'3:4'  => '768x1024',
+				'3:2'  => '1536x1024',
+				'2:3'  => '1024x1536',
 			);
 
 			if ( isset( $aspect_to_size[ $aspect_ratio ] ) ) {
@@ -1035,20 +1035,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 */
 		protected function validate_model_requirements( $requirements, $arguments, $context ) {
 			// Extract model from arguments, context, or assistant_config.
-			$model = $arguments['model'] ?? $context['model'] ?? '';
+			$model                 = $arguments['model'] ?? $context['model'] ?? '';
 			$from_assistant_config = false;
-			
+
 			// If model not directly available, check assistant_config.
 			if ( empty( $model ) && ! empty( $context['assistant_config'] ) ) {
 				$assistant_config = $context['assistant_config'];
-				
+
 				// Extract provider and model from assistant_config.
-				$provider = $assistant_config['provider'] ?? '';
+				$provider   = $assistant_config['provider'] ?? '';
 				$model_name = $assistant_config['model'] ?? '';
-				
+
 				// Construct model in format "provider:model" if both are present.
 				if ( ! empty( $provider ) && ! empty( $model_name ) ) {
-					$model = $provider . ':' . $model_name;
+					$model                 = $provider . ':' . $model_name;
 					$from_assistant_config = true;
 				}
 			}
@@ -1061,9 +1061,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			// Validate allowed providers.
 			if ( ! empty( $requirements['providers'] ) && ! empty( $model ) ) {
 				// Extract provider from model string (format: "provider:model" or just "model").
-				$parts = explode( ':', $model );
+				$parts    = explode( ':', $model );
 				$provider = count( $parts ) > 1 ? $parts[0] : '';
-				
+
 				// If provider is explicitly specified, validate it.
 				if ( ! empty( $provider ) && ! in_array( $provider, $requirements['providers'], true ) ) {
 					return new WP_Error(
@@ -1078,7 +1078,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			if ( ! empty( $requirements['models'] ) && ! empty( $model ) && ! $from_assistant_config ) {
 				// Extract just the model name without provider prefix.
 				$model_name = strpos( $model, ':' ) !== false ? explode( ':', $model )[1] : $model;
-				
+
 				if ( ! in_array( $model_name, $requirements['models'], true ) ) {
 					return new WP_Error(
 						'invalid_model',

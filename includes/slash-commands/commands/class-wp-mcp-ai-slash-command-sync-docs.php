@@ -66,11 +66,11 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 		// Analyze each document.
 		$results = array(
-			'total_docs'      => count( $docs ),
-			'docs_checked'    => 0,
-			'issues_found'    => 0,
-			'issues_fixed'    => 0,
-			'docs'            => array(),
+			'total_docs'   => count( $docs ),
+			'docs_checked' => 0,
+			'issues_found' => 0,
+			'issues_fixed' => 0,
+			'docs'         => array(),
 		);
 
 		foreach ( $docs as $doc ) {
@@ -84,7 +84,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 			);
 
 			$results['docs'][] = $doc_result;
-			$results['docs_checked']++;
+			++$results['docs_checked'];
 
 			if ( ! empty( $doc_result['issues'] ) ) {
 				$results['issues_found'] += count( $doc_result['issues'] );
@@ -130,9 +130,9 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 			$posts = get_posts(
 				array(
-					'post_type'   => $post_types,
-					'post_status' => 'publish',
-					'numberposts' => -1,
+					'post_type'     => $post_types,
+					'post_status'   => 'publish',
+					'numberposts'   => -1,
 					'category_name' => 'documentation',
 				)
 			);
@@ -186,7 +186,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 		$files = array();
 
 		// Check plugin directory.
-		$plugin_dir = WP_PLUGIN_DIR;
+		$plugin_dir      = WP_PLUGIN_DIR;
 		$readme_patterns = array( 'README.md', 'readme.txt', 'README.txt', 'DOCUMENTATION.md' );
 
 		foreach ( $readme_patterns as $pattern ) {
@@ -249,7 +249,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 				if ( $options['auto_fix'] ) {
 					$doc['content'] = $this->fix_version_references( $doc['content'] );
-					$fixed[] = 'Updated version references';
+					$fixed[]        = 'Updated version references';
 				}
 			}
 		}
@@ -297,13 +297,13 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 		}
 
 		return array(
-			'doc_id'  => isset( $doc['id'] ) ? $doc['id'] : null,
-			'title'   => $doc['title'],
-			'type'    => $doc['type'],
-			'url'     => $doc['url'],
-			'issues'  => $issues,
-			'fixed'   => $fixed,
-			'status'  => empty( $issues ) ? 'synced' : 'needs_attention',
+			'doc_id' => isset( $doc['id'] ) ? $doc['id'] : null,
+			'title'  => $doc['title'],
+			'type'   => $doc['type'],
+			'url'    => $doc['url'],
+			'issues' => $issues,
+			'fixed'  => $fixed,
+			'status' => empty( $issues ) ? 'synced' : 'needs_attention',
 		);
 	}
 
@@ -420,9 +420,9 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 		// Check for deprecated functions.
 		$deprecated_functions = array(
-			'mysql_query'        => 'Use $wpdb->query() instead',
-			'create_function'    => 'Use anonymous functions instead',
-			'get_the_author_id'  => 'Use get_the_author_meta(\'ID\') instead',
+			'mysql_query'       => 'Use $wpdb->query() instead',
+			'create_function'   => 'Use anonymous functions instead',
+			'get_the_author_id' => 'Use get_the_author_meta(\'ID\') instead',
 		);
 
 		foreach ( $code_blocks[1] as $code ) {
@@ -460,8 +460,8 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 		foreach ( $required_sections as $section ) {
 			// Check if section exists (markdown or HTML heading).
 			if ( stripos( $doc['content'], '# ' . $section ) === false &&
-			     stripos( $doc['content'], '## ' . $section ) === false &&
-			     stripos( $doc['content'], '<h2>' . $section ) === false ) {
+				stripos( $doc['content'], '## ' . $section ) === false &&
+				stripos( $doc['content'], '<h2>' . $section ) === false ) {
 				$missing[] = $section;
 			}
 		}
@@ -543,11 +543,11 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 			foreach ( $by_type as $type => $issues ) {
 				$type_label = ucwords( str_replace( '_', ' ', $type ) );
-				$output .= sprintf( "**%s:**\n", $type_label );
+				$output    .= sprintf( "**%s:**\n", $type_label );
 
 				foreach ( $issues as $issue ) {
 					$fixable_text = isset( $issue['fixable'] ) && $issue['fixable'] ? ' (fixable)' : '';
-					$output .= sprintf(
+					$output      .= sprintf(
 						"- %s%s\n",
 						esc_html( $issue['message'] ),
 						$fixable_text

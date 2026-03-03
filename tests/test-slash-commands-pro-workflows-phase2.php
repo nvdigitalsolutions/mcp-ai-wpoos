@@ -35,7 +35,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 		wp_mcp_ai_init_slash_commands();
 
 		// Get handler and create orchestrator.
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler            = wp_mcp_ai_get_slash_command_handler();
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $handler );
 	}
 
@@ -55,7 +55,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_ecommerce_inventory_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['ecommerce_inventory_management'];
+		$workflow  = $workflows['ecommerce_inventory_management'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -67,7 +67,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_social_content_planning_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['social_content_planning'];
+		$workflow  = $workflows['social_content_planning'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -79,7 +79,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_video_post_production_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['video_post_production'];
+		$workflow  = $workflows['video_post_production'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -92,12 +92,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	public function test_ecommerce_inventory_workflow_commands() {
 		// Get internal workflow definition.
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['ecommerce_inventory_management'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify step commands.
 		$this->assertEquals( 'inventory-forecast', $steps[0]['command'] );
@@ -115,12 +115,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_social_content_planning_workflow_parameters() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['social_content_planning'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify step commands.
 		$this->assertEquals( 'competitor-track', $steps[0]['command'] );
@@ -140,12 +140,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_video_post_production_workflow_chaining() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['video_post_production'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify step commands.
 		$this->assertEquals( 'video-merge', $steps[0]['command'] );
@@ -166,7 +166,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_phase2_workflows_have_required_fields() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
@@ -252,12 +252,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 */
 	public function test_workflow_parameter_placeholders() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['video_post_production'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Check for {previous.field} placeholder format.
 		$video_id_param = $steps[1]['params']['video-id'];
@@ -270,11 +270,11 @@ class Test_Slash_Commands_Pro_Workflows_Phase2 extends WP_UnitTestCase {
 	 * Test workflow commands exist.
 	 */
 	public function test_workflow_commands_are_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 

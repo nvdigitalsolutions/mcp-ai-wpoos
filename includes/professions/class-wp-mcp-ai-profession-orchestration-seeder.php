@@ -1226,8 +1226,8 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 				'flight_operations' => array(
 					'steps'         => array( 'plan_flight', 'pre_flight_check', 'execute_flight', 'post_flight_report' ),
 					'dependencies'  => array(
-						'pre_flight_check'  => 'plan_flight',
-						'execute_flight'    => 'pre_flight_check',
+						'pre_flight_check'   => 'plan_flight',
+						'execute_flight'     => 'pre_flight_check',
 						'post_flight_report' => 'execute_flight',
 					),
 					'parallel_safe' => false,
@@ -1278,9 +1278,9 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 				'electrical_project' => array(
 					'steps'         => array( 'assess_requirements', 'plan_wiring', 'install_systems', 'test_inspect' ),
 					'dependencies'  => array(
-						'plan_wiring'      => 'assess_requirements',
-						'install_systems'  => 'plan_wiring',
-						'test_inspect'     => 'install_systems',
+						'plan_wiring'     => 'assess_requirements',
+						'install_systems' => 'plan_wiring',
+						'test_inspect'    => 'install_systems',
 					),
 					'parallel_safe' => false,
 					'tools'         => array( 'create_post', 'generate_mermaid', 'save_post' ),

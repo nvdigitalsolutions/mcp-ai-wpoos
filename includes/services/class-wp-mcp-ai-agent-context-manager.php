@@ -94,14 +94,14 @@ class WP_MCP_AI_Agent_Context_Manager {
 
 		// Prepare context record.
 		$context_record = array(
-			'context_id'   => $context_id,
-			'agent_id'     => $agent_id,
-			'context_type' => sanitize_key( $context_type ),
-			'data'         => $context_data,
-			'stored_at'    => current_time( 'mysql' ),
-			'expires_at'   => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
-			'ttl'          => $ttl,
-			'access_count' => 0,
+			'context_id'    => $context_id,
+			'agent_id'      => $agent_id,
+			'context_type'  => sanitize_key( $context_type ),
+			'data'          => $context_data,
+			'stored_at'     => current_time( 'mysql' ),
+			'expires_at'    => gmdate( 'Y-m-d H:i:s', time() + $ttl ),
+			'ttl'           => $ttl,
+			'access_count'  => 0,
 			'last_accessed' => null,
 		);
 
@@ -764,9 +764,9 @@ class WP_MCP_AI_Agent_Context_Manager {
 			'avg_access_count'    => 0,
 		);
 
-		$current_time      = time();
-		$total_age         = 0;
-		$total_access      = 0;
+		$current_time       = time();
+		$total_age          = 0;
+		$total_access       = 0;
 		$expiring_threshold = 7 * DAY_IN_SECONDS; // 7 days.
 
 		foreach ( $context_index as $ctx_id => $entry ) {
@@ -788,7 +788,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 			}
 
 			// Access patterns.
-			$access_count = isset( $context['access_count'] ) ? $context['access_count'] : 0;
+			$access_count  = isset( $context['access_count'] ) ? $context['access_count'] : 0;
 			$total_access += $access_count;
 
 			if ( $access_count >= 5 ) {
@@ -813,9 +813,9 @@ class WP_MCP_AI_Agent_Context_Manager {
 
 		// Health score (0-100).
 		// Based on: active ratio, access ratio, expiration management.
-		$active_ratio  = $metrics['total_contexts'] > 0 ? $metrics['active_contexts'] / $metrics['total_contexts'] : 0;
-		$access_ratio  = $metrics['total_contexts'] > 0 ? ( $metrics['total_contexts'] - $metrics['never_accessed'] ) / $metrics['total_contexts'] : 0;
-		$health_score  = ( $active_ratio * 0.5 + $access_ratio * 0.5 ) * 100;
+		$active_ratio = $metrics['total_contexts'] > 0 ? $metrics['active_contexts'] / $metrics['total_contexts'] : 0;
+		$access_ratio = $metrics['total_contexts'] > 0 ? ( $metrics['total_contexts'] - $metrics['never_accessed'] ) / $metrics['total_contexts'] : 0;
+		$health_score = ( $active_ratio * 0.5 + $access_ratio * 0.5 ) * 100;
 
 		return array(
 			'health_score' => round( $health_score, 1 ),

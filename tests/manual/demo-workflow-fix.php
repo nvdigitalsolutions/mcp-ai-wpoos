@@ -10,7 +10,7 @@
 
 // Simulate the workflow class capability validation.
 class Workflow_Demo {
-	
+
 	/**
 	 * Get required capability for a task
 	 *
@@ -35,10 +35,10 @@ class Workflow_Demo {
 			'wait'              => null,
 			'sleep'             => null,
 		);
-		
+
 		return isset( $task_capabilities[ $task ] ) ? $task_capabilities[ $task ] : null;
 	}
-	
+
 	/**
 	 * Validate user has required capabilities for all workflow steps
 	 *
@@ -50,40 +50,40 @@ class Workflow_Demo {
 		if ( empty( $workflow['steps'] ) || ! is_array( $workflow['steps'] ) ) {
 			return array( 'success' => true );
 		}
-		
+
 		$missing_capabilities = array();
-		
+
 		foreach ( $workflow['steps'] as $step ) {
 			if ( empty( $step['task'] ) ) {
 				continue;
 			}
-			
+
 			$required_capability = $this->get_task_required_capability( $step['task'] );
-			
+
 			if ( $required_capability && ! in_array( $required_capability, $user_capabilities, true ) ) {
 				$missing_capabilities[ $step['task'] ] = $required_capability;
 			}
 		}
-		
+
 		if ( ! empty( $missing_capabilities ) ) {
 			$task_list = array();
 			foreach ( $missing_capabilities as $task => $capability ) {
 				$task_list[] = sprintf( '%s (requires %s)', $task, $capability );
 			}
-			
+
 			return array(
 				'success' => false,
 				'error'   => 'You do not have sufficient permissions to execute this workflow. The following tasks require higher privileges: ' . implode( ', ', $task_list ),
 			);
 		}
-		
+
 		return array( 'success' => true );
 	}
 }
 
 // Define test workflows.
 $workflows = array(
-	'site-health' => array(
+	'site-health'  => array(
 		'name'  => 'Site Health Check',
 		'steps' => array(
 			array( 'task' => 'optimize-perf' ),
@@ -115,10 +115,10 @@ echo "=== Workflow Capability Validation Demo ===\n\n";
 foreach ( $workflows as $workflow_slug => $workflow ) {
 	echo "Workflow: {$workflow['name']} ({$workflow_slug})\n";
 	echo str_repeat( '-', 50 ) . "\n";
-	
+
 	foreach ( $user_roles as $role => $capabilities ) {
 		$result = $demo->validate_workflow_capabilities( $workflow, $capabilities );
-		
+
 		if ( $result['success'] ) {
 			echo "✓ {$role}: ALLOWED\n";
 		} else {
@@ -126,7 +126,7 @@ foreach ( $workflows as $workflow_slug => $workflow ) {
 			echo "  Reason: {$result['error']}\n";
 		}
 	}
-	
+
 	echo "\n";
 }
 

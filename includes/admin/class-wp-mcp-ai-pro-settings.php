@@ -391,15 +391,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					),
 				),
 				'document_generation'             => array(
-					'name'          => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
-					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
-					'category'      => 'specialized',
-					'php_functions' => array( 'exec' ),
-					'npm_packages'  => array( 'pdfkit', 'docx', 'exceljs', 'pdf-parse', 'qrcode' ),
+					'name'              => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'description'       => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+					'enabled'           => ! empty( $settings['enable_document_generation_toolkit'] ),
+					'category'          => 'specialized',
+					'php_functions'     => array( 'exec' ),
+					'npm_packages'      => array( 'pdfkit', 'docx', 'exceljs', 'pdf-parse', 'qrcode' ),
 					'composer_packages' => array( 'smalot/pdfparser' ),
-					'tools_count'   => 3,
-					'tools'         => array(
+					'tools_count'       => 3,
+					'tools'             => array(
 						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
@@ -833,7 +833,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				if ( isset( $toolkit['composer_packages'] ) && is_array( $toolkit['composer_packages'] ) ) {
 					foreach ( $toolkit['composer_packages'] as $package ) {
-						$status                                = self::get_composer_package_status( $package );
+						$status                                 = self::get_composer_package_status( $package );
 						$toolkit['composer_status'][ $package ] = $status;
 						if ( ! $status['available'] ) {
 							$toolkit['composer_available'] = false;
@@ -2594,7 +2594,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <div class="wp-mcp-ai-settings-card">
 	<h2>
 		<span class="dashicons dashicons-networking" style="color: #2271b1;"></span>
-		<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
 		<span class="pro-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
 	</h2>
 

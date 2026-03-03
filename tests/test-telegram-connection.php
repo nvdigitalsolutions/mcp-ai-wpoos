@@ -1116,7 +1116,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		);
 
 		// Build the data-check string exactly as Telegram specifies.
-		$pairs = array(
+		$pairs       = array(
 			'auth_date' => $auth_date,
 			'user'      => $user_json,
 		);
@@ -1253,8 +1253,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		// No assistant param set.
 
 		$connection = array(
-			'connection_type'       => 'telegram',
-			'enabled'               => true,
+			'connection_type'        => 'telegram',
+			'enabled'                => true,
 			'assigned_assistant_ids' => array( 42, 99 ),
 		);
 
@@ -1362,8 +1362,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$request->set_param( 'assistant', 'explicit-slug' );
 
 		$connection = array(
-			'connection_type'       => 'telegram',
-			'enabled'               => true,
+			'connection_type'        => 'telegram',
+			'enabled'                => true,
 			'assigned_assistant_ids' => array( 55 ),
 		);
 
@@ -1507,8 +1507,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		}
 
 		// Enable a known setting-gated toolkit.
-		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_crm_toolkit']   = true;
+		$settings                       = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_crm_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$result = $controller->get_active_toolkits();
@@ -1551,8 +1551,8 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		}
 
 		// Explicitly disable the CRM toolkit.
-		$settings                          = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_crm_toolkit']    = false;
+		$settings                                = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_crm_toolkit']          = false;
 		$settings['enable_social_media_toolkit'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -1638,9 +1638,12 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		// Verify post shape.
 		$post_data = array_values(
-			array_filter( $data['posts'], function ( $p ) use ( $post_id ) {
-				return (int) $p['id'] === $post_id;
-			} )
+			array_filter(
+				$data['posts'],
+				function ( $p ) use ( $post_id ) {
+					return (int) $p['id'] === $post_id;
+				}
+			)
 		);
 		$this->assertNotEmpty( $post_data );
 		$this->assertArrayHasKey( 'title', $post_data[0] );
@@ -1840,7 +1843,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		$input = "auth_date=123\x00&hash=abc";
+		$input  = "auth_date=123\x00&hash=abc";
 		$result = $controller->sanitize_init_data( $input );
 
 		$this->assertStringNotContainsString( "\x00", $result, 'sanitize_init_data() should strip null bytes' );
@@ -1856,7 +1859,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 			return;
 		}
 
-		$input = 'auth_date=123&user=<script>alert(1)</script>&hash=abc';
+		$input  = 'auth_date=123&user=<script>alert(1)</script>&hash=abc';
 		$result = $controller->sanitize_init_data( $input );
 
 		$this->assertStringNotContainsString( '<script>', $result, 'sanitize_init_data() should strip HTML tags' );
@@ -1885,7 +1888,7 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		);
 
 		// Build the data-check string exactly as Telegram specifies.
-		$pairs = array(
+		$pairs       = array(
 			'auth_date' => $auth_date,
 			'user'      => $user_json,
 		);
@@ -2358,4 +2361,3 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertTrue( (bool) $updated['enable_groups'], 'enable_groups should be preserved on update' );
 	}
 }
-

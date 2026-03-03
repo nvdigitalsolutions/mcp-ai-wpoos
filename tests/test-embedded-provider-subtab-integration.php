@@ -19,7 +19,7 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 	public function setUp(): void {
 		parent::setUp();
 		delete_option( 'wp_mcp_ai_settings' );
-		
+
 		// Register the Pro Providers section if not already registered.
 		if ( class_exists( 'WP_MCP_AI_Section_Pro_Providers' ) ) {
 			$pro_providers_section = new WP_MCP_AI_Section_Pro_Providers();
@@ -46,7 +46,7 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 
 		$providers_section = new WP_MCP_AI_Section_Providers();
 		$reflection        = new ReflectionClass( $providers_section );
-		
+
 		// Get the subtab groups using reflection.
 		$method = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
@@ -54,16 +54,16 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 
 		// Verify the embedded subtab is present.
 		$this->assertArrayHasKey( 'embedded', $subtab_groups, 'Embedded subtab should be present in base Providers section' );
-		
+
 		// Verify the embedded subtab has the correct structure.
 		$this->assertArrayHasKey( 'id', $subtab_groups['embedded'] );
 		$this->assertArrayHasKey( 'label', $subtab_groups['embedded'] );
 		$this->assertArrayHasKey( 'icon', $subtab_groups['embedded'] );
 		$this->assertArrayHasKey( 'fields', $subtab_groups['embedded'] );
-		
+
 		// Verify the embedded subtab ID.
 		$this->assertEquals( 'embedded', $subtab_groups['embedded']['id'] );
-		
+
 		// Verify the embedded subtab has expected fields.
 		$expected_fields = array( 'enable_embedded', 'embedded_model', 'embedded_model_management' );
 		$this->assertEquals( $expected_fields, $subtab_groups['embedded']['fields'] );
@@ -79,15 +79,15 @@ class WP_MCP_AI_Embedded_Provider_Subtab_Integration_Test extends WP_UnitTestCas
 		}
 
 		$providers_section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Set the active subtab to 'embedded'.
 		$_GET['subtab'] = 'embedded';
-		
+
 		// Capture the output of render().
 		ob_start();
 		$providers_section->render();
 		$output = ob_get_clean();
-		
+
 		// Verify that the output contains embedded provider fields.
 		// Note: The actual rendering will depend on the Pro section's implementation.
 		// For now, we just verify that no fatal error occurs.

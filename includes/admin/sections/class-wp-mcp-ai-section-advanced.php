@@ -1976,7 +1976,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			}
 
 			// Get all professions from knowledge base.
-			$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+			$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 			$professions = $loader->load_all();
 
 			// Return count, handling WP_Error if load failed.

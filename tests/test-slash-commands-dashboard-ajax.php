@@ -58,12 +58,12 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		$this->dashboard = new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
 
 		// Create test users.
-		$this->admin_id = $this->factory->user->create(
+		$this->admin_id      = $this->factory->user->create(
 			array(
 				'role' => 'administrator',
 			)
 		);
-		$this->editor_id = $this->factory->user->create(
+		$this->editor_id     = $this->factory->user->create(
 			array(
 				'role' => 'editor',
 			)
@@ -126,7 +126,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->subscriber_id );
 
 		// Setup request with valid nonce.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['workflow'] = 'daily-review';
 
 		// Capture output.
@@ -147,7 +147,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Setup request with valid nonce but no workflow.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['workflow'] = '';
 
 		// Capture output.
@@ -168,7 +168,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Setup request with valid nonce and workflow.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['workflow'] = 'daily-review';
 
 		// Capture output.
@@ -189,7 +189,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Setup request for site-health workflow (requires manage_options).
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['workflow'] = 'site-health';
 
 		// Capture output.
@@ -212,7 +212,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 
 		// Setup request for site-health workflow.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['workflow'] = 'site-health';
 
 		// Capture output.
@@ -248,7 +248,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->subscriber_id );
 
 		// Setup request with valid nonce.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']   = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['command'] = '/help';
 
 		// Capture output.
@@ -269,7 +269,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Setup request with valid nonce but no command.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']   = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['command'] = '';
 
 		// Capture output.
@@ -290,7 +290,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Setup request with valid nonce and command.
-		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
+		$_POST['nonce']   = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
 		$_POST['command'] = '/help';
 
 		// Capture output.
@@ -394,12 +394,15 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 		wp_set_current_user( $this->editor_id );
 
 		// Add some history first.
-		update_option( 'wp_mcp_ai_slash_command_history', array(
+		update_option(
+			'wp_mcp_ai_slash_command_history',
 			array(
-				'command' => '/help',
-				'time'    => time(),
-			),
-		) );
+				array(
+					'command' => '/help',
+					'time'    => time(),
+				),
+			)
+		);
 
 		// Setup request with valid nonce.
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_slash_commands' );
@@ -424,7 +427,7 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	public function test_log_execution_creates_history_entry() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'log_execution' );
+		$method     = $reflection->getMethod( 'log_execution' );
 		$method->setAccessible( true );
 
 		// Log an execution.
@@ -444,11 +447,11 @@ class Test_Slash_Commands_Dashboard_Ajax extends WP_UnitTestCase {
 	public function test_history_respects_max_entries() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->dashboard );
-		$method = $reflection->getMethod( 'log_execution' );
+		$method     = $reflection->getMethod( 'log_execution' );
 		$method->setAccessible( true );
 
 		// Get the MAX_HISTORY_ENTRIES constant from the dashboard class.
-		$max_entries = 100; // WP_MCP_AI_Admin_Slash_Commands_Dashboard::MAX_HISTORY_ENTRIES
+		$max_entries       = 100; // WP_MCP_AI_Admin_Slash_Commands_Dashboard::MAX_HISTORY_ENTRIES
 		$entries_to_create = $max_entries + 5;
 
 		// Log more than MAX_HISTORY_ENTRIES.

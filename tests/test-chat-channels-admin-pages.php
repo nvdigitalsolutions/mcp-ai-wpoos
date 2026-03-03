@@ -49,8 +49,8 @@ class Test_Chat_Channels_Admin_Pages extends WP_UnitTestCase {
 		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Enable chat channels toolkit for tests by default.
-		$settings                                  = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_chat_channels_toolkit']  = true;
+		$settings                                 = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_chat_channels_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Store and clear menu globals.

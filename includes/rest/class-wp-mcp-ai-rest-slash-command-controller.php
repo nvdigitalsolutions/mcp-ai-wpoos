@@ -490,7 +490,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 				'type'        => 'string',
 				'required'    => true,
 			),
-			'async' => array(
+			'async'   => array(
 				'description' => __( 'Execute command asynchronously', 'mcp-ai-wpoos' ),
 				'type'        => 'boolean',
 				'default'     => false,
@@ -517,7 +517,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 					'description' => __( 'Command that was executed', 'mcp-ai-wpoos' ),
 					'type'        => 'string',
 				),
-				'result' => array(
+				'result'  => array(
 					'description' => __( 'Command execution result', 'mcp-ai-wpoos' ),
 					'type'        => 'mixed',
 				),

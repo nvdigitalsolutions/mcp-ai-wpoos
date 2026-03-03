@@ -266,8 +266,8 @@ class Test_Orchestration_Role_Coverage extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'determine_agent_role' );
 		$method->setAccessible( true );
 
-		$json_dir   = WP_MCP_AI_PATH . 'includes/knowledge-base/professions';
-		$json_files = glob( $json_dir . '/*.json' );
+		$json_dir    = WP_MCP_AI_PATH . 'includes/knowledge-base/professions';
+		$json_files  = glob( $json_dir . '/*.json' );
 		$role_counts = array(
 			'planner'    => 0,
 			'executor'   => 0,

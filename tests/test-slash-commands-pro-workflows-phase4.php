@@ -26,7 +26,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_comprehensive_ecommerce_suite_structure() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['comprehensive_ecommerce_suite'];
+		$workflow  = $workflows['comprehensive_ecommerce_suite'];
 
 		$this->assertArrayHasKey( 'name', $workflow );
 		$this->assertArrayHasKey( 'description', $workflow );
@@ -36,14 +36,14 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_comprehensive_ecommerce_suite_steps_count() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['comprehensive_ecommerce_suite'];
+		$workflow  = $workflows['comprehensive_ecommerce_suite'];
 
 		$this->assertCount( 5, $workflow['steps'] );
 	}
 
 	public function test_comprehensive_ecommerce_suite_step_commands() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['comprehensive_ecommerce_suite'];
+		$workflow  = $workflows['comprehensive_ecommerce_suite'];
 
 		$expected_commands = array(
 			'ecom-analytics',
@@ -61,7 +61,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_comprehensive_ecommerce_suite_has_params() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['comprehensive_ecommerce_suite'];
+		$workflow  = $workflows['comprehensive_ecommerce_suite'];
 
 		foreach ( $workflow['steps'] as $step ) {
 			$this->assertArrayHasKey( 'params', $step );
@@ -76,7 +76,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_video_production_complete_structure() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['video_production_complete'];
+		$workflow  = $workflows['video_production_complete'];
 
 		$this->assertArrayHasKey( 'name', $workflow );
 		$this->assertArrayHasKey( 'description', $workflow );
@@ -86,14 +86,14 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_video_production_complete_steps_count() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['video_production_complete'];
+		$workflow  = $workflows['video_production_complete'];
 
 		$this->assertCount( 7, $workflow['steps'] );
 	}
 
 	public function test_video_production_complete_step_commands() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['video_production_complete'];
+		$workflow  = $workflows['video_production_complete'];
 
 		$expected_commands = array(
 			'video-edit',
@@ -113,7 +113,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 
 	public function test_video_production_complete_parameter_placeholders() {
 		$workflows = $this->get_workflows();
-		$workflow = $workflows['video_production_complete'];
+		$workflow  = $workflows['video_production_complete'];
 
 		// Check for placeholder usage.
 		$has_placeholders = false;
@@ -132,7 +132,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 	}
 
 	public function test_all_phase4_workflows_have_required_fields() {
-		$workflows = $this->get_workflows();
+		$workflows        = $this->get_workflows();
 		$phase4_workflows = array( 'comprehensive_ecommerce_suite', 'video_production_complete' );
 
 		foreach ( $phase4_workflows as $workflow_key ) {
@@ -151,7 +151,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 	}
 
 	public function test_all_phase4_workflow_steps_have_command_and_params() {
-		$workflows = $this->get_workflows();
+		$workflows        = $this->get_workflows();
 		$phase4_workflows = array( 'comprehensive_ecommerce_suite', 'video_production_complete' );
 
 		foreach ( $phase4_workflows as $workflow_key ) {
@@ -165,7 +165,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 	}
 
 	public function test_workflow_names_are_translatable() {
-		$workflows = $this->get_workflows();
+		$workflows        = $this->get_workflows();
 		$phase4_workflows = array( 'comprehensive_ecommerce_suite', 'video_production_complete' );
 
 		foreach ( $phase4_workflows as $workflow_key ) {
@@ -184,7 +184,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase4 extends WP_UnitTestCase {
 	 */
 	protected function get_workflows() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$method = $reflection->getMethod( 'get_workflow_definitions' );
+		$method     = $reflection->getMethod( 'get_workflow_definitions' );
 		$method->setAccessible( true );
 		return $method->invoke( $this->orchestrator );
 	}

@@ -358,4 +358,3 @@ class Test_Login_Security_Monitor extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 0, $result['summary']['total_attempts'] );
 	}
 }
-

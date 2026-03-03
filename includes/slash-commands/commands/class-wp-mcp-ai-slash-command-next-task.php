@@ -48,11 +48,11 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 		}
 
 		// Parse flags.
-		$filter      = isset( $flags['filter'] ) ? $flags['filter'] : 'all';
-		$dry_run     = isset( $flags['dry-run'] ) || isset( $flags['n'] );
-		$auto_fix    = isset( $flags['auto'] ) || isset( $flags['a'] );
-		$max_tasks   = isset( $flags['limit'] ) ? absint( $flags['limit'] ) : 5;
-		$task_type   = isset( $flags['type'] ) ? sanitize_text_field( $flags['type'] ) : 'all';
+		$filter    = isset( $flags['filter'] ) ? $flags['filter'] : 'all';
+		$dry_run   = isset( $flags['dry-run'] ) || isset( $flags['n'] );
+		$auto_fix  = isset( $flags['auto'] ) || isset( $flags['a'] );
+		$max_tasks = isset( $flags['limit'] ) ? absint( $flags['limit'] ) : 5;
+		$task_type = isset( $flags['type'] ) ? sanitize_text_field( $flags['type'] ) : 'all';
 
 		// Phase 1: Task Discovery.
 		$tasks = $this->discover_tasks(
@@ -179,7 +179,7 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 		// Prioritize tasks.
 		usort(
 			$tasks,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $b['priority'] - $a['priority'];
 			}
 		);
@@ -328,12 +328,12 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 	 */
 	private function gather_site_context() {
 		return array(
-			'site_name'       => get_bloginfo( 'name' ),
-			'site_url'        => get_site_url(),
-			'post_count'      => wp_count_posts()->publish,
-			'active_theme'    => wp_get_theme()->get( 'Name' ),
-			'seo_plugin'      => $this->detect_seo_plugin(),
-			'content_type'    => get_option( 'default_post_format', 'standard' ),
+			'site_name'    => get_bloginfo( 'name' ),
+			'site_url'     => get_site_url(),
+			'post_count'   => wp_count_posts()->publish,
+			'active_theme' => wp_get_theme()->get( 'Name' ),
+			'seo_plugin'   => $this->detect_seo_plugin(),
+			'content_type' => get_option( 'default_post_format', 'standard' ),
 		);
 	}
 
@@ -361,19 +361,19 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 	 */
 	private function create_task_plan( $tasks, $context, $flags ) {
 		$plan = array(
-			'total_tasks' => count( $tasks ),
+			'total_tasks'    => count( $tasks ),
 			'estimated_time' => $this->estimate_time( $tasks ),
-			'steps' => array(),
+			'steps'          => array(),
 		);
 
 		foreach ( $tasks as $index => $task ) {
 			$step = array(
-				'step_number' => $index + 1,
-				'task_type'   => $task['type'],
-				'post_id'     => $task['post_id'],
-				'title'       => $task['title'],
-				'description' => $task['description'],
-				'actions'     => $this->plan_actions( $task, $context ),
+				'step_number'  => $index + 1,
+				'task_type'    => $task['type'],
+				'post_id'      => $task['post_id'],
+				'title'        => $task['title'],
+				'description'  => $task['description'],
+				'actions'      => $this->plan_actions( $task, $context ),
 				'tools_needed' => $this->get_required_tools( $task ),
 			);
 
@@ -468,9 +468,9 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 	 */
 	private function get_required_tools( $task ) {
 		$tools_map = array(
-			'publish_draft'         => array( 'update_post', 'get_post', 'seo_meta_optimizer' ),
-			'add_meta_description'  => array( 'get_post', 'seo_meta_optimizer', 'update_post' ),
-			'update_content'        => array( 'get_post', 'update_post', 'content_freshness_checker' ),
+			'publish_draft'        => array( 'update_post', 'get_post', 'seo_meta_optimizer' ),
+			'add_meta_description' => array( 'get_post', 'seo_meta_optimizer', 'update_post' ),
+			'update_content'       => array( 'get_post', 'update_post', 'content_freshness_checker' ),
 		);
 
 		return isset( $tools_map[ $task['type'] ] ) ? $tools_map[ $task['type'] ] : array();
@@ -538,17 +538,17 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 	 */
 	private function validate_quality( $results ) {
 		$validation = array(
-			'total'     => count( $results ),
-			'passed'    => 0,
-			'failed'    => 0,
-			'warnings'  => array(),
+			'total'    => count( $results ),
+			'passed'   => 0,
+			'failed'   => 0,
+			'warnings' => array(),
 		);
 
 		foreach ( $results as $result ) {
 			if ( 'completed' === $result['status'] ) {
-				$validation['passed']++;
+				++$validation['passed'];
 			} else {
-				$validation['failed']++;
+				++$validation['failed'];
 			}
 		}
 
@@ -589,7 +589,7 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 		if ( isset( $data['results'] ) ) {
 			$output .= "### Results\n\n";
 			foreach ( $data['results'] as $result ) {
-				$icon = 'completed' === $result['status'] ? '✅' : '❌';
+				$icon    = 'completed' === $result['status'] ? '✅' : '❌';
 				$output .= sprintf(
 					"%s Step %d: %s\n",
 					$icon,
@@ -602,7 +602,7 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 
 		if ( isset( $data['validation'] ) ) {
 			$validation = $data['validation'];
-			$output .= sprintf(
+			$output    .= sprintf(
 				"### Quality Check\n\n**Passed:** %d / %d\n**Failed:** %d\n\n",
 				$validation['passed'],
 				$validation['total'],

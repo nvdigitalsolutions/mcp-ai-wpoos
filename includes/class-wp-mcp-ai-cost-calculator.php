@@ -243,11 +243,11 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'anthropic'   => array(
 			// Claude 4.6 series (February 2026).
-			'claude-sonnet-4-6' => array(
+			'claude-sonnet-4-6'          => array(
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
-			'claude-opus-4-6'   => array(
+			'claude-opus-4-6'            => array(
 				'input'  => 5.00,
 				'output' => 25.00,
 			),

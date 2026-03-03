@@ -22,8 +22,8 @@ if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
 		 */
 		public function __construct() {
 			// Mock custom-content-types module wrapper.
-			$module_wrapper           = new stdClass();
-			$module_wrapper->instance = new stdClass();
+			$module_wrapper                    = new stdClass();
+			$module_wrapper->instance          = new stdClass();
 			$module_wrapper->instance->manager = new stdClass();
 
 			$this->modules['custom-content-types'] = $module_wrapper;
@@ -168,8 +168,8 @@ class WP_MCP_AI_JetEngine_WebChat_CCT_Module_Access_Test extends WP_UnitTestCase
 		// Mock module wrapper without instance.
 		$reflection = new ReflectionProperty( Jet_Engine_Modules::class, 'modules' );
 		$reflection->setAccessible( true );
-		$modules                               = $reflection->getValue( $engine->modules );
-		$modules['custom-content-types']       = new stdClass();
+		$modules                         = $reflection->getValue( $engine->modules );
+		$modules['custom-content-types'] = new stdClass();
 		// Note: no 'instance' property on purpose.
 		$reflection->setValue( $engine->modules, $modules );
 

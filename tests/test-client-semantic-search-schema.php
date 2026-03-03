@@ -48,7 +48,7 @@ class Test_WP_MCP_AI_Tool_Client_Semantic_Search_Schema extends WP_UnitTestCase 
 	 * Test that the text parameter uses oneOf for union types.
 	 */
 	public function test_text_parameter_uses_oneof() {
-		$schema = $this->tool->get_parameters_schema();
+		$schema      = $this->tool->get_parameters_schema();
 		$text_schema = $schema['properties']['text'];
 
 		// The text parameter should use oneOf, not a type array.
@@ -61,8 +61,8 @@ class Test_WP_MCP_AI_Tool_Client_Semantic_Search_Schema extends WP_UnitTestCase 
 	 * Test that string type is properly defined.
 	 */
 	public function test_string_type_defined() {
-		$schema = $this->tool->get_parameters_schema();
-		$text_schema = $schema['properties']['text'];
+		$schema        = $this->tool->get_parameters_schema();
+		$text_schema   = $schema['properties']['text'];
 		$oneof_schemas = $text_schema['oneOf'];
 
 		// Find the string schema.
@@ -82,8 +82,8 @@ class Test_WP_MCP_AI_Tool_Client_Semantic_Search_Schema extends WP_UnitTestCase 
 	 * Test that array type includes items definition.
 	 */
 	public function test_array_type_has_items() {
-		$schema = $this->tool->get_parameters_schema();
-		$text_schema = $schema['properties']['text'];
+		$schema        = $this->tool->get_parameters_schema();
+		$text_schema   = $schema['properties']['text'];
 		$oneof_schemas = $text_schema['oneOf'];
 
 		// Find the array schema.
@@ -109,7 +109,7 @@ class Test_WP_MCP_AI_Tool_Client_Semantic_Search_Schema extends WP_UnitTestCase 
 	 * Test that the schema has a description.
 	 */
 	public function test_text_parameter_has_description() {
-		$schema = $this->tool->get_parameters_schema();
+		$schema      = $this->tool->get_parameters_schema();
 		$text_schema = $schema['properties']['text'];
 
 		$this->assertArrayHasKey( 'description', $text_schema );
