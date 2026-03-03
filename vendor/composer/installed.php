@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-base-plugin-casing-error',
         'version' => 'dev-copilot/fix-base-plugin-casing-error',
-        'reference' => '9e87a7e5c320e0705e9847f8abccdb6c4ed12e36',
+        'reference' => '7dfa863ee3083ce37b41182f8fd7884ed9e0afd4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-base-plugin-casing-error',
             'version' => 'dev-copilot/fix-base-plugin-casing-error',
-            'reference' => '9e87a7e5c320e0705e9847f8abccdb6c4ed12e36',
+            'reference' => '7dfa863ee3083ce37b41182f8fd7884ed9e0afd4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
