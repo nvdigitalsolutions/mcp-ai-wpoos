@@ -182,10 +182,10 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 	 * Test that settings override model defaults.
 	 */
 	public function test_settings_override_model_defaults() {
-		$settings                           = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['openai_api_key']         = 'sk-test';
-		$settings['openai_image_quality']   = 'high';
-		$settings['openai_image_model']     = 'gpt-image-1.5';
+		$settings                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']       = 'sk-test';
+		$settings['openai_image_quality'] = 'high';
+		$settings['openai_image_model']   = 'gpt-image-1.5';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$client           = new WP_MCP_AI_OpenAI_Client();
@@ -236,10 +236,10 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 	 * Test that explicit options override everything.
 	 */
 	public function test_explicit_options_override_everything() {
-		$settings                           = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['openai_api_key']         = 'sk-test';
-		$settings['openai_image_quality']   = 'medium';
-		$settings['openai_image_model']     = 'gpt-image-1.5';
+		$settings                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key']       = 'sk-test';
+		$settings['openai_image_quality'] = 'medium';
+		$settings['openai_image_model']   = 'gpt-image-1.5';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		$client           = new WP_MCP_AI_OpenAI_Client();
@@ -272,7 +272,13 @@ class WP_MCP_AI_OpenAI_Image_Quality_Model_Aware_Test extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
 		// Explicitly request 'hd' quality with DALL-E 3 model.
-		$result = $client->generate_image( 'Test prompt', array( 'model' => 'dall-e-3', 'quality' => 'hd' ) );
+		$result = $client->generate_image(
+			'Test prompt',
+			array(
+				'model'   => 'dall-e-3',
+				'quality' => 'hd',
+			)
+		);
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 

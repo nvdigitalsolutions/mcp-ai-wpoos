@@ -352,17 +352,24 @@ class WP_MCP_AI_Code_Optimizer {
 		$temp_file = tempnam( sys_get_temp_dir(), 'php_syntax_' );
 		file_put_contents( $temp_file, $code );
 
-		$output     = array();
-		$return_var = 0;
-		exec( 'php -l ' . escapeshellarg( $temp_file ) . ' 2>&1', $output, $return_var );
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$result          = $process_service->run_silent( array( 'php', '-l', $temp_file ), array( 'timeout' => 15 ) );
 
 		unlink( $temp_file );
 
-		$valid = 0 === $return_var;
+		$valid  = $result['success'];
+		$errors = $valid ? array() : array_values(
+			array_filter(
+				explode( "\n", trim( $result['output'] ) ),
+				function ( $line ) {
+					return '' !== trim( $line );
+				}
+			)
+		);
 
 		return array(
 			'valid'  => $valid,
-			'errors' => $valid ? array() : $output,
+			'errors' => $errors,
 		);
 	}
 

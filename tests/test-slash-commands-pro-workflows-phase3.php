@@ -35,7 +35,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 		wp_mcp_ai_init_slash_commands();
 
 		// Get handler and create orchestrator.
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler            = wp_mcp_ai_get_slash_command_handler();
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $handler );
 	}
 
@@ -54,7 +54,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_product_launch_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['product_launch_complete'];
+		$workflow  = $workflows['product_launch_complete'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -66,7 +66,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_social_campaign_automation_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['social_campaign_automation'];
+		$workflow  = $workflows['social_campaign_automation'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -78,12 +78,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_product_launch_workflow_commands() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['product_launch_complete'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify step commands.
 		$this->assertEquals( 'bundle-create', $steps[0]['command'] );
@@ -97,12 +97,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_social_campaign_automation_workflow_commands() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['social_campaign_automation'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify step commands.
 		$this->assertEquals( 'influencer-find', $steps[0]['command'] );
@@ -116,12 +116,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_product_launch_workflow_placeholders() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['product_launch_complete'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Check for {product_name} placeholder.
 		$this->assertArrayHasKey( 'name', $steps[0]['params'] );
@@ -137,12 +137,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_social_campaign_workflow_parameter_passing() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['social_campaign_automation'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Verify parameter passing between steps.
 		$this->assertArrayHasKey( 'content', $steps[3]['params'] );
@@ -199,7 +199,7 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_phase3_workflows_have_required_fields() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
@@ -233,11 +233,11 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 * Test workflow commands are registered.
 	 */
 	public function test_phase3_workflow_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
@@ -265,12 +265,12 @@ class Test_Slash_Commands_Pro_Workflows_Phase3 extends WP_UnitTestCase {
 	 */
 	public function test_product_launch_workflow_parameter_types() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['product_launch_complete'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Check discount parameter is numeric.
 		$this->assertArrayHasKey( 'discount', $steps[0]['params'] );

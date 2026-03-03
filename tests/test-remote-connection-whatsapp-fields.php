@@ -240,14 +240,14 @@ class Test_Remote_Connection_WhatsApp_Fields extends WP_UnitTestCase {
 		}
 
 		$connection_data = array(
-			'name'             => 'Test WhatsApp Channel URL Connection',
-			'url'              => 'https://graph.facebook.com/v22.0',
-			'connection_type'  => 'whatsapp',
-			'auth_type'        => 'none',
-			'enabled'          => true,
-			'api_key'          => 'test_access_token',
-			'phone_number_id'  => '123456789012345',
-			'channel_url'      => 'https://chat.whatsapp.com/TestInviteCode12345',
+			'name'            => 'Test WhatsApp Channel URL Connection',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'enabled'         => true,
+			'api_key'         => 'test_access_token',
+			'phone_number_id' => '123456789012345',
+			'channel_url'     => 'https://chat.whatsapp.com/TestInviteCode12345',
 		);
 
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );

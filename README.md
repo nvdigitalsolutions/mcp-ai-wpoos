@@ -13,7 +13,7 @@
 
 **Version:** 1.1.2  
 **Release Date:** 2026-02-16 (February 2026 update with WordPress.org compliance fixes, pro integration settings architecture)  
-**Latest Updates:** February 2026 - WordPress.org compliance, JetEngine integration, package pre-bundling, Product Research fixes  
+**Latest Updates:** March 2026 - Office 365 & iCloud Drive connection types, Telegram Mini App CMS, Discord/Telegram reactions, WhatsApp group routing, Google Chat auto-reply, embedded chat client fixes, Facebook Messenger enhancements  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,7 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (January & February 2026)](#-latest-updates-january-february-2026)
+- [🆕 Latest Updates (February & March 2026)](#-latest-updates-februarymarch-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -265,9 +265,54 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (January-February 2026)
+## 🆕 Latest Updates (February–March 2026)
 
-### WordPress.org Compliance Fixes (February 16, 2026) ⭐ **NEW**
+### Office 365 & iCloud Drive Connection Types (March 1, 2026) ⭐ **NEW**
+
+**8 new tools across 3 new integration platforms (PR #3971)**
+
+- ✅ **Outlook Mail**: `send_outlook_mail` (HTML/plain-text, CC support) + `get_outlook_messages` (any folder, OData filter)
+- ✅ **OneDrive**: `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` via Microsoft Graph API
+- ✅ **iCloud Drive**: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via HTTPS gateway
+- ✅ **Admin UI**: New Office 365 and iCloud Drive config panels in NV oOS → Chat Channels Toolkit
+- ✅ Chat Channels Toolkit grows to **47 tools across 11 platforms**
+- [Setup Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md#office-365-setup)
+
+### Telegram Mini App CMS (February 28, 2026) ⭐ **NEW**
+
+**PR #3959 – Transformed Telegram Mini App from chat shell into full WordPress CMS**
+
+- ✅ New REST endpoints for WordPress CPTs, tools, and media within the Telegram WebView
+- ✅ Redesigned Mini App UI with navigation panels for content management
+- ✅ Fixed Mini App stuck on "Authenticating": session token fallback auth, infinite-loop prevention, subscriber-level permission (PR #3971)
+- [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
+
+### Discord/Telegram Reactions + Discord Voice (February 27, 2026) ⭐ **NEW**
+
+**OpenClaw Feb 2026 parity – 3 new tools**
+
+- ✅ `add_discord_message_reaction` – add emoji reactions to Discord messages
+- ✅ `add_telegram_message_reaction` – add emoji reactions to Telegram messages (Bot API 7.0+)
+- ✅ `get_discord_voice_channel_members` – list users currently in a Discord voice channel
+- ✅ **Elementor Telegram Login Widget** (PR #3940) – drag-and-drop `[mcp_ai_telegram_login]` shortcode integration
+
+### Chat Channel Connection Fixes (February 19–28, 2026)
+
+**Comprehensive stabilization sprint across WhatsApp, Messenger, Google Chat, and inbox storage**
+
+- ✅ **WhatsApp** (PR #3818, #3819): Fixed 403 field-permission errors on test connection
+- ✅ **WhatsApp** (PR #3840): Fixed auto-reply error #133010
+- ✅ **WhatsApp** (PR #3841): Fixed assistant silently ignoring real messages when App Secret not configured
+- ✅ **WhatsApp** (PR #3859): AI auto-replies to group messages now route to the group thread
+- ✅ **Messenger** (PR #3840): Added App ID, token generator, Test Connection, API version dropdown
+- ✅ **Messenger** (PR #3958): Fixed Test Connection button failure in Messenger settings
+- ✅ **Google Chat** (PR #3879): Fixed HTTP 404 on test connection, improved OAuth UX, service account key indicator
+- ✅ **Google Chat** (PR #3898): Fixed auto-reply silently dropped, added thread replies, fixed OAuth welcome message
+- ✅ **Google Chat**: Fixed Audience URL field not clearable (verify_token preservation bug)
+- ✅ **Inbox CCT** (PR #3860): Fixed `channel_messages` / `channel_contacts` CCTs never registering — inbox messages now persist and display correctly
+- ✅ **Embedded Client** (PR #3878, #3880, #3899): Fixed system prompt + professional roles not sent to LLM; fixed HTML-in-prompt silently dropping entire prompt
+
+
 
 **Version 1.1.2 Released: Critical WordPress.org compliance updates**
 
@@ -391,17 +436,24 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
-**Production-Ready: 6 chat platforms + collaborative rooms with AI assistants**
+**Production-Ready: 11 platforms + collaborative rooms with AI assistants**
 
-**Chat Channels Toolkit (21 Tools):**
-- **Telegram (3)**: Send messages, get updates, manage webhooks
-- **WhatsApp (3)**: Send messages/templates, get message history
+**Chat Channels Toolkit (47 Tools):**
+- **Telegram (4)**: Send messages, get updates, manage webhooks, add message reactions
+- **WhatsApp (4)**: Send template/interactive/media messages, get message history
 - **Slack (4)**: Send messages, get channels/messages, create channels
-- **Discord (4)**: Send messages, get channels/messages, create channels
+- **Discord (6)**: Send messages, get channels/messages, create channels, add reactions, voice channel members
 - **Microsoft Teams (3)**: Send messages, get channels/messages
 - **Facebook Messenger (3)**: Send messages, get conversations, create broadcasts
+- **Apple Messages for Business (4)**: Send text/interactive/group messages, retrieve conversation history
+- **Google Chat / Spaces (7)**: Send messages, list/create spaces, manage members, retrieve history
+- **Twitter/X (3)**: Send/receive Direct Messages, manage Account Activity webhooks
+- **Office 365 – Outlook (2)** ⭐ **NEW**: Send and retrieve Outlook mail via Microsoft Graph API
+- **Office 365 – OneDrive (3)** ⭐ **NEW**: List, download, and upload OneDrive files via Microsoft Graph API
+- **iCloud Drive (3)** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway
+- **WebChat (1)**: `send_webchat_message` - Send to P2P WebChat rooms
 - **Unified Hub (1)**: `unified_channel_broadcast` - Simultaneous multi-platform messaging
-- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit
+- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit, including Office 365 and iCloud Drive configuration
 - [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
 
 **WebChat Rooms:**
@@ -795,7 +847,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
-- 💬 **Chat Channels Toolkit (21 Tools)**: Integrate with 6 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger
+- 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
+- 📧 **Office 365 Integration** ⭐ **NEW**: Send and retrieve Outlook mail, list/download/upload OneDrive files via Microsoft Graph API (5 tools)
+- ☁️ **iCloud Drive Integration** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway service (3 tools)
 - 🌐 **Unified Broadcasting**: Send messages across multiple platforms simultaneously with `unified_channel_broadcast` tool
 - 🏠 **WebChat Rooms**: Custom post type for real-time collaborative chat rooms with AI assistant assignment
 - 📝 **Message Persistence**: JetEngine CCT integration for permanent message history

@@ -50,12 +50,12 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 
 		// Test with null lineupSlotCounts.
 		$league_data_null = array(
-			'id'                    => 12345,
-			'seasonId'              => 2024,
-			'scoringPeriodId'       => 10,
-			'currentMatchupPeriod'  => 10,
-			'finalScoringPeriod'    => 17,
-			'settings'              => array(
+			'id'                   => 12345,
+			'seasonId'             => 2024,
+			'scoringPeriodId'      => 10,
+			'currentMatchupPeriod' => 10,
+			'finalScoringPeriod'   => 17,
+			'settings'             => array(
 				'name'           => 'Test League',
 				'size'           => 12,
 				'isPublic'       => true,
@@ -66,7 +66,7 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 		);
 
 		$result = $method->invoke( $this->tool, $league_data_null );
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'roster_settings', $result );
 		$this->assertEquals( 0, $result['roster_settings']['roster_size'] );
@@ -84,12 +84,12 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 
 		// Test with string lineupSlotCounts.
 		$league_data_string = array(
-			'id'                    => 12345,
-			'seasonId'              => 2024,
-			'scoringPeriodId'       => 10,
-			'currentMatchupPeriod'  => 10,
-			'finalScoringPeriod'    => 17,
-			'settings'              => array(
+			'id'                   => 12345,
+			'seasonId'             => 2024,
+			'scoringPeriodId'      => 10,
+			'currentMatchupPeriod' => 10,
+			'finalScoringPeriod'   => 17,
+			'settings'             => array(
 				'name'           => 'Test League',
 				'size'           => 12,
 				'isPublic'       => true,
@@ -100,7 +100,7 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 		);
 
 		$result = $method->invoke( $this->tool, $league_data_string );
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'roster_settings', $result );
 		$this->assertEquals( 0, $result['roster_settings']['roster_size'] );
@@ -118,31 +118,31 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 
 		// Test with valid array lineupSlotCounts.
 		$league_data_valid = array(
-			'id'                    => 12345,
-			'seasonId'              => 2024,
-			'scoringPeriodId'       => 10,
-			'currentMatchupPeriod'  => 10,
-			'finalScoringPeriod'    => 17,
-			'settings'              => array(
+			'id'                   => 12345,
+			'seasonId'             => 2024,
+			'scoringPeriodId'      => 10,
+			'currentMatchupPeriod' => 10,
+			'finalScoringPeriod'   => 17,
+			'settings'             => array(
 				'name'           => 'Test League',
 				'size'           => 12,
 				'isPublic'       => true,
 				'rosterSettings' => array(
 					'lineupSlotCounts' => array(
-						'QB'  => 1,
-						'RB'  => 2,
-						'WR'  => 2,
-						'TE'  => 1,
+						'QB'   => 1,
+						'RB'   => 2,
+						'WR'   => 2,
+						'TE'   => 1,
 						'FLEX' => 1,
-						'K'   => 1,
-						'DEF' => 1,
+						'K'    => 1,
+						'DEF'  => 1,
 					),
 				),
 			),
 		);
 
 		$result = $method->invoke( $this->tool, $league_data_valid );
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'roster_settings', $result );
 		$this->assertEquals( 9, $result['roster_settings']['roster_size'] ); // Sum of all positions.
@@ -160,12 +160,12 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 
 		// Test with missing rosterSettings.
 		$league_data_missing = array(
-			'id'                    => 12345,
-			'seasonId'              => 2024,
-			'scoringPeriodId'       => 10,
-			'currentMatchupPeriod'  => 10,
-			'finalScoringPeriod'    => 17,
-			'settings'              => array(
+			'id'                   => 12345,
+			'seasonId'             => 2024,
+			'scoringPeriodId'      => 10,
+			'currentMatchupPeriod' => 10,
+			'finalScoringPeriod'   => 17,
+			'settings'             => array(
 				'name'     => 'Test League',
 				'size'     => 12,
 				'isPublic' => true,
@@ -173,7 +173,7 @@ class Test_ESPN_Fantasy_Get_League_Roster_Settings extends WP_UnitTestCase {
 		);
 
 		$result = $method->invoke( $this->tool, $league_data_missing );
-		
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'roster_settings', $result );
 		$this->assertEquals( 0, $result['roster_settings']['roster_size'] );

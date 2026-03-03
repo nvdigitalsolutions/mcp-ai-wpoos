@@ -45,11 +45,11 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_flowhub_test_button_renders() {
 		// Set credentials.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['flowhub_api_key']      = '';
-		$settings['flowhub_client_id']    = '';
+		$settings                          = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['flowhub_api_key']       = '';
+		$settings['flowhub_client_id']     = '';
 		$settings['flowhub_client_secret'] = '';
-		$settings['flowhub_location_id']  = '';
+		$settings['flowhub_location_id']   = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Get the section instance.
@@ -123,14 +123,14 @@ class Test_Flowhub_Connection_Test extends WP_UnitTestCase {
 	 * Test that Flowhub is in the connections subtab groups.
 	 */
 	public function test_flowhub_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'flowhub', $subtab_groups, 'Flowhub should be in subtab groups' );
-		
+
 		$flowhub_group = $subtab_groups['flowhub'];
 		$this->assertEquals( 'flowhub', $flowhub_group['id'] );
 	}

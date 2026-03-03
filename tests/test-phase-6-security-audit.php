@@ -96,7 +96,7 @@ class Test_Phase_6_Security_Audit extends WP_UnitTestCase {
 		// Test SQL injection attempts.
 		$sql_injection_attempts = array(
 			"' OR '1'='1",
-			"1; DROP TABLE wp_users",
+			'1; DROP TABLE wp_users',
 			"1' UNION SELECT * FROM wp_users--",
 			"admin' --",
 		);
@@ -200,9 +200,9 @@ class Test_Phase_6_Security_Audit extends WP_UnitTestCase {
 		);
 
 		$disallowed_mimes = array(
-			'php'  => 'application/x-php',
-			'exe'  => 'application/x-msdownload',
-			'sh'   => 'application/x-sh',
+			'php' => 'application/x-php',
+			'exe' => 'application/x-msdownload',
+			'sh'  => 'application/x-sh',
 		);
 
 		// Test that allowed MIME types are in WordPress allowed list.

@@ -356,7 +356,7 @@ class Test_Embedded_Client_Knowledge_Tools extends WP_UnitTestCase {
 		ob_start();
 		$shortcode->render(
 			array(
-				'assistant' => $assistant_id,
+				'assistant'  => $assistant_id,
 				'profession' => $profession_id,
 			)
 		);

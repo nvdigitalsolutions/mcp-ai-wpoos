@@ -197,7 +197,7 @@ class Test_Toolkit_Slash_Commands extends WP_UnitTestCase {
 		// Test that filter can disable toolkit commands.
 		add_filter(
 			'wp_mcp_ai_toolkit_enabled',
-			function( $enabled, $toolkit_slug ) {
+			function ( $enabled, $toolkit_slug ) {
 				if ( 'content_publishing' === $toolkit_slug ) {
 					return false;
 				}

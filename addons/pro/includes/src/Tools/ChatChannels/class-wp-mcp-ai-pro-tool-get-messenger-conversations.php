@@ -97,7 +97,7 @@ class WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations implements WP_MCP_AI_Tool_I
 			return new WP_Error( 'wp_mcp_ai_missing_messenger_token', __( 'A valid Facebook Page access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$endpoint = 'https://graph.facebook.com/v19.0/me/conversations?fields=id,senders,snippet';
+		$endpoint = 'https://graph.facebook.com/v19.0/me/conversations?platform=messenger&fields=id,snippet';
 
 		WP_MCP_AI_Logger::log_event(
 			'messenger_get_conversations_request',

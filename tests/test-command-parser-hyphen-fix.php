@@ -25,10 +25,10 @@ class Test_Command_Parser_Hyphen_Fix extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Load parser class.
 		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-parser.php';
-		
+
 		$this->parser = new WP_MCP_AI_Slash_Command_Parser();
 	}
 
@@ -139,11 +139,11 @@ class Test_Command_Parser_Hyphen_Fix extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result );
 		$this->assertEquals( 'optimize-perf', $result['command'], 'Entire command name should be captured' );
-		
+
 		// Ensure -perf is NOT treated as a flag
 		$this->assertArrayNotHasKey( 'p', $result['flags'], 'Should not have -p flag' );
 		$this->assertArrayNotHasKey( 'perf', $result['flags'], 'Should not have -perf flag' );
-		
+
 		// Ensure -perf is NOT treated as a positional argument
 		$this->assertEmpty( $result['args'], 'Should not have any positional arguments' );
 	}

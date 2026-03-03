@@ -40,7 +40,7 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 		$this->handler->register(
 			'throw_exception',
 			array(
-				'handler'    => function() {
+				'handler'    => function () {
 					throw new Exception( 'Test exception message' );
 				},
 				'capability' => 'read',
@@ -63,7 +63,7 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 		$this->handler->register(
 			'throw_error',
 			array(
-				'handler'    => function() {
+				'handler'    => function () {
 					throw new Error( 'Test PHP Error message' );
 				},
 				'capability' => 'read',
@@ -84,10 +84,10 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 		$this->handler->register(
 			'throw_type_error',
 			array(
-				'handler'    => function() {
+				'handler'    => function () {
 					// Intentionally call a function with wrong argument type to trigger TypeError.
 					// This simulates what might happen with undefined functions or type mismatches.
-					$func = function( int $required ) {
+					$func = function ( int $required ) {
 						return $required;
 					};
 					$func( 'string instead of int' );
@@ -111,7 +111,7 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 		$this->handler->register(
 			'descriptive_error',
 			array(
-				'handler'    => function() {
+				'handler'    => function () {
 					throw new Exception( 'This is a very specific error about X failing' );
 				},
 				'capability' => 'read',
@@ -122,11 +122,11 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$error_message = $result->get_error_message();
-		
+
 		// Should NOT be just "error".
 		$this->assertNotEquals( 'error', $error_message );
 		$this->assertNotEquals( 'Error: error', $error_message );
-		
+
 		// Should contain the actual error details.
 		$this->assertStringContainsString( 'specific error about X failing', $error_message );
 	}
@@ -138,7 +138,7 @@ class Test_Slash_Command_Error_Handling extends WP_UnitTestCase {
 		$this->handler->register(
 			'return_wp_error',
 			array(
-				'handler'    => function() {
+				'handler'    => function () {
 					return new WP_Error( 'custom_error', 'Custom error message' );
 				},
 				'capability' => 'read',

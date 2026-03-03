@@ -97,6 +97,54 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that clearing the Audience URL (verify_token) on update persists as empty.
+	 *
+	 * Regression test: previously the save manager would restore the old verify_token
+	 * whenever the submitted value was empty, making it impossible to clear the field.
+	 */
+	public function test_google_chat_audience_url_can_be_cleared() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// First save with an audience URL set.
+		$connection_data = array(
+			'name'              => 'Test Google Chat Clear Audience',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_token',
+			'verify_token'      => 'https://example.com/wp-json/mcp-ai/v1/webhooks/google-chat',
+			'google_chat_space' => '',
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Now update, explicitly clearing the audience URL (keep api_key unchanged to isolate the fix).
+		$update_data = array(
+			'id'                => $connection_id,
+			'name'              => 'Test Google Chat Clear Audience',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'api_key'           => 'ya29.test_token',
+			'verify_token'      => '',
+			'google_chat_space' => '',
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $saved );
+		$this->assertSame( '', $saved['verify_token'], 'Clearing the Audience URL should persist as empty' );
+	}
+
+	/**
 	 * Test that assigned_assistant_ids persist for Google Chat connections.
 	 */
 	public function test_google_chat_assigned_assistants_persist() {
@@ -762,13 +810,13 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 
 		// Save a Google Chat connection with a unique space name.
 		$connection_data = array(
-			'name'                  => 'GC Incoming Route Test',
-			'url'                   => 'https://chat.googleapis.com/v1',
-			'connection_type'       => 'google_chat',
-			'auth_type'             => 'none',
-			'enabled'               => true,
-			'api_key'               => 'ya29.fake_token',
-			'google_chat_space'     => 'spaces/AAAARouteTest',
+			'name'                   => 'GC Incoming Route Test',
+			'url'                    => 'https://chat.googleapis.com/v1',
+			'connection_type'        => 'google_chat',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => 'ya29.fake_token',
+			'google_chat_space'      => 'spaces/AAAARouteTest',
 			'assigned_assistant_ids' => array(),
 		);
 
@@ -1148,5 +1196,283 @@ class Test_Remote_Connection_Google_Chat_Fields extends WP_UnitTestCase {
 		$this->assertNotFalse( $scheduled, 'A cron reply job must be scheduled for APP_COMMAND events' );
 
 		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+	}
+
+	// =========================================================================
+	// Incoming webhook URL (reply_webhook_url) support.
+	// =========================================================================
+
+	/**
+	 * Test that reply_webhook_url field persists when saving a Google Chat connection.
+	 */
+	public function test_google_chat_reply_webhook_url_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$webhook_url = 'https://chat.googleapis.com/v1/spaces/AAAATestSpace/messages?key=abc123&token=xyz789';
+
+		$connection_data = array(
+			'name'              => 'GC Webhook URL Test',
+			'url'               => 'https://chat.googleapis.com/v1',
+			'connection_type'   => 'google_chat',
+			'auth_type'         => 'none',
+			'enabled'           => true,
+			'reply_webhook_url' => $webhook_url,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return an error' );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertNotNull( $saved, 'Saved connection should be retrievable' );
+		$this->assertSame( 'google_chat', $saved['connection_type'], 'Connection type should be google_chat' );
+		$this->assertSame( $webhook_url, $saved['reply_webhook_url'], 'reply_webhook_url field should persist' );
+	}
+
+	/**
+	 * Test that reply_webhook_url is preserved when updating a connection without providing it.
+	 */
+	public function test_google_chat_reply_webhook_url_preserved_on_update() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$webhook_url = 'https://chat.googleapis.com/v1/spaces/AAAAPreserveTest/messages?key=abc&token=def';
+
+		// First save with webhook URL.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'              => 'GC Preserve Webhook Test',
+				'url'               => 'https://chat.googleapis.com/v1',
+				'connection_type'   => 'google_chat',
+				'auth_type'         => 'none',
+				'enabled'           => true,
+				'reply_webhook_url' => $webhook_url,
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		// Update without providing reply_webhook_url — it should be preserved.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'              => $connection_id,
+				'name'            => 'GC Preserve Webhook Test Updated',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+			)
+		);
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $saved );
+		$this->assertSame( $webhook_url, $saved['reply_webhook_url'], 'reply_webhook_url should be preserved when not provided on update' );
+	}
+
+	/**
+	 * Test that reply_webhook_url empty when not provided.
+	 */
+	public function test_google_chat_reply_webhook_url_empty_when_not_provided() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC No Webhook Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'ya29.fake_token',
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		$this->assertNotNull( $saved );
+		$this->assertSame( '', $saved['reply_webhook_url'], 'reply_webhook_url should be empty when not provided' );
+	}
+
+	/**
+	 * Test that handle_webhook schedules a cron job for a MESSAGE event when the connection
+	 * has only a reply_webhook_url and no OAuth/Service Account credentials.
+	 */
+	public function test_google_chat_webhook_url_only_connection_schedules_cron() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Webhook Only Assistant',
+			)
+		);
+
+		// Save connection with ONLY a reply_webhook_url — no OAuth or Service Account.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC Webhook Only',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'reply_webhook_url'      => 'https://chat.googleapis.com/v1/spaces/AAAAWebhookOnly/messages?key=k&token=t',
+				'google_chat_space'      => 'spaces/AAAAWebhookOnly',
+				'assigned_assistant_ids' => array( $assistant_id ),
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'name'   => 'spaces/AAAAWebhookOnly/messages/wh1',
+				'text'   => 'Hello via webhook only!',
+				'sender' => array( 'name' => 'users/99' ),
+			),
+			'space'   => array(
+				'name'      => 'spaces/AAAAWebhookOnly',
+				'spaceType' => 'SPACE',
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_json_params( $payload );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$controller->handle_webhook( $request );
+
+		$scheduled = wp_next_scheduled( 'wp_mcp_ai_google_chat_send_ai_reply' );
+		$this->assertNotFalse( $scheduled, 'Cron job should be scheduled even when only a reply_webhook_url is configured' );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_google_chat_send_ai_reply' );
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test that handle_google_chat_reply_job returns early when connection has
+	 * neither OAuth credentials nor a valid reply_webhook_url.
+	 */
+	public function test_google_chat_reply_job_returns_early_without_credentials_or_webhook() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		// Save a connection with NO credentials and NO webhook URL.
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                   => 'GC No Credentials',
+				'url'                    => 'https://chat.googleapis.com/v1',
+				'connection_type'        => 'google_chat',
+				'auth_type'              => 'none',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+			)
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $connection_id );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Call handle_google_chat_reply_job — it should return early without throwing.
+		$controller->handle_google_chat_reply_job(
+			array(
+				'assistant_id'  => 1,
+				'message_text'  => 'Test message',
+				'space_name'    => 'spaces/AAAATest',
+				'sender_name'   => 'users/100',
+				'connection_id' => $connection_id,
+				'thread_name'   => '',
+			)
+		);
+
+		// If we reach here without exception, the early-return guard works correctly.
+		$this->assertTrue( true, 'Reply job should return early when no credentials or webhook URL are configured' );
+	}
+
+	/**
+	 * Test that WEBHOOK_URL_PATTERN constant is defined and rejects non-matching URLs.
+	 */
+	public function test_google_chat_webhook_url_pattern_constant() {
+		if ( ! class_exists( 'WP_MCP_AI_Google_Chat_Webhook_Controller' ) ) {
+			$this->markTestSkipped( 'Cannot safely load Google Chat webhook controller in unit tests' );
+			return;
+		}
+
+		$valid_url   = 'https://chat.googleapis.com/v1/spaces/AAAATest/messages?key=abc&token=xyz';
+		$invalid_url = 'https://evil.example.com/v1/spaces/AAAATest/messages?key=abc&token=xyz';
+
+		$this->assertSame(
+			1,
+			preg_match( WP_MCP_AI_Google_Chat_Webhook_Controller::WEBHOOK_URL_PATTERN, $valid_url ),
+			'Valid Google Chat incoming webhook URL should match the pattern'
+		);
+
+		$this->assertSame(
+			0,
+			preg_match( WP_MCP_AI_Google_Chat_Webhook_Controller::WEBHOOK_URL_PATTERN, $invalid_url ),
+			'Non-Google-Chat URL should not match the pattern'
+		);
+	}
+
+	/**
+	 * Test that connection_method persists correctly for all three Google Chat auth methods.
+	 */
+	public function test_google_chat_connection_method_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$methods = array( 'service_account', 'oauth', 'webhook' );
+
+		foreach ( $methods as $method ) {
+			$connection_data = array(
+				'name'              => 'Test Google Chat - ' . $method,
+				'url'               => 'https://chat.googleapis.com/v1',
+				'connection_type'   => 'google_chat',
+				'auth_type'         => 'none',
+				'enabled'           => true,
+				'connection_method' => $method,
+			);
+
+			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+			$this->assertNotInstanceOf( 'WP_Error', $result, 'Connection save should not return error for method: ' . $method );
+			$this->assertIsString( $result, 'Connection save should return connection ID for method: ' . $method );
+
+			$saved = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+			$this->assertNotNull( $saved, 'Saved connection should be retrievable for method: ' . $method );
+			$this->assertSame( $method, $saved['connection_method'], 'connection_method should persist as "' . $method . '"' );
+		}
 	}
 }

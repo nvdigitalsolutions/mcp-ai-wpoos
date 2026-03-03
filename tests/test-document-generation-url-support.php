@@ -130,7 +130,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 	public function test_add_watermark_to_pdf_requires_id_or_url() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-add-watermark-to-pdf.php';
 
-		$tool = new WP_MCP_AI_Tool_Add_Watermark_To_PDF();
+		$tool   = new WP_MCP_AI_Tool_Add_Watermark_To_PDF();
 		$result = $tool->execute(
 			array( 'text' => 'CONFIDENTIAL' ),
 			array( 'user_id' => $this->user_id )

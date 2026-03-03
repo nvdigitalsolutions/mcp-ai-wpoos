@@ -113,7 +113,7 @@ class Test_Anthropic_Model_Service extends WP_UnitTestCase {
 		// Anthropic models should still be available for browsing.
 		$this->assertIsArray( $models );
 		$this->assertNotEmpty( $models, 'Anthropic models should be available even without API key for browsing' );
-		
+
 		// Check that Claude 4.6 models are still present.
 		$this->assertArrayHasKey( 'claude-opus-4-6', $models );
 		$this->assertArrayHasKey( 'claude-sonnet-4-6', $models );

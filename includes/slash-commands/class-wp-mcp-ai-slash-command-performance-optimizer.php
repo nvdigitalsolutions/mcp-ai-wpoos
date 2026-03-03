@@ -72,7 +72,7 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 * @return string Timer ID.
 	 */
 	public function start_timer( $operation ) {
-		$timer_id = uniqid( $operation . '_', true );
+		$timer_id                   = uniqid( $operation . '_', true );
 		$this->metrics[ $timer_id ] = array(
 			'operation' => $operation,
 			'start'     => microtime( true ),
@@ -94,8 +94,8 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 			return array();
 		}
 
-		$this->metrics[ $timer_id ]['end'] = microtime( true );
-		$this->metrics[ $timer_id ]['duration'] = $this->metrics[ $timer_id ]['end'] - $this->metrics[ $timer_id ]['start'];
+		$this->metrics[ $timer_id ]['end']         = microtime( true );
+		$this->metrics[ $timer_id ]['duration']    = $this->metrics[ $timer_id ]['end'] - $this->metrics[ $timer_id ]['start'];
 		$this->metrics[ $timer_id ]['memory_used'] = memory_get_usage() - $this->metrics[ $timer_id ]['memory'];
 
 		return $this->metrics[ $timer_id ];
@@ -125,16 +125,16 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 */
 	public function get_cached_result( $command, $args ) {
 		$cache_key = $this->generate_cache_key( $command, $args );
-		
+
 		// Try persistent cache first (Redis/Memcached).
 		if ( $this->cache_adapter && $this->cache_adapter->is_available() ) {
 			$cached = $this->cache_adapter->get( $cache_key );
 			if ( false !== $cached ) {
 				// Add cache hit indicator.
 				if ( is_array( $cached ) ) {
-					$cached['cached'] = true;
+					$cached['cached']        = true;
 					$cached['cache_backend'] = $this->cache_adapter->get_backend();
-					$cached['cache_time'] = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
+					$cached['cache_time']    = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
 				}
 				return $cached;
 			}
@@ -146,9 +146,9 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 		if ( false !== $cached ) {
 			// Add cache hit indicator.
 			if ( is_array( $cached ) ) {
-				$cached['cached'] = true;
-				$cached['cache_backend'] = 'wordpress';
-				$cached['cache_time'] = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
+				$cached['cached']        = true;
+				$cached['cache_backend'] = 'WordPress';
+				$cached['cache_time']    = isset( $cached['_cache_time'] ) ? $cached['_cache_time'] : null;
 			}
 		}
 
@@ -179,7 +179,7 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 		}
 
 		$cache_key = $this->generate_cache_key( $command, $args );
-		$success = false;
+		$success   = false;
 
 		// Store in persistent cache (Redis/Memcached).
 		if ( $this->cache_adapter && $this->cache_adapter->is_available() ) {
@@ -318,8 +318,8 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 */
 	public function batch_execute( $commands, $context = array() ) {
 		$timer_id = $this->start_timer( 'batch_execute' );
-		$results = array();
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$results  = array();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 
 		if ( ! $handler ) {
 			return array(
@@ -340,8 +340,8 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 			'results' => $results,
 			'metrics' => array(
 				'total_commands' => count( $commands ),
-				'duration' => $metrics['duration'],
-				'avg_duration' => $metrics['duration'] / count( $commands ),
+				'duration'       => $metrics['duration'],
+				'avg_duration'   => $metrics['duration'] / count( $commands ),
 			),
 		);
 	}
@@ -419,7 +419,7 @@ class WP_MCP_AI_Slash_Command_Performance_Optimizer {
 	 */
 	public function profile_command_end( $command, $args, $result ) {
 		$timer_id = "command_{$command}_" . substr( md5( wp_json_encode( $args ) ), 0, 8 );
-		$metrics = $this->stop_timer( $timer_id );
+		$metrics  = $this->stop_timer( $timer_id );
 
 		// Log slow commands.
 		if ( isset( $metrics['duration'] ) && $metrics['duration'] > 2.0 ) {

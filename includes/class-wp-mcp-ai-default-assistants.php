@@ -375,7 +375,7 @@ class WP_MCP_AI_Default_Assistants {
 			'- **Persistent Storage**: Log successful workflows to WordPress database for pattern learning' . "\n" .
 			'- Query past decisions via `search_content` to improve routing accuracy' . "\n\n" .
 			'You operate with the highest level of system authority. Be decisive, efficient, and focused on delivering complete solutions through intelligent coordination.';
-		
+
 		return $prompt;
 	}
 

@@ -518,6 +518,9 @@ require_once WP_MCP_AI_PATH . 'includes/content-assistant-init.php';
 
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
+// Model Rate Limits CCT provides default model data used by Model Config regardless of integrations.
+// All JetEngine-specific operations within this class check for JetEngine availability internally.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
@@ -530,6 +533,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
@@ -647,7 +652,6 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php';
 	// JetEngine Quiz CCT is now loaded by the Pro addon.
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-submissions-cct.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
@@ -1875,6 +1879,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 			set_transient( 'wp_mcp_ai_install_default_assistants', true, HOUR_IN_SECONDS );
 		}
 
+		// Install bundled Anthropic Agent Skills on activation.
+		// Deferred to init hook to ensure the uploads directory is accessible.
+		// Skills that are already installed in uploads will be skipped.
+		set_transient( 'wp_mcp_ai_install_bundled_skills', true, HOUR_IN_SECONDS );
+
 		// Trigger optional components download (vectorizer & knowledge base).
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
@@ -1975,6 +1984,33 @@ add_action(
 		}
 	},
 	100 // Run late to ensure CPT is registered.
+);
+
+/**
+ * Install bundled Anthropic Agent Skills on init if activation transient is set.
+ *
+ * Copies pre-packaged SKILL.md files from the plugin's bundled-skills directory
+ * to the uploads skill storage. Already-installed skills are skipped.
+ *
+ * @since 1.7.1
+ */
+add_action(
+	'init',
+	function () {
+		if ( get_transient( 'wp_mcp_ai_install_bundled_skills' ) ) {
+			delete_transient( 'wp_mcp_ai_install_bundled_skills' );
+
+			$registry = WP_MCP_AI_Skill_Registry::instance();
+			$result   = $registry->install_bundled_skills();
+
+			// Log any errors for debugging.
+			if ( ! empty( $result['errors'] ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
+				error_log( 'WP_MCP_AI: Bundled skills install errors: ' . implode( '; ', $result['errors'] ) );
+			}
+		}
+	},
+	100
 );
 
 if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {

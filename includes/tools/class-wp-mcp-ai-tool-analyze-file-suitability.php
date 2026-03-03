@@ -391,7 +391,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$is_utf8 = @mb_check_encoding( $sample, 'UTF-8' );
 
 		if ( ! $is_utf8 ) {
-			$warnings[] = __( 'File encoding is not UTF-8. This may cause text extraction issues.', 'mcp-ai-wpoos' );
+			$warnings[]        = __( 'File encoding is not UTF-8. This may cause text extraction issues.', 'mcp-ai-wpoos' );
 			$recommendations[] = __( 'Convert file to UTF-8 encoding before upload for best results.', 'mcp-ai-wpoos' );
 		} else {
 			$recommendations[] = __( 'File encoding appears to be UTF-8 - optimal for vector store ingestion.', 'mcp-ai-wpoos' );

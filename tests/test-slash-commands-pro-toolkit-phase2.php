@@ -42,7 +42,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 * Test Phase 2 e-commerce commands are registered.
 	 */
 	public function test_phase2_ecommerce_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'discount-optimize', $commands );
@@ -54,7 +54,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 * Test Phase 2 social media commands are registered.
 	 */
 	public function test_phase2_social_media_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'social-schedule', $commands );
@@ -66,7 +66,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 * Test Phase 2 video production commands are registered.
 	 */
 	public function test_phase2_video_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'video-merge', $commands );
@@ -82,7 +82,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameters.
-		$args = array( 'content' => 'Test post' );
+		$args    = array( 'content' => 'Test post' );
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_social_schedule( $args, $context );
@@ -165,7 +165,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameter.
-		$args = array();
+		$args    = array();
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_video_merge( $args, $context );
@@ -206,7 +206,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameter.
-		$args = array();
+		$args    = array();
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_video_thumbnail_generate( $args, $context );
@@ -252,7 +252,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 * Test command parameter documentation exists.
 	 */
 	public function test_phase2_commands_have_documentation() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$phase2_commands = array(
@@ -269,11 +269,11 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 		foreach ( $phase2_commands as $command_name ) {
 			$this->assertArrayHasKey( $command_name, $commands );
 			$command = $commands[ $command_name ];
-			
+
 			// Check for usage documentation.
 			$this->assertArrayHasKey( 'usage', $command );
 			$this->assertNotEmpty( $command['usage'] );
-			
+
 			// Check for parameters documentation.
 			$this->assertArrayHasKey( 'parameters', $command );
 		}
@@ -283,7 +283,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase2 extends WP_UnitTestCase {
 	 * Test command capability requirements are correct.
 	 */
 	public function test_phase2_command_capabilities() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		// E-commerce commands require manage_woocommerce.

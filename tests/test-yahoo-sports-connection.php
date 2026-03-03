@@ -49,7 +49,7 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'yahoo_client_id', $fields, 'Yahoo Client ID field should exist' );
 		$this->assertArrayHasKey( 'yahoo_client_secret', $fields, 'Yahoo Client Secret field should exist' );
-		
+
 		// Verify field structure.
 		$this->assertEquals( 'text', $fields['yahoo_client_id']['type'] );
 		$this->assertEquals( 'password', $fields['yahoo_client_secret']['type'] );
@@ -59,14 +59,14 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 	 * Test that Yahoo Sports is in the connections subtab groups.
 	 */
 	public function test_yahoo_sports_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'yahoo_sports', $subtab_groups, 'Yahoo Sports should be in subtab groups' );
-		
+
 		$yahoo_group = $subtab_groups['yahoo_sports'];
 		$this->assertEquals( 'yahoo_sports', $yahoo_group['id'] );
 		$this->assertEquals( 'dashicons-awards', $yahoo_group['icon'] );

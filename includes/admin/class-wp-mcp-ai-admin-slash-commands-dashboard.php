@@ -131,7 +131,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		// Sanitize and validate active tab.
 		$allowed_tabs = array( 'commands', 'workflows', 'history', 'test' );
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab selection, no state change.
-		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'commands';
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'commands';
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'commands';
 		}
@@ -193,8 +193,8 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 */
 	private function render_commands_tab( $commands ) {
 		// Group commands by toolkit.
-		$toolkit_commands  = $this->group_commands_by_toolkit( $commands );
-		$global_commands   = $this->get_global_commands( $commands );
+		$toolkit_commands = $this->group_commands_by_toolkit( $commands );
+		$global_commands  = $this->get_global_commands( $commands );
 		?>
 		<div class="commands-tab">
 			<h2><?php esc_html_e( 'Available Commands', 'mcp-ai-wpoos' ); ?></h2>
@@ -602,7 +602,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		$workflows = array();
 
 		// Get workflows from the orchestrator.
-		$orchestrator           = wp_mcp_ai_get_workflow_orchestrator();
+		$orchestrator = wp_mcp_ai_get_workflow_orchestrator();
 		if ( $orchestrator ) {
 			$handler                = wp_mcp_ai_get_slash_command_handler();
 			$orchestrator_workflows = $orchestrator->get_workflows();
@@ -772,9 +772,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			);
 		}
 
-		wp_send_json_success( array(
-			'output' => $result,
-		) );
+		wp_send_json_success(
+			array(
+				'output' => $result,
+			)
+		);
 	}
 
 	/**
@@ -872,9 +874,11 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			);
 		}
 
-		wp_send_json_success( array(
-			'output' => $result,
-		) );
+		wp_send_json_success(
+			array(
+				'output' => $result,
+			)
+		);
 	}
 
 	/**

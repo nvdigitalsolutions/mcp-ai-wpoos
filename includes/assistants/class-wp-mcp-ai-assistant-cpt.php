@@ -37,6 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
 		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
 		const META_PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
+		const META_SKILLS                  = '_wp_mcp_ai_skills';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -75,6 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
 			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
 			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
+			$this->metaboxes['skills']         = new WP_MCP_AI_Metabox_Skills( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -2005,6 +2007,41 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize skills metadata value.
+		 *
+		 * Validates that each value is a valid skill name slug
+		 * (lowercase, digits, hyphens only; max 64 chars).
+		 *
+		 * @since 1.7.0
+		 * @param mixed $skills Raw skills value from POST data.
+		 * @return array Sanitized array of skill name strings.
+		 */
+		public static function sanitize_skills_meta( $skills ) {
+			if ( ! is_array( $skills ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+			foreach ( $skills as $skill_name ) {
+				if ( ! is_string( $skill_name ) ) {
+					continue;
+				}
+
+				$skill_name = sanitize_text_field( $skill_name );
+
+				// Validate skill name format per Agent Skills spec.
+				if ( preg_match( '/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/', $skill_name )
+					&& false === strpos( $skill_name, '--' )
+					&& strlen( $skill_name ) <= 64
+				) {
+					$sanitized[] = $skill_name;
+				}
+			}
+
+			return array_values( array_unique( $sanitized ) );
+		}
+
+		/**
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
@@ -2107,6 +2144,19 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Only show mesh routing meta box if mesh is enabled.
 			if ( ! empty( $settings['enable_mesh'] ) && isset( $this->metaboxes['mesh-routing'] ) ) {
 				$metabox = $this->metaboxes['mesh-routing'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
+			// Register the Agent Skills metabox.
+			if ( isset( $this->metaboxes['skills'] ) ) {
+				$metabox = $this->metaboxes['skills'];
 				add_meta_box(
 					$metabox->get_id(),
 					$metabox->get_title(),
@@ -4378,6 +4428,21 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle Agent Skills meta.
+			if ( isset( $_POST['wp_mcp_ai_skills_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_skills_meta_nonce'] ) ), 'wp_mcp_ai_skills_meta' ) ) {
+				$skills = array();
+				if ( isset( $_POST['wp_mcp_ai_skills'] ) && is_array( $_POST['wp_mcp_ai_skills'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_skills_meta().
+					$skills = self::sanitize_skills_meta( wp_unslash( $_POST['wp_mcp_ai_skills'] ) );
+				}
+
+				if ( empty( $skills ) ) {
+					delete_post_meta( $post_id, self::META_SKILLS );
+				} else {
+					update_post_meta( $post_id, self::META_SKILLS, $skills );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -4738,6 +4803,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						$config['system_prompt'] = $roles_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['system_prompt'];
 					} else {
 						$config['system_prompt'] = $roles_prompt;
+					}
+				}
+			}
+
+			// Build prompt from Agent Skills if assigned.
+			$skills = get_post_meta( $assistant_id, self::META_SKILLS, true );
+			if ( is_array( $skills ) && ! empty( $skills ) ) {
+				$registry      = WP_MCP_AI_Skill_Registry::instance();
+				$skills_prompt = $registry->build_skills_prompt( $skills );
+				if ( ! empty( $skills_prompt ) ) {
+					if ( ! empty( $config['system_prompt'] ) ) {
+						$config['system_prompt'] .= "\n\n---\n\n" . $skills_prompt;
+					} else {
+						$config['system_prompt'] = $skills_prompt;
 					}
 				}
 			}

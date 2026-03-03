@@ -178,6 +178,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['bot_username'] = $existing_connection['bot_username'];
 			}
 
+			// Preserve existing enable_groups (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_groups'] ) && isset( $existing_connection['enable_groups'] ) ) {
+				$connection_data['enable_groups'] = $existing_connection['enable_groups'];
+			}
+
+			// Preserve existing enable_web_login (Telegram) if not provided.
+			if ( ! isset( $connection_data['enable_web_login'] ) && isset( $existing_connection['enable_web_login'] ) ) {
+				$connection_data['enable_web_login'] = $existing_connection['enable_web_login'];
+			}
+
+			// Preserve existing web_login_redirect_url (Telegram) if not provided.
+			if ( ! isset( $connection_data['web_login_redirect_url'] ) && isset( $existing_connection['web_login_redirect_url'] ) ) {
+				$connection_data['web_login_redirect_url'] = $existing_connection['web_login_redirect_url'];
+			}
+
+			// Preserve existing auto_create_wp_user (Telegram) if not provided.
+			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
+				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
+			}
+
+			// Preserve existing new_user_role (Telegram) if not provided.
+			if ( ! isset( $connection_data['new_user_role'] ) && isset( $existing_connection['new_user_role'] ) ) {
+				$connection_data['new_user_role'] = $existing_connection['new_user_role'];
+			}
+
 			// Preserve existing WhatsApp-specific fields if not provided.
 			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
 				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
@@ -191,7 +216,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['system_user_id'] = $existing_connection['system_user_id'];
 			}
 
-			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] ) ) {
+			// For Google Chat the Audience URL (verify_token) is an optional field that is always
+			// rendered and submitted in the edit form, so allow the user to clear it.
+			// For WhatsApp and Messenger the verify_token is a required webhook secret; preserve
+			// the stored value when the submitted field is empty to avoid accidental erasure.
+			$saved_connection_type = isset( $connection_data['connection_type'] ) ? $connection_data['connection_type'] : '';
+			if ( empty( $connection_data['verify_token'] ) && ! empty( $existing_connection['verify_token'] )
+				&& 'google_chat' !== $saved_connection_type ) {
 				$connection_data['verify_token'] = $existing_connection['verify_token'];
 			}
 
@@ -265,9 +296,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
 			}
 
-			// Preserve existing assigned_assistant_ids (WhatsApp channel routing) if not provided.
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) if not provided.
+			if ( empty( $connection_data['reply_webhook_url'] ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
+			}
+
+			// Preserve existing connection_method (Google Chat) if not provided.
+			if ( empty( $connection_data['connection_method'] ) && ! empty( $existing_connection['connection_method'] ) ) {
+				$connection_data['connection_method'] = $existing_connection['connection_method'];
+			}
+
+			// Preserve existing assigned_assistant_ids (channel routing) if not provided.
 			if ( ! isset( $connection_data['assigned_assistant_ids'] ) && ! empty( $existing_connection['assigned_assistant_ids'] ) ) {
 				$connection_data['assigned_assistant_ids'] = $existing_connection['assigned_assistant_ids'];
+			}
+
+			// Preserve existing require_mention (chat channels) if not provided.
+			if ( ! isset( $connection_data['require_mention'] ) && isset( $existing_connection['require_mention'] ) ) {
+				$connection_data['require_mention'] = $existing_connection['require_mention'];
 			}
 
 			// Preserve existing test_endpoint if not provided.
@@ -339,6 +385,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
 			// Telegram-specific fields.
 			'bot_username'    => isset( $connection_data['bot_username'] ) ? sanitize_text_field( $connection_data['bot_username'] ) : '',
+			'enable_groups'   => ! empty( $connection_data['enable_groups'] ),
+			// Telegram Web Login feature flag and after-login redirect URL.
+			'enable_web_login'       => ! empty( $connection_data['enable_web_login'] ),
+			'web_login_redirect_url' => isset( $connection_data['web_login_redirect_url'] ) ? esc_url_raw( $connection_data['web_login_redirect_url'] ) : '',
+			// Telegram WordPress account creation for new Telegram users.
+			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
+			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
@@ -368,11 +421,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// WebChat P2P-specific fields.
 			'p2p_connection_id' => isset( $connection_data['p2p_connection_id'] ) ? sanitize_text_field( $connection_data['p2p_connection_id'] ) : '',
 			// Google Chat-specific fields.
-			'google_chat_space' => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
-			// WhatsApp channel routing: assistant IDs listening on this channel.
+			'google_chat_space'  => isset( $connection_data['google_chat_space'] ) ? sanitize_text_field( $connection_data['google_chat_space'] ) : '',
+			// Google Chat incoming webhook URL for sending AI replies (no OAuth needed).
+			'reply_webhook_url'  => isset( $connection_data['reply_webhook_url'] ) ? esc_url_raw( $connection_data['reply_webhook_url'] ) : '',
+			// When true, OIDC token validation is skipped for incoming webhook events.
+			// Useful for environments where the Authorization header is stripped by a proxy or WAF.
+			'disable_oidc_verification' => ! empty( $connection_data['disable_oidc_verification'] ),
+			// Google Chat authentication method: service_account | oauth | webhook.
+			'connection_method'  => isset( $connection_data['connection_method'] ) ? sanitize_key( $connection_data['connection_method'] ) : '',
+			// Channel routing: assistant IDs that listen on this connection (used by all chat-channel types).
 			'assigned_assistant_ids' => isset( $connection_data['assigned_assistant_ids'] ) && is_array( $connection_data['assigned_assistant_ids'] )
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
 				: array(),
+			// Chat-channel setting: only auto-reply when an assigned assistant is @mentioned.
+			'require_mention' => ! empty( $connection_data['require_mention'] ),
 			// Generic API test endpoint.
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.

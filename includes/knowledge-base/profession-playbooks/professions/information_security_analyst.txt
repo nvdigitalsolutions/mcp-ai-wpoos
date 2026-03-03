@@ -1,0 +1,598 @@
+Profession Playbook — Information Security Analyst
+Slug: information_security_analyst
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Monitor security events using SIEM platforms (Splunk, Microsoft Sentinel, Elastic Security, QRadar)
+- Detect, investigate, and respond to security incidents following established IR procedures
+- Conduct vulnerability assessments and coordinate remediation with system owners
+- Perform threat analysis using frameworks (MITRE ATT&CK, Cyber Kill Chain, Diamond Model)
+- Develop and maintain security policies, standards, and procedures aligned with frameworks (NIST CSF, ISO 27001, CIS Controls)
+- Implement and manage security controls: firewalls, IDS/IPS, EDR, DLP, WAF, email security
+- Conduct security awareness training and phishing simulations for employees
+- Perform risk assessments identifying threats, vulnerabilities, likelihood, and impact
+- Review and approve access control requests following principle of least privilege
+- Monitor threat intelligence feeds and assess relevance to organization's threat landscape
+- Conduct log analysis and digital forensics during incident investigations
+- Manage security tools, update detection rules, and tune alert thresholds to reduce false positives
+- Document security findings, incidents, and recommendations in clear reports for technical and executive audiences
+- Support compliance audits and evidence collection (SOC 2, PCI DSS, HIPAA, FedRAMP)
+
+Do NOT:
+- Access systems or data beyond what is authorized for investigation purposes
+- Conduct offensive security testing (penetration testing) without explicit written authorization
+- Share sensitive incident details outside of need-to-know channels
+- Disable security controls without change management approval and risk acceptance
+- Ignore alerts or suppress notifications without documented investigation
+- Store evidence outside of approved evidence management systems
+- Attribute attacks publicly or share threat intelligence outside authorized sharing agreements
+- Make changes to production systems without following change management procedures
+- Use personal devices or unauthorized tools for security investigations
+- Assume a single alert represents the full scope of an incident
+
+Escalate / refer out when:
+- Active breach or data exfiltration detected — escalate to incident commander and CISO immediately
+- Advanced persistent threat (APT) indicators found — escalate to threat intelligence team
+- Forensic evidence collection requires legal hold — engage legal counsel
+- Vulnerability affects critical infrastructure with no available patch — escalate to CISO for risk acceptance
+- Third-party/vendor security incident — escalate to vendor management and legal
+- Compliance violation discovered — escalate to compliance officer and legal
+- Insider threat indicators detected — escalate to HR and legal with sensitivity
+- Nation-state or critical infrastructure threats — engage law enforcement (FBI IC3, CISA)
+- Penetration testing or red team exercise needed — engage specialized offensive security team
+- Cryptographic implementation decisions — engage cryptography specialists
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Scope**: What systems, networks, or data are in scope? What is the asset classification?
+2. **Threat context**: What is the current threat landscape? Any known active threats or recent incidents?
+3. **Compliance**: What regulatory frameworks apply? (NIST CSF, ISO 27001, SOC 2, PCI DSS, HIPAA, GDPR, FedRAMP)
+4. **Environment**: What is the infrastructure? (Cloud, on-prem, hybrid) What operating systems and applications?
+5. **Current controls**: What security tools are deployed? (SIEM, EDR, firewall, DLP, IAM) Any gaps?
+6. **Region**: What jurisdictions? Breach notification laws? Data residency requirements?
+7. **Timeline**: Is this proactive assessment, active investigation, or post-incident review?
+8. **Stakeholders**: Who are the decision-makers? What is the reporting structure for security findings?
+
+1.5) Regional Considerations
+
+Information security is heavily governed by jurisdiction-specific regulations and reporting requirements:
+
+**Breach Notification Laws:**
+- **United States**: 50 state breach notification laws with varying timelines (72 hours to 60 days); SEC reporting requirements for public companies (4 business days for material incidents); HIPAA breach notification (60 days); federal agency reporting (CIRCIA — 72 hours for critical infrastructure)
+- **European Union**: GDPR Article 33 — notify supervisory authority within 72 hours; Article 34 — notify affected individuals without undue delay if high risk; NIS2 Directive — 24-hour early warning, 72-hour notification for essential/important entities
+- **United Kingdom**: ICO notification within 72 hours under UK GDPR; PECR for telecoms
+- **Canada**: PIPEDA — notify Privacy Commissioner and affected individuals "as soon as feasible"
+- **Australia**: Notifiable Data Breaches (NDB) scheme — notify within 30 days of becoming aware
+- **Asia**: Varying requirements — Japan APPI (promptly), Singapore PDPA (3 days), China PIPL (immediately)
+
+**Compliance Frameworks by Region:**
+- **Global**: ISO 27001/27002, NIST CSF, CIS Controls — internationally recognized
+- **United States**: NIST 800-53 (federal), FedRAMP (cloud for government), CMMC (defense contractors), SOX (financial), HIPAA (healthcare), PCI DSS (payment cards)
+- **European Union**: NIS2 Directive, DORA (financial services), ENISA guidelines, eIDAS (electronic identification)
+- **United Kingdom**: Cyber Essentials / Cyber Essentials Plus (government suppliers), NIS Regulations
+- **Asia-Pacific**: IRAP (Australia government), CSA STAR (Singapore cloud), MLPS 2.0 (China)
+
+**Law Enforcement & Intelligence Sharing:**
+- FBI IC3 and CISA (US); Europol EC3 (EU); NCSC (UK); AFP ACSC (Australia)
+- Information Sharing and Analysis Centers (ISACs) — sector-specific threat intelligence
+- Five Eyes, NATO CCDCOE for allied nation threat intelligence
+- Budapest Convention on Cybercrime — international cooperation framework
+
+**Data Sovereignty:**
+- Security tools and logs may be subject to data residency requirements
+- Cloud SIEM and EDR data processing location must comply with local laws
+- Cross-border incident response may require legal coordination between jurisdictions
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Asset and risk identification**: Inventory critical assets (systems, data, applications). Classify assets by sensitivity and business criticality. Identify threats relevant to the organization (threat modeling). Assess vulnerabilities through scanning and configuration review. Calculate risk: likelihood x impact, using quantitative or qualitative methodology.
+2. **Security control implementation**: Map existing controls to framework requirements (NIST CSF, CIS Controls). Identify control gaps and prioritize remediation by risk. Implement technical controls: network segmentation, encryption, MFA, EDR, DLP. Implement administrative controls: policies, procedures, awareness training. Implement physical controls where applicable. Document all controls with ownership and review schedule.
+3. **Monitoring and detection**: Configure SIEM with relevant log sources (endpoints, network, cloud, identity). Develop detection rules and use cases aligned with MITRE ATT&CK. Tune alerts to minimize false positives while maintaining detection coverage. Implement automated enrichment and correlation. Establish baseline behavior for anomaly detection. Monitor threat intelligence for emerging threats.
+4. **Incident detection and triage**: Receive alert from SIEM, EDR, user report, or threat intelligence. Triage: classify severity (Critical, High, Medium, Low) using documented criteria. Determine if alert is true positive, false positive, or benign. Assign incident to appropriate analyst based on severity and expertise. Begin evidence preservation (logs, memory dumps, disk images).
+5. **Incident investigation and containment**: Investigate scope: affected systems, accounts, data. Determine attack vector and techniques (map to MITRE ATT&CK). Contain threat: isolate affected systems, block malicious IPs/domains, disable compromised accounts. Preserve forensic evidence following chain of custody. Communicate with stakeholders per incident communication plan.
+6. **Eradication and recovery**: Remove malicious artifacts (malware, backdoors, unauthorized accounts). Patch exploited vulnerabilities. Restore affected systems from clean backups. Verify systems are clean before returning to production. Monitor recovered systems for signs of re-compromise. Reset credentials for all potentially compromised accounts.
+7. **Post-incident and improvement**: Conduct post-incident review (blameless post-mortem). Document timeline, root cause, impact, and response effectiveness. Update detection rules based on lessons learned. Update incident response procedures. Report to stakeholders and regulatory authorities as required. Track remediation actions to completion.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Security assessment report with findings and risk ratings
+- Incident report with timeline, scope, and remediation actions
+- Vulnerability scan results with prioritized remediation recommendations
+- Updated detection rules or SIEM configuration
+- Security policy or procedure document
+
+**Gold standard deliverable**:
+- Comprehensive risk assessment with threat modeling and quantified risk scores
+- Detailed incident report with MITRE ATT&CK mapping, root cause analysis, and lessons learned
+- Vulnerability management report with trending, SLA compliance, and remediation tracking
+- Security architecture review with control gap analysis mapped to NIST CSF or ISO 27001
+- Threat landscape report with relevant TTPs and defensive recommendations
+- Executive security dashboard showing risk posture, incident metrics, and compliance status
+- Incident response playbook updated with scenario-specific procedures
+- Security awareness training materials and phishing simulation results
+- Tabletop exercise scenario and after-action report
+- Compliance evidence package for audit (SOC 2, PCI DSS, HIPAA)
+- Business continuity and disaster recovery plan review
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Incident Response**:
+- [ ] Incident classified by severity using documented criteria
+- [ ] Timeline reconstructed with evidence (logs, timestamps, artifacts)
+- [ ] All affected systems and accounts identified
+- [ ] Attack vector and techniques mapped to MITRE ATT&CK
+- [ ] Containment actions documented and validated
+- [ ] Forensic evidence preserved with chain of custody
+- [ ] Eradication confirmed (no persistence mechanisms remain)
+- [ ] Recovery verified (systems clean, monitoring enhanced)
+- [ ] Regulatory notification requirements assessed and met
+- [ ] Post-incident review conducted and documented
+
+**Vulnerability Management**:
+- [ ] Vulnerability scans run on schedule (weekly/monthly)
+- [ ] Findings triaged and prioritized by CVSS score and business context
+- [ ] Critical vulnerabilities remediated within SLA (e.g., 7 days)
+- [ ] High vulnerabilities remediated within SLA (e.g., 30 days)
+- [ ] Exceptions documented with risk acceptance from asset owner
+- [ ] Remediation verified through follow-up scanning
+- [ ] Trending metrics tracked (mean time to remediate, vulnerability counts)
+
+**Monitoring & Detection**:
+- [ ] All critical log sources feeding SIEM (endpoints, network, cloud, identity)
+- [ ] Detection rules cover high-priority MITRE ATT&CK techniques
+- [ ] Alert false positive rate below acceptable threshold (<20%)
+- [ ] Mean time to detect (MTTD) meets SLA
+- [ ] Mean time to respond (MTTR) meets SLA
+- [ ] Detection coverage regularly reviewed and gaps addressed
+- [ ] Threat intelligence feeds integrated and actionable
+
+**Compliance**:
+- [ ] Security controls mapped to applicable framework requirements
+- [ ] Control effectiveness evidence documented and current
+- [ ] Policy documents reviewed and updated annually
+- [ ] Risk register maintained with current risk assessments
+- [ ] Security awareness training completion tracked (>95% target)
+- [ ] Access reviews conducted quarterly
+- [ ] Third-party security assessments completed for critical vendors
+
+**Reporting**:
+- [ ] Technical findings accurate and reproducible
+- [ ] Risk ratings consistent with organizational risk criteria
+- [ ] Recommendations are specific, actionable, and prioritized
+- [ ] Executive summary is clear and free of unnecessary jargon
+- [ ] Evidence supporting findings is referenced and preserved
+- [ ] Sensitive information classified and distributed appropriately
+
+6) Templates (paste-ready)
+
+**Template 1: Security Incident Report**
+```markdown
+# Security Incident Report
+
+## Incident Summary
+- **Incident ID**: [INC-YYYY-XXXX]
+- **Severity**: [Critical / High / Medium / Low]
+- **Status**: [Open / Contained / Eradicated / Closed]
+- **Date detected**: [YYYY-MM-DD HH:MM UTC]
+- **Date contained**: [YYYY-MM-DD HH:MM UTC]
+- **Date resolved**: [YYYY-MM-DD HH:MM UTC]
+- **Incident commander**: [Name]
+- **Classification**: [Malware / Phishing / Unauthorized Access / Data Breach / DDoS / Insider Threat]
+
+## Executive Summary
+[2-3 sentence summary for leadership: what happened, what was the impact, what actions were taken]
+
+## Timeline
+| Time (UTC) | Event | Source |
+|------------|-------|--------|
+| YYYY-MM-DD HH:MM | Initial compromise (estimated) | Forensic analysis |
+| YYYY-MM-DD HH:MM | Alert triggered | SIEM / EDR |
+| YYYY-MM-DD HH:MM | Investigation started | SOC analyst |
+| YYYY-MM-DD HH:MM | Containment actions taken | IR team |
+| YYYY-MM-DD HH:MM | Eradication completed | IR team |
+| YYYY-MM-DD HH:MM | Recovery and monitoring | IT operations |
+
+## Impact Assessment
+- **Systems affected**: [List of systems]
+- **Data affected**: [Type and volume of data, sensitivity classification]
+- **Users affected**: [Number and type of users]
+- **Business impact**: [Operational, financial, reputational]
+- **Regulatory impact**: [Breach notification required? Agencies to notify?]
+
+## Attack Analysis (MITRE ATT&CK Mapping)
+| Tactic | Technique | ID | Evidence |
+|--------|-----------|-----|----------|
+| Initial Access | Phishing | T1566.001 | Malicious email attachment |
+| Execution | PowerShell | T1059.001 | Encoded command in logs |
+| Persistence | Registry Run Key | T1547.001 | Registry modification |
+| Exfiltration | HTTP C2 | T1041 | Outbound traffic to C2 IP |
+
+## Containment Actions
+1. [Action 1: e.g., Isolated affected hosts from network]
+2. [Action 2: e.g., Blocked malicious IP addresses at firewall]
+3. [Action 3: e.g., Disabled compromised user accounts]
+
+## Root Cause
+[Detailed description of how the incident occurred and the underlying vulnerability]
+
+## Recommendations
+| Priority | Recommendation | Owner | Due Date |
+|----------|---------------|-------|----------|
+| Critical | [Recommendation] | [Team] | [Date] |
+| High | [Recommendation] | [Team] | [Date] |
+| Medium | [Recommendation] | [Team] | [Date] |
+
+## Lessons Learned
+- [What went well]
+- [What could be improved]
+- [Action items for IR process improvement]
+
+## Regulatory Notifications
+| Authority | Required | Deadline | Status |
+|-----------|----------|----------|--------|
+| [State AG / ICO / etc.] | [Yes/No] | [Date] | [Notified / Pending] |
+```
+
+**Template 2: Vulnerability Assessment Report**
+```markdown
+# Vulnerability Assessment Report
+
+## Scope
+- **Assessment date**: [YYYY-MM-DD]
+- **Target systems**: [Network ranges, applications, cloud resources]
+- **Tools used**: [Nessus, Qualys, Burp Suite, etc.]
+- **Methodology**: [OWASP, NIST 800-115, PTES]
+
+## Executive Summary
+- **Total vulnerabilities**: [XXX]
+- **Critical**: [X] | **High**: [X] | **Medium**: [X] | **Low**: [X] | **Info**: [X]
+- **Top risk**: [Brief description of most significant finding]
+- **Overall risk rating**: [Critical / High / Medium / Low]
+
+## Findings Summary
+| # | Severity | Title | CVSS | Affected Systems | Remediation |
+|---|----------|-------|------|------------------|-------------|
+| 1 | Critical | [Finding title] | 9.8 | [System(s)] | [Patch/Config] |
+| 2 | High | [Finding title] | 8.1 | [System(s)] | [Patch/Config] |
+| 3 | High | [Finding title] | 7.5 | [System(s)] | [Patch/Config] |
+
+## Detailed Findings
+
+### Finding 1: [Title]
+- **Severity**: Critical (CVSS 9.8)
+- **CVE**: [CVE-YYYY-XXXXX]
+- **Affected systems**: [IP/hostname list]
+- **Description**: [Technical description of vulnerability]
+- **Evidence**: [Screenshot, scan output, proof of concept]
+- **Impact**: [What an attacker could achieve]
+- **Remediation**: [Step-by-step fix instructions]
+- **Reference**: [Vendor advisory, CWE, OWASP link]
+
+## Trending (vs. Previous Assessment)
+| Metric | Previous | Current | Trend |
+|--------|----------|---------|-------|
+| Critical vulns | X | X | ↑/↓/→ |
+| High vulns | X | X | ↑/↓/→ |
+| MTTR (Critical) | X days | X days | ↑/↓/→ |
+
+## Remediation Priorities
+1. [Immediate: Patch critical vulnerabilities on internet-facing systems]
+2. [Short-term: Update configurations per CIS benchmarks]
+3. [Medium-term: Implement network segmentation]
+4. [Long-term: Deploy vulnerability management automation]
+```
+
+**Template 3: Security Risk Assessment**
+```markdown
+# Risk Assessment: [System/Project Name]
+
+## Assessment Overview
+- **Date**: [YYYY-MM-DD]
+- **Assessor**: [Name]
+- **Methodology**: [NIST 800-30 / ISO 27005 / FAIR]
+- **Scope**: [Systems, data, processes in scope]
+
+## Asset Inventory
+| Asset | Classification | Owner | Criticality |
+|-------|---------------|-------|-------------|
+| [System] | [Confidential] | [Name] | [High] |
+| [Database] | [Restricted] | [Name] | [Critical] |
+
+## Threat Analysis
+| Threat | Source | Likelihood | MITRE ATT&CK |
+|--------|--------|-----------|---------------|
+| Ransomware | External - Criminal | High | T1486 |
+| Data breach | External - APT | Medium | T1567 |
+| Insider theft | Internal - Employee | Low | T1052 |
+| DDoS | External - Hacktivist | Medium | T1498 |
+
+## Risk Register
+| Risk ID | Threat | Vulnerability | Likelihood | Impact | Risk Level | Treatment |
+|---------|--------|---------------|------------|--------|------------|-----------|
+| R-001 | Ransomware | Unpatched systems | High | Critical | Critical | Mitigate |
+| R-002 | Data breach | Weak access controls | Medium | High | High | Mitigate |
+| R-003 | Insider theft | Excessive privileges | Low | High | Medium | Mitigate |
+
+## Risk Treatment Plan
+| Risk ID | Control | Implementation | Owner | Due Date | Status |
+|---------|---------|---------------|-------|----------|--------|
+| R-001 | Automated patching | Deploy WSUS/SCCM | [Name] | [Date] | [Status] |
+| R-001 | Offline backups | 3-2-1 backup strategy | [Name] | [Date] | [Status] |
+| R-002 | MFA enforcement | Deploy Azure AD MFA | [Name] | [Date] | [Status] |
+
+## Residual Risk
+[Description of remaining risk after controls are implemented, with risk acceptance by appropriate authority]
+```
+
+**Template 4: SIEM Detection Rule**
+```yaml
+# SIEM Detection Rule: Suspicious PowerShell Execution
+rule:
+  name: "Suspicious Encoded PowerShell Command"
+  id: "DET-2024-0042"
+  description: >
+    Detects PowerShell execution with encoded commands,
+    commonly used by attackers to bypass detection.
+  severity: high
+  mitre_attack:
+    tactic: "Execution"
+    technique: "T1059.001"
+    sub_technique: "PowerShell"
+  
+  data_sources:
+    - windows_event_log:
+        channel: "Microsoft-Windows-PowerShell/Operational"
+        event_id: [4104, 4103]
+    - sysmon:
+        event_id: 1  # Process creation
+
+  detection:
+    condition: >
+      process_name = "powershell.exe" AND
+      (command_line CONTAINS "-enc" OR
+       command_line CONTAINS "-EncodedCommand" OR
+       command_line CONTAINS "FromBase64String") AND
+      NOT (parent_process IN known_legitimate_parents)
+
+  false_positive_sources:
+    - "SCCM/MECM software deployment"
+    - "Azure AD Connect synchronization"
+    - "Known IT automation scripts (document hash)"
+
+  response_actions:
+    - "Investigate parent process and user context"
+    - "Check if encoded command matches known malware signatures"
+    - "Review surrounding events for lateral movement"
+    - "If confirmed malicious: isolate host, disable account"
+
+  tuning_notes: >
+    Baseline known legitimate encoded PowerShell usage.
+    Add to allowlist only with documented justification.
+    Review quarterly for continued relevance.
+  
+  last_updated: "2024-12-15"
+  author: "SOC Engineering"
+```
+
+7) Examples of excellent outputs
+
+**Example 1: Incident Investigation Workflow**
+```python
+# incident_enrichment.py
+"""Automated incident enrichment for SOC analysts."""
+
+import hashlib
+from dataclasses import dataclass
+from typing import Optional
+from datetime import datetime
+
+@dataclass
+class IndicatorOfCompromise:
+    type: str  # "ip", "domain", "hash", "email"
+    value: str
+    first_seen: datetime
+    context: str
+
+@dataclass
+class EnrichmentResult:
+    ioc: IndicatorOfCompromise
+    threat_intel_match: bool
+    reputation_score: Optional[int]  # 0-100, higher = more malicious
+    related_campaigns: list[str]
+    recommended_action: str
+
+class IncidentEnricher:
+    """Enrich indicators of compromise with threat intelligence."""
+
+    def __init__(self, ti_client, reputation_client):
+        self.ti_client = ti_client
+        self.reputation_client = reputation_client
+
+    def enrich_ioc(self, ioc: IndicatorOfCompromise) -> EnrichmentResult:
+        """Enrich a single IOC with threat intelligence data."""
+        # Query threat intelligence
+        ti_match = self.ti_client.lookup(ioc.type, ioc.value)
+
+        # Query reputation
+        reputation = self.reputation_client.get_score(ioc.type, ioc.value)
+
+        # Determine recommended action
+        action = self._determine_action(ti_match, reputation)
+
+        return EnrichmentResult(
+            ioc=ioc,
+            threat_intel_match=ti_match is not None,
+            reputation_score=reputation,
+            related_campaigns=ti_match.campaigns if ti_match else [],
+            recommended_action=action,
+        )
+
+    @staticmethod
+    def _determine_action(ti_match, reputation_score: Optional[int]) -> str:
+        """Determine recommended action based on enrichment results."""
+        if ti_match and ti_match.severity == "critical":
+            return "BLOCK immediately and escalate to IR team"
+        if reputation_score and reputation_score > 80:
+            return "BLOCK and investigate affected systems"
+        if reputation_score and reputation_score > 50:
+            return "MONITOR closely and investigate context"
+        if ti_match:
+            return "INVESTIGATE — matches known threat intelligence"
+        return "LOG — no significant threat indicators found"
+
+    def bulk_enrich(self, iocs: list[IndicatorOfCompromise]) -> list[EnrichmentResult]:
+        """Enrich multiple IOCs and sort by risk."""
+        results = [self.enrich_ioc(ioc) for ioc in iocs]
+        # Sort by reputation score (highest risk first)
+        results.sort(
+            key=lambda r: r.reputation_score or 0,
+            reverse=True,
+        )
+        return results
+```
+
+**Example 2: Security Architecture Review Excerpt**
+```markdown
+# Security Architecture Review: [Application Name]
+
+## Authentication & Session Management — FINDINGS
+
+### Finding 1: JWT Tokens Lack Rotation Mechanism
+**Severity**: High
+**CWE**: CWE-613 (Insufficient Session Expiration)
+
+**Current State**: JWT access tokens have 24-hour expiry with no refresh
+token mechanism. If a token is compromised, it remains valid for up to
+24 hours.
+
+**Recommendation**: Implement short-lived access tokens (15 min) with
+refresh token rotation. Use refresh token reuse detection to identify
+token theft.
+
+```
+Current:  [Login] → [JWT: 24h expiry] → [API calls for 24h]
+Proposed: [Login] → [Access: 15min] + [Refresh: 7d, rotating]
+                  → [Silent refresh every 15min]
+                  → [Refresh token reuse = revoke all sessions]
+```
+
+### Finding 2: No Rate Limiting on Authentication Endpoints
+**Severity**: High
+**CWE**: CWE-307 (Improper Restriction of Excessive Authentication Attempts)
+
+**Current State**: The /api/auth/login endpoint has no rate limiting,
+allowing unlimited authentication attempts.
+
+**Recommendation**: Implement progressive rate limiting:
+- 5 failed attempts in 5 minutes → 30-second delay
+- 10 failed attempts in 15 minutes → 5-minute lockout
+- 20 failed attempts in 1 hour → account lockout with admin review
+- Log all failed authentication attempts to SIEM
+```
+
+**Example 3: Phishing Analysis Report**
+```markdown
+# Phishing Analysis: [Campaign ID]
+
+## Indicators of Compromise
+| Type | Value | Verdict |
+|------|-------|---------|
+| Sender | attacker@spoofed-domain.com | Malicious |
+| Reply-To | harvest@evil-domain.xyz | Malicious |
+| URL | hxxps://login-portal.evil[.]xyz/auth | Malicious — credential harvester |
+| Attachment | invoice_2024.html (SHA256: abc123...) | Malicious — HTML smuggling |
+| Hosting IP | 198.51.100[.]42 | Known phishing infrastructure |
+
+## Email Headers Analysis
+- SPF: FAIL (sent from unauthorized IP)
+- DKIM: NONE (no DKIM signature)
+- DMARC: FAIL (policy: none — no enforcement)
+
+## Impact
+- **Emails delivered**: 47 out of 200 targeted (23.5% bypass rate)
+- **Users who clicked**: 12 (25.5% of delivered)
+- **Users who submitted credentials**: 3 (6.4% of delivered)
+
+## Immediate Response Actions
+1. Block sender domain at email gateway
+2. Block URL at web proxy and DNS sinkhole
+3. Reset passwords for 3 users who submitted credentials
+4. Revoke active sessions for compromised accounts
+5. Scan compromised workstations for persistence
+
+## Recommendations
+1. Enable DMARC enforcement (p=quarantine → p=reject)
+2. Deploy URL rewriting and sandbox detonation
+3. Targeted security awareness for 12 users who clicked
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **SIEM**: Security Information and Event Management — centralized log collection and analysis
+- **EDR**: Endpoint Detection and Response — advanced endpoint monitoring and response
+- **XDR**: Extended Detection and Response — cross-domain correlation (endpoint, network, cloud, email)
+- **SOC**: Security Operations Center — team monitoring and responding to security events
+- **SOAR**: Security Orchestration, Automation, and Response — automated incident workflows
+- **IOC**: Indicator of Compromise — forensic artifact indicating intrusion (IP, hash, domain)
+- **TTP**: Tactics, Techniques, and Procedures — adversary behavioral patterns
+- **MITRE ATT&CK**: Knowledge base of adversary tactics and techniques
+- **CVE**: Common Vulnerabilities and Exposures — standardized vulnerability identifiers
+- **CVSS**: Common Vulnerability Scoring System — vulnerability severity scoring (0-10)
+- **Zero-day**: Vulnerability unknown to vendor with no available patch
+- **APT**: Advanced Persistent Threat — sophisticated, targeted attack campaign
+- **MTTD/MTTR**: Mean Time to Detect / Mean Time to Respond — SOC efficiency metrics
+
+**Compliance Frameworks**:
+- **NIST CSF**: Cybersecurity Framework — Identify, Protect, Detect, Respond, Recover (+ Govern in v2.0)
+- **NIST 800-53**: Security and Privacy Controls for Information Systems
+- **ISO 27001/27002**: Information Security Management System standard
+- **CIS Controls**: Center for Internet Security — prioritized security best practices (18 controls)
+- **SOC 2**: Service Organization Control — Type I (design) and Type II (operating effectiveness)
+- **PCI DSS v4.0**: Payment Card Industry Data Security Standard (12 requirements)
+- **HIPAA**: Health Insurance Portability and Accountability Act — security and privacy rules
+- **FedRAMP**: Federal Risk and Authorization Management Program — US government cloud security
+
+**Security Tools**:
+- **SIEM**: Splunk, Microsoft Sentinel, Elastic Security, IBM QRadar, Google Chronicle
+- **EDR**: CrowdStrike Falcon, Microsoft Defender for Endpoint, SentinelOne, Carbon Black
+- **Vulnerability scanning**: Nessus (Tenable), Qualys, Rapid7 InsightVM, OpenVAS
+- **Web application**: Burp Suite, OWASP ZAP, Acunetix, Invicti
+- **Network**: Zeek (Bro), Suricata, Snort, Wireshark
+- **Threat intelligence**: MISP, OpenCTI, Recorded Future, Mandiant Advantage
+
+**Security Standards & Classifications**:
+- **OWASP Top 10**: Most critical web application security risks
+- **CWE**: Common Weakness Enumeration — software weakness taxonomy
+- **STIX/TAXII**: Structured Threat Information eXpression / Trusted Automated eXchange
+- **TLP**: Traffic Light Protocol — information sharing classification (RED, AMBER, GREEN, CLEAR)
+- **Kill Chain**: Lockheed Martin — 7-phase cyber intrusion model
+- **Diamond Model**: Intrusion analysis framework (adversary, capability, infrastructure, victim)
+
+**Certifications** (industry-recognized):
+- **CompTIA Security+**: Entry-level security certification
+- **CISSP**: Certified Information Systems Security Professional — advanced management
+- **CEH**: Certified Ethical Hacker — offensive security fundamentals
+- **GIAC**: SANS Institute certifications (GSEC, GCIH, GCIA, GCFA, GPEN)
+- **CISM**: Certified Information Security Manager — governance focused
+- **OSCP**: Offensive Security Certified Professional — hands-on penetration testing
+
+Change log
+- 2025-01-15: Initial Information Security Analyst playbook created with 2024-2025 best practices including MITRE ATT&CK-based detection, NIST CSF v2.0 alignment, incident response procedures, SIEM detection engineering, vulnerability management SLAs, compliance framework mappings, and comprehensive templates for incident reports, vulnerability assessments, risk assessments, and SIEM detection rules.
