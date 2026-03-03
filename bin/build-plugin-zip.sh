@@ -37,6 +37,7 @@ BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
+SKIP_NPM_BUILD=false
 VERSION=""
 
 # Parse arguments
@@ -58,6 +59,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_CORE_ONLY=true
             shift
             ;;
+        --skip-npm-build)
+            SKIP_NPM_BUILD=true
+            shift
+            ;;
         --version)
             VERSION="$2"
             shift 2
@@ -77,6 +82,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
             echo "  --all             Build all main versions (base, pro, combined)"
+            echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
             echo ""
@@ -86,6 +92,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 --pro                 # Build only pro add-on"
             echo "  $0 --combined            # Build base + pro combined"
             echo "  $0 --core-only           # Build only core plugin"
+            echo "  $0 --skip-npm-build      # Skip npm build (assets already pre-built)"
             echo "  $0 --version 1.0.0       # Specify version"
             exit 0
             ;;
@@ -146,10 +153,15 @@ echo "✅ All requirements met"
 echo ""
 
 # Step 1: Install and build frontend assets
-echo "Step 1: Building frontend assets..."
-npm ci --silent 2>/dev/null || npm install --silent
-npm run build
-echo "✅ Frontend assets built"
+if [ "$SKIP_NPM_BUILD" = true ]; then
+    echo "Step 1: Skipping npm build (--skip-npm-build flag set — using pre-built assets)..."
+    echo "✅ Using pre-built frontend assets from repository"
+else
+    echo "Step 1: Building frontend assets..."
+    npm ci --silent 2>/dev/null || npm install --silent
+    npm run build
+    echo "✅ Frontend assets built"
+fi
 echo ""
 
 # Step 2: Install production Composer dependencies
@@ -208,6 +220,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'core' \
         --exclude 'shared' \
         --exclude 'ARCHITECTURE.md' \
+        --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -217,6 +230,14 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
+        --exclude 'composer.json' \
+        --exclude 'package.json' \
+        --exclude 'tsconfig.json' \
+        --exclude '.npmrc' \
+        --exclude '.codecov.yml' \
+        --exclude 'esbuild.config.pro.js' \
+        --exclude 'phpcs.xml.dist' \
+        --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
@@ -650,6 +671,7 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'core' \
         --exclude 'shared' \
         --exclude 'ARCHITECTURE.md' \
+        --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -659,6 +681,14 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
+        --exclude 'composer.json' \
+        --exclude 'package.json' \
+        --exclude 'tsconfig.json' \
+        --exclude '.npmrc' \
+        --exclude '.codecov.yml' \
+        --exclude 'esbuild.config.pro.js' \
+        --exclude 'phpcs.xml.dist' \
+        --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
