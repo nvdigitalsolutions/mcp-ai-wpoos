@@ -285,9 +285,23 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_event(
 				'telegram_group_message_ignored',
 				'Group message ignored: group support not enabled on this connection.',
-				array( 'chat_type' => $chat_type )
+				array(
+					'chat_type' => $chat_type,
+					'chat_id'   => $chat_id,
+				)
 			);
 			return;
+		}
+
+		if ( $is_group ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_group_message_received',
+				'Processing group message.',
+				array(
+					'chat_type' => $chat_type,
+					'chat_id'   => $chat_id,
+				)
+			);
 		}
 
 		// In groups, only reply when the bot is mentioned or the message is a
@@ -607,6 +621,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Keep the raw text for a plain-text fallback if HTML formatting fails.
+		$raw_content = $content;
+
 		// Convert Markdown from the AI response to Telegram-compatible HTML
 		// so the reply renders with rich formatting (bold, italic, links, etc.).
 		$content = $this->markdown_to_telegram_html( $content );
@@ -627,8 +644,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		// In group/supergroup chats, reply to the original message to keep the
 		// conversation threaded and make it clear which message is being answered.
+		// allow_sending_without_reply prevents failures when the original message
+		// is unavailable (e.g. deleted, or migrated in supergroups).
 		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
-			$payload['reply_to_message_id'] = (int) $reply_to_message_id;
+			$payload['reply_to_message_id']        = (int) $reply_to_message_id;
+			$payload['allow_sending_without_reply'] = true;
 		}
 
 		$body = wp_json_encode( $payload );
@@ -644,6 +664,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'assistant_id' => $assistant_id,
 				'chat_id'      => substr( $chat_id, 0, 4 ) . '***',
+				'chat_type'    => $chat_type,
 			)
 		);
 
@@ -664,14 +685,105 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$http_code = (int) wp_remote_retrieve_response_code( $result );
+		$http_code     = (int) wp_remote_retrieve_response_code( $result );
+		$response_body = json_decode( wp_remote_retrieve_body( $result ), true );
 
 		if ( 200 !== $http_code ) {
+			$api_description = isset( $response_body['description'] ) ? $response_body['description'] : '';
+
 			WP_MCP_AI_Logger::log_error(
 				'Telegram AI reply: API returned non-200 status.',
-				array( 'http_code' => $http_code )
+				array(
+					'http_code'   => $http_code,
+					'description' => $api_description,
+					'chat_type'   => $chat_type,
+				)
 			);
-			return;
+
+			// If the send failed and reply_to_message_id was set, retry without
+			// threading so the user still receives the reply even when the
+			// original message reference is invalid.
+			if ( isset( $payload['reply_to_message_id'] ) ) {
+				unset( $payload['reply_to_message_id'], $payload['allow_sending_without_reply'] );
+
+				$retry_body = wp_json_encode( $payload );
+				if ( false !== $retry_body ) {
+					$retry_result = wp_remote_post(
+						$endpoint,
+						array(
+							'headers' => array( 'Content-Type' => 'application/json' ),
+							'timeout' => 20,
+							'body'    => $retry_body,
+						)
+					);
+
+					$retry_code = is_wp_error( $retry_result )
+						? 0
+						: (int) wp_remote_retrieve_response_code( $retry_result );
+
+					if ( 200 === $retry_code ) {
+						WP_MCP_AI_Logger::log_event(
+							'telegram_ai_reply_retry_success',
+							'Telegram AI reply succeeded on retry without reply_to_message_id.',
+							array( 'chat_id' => substr( $chat_id, 0, 4 ) . '***' )
+						);
+						// Fall through to conversation history update below.
+					} else {
+						$retry_body_decoded = is_wp_error( $retry_result )
+							? array()
+							: json_decode( wp_remote_retrieve_body( $retry_result ), true );
+						$retry_desc         = isset( $retry_body_decoded['description'] ) ? $retry_body_decoded['description'] : '';
+
+						WP_MCP_AI_Logger::log_error(
+							'Telegram AI reply: retry without reply_to_message_id also failed.',
+							array(
+								'http_code'   => $retry_code,
+								'description' => $retry_desc,
+							)
+						);
+						return;
+					}
+				} else {
+					return;
+				}
+			} elseif ( false !== strpos( $api_description, 'parse' ) || false !== strpos( $api_description, 'HTML' ) ) {
+				// HTML formatting may have caused the error; retry with plain text.
+				$payload['text'] = wp_strip_all_tags( $raw_content );
+				if ( mb_strlen( $payload['text'] ) > self::MAX_MESSAGE_LENGTH ) {
+					$payload['text'] = mb_substr( $payload['text'], 0, self::MAX_MESSAGE_LENGTH - 3 ) . '...';
+				}
+				unset( $payload['parse_mode'] );
+
+				$retry_body = wp_json_encode( $payload );
+				if ( false !== $retry_body ) {
+					$retry_result = wp_remote_post(
+						$endpoint,
+						array(
+							'headers' => array( 'Content-Type' => 'application/json' ),
+							'timeout' => 20,
+							'body'    => $retry_body,
+						)
+					);
+
+					$retry_code = is_wp_error( $retry_result )
+						? 0
+						: (int) wp_remote_retrieve_response_code( $retry_result );
+
+					if ( 200 === $retry_code ) {
+						WP_MCP_AI_Logger::log_event(
+							'telegram_ai_reply_retry_success',
+							'Telegram AI reply succeeded on retry without HTML parse_mode.',
+							array( 'chat_id' => substr( $chat_id, 0, 4 ) . '***' )
+						);
+					} else {
+						return;
+					}
+				} else {
+					return;
+				}
+			} else {
+				return;
+			}
 		}
 
 		// Persist updated conversation history.
