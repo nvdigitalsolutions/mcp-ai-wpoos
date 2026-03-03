@@ -1839,7 +1839,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<input type="checkbox" name="telegram_require_mention" id="telegram_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
 							<?php esc_html_e( 'Only reply when the bot is @mentioned or the message is a reply to the bot', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'When unchecked (default), the bot replies to every message in the group. When checked, the bot only auto-replies when explicitly @mentioned, when an assigned assistant @slug is mentioned, or when the message is a direct reply to one of the bot\'s own messages. Fill in the Bot Username above for reliable mention detection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Applies to groups only. In private chats the bot always replies. When unchecked (default), the bot replies to every group message. When checked, the bot only auto-replies in groups when explicitly @mentioned, when an assigned assistant @slug is mentioned, or when the message is a direct reply to one of the bot\'s own messages. Fill in the Bot Username above for reliable mention detection.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

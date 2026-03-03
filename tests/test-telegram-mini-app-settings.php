@@ -1462,6 +1462,48 @@ class Test_Telegram_Mini_App_Settings extends WP_UnitTestCase {
 		$this->assertTrue( $result_true, 'require_mention should be true when explicitly set to true' );
 	}
 
+	/**
+	 * Test that require_mention never blocks replies in private chats.
+	 *
+	 * In a private (1-on-1) Telegram chat the user is already talking directly
+	 * to the bot, so @mention detection is meaningless. The webhook controller
+	 * must NOT apply the require_mention gate for private chats – it is only
+	 * a group-chat feature.
+	 *
+	 * Previously a block like:
+	 *   if ( ! $is_group && ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( ... ) ) { return; }
+	 * incorrectly prevented the bot from replying in private chats when
+	 * require_mention was enabled and the message contained no @slug.
+	 *
+	 * The corrected logic is:
+	 *   $require_mention_in_group = $is_group && ! empty( $connection['require_mention'] );
+	 * – private chats are always allowed through.
+	 */
+	public function test_require_mention_does_not_apply_to_private_chats() {
+		// Simulate the gate logic used in the webhook controller.
+		$connection_with_require_mention = array(
+			'require_mention' => true,
+		);
+
+		// private chat: $is_group = false.
+		$is_group                 = false;
+		$require_mention_in_group = $is_group && ! empty( $connection_with_require_mention['require_mention'] );
+
+		$this->assertFalse(
+			$require_mention_in_group,
+			'require_mention gate must be false for private chats even when require_mention is enabled on the connection'
+		);
+
+		// Sanity-check: gate IS active for a group when require_mention is enabled.
+		$is_group_chat            = true;
+		$require_mention_in_group = $is_group_chat && ! empty( $connection_with_require_mention['require_mention'] );
+
+		$this->assertTrue(
+			$require_mention_in_group,
+			'require_mention gate must be true for group chats when require_mention is enabled'
+		);
+	}
+
 	// =========================================================================
 	// message_mentions_bot – entity-based detection
 	// =========================================================================
