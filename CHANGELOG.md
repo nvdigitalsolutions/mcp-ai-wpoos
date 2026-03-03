@@ -28,6 +28,36 @@
 - Base plugin integration settings reduced to base-only features
 - Pro addon integration settings added for pro-only features
 
+## [1.1.3] - 2026-03-03
+
+### Fixed - WordPress.org Compliance Final Audit
+- **Output Escaping (March 3, 2026)**: Added `esc_attr()` to 5 unescaped CSS class attribute echoes
+  - `class-wp-mcp-ai-admin-profession-settings.php`: nav-tab active class conditional
+  - `class-wp-mcp-ai-admin-team-settings.php`: nav-tab active class conditional
+  - `class-wp-mcp-ai-admin-slash-commands-dashboard.php`: compact-view class conditional
+  - `class-wp-mcp-ai-admin-orchestration-dashboard.php`: health-score-circle and warning class conditionals
+  - Added `phpcs:ignore` with justification for safe `wp_json_encode()` output inside inline `<script>` block
+- **ABSPATH Security Guards (March 3, 2026)**: Added `if ( ! defined( 'ABSPATH' ) ) { exit; }` to 4 files
+  - `includes/toolkit-metadata-mapping.php`
+  - `includes/filesystem/class-wp-mcp-ai-filesystem-service.php`
+  - `includes/services/class-wp-mcp-ai-process-service.php`
+  - `includes/validators/class-wp-mcp-ai-validator-service.php`
+- **Hardcoded Admin Menu Position (March 3, 2026)**: Removed last hardcoded menu position from Pro Dashboard
+  - Changed `add_menu_page()` position argument from `85` to `null` (automatic positioning)
+  - Now consistent with v1.1.2 fix applied to all other menu registrations
+- **PR #4004 Compliance Review**: Reviewed and confirmed Telegram Mini App media tab changes are fully compliant
+  - PHP: `pathinfo( $full_url, PATHINFO_EXTENSION )` safely cast to string and lowercased
+  - JS: `escHtml()` used for all user-derived badge content
+  - CSS: Layout-only changes, no compliance concerns
+
+### Added - Telegram Mini App
+- **Media Tab Extension Badges (PR #4004, March 2, 2026)**: Non-renderable files now show extension badge
+  - Adds `ext` field (lowercase extension) to all `handle_media()` REST responses
+  - JS: `extBadge` computed from `item.ext`, rendered with `escHtml()` escaping
+  - New CSS `.tma-media-icon-emoji`: base `line-height:1` rule for consistent icon sizing
+  - New CSS `.tma-media-ext-badge`: monospace pill with `rgba(0,0,0,.35)` background and `var(--tma-section-bg,#fff)` text for WCAG-compliant contrast in Telegram light/dark themes; truncates long extensions with ellipsis
+  - `.tma-media-icon` updated to `flex-direction:column` + `gap:4px` for vertical icon/badge stacking; font-size 36px → 32px
+
 ## [Unreleased]
 
 ### Added - March 2026
