@@ -1812,13 +1812,18 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     items.forEach(function (item) {
       var isImg  = item.mime_type && item.mime_type.indexOf(\'image/\') === 0;
       var isVid  = item.mime_type && item.mime_type.indexOf(\'video/\') === 0;
+      var isAud  = item.mime_type && item.mime_type.indexOf(\'audio/\') === 0;
       var thumb;
       if (isImg && item.thumb) {
         thumb = \'<img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy">\';
       } else if (isVid && item.thumb) {
         thumb = \'<div class="tma-media-icon-wrap"><img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy"><span class="tma-media-play-badge">▶</span></div>\';
+      } else if (isVid && item.url) {
+        thumb = \'<div class="tma-media-icon-wrap"><video class="tma-media-thumb tma-media-video-preview" src="\' + escHtml(item.url) + \'" muted preload="metadata" playsinline></video><span class="tma-media-play-badge">▶</span></div>\';
+      } else if (isAud && item.url) {
+        thumb = \'<div class="tma-media-icon tma-media-icon--audio"><div class="tma-media-icon-emoji">\' + mimeIcon(item.mime_type) + \'</div><audio class="tma-media-audio-preview" src="\' + escHtml(item.url) + \'" controls preload="none"></audio></div>\';
       } else {
-        thumb = \'<div class="tma-media-icon">\' + mimeIcon(item.mime_type) + \'</div>\';
+        thumb = \'<div class="tma-media-icon tma-media-icon--\' + mimeTypeClass(item.mime_type) + \'">\' + mimeIcon(item.mime_type) + \'</div>\';
       }
       var typeLabel = mimeLabel(item.mime_type);
       var metaParts = [];
@@ -1899,6 +1904,34 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
     if (mime.indexOf(\'application/epub\') === 0)             return \'📚\';
     if (mime.indexOf(\'application/\') === 0)                 return \'📦\';
     return \'📄\';
+  }
+
+  function mimeTypeClass(mime) {
+    if (!mime) return \'generic\';
+    if (mime.indexOf(\'image/\') === 0)       return \'image\';
+    if (mime.indexOf(\'video/\') === 0)       return \'video\';
+    if (mime.indexOf(\'audio/\') === 0)       return \'audio\';
+    if (mime.indexOf(\'application/pdf\') === 0) return \'pdf\';
+    if (mime.indexOf(\'application/msword\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.wordprocessingml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.text\') === 0) return \'word\';
+    if (mime.indexOf(\'application/vnd.ms-excel\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.spreadsheetml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.spreadsheet\') === 0 ||
+        mime.indexOf(\'text/csv\') === 0)     return \'excel\';
+    if (mime.indexOf(\'application/vnd.ms-powerpoint\') === 0 ||
+        mime.indexOf(\'application/vnd.openxmlformats-officedocument.presentationml\') === 0 ||
+        mime.indexOf(\'application/vnd.oasis.opendocument.presentation\') === 0) return \'ppt\';
+    if (mime.indexOf(\'application/zip\') === 0 ||
+        mime.indexOf(\'application/x-rar\') === 0 ||
+        mime.indexOf(\'application/x-7z\') === 0 ||
+        mime.indexOf(\'application/gzip\') === 0 ||
+        mime.indexOf(\'application/x-tar\') === 0) return \'archive\';
+    if (mime.indexOf(\'text/\') === 0)        return \'text\';
+    if (mime.indexOf(\'font/\') === 0 ||
+        mime.indexOf(\'application/font\') === 0) return \'font\';
+    if (mime.indexOf(\'application/epub\') === 0) return \'epub\';
+    return \'generic\';
   }
 
   function mimeLabel(mime) {
@@ -4107,11 +4140,26 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-media-grid{padding:8px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;overflow-y:auto;-webkit-overflow-scrolling:touch;align-content:start}
 .tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition);min-height:60px}
 .tma-media-item:active{opacity:.7}
-.tma-media-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.tma-media-thumb{width:100%;aspect-ratio:1;object-fit:cover;object-position:center;display:block}
 .tma-media-icon{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--tma-secondary-bg)}
 .tma-media-icon-wrap{position:relative;width:100%;aspect-ratio:1}
-.tma-media-icon-wrap .tma-media-thumb{width:100%;height:100%;object-fit:cover}
+.tma-media-icon-wrap .tma-media-thumb{width:100%;height:100%;object-fit:cover;object-position:center}
+.tma-media-video-preview{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
 .tma-media-play-badge{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:28px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
+.tma-media-icon--pdf{background:rgba(231,76,60,.15)}
+.tma-media-icon--word{background:rgba(43,87,154,.15)}
+.tma-media-icon--excel{background:rgba(33,114,96,.15)}
+.tma-media-icon--ppt{background:rgba(210,71,38,.15)}
+.tma-media-icon--audio{background:rgba(155,89,182,.15)}
+.tma-media-icon--audio.tma-media-icon{flex-direction:column;gap:4px;font-size:28px;padding:6px;box-sizing:border-box}
+.tma-media-icon--audio .tma-media-icon-emoji{line-height:1}
+.tma-media-audio-preview{width:100%;height:28px;min-width:0;display:block}
+.tma-media-icon--archive{background:rgba(230,126,34,.15)}
+.tma-media-icon--text{background:rgba(52,73,94,.15)}
+.tma-media-icon--font{background:rgba(22,160,133,.15)}
+.tma-media-icon--epub{background:rgba(39,174,96,.15)}
+.tma-media-icon--image{background:rgba(52,152,219,.15)}
+.tma-media-icon--video{background:rgba(52,73,94,.15)}
 .tma-media-info{padding:6px 8px}
 .tma-media-title{font-size:11px;font-weight:500;color:var(--tma-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tma-media-meta{font-size:10px;color:var(--tma-hint)}
