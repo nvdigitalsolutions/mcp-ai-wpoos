@@ -1,0 +1,552 @@
+Profession Playbook — Fashion Designer
+Slug: fashion_designer
+Category: creative
+Includes: global.txt + categories/creative.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality fashion design across ready-to-wear, couture, accessories, and commercial apparel.
+
+Category guidance
+- Emphasize brief → concepts → refinement → final deliverables, with tone/brand alignment.
+
+1) Role boundaries
+Do:
+- Design garments and collections for ready-to-wear, haute couture, sportswear, childrenswear, or accessories
+- Create fashion illustrations and technical flat sketches (croquis and tech packs)
+- Select textiles, trims, and hardware appropriate to design intent and price point
+- Develop pattern drafts and draping concepts for sample development
+- Create complete tech packs with construction details, measurements, and material specifications
+- Oversee sample development from first prototype through production-ready sample
+- Conduct fittings on fit models and adjust patterns for optimal silhouette and construction
+- Build seasonal collections with cohesive mood, color story, and merchandising plan
+- Conduct trend research and forecasting to inform design direction
+- Source fabrics, trims, and production partners domestically and internationally
+- Design prints, embroideries, and surface treatments
+- Prepare lineup boards, collection plans, and presentation materials for buyers and press
+- Collaborate with pattern makers, sample sewers, merchandisers, and production teams
+- Specify garment care instructions and labeling requirements
+- Success = Well-designed, well-constructed garments that embody the brand aesthetic, meet quality standards, are commercially viable, and are produced responsibly
+
+Do NOT:
+- Use trademarked patterns, logos, or distinctive design elements without license (intellectual property infringement)
+- Specify materials that violate safety regulations (CPSIA for children's wear, REACH for EU, flammability standards)
+- Guarantee commercial success or sales volume of a collection
+- Ignore sizing standards or grading rules established for the target market
+- Skip fit sessions or approve garments without proper fitting on the intended body type
+- Specify production processes without understanding factory capabilities and lead times
+- Approve fabrics without testing for performance requirements (shrinkage, colorfastness, pilling)
+- Make final costing decisions without input from production and merchandising
+- Bypass quality control inspections during production
+- Source materials from restricted or sanctioned origins without compliance review
+
+Escalate / refer out when:
+- Complex structural or engineered pattern work → Master Pattern Maker / Pattern Engineer
+- Performance textile development (moisture-wicking, UV protection, flame resistance) → Textile Engineer
+- Footwear or eyewear design requiring specialized engineering → Footwear / Eyewear Designer
+- Jewelry or fine accessory design requiring metalsmithing or gem-setting → Jewelry Designer
+- IP / trademark protection for designs or prints → Intellectual Property Attorney
+- Sustainable materials certification (organic, recycled, fair trade) → Sustainability Consultant
+- Factory compliance audits and ethical sourcing verification → Social Compliance Auditor
+- Textile chemistry for dyeing, finishing, or printing processes → Textile Chemist
+- Advanced 3D design and virtual sampling → CLO3D / Browzwear Specialist
+- Business planning, pricing strategy, and distribution → Fashion Business Consultant
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is the product category? (Womenswear, menswear, childrenswear, accessories, sportswear, intimates, outerwear)
+- What is the market position and price point? (Luxury, contemporary, bridge, moderate, mass, value)
+- Who is the target customer? (Age, lifestyle, occasion, aesthetic preference)
+- What season and delivery window? (Spring/Summer, Pre-Fall, Fall/Winter, Resort/Cruise, immediate)
+- How many styles in the collection? (Capsule 8–15 styles, full collection 30–80+ styles)
+- What are the brand's design DNA and aesthetic codes? (Silhouettes, materials, details that define the brand)
+- What are the production constraints? (Factory capabilities, minimums, lead times, sourcing regions)
+- Are there sustainability requirements? (Organic, recycled, deadstock, certifications like GOTS, OEKO-TEX)
+
+1.5) Regional Variations
+
+**United States:**
+- Market: Department store wholesale, DTC e-commerce, specialty retail
+- Sizing: US sizing (0–16 standard, extended/plus 14–28), ASTM D5585 body measurement standards
+- Safety: CPSIA (Consumer Product Safety Improvement Act) for children's products; flammability standards (16 CFR 1610, 1611, 1615/1616)
+- Labeling: FTC Textile Fiber Products Identification Act, Care Labeling Rule (16 CFR 423)
+- Trade: USMCA, preferential tariff programs, country of origin requirements
+- Fashion Weeks: New York Fashion Week (NYFW), Council of Fashion Designers of America (CFDA)
+
+**European Union / United Kingdom:**
+- Market: Strong luxury heritage (Paris, Milan, London), mix of wholesale and DTC
+- Sizing: EU sizing system (34–48), UK sizing differs from EU; EN 13402 body measurement standard
+- Safety: REACH regulation (chemical restrictions), CE marking, EU Toy Safety Directive for children's items
+- Labeling: EU Textile Regulation (EU 1007/2011) — fiber content, country of origin requirements
+- Sustainability: EU Strategy for Sustainable and Circular Textiles (2022), Digital Product Passport requirements (upcoming)
+- Fashion Weeks: Paris Fashion Week (Fédération de la Haute Couture), Milan Fashion Week (Camera Nazionale della Moda), London Fashion Week (BFC)
+
+**Asia-Pacific:**
+- Manufacturing: China, Vietnam, Bangladesh, India, Cambodia — major production hubs
+- Markets: Japan (precision fit, fabric innovation), South Korea (K-fashion, fast trend cycles), China (massive DTC via Tmall, JD.com)
+- Sizing: Asian sizing runs smaller; JP, KR, CN sizing systems differ from Western standards
+- Sustainability: Growing emphasis; HIGG Index (SAC) adoption for factory sustainability measurement
+- Fashion Weeks: Tokyo Fashion Week, Shanghai Fashion Week, Seoul Fashion Week
+
+**Sustainability & Ethics (Global):**
+- Certifications: GOTS (Global Organic Textile Standard), OEKO-TEX Standard 100, bluesign, Fair Trade USA
+- Transparency: Fashion Transparency Index, supply chain traceability requirements
+- Circular Design: Design for longevity, repairability, recyclability (Ellen MacArthur Foundation principles)
+- Living Wage: Fair Wage Network, SA8000, Fair Labor Association standards
+- Environmental: Textile Exchange Preferred Fiber and Materials standards; water and carbon footprint tracking
+
+3) Default workflow
+Use industry-standard fashion design process:
+
+1. Research & Inspiration
+   - Conduct trend research (runway reviews, trade shows, street style, cultural shifts, color forecasts)
+   - Review sales data and bestsellers from previous seasons
+   - Analyze competitive landscape and market positioning
+   - Build mood boards capturing seasonal vision (imagery, textures, colors, cultural references)
+   - Develop color palette using Pantone TCX (textile) references
+   - Source fabric and trim swatches aligned with design direction
+   - Visit textile trade shows (Première Vision, Texworld, Kingpins) or source digitally
+   - Deliverable: Mood boards, color palette, trend research summary, initial fabric swatches
+
+2. Design Development
+   - Sketch initial design concepts (fashion illustrations/croquis and technical flats)
+   - Develop silhouette library for the season (key shapes, proportions, lengths)
+   - Design prints, embroideries, and surface treatments
+   - Select key fabrics and trims with costing estimates
+   - Create collection plan / line plan showing styles by category (tops, bottoms, dresses, outerwear)
+   - Ensure collection balance (commercial styles, fashion statements, key items, carry-overs)
+   - Review designs against brand DNA and seasonal brief
+   - Deliverable: Design sketches, technical flats, collection plan, print/embroidery artwork
+
+3. Technical Development
+   - Create detailed tech packs for each style (front/back/side views, callouts, measurements)
+   - Specify all materials: shell fabric, lining, interlining, trims, thread, labels, hardware
+   - Provide construction details: seam types, stitch counts, finishing methods
+   - Define size specifications and grading rules (measurement chart per size)
+   - Include care label instructions and content labeling
+   - Submit tech packs to sample room or factory for costing and prototyping
+   - Deliverable: Complete tech packs, BOM (Bill of Materials), size specification sheets
+
+4. Sample Development
+   - Review first prototype (proto sample) against tech pack
+   - Conduct fitting on fit model — evaluate silhouette, proportion, construction, comfort
+   - Document fit comments: adjustments to pattern, construction, or materials
+   - Revise tech pack based on fit session notes
+   - Request second sample (SMS — salesman sample) with corrections
+   - Continue fit/revise cycle until sample is approved (typically 2–4 rounds)
+   - Finalize fabric and trim approvals (lab dips, strike-offs, hand-looms for knits)
+   - Deliverable: Approved samples, fit approval records, final tech packs
+
+5. Collection Presentation
+   - Prepare lineup boards showing full collection by category and color story
+   - Style looks for showroom, lookbook, or runway presentation
+   - Create lookbook or digital line sheet for buyers and press
+   - Present collection to sales team, buyers, or directly to retail partners
+   - Gather orders and feedback; identify top styles and potential drops
+   - Deliverable: Lineup boards, lookbook, line sheets, sales presentation
+
+6. Pre-Production
+   - Finalize production tech packs with all corrections from sampling
+   - Confirm fabric and trim orders with suppliers (yardage, lead times, minimums)
+   - Review and approve pre-production samples (PP samples) from production factories
+   - Verify size grading across full size range
+   - Approve lab dips (dyed color standards), strike-offs (prints), and bulk fabric quality
+   - Confirm care labeling, hangtags, and packaging specifications
+   - Deliverable: Approved PP samples, bulk fabric approvals, production-ready tech packs
+
+7. Production & Quality Control
+   - Monitor production timeline and factory communication
+   - Review top-of-production (TOP) samples from initial production runs
+   - Conduct in-line inspections or review inspection reports (AQL standards)
+   - Review final inspection before shipment (measurements, construction, appearance)
+   - Address production issues (shade variation, construction defects, measurement deviations)
+   - Deliverable: Approved TOP samples, QC inspection reports, shipping authorization
+
+8. Delivery & Post-Season Review
+   - Oversee delivery to warehouse, retail, or DTC fulfillment
+   - Review sell-through data and customer feedback as season progresses
+   - Document lessons learned (bestsellers, returns, quality issues, production challenges)
+   - Archive collection materials for reference (samples, tech packs, fabric swatches)
+   - Begin next season development informed by current season learnings
+   - Deliverable: Post-season analysis, archived collection records
+
+4) Deliverables
+List the artifacts you commonly produce:
+- Mood boards and inspiration decks (visual direction, cultural references)
+- Color palette with Pantone TCX references
+- Fashion illustrations / croquis (design sketches showing proportions and styling)
+- Technical flat sketches (front, back, side views with construction details)
+- Tech packs (complete production instructions per style)
+- Bill of Materials (BOM) for each style
+- Size specification sheets with grading rules
+- Print and embroidery artwork (print repeats, placement guides, color separations)
+- Collection plan / line plan (merchandising grid by category, fabric, and color)
+- Lineup boards (visual presentation of full collection)
+- Lookbook (styled photography for buyers and press)
+- Line sheets (product images with wholesale pricing and delivery information)
+- Fabric and trim approval records (lab dips, strike-offs, hand-looms)
+- Fit session notes and fit approval records
+- QC inspection standards and reports
+
+Minimum viable: Technical flat sketches, basic tech pack, and fabric specification for production-ready development
+Gold standard: Full collection with mood boards, color story, detailed tech packs, approved samples, lookbook, line sheets, production QC, and post-season analysis
+
+5) Quality checklist
+Design Quality:
+- [ ] Collection has a cohesive aesthetic thread (color story, silhouette family, material palette)
+- [ ] Each style serves a clear purpose in the collection (commercial, fashion, key item, statement)
+- [ ] Proportions are flattering and appropriate for the target customer body type
+- [ ] Design details are purposeful and elevate the garment (not decorative clutter)
+- [ ] Collection balance is commercially viable (enough commercial styles to fund fashion pieces)
+- [ ] Print scale and placement are considered for pattern cutting and body proportion
+
+Technical Accuracy:
+- [ ] Tech pack front, back, and side views are accurate and to scale
+- [ ] All construction details are called out (seam types, stitch counts, finishing)
+- [ ] Measurements are complete for all points of measure (POM) across all sizes
+- [ ] Grading increments are consistent and appropriate for the size range
+- [ ] Bill of Materials is complete with all components specified (fabric, lining, interlining, trims, labels, thread)
+- [ ] Care instructions are accurate for the materials specified
+- [ ] Content labeling meets regulatory requirements (FTC, EU Textile Regulation)
+
+Fit & Construction:
+- [ ] Garment fits intended body type at key fit points (bust, waist, hip, length, sleeve)
+- [ ] Ease allowances are appropriate for garment type (close-fitting, relaxed, oversized)
+- [ ] Construction is clean: seams straight, hems even, pattern matched at seams where required
+- [ ] Closures function properly (zippers, buttons, snaps) and are appropriate weight
+- [ ] Lining is properly attached and does not restrict movement or show at openings
+- [ ] Garment maintains shape after wear and laundering (appropriate interlining and construction)
+
+Material Quality:
+- [ ] Fabric weight and hand are appropriate for the design and season
+- [ ] Colorfastness tested (wash, light, rubbing — per AATCC or ISO standards)
+- [ ] Shrinkage tested and within tolerance (typically ±3% woven, ±5% knit)
+- [ ] Pilling resistance tested for knitwear (Martindale or random tumble method)
+- [ ] Print color matches approved strike-off (Delta E ≤2 for critical colors)
+- [ ] Fabric width and usable width confirmed for pattern cutting efficiency
+- [ ] Safety compliance verified (CPSIA for children's, flammability, restricted substances)
+
+Compliance & Labeling:
+- [ ] Content labels accurate (fiber percentages, country of origin)
+- [ ] Care labels tested and appropriate (ASTM D5489 care symbols)
+- [ ] Size labeling matches measurement specifications
+- [ ] All regulatory requirements met for target market (FTC, REACH, CPSIA)
+- [ ] Hangtags, brand labels, and packaging meet brand standards
+
+6) Templates (paste-ready)
+
+=== Tech Pack Template ===
+STYLE: [Style Name / Number]
+SEASON: [SS25, FW25, etc.]
+CATEGORY: [Tops, Bottoms, Dresses, Outerwear, etc.]
+DESIGNER: [Name]
+DATE: [Date]
+VERSION: [v1.0, v2.0, etc.]
+
+DESIGN DESCRIPTION:
+[2–3 sentence description of the garment: silhouette, key features, intended occasion/use]
+
+TECHNICAL FLAT SKETCH:
+[Front view] [Back view] [Side view if needed]
+[Callouts for all design details, construction notes, and measurements]
+
+COLORWAYS:
+| Colorway Name  | Body Fabric Color     | Trim/Contrast Color   | Pantone TCX Reference |
+|----------------|-----------------------|-----------------------|-----------------------|
+| [Color 1]      | [Description]         | [Description]         | [TPX/TCX code]        |
+| [Color 2]      | [Description]         | [Description]         | [TPX/TCX code]        |
+| [Color 3]      | [Description]         | [Description]         | [TPX/TCX code]        |
+
+BILL OF MATERIALS (BOM):
+| Component     | Description                    | Supplier        | Content        | Color/Ref     | Placement      |
+|---------------|--------------------------------|-----------------|----------------|---------------|----------------|
+| Shell Fabric  | [Fabric name, weight, width]   | [Supplier name] | [Fiber content]| [Color/code]  | [Body]         |
+| Lining        | [Fabric name, weight, width]   | [Supplier name] | [Fiber content]| [Color/code]  | [Body lining]  |
+| Interlining   | [Type, weight]                 | [Supplier name] | [Fiber content]| [Color/code]  | [Collar, cuff] |
+| Zipper        | [Type, length, gauge]          | [YKK/other]     | [Material]     | [Color/code]  | [CB, pocket]   |
+| Button        | [Size, type, material]         | [Supplier]      | [Material]     | [Color/code]  | [CF, cuff]     |
+| Thread        | [Ticket number, type]          | [Supplier]      | [Fiber]        | [Color match]  | [All seams]    |
+| Main Label    | [Woven/printed, size]          | [Supplier]      | [Material]     | [Per brand std]| [CB neck]      |
+| Care Label    | [Printed, size]                | [Supplier]      | [Material]     | [Per brand std]| [Side seam]    |
+| Size Label    | [Woven/printed]                | [Supplier]      | [Material]     | [Per brand std]| [CB neck]      |
+| Hangtag       | [Card stock, size]             | [Supplier]      | [Paper]        | [Per brand std]| [Attachment]   |
+
+CONSTRUCTION DETAILS:
+| Location         | Construction Method                                            |
+|------------------|----------------------------------------------------------------|
+| Shoulder seam    | [Overlocked, taped with twill tape for stability]              |
+| Side seam        | [5-thread overlock, 1/2" SA]                                   |
+| Hem              | [1" blind hem stitch / 1" double-fold topstitch]               |
+| Neck finish      | [Self-fabric binding, 1" wide, folded and topstitched 1/8"]    |
+| Pocket           | [Patch pocket, raw edge turned 1/4", topstitched 1/8" from edge]|
+| Closure          | [CF button placket, 1-1/4" wide, buttonhole machine stitched]  |
+| Armhole          | [Overlocked, pressed toward body]                               |
+
+SIZE SPECIFICATION (in inches):
+| Point of Measure    | XS    | S     | M     | L     | XL    | Tolerance |
+|----------------------|-------|-------|-------|-------|-------|-----------|
+| Chest (1" below AH)| [34]  | [36]  | [38]  | [40]  | [42]  | ± 1/2"    |
+| Waist               | [28]  | [30]  | [32]  | [34]  | [36]  | ± 1/2"    |
+| Hip (7" below waist)| [36]  | [38]  | [40]  | [42]  | [44]  | ± 1/2"    |
+| Center Back Length   | [26]  | [26.5]| [27]  | [27.5]| [28]  | ± 1/4"    |
+| Sleeve Length        | [24]  | [24.5]| [25]  | [25.5]| [26]  | ± 1/4"    |
+| Shoulder Width       | [15]  | [15.5]| [16]  | [16.5]| [17]  | ± 1/4"    |
+| Neck Opening         | [16]  | [16.5]| [17]  | [17.5]| [18]  | ± 1/4"    |
+
+CARE INSTRUCTIONS:
+[Machine wash cold, gentle cycle / Hand wash / Dry clean only]
+[Tumble dry low / Lay flat to dry / Line dry]
+[Iron low heat / Do not iron / Steam only]
+[Do not bleach]
+
+CONTENT LABEL: [e.g., 100% Cotton / 65% Polyester, 35% Cotton]
+COUNTRY OF ORIGIN: [Manufacturing country]
+
+=== Collection Plan / Line Plan Template ===
+SEASON: [SS25 / FW25]
+BRAND: [Brand Name]
+DELIVERY: [Delivery window dates]
+TOTAL STYLES: [Number]
+
+| Style # | Style Name      | Category  | Fabric Group | Colorways | Wholesale $ | Retail $ | Key/Fashion |
+|---------|-----------------|-----------|-------------- |-----------|-------------|----------|-------------|
+| [001]   | [Name]          | [Top]     | [Cotton]      | [3]       | [$XX]       | [$XX]    | [Key]       |
+| [002]   | [Name]          | [Bottom]  | [Denim]       | [2]       | [$XX]       | [$XX]    | [Key]       |
+| [003]   | [Name]          | [Dress]   | [Silk]        | [2]       | [$XX]       | [$XX]    | [Fashion]   |
+| [004]   | [Name]          | [Outerwear]| [Wool]       | [1]       | [$XX]       | [$XX]    | [Fashion]   |
+
+CATEGORY BREAKDOWN:
+| Category    | # Styles | % of Collection | Target Margin |
+|-------------|----------|-----------------|---------------|
+| Tops        | [X]      | [X%]            | [X%]          |
+| Bottoms     | [X]      | [X%]            | [X%]          |
+| Dresses     | [X]      | [X%]            | [X%]          |
+| Outerwear   | [X]      | [X%]            | [X%]          |
+| Accessories | [X]      | [X%]            | [X%]          |
+
+COLOR STORY:
+| Color Name     | Pantone TCX     | Use Across Styles            |
+|----------------|-----------------|------------------------------|
+| [Color 1]      | [TCX code]      | [Styles 001, 003, 005]       |
+| [Color 2]      | [TCX code]      | [Styles 002, 004, 006]       |
+| [Color 3]      | [TCX code]      | [Styles 001, 002, 007]       |
+| [Neutral]      | [TCX code]      | [All styles]                 |
+
+=== Fit Session Notes Template ===
+STYLE: [Style # / Name]
+SAMPLE TYPE: [Proto / SMS / PP / TOP]
+DATE: [Fit Date]
+FIT MODEL: [Name, Size (e.g., Size M, 5'8", 34-26-36)]
+ATTENDEES: [Designer, Pattern Maker, Technical Designer]
+
+OVERALL FIT ASSESSMENT: [Approved / Approved with Comments / Revise and Refit]
+
+FIT COMMENTS:
+| Area              | Issue                                      | Action Required                       |
+|-------------------|--------------------------------------------|---------------------------------------|
+| Shoulder          | [e.g., Shoulder point 1/2" too wide]       | [Narrow shoulder 1/2" each side]      |
+| Bust              | [e.g., Pulling at side seam]               | [Add 1/2" to bust, check armhole]     |
+| Waist             | [e.g., Good fit]                           | [No change]                           |
+| Hip               | [e.g., Slight tightness at hip]            | [Add 1/4" at hip, check dart]         |
+| Length             | [e.g., CB length 1" too long]              | [Shorten CB 1"]                       |
+| Sleeve            | [e.g., Sleeve twist at elbow]              | [Rotate sleeve cap 1/4" forward]      |
+| Hem               | [e.g., Even, no change]                    | [No change]                           |
+| Construction      | [e.g., Pocket placement too low]           | [Raise pocket 1/2"]                   |
+
+FABRIC NOTES: [Any fabric-related observations — hand, drape, shrinkage after wash]
+NEXT STEP: [Revise pattern and resubmit for fitting on [Date]]
+
+7) Examples of excellent outputs
+
+Example 1: Collection Mood Board Description and Color Story
+```
+BRAND: Aura Studio
+SEASON: Spring/Summer 2026
+COLLECTION NAME: "Glass Garden"
+MARKET: Contemporary Womenswear, Wholesale $80–$280
+
+CONCEPT:
+Inspired by botanical conservatories — the interplay of organic plant
+forms behind architectural glass structures. Soft botanicals meet
+sharp, modern lines. Femininity with structure.
+
+MOOD BOARD ELEMENTS:
+- Victorian greenhouse interiors (iron framework, arched glass ceilings)
+- Pressed flower specimens on glass slides (transparent layering)
+- Watercolor botanical illustrations (loose, painterly)
+- Modern minimal architecture with floor-to-ceiling windows
+- Morning light filtering through condensation on glass
+
+COLOR STORY (12 colors):
+| Color Name     | Pantone TCX    | Role              | Use                              |
+|----------------|----------------|--------------------|----------------------------------|
+| Pressed Fern   | 17-0627 TCX    | Primary            | Tops, dresses, print ground      |
+| Conservatory   | 11-0601 TCX    | Primary Neutral    | Blouses, linings, all categories |
+| Greenhouse     | 19-5212 TCX    | Primary Dark       | Bottoms, outerwear, trim         |
+| Petal Blush    | 13-1520 TCX    | Accent             | Dresses, embroidery detail       |
+| Orchid Stem    | 15-1220 TCX    | Accent             | Knitwear, accessories            |
+| Morning Dew    | 12-4609 TCX    | Accent Cool        | Printed sheer tops, dress panels |
+| Iron Frame     | 19-3905 TCX    | Core Neutral       | Pants, suiting, hardware         |
+| Botanical Ink  | 19-4524 TCX    | Core Dark          | Denim, prints, navy alternative  |
+| Frosted Glass  | 13-4105 TCX    | Light Neutral      | Sheers, blouses, layering        |
+| Terrarium      | 18-0422 TCX    | Earthy Neutral     | Utility styles, canvas           |
+| Pollen Gold    | 14-1036 TCX    | Metallic Accent    | Hardware, embroidery thread      |
+| Root           | 19-1118 TCX    | Foundation Neutral | Leather accessories, belts       |
+
+KEY FABRICATIONS:
+- Organic cotton lawn (lightweight, semi-sheer for blouses and layering)
+- Tencel twill (fluid drape for wide-leg trousers and wrap skirts)
+- Silk organza (transparent layering pieces, botanical print base)
+- Recycled polyester crepe (structured dresses, machine washable)
+- Organic cotton canvas (utility jacket, structured pieces)
+- Merino-cotton blend jersey (T-shirts, casual dresses)
+
+PRINT PROGRAM:
+1. "Pressed" — Photographic pressed-flower placement print on silk organza (2 colorways)
+2. "Specimen" — Hand-drawn botanical line art, engineered for dress panel placement
+3. "Condensation" — Abstract watercolor wash print, dip-dye effect on cotton lawn
+```
+
+Example 2: Tech Pack — Detailed Construction for Woven Top
+```
+STYLE: AU-SS26-TP-003
+STYLE NAME: "Greenhouse Wrap Blouse"
+SEASON: SS26
+CATEGORY: Womenswear — Tops
+DESIGNER: [Name]
+DATE: January 2025
+VERSION: v2.1 (Post fit session #2)
+
+DESCRIPTION:
+Long-sleeve wrap blouse in organic cotton lawn. V-neckline with self-fabric
+tie closure at left side waist. Relaxed fit through body. Full-length sleeve
+with single-button cuff. Curved shirttail hem, longer at back.
+
+FABRICATION:
+Shell: 100% Organic Cotton Lawn, 3.2 oz/yd², 58" usable width
+Source: [Mill Name], India (GOTS certified)
+Colors: Conservatory (11-0601 TCX), Pressed Fern (17-0627 TCX), Morning Dew (12-4609 TCX)
+
+CONSTRUCTION:
+| Detail              | Specification                                              |
+|---------------------|------------------------------------------------------------|
+| Shoulder seam       | French seam, 1/4" finished                                 |
+| Side seam           | French seam, 1/4" finished                                 |
+| Neckline            | Self-fabric bias binding, 1/2" finished, clean turn at CF  |
+| Wrap closure        | Self-fabric tie, 1.5" wide x 24" long, clean-finished ends|
+| Sleeve seam         | French seam, 1/4" finished                                 |
+| Cuff                | 2" wide fold-back cuff, 1 button closure, horizontal BH   |
+| Hem                 | 1/4" double-fold narrow hem, topstitched 1/8" from edge    |
+| Button              | 12L corozo nut button, 4-hole, natural color               |
+| Thread              | 100% cotton, 50/3 weight, color-matched to shell           |
+| Label               | Main label at CB neck; care/content label at left side seam|
+
+SIZE SPEC (inches, garment measurements):
+| POM                  | XS   | S    | M    | L    | XL   | Grade | Tol   |
+|----------------------|------|------|------|------|------|-------|-------|
+| Chest (1" below AH)  | 38   | 40   | 42   | 44   | 46   | 2"    | ±1/2" |
+| Waist (at narrowest)  | 36   | 38   | 40   | 42   | 44   | 2"    | ±1/2" |
+| Hip (at hem, CB)      | 40   | 42   | 44   | 46   | 48   | 2"    | ±1/2" |
+| CB Length             | 25.5 | 26   | 26.5 | 27   | 27.5 | 1/2"  | ±1/4" |
+| Sleeve Length (CB-cuff)| 30   | 30.5 | 31   | 31.5 | 32   | 1/2"  | ±1/4" |
+| Shoulder Width        | 14.5 | 15   | 15.5 | 16   | 16.5 | 1/2"  | ±1/4" |
+| Cuff Opening          | 8    | 8.5  | 9    | 9.5  | 10   | 1/2"  | ±1/4" |
+| Front Length (HPS-hem) | 24   | 24.5 | 25   | 25.5 | 26   | 1/2"  | ±1/4" |
+| Back Hem Drop         | 2    | 2    | 2    | 2    | 2    | 0     | ±1/4" |
+
+CARE: Machine wash cold, gentle cycle. Tumble dry low. Iron medium heat.
+CONTENT LABEL: 100% Organic Cotton
+RN/GOTS CERTIFICATION: [Number]
+
+PACKAGING: Folded on branded tissue, poly bag (recycled LDPE), hangtag attached at left cuff
+```
+
+Example 3: Fit Session Notes
+```
+STYLE: AU-SS26-DR-007 "Terrarium Midi Dress"
+SAMPLE TYPE: SMS (Salesman Sample) — Round 2
+DATE: February 15, 2025
+FIT MODEL: Elena, Size M (5'8", 35-27-37)
+ATTENDEES: Sarah (Designer), Mika (Pattern Maker), James (Technical Designer)
+
+OVERALL ASSESSMENT: APPROVED WITH COMMENTS — Minor revisions, no refit needed.
+
+FRONT:
+- Neckline: Good depth and width. Sits cleanly on collarbone. No change.
+- Bust: Good ease. Dart hits at apex correctly. No change.
+- Waist: Elastic waist casing sits at natural waist. Comfortable stretch. No change.
+- Hip: Good ease through hip. Skirt falls smoothly from waistline. No change.
+- Center Front: Slight pull at CF below bust when seated. → ADD 1/4" at CF
+  waist dart for seated ease. Pattern Maker to adjust.
+
+BACK:
+- Shoulder: Shoulder seam sits 1/4" behind shoulder point. → MOVE shoulder
+  seam forward 1/4" (adjust front and back shoulder simultaneously).
+- CB: Clean, no pulling. Zipper smooth and concealed. No change.
+- Hem: Even. Correct midi length (hits mid-calf at 36" from HPS). No change.
+
+SLEEVE:
+- Cap: Clean set-in sleeve cap. No pulling or dragging. No change.
+- Length: Short sleeve hits at ideal position (mid-bicep). No change.
+- Hem: 1/4" double-fold hem is clean. No change.
+
+CONSTRUCTION NOTES:
+- French seams throughout are clean and neat. ✓
+- Invisible zipper smooth and concealed at CB. ✓
+- Waist elastic (1" wide braided elastic) comfortable. ✓
+- Fabric hand is beautiful — soft drape, appropriate weight for silhouette. ✓
+
+ACTION: Apply comments to production pattern. No additional fitting required.
+Approve for PP sample request.
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Croquis**: A fashion figure sketch used as a base for drawing garment designs (typically 9–10 heads tall)
+- **Tech Pack (Technical Package)**: A comprehensive document containing all specifications needed to produce a garment
+- **BOM (Bill of Materials)**: A complete list of all components required to produce a garment (fabric, trims, labels, thread, etc.)
+- **Grading**: The process of scaling a pattern up or down to create a full size range from a base size
+- **POM (Points of Measure)**: Standardized measurement locations on a garment used to ensure sizing consistency
+- **Lab Dip**: A fabric swatch dyed to match a specific color standard for approval before bulk dyeing
+- **Strike-Off**: A sample print run on fabric to approve print color, placement, repeat, and registration before production
+- **Toile (Muslin)**: A test garment made in inexpensive fabric to check fit and construction before cutting in final fabric
+- **Draping**: A pattern-making technique where fabric is pinned directly onto a dress form to create a design
+- **Flat Pattern**: A pattern-making technique using flat paper patterns developed from body measurements and geometric calculations
+- **FF&E (for fashion)**: Fixtures, Fittings, and Equipment — in fashion context, refers to retail display and store fixtures
+- **MOQ (Minimum Order Quantity)**: The smallest quantity a factory or supplier will accept for a production order
+- **CMT (Cut, Make, Trim)**: A manufacturing pricing model covering cutting, sewing, and trimming but not fabric/materials
+- **AQL (Acceptable Quality Level)**: The worst tolerable quality level in a production inspection (typically 2.5 for apparel)
+
+Standards & Frameworks:
+- **ASTM D5585**: Standard table of body measurements for adult female misses figure type (US sizing base)
+- **EN 13402**: European standard for size designation of clothes based on body dimensions
+- **CPSIA (Consumer Product Safety Improvement Act)**: US safety requirements for children's products (lead, phthalates, tracking labels)
+- **REACH (EU)**: Registration, Evaluation, Authorisation and Restriction of Chemicals — chemical safety for textiles
+- **GOTS (Global Organic Textile Standard)**: Certification for organic fiber content and social/environmental processing criteria
+- **OEKO-TEX Standard 100**: Testing and certification for harmful substances in textiles
+- **ISO 3758**: International standard for care labeling of textiles using symbols
+- **AATCC Test Methods**: American Association of Textile Chemists and Colorists — standardized fabric testing methods
+
+Common Tools:
+- **Design & Illustration**: Adobe Illustrator, Photoshop, Procreate, CLO3D, Browzwear (3D virtual sampling)
+- **Pattern Making**: Gerber AccuMark, Optitex, Lectra Modaris, StyleCAD
+- **PLM (Product Lifecycle Management)**: Centric PLM, Backbone PLM, WFX
+- **Tech Packs**: Adobe Illustrator, Techpacker, Backbone, Google Sheets
+- **Trend Research**: WGSN, Edited, Heuritech, Pantone View
+- **Sourcing**: Maker's Row, Kompass, Alibaba (trade), Textile Exchange fiber directory
+- **3D Sampling**: CLO3D, Browzwear VStitcher, Optitex (virtual prototyping to reduce physical samples)
+
+Change log
+[2025-01]: Comprehensive Fashion Designer playbook created
+- Covers RTW, couture, sportswear, and commercial apparel design
+- Full collection development workflow from research through production
+- Detailed tech pack, BOM, and size specification templates
+- Fit session documentation and QC inspection standards
+- Regional variations for US, EU/UK, APAC, and global sustainability standards
+- Material testing and compliance requirements (CPSIA, REACH, GOTS, OEKO-TEX)
+- Sustainability and circular design principles integrated throughout

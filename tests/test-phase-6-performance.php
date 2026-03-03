@@ -95,15 +95,22 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 */
 	public function test_rest_api_response_time() {
 		// Register a test endpoint.
-		add_action( 'rest_api_init', function() {
-			register_rest_route( 'mcp-ai-test/v1', '/test', array(
-				'methods'  => 'GET',
-				'callback' => function() {
-					return array( 'status' => 'success' );
-				},
-				'permission_callback' => '__return_true',
-			) );
-		} );
+		add_action(
+			'rest_api_init',
+			function () {
+				register_rest_route(
+					'mcp-ai-test/v1',
+					'/test',
+					array(
+						'methods'             => 'GET',
+						'callback'            => function () {
+							return array( 'status' => 'success' );
+						},
+						'permission_callback' => '__return_true',
+					)
+				);
+			}
+		);
 
 		rest_get_server()->register_routes();
 
@@ -137,9 +144,9 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 			$results[] = apply_filters( 'wp_mcp_ai_test_operation', array( 'id' => $i ) );
 		}
 
-		$end_time     = microtime( true );
-		$total_time   = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
-		$avg_per_op   = $total_time / 10;
+		$end_time   = microtime( true );
+		$total_time = ( $end_time - $start_time ) * 1000; // Convert to milliseconds
+		$avg_per_op = $total_time / 10;
 
 		// Average time per operation should be reasonable.
 		$this->assertLessThan( 200, $avg_per_op, 'Average time per operation should be under 200ms' );
@@ -186,7 +193,7 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 * @group large-dataset
 	 */
 	public function test_large_dataset_processing() {
-		$start_time = microtime( true );
+		$start_time   = microtime( true );
 		$memory_start = memory_get_usage( true );
 
 		// Process a large dataset.
@@ -200,9 +207,12 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		}
 
 		// Process the dataset.
-		$processed = array_filter( $dataset, function( $item ) {
-			return $item['id'] % 2 === 0; // Filter even IDs.
-		} );
+		$processed = array_filter(
+			$dataset,
+			function ( $item ) {
+				return $item['id'] % 2 === 0; // Filter even IDs.
+			}
+		);
 
 		$end_time   = microtime( true );
 		$memory_end = memory_get_usage( true );
@@ -228,9 +238,18 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 
 		// Simulate workflow execution with multiple steps.
 		$workflow_steps = array(
-			array( 'action' => 'step1', 'duration' => 100 ),
-			array( 'action' => 'step2', 'duration' => 150 ),
-			array( 'action' => 'step3', 'duration' => 200 ),
+			array(
+				'action'   => 'step1',
+				'duration' => 100,
+			),
+			array(
+				'action'   => 'step2',
+				'duration' => 150,
+			),
+			array(
+				'action'   => 'step3',
+				'duration' => 200,
+			),
 		);
 
 		$total_duration = 0;
@@ -259,7 +278,14 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 		$test_data = array(
 			'workflow' => array(
 				'name'  => 'Test Workflow',
-				'steps' => array_fill( 0, 100, array( 'action' => 'test', 'params' => array( 'key' => 'value' ) ) ),
+				'steps' => array_fill(
+					0,
+					100,
+					array(
+						'action' => 'test',
+						'params' => array( 'key' => 'value' ),
+					)
+				),
 			),
 		);
 
@@ -292,9 +318,12 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	public function test_hook_performance() {
 		// Add multiple filters.
 		for ( $i = 0; $i < 10; $i++ ) {
-			add_filter( 'wp_mcp_ai_test_filter', function( $value ) use ( $i ) {
-				return $value . '_' . $i;
-			} );
+			add_filter(
+				'wp_mcp_ai_test_filter',
+				function ( $value ) use ( $i ) {
+					return $value . '_' . $i;
+				}
+			);
 		}
 
 		$start_time = microtime( true );
@@ -392,7 +421,10 @@ class Test_Phase_6_Performance extends WP_UnitTestCase {
 	 */
 	public function test_transient_performance() {
 		$transient_key = 'wp_mcp_ai_test_transient';
-		$test_data     = array( 'key' => 'value', 'timestamp' => time() );
+		$test_data     = array(
+			'key'       => 'value',
+			'timestamp' => time(),
+		);
 
 		// Test set transient.
 		$start_time = microtime( true );

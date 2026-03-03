@@ -45,7 +45,7 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_removebg_test_button_renders_without_saved_key() {
 		// Clear any saved API key.
-		$settings                  = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                     = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['removebg_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -98,7 +98,7 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_removebg_test_button_renders_with_saved_key() {
 		// Set a saved API key.
-		$settings                  = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                     = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['removebg_api_key'] = 'test-api-key-12345';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -168,14 +168,14 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 	 * Test that Remove.bg is in the connections subtab groups.
 	 */
 	public function test_removebg_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'removebg', $subtab_groups, 'Remove.bg should be in subtab groups' );
-		
+
 		$removebg_group = $subtab_groups['removebg'];
 		$this->assertEquals( 'removebg', $removebg_group['id'] );
 		$this->assertContains( 'removebg_api_key', $removebg_group['fields'] );
@@ -192,15 +192,15 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_settings' );
 
 		// Simulate form submission for RemoveBG connection.
-		$_POST['wp_mcp_ai_settings'] = array(
+		$_POST['wp_mcp_ai_settings']                 = array(
 			'removebg_api_key' => 'test-api-key-12345',
 		);
-		$_POST['active_tab']          = 'tools';
-		$_POST['subtab']              = 'connections';
-		$_POST['connection']          = 'removebg';
+		$_POST['active_tab']                         = 'tools';
+		$_POST['subtab']                             = 'connections';
+		$_POST['connection']                         = 'removebg';
 		$_POST['subtab_integrations_gmail_crawl4ai'] = 'removebg';
-		$_POST['_wpnonce']            = wp_create_nonce( 'wp_mcp_ai_save_settings' );
-		$_POST['action']              = 'wp_mcp_ai_save_settings';
+		$_POST['_wpnonce']                           = wp_create_nonce( 'wp_mcp_ai_save_settings' );
+		$_POST['action']                             = 'wp_mcp_ai_save_settings';
 
 		// Get the settings dashboard instance.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();

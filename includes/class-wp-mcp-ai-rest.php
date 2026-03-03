@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-slash-command-controller.php';
 			add_action(
 				'rest_api_init',
-				function() {
+				function () {
 					$controller = new WP_MCP_AI_REST_Slash_Command_Controller();
 					$controller->register_routes();
 				}
@@ -2669,11 +2669,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 						if ( ! is_wp_error( $fallback_validation ) ) {
 							// Fallback model can handle the request.
-							$original_model   = $model;
+							$original_model    = $model;
 							$original_provider = isset( $options['provider'] ) ? $options['provider'] : '';
-							$options['model'] = $fallback_model;
-							$model            = $fallback_model;
-							$switched_model   = true;
+							$options['model']  = $fallback_model;
+							$model             = $fallback_model;
+							$switched_model    = true;
 
 							// Also switch provider to match the fallback model so the router
 							// sends the request to the correct LLM API endpoint.
@@ -2688,12 +2688,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'agentic_model_switched',
 								'Switched to higher-capacity model due to token limits',
 								array(
-									'iteration'        => $iteration,
-									'original_model'   => $original_model,
+									'iteration'         => $iteration,
+									'original_model'    => $original_model,
 									'original_provider' => $original_provider,
-									'new_model'        => $fallback_model,
-									'new_provider'     => isset( $options['provider'] ) ? $options['provider'] : '',
-									'assistant_id'     => $assistant_id,
+									'new_model'         => $fallback_model,
+									'new_provider'      => isset( $options['provider'] ) ? $options['provider'] : '',
+									'assistant_id'      => $assistant_id,
 								)
 							);
 						}

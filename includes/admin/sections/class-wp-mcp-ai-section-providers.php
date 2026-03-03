@@ -130,9 +130,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $cloudflare_models ) ) {
 				$cloudflare_models = array(
-					'@cf/meta/llama-4-scout-17b-16e-instruct'    => 'Llama 4 Scout 17B (Recommended)',
-					'@cf/meta/llama-3.3-70b-instruct-fp8-fast'   => 'Llama 3.3 70B Instruct FP8 Fast',
-					'@cf/meta/llama-3.2-3b-instruct'             => 'Llama 3.2 3B Instruct',
+					'@cf/meta/llama-4-scout-17b-16e-instruct' => 'Llama 4 Scout 17B (Recommended)',
+					'@cf/meta/llama-3.3-70b-instruct-fp8-fast' => 'Llama 3.3 70B Instruct FP8 Fast',
+					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct',
 				);
 			}
 
@@ -1147,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						$method = $reflection->getMethod( 'get_fields' );
 						$method->setAccessible( true );
 						$pro_fields = $method->invoke( $pro_providers_section );
-						
+
 						// Render Pro provider fields for the embedded subtab.
 						foreach ( $active_group['fields'] as $key ) {
 							if ( isset( $pro_fields[ $key ] ) ) {
@@ -1372,6 +1372,5 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			return $input;
 		}
-
 	}
 }

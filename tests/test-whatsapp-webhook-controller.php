@@ -1660,9 +1660,9 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 
 		// Verify that when group_id is present, dispatch_whatsapp_ai_reply schedules
 		// the cron job with the group as recipient via reflection.
-		$controller  = new WP_MCP_AI_WhatsApp_Webhook_Controller();
-		$reflection  = new ReflectionClass( $controller );
-		$method      = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_whatsapp_ai_reply' );
 		$method->setAccessible( true );
 
 		$scheduled_before = wp_next_scheduled( 'wp_mcp_ai_whatsapp_reply' );
@@ -1686,8 +1686,8 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$method->invoke( $controller, $message_data, $saved, array( $assistant_id ) );
 
 		// Retrieve scheduled cron args.
-		$cron_args  = null;
-		$crons      = _get_cron_array();
+		$cron_args = null;
+		$crons     = _get_cron_array();
 		foreach ( $crons as $timestamp => $hooks ) {
 			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
 				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
@@ -1766,8 +1766,8 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$method->invoke( $controller, $message_data, $saved, array( $assistant_id ) );
 
 		// Retrieve scheduled cron args.
-		$cron_args  = null;
-		$crons      = _get_cron_array();
+		$cron_args = null;
+		$crons     = _get_cron_array();
 		foreach ( $crons as $timestamp => $hooks ) {
 			if ( isset( $hooks['wp_mcp_ai_whatsapp_reply'] ) ) {
 				foreach ( $hooks['wp_mcp_ai_whatsapp_reply'] as $cron_entry ) {
@@ -1784,6 +1784,4 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		// Clean up.
 		wp_delete_post( $assistant_id, true );
 	}
-
 }
-

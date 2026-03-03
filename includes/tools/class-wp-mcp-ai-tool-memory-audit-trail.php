@@ -86,13 +86,13 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 				'options'    => array(
 					'type'       => 'object',
 					'properties' => array(
-						'limit'      => array(
+						'limit'       => array(
 							'type'    => 'integer',
 							'default' => 50,
 							'maximum' => 200,
 						),
-						'date_from'  => array( 'type' => 'string' ),
-						'date_to'    => array( 'type' => 'string' ),
+						'date_from'   => array( 'type' => 'string' ),
+						'date_to'     => array( 'type' => 'string' ),
 						'action_type' => array(
 							'type' => 'string',
 							'enum' => array( 'create', 'update', 'delete', 'access' ),
@@ -173,8 +173,8 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! is_array( $history ) ) {
 			return array(
-				'success' => true,
-				'message' => __( 'No version history found for this context.', 'mcp-ai-wpoos' ),
+				'success'  => true,
+				'message'  => __( 'No version history found for this context.', 'mcp-ai-wpoos' ),
 				'versions' => array(),
 			);
 		}
@@ -186,14 +186,14 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$history = array_slice( $history, 0, $limit, true );
 
 		return array(
-			'success'       => true,
-			'message'       => sprintf(
+			'success'        => true,
+			'message'        => sprintf(
 				/* translators: %d: number of versions */
 				__( 'Found %d versions.', 'mcp-ai-wpoos' ),
 				count( $history )
 			),
-			'context_id'    => $context_id,
-			'versions'      => $history,
+			'context_id'     => $context_id,
+			'versions'       => $history,
 			'total_versions' => count( $history ),
 		);
 	}
@@ -237,14 +237,14 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$differences = $this->calculate_differences( $from_data['data'], $to_data['data'] );
 
 		return array(
-			'success'     => true,
-			'message'     => __( 'Version comparison complete.', 'mcp-ai-wpoos' ),
-			'context_id'  => $context_id,
+			'success'      => true,
+			'message'      => __( 'Version comparison complete.', 'mcp-ai-wpoos' ),
+			'context_id'   => $context_id,
 			'from_version' => $from_version,
-			'to_version'  => $to_version,
-			'differences' => $differences,
-			'from_data'   => $from_data,
-			'to_data'     => $to_data,
+			'to_version'   => $to_version,
+			'differences'  => $differences,
+			'from_data'    => $from_data,
+			'to_data'      => $to_data,
 		);
 	}
 
@@ -313,19 +313,24 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 			$this->save_version( $agent_id, $context_id, $current_context, 'rollback' );
 
 			// Log audit trail.
-			$this->log_audit_event( $agent_id, $context_id, 'rollback', array(
-				'version' => $version,
-			) );
+			$this->log_audit_event(
+				$agent_id,
+				$context_id,
+				'rollback',
+				array(
+					'version' => $version,
+				)
+			);
 
 			return array(
-				'success'     => true,
-				'message'     => sprintf(
+				'success'        => true,
+				'message'        => sprintf(
 					/* translators: %d: version number */
 					__( 'Successfully rolled back to version %d.', 'mcp-ai-wpoos' ),
 					$version
 				),
-				'context_id'  => $context_id,
-				'version'     => $version,
+				'context_id'     => $context_id,
+				'version'        => $version,
 				'rolled_back_at' => $current_context['data']['metadata']['rolled_back_at'],
 			);
 		}
@@ -344,9 +349,9 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array Result.
 	 */
 	private function get_audit_log( $agent_id, $options ) {
-		$limit      = isset( $options['limit'] ) ? absint( $options['limit'] ) : 50;
-		$date_from  = isset( $options['date_from'] ) ? sanitize_text_field( $options['date_from'] ) : null;
-		$date_to    = isset( $options['date_to'] ) ? sanitize_text_field( $options['date_to'] ) : null;
+		$limit       = isset( $options['limit'] ) ? absint( $options['limit'] ) : 50;
+		$date_from   = isset( $options['date_from'] ) ? sanitize_text_field( $options['date_from'] ) : null;
+		$date_to     = isset( $options['date_to'] ) ? sanitize_text_field( $options['date_to'] ) : null;
 		$action_type = isset( $options['action_type'] ) ? sanitize_key( $options['action_type'] ) : null;
 
 		// Get audit log from transient.
@@ -403,17 +408,17 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		$audit_log = array_slice( $audit_log, 0, $limit );
 
 		return array(
-			'success'      => true,
-			'message'      => sprintf(
+			'success'       => true,
+			'message'       => sprintf(
 				/* translators: %d: number of audit entries */
 				__( 'Found %d audit log entries.', 'mcp-ai-wpoos' ),
 				count( $audit_log )
 			),
-			'entries'      => $audit_log,
+			'entries'       => $audit_log,
 			'total_entries' => count( $audit_log ),
-			'filters'      => array(
-				'date_from'  => $date_from,
-				'date_to'    => $date_to,
+			'filters'       => array(
+				'date_from'   => $date_from,
+				'date_to'     => $date_to,
 				'action_type' => $action_type,
 			),
 		);
@@ -438,10 +443,10 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$stats = array(
-			'total_events'    => count( $audit_log ),
-			'by_action'       => array(),
-			'by_hour'         => array(),
-			'recent_24h'      => 0,
+			'total_events'        => count( $audit_log ),
+			'by_action'           => array(),
+			'by_hour'             => array(),
+			'recent_24h'          => 0,
 			'most_active_context' => null,
 		);
 
@@ -482,8 +487,8 @@ class WP_MCP_AI_Tool_Memory_Audit_Trail implements WP_MCP_AI_Tool_Interface, WP_
 		// Find most active context.
 		if ( ! empty( $context_activity ) ) {
 			arsort( $context_activity );
-			$most_active_id                      = key( $context_activity );
-			$stats['most_active_context']        = array(
+			$most_active_id               = key( $context_activity );
+			$stats['most_active_context'] = array(
 				'context_id' => $most_active_id,
 				'events'     => $context_activity[ $most_active_id ],
 			);

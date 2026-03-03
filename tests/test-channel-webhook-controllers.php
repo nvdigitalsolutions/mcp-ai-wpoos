@@ -38,6 +38,29 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Check whether any cron event is scheduled for the given hook, regardless of args.
+	 *
+	 * wp_next_scheduled() matches by args hash; calling it without args only finds
+	 * events that were also scheduled without args. This helper scans the entire
+	 * cron array so it works for events scheduled with arbitrary arguments.
+	 *
+	 * @param string $hook Action hook name.
+	 * @return int|false Timestamp of the next scheduled event, or false.
+	 */
+	private function next_scheduled_any_args( $hook ) {
+		$crons = _get_cron_array();
+		if ( ! is_array( $crons ) ) {
+			return false;
+		}
+		foreach ( $crons as $timestamp => $hooks ) {
+			if ( isset( $hooks[ $hook ] ) ) {
+				return $timestamp;
+			}
+		}
+		return false;
+	}
+
 	// =========================================================================
 	// Telegram Webhook Controller
 	// =========================================================================
@@ -106,6 +129,148 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$key_b = $method->invoke( $controller, '123456', 'conn_B' );
 
 		$this->assertNotSame( $key_a, $key_b );
+	}
+
+	// =========================================================================
+	// Telegram markdown_to_telegram_html
+	// =========================================================================
+
+	/**
+	 * Helper: invoke the protected markdown_to_telegram_html method.
+	 *
+	 * @param string $markdown Input Markdown.
+	 * @return string Telegram-compatible HTML.
+	 */
+	private function invoke_markdown_to_telegram_html( $markdown ) {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'markdown_to_telegram_html' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $controller, $markdown );
+	}
+
+	/**
+	 * Test empty and non-string inputs return empty string.
+	 */
+	public function test_telegram_markdown_to_html_empty_input() {
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( '' ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( null ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( false ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( 42 ) );
+		$this->assertSame( '', $this->invoke_markdown_to_telegram_html( array() ) );
+	}
+
+	/**
+	 * Test bold Markdown converts to <b> tags.
+	 */
+	public function test_telegram_markdown_to_html_bold() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is **bold** text.' );
+		$this->assertStringContainsString( '<b>bold</b>', $result );
+	}
+
+	/**
+	 * Test italic Markdown converts to <i> tags.
+	 */
+	public function test_telegram_markdown_to_html_italic() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is *italic* text.' );
+		$this->assertStringContainsString( '<i>italic</i>', $result );
+	}
+
+	/**
+	 * Test strikethrough Markdown converts to <s> tags.
+	 */
+	public function test_telegram_markdown_to_html_strikethrough() {
+		$result = $this->invoke_markdown_to_telegram_html( 'This is ~~deleted~~ text.' );
+		$this->assertStringContainsString( '<s>deleted</s>', $result );
+	}
+
+	/**
+	 * Test inline code converts to <code> tags.
+	 */
+	public function test_telegram_markdown_to_html_inline_code() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Use `echo hello` here.' );
+		$this->assertStringContainsString( '<code>echo hello</code>', $result );
+	}
+
+	/**
+	 * Test fenced code blocks convert to <pre> tags.
+	 */
+	public function test_telegram_markdown_to_html_code_block() {
+		$md     = "```php\necho 'hello';\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringContainsString( '<pre><code class="language-php">', $result );
+		$this->assertStringContainsString( 'echo &#039;hello&#039;;', $result );
+		$this->assertStringContainsString( '</code></pre>', $result );
+	}
+
+	/**
+	 * Test fenced code block without language.
+	 */
+	public function test_telegram_markdown_to_html_code_block_no_lang() {
+		$md     = "```\nsome code\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringContainsString( '<pre>some code</pre>', $result );
+		$this->assertStringNotContainsString( '<code', $result );
+	}
+
+	/**
+	 * Test Markdown links convert to <a> tags.
+	 */
+	public function test_telegram_markdown_to_html_links() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Visit [Google](https://google.com) now.' );
+		$this->assertStringContainsString( '<a href="https://google.com">Google</a>', $result );
+	}
+
+	/**
+	 * Test headings convert to bold text.
+	 */
+	public function test_telegram_markdown_to_html_headings() {
+		$result = $this->invoke_markdown_to_telegram_html( "# Main Title\n\nSome text." );
+		$this->assertStringContainsString( '<b>Main Title</b>', $result );
+		$this->assertStringNotContainsString( '#', $result );
+	}
+
+	/**
+	 * Test blockquotes convert to <blockquote>.
+	 */
+	public function test_telegram_markdown_to_html_blockquotes() {
+		$result = $this->invoke_markdown_to_telegram_html( "> This is a quote\n> continued" );
+		$this->assertStringContainsString( '<blockquote>', $result );
+		$this->assertStringContainsString( 'This is a quote', $result );
+	}
+
+	/**
+	 * Test that special HTML characters are escaped in plain text.
+	 */
+	public function test_telegram_markdown_to_html_escapes_special_chars() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Use a < b & c > d.' );
+		$this->assertStringContainsString( '&lt;', $result );
+		$this->assertStringContainsString( '&amp;', $result );
+		$this->assertStringContainsString( '&gt;', $result );
+	}
+
+	/**
+	 * Test code block content is not processed for bold/italic and is properly wrapped.
+	 */
+	public function test_telegram_markdown_to_html_code_block_not_processed() {
+		$md     = "```\n**not bold** *not italic*\n```";
+		$result = $this->invoke_markdown_to_telegram_html( $md );
+		$this->assertStringNotContainsString( '<b>not bold</b>', $result );
+		$this->assertStringNotContainsString( '<i>not italic</i>', $result );
+		$this->assertStringContainsString( '<pre>', $result );
+		$this->assertStringContainsString( '</pre>', $result );
+		$this->assertStringContainsString( '**not bold**', $result );
+	}
+
+	/**
+	 * Test plain text without Markdown passes through with HTML escaping only.
+	 */
+	public function test_telegram_markdown_to_html_plain_text() {
+		$result = $this->invoke_markdown_to_telegram_html( 'Hello world, no formatting here.' );
+		$this->assertSame( 'Hello world, no formatting here.', $result );
 	}
 
 	// =========================================================================
@@ -745,14 +910,14 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		$connections = array(
-			array(
+			'generic_conn' => array(
 				'id'                     => 'generic_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
 				'assigned_assistant_ids' => array( 1 ),
 				'api_key'                => 'dummy_token',
 			),
-			array(
+			'space_conn'   => array(
 				'id'                     => 'space_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
@@ -788,7 +953,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		}
 
 		$connections = array(
-			array(
+			'generic_conn' => array(
 				'id'                     => 'generic_conn',
 				'connection_type'        => 'google_chat',
 				'enabled'                => true,
@@ -847,7 +1012,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Connection with no assigned_assistant_ids.
 		$connections = array(
-			array(
+			'no_assistant_conn' => array(
 				'id'              => 'no_assistant_conn',
 				'connection_type' => 'google_chat',
 				'enabled'         => true,
@@ -1701,7 +1866,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_require_conn' => array(
 					'id'                     => 'gc_require_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1737,7 +1902,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — the bot always auto-replies to every message.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled — the bot always auto-replies regardless of require_mention setting'
 		);
 
@@ -1770,7 +1935,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_native_conn' => array(
 					'id'                     => 'gc_native_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1807,7 +1972,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — the native @mention satisfies require_mention.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled when the bot receives a native Google Chat @mention (argumentText present)'
 		);
 
@@ -1840,7 +2005,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_dm_conn' => array(
 					'id'                     => 'gc_dm_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1875,7 +2040,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Cron job must be scheduled — DMs always satisfy require_mention.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'Cron job must be scheduled when the message arrives in a DIRECT_MESSAGE space'
 		);
 
@@ -1911,7 +2076,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_pro_remote_sites',
 			array(
-				array(
+				'gc_dm_added_conn' => array(
 					'id'                     => 'gc_dm_added_conn',
 					'connection_type'        => 'google_chat',
 					'enabled'                => true,
@@ -1946,7 +2111,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// The AI reply cron job must be scheduled — the user's first message must not be ignored.
 		$this->assertNotFalse(
-			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
 			'An AI reply cron job must be scheduled when the bot is added via DM and the user included an initial message'
 		);
 
@@ -2471,5 +2636,1647 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		wp_clear_scheduled_hook( $hook );
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat – Marketplace App / auth robustness (priority + header fixes).
+	// =========================================================================
+
+	/**
+	 * Test allow_google_oidc_auth is registered at priority 99999.
+	 *
+	 * Third-party JWT auth plugins commonly hook rest_authentication_errors at
+	 * priority 100–999. Our filter must run after them so it can clear any
+	 * WP_Error they set before WordPress rejects the request.
+	 */
+	public function test_google_chat_auth_filter_registered_at_99999() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$priority = has_filter( 'rest_authentication_errors', array( $controller, 'allow_google_oidc_auth' ) );
+
+		$this->assertSame(
+			99999,
+			$priority,
+			'allow_google_oidc_auth must be registered at priority 99999 so it runs after JWT plugins at 100–999'
+		);
+	}
+
+	/**
+	 * Test allow_google_oidc_auth clears a WP_Error set by a JWT plugin simulated
+	 * at priority 500 (i.e. higher than the old priority of 99).
+	 */
+	public function test_google_chat_auth_filter_clears_error_from_high_priority_jwt_plugin() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Simulate a JWT auth plugin that sets a WP_Error after the OLD priority (99).
+		$jwt_error = new WP_Error( 'jwt_auth_bad_config', 'JWT auth error' );
+
+		// Simulate the REQUEST_URI for our webhook route.
+		$_SERVER['REQUEST_URI'] = '/wp-json/mcp-ai/v1/webhooks/google-chat';
+
+		$result = $controller->allow_google_oidc_auth( $jwt_error );
+
+		$this->assertNull( $result, 'allow_google_oidc_auth must clear WP_Error set by plugins at higher priorities' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a Bearer token supplied via
+	 * $_SERVER['HTTP_AUTHORIZATION'] when the WP_REST_Request header is empty
+	 * (simulates Apache + FastCGI environments that strip the Authorization header).
+	 */
+	public function test_google_chat_validation_accepts_bearer_from_server_http_authorization() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no connection is stored so audience defaults to empty (always passes).
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Inject Bearer token directly into $_SERVER (no WP_REST_Request header set).
+		$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer some.valid.looking.token';
+
+		try {
+			$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+			// Do NOT set_header() — we want get_header() to return empty.
+
+			$result = $controller->validate_google_oidc_token( $request );
+		} finally {
+			unset( $_SERVER['HTTP_AUTHORIZATION'] );
+		}
+
+		$this->assertTrue( $result, 'validate_google_oidc_token should accept Bearer token from $_SERVER[HTTP_AUTHORIZATION] fallback' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a Bearer token supplied via
+	 * $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] (a second common Apache fallback).
+	 */
+	public function test_google_chat_validation_accepts_bearer_from_redirect_http_authorization() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = 'Bearer another.valid.looking.token';
+
+		try {
+			$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+			$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+
+			$result = $controller->validate_google_oidc_token( $request );
+		} finally {
+			unset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+		}
+
+		$this->assertTrue( $result, 'validate_google_oidc_token should accept Bearer token from $_SERVER[REDIRECT_HTTP_AUTHORIZATION] fallback' );
+	}
+
+	// =========================================================================
+	// Google Chat – issuer (iss) validation and aud array support.
+	// =========================================================================
+
+	/**
+	 * Helper: base64url-encode a string (RFC 4648 §5, no padding).
+	 *
+	 * @param string $value Raw string to encode.
+	 * @return string Base64url-encoded string without padding characters.
+	 */
+	private function base64url_encode_test( $value ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return rtrim( strtr( base64_encode( $value ), '+/', '-_' ), '=' );
+	}
+
+	/**
+	 * Helper: build a minimal base64url-encoded JWT with the supplied payload claims.
+	 *
+	 * The signature segment is a dummy value — these tests only exercise the
+	 * local JWT-decode path, not full crypto verification.
+	 *
+	 * @param array $claims JWT payload claims.
+	 * @return string JWT string in header.payload.sig format.
+	 */
+	private function build_test_jwt( array $claims ) {
+		$header_b64  = $this->base64url_encode_test(
+			wp_json_encode(
+				array(
+					'alg' => 'RS256',
+					'typ' => 'JWT',
+				)
+			)
+		);
+		$payload_b64 = $this->base64url_encode_test( wp_json_encode( $claims ) );
+		return $header_b64 . '.' . $payload_b64 . '.fakesig';
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a JWT whose 'aud' claim is an array
+	 * containing the configured audience URL.
+	 *
+	 * RFC 7519 §4.1.3 allows 'aud' to be either a single string or an array of
+	 * strings.  Some Google-issued tokens carry the audience as a single-element
+	 * array, so the controller must handle both forms.
+	 */
+	public function test_google_chat_validation_accepts_aud_as_array_containing_audience() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Aud Array Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with 'aud' as an array containing the correct audience.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => array( $webhook_url ),
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept aud as an array when it contains the configured audience URL' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a JWT whose 'aud' array does NOT
+	 * contain the configured audience URL.
+	 */
+	public function test_google_chat_validation_rejects_aud_array_missing_audience() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Aud Array Reject Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with 'aud' as an array that does NOT include the correct audience.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => array( 'https://example.com/wrong', 'https://example.org/also-wrong' ),
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must reject a token whose aud array does not contain the configured audience' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a JWT whose 'iss' claim is not a
+	 * recognised Google issuer (e.g. a forged or third-party token).
+	 */
+	public function test_google_chat_validation_rejects_invalid_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Issuer Reject Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Build JWT with a non-Google issuer to simulate a forged or third-party token.
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'https://malicious-issuer.example.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must reject tokens from non-Google issuers' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token accepts a JWT from the canonical Google Chat
+	 * issuer 'chat@system.gserviceaccount.com'.
+	 */
+	public function test_google_chat_validation_accepts_google_chat_system_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Chat System Issuer Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Use the canonical Google Chat issuer (chat@system.gserviceaccount.com).
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'chat@system.gserviceaccount.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from the Google Chat system service account issuer' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token also accepts the 'accounts.google.com'
+	 * issuer for compatibility with Workspace Add-ons and OAuth-based tokens.
+	 */
+	public function test_google_chat_validation_accepts_accounts_google_com_issuer() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$webhook_url = home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' );
+
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'GC Accounts Issuer Test',
+				'url'             => 'https://chat.googleapis.com/v1',
+				'connection_type' => 'google_chat',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => 'dummy_token',
+				'verify_token'    => $webhook_url,
+			)
+		);
+
+		// Use the accounts.google.com issuer (Workspace Add-ons / OAuth compatibility).
+		$token = $this->build_test_jwt(
+			array(
+				'iss' => 'accounts.google.com',
+				'aud' => $webhook_url,
+				'exp' => time() + 3600,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer ' . $token );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'validate_google_oidc_token must accept tokens from accounts.google.com for Workspace Add-ons compatibility' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat – get_active_google_chat_connection fallback routing.
+	// =========================================================================
+
+	/**
+	 * Test get_active_google_chat_connection does NOT fall back to a space-specific
+	 * connection that is configured for a different space.
+	 *
+	 * A connection whose google_chat_space is 'spaces/AAA' must not be used for
+	 * an incoming message from 'spaces/BBB' — doing so would route messages with
+	 * the wrong credentials and potentially the wrong AI assistant.
+	 */
+	public function test_google_chat_space_specific_connection_not_used_for_different_space() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Store ONLY space-specific connections — no generic fallback.
+		$connections = array(
+			array(
+				'id'                     => 'space_conn_aaa',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'token_for_aaa',
+				'google_chat_space'      => 'spaces/AAA',
+			),
+			array(
+				'id'                     => 'space_conn_bbb',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 2 ),
+				'api_key'                => 'token_for_bbb',
+				'google_chat_space'      => 'spaces/BBB',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// Message from spaces/CCC — neither specific connection matches.
+		$result = $method->invoke( $controller, 'spaces/CCC' );
+
+		$this->assertNull(
+			$result,
+			'get_active_google_chat_connection must return null when only space-specific connections exist and none match the incoming space'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test get_active_google_chat_connection prefers a generic connection (no
+	 * google_chat_space set) over a space-specific one when no exact match exists.
+	 */
+	public function test_google_chat_generic_connection_used_as_fallback_over_space_specific() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$connections = array(
+			'space_conn_aaa' => array(
+				'id'                => 'space_conn_aaa',
+				'connection_type'   => 'google_chat',
+				'enabled'           => true,
+				'api_key'           => 'token_for_aaa',
+				'google_chat_space' => 'spaces/AAA',
+			),
+			'generic_conn'   => array(
+				'id'              => 'generic_conn',
+				'connection_type' => 'google_chat',
+				'enabled'         => true,
+				'api_key'         => 'token_generic',
+				// No google_chat_space — this is the generic fallback.
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// Message from spaces/BBB — only the generic connection should match as fallback.
+		$result = $method->invoke( $controller, 'spaces/BBB' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame(
+			'generic_conn',
+			$result['id'],
+			'get_active_google_chat_connection must use the generic connection as fallback, not the one for spaces/AAA'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat AJAX webhook (Cloudflare fallback).
+	// =========================================================================
+
+	/**
+	 * Test that the AJAX webhook actions are registered on both privileged and
+	 * unprivileged wp_ajax_* hooks so Google Chat requests arrive without a
+	 * WordPress user session.
+	 */
+	public function test_google_chat_ajax_webhook_actions_registered() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Make sure the expected hook is registered.
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$this->assertTrue(
+			has_action( 'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_nopriv_wp_mcp_ai_google_chat_webhook action must be registered'
+		);
+		$this->assertTrue(
+			has_action( 'wp_ajax_wp_mcp_ai_google_chat_webhook', array( $controller, 'handle_ajax_webhook' ) ) !== false,
+			'wp_ajax_wp_mcp_ai_google_chat_webhook action must be registered'
+		);
+	}
+
+	/**
+	 * Test that handle_ajax_webhook validates the OIDC token the same way as the REST endpoint.
+	 *
+	 * When no Authorization header is present, validate_google_oidc_token() must
+	 * return false, so the AJAX handler must send a 401 and stop processing.
+	 */
+	public function test_google_chat_ajax_webhook_validate_oidc_delegates_to_rest_validator() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'validate_google_oidc_token' );
+		$method->setAccessible( true );
+
+		// No Authorization header — must return false.
+		$rest_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$result       = $method->invoke( $controller, $rest_request );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must return false when Authorization header is absent' );
+	}
+
+	/**
+	 * Test that handle_ajax_webhook reuses the existing validate_google_oidc_token logic.
+	 *
+	 * A fake Bearer token that is not a valid JWT must be rejected by both the
+	 * REST permission_callback and the AJAX handler.
+	 */
+	public function test_google_chat_ajax_webhook_rejects_invalid_jwt() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Store a connection with verify_token so JWT format validation is enforced.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_jwt_conn' => array(
+					'id'              => 'gc_jwt_conn',
+					'connection_type' => 'google_chat',
+					'enabled'         => true,
+					'api_key'         => 'dummy',
+					'verify_token'    => 'https://example.com/webhook',
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'validate_google_oidc_token' );
+		$method->setAccessible( true );
+
+		$rest_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// 'not-a-jwt' has fewer than 2 dot-separated segments.
+		$rest_request->set_header( 'authorization', 'Bearer not-a-jwt' );
+
+		$result = $method->invoke( $controller, $rest_request );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$this->assertFalse( $result, 'validate_google_oidc_token must return false for a non-JWT token' );
+	}
+
+	// =========================================================================
+	// Google Chat Webhook Controller – maybe_auto_reply / dispatch methods
+	// =========================================================================
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when message_text is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_message() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		// Should not throw and should return null (void) without scheduling.
+		$result = $method->invoke( $controller, '', 'users/123', 'spaces/AAA', 'conn_1', '', array( 1 ) );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early on empty message_text' );
+
+		// No event should be scheduled.
+		$this->assertFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'No cron event should be scheduled when message_text is empty'
+		);
+	}
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when assigned_assistant_ids is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_assistants() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'Hello', 'users/123', 'spaces/AAA', 'conn_1', '', array() );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early when assigned_assistant_ids is empty' );
+	}
+
+	/**
+	 * Test dispatch_google_chat_ai_reply returns early when space_name is empty.
+	 */
+	public function test_google_chat_dispatch_returns_early_on_empty_space_name() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'dispatch_google_chat_ai_reply' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'Hello', 'users/123', '', 'conn_1', '', array( 1 ) );
+		$this->assertNull( $result, 'dispatch_google_chat_ai_reply must return early when space_name is empty' );
+	}
+
+	/**
+	 * Test maybe_auto_reply stops auto-reply when human takeover keyword is matched.
+	 */
+	public function test_google_chat_maybe_auto_reply_human_takeover_keyword_stops_reply() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_auto_reply' );
+		$method->setAccessible( true );
+
+		$automation_rules = array(
+			'human_takeover_keywords' => 'agent, human',
+		);
+
+		// "I need a human agent" contains the keyword "agent".
+		$method->invoke(
+			$controller,
+			'I need a human agent',
+			'users/123',
+			'spaces/AAA',
+			'conn_1',
+			'',
+			array( 1 ),
+			$automation_rules
+		);
+
+		// No cron event should be scheduled when human takeover keyword is matched.
+		$this->assertFalse(
+			wp_next_scheduled( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'No AI reply cron event should be scheduled when human takeover keyword is matched'
+		);
+	}
+
+	/**
+	 * Test maybe_auto_reply does not stop on AI resume keyword (continues to dispatch).
+	 */
+	public function test_google_chat_maybe_auto_reply_ai_resume_keyword_continues() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'maybe_auto_reply' );
+		$method->setAccessible( true );
+
+		$automation_rules = array(
+			'ai_resume_keywords' => 'bot, ai',
+		);
+
+		// "resume bot" contains the keyword "bot" — AI should resume and a cron job should be scheduled.
+		$method->invoke(
+			$controller,
+			'resume bot',
+			'users/123',
+			'spaces/AAA',
+			'conn_1',
+			'',
+			array( 5 ),
+			$automation_rules
+		);
+
+		// A cron event should have been scheduled.
+		$this->assertNotFalse(
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'AI reply cron event should be scheduled after AI resume keyword clears human takeover'
+		);
+	}
+
+	/**
+	 * Test get_channel_contact_id returns null when CCT is not available.
+	 */
+	public function test_google_chat_get_channel_contact_id_returns_null_when_cct_unavailable() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_channel_contact_id' );
+		$method->setAccessible( true );
+
+		// WP_MCP_AI_Channel_Contacts_CCT does not exist in the base test environment.
+		$result = $method->invoke( $controller, 'google_chat', 'users/99999' );
+
+		$this->assertNull( $result, 'get_channel_contact_id must return null when CCT class is unavailable' );
+	}
+
+	// =========================================================================
+	// Google Chat – disable_oidc_verification (Telegram-like no-auth mode).
+	// =========================================================================
+
+	/**
+	 * Test validate_google_oidc_token allows through without a Bearer token when
+	 * disable_oidc_verification is enabled on the connection.
+	 *
+	 * This mirrors the Telegram behavior where validation passes when no secret
+	 * token is configured — allowing environments that strip the Authorization
+	 * header to still receive Google Chat webhook events.
+	 */
+	public function test_google_chat_oidc_validation_skipped_when_disabled_on_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Store a google_chat connection with disable_oidc_verification enabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC OIDC Disabled Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'api_key'                   => 'dummy_token',
+				'disable_oidc_verification' => true,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// Deliberately omit Authorization header — should still pass when OIDC is disabled.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'Validation must pass when disable_oidc_verification is enabled, even without a Bearer token' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token still requires a Bearer token when
+	 * disable_oidc_verification is false (default behavior unchanged).
+	 */
+	public function test_google_chat_oidc_validation_still_required_when_not_disabled() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Store a connection with disable_oidc_verification explicitly false.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC OIDC Enabled Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'api_key'                   => 'dummy_token',
+				'disable_oidc_verification' => false,
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		// No Authorization header.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse( $result, 'Validation must still reject requests without Bearer token when OIDC is not disabled' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test that disable_oidc_verification is saved and retrieved correctly via
+	 * WP_MCP_AI_Pro_Remote_Site_Manager.
+	 */
+	public function test_google_chat_disable_oidc_verification_field_persists() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$conn_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'                      => 'GC Persist Field Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'disable_oidc_verification' => true,
+			)
+		);
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+
+		$this->assertIsArray( $connection );
+		$this->assertTrue( (bool) $connection['disable_oidc_verification'], 'disable_oidc_verification should be persisted as true' );
+
+		// Now save with the flag disabled.
+		WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'id'                        => $conn_id,
+				'name'                      => 'GC Persist Field Test',
+				'url'                       => 'https://chat.googleapis.com/v1',
+				'connection_type'           => 'google_chat',
+				'auth_type'                 => 'none',
+				'enabled'                   => true,
+				'disable_oidc_verification' => false,
+			)
+		);
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $conn_id );
+
+		$this->assertFalse( (bool) $connection['disable_oidc_verification'], 'disable_oidc_verification should be persisted as false after update' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	// =========================================================================
+	// Google Chat & Telegram – get_any_assistant_id fallback (respond to all).
+	// =========================================================================
+
+	/**
+	 * Test get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Create a published assistant post.
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
+
+	/**
+	 * Test get_any_assistant_id returns 0 when no published assistant exists.
+	 */
+	public function test_google_chat_get_any_assistant_id_returns_zero_when_no_assistant() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		// Ensure no published assistants exist.
+		$existing = get_posts(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'fields'      => 'ids',
+				'numberposts' => -1,
+			)
+		);
+		foreach ( $existing as $id ) {
+			wp_delete_post( $id, true );
+		}
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( 0, $result, 'get_any_assistant_id should return 0 when no assistants exist' );
+	}
+
+	/**
+	 * Test Telegram get_any_assistant_id returns an ID when a published assistant exists.
+	 */
+	public function test_telegram_get_any_assistant_id_returns_id_when_assistant_exists() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$assistant_id = wp_insert_post(
+			array(
+				'post_title'  => 'Test Telegram Assistant',
+				'post_status' => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+			)
+		);
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_any_assistant_id' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertSame( $assistant_id, $result, 'get_any_assistant_id should return the published assistant ID' );
+
+		wp_delete_post( $assistant_id, true );
+	}
+
+	// =========================================================================
+	// Google Chat – WordPress nonce authentication.
+	// =========================================================================
+
+	/**
+	 * Test validate_google_oidc_token accepts a logged-in admin supplying a valid
+	 * WordPress nonce in the X-WP-Nonce header.
+	 *
+	 * Admins (manage_options) can authenticate the webhook via the standard
+	 * WordPress REST API nonce, enabling testing and WordPress-side invocations
+	 * without a real Google OIDC Bearer token.
+	 */
+	public function test_google_chat_validation_accepts_admin_with_valid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$nonce = wp_create_nonce( 'wp_rest' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertTrue( $result, 'A logged-in admin with a valid WordPress nonce must be accepted' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects a logged-in subscriber even when
+	 * a valid WordPress nonce is supplied.
+	 *
+	 * Only users with manage_options capability are allowed to authenticate via
+	 * WordPress nonce; regular subscribers must not bypass OIDC validation.
+	 */
+	public function test_google_chat_validation_rejects_subscriber_with_valid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// Temporarily remove the test-bootstrap filter that grants manage_options
+		// to all users so the subscriber's real capabilities are evaluated.
+		remove_all_filters( 'user_has_cap' );
+
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$nonce = wp_create_nonce( 'wp_rest' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', $nonce );
+		// No Authorization Bearer header — nonce is the only credential supplied.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertFalse( $result, 'A subscriber with a valid nonce must not bypass OIDC validation' );
+	}
+
+	/**
+	 * Test validate_google_oidc_token rejects an admin who sends an invalid nonce.
+	 *
+	 * An invalid or tampered nonce must fall through to the OIDC Bearer-token
+	 * check and be rejected when no Bearer token is present either.
+	 */
+	public function test_google_chat_validation_rejects_admin_with_invalid_nonce() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'X-WP-Nonce', 'invalid_nonce_value' );
+		// No Authorization Bearer header — nothing else to fall back on.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		wp_set_current_user( 0 );
+
+		$this->assertFalse( $result, 'An admin with an invalid nonce and no Bearer token must be rejected' );
+	}
+
+	/**
+	 * Test that an unauthenticated request with no X-WP-Nonce header still falls
+	 * through to the OIDC Bearer-token check (nonce path is skipped entirely).
+	 *
+	 * This guards against the nonce block accidentally short-circuiting the
+	 * existing OIDC validation when no nonce header is present.
+	 */
+	public function test_google_chat_validation_no_nonce_falls_through_to_oidc() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		// No user logged in, no nonce header — a Bearer token is the only path.
+		wp_set_current_user( 0 );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_header( 'Authorization', 'Bearer some.valid.looking.token' );
+		// No X-WP-Nonce header set.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue( $result, 'Without a nonce header the Bearer-token path must still work (no audience → pass)' );
+	}
+
+	// =========================================================================
+	// Apple Messages for Business Webhook Controller
+	// =========================================================================
+
+	/**
+	 * Test CONVERSATION_HISTORY_TTL constant equals 86400 (24 hours).
+	 */
+	public function test_apple_messages_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Apple Messages CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test DEDUP_TRANSIENT_TTL constant equals 60.
+	 */
+	public function test_apple_messages_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Apple Messages DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/**
+	 * Test MAX_MESSAGE_LENGTH constant equals 2000.
+	 */
+	public function test_apple_messages_max_message_length_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			2000,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::MAX_MESSAGE_LENGTH,
+			'Apple Messages MAX_MESSAGE_LENGTH should be 2000 characters'
+		);
+	}
+
+	/**
+	 * Test REPLY_CRON_HOOK constant has expected value.
+	 */
+	public function test_apple_messages_reply_cron_hook_constant() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$this->assertSame(
+			'wp_mcp_ai_apple_messages_send_ai_reply',
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::REPLY_CRON_HOOK
+		);
+	}
+
+	/**
+	 * Test SUPPORTED_EVENT_TYPES constant contains the five expected types.
+	 */
+	public function test_apple_messages_supported_event_types() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$expected = array( 'message', 'interactive', 'typing', 'read', 'close' );
+
+		$this->assertSame(
+			$expected,
+			WP_MCP_AI_Apple_Messages_Webhook_Controller::SUPPORTED_EVENT_TYPES,
+			'Apple Messages SUPPORTED_EVENT_TYPES should list all five event types'
+		);
+	}
+
+	/**
+	 * Test that validate_webhook_signature returns true when no secret is configured.
+	 */
+	public function test_apple_messages_signature_passes_without_secret() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		// Ensure no settings are stored.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '{"type":"message"}' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook should pass validation when no secret is configured' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects requests with no signature header
+	 * when a secret is configured.
+	 */
+	public function test_apple_messages_signature_rejected_without_header() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => 'mysecret',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '{"type":"message"}' );
+		// No signature header set.
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertFalse( $result, 'Webhook should be rejected when secret is set but no signature header is present' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature accepts a correct HMAC-SHA256 signature.
+	 */
+	public function test_apple_messages_signature_accepted_with_valid_hmac() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'test-webhook-secret';
+		$payload = '{"type":"message","id":"evt_001"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$signature = hash_hmac( 'sha256', $payload, $secret );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		$request->set_header( 'x-apple-messages-signature', $signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook with a correct HMAC-SHA256 signature should be accepted' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature accepts a sha256= prefixed signature.
+	 */
+	public function test_apple_messages_signature_accepted_with_sha256_prefix() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'another-secret';
+		$payload = '{"type":"close","conversationId":"conv_xyz"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$signature = 'sha256=' . hash_hmac( 'sha256', $payload, $secret );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		$request->set_header( 'x-hub-signature-256', $signature );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook with sha256= prefixed HMAC signature should be accepted' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that validate_webhook_signature rejects a tampered payload.
+	 */
+	public function test_apple_messages_signature_rejected_with_invalid_hmac() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$secret  = 'real-secret';
+		$payload = '{"type":"message"}';
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'webhook_secret' => $secret,
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( $payload );
+		// Provide signature computed with wrong secret.
+		$request->set_header( 'x-apple-messages-signature', hash_hmac( 'sha256', $payload, 'wrong-secret' ) );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertFalse( $result, 'Webhook with incorrect HMAC signature should be rejected' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that handle_webhook returns ok:true for an empty payload.
+	 */
+	public function test_apple_messages_handle_webhook_returns_ok_for_empty_payload() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_body( '' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'ok', $data );
+		$this->assertTrue( $data['ok'] );
+	}
+
+	/**
+	 * Test that handle_webhook returns ok:true for an unsupported event type.
+	 */
+	public function test_apple_messages_handle_webhook_ignores_unknown_event_type() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( '{"type":"unknown_event_xyz","id":"evt_123"}' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['ok'], 'Unknown event types must still return ok:true' );
+	}
+
+	/**
+	 * Test that duplicate events are skipped via deduplication transient.
+	 */
+	public function test_apple_messages_deduplication_skips_duplicate_events() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$event_id = 'evt_dedup_test_001';
+
+		// Pre-set the dedup transient to simulate a previously processed event.
+		set_transient( 'wp_mcp_ai_apple_dedup_' . $event_id, 1, 60 );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'           => 'message',
+					'id'             => $event_id,
+					'conversationId' => 'conv_123',
+					'senderId'       => 'sender_456',
+					'body'           => array( 'text' => 'Hello again' ),
+				)
+			)
+		);
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( 'WP_REST_Response', $response );
+		$this->assertTrue( $response->get_data()['ok'], 'Duplicate event should still return ok:true' );
+
+		delete_transient( 'wp_mcp_ai_apple_dedup_' . $event_id );
+	}
+
+	/**
+	 * Test that close event sets opt-out transient for the conversation.
+	 */
+	public function test_apple_messages_close_event_sets_optout_transient() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$conversation_id = 'conv_close_test_' . uniqid();
+		$transient_key   = 'wp_mcp_ai_apple_optout_' . md5( $conversation_id );
+
+		// Ensure no prior transient.
+		delete_transient( $transient_key );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/apple-messages' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'type'           => 'close',
+					'id'             => 'evt_close_' . uniqid(),
+					'conversationId' => $conversation_id,
+				)
+			)
+		);
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertTrue( $response->get_data()['ok'] );
+		$this->assertNotFalse( get_transient( $transient_key ), 'Close event should set opt-out transient for the conversation' );
+
+		delete_transient( $transient_key );
+	}
+
+	/**
+	 * Test mask_sensitive_value returns masked string for normal values.
+	 */
+	public function test_apple_messages_mask_sensitive_value() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'mask_sensitive_value' );
+		$method->setAccessible( true );
+
+		$masked_empty = $method->invoke( $controller, '' );
+		$this->assertSame( '', $masked_empty, 'Empty value should return empty string' );
+
+		$masked_short = $method->invoke( $controller, 'ab' );
+		$this->assertSame( '**', $masked_short, 'Short value (<=4) should be fully masked' );
+
+		$masked_long = $method->invoke( $controller, 'abcdefgh' );
+		$this->assertStringStartsWith( 'ab', $masked_long, 'Long value should preserve first two chars' );
+		$this->assertStringEndsWith( 'gh', $masked_long, 'Long value should preserve last two chars' );
+		$this->assertStringContainsString( '****', $masked_long, 'Long value should have asterisks in the middle' );
+	}
+
+	/**
+	 * Test get_connection_settings falls back to default connection when no connection_id matches.
+	 */
+	public function test_apple_messages_get_connection_settings_fallback_to_default() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'default' => array(
+						'msp_api_url' => 'https://default.msp.example.com',
+						'api_key'     => 'default-key',
+						'business_id' => 'biz-default',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_connection_settings' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'nonexistent_connection_id' );
+
+		$this->assertArrayHasKey( 'msp_api_url', $result );
+		$this->assertSame( 'https://default.msp.example.com', $result['msp_api_url'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_connection_settings returns named connection settings when connection_id matches.
+	 */
+	public function test_apple_messages_get_connection_settings_returns_named_connection() {
+		$this->load_controller( 'WP_MCP_AI_Apple_Messages_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-apple-messages-webhook-controller.php' );
+
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'apple_messages_connections' => array(
+					'store_a' => array(
+						'msp_api_url' => 'https://store-a.msp.example.com',
+						'api_key'     => 'store-a-key',
+						'business_id' => 'biz-store-a',
+					),
+					'default' => array(
+						'msp_api_url' => 'https://default.msp.example.com',
+						'api_key'     => 'default-key',
+						'business_id' => 'biz-default',
+					),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Apple_Messages_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_connection_settings' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'store_a' );
+
+		$this->assertSame( 'https://store-a.msp.example.com', $result['msp_api_url'] );
+		$this->assertSame( 'biz-store-a', $result['business_id'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	// =========================================================================
+	// Outlook Webhook Controller
+	// =========================================================================
+
+	/** Test CONVERSATION_HISTORY_TTL constant equals 86400. */
+	public function test_outlook_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Outlook_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Outlook CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/** Test DEDUP_TRANSIENT_TTL constant equals 60. */
+	public function test_outlook_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_Outlook_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'Outlook DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/** Test GRAPH_API_BASE constant is correct. */
+	public function test_outlook_graph_api_base_constant() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$this->assertSame(
+			'https://graph.microsoft.com/v1.0',
+			WP_MCP_AI_Outlook_Webhook_Controller::GRAPH_API_BASE
+		);
+	}
+
+	/** Test get_conversation_history_key is deterministic and scoped to sender+connection. */
+	public function test_outlook_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'sender@example.com', 'conn_xyz' );
+		$key2 = $method->invoke( $controller, 'sender@example.com', 'conn_xyz' );
+		$key3 = $method->invoke( $controller, 'other@example.com', 'conn_xyz' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_ol_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/** Test that different connection IDs produce different keys. */
+	public function test_outlook_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'sender@example.com', 'conn_1' );
+		$key2 = $method->invoke( $controller, 'sender@example.com', 'conn_2' );
+
+		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
+	}
+
+	/** Test validate_outlook_signature allows through when no client_state is set. */
+	public function test_outlook_validation_passes_without_client_state() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/outlook' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( array( 'value' => array( array( 'changeType' => 'created' ) ) ) ) );
+
+		$result = $controller->validate_outlook_signature( $request );
+
+		$this->assertTrue( $result, 'Validation should pass when no client state is configured' );
+	}
+
+	/** Test handle_webhook returns validation token for Graph subscription validation. */
+	public function test_outlook_webhook_returns_validation_token() {
+		$this->load_controller( 'WP_MCP_AI_Outlook_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Outlook_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/outlook' );
+		$request->set_query_params( array( 'validationToken' => 'abc123token' ) );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 'abc123token', $response->get_data() );
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers );
+		$this->assertSame( 'text/plain', $headers['Content-Type'] );
+	}
+
+	// =========================================================================
+	// iCloud Webhook Controller
+	// =========================================================================
+
+	/** Test CONVERSATION_HISTORY_TTL constant equals 86400. */
+	public function test_icloud_conversation_history_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_iCloud_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'iCloud CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/** Test DEDUP_TRANSIENT_TTL constant equals 60. */
+	public function test_icloud_dedup_ttl_constant() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$this->assertSame(
+			60,
+			WP_MCP_AI_iCloud_Webhook_Controller::DEDUP_TRANSIENT_TTL,
+			'iCloud DEDUP_TRANSIENT_TTL should be 60 seconds'
+		);
+	}
+
+	/** Test get_conversation_history_key is deterministic and scoped to user+connection. */
+	public function test_icloud_conversation_history_key_is_deterministic() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'user_abc', 'conn_xyz' );
+		$key2 = $method->invoke( $controller, 'user_abc', 'conn_xyz' );
+		$key3 = $method->invoke( $controller, 'user_def', 'conn_xyz' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different user produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_ic_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+	/** Test that different connection IDs produce different keys. */
+	public function test_icloud_history_key_differs_by_connection() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'user_abc', 'conn_1' );
+		$key2 = $method->invoke( $controller, 'user_abc', 'conn_2' );
+
+		$this->assertNotSame( $key1, $key2, 'Different connections must produce different history keys' );
+	}
+
+	/** Test validate_webhook_signature allows through when no signing secret is set. */
+	public function test_icloud_validation_passes_without_signing_secret() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/icloud' );
+		$request->set_body( '{"event_type":"file_created","file_id":"abc"}' );
+
+		$result = $controller->validate_webhook_signature( $request );
+
+		$this->assertTrue( $result, 'Webhook should pass validation when no signing secret is configured' );
+	}
+
+	/** Test handle_webhook acknowledges payload without event_type gracefully. */
+	public function test_icloud_webhook_acknowledges_missing_event_type() {
+		$this->load_controller( 'WP_MCP_AI_iCloud_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_iCloud_Webhook_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/icloud' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body( wp_json_encode( array( 'file_id' => 'abc' ) ) );
+
+		$response = $controller->handle_webhook( $request );
+		$data     = rest_ensure_response( $response )->get_data();
+
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'ok', $data );
+		$this->assertTrue( $data['ok'], 'iCloud webhook should acknowledge payloads missing event_type without error' );
 	}
 }

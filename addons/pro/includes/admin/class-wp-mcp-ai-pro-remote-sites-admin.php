@@ -33,6 +33,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_whatsapp_auto_reply', array( $this, 'ajax_test_whatsapp_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_generate_messenger_token', array( $this, 'ajax_generate_messenger_token' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_live', array( $this, 'ajax_test_messenger_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_messenger_auto_reply', array( $this, 'ajax_test_messenger_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_remote_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_register_whatsapp_phone_number', array( $this, 'ajax_register_whatsapp_phone_number' ) );
@@ -43,8 +44,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_google_chat_incoming_trigger', array( $this, 'ajax_test_google_chat_incoming_trigger' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_live', array( $this, 'ajax_test_telegram_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_auto_reply', array( $this, 'ajax_test_telegram_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_send_group', array( $this, 'ajax_test_telegram_send_group' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_set_telegram_webhook', array( $this, 'ajax_set_telegram_webhook' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_telegram_webhook_info', array( $this, 'ajax_get_telegram_webhook_info' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_slack_live', array( $this, 'ajax_test_slack_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_slack_auto_reply', array( $this, 'ajax_test_slack_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_discord_live', array( $this, 'ajax_test_discord_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_discord_auto_reply', array( $this, 'ajax_test_discord_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_teams_live', array( $this, 'ajax_test_teams_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_teams_auto_reply', array( $this, 'ajax_test_teams_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_office365_live', array( $this, 'ajax_test_office365_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_office365_auto_reply', array( $this, 'ajax_test_office365_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_live', array( $this, 'ajax_test_icloud_live' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_auto_reply', array( $this, 'ajax_test_icloud_auto_reply' ) );
 	}
 
 	/**
@@ -215,13 +227,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress';
 
 			// Map connection-type-specific fields to generic field names.
-			$api_key       = '';
-			$api_secret    = '';
-			$client_id     = '';
-			$client_secret = '';
-			$refresh_token = '';
-			$user_email    = '';
-			$app_id        = '';
+			$api_key        = '';
+			$api_secret     = '';
+			$client_id      = '';
+			$client_secret  = '';
+			$refresh_token  = '';
+			$user_email     = '';
+			$app_id         = '';
+			$signing_secret = '';
+			$gc_method      = 'service_account';
 
 			switch ( $connection_type ) {
 				case 'mesh_peer':
@@ -274,17 +288,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$client_id     = isset( $_POST['google_chat_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['google_chat_client_secret'] ) ? wp_unslash( $_POST['google_chat_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$refresh_token = isset( $_POST['google_chat_refresh_token'] ) ? wp_unslash( $_POST['google_chat_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$gc_method     = isset( $_POST['google_chat_method'] ) ? sanitize_key( wp_unslash( $_POST['google_chat_method'] ) ) : 'service_account';
+					if ( ! in_array( $gc_method, array( 'service_account', 'oauth', 'webhook' ), true ) ) {
+						$gc_method = 'service_account';
+					}
 					break;
 				case 'slack':
-					$api_key    = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$api_secret = isset( $_POST['slack_signing_secret'] ) ? wp_unslash( $_POST['slack_signing_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key        = isset( $_POST['slack_bot_token'] ) ? wp_unslash( $_POST['slack_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$signing_secret = isset( $_POST['slack_signing_secret'] ) ? wp_unslash( $_POST['slack_signing_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'discord':
 					$api_key = isset( $_POST['discord_bot_token'] ) ? wp_unslash( $_POST['discord_bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'microsoft_teams':
-					// Teams uses app_id and app_secret (handled separately below)
-					$api_secret = isset( $_POST['teams_app_password'] ) ? wp_unslash( $_POST['teams_app_password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					// Outgoing Webhook security token (HMAC-SHA256 key from Teams Admin Center).
+					$signing_secret = isset( $_POST['teams_security_token'] ) ? wp_unslash( $_POST['teams_security_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					// The Microsoft Graph API Bearer token is stored in 'token'; it is handled
+					// via the channel-aware 'token' entry in $connection_data below.
 					break;
 				case 'facebook_messenger':
 					$api_key    = isset( $_POST['messenger_page_access_token'] ) ? wp_unslash( $_POST['messenger_page_access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -294,6 +314,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				case 'webchat':
 					// WebChat uses connection_id (handled separately as p2p_connection_id below)
 					$api_secret = isset( $_POST['webchat_encryption_key'] ) ? wp_unslash( $_POST['webchat_encryption_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'apple_messages':
+					$api_key    = isset( $_POST['apple_msp_api_key'] ) ? wp_unslash( $_POST['apple_msp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['apple_webhook_secret'] ) ? wp_unslash( $_POST['apple_webhook_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'office365':
+					$client_id     = isset( $_POST['office365_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['office365_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['office365_client_secret'] ) ? wp_unslash( $_POST['office365_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'icloud':
+					$api_key = isset( $_POST['icloud_api_key'] ) ? wp_unslash( $_POST['icloud_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 			}
 
@@ -377,6 +408,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				$auth_type = 'none';
 			}
 
+			if ( 'apple_messages' === $connection_type ) {
+				// The MSP API URL is entered by the user (varies per MSP provider).
+				$url       = isset( $_POST['apple_msp_api_url'] ) ? esc_url_raw( wp_unslash( $_POST['apple_msp_api_url'] ) ) : $url;
+				$auth_type = 'none';
+			}
+
+			if ( 'office365' === $connection_type ) {
+				$url       = 'https://graph.microsoft.com/v1.0';
+				$auth_type = 'none'; // Office 365 uses OAuth via Azure AD
+			}
+
+			if ( 'icloud' === $connection_type ) {
+				// The gateway API URL is entered by the user (varies per gateway).
+				$url       = isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : $url;
+				$auth_type = 'none';
+			}
+
 			// For mesh peer connections, use custom_header auth with mesh API key
 			if ( 'mesh_peer' === $connection_type ) {
 				$auth_type = 'custom_header';
@@ -421,11 +469,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'auth_type'       => $auth_type,
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '',
 				'password'        => isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				'token'           => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				// For Teams, the Graph API Bearer token comes from the channel-specific field; all others use the generic 'token' POST field.
+				'token'           => 'microsoft_teams' === $connection_type
+					? ( isset( $_POST['teams_graph_token'] ) ? wp_unslash( $_POST['teams_graph_token'] ) : '' ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					: ( isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '' ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '',
 				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? wp_unslash( $_POST['consumer_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'api_key'         => $api_key,
 				'api_secret'      => $api_secret,
+				// HMAC-SHA256 signing secret (Slack events / Teams outgoing webhook security token).
+				'signing_secret'  => $signing_secret,
 				'client_id'       => $client_id,
 				'client_secret'   => $client_secret,
 				'app_id'          => $app_id ? $app_id : ( isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : ( isset( $_POST['teams_app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_app_id'] ) ) : '' ) ),
@@ -443,8 +496,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Google Drive-specific fields.
 				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 				// Telegram-specific fields.
-				'bot_username'    => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
-				'secret_token'    => $telegram_secret_token,
+				'bot_username'         => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
+				'secret_token'         => $telegram_secret_token,
+				'enable_groups'        => ! empty( $_POST['telegram_enable_groups'] ),
+				'enable_web_login'     => ! empty( $_POST['telegram_enable_web_login'] ),
+				'web_login_redirect_url' => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
+				'auto_create_wp_user'  => ! empty( $_POST['telegram_auto_create_wp_user'] ),
+				'new_user_role'        => isset( $_POST['telegram_new_user_role'] ) ? sanitize_key( wp_unslash( $_POST['telegram_new_user_role'] ) ) : 'subscriber',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -460,17 +518,44 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Discord-specific fields.
 				'application_id'  => isset( $_POST['discord_application_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_application_id'] ) ) : '',
 				'guild_id'        => isset( $_POST['discord_guild_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_guild_id'] ) ) : '',
-				// Microsoft Teams-specific fields.
-				'tenant_id'       => isset( $_POST['teams_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_tenant_id'] ) ) : '',
+				'public_key'      => isset( $_POST['discord_public_key'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_public_key'] ) ) : '',
+				// Microsoft Teams / Office 365-specific fields.
+				'tenant_id'       => 'office365' === $connection_type
+					? ( isset( $_POST['office365_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['office365_tenant_id'] ) ) : '' )
+					: ( isset( $_POST['teams_tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['teams_tenant_id'] ) ) : '' ),
 				// Facebook Messenger-specific fields.
 				'page_id'         => isset( $_POST['messenger_page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_page_id'] ) ) : '',
+				// Chat-channel setting: only reply when the assistant is @mentioned.
+				// Each channel uses a channel-prefixed field name so that hidden form fields
+				// from other channel types do not conflict with the active one.
+				'require_mention' => (
+					( 'telegram' === $connection_type && ! empty( $_POST['telegram_require_mention'] ) ) ||
+					( 'slack' === $connection_type && ! empty( $_POST['slack_require_mention'] ) ) ||
+					( 'discord' === $connection_type && ! empty( $_POST['discord_require_mention'] ) ) ||
+					( 'microsoft_teams' === $connection_type && ! empty( $_POST['teams_require_mention'] ) ) ||
+					( 'facebook_messenger' === $connection_type && ! empty( $_POST['messenger_require_mention'] ) )
+				),
 				// WebChat-specific fields.
 				'p2p_connection_id' => isset( $_POST['webchat_connection_id'] ) ? sanitize_text_field( wp_unslash( $_POST['webchat_connection_id'] ) ) : '',
 				// Google Chat-specific fields.
 				'google_chat_space' => isset( $_POST['google_chat_space'] ) ? sanitize_text_field( wp_unslash( $_POST['google_chat_space'] ) ) : '',
+				'reply_webhook_url' => isset( $_POST['google_chat_reply_webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['google_chat_reply_webhook_url'] ) ) : '',
+				'disable_oidc_verification' => ! empty( $_POST['google_chat_disable_oidc_verification'] ),
+				'connection_method' => $gc_method,
 				// Twitter/X-specific fields.
 				'twitter_user_id'   => isset( $_POST['twitter_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['twitter_user_id'] ) ) : '',
-				// WhatsApp channel routing: assistants assigned to listen on this channel.
+				// Apple Messages for Business-specific fields.
+				'business_id'       => isset( $_POST['apple_business_id'] ) ? sanitize_text_field( wp_unslash( $_POST['apple_business_id'] ) ) : '',
+				// iCloud Drive-specific fields.
+				'gateway_api_url'   => isset( $_POST['icloud_gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['icloud_gateway_url'] ) ) : '',
+				// Office 365 / iCloud: per-service toggles (e.g. outlook_mail, onedrive, icloud_drive).
+				'enabled_services'  => $this->resolve_enabled_services( $connection_type ),
+				// Office 365 per-service settings.
+				'outlook_mailbox_folder' => isset( $_POST['outlook_mailbox_folder'] ) ? sanitize_text_field( wp_unslash( $_POST['outlook_mailbox_folder'] ) ) : '',
+				'onedrive_folder_path'   => isset( $_POST['onedrive_folder_path'] ) ? sanitize_text_field( wp_unslash( $_POST['onedrive_folder_path'] ) ) : '',
+				// iCloud per-service settings.
+				'icloud_default_folder_id' => isset( $_POST['icloud_default_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['icloud_default_folder_id'] ) ) : '',
+				// Channel routing: assistants assigned to auto-reply on this connection (used by all chat-channel types).
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					: array(),
@@ -720,7 +805,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'webchat'            => __( 'WebChat', 'mcp-ai-wpoos-pro' ),
 									'google_chat'        => __( 'Google Chat', 'mcp-ai-wpoos-pro' ),
 									'twitter'            => __( 'Twitter / X', 'mcp-ai-wpoos-pro' ),
-								);
+									'apple_messages'     => __( 'Apple Messages for Business', 'mcp-ai-wpoos-pro' ),
+									'office365'          => __( 'Office 365', 'mcp-ai-wpoos-pro' ),
+									'icloud'             => __( 'iCloud Drive', 'mcp-ai-wpoos-pro' ),
+									);
 
 								$type_colors = array(
 									'wordpress'          => '#2271b1',
@@ -742,7 +830,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'webchat'            => '#ff6b6b', // WebChat coral red
 									'google_chat'        => '#1a73e8', // Google Chat blue
 									'twitter'            => '#000000', // X (formerly Twitter) black
-								);
+									'apple_messages'     => '#555555', // Apple dark grey
+									'office365'          => '#d83b01', // Microsoft Office orange
+									'icloud'             => '#3693f5', // iCloud blue
+									);
 
 								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
 								$type_badge_color = isset( $type_colors[ $connection_type ] ) ? $type_colors[ $connection_type ] : '#50575e';
@@ -1044,6 +1135,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="twitter" <?php selected( $connection_type, 'twitter' ); ?>>
 								<?php esc_html_e( 'Twitter / X (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="apple_messages" <?php selected( $connection_type, 'apple_messages' ); ?>>
+								<?php esc_html_e( 'Apple Messages for Business / iMessage (Chat Channel)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="office365" <?php selected( $connection_type, 'office365' ); ?>>
+								<?php esc_html_e( 'Office 365 (Outlook / OneDrive)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="icloud" <?php selected( $connection_type, 'icloud' ); ?>>
+								<?php esc_html_e( 'iCloud Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -1721,6 +1821,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Enable Group Chats', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_enable_groups" id="telegram_enable_groups" value="1" <?php checked( $is_edit && ! empty( $connection['enable_groups'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Allow the bot to respond in group and supergroup chats', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot will process and reply to messages in Telegram groups and supergroups. When disabled, the bot only responds in private (direct) chats.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><strong><?php esc_html_e( 'Privacy Mode:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'You may need to disable Privacy Mode via @BotFather (/setprivacy → Disable) so Telegram delivers all group messages to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_require_mention" id="telegram_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the bot is @mentioned or the message is a reply to the bot', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Applies to groups only. In private chats the bot always replies. When unchecked (default), the bot replies to every group message. When checked, the bot only auto-replies in groups when explicitly @mentioned, when an assigned assistant @slug is mentioned, or when the message is a direct reply to one of the bot\'s own messages. Fill in the Bot Username above for reliable mention detection.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="telegram_test_connection_btn" class="button button-secondary">
@@ -1737,8 +1860,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
 							<div style="flex: 1; min-width: 200px;">
-								<input type="text" id="telegram_test_auto_reply_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '123456789 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
-								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Chat ID (optional — if provided, the AI reply will be sent via Telegram)', 'mcp-ai-wpoos-pro' ); ?></p>
+								<input type="text" id="telegram_test_auto_reply_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '123456789 or -1001234567890 or @channelname (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Chat ID, group ID, or @channel username (optional — if provided, the AI reply will be sent to this private chat, group, or channel via Telegram)', 'mcp-ai-wpoos-pro' ); ?></p>
 							</div>
 							<div style="flex: 2; min-width: 250px;">
 								<textarea id="telegram_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
@@ -1752,6 +1875,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</div>
 						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<div id="telegram_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Send to Group/Channel', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="telegram_test_group_chat_id" class="regular-text" placeholder="<?php esc_attr_e( '-1001234567890, @channelname, or https://t.me/groupname', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Group/supergroup ID (negative number), @channel username, or a t.me link (e.g. https://t.me/groupname). Note: private invite links (t.me/+hash) cannot be used — use the numeric chat ID instead.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="telegram_test_group_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message to send…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="telegram_test_group_send_btn" class="button button-secondary">
+								<?php esc_html_e( 'Send Test Message', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="telegram_test_group_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Send a direct message to a Telegram group, supergroup, or channel to verify outgoing message delivery. Requires the connection to be saved with a valid bot token. The bot must be a member of the group/channel.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="telegram_test_group_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -1773,6 +1919,98 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Web Login', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_enable_web_login" id="telegram_enable_web_login" value="1" <?php checked( $is_edit && ! empty( $connection['enable_web_login'] ) ); ?>>
+							<?php esc_html_e( 'Enable Telegram Web Login', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: link to Telegram Web Login docs */
+								esc_html__( 'Allow users to log in to your website using their Telegram account. Uses the %s. Requires you to set your site\'s domain in @BotFather with /setdomain.', 'mcp-ai-wpoos-pro' ),
+								'<a href="https://core.telegram.org/widgets/login" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Telegram Login Widget', 'mcp-ai-wpoos-pro' ) . '</a>'
+							);
+							?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_web_login_redirect_url"><?php esc_html_e( 'Web Login Callback URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" readonly="readonly" value="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-login' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description"><?php esc_html_e( 'Set this URL as the auth-url in the Login Widget (see the shortcode below). Telegram will redirect users here after authentication.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_web_login_redirect_url"><?php esc_html_e( 'After-Login Redirect URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="telegram_web_login_redirect_url" id="telegram_web_login_redirect_url" class="large-text" value="<?php echo $is_edit && isset( $connection['web_login_redirect_url'] ) ? esc_url( $connection['web_login_redirect_url'] ) : ''; ?>" placeholder="<?php echo esc_attr( home_url( '/' ) ); ?>">
+						<p class="description"><?php esc_html_e( 'Where to redirect the user after a successful Web Login. Leave blank to redirect to the home page. Use the wp_mcp_ai_telegram_login_redirect_url filter for dynamic redirects.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Login Widget Shortcode', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<input type="text" readonly="readonly" value="[mcp_ai_telegram_login]" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<?php esc_html_e( 'Add this shortcode to any page or widget to display the Telegram Login button. Optional attributes:', 'mcp-ai-wpoos-pro' ); ?>
+							<code>bot_username="mybot"</code>,
+							<code>button_size="large|medium|small"</code>,
+							<code>corner_radius="10"</code>,
+							<code>request_access="write"</code>,
+							<code>show_avatar="1|0"</code>,
+							<code>lang="en"</code>.
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'WordPress Account Creation', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						// Default to enabled for new connections and for existing connections
+						// that pre-date this setting (backwards compatibility).
+						$tg_auto_create_checked = ! $is_edit
+							|| ! array_key_exists( 'auto_create_wp_user', $connection )
+							|| ! empty( $connection['auto_create_wp_user'] );
+						?>
+						<label>
+							<input type="checkbox" name="telegram_auto_create_wp_user" id="telegram_auto_create_wp_user" value="1" <?php checked( $tg_auto_create_checked ); ?>>
+							<?php esc_html_e( 'Automatically create a WordPress account for new Telegram users', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, a WordPress account is created automatically the first time a user signs in via the Telegram Login Widget or Telegram Mini App, using the role configured below. Disable to require manual account linking.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_new_user_role"><?php esc_html_e( 'New User Role', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_tg_role    = $is_edit && ! empty( $connection['new_user_role'] ) ? $connection['new_user_role'] : 'subscriber';
+						$wp_roles_obj     = wp_roles();
+						$all_role_names   = $wp_roles_obj->get_names();
+						?>
+						<select name="telegram_new_user_role" id="telegram_new_user_role">
+							<?php foreach ( $all_role_names as $role_key => $role_name ) : ?>
+								<option value="<?php echo esc_attr( $role_key ); ?>" <?php selected( $saved_tg_role, $role_key ); ?>><?php echo esc_html( translate_user_role( $role_name ) ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'WordPress role assigned to newly-created Telegram users. "Subscriber" is recommended for public-facing bots. Raise this for internal/team bots only.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Bot Creation Guide', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<details>
@@ -1785,6 +2023,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'Copy the bot token that BotFather sends (format: 1234567890:ABCdef…) and paste it into the Bot Token field above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Optionally, use /setdescription, /setabouttext, and /setuserpic to customize your bot.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Save this connection, then click Set Webhook to register the webhook URL with Telegram automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'To enable Web Login: tick "Enable Telegram Web Login" above and send /setdomain to @BotFather to authorize your site\'s domain.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin-top: 8px; font-size: 13px;">
 								<?php
@@ -2237,6 +2476,86 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row">
+						<label for="slack_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$sl_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$sl_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'slack' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="slack_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $sl_assistants as $sl_assistant ) :
+								$sl_is_selected = in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>" <?php echo esc_attr( $sl_is_selected ); ?>>
+									<?php echo esc_html( $sl_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Slack workspace.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="slack_require_mention" id="slack_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'slack' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Slack channels where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="slack_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Bot Token', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="slack_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Calls the Slack API (auth.test) to verify your bot token. Works before saving.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="slack_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="slack_test_auto_reply_channel" class="regular-text" placeholder="<?php esc_attr_e( '#general or C0123456789 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Channel name or ID (optional — if provided, the AI reply will be sent to this Slack channel)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="slack_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="slack_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="slack_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="slack_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for Discord -->
 				<tr class="discord-only-field" style="display: none;">
 					<th scope="row">
@@ -2282,28 +2601,132 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row">
+						<label for="discord_public_key"><?php esc_html_e( 'Public Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="discord_public_key" id="discord_public_key" class="regular-text" value="<?php echo $is_edit && isset( $connection['public_key'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['public_key'] ) : ''; ?>" autocomplete="off" placeholder="<?php esc_attr_e( 'Ed25519 public key from Discord Developer Portal', 'mcp-ai-wpoos-pro' ); ?>">
+						<p class="description"><?php esc_html_e( 'Ed25519 public key from the Discord Developer Portal. Used to verify the signature of every incoming interaction request. Found under General Information → Public Key.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row">
+						<label for="discord_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$ds_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$ds_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="discord_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $ds_assistants as $ds_assistant ) :
+								$ds_is_selected = in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>" <?php echo esc_attr( $ds_is_selected ); ?>>
+									<?php echo esc_html( $ds_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Discord bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="discord_require_mention" id="discord_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'discord' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Discord servers where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="discord_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Bot Token', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="discord_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Calls the Discord API (users/@me) to verify your bot token. Works before saving.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="discord_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="discord-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="discord_test_auto_reply_channel" class="regular-text" placeholder="<?php esc_attr_e( '123456789012345678 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Channel ID (optional — if provided, the AI reply will be sent to this Discord channel)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="discord_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="discord_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="discord_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="discord_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
 				<!-- Type-specific fields for Microsoft Teams -->
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="teams_app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="teams_app_id"><?php esc_html_e( 'App ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="teams_app_id" id="teams_app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your Microsoft Teams application ID (from Azure AD).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: Your Azure AD application ID (for reference only). Not required for outgoing webhook connections.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="teams_app_password"><?php esc_html_e( 'App Password', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+						<label for="teams_security_token"><?php esc_html_e( 'Security Token (Signing Secret)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="teams_app_password" id="teams_app_password" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing app password.', 'mcp-ai-wpoos-pro' ); ?></p>
-						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Microsoft Teams app password/secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['signing_secret'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Security token is saved. Leave blank to keep the existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
+						<input type="password" name="teams_security_token" id="teams_security_token" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( ! $is_edit || empty( $connection['signing_secret'] ) ) : ?>
+							<p class="description"><?php esc_html_e( 'The HMAC-SHA256 security token shown when creating the outgoing webhook in the Microsoft Teams Admin Center. Used to verify that requests genuinely originate from Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_graph_token"><?php esc_html_e( 'Microsoft Graph Access Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['token'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Access token is saved. Leave blank to keep the existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="teams_graph_token" id="teams_graph_token" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'Optional: Microsoft Graph API Bearer token used to post AI replies directly to Teams channels via the Graph API. Obtain via Azure AD application credentials or admin consent. Leave blank if you only need incoming message processing.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -2319,11 +2742,87 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
-						<label><?php esc_html_e( 'Messaging Endpoint', 'mcp-ai-wpoos-pro' ); ?></label>
+						<label><?php esc_html_e( 'Outgoing Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Configure as Messaging Endpoint in Azure Bot Channels Registration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Register this URL as the Callback URL when creating an Outgoing Webhook in the Microsoft Teams Admin Center (under Apps → Manage apps → Outgoing webhooks).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="teams_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$ms_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$ms_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="teams_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $ms_assistants as $ms_assistant ) :
+								$ms_is_selected = in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>" <?php echo esc_attr( $ms_is_selected ); ?>>
+									<?php echo esc_html( $ms_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages sent to this Teams bot.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="teams_require_mention" id="teams_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'microsoft_teams' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful for shared Teams channels where the bot should stay quiet unless addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="teams_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Graph Token', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="teams_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Verifies the Microsoft Graph Access Token by calling the Graph API. Requires a valid Graph token to be saved.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="teams_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="teams_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="teams_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="teams_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="teams_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -2456,9 +2955,77 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</ol>
 							<p style="margin: 0; font-size: 13px;">
 								<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
-								<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+								<code>pages_messaging</code>
 							</p>
 						</div>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row">
+						<label for="messenger_assigned_assistant_ids"><?php esc_html_e( 'Assigned Assistants', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$msng_assistants = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$msng_saved_assistant_ids = $is_edit && isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) && 'facebook_messenger' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? array_map( 'absint', $connection['assigned_assistant_ids'] )
+							: array();
+						?>
+						<select name="assigned_assistant_ids[]" id="messenger_assigned_assistant_ids" multiple="multiple" class="regular-text" size="5" style="min-height: 80px;">
+							<?php foreach ( $msng_assistants as $msng_assistant ) :
+								$msng_is_selected = in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ? 'selected="selected"' : '';
+								?>
+								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>" <?php echo esc_attr( $msng_is_selected ); ?>>
+									<?php echo esc_html( $msng_assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Hold Ctrl/Cmd to select multiple assistants. The first selected assistant will automatically reply to messages received on this Facebook Page.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Require Mention', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="messenger_require_mention" id="messenger_require_mention" value="1" <?php checked( $is_edit && ! empty( $connection['require_mention'] ) && 'facebook_messenger' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Only reply when the assistant is @mentioned', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, the bot only auto-replies to messages that explicitly @mention one of its assigned assistants. Useful when the Page also handles manual replies and the bot should only intervene when addressed directly.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="facebook_messenger-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="messenger_test_auto_reply_recipient_id" class="regular-text" placeholder="<?php esc_attr_e( 'PSID e.g. 123456789 (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Recipient PSID (optional — if provided, the AI reply will be sent via Messenger)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="messenger_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="messenger_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="messenger_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="messenger_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -2498,7 +3065,51 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<!-- Type-specific fields for Google Chat -->
+
+				<!-- Connection Method Selector -->
 				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Connection Method', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						// Determine the previously saved method (for edit mode).
+						$gc_saved_method = 'service_account'; // default.
+						if ( $is_edit && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+							if ( ! empty( $connection['connection_method'] ) ) {
+								// Use the explicitly saved method.
+								$gc_saved_method = $connection['connection_method'];
+							} elseif ( ! empty( $connection['reply_webhook_url'] ) && empty( $connection['api_key'] ) && empty( $connection['client_id'] ) ) {
+								// Legacy fallback: infer from populated fields.
+								$gc_saved_method = 'webhook';
+							} elseif ( ! empty( $connection['client_id'] ) || ! empty( $connection['refresh_token'] ) ) {
+								$gc_saved_method = 'oauth';
+							}
+						}
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Connection Method', 'mcp-ai-wpoos-pro' ); ?></legend>
+							<label style="display: inline-flex; align-items: center; margin-right: 20px; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_service_account" value="service_account" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'service_account' ); ?>>
+								<strong><?php esc_html_e( 'Service Account', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(recommended — full bot API access)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+							<label style="display: inline-flex; align-items: center; margin-right: 20px; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_oauth" value="oauth" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'oauth' ); ?>>
+								<strong><?php esc_html_e( 'OAuth 2.0', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(1-click user authorization)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+							<label style="display: inline-flex; align-items: center; cursor: pointer;">
+								<input type="radio" name="google_chat_method" id="gc_method_webhook" value="webhook" style="margin-right: 6px;" <?php checked( $gc_saved_method, 'webhook' ); ?>>
+								<strong><?php esc_html_e( 'Incoming Webhook', 'mcp-ai-wpoos-pro' ); ?></strong>&nbsp;<span style="font-weight:normal; color:#555;"><?php esc_html_e( '(simplest — outbound-only to one space)', 'mcp-ai-wpoos-pro' ); ?></span>
+							</label>
+						</fieldset>
+						<p class="description" style="margin-top: 8px;">
+							<?php esc_html_e( 'Choose how NV oOS authenticates with Google Chat. Service Account is best for bots that need to read and write across multiple spaces. OAuth 2.0 grants user-level access. Incoming Webhook is the simplest option when you only need to post outbound messages to a single space.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<!-- Service Account fields -->
+				<tr class="google_chat-only-field gc-method-sa gc-method-oauth" style="display: none;">
 					<th scope="row">
 						<label for="google_chat_service_account_key"><?php esc_html_e( 'Service Account JSON Key', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2662,6 +3273,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row">
+						<label for="google_chat_disable_oidc_verification"><?php esc_html_e( 'Disable OIDC Verification', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="google_chat_disable_oidc_verification" id="google_chat_disable_oidc_verification" value="1" <?php checked( $is_edit && isset( $connection['disable_oidc_verification'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) && ! empty( $connection['disable_oidc_verification'] ) ); ?>>
+							<?php esc_html_e( 'Accept incoming webhook events without validating the Google OIDC Bearer token.', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'Enable this only if Google Chat messages are not being received and you suspect the Authorization header is being stripped by your server, a proxy, or a WAF (e.g., Cloudflare). This mirrors the behavior of the Telegram integration when no secret token is configured. Not recommended for production — enable the Audience URL above instead for secure verification.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
 						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
@@ -2674,6 +3300,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all connections):', 'mcp-ai-wpoos-pro' ); ?></p>
 							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 							<p class="description"><?php esc_html_e( 'Use the generic URL only if all connections share the same Google Cloud project. The channel-specific URL above is preferred.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<div style="background: #fff8e1; border-left: 4px solid #f9a825; padding: 10px 12px; margin-top: 12px;">
+								<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;">
+									<span class="dashicons dashicons-shield" style="color: #f9a825;"></span>
+									<?php esc_html_e( 'Cloudflare / Proxy Fallback URL:', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+								<input type="text" readonly="readonly" value="<?php echo esc_url( add_query_arg( array( 'action' => 'wp_mcp_ai_google_chat_webhook', 'connection_id' => $connection['id'] ), admin_url( 'admin-ajax.php' ) ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 4px;">
+								<p class="description"><?php esc_html_e( 'Use this URL instead if Cloudflare, a WAF, or another proxy is blocking the standard /wp-json/ endpoint above. This alternative route bypasses REST API restrictions while applying the same Google OIDC token security.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
 						<?php else : ?>
 							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for use in the Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2694,6 +3328,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</div>
 						<div id="wp-mcp-ai-gc-fetch-spaces-result" style="margin-top:8px;"></div>
 						<p class="description"><?php esc_html_e( 'Enter a Google Chat space resource name (e.g., spaces/AAAAxxxxxx) to route messages from that specific space to this connection\'s assistants. Leave blank to handle all spaces. Click \'Fetch Spaces\' to retrieve your bot\'s spaces automatically using the Access Token above.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_chat_reply_webhook_url"><?php esc_html_e( 'Incoming Webhook URL (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="url" name="google_chat_reply_webhook_url" id="google_chat_reply_webhook_url" class="large-text" value="<?php echo $is_edit && isset( $connection['reply_webhook_url'] ) && 'google_chat' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['reply_webhook_url'] ) : ''; ?>" placeholder="https://chat.googleapis.com/v1/spaces/AAAAxxxxxx/messages?key=…&amp;token=…" autocomplete="off">
+						<p class="description">
+							<?php esc_html_e( 'Paste the incoming webhook URL for the Google Chat space (created in Space Settings → Apps &amp; integrations → Manage webhooks). When provided, the AI assistant will use this URL to reply without requiring OAuth or Service Account credentials. This is the simplest setup option for bots responding in a single space.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php
+							printf(
+								'<a href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+								esc_url( 'https://developers.google.com/workspace/chat/quickstart/webhooks' ),
+								esc_html__( 'Learn more about Google Chat incoming webhooks', 'mcp-ai-wpoos-pro' )
+							);
+							?>
+						</p>
 					</td>
 				</tr>
 
@@ -2813,6 +3466,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<li><?php esc_html_e( 'In the Google Chat API → Configuration, set the bot endpoint URL to the Webhook URL shown above.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Copy the Webhook URL into the Audience URL field — Google uses this URL as the OIDC token audience to authenticate incoming requests.', 'mcp-ai-wpoos-pro' ); ?></li>
 								<li><?php esc_html_e( 'Click \'Fetch Spaces\' to retrieve your bot\'s spaces, then assign Assistants, save, and enable the connection.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+							<p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 600;"><?php esc_html_e( 'Option C: Incoming Webhook URL (simplest — single-space bots)', 'mcp-ai-wpoos-pro' ); ?></p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'In the Google Chat space, click the space name → Apps &amp; integrations → Manage webhooks → Add webhook.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Copy the generated webhook URL (starts with https://chat.googleapis.com/v1/spaces/…) and paste it into the Incoming Webhook URL field above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'In Google Cloud Console, configure the bot endpoint URL to the Webhook URL shown above (still required so Google Chat can send events to the assistant).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign Assistants, save, and enable the connection. No OAuth credentials are needed for this option.', 'mcp-ai-wpoos-pro' ); ?></li>
 							</ol>
 							<p style="margin: 0; font-size: 13px; color: #2271b1;">
 								ℹ <strong><?php esc_html_e( 'OAuth scopes:', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -2966,7 +3626,362 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								ℹ <strong><?php esc_html_e( 'Signature validation:', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<?php esc_html_e( 'Twitter signs each POST event with HMAC-SHA256 (base64-encoded) using your Consumer Secret in the X-Twitter-Webhooks-Signature header. The API Secret Key above enables automatic signature verification on every incoming event.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
+							</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Apple Messages for Business (iMessage) -->
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_msp_api_url"><?php esc_html_e( 'MSP API URL', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="url" name="apple_msp_api_url" id="apple_msp_api_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['url'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['url'] ) : ''; ?>" placeholder="https://api.your-msp.com/v1/apple/messages" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Base URL of your approved Messaging Service Provider (MSP) REST API endpoint. Each MSP (e.g. Infobip, Zendesk, CM.com) provides its own URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_msp_api_key"><?php esc_html_e( 'MSP API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'API key is saved. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="apple_msp_api_key" id="apple_msp_api_key" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'API key or bearer token issued by your MSP for authenticating Apple Messages for Business API requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_webhook_secret"><?php esc_html_e( 'Webhook Signing Secret (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_secret'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Signing secret is saved. Leave blank to keep the existing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="apple_webhook_secret" id="apple_webhook_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'HMAC-SHA256 signing secret provided by your MSP for validating incoming webhook events. Leave blank to skip signature verification.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label for="apple_business_id"><?php esc_html_e( 'Apple Business ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="apple_business_id" id="apple_business_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['business_id'] ) && 'apple_messages' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['business_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Apple Messages for Business identifier issued during Apple Business Registration. Required when sending outbound messages via the AI tools.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Channel-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;"><?php esc_html_e( 'Register this URL with your MSP as the webhook endpoint to receive Apple Messages for Business events.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all connections):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use the channel-specific URL above when possible so each MSP configuration routes to its own connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/apple-messages' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL for your MSP configuration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="apple_messages-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #555555; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Register your business at register.apple.com/messages to obtain an Apple Business ID.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Choose an approved Messaging Service Provider (MSP) such as Infobip, Zendesk, CM.com, or LivePerson and obtain your MSP API credentials.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter the MSP API URL, API Key, and optional Webhook Signing Secret above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection to generate a channel-specific Webhook URL, then register it with your MSP.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to this connection so incoming iMessages are answered automatically.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
 						</div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Office 365 (Outlook / OneDrive) -->
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_client_id"><?php esc_html_e( 'Application (Client) ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="office365_client_id" id="office365_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Azure AD application (client) ID. Can be the same as Microsoft Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_client_secret"><?php esc_html_e( 'Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['client_secret'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'Client secret is saved. Leave blank to keep the existing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="office365_client_secret" id="office365_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'Your Azure AD client secret for authenticating Microsoft Graph API requests.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label for="office365_tenant_id"><?php esc_html_e( 'Tenant ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="office365_tenant_id" id="office365_tenant_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['tenant_id'] ) && 'office365' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_attr( $connection['tenant_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Azure AD tenant ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$o365_saved_services = $is_edit && isset( $connection['enabled_services'] ) && is_array( $connection['enabled_services'] ) ? $connection['enabled_services'] : array( 'outlook_mail', 'onedrive' );
+						$o365_services       = array(
+							'outlook_mail' => __( 'Outlook Mail — send and read emails (Mail.ReadWrite, Mail.Send)', 'mcp-ai-wpoos-pro' ),
+							'onedrive'     => __( 'OneDrive — list, read, and upload files (Files.ReadWrite.All)', 'mcp-ai-wpoos-pro' ),
+						);
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></span></legend>
+							<?php foreach ( $o365_services as $service_key => $service_label ) : ?>
+								<label style="display: block; margin-bottom: 6px;">
+									<input type="checkbox" name="office365_enabled_services[]" value="<?php echo esc_attr( $service_key ); ?>" <?php checked( in_array( $service_key, $o365_saved_services, true ) ); ?>>
+									<?php echo esc_html( $service_label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Select which Office 365 services to enable for this connection. Only the selected services will have their AI tools activated. Each service requires the listed Microsoft Graph API permissions.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Outlook Mail service settings -->
+				<tr class="office365-only-field office365-service-outlook_mail" style="display: none;">
+					<th scope="row">
+						<label for="outlook_mailbox_folder"><?php esc_html_e( 'Outlook — Mailbox Folder', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="outlook_mailbox_folder" id="outlook_mailbox_folder" class="regular-text" value="<?php echo $is_edit && isset( $connection['outlook_mailbox_folder'] ) ? esc_attr( $connection['outlook_mailbox_folder'] ) : ''; ?>" placeholder="inbox" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default mailbox folder for reading messages (e.g. inbox, sentitems, drafts). Leave blank to default to inbox.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- OneDrive service settings -->
+				<tr class="office365-only-field office365-service-onedrive" style="display: none;">
+					<th scope="row">
+						<label for="onedrive_folder_path"><?php esc_html_e( 'OneDrive — Default Folder Path', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="onedrive_folder_path" id="onedrive_folder_path" class="regular-text" value="<?php echo $is_edit && isset( $connection['onedrive_folder_path'] ) ? esc_attr( $connection['onedrive_folder_path'] ) : ''; ?>" placeholder="Documents/Projects" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder path for file operations (e.g. Documents/Projects). Leave blank for the root of OneDrive.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Register this URL with Microsoft Graph subscriptions to receive new mail notifications.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #d83b01; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Register an application in the Azure Portal (or reuse the one from Microsoft Teams).', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Add Microsoft Graph API permissions for each enabled service above and grant admin consent.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter your Application (Client) ID, Client Secret, and Tenant ID above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection, then configure a Microsoft Graph subscription with the webhook URL above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to auto-reply to incoming Outlook emails.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="office365_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test Office 365 Connection', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="office365_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Calls the Microsoft Graph API to verify your credentials and retrieve the current user profile. Works before saving if credentials are entered above.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="office365_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="office365-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 1; min-width: 200px;">
+								<input type="text" id="office365_test_auto_reply_recipient" class="regular-text" placeholder="<?php esc_attr_e( 'user@example.com (optional)', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;">
+								<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Recipient email (optional — if provided, the AI reply will be sent via Outlook)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="office365_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="office365_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="office365_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming email and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="office365_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for iCloud Drive -->
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label for="icloud_gateway_url"><?php esc_html_e( 'Gateway API URL', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="url" name="icloud_gateway_url" id="icloud_gateway_url" class="regular-text" value="<?php echo $is_edit && isset( $connection['gateway_api_url'] ) && 'icloud' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ? esc_url( $connection['gateway_api_url'] ) : ''; ?>" placeholder="https://gateway.example.com/api/icloud" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Base URL of your iCloud Drive gateway/proxy service endpoint.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label for="icloud_api_key"><?php esc_html_e( 'Gateway API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'icloud' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+							<p class="description" style="margin-bottom: 6px;"><?php esc_html_e( 'API key is saved. Leave blank to keep the existing key.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<input type="password" name="icloud_api_key" id="icloud_api_key" class="regular-text" value="" autocomplete="new-password">
+						<p class="description"><?php esc_html_e( 'API key for authenticating with the iCloud Drive gateway service.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$icloud_saved_services = $is_edit && isset( $connection['enabled_services'] ) && is_array( $connection['enabled_services'] ) ? $connection['enabled_services'] : array( 'icloud_drive' );
+						$icloud_services       = array(
+							'icloud_drive' => __( 'iCloud Drive — list, read, and upload files', 'mcp-ai-wpoos-pro' ),
+						);
+						?>
+						<fieldset>
+							<legend class="screen-reader-text"><span><?php esc_html_e( 'Enabled Services', 'mcp-ai-wpoos-pro' ); ?></span></legend>
+							<?php foreach ( $icloud_services as $service_key => $service_label ) : ?>
+								<label style="display: block; margin-bottom: 6px;">
+									<input type="checkbox" name="icloud_enabled_services[]" value="<?php echo esc_attr( $service_key ); ?>" <?php checked( in_array( $service_key, $icloud_saved_services, true ) ); ?>>
+									<?php echo esc_html( $service_label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Select which iCloud services to enable for this connection. Only the selected services will have their AI tools activated.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- iCloud Drive service settings -->
+				<tr class="icloud-only-field icloud-service-icloud_drive" style="display: none;">
+					<th scope="row">
+						<label for="icloud_default_folder_id"><?php esc_html_e( 'iCloud Drive — Default Folder ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="icloud_default_folder_id" id="icloud_default_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['icloud_default_folder_id'] ) ? esc_attr( $connection['icloud_default_folder_id'] ) : ''; ?>" placeholder="" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Default folder ID for file operations. Leave blank to list files from the root of iCloud Drive.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Register this URL with your iCloud gateway to receive file change notifications.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a channel-specific webhook URL.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row"></th>
+					<td>
+						<div style="background: #f0f6fc; border-left: 4px solid #3693f5; padding: 12px; margin-top: 10px;">
+							<p style="margin: 0 0 8px 0; font-weight: 600;">
+								<?php esc_html_e( 'Quick Setup Guide', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<ol style="margin: 0 0 8px 20px; font-size: 13px;">
+								<li><?php esc_html_e( 'Deploy or configure your iCloud Drive gateway/proxy service.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Enter the Gateway API URL and API Key above.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Save this connection to get a channel-specific webhook URL for file change notifications.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Assign AI Assistants to auto-reply on file events.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="icloud_test_connection_btn" class="button button-secondary">
+							<?php esc_html_e( 'Test iCloud Connection', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="icloud_test_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Calls the iCloud gateway API to verify your credentials and connectivity. Works before saving if credentials are entered above.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="icloud_test_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="icloud-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;">
+							<div style="flex: 2; min-width: 250px;">
+								<textarea id="icloud_test_auto_reply_msg" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Enter a test message…', 'mcp-ai-wpoos-pro' ); ?>" style="width: 100%;"></textarea>
+							</div>
+						</div>
+						<div style="margin-top: 8px;">
+							<button type="button" id="icloud_test_auto_reply_btn" class="button button-secondary">
+								<?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="icloud_test_auto_reply_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming file event and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="icloud_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -3080,6 +4095,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var meshPeerFields = document.querySelectorAll('.mesh_peer-only-field');
 			var googleChatFields = document.querySelectorAll('.google_chat-only-field');
 			var twitterFields = document.querySelectorAll('.twitter-only-field');
+			var appleMessagesFields = document.querySelectorAll('.apple_messages-only-field');
+			var office365Fields = document.querySelectorAll('.office365-only-field');
+			var icloudFields = document.querySelectorAll('.icloud-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -3142,6 +4160,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			twitterFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			appleMessagesFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			office365Fields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			icloudFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -3323,7 +4350,55 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				authTypeSelect.value = 'none';
+			} else if (connectionType === 'apple_messages') {
+				appleMessagesFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Apple Messages for Business — MSP API URL is entered by the user
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'office365') {
+				office365Fields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Office 365 uses Microsoft Graph API
+				urlField.value = 'https://graph.microsoft.com/v1.0';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('office365');
+			} else if (connectionType === 'icloud') {
+				icloudFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// iCloud Drive — gateway API URL is entered by the user
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'none';
+				authTypeSelect.value = 'none';
+				// Show/hide per-service settings based on checkbox state
+				toggleServiceSettings('icloud');
 			}
+		}
+
+		/**
+		 * Show/hide per-service settings rows based on service checkbox state.
+		 *
+		 * Rows carry a CSS class like "office365-service-outlook_mail" or "icloud-service-icloud_drive".
+		 * When the corresponding service checkbox is checked the row is visible; otherwise hidden.
+		 */
+		function toggleServiceSettings(platform) {
+			var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+			checkboxes.forEach(function(cb) {
+				var rows = document.querySelectorAll('.' + platform + '-service-' + cb.value);
+				rows.forEach(function(row) {
+					row.style.display = cb.checked ? 'table-row' : 'none';
+				});
+			});
 		}
 
 		// Initialize on page load
@@ -3337,6 +4412,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// Add event listener for connection type changes
 			document.getElementById('connection_type').addEventListener('change', function() {
 				toggleConnectionTypeFields(this.value);
+			});
+
+			// Office 365 / iCloud service checkboxes: toggle per-service settings on change.
+			['office365', 'icloud'].forEach(function(platform) {
+				var checkboxes = document.querySelectorAll('input[name="' + platform + '_enabled_services[]"]');
+				checkboxes.forEach(function(cb) {
+					cb.addEventListener('change', function() {
+						toggleServiceSettings(platform);
+					});
+				});
 			});
 
 			// WhatsApp Cloud API version change: update the URL field accordingly
@@ -3530,7 +4615,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #229ED9;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
 								}
 								if (d && d.sent) {
-									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test chat via Telegram.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the test chat/group/channel via Telegram.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
 								} else if (chatId && d && !d.sent) {
 									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
 									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Telegram failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
@@ -3547,6 +4632,95 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (tgAutoReplyResult) {
 								tgAutoReplyResult.style.display = 'block';
 								tgAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Telegram: Test Send to Group/Channel button.
+			var tgGroupSendBtn     = document.getElementById('telegram_test_group_send_btn');
+			var tgGroupSendSpinner = document.getElementById('telegram_test_group_spinner');
+			var tgGroupSendResult  = document.getElementById('telegram_test_group_result');
+			if (tgGroupSendBtn) {
+				tgGroupSendBtn.addEventListener('click', function() {
+					var chatIdEl = document.getElementById('telegram_test_group_chat_id');
+					var msgEl    = document.getElementById('telegram_test_group_msg');
+					var chatId   = chatIdEl ? chatIdEl.value.trim() : '';
+					var msg      = msgEl    ? msgEl.value.trim()    : '';
+
+					if (!chatId) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a group/channel chat ID, @username, or t.me link.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					// Parse t.me links: extract @username from public links.
+					// Private invite links (t.me/+hash) cannot be resolved to a chat ID.
+					var tmeMatch = chatId.match(/^https?:\/\/t\.me\/\+/);
+					if (tmeMatch) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-warning inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Private invite links (t.me/+…) cannot be used to send messages via the API. Please use the numeric chat ID (e.g. -1001234567890) or a public @username instead. You can find the chat ID in the plugin logs after the bot receives a message in the group.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+					var tmePublicMatch = chatId.match(/^https?:\/\/t\.me\/([a-zA-Z][a-zA-Z0-9_]{4,})$/);
+					if (tmePublicMatch) {
+						chatId = '@' + tmePublicMatch[1];
+					}
+
+					if (!msg) {
+						if (tgGroupSendResult) {
+							tgGroupSendResult.style.display = 'block';
+							tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					tgGroupSendBtn.disabled = true;
+					if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'inline-block'; }
+					if (tgGroupSendResult)  { tgGroupSendResult.style.display = 'none'; tgGroupSendResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_telegram_send_group');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_telegram_send_group' ) ); ?>);
+					data.append('test_chat_id', chatId);
+					data.append('test_message', msg);
+					var connIdEl2 = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl2) { data.append('connection_id', connIdEl2.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							tgGroupSendBtn.disabled = false;
+							if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'none'; }
+							if (!tgGroupSendResult) { return; }
+							tgGroupSendResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Message sent successfully!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.chat_title) {
+									html += '<p style="margin:6px 0 0;">' + <?php echo wp_json_encode( __( 'Delivered to:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <strong>' + d.chat_title.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</strong>';
+									if (d.chat_type) { html += ' (' + d.chat_type + ')'; }
+									html += '</p>';
+								}
+								html += '</div>';
+								tgGroupSendResult.innerHTML = html;
+							} else {
+								tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to send message.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							tgGroupSendBtn.disabled = false;
+							if (tgGroupSendSpinner) { tgGroupSendSpinner.style.display = 'none'; }
+							if (tgGroupSendResult) {
+								tgGroupSendResult.style.display = 'block';
+								tgGroupSendResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -4483,7 +5657,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						.then(function(result) {
 							msngGenerateTokenBtn.disabled = false;
 							if (result.success) {
-								var tokenInput = document.getElementById('messenger_page_access_token');
+								var tokenInput  = document.getElementById('messenger_page_access_token');
+
 								tokenInput.value = result.data.access_token;
 								tokenInput.type = 'text';
 								if (msngTokenToggleBtn) {
@@ -4491,7 +5666,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									msngTokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
 								}
 								statusEl.style.color = '#00a32a';
-								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated.', 'mcp-ai-wpoos-pro' ) ); ?>;
+								statusEl.textContent = <?php echo wp_json_encode( __( '✓ App Access Token generated and populated. Please save the connection to apply the new token.', 'mcp-ai-wpoos-pro' ) ); ?>;
 							} else {
 								statusEl.style.color = '#d63638';
 								statusEl.textContent = result.data || <?php echo wp_json_encode( __( 'Failed to generate token.', 'mcp-ai-wpoos-pro' ) ); ?>;
@@ -4511,11 +5686,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var msngTestResult  = document.getElementById('messenger_test_result');
 			if (msngTestBtn) {
 				msngTestBtn.addEventListener('click', function() {
-					var accessToken = document.getElementById('messenger_page_access_token').value.trim();
-					var pageId      = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
-					var apiVersion  = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
+					var accessToken  = document.getElementById('messenger_page_access_token').value.trim();
+					var pageId       = document.getElementById('messenger_page_id') ? document.getElementById('messenger_page_id').value.trim() : '';
+					var apiVersion   = document.getElementById('messenger_graph_api_version') ? document.getElementById('messenger_graph_api_version').value : 'v21.0';
+					var connIdField  = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdField ? connIdField.value : '';
 
-					if (!accessToken) {
+					// Allow empty field when editing — the server will use the saved token.
+					if (!accessToken && !connectionId) {
 						if (msngTestResult) {
 							msngTestResult.style.display = 'block';
 							msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Page Access Token first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
@@ -4531,6 +5709,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('action', 'wp_mcp_ai_test_messenger_live');
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_live' ) ); ?>);
 					data.append('access_token', accessToken);
+					if (connectionId) { data.append('connection_id', connectionId); }
 					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
 					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 					data.append('page_id', pageId);
@@ -4576,6 +5755,720 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (msngTestResult) {
 								msngTestResult.style.display = 'block';
 								msngTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Messenger: Test Auto-Reply button.
+			var msngAutoReplyBtn     = document.getElementById('messenger_test_auto_reply_btn');
+			var msngAutoReplySpinner = document.getElementById('messenger_test_auto_reply_spinner');
+			var msngAutoReplyResult  = document.getElementById('messenger_test_auto_reply_result');
+			if (msngAutoReplyBtn) {
+				msngAutoReplyBtn.addEventListener('click', function() {
+					var msgEl         = document.getElementById('messenger_test_auto_reply_msg');
+					var recipientIdEl = document.getElementById('messenger_test_auto_reply_recipient_id');
+					var msg           = msgEl         ? msgEl.value.trim()         : '';
+					var recipientId   = recipientIdEl ? recipientIdEl.value.trim() : '';
+
+					if (!msg) {
+						if (msngAutoReplyResult) {
+							msngAutoReplyResult.style.display = 'block';
+							msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					msngAutoReplyBtn.disabled = true;
+					if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'inline-block'; }
+					if (msngAutoReplyResult)  { msngAutoReplyResult.style.display = 'none'; msngAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_messenger_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_messenger_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (recipientId) { data.append('test_recipient_id', recipientId); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							msngAutoReplyBtn.disabled = false;
+							if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'none'; }
+							if (!msngAutoReplyResult) { return; }
+							msngAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #0084ff;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the recipient via Messenger.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+								} else if (recipientId && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Messenger failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+								}
+								html += '</div>';
+								msngAutoReplyResult.innerHTML = html;
+							} else {
+								msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							msngAutoReplyBtn.disabled = false;
+							if (msngAutoReplySpinner) { msngAutoReplySpinner.style.display = 'none'; }
+							if (msngAutoReplyResult) {
+								msngAutoReplyResult.style.display = 'block';
+								msngAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Office 365: inline Test Connection button.
+			var o365TestBtn     = document.getElementById('office365_test_connection_btn');
+			var o365TestSpinner = document.getElementById('office365_test_spinner');
+			var o365TestResult  = document.getElementById('office365_test_result');
+			if (o365TestBtn) {
+				o365TestBtn.addEventListener('click', function() {
+					var clientId     = document.getElementById('office365_client_id').value.trim();
+					var clientSecret = document.getElementById('office365_client_secret').value.trim();
+					var tenantId     = document.getElementById('office365_tenant_id').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!clientId && !connectionId) {
+						if (o365TestResult) {
+							o365TestResult.style.display = 'block';
+							o365TestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Application (Client) ID first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					o365TestBtn.disabled = true;
+					if (o365TestSpinner) { o365TestSpinner.style.display = 'inline-block'; }
+					if (o365TestResult)  { o365TestResult.style.display = 'none'; o365TestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_office365_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_office365_live' ) ); ?>);
+					if (clientId)     { data.append('client_id', clientId); }
+					if (clientSecret) { data.append('client_secret', clientSecret); }
+					if (tenantId)     { data.append('tenant_id', tenantId); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							o365TestBtn.disabled = false;
+							if (o365TestSpinner) { o365TestSpinner.style.display = 'none'; }
+							if (!o365TestResult) { return; }
+							o365TestResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.display_name) { items.push(<?php echo wp_json_encode( __( 'Display Name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.display_name); }
+									if (d.mail)         { items.push(<?php echo wp_json_encode( __( 'Email:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.mail); }
+									if (d.tenant_id)    { items.push(<?php echo wp_json_encode( __( 'Tenant:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.tenant_id); }
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.warning) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'; }
+								}
+								html += '</div>';
+								o365TestResult.innerHTML = html;
+							} else {
+								o365TestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							o365TestBtn.disabled = false;
+							if (o365TestSpinner) { o365TestSpinner.style.display = 'none'; }
+							if (o365TestResult) {
+								o365TestResult.style.display = 'block';
+								o365TestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Office 365: Test Auto-Reply button.
+			var o365AutoReplyBtn     = document.getElementById('office365_test_auto_reply_btn');
+			var o365AutoReplySpinner = document.getElementById('office365_test_auto_reply_spinner');
+			var o365AutoReplyResult  = document.getElementById('office365_test_auto_reply_result');
+			if (o365AutoReplyBtn) {
+				o365AutoReplyBtn.addEventListener('click', function() {
+					var msgEl       = document.getElementById('office365_test_auto_reply_msg');
+					var recipientEl = document.getElementById('office365_test_auto_reply_recipient');
+					var msg         = msgEl       ? msgEl.value.trim()       : '';
+					var recipient   = recipientEl ? recipientEl.value.trim() : '';
+
+					if (!msg) {
+						if (o365AutoReplyResult) {
+							o365AutoReplyResult.style.display = 'block';
+							o365AutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					o365AutoReplyBtn.disabled = true;
+					if (o365AutoReplySpinner) { o365AutoReplySpinner.style.display = 'inline-block'; }
+					if (o365AutoReplyResult)  { o365AutoReplyResult.style.display = 'none'; o365AutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_office365_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_office365_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (recipient) { data.append('test_recipient', recipient); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							o365AutoReplyBtn.disabled = false;
+							if (o365AutoReplySpinner) { o365AutoReplySpinner.style.display = 'none'; }
+							if (!o365AutoReplyResult) { return; }
+							o365AutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #d83b01;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ <?php echo esc_js( __( 'Reply sent to the recipient via Outlook.', 'mcp-ai-wpoos-pro' ) ); ?></p>';
+								} else if (recipient && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ <?php echo esc_js( __( 'AI reply generated but sending via Outlook failed.', 'mcp-ai-wpoos-pro' ) ); ?>' + sendErr + '</p>';
+								}
+								html += '</div>';
+								o365AutoReplyResult.innerHTML = html;
+							} else {
+								o365AutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							o365AutoReplyBtn.disabled = false;
+							if (o365AutoReplySpinner) { o365AutoReplySpinner.style.display = 'none'; }
+							if (o365AutoReplyResult) {
+								o365AutoReplyResult.style.display = 'block';
+								o365AutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// iCloud: inline Test Connection button.
+			var icloudTestBtn     = document.getElementById('icloud_test_connection_btn');
+			var icloudTestSpinner = document.getElementById('icloud_test_spinner');
+			var icloudTestResult  = document.getElementById('icloud_test_result');
+			if (icloudTestBtn) {
+				icloudTestBtn.addEventListener('click', function() {
+					var gatewayUrl   = document.getElementById('icloud_gateway_url').value.trim();
+					var apiKey       = document.getElementById('icloud_api_key').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!gatewayUrl && !connectionId) {
+						if (icloudTestResult) {
+							icloudTestResult.style.display = 'block';
+							icloudTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter your Gateway API URL first.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					icloudTestBtn.disabled = true;
+					if (icloudTestSpinner) { icloudTestSpinner.style.display = 'inline-block'; }
+					if (icloudTestResult)  { icloudTestResult.style.display = 'none'; icloudTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_icloud_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_icloud_live' ) ); ?>);
+					if (gatewayUrl)   { data.append('gateway_url', gatewayUrl); }
+					if (apiKey)       { data.append('api_key', apiKey); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							icloudTestBtn.disabled = false;
+							if (icloudTestSpinner) { icloudTestSpinner.style.display = 'none'; }
+							if (!icloudTestResult) { return; }
+							icloudTestResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && typeof d === 'object') {
+									var items = [];
+									if (d.gateway_url) { items.push(<?php echo wp_json_encode( __( 'Gateway:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.gateway_url); }
+									if (d.status)      { items.push(<?php echo wp_json_encode( __( 'Status:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.status); }
+									if (d.message)     { items.push(d.message); }
+									if (items.length) {
+										html += '<ul style="margin:8px 0;padding-left:20px;">';
+										items.forEach(function(item) { html += '<li>' + item + '</li>'; });
+										html += '</ul>';
+									}
+									if (d.warning) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'; }
+								}
+								html += '</div>';
+								icloudTestResult.innerHTML = html;
+							} else {
+								icloudTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							icloudTestBtn.disabled = false;
+							if (icloudTestSpinner) { icloudTestSpinner.style.display = 'none'; }
+							if (icloudTestResult) {
+								icloudTestResult.style.display = 'block';
+								icloudTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// iCloud: Test Auto-Reply button.
+			var icloudAutoReplyBtn     = document.getElementById('icloud_test_auto_reply_btn');
+			var icloudAutoReplySpinner = document.getElementById('icloud_test_auto_reply_spinner');
+			var icloudAutoReplyResult  = document.getElementById('icloud_test_auto_reply_result');
+			if (icloudAutoReplyBtn) {
+				icloudAutoReplyBtn.addEventListener('click', function() {
+					var msgEl = document.getElementById('icloud_test_auto_reply_msg');
+					var msg   = msgEl ? msgEl.value.trim() : '';
+
+					if (!msg) {
+						if (icloudAutoReplyResult) {
+							icloudAutoReplyResult.style.display = 'block';
+							icloudAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					icloudAutoReplyBtn.disabled = true;
+					if (icloudAutoReplySpinner) { icloudAutoReplySpinner.style.display = 'inline-block'; }
+					if (icloudAutoReplyResult)  { icloudAutoReplyResult.style.display = 'none'; icloudAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_icloud_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_icloud_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							icloudAutoReplyBtn.disabled = false;
+							if (icloudAutoReplySpinner) { icloudAutoReplySpinner.style.display = 'none'; }
+							if (!icloudAutoReplyResult) { return; }
+							icloudAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #3693f5;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								html += '</div>';
+								icloudAutoReplyResult.innerHTML = html;
+							} else {
+								icloudAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							icloudAutoReplyBtn.disabled = false;
+							if (icloudAutoReplySpinner) { icloudAutoReplySpinner.style.display = 'none'; }
+							if (icloudAutoReplyResult) {
+								icloudAutoReplyResult.style.display = 'block';
+								icloudAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Slack: Test Bot Token button.
+			var slackTestBtn     = document.getElementById('slack_test_connection_btn');
+			var slackTestSpinner = document.getElementById('slack_test_spinner');
+			var slackTestResult  = document.getElementById('slack_test_result');
+			if (slackTestBtn) {
+				slackTestBtn.addEventListener('click', function() {
+					var botToken     = document.getElementById('slack_bot_token').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					slackTestBtn.disabled = true;
+					if (slackTestSpinner) { slackTestSpinner.style.display = 'inline-block'; }
+					if (slackTestResult) { slackTestResult.style.display = 'none'; slackTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_slack_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_slack_live' ) ); ?>);
+					if (botToken) { data.append('bot_token', botToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							slackTestBtn.disabled = false;
+							if (slackTestSpinner) { slackTestSpinner.style.display = 'none'; }
+							if (!slackTestResult) { return; }
+							slackTestResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Slack connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d) {
+									html += '<ul style="margin:8px 0;padding-left:20px;">';
+									if (d.team)    { html += '<li>' + <?php echo wp_json_encode( __( 'Team:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.team + '</li>'; }
+									if (d.bot_user) { html += '<li>' + <?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_user + '</li>'; }
+									if (d.team_id)  { html += '<li>' + <?php echo wp_json_encode( __( 'Team ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.team_id + '</code></li>'; }
+									html += '</ul>';
+								}
+								html += '</div>';
+								slackTestResult.innerHTML = html;
+							} else {
+								slackTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							slackTestBtn.disabled = false;
+							if (slackTestSpinner) { slackTestSpinner.style.display = 'none'; }
+							if (slackTestResult) {
+								slackTestResult.style.display = 'block';
+								slackTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Slack: Test Auto-Reply button.
+			var slackAutoReplyBtn     = document.getElementById('slack_test_auto_reply_btn');
+			var slackAutoReplySpinner = document.getElementById('slack_test_auto_reply_spinner');
+			var slackAutoReplyResult  = document.getElementById('slack_test_auto_reply_result');
+			if (slackAutoReplyBtn) {
+				slackAutoReplyBtn.addEventListener('click', function() {
+					var msgEl     = document.getElementById('slack_test_auto_reply_msg');
+					var channelEl = document.getElementById('slack_test_auto_reply_channel');
+					var msg       = msgEl     ? msgEl.value.trim()     : '';
+					var channel   = channelEl ? channelEl.value.trim() : '';
+
+					if (!msg) {
+						if (slackAutoReplyResult) {
+							slackAutoReplyResult.style.display = 'block';
+							slackAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					slackAutoReplyBtn.disabled = true;
+					if (slackAutoReplySpinner) { slackAutoReplySpinner.style.display = 'inline-block'; }
+					if (slackAutoReplyResult)  { slackAutoReplyResult.style.display = 'none'; slackAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_slack_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_slack_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (channel) { data.append('test_channel', channel); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							slackAutoReplyBtn.disabled = false;
+							if (slackAutoReplySpinner) { slackAutoReplySpinner.style.display = 'none'; }
+							if (!slackAutoReplyResult) { return; }
+							slackAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #4A154B;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ ' + <?php echo wp_json_encode( __( 'Reply sent to the Slack channel.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+								} else if (channel && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ ' + <?php echo wp_json_encode( __( 'AI reply generated but sending to Slack failed.', 'mcp-ai-wpoos-pro' ) ); ?> + sendErr + '</p>';
+								}
+								html += '</div>';
+								slackAutoReplyResult.innerHTML = html;
+							} else {
+								slackAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							slackAutoReplyBtn.disabled = false;
+							if (slackAutoReplySpinner) { slackAutoReplySpinner.style.display = 'none'; }
+							if (slackAutoReplyResult) {
+								slackAutoReplyResult.style.display = 'block';
+								slackAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Discord: Test Bot Token button.
+			var discordTestBtn     = document.getElementById('discord_test_connection_btn');
+			var discordTestSpinner = document.getElementById('discord_test_spinner');
+			var discordTestResult  = document.getElementById('discord_test_result');
+			if (discordTestBtn) {
+				discordTestBtn.addEventListener('click', function() {
+					var botToken     = document.getElementById('discord_bot_token').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					discordTestBtn.disabled = true;
+					if (discordTestSpinner) { discordTestSpinner.style.display = 'inline-block'; }
+					if (discordTestResult) { discordTestResult.style.display = 'none'; discordTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_discord_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_discord_live' ) ); ?>);
+					if (botToken) { data.append('bot_token', botToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							discordTestBtn.disabled = false;
+							if (discordTestSpinner) { discordTestSpinner.style.display = 'none'; }
+							if (!discordTestResult) { return; }
+							discordTestResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Discord connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d) {
+									html += '<ul style="margin:8px 0;padding-left:20px;">';
+									if (d.bot_username) { html += '<li>' + <?php echo wp_json_encode( __( 'Bot:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_username + '</li>'; }
+									if (d.bot_id)       { html += '<li>' + <?php echo wp_json_encode( __( 'Bot ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.bot_id + '</code></li>'; }
+									html += '</ul>';
+								}
+								html += '</div>';
+								discordTestResult.innerHTML = html;
+							} else {
+								discordTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							discordTestBtn.disabled = false;
+							if (discordTestSpinner) { discordTestSpinner.style.display = 'none'; }
+							if (discordTestResult) {
+								discordTestResult.style.display = 'block';
+								discordTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Discord: Test Auto-Reply button.
+			var discordAutoReplyBtn     = document.getElementById('discord_test_auto_reply_btn');
+			var discordAutoReplySpinner = document.getElementById('discord_test_auto_reply_spinner');
+			var discordAutoReplyResult  = document.getElementById('discord_test_auto_reply_result');
+			if (discordAutoReplyBtn) {
+				discordAutoReplyBtn.addEventListener('click', function() {
+					var msgEl     = document.getElementById('discord_test_auto_reply_msg');
+					var channelEl = document.getElementById('discord_test_auto_reply_channel');
+					var msg       = msgEl     ? msgEl.value.trim()     : '';
+					var channel   = channelEl ? channelEl.value.trim() : '';
+
+					if (!msg) {
+						if (discordAutoReplyResult) {
+							discordAutoReplyResult.style.display = 'block';
+							discordAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					discordAutoReplyBtn.disabled = true;
+					if (discordAutoReplySpinner) { discordAutoReplySpinner.style.display = 'inline-block'; }
+					if (discordAutoReplyResult)  { discordAutoReplyResult.style.display = 'none'; discordAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_discord_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_discord_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					if (channel) { data.append('test_channel', channel); }
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							discordAutoReplyBtn.disabled = false;
+							if (discordAutoReplySpinner) { discordAutoReplySpinner.style.display = 'none'; }
+							if (!discordAutoReplyResult) { return; }
+							discordAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #5865F2;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								if (d && d.sent) {
+									html += '<p style="margin:4px 0 0;color:#00a32a;font-size:13px;">✓ ' + <?php echo wp_json_encode( __( 'Reply sent to the Discord channel.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+								} else if (channel && d && !d.sent) {
+									var sendErr = (d && d.send_error) ? ' (' + d.send_error + ')' : '';
+									html += '<p style="margin:4px 0 0;color:#d63638;font-size:13px;">⚠ ' + <?php echo wp_json_encode( __( 'AI reply generated but sending to Discord failed.', 'mcp-ai-wpoos-pro' ) ); ?> + sendErr + '</p>';
+								}
+								html += '</div>';
+								discordAutoReplyResult.innerHTML = html;
+							} else {
+								discordAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							discordAutoReplyBtn.disabled = false;
+							if (discordAutoReplySpinner) { discordAutoReplySpinner.style.display = 'none'; }
+							if (discordAutoReplyResult) {
+								discordAutoReplyResult.style.display = 'block';
+								discordAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Microsoft Teams: Test Graph Token button.
+			var teamsTestBtn     = document.getElementById('teams_test_connection_btn');
+			var teamsTestSpinner = document.getElementById('teams_test_spinner');
+			var teamsTestResult  = document.getElementById('teams_test_result');
+			if (teamsTestBtn) {
+				teamsTestBtn.addEventListener('click', function() {
+					var graphToken   = document.getElementById('teams_graph_token').value.trim();
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					teamsTestBtn.disabled = true;
+					if (teamsTestSpinner) { teamsTestSpinner.style.display = 'inline-block'; }
+					if (teamsTestResult) { teamsTestResult.style.display = 'none'; teamsTestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_teams_live');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_teams_live' ) ); ?>);
+					if (graphToken) { data.append('graph_token', graphToken); }
+					if (connectionId) { data.append('connection_id', connectionId); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							teamsTestBtn.disabled = false;
+							if (teamsTestSpinner) { teamsTestSpinner.style.display = 'none'; }
+							if (!teamsTestResult) { return; }
+							teamsTestResult.style.display = 'block';
+							if (result.success) {
+								var d = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Teams connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.display_name) {
+									html += '<p style="margin:6px 0 0;">' + <?php echo wp_json_encode( __( 'Authenticated as:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <strong>' + d.display_name + '</strong></p>';
+								}
+								html += '</div>';
+								teamsTestResult.innerHTML = html;
+							} else {
+								teamsTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Connection test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							teamsTestBtn.disabled = false;
+							if (teamsTestSpinner) { teamsTestSpinner.style.display = 'none'; }
+							if (teamsTestResult) {
+								teamsTestResult.style.display = 'block';
+								teamsTestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Microsoft Teams: Test Auto-Reply button.
+			var teamsAutoReplyBtn     = document.getElementById('teams_test_auto_reply_btn');
+			var teamsAutoReplySpinner = document.getElementById('teams_test_auto_reply_spinner');
+			var teamsAutoReplyResult  = document.getElementById('teams_test_auto_reply_result');
+			if (teamsAutoReplyBtn) {
+				teamsAutoReplyBtn.addEventListener('click', function() {
+					var msgEl = document.getElementById('teams_test_auto_reply_msg');
+					var msg   = msgEl ? msgEl.value.trim() : '';
+
+					if (!msg) {
+						if (teamsAutoReplyResult) {
+							teamsAutoReplyResult.style.display = 'block';
+							teamsAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					teamsAutoReplyBtn.disabled = true;
+					if (teamsAutoReplySpinner) { teamsAutoReplySpinner.style.display = 'inline-block'; }
+					if (teamsAutoReplyResult)  { teamsAutoReplyResult.style.display = 'none'; teamsAutoReplyResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_test_teams_auto_reply');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_test_teams_auto_reply' ) ); ?>);
+					data.append('test_message', msg);
+					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					if (connIdEl) { data.append('connection_id', connIdEl.value); }
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							teamsAutoReplyBtn.disabled = false;
+							if (teamsAutoReplySpinner) { teamsAutoReplySpinner.style.display = 'none'; }
+							if (!teamsAutoReplyResult) { return; }
+							teamsAutoReplyResult.style.display = 'block';
+							if (result.success) {
+								var d    = result.data;
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'AI reply generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								if (d && d.ai_reply) {
+									html += '<blockquote style="margin:8px 0 4px 16px;border-left:3px solid #6264A7;padding-left:8px;white-space:pre-wrap;">' + d.ai_reply.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</blockquote>';
+								}
+								html += '</div>';
+								teamsAutoReplyResult.innerHTML = html;
+							} else {
+								teamsAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Auto-reply test failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							teamsAutoReplyBtn.disabled = false;
+							if (teamsAutoReplySpinner) { teamsAutoReplySpinner.style.display = 'none'; }
+							if (teamsAutoReplyResult) {
+								teamsAutoReplyResult.style.display = 'block';
+								teamsAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -6199,10 +8092,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	/**
 	 * AJAX handler: test a Facebook Messenger connection using credentials posted directly from the form.
 	 *
-	 * Verifies the access token by calling GET /me or GET /{page-id} on the Meta Graph API
-	 * and returns page name, category, and follower count on success.
+	 * Verifies the access token by calling GET /me on the Meta Graph API and returns page name
+	 * on success. Using /me avoids querying /{page-id} directly, which requires the
+	 * pages_read_engagement permission, Page Public Content Access, or Page Public Metadata Access
+	 * features. When a page_id is supplied the returned id is compared against it to confirm
+	 * the token belongs to the expected page.
 	 *
-	 * Accepts: access_token, page_id (optional), api_version, nonce (POST).
+	 * Accepts: access_token, page_id (optional), api_version, connection_id (optional), nonce (POST).
+	 * When connection_id is provided and the access_token is empty or is an App Access Token,
+	 * the handler falls back to the saved Page Access Token stored in the database.
 	 * Returns JSON with page details on success, or error message on failure.
 	 *
 	 * @since 1.0.0
@@ -6215,14 +8113,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		$access_token = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
-		$access_token = trim( (string) $access_token );
-		$page_id      = isset( $_POST['page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
-		$api_version  = isset( $_POST['api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['api_version'] ) ) : 'v21.0';
+		$access_token  = isset( $_POST['access_token'] ) ? wp_unslash( $_POST['access_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- access tokens must not be sanitized as sanitize_text_field() can truncate valid token characters.
+		$access_token  = trim( (string) $access_token );
+		$page_id       = isset( $_POST['page_id'] ) ? sanitize_text_field( wp_unslash( $_POST['page_id'] ) ) : '';
+		$api_version   = isset( $_POST['api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['api_version'] ) ) : 'v21.0';
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
 
 		// Validate API version format.
 		if ( ! preg_match( '/^v\d+\.\d+$/', $api_version ) ) {
 			$api_version = 'v21.0';
+		}
+
+		// When editing an existing connection and the form field is empty (or contains an
+		// App Access Token from the "Generate" button), fall back to the saved Page Access
+		// Token stored in the database so the test reflects the actual saved credentials.
+		if ( ! empty( $connection_id ) ) {
+			$is_form_app_token = (bool) preg_match( '/^\d+\|[A-Za-z0-9_\-]+$/', $access_token );
+			if ( empty( $access_token ) || $is_form_app_token ) {
+				$saved_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $saved_connection && ! empty( $saved_connection['api_key'] ) ) {
+					$saved_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $saved_connection['api_key'] );
+					if ( ! empty( $saved_token ) && $saved_token !== $access_token ) {
+						$access_token = $saved_token;
+					}
+				}
+			}
 		}
 
 		if ( empty( $access_token ) ) {
@@ -6230,23 +8145,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		// If a page ID is provided, query that page directly; otherwise query /me (app token).
-		$target  = ! empty( $page_id ) ? rawurlencode( $page_id ) : 'me';
-		$endpoint = sprintf(
-			'https://graph.facebook.com/%s/%s?fields=id,name,category,fan_count',
-			$api_version,
-			$target
+		// Detect App Access Tokens (format: {AppID}|{hash}, e.g. "1704482943846642|EVQCBBJ0mXtyjMW6Z4fGgZkGrVA").
+		// App Access Tokens cannot call /me — that endpoint is reserved for User/Page tokens and returns
+		// "An active access token must be used to query information about the current user" (HTTP 400).
+		// Route App Access Tokens to /app, which returns the app's own identity and works without error.
+		$is_app_token = (bool) preg_match( '/^\d+\|[A-Za-z0-9_\-]+$/', $access_token );
+
+		if ( $is_app_token ) {
+			// App Access Token: verify via /app endpoint.
+			$endpoint = sprintf(
+				'https://graph.facebook.com/%s/app?fields=id,name&access_token=%s',
+				$api_version,
+				rawurlencode( $access_token )
+			);
+		} else {
+			// Page/User Access Token: query /me — returns the page's own data without requiring
+			// pages_read_engagement, Page Public Content Access, or Page Public Metadata Access.
+			// Requesting only id and name to stay within standard token permissions.
+			$endpoint = sprintf(
+				'https://graph.facebook.com/%s/me?fields=id,name',
+				$api_version
+			);
+		}
+
+		$request_args = array(
+			'timeout' => 15,
 		);
 
-		$response = wp_remote_get(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $access_token,
-				),
-				'timeout' => 15,
-			)
-		);
+		if ( ! $is_app_token ) {
+			// Page/User tokens: pass via Authorization header.
+			$request_args['headers'] = array(
+				'Authorization' => 'Bearer ' . $access_token,
+			);
+		}
+
+		$response = wp_remote_get( $endpoint, $request_args );
 
 		if ( is_wp_error( $response ) ) {
 			wp_send_json_error(
@@ -6278,18 +8211,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
+		$returned_id = isset( $body['id'] ) ? $body['id'] : '';
+		$token_type  = $is_app_token ? __( 'App Access Token', 'mcp-ai-wpoos-pro' ) : __( 'Page Access Token', 'mcp-ai-wpoos-pro' );
+
 		$result = array(
 			'page_name'  => isset( $body['name'] ) ? $body['name'] : '',
-			'page_id'    => isset( $body['id'] ) ? $body['id'] : '',
-			'category'   => isset( $body['category'] ) ? $body['category'] : '',
-			'fan_count'  => isset( $body['fan_count'] ) ? (int) $body['fan_count'] : '',
-			'token_type' => ! empty( $page_id ) ? __( 'Page Access Token', 'mcp-ai-wpoos-pro' ) : __( 'App Access Token', 'mcp-ai-wpoos-pro' ),
+			'page_id'    => $returned_id,
+			'token_type' => $token_type,
 			'message'    => __( 'Messenger connection successful! Credentials are valid.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		// Warn when an App Access Token is used — it can verify identity but cannot send messages.
-		if ( empty( $page_id ) ) {
+		if ( $is_app_token ) {
+			// Warn that App Access Tokens cannot send Messenger messages.
 			$result['warning'] = __( 'App Access Token detected. To send messages via Messenger, obtain a Page Access Token with pages_messaging permission from Meta Business Suite or Graph API Explorer.', 'mcp-ai-wpoos-pro' );
+		} elseif ( ! empty( $page_id ) && $returned_id !== $page_id ) {
+			// Page token is valid but represents a different page.
+			$result['warning'] = __( 'The token is valid but the Page ID returned by the API does not match the Page ID provided. Ensure you are using a Page Access Token for the correct page.', 'mcp-ai-wpoos-pro' );
+		} elseif ( empty( $page_id ) ) {
+			// No page_id provided — advise the user.
+			$result['warning'] = __( 'No Page ID provided. To validate that the token matches your intended page, enter a Page ID in the optional field above.', 'mcp-ai-wpoos-pro' );
 		}
 
 		wp_send_json_success( $result );
@@ -7098,8 +9038,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// If a space name is available and credentials are present, send the reply
 		// via the Google Chat API to complete the full end-to-end test.
-		$has_api_key = ! empty( $connection['api_key'] );
-		$has_oauth   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] );
+		$has_api_key     = ! empty( $connection['api_key'] );
+		$has_oauth       = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] );
+		$has_webhook_url = ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#', $connection['reply_webhook_url'] );
 
 		if ( '' !== $space_name && ( $has_api_key || $has_oauth ) ) {
 			if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $space_name ) ) {
@@ -7179,6 +9121,192 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				}
 			} else {
 				$result['send_error'] = __( 'Could not obtain an access token from the stored credentials.', 'mcp-ai-wpoos-pro' );
+			}
+		} elseif ( $has_webhook_url ) {
+			// --- Fallback: send via incoming webhook URL (no OAuth needed) ---
+			$chat_body = wp_strip_all_tags( $ai_reply );
+			$chat_body = html_entity_decode( $chat_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			if ( mb_strlen( $chat_body ) > 4096 ) {
+				$chat_body = mb_substr( $chat_body, 0, 4093 ) . '...';
+			}
+
+			$send_body = wp_json_encode( array( 'text' => $chat_body ) );
+
+			if ( false !== $send_body ) {
+				$send_result = wp_remote_post(
+					$connection['reply_webhook_url'],
+					array(
+						'headers' => array( 'Content-Type' => 'application/json' ),
+						'timeout' => 20,
+						'body'    => $send_body,
+					)
+				);
+
+				if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+					$result['sent'] = true;
+				} else {
+					$send_error_body      = ! is_wp_error( $send_result ) ? json_decode( wp_remote_retrieve_body( $send_result ), true ) : null;
+					$result['send_error'] = isset( $send_error_body['error']['message'] )
+						? $send_error_body['error']['message']
+						: ( is_wp_error( $send_result ) ? $send_result->get_error_message() : __( 'Unknown send error.', 'mcp-ai-wpoos-pro' ) );
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: test the Facebook Messenger auto-reply flow.
+	 *
+	 * Sends the supplied test message to the first assigned assistant via the
+	 * internal chat REST endpoint and returns the AI-generated reply. Optionally
+	 * delivers the reply to a Messenger recipient (PSID) using the Send API.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_test_messenger_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_messenger_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id    = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message     = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_recipient   = isset( $_POST['test_recipient_id'] ) ? sanitize_text_field( wp_unslash( $_POST['test_recipient_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		// Call the internal chat REST endpoint using an admin user context.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		// Extract the assistant reply text from the chat endpoint response.
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a recipient PSID was provided, send the reply via the Messenger Send API.
+		if ( ! empty( $test_recipient ) && ! empty( $connection['api_key'] ) ) {
+			$access_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+			if ( '' !== $access_token ) {
+				$graph_api_version = isset( $connection['graph_api_version'] ) && $connection['graph_api_version']
+					? sanitize_text_field( $connection['graph_api_version'] )
+					: 'v21.0';
+
+				// Messenger does not render HTML; strip tags and cap at 2000 characters.
+				$msng_body = wp_strip_all_tags( $ai_reply );
+				$msng_body = html_entity_decode( $msng_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				if ( mb_strlen( $msng_body ) > 2000 ) {
+					$msng_body = mb_substr( $msng_body, 0, 1997 ) . '...';
+				}
+
+				$endpoint = sprintf(
+					'https://graph.facebook.com/%s/me/messages',
+					rawurlencode( $graph_api_version )
+				);
+
+				$payload = array(
+					'recipient' => array( 'id' => $test_recipient ),
+					'message'   => array( 'text' => $msng_body ),
+				);
+
+				$body = wp_json_encode( $payload );
+				if ( false !== $body ) {
+					$send_result = wp_remote_post(
+						add_query_arg( 'access_token', $access_token, $endpoint ),
+						array(
+							'headers' => array( 'Content-Type' => 'application/json' ),
+							'timeout' => 20,
+							'body'    => $body,
+						)
+					);
+
+					if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+						$result['sent'] = true;
+					} else {
+						$send_body          = is_wp_error( $send_result ) ? '' : wp_remote_retrieve_body( $send_result );
+						$send_error_decoded = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+						$result['send_error'] = is_wp_error( $send_result )
+							? $send_result->get_error_message()
+							: ( isset( $send_error_decoded['error']['message'] ) ? $send_error_decoded['error']['message'] : $send_body );
+					}
+				}
 			}
 		}
 
@@ -7339,6 +9467,603 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Send a test message directly to a Telegram group, supergroup, or channel.
+	 *
+	 * Accepts (POST): connection_id, test_chat_id, test_message, nonce.
+	 * The chat ID can be a numeric group/supergroup ID (negative number) or an @channel username.
+	 */
+	public function ajax_test_telegram_send_group() {
+		check_ajax_referer( 'wp_mcp_ai_test_telegram_send_group', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_chat_id  = isset( $_POST['test_chat_id'] ) ? sanitize_text_field( wp_unslash( $_POST['test_chat_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $test_chat_id ) ) {
+			wp_send_json_error( __( 'Please enter a group/channel chat ID or @username.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $connection['api_key'] ) ) {
+			wp_send_json_error( __( 'No bot token found for this connection. Save the connection with a valid bot token first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Could not decrypt bot token.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Telegram enforces a 4096-character limit for text messages.
+		$tg_body = wp_strip_all_tags( $test_message );
+		$tg_body = html_entity_decode( $tg_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		if ( mb_strlen( $tg_body ) > 4096 ) {
+			$tg_body = mb_substr( $tg_body, 0, 4093 ) . '...';
+		}
+
+		$endpoint = 'https://api.telegram.org/bot' . rawurlencode( $bot_token ) . '/sendMessage';
+
+		$payload = array(
+			'chat_id' => $test_chat_id,
+			'text'    => $tg_body,
+		);
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			wp_send_json_error( __( 'Failed to encode message payload.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$send_result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout' => 20,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $send_result ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$send_result->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$status_code   = (int) wp_remote_retrieve_response_code( $send_result );
+		$response_body = json_decode( wp_remote_retrieve_body( $send_result ), true );
+
+		if ( 200 !== $status_code || empty( $response_body['ok'] ) ) {
+			$description = isset( $response_body['description'] ) ? $response_body['description'] : __( 'Unknown Telegram API error.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		$result_data = isset( $response_body['result'] ) ? $response_body['result'] : array();
+		$chat_info   = isset( $result_data['chat'] ) ? $result_data['chat'] : array();
+
+		wp_send_json_success(
+			array(
+				'chat_title' => isset( $chat_info['title'] ) ? $chat_info['title'] : '',
+				'chat_type'  => isset( $chat_info['type'] ) ? $chat_info['type'] : '',
+				'message_id' => isset( $result_data['message_id'] ) ? $result_data['message_id'] : '',
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Test Office 365 connection by obtaining a token from Microsoft Graph.
+	 *
+	 * Accepts: client_id, client_secret, tenant_id, connection_id, nonce (POST).
+	 * Falls back to stored credentials when fields are left blank.
+	 */
+	public function ajax_test_office365_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_office365_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$client_id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+		$client_secret = isset( $_POST['client_secret'] ) ? wp_unslash( $_POST['client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- secrets must not be sanitized.
+		$client_secret = trim( (string) $client_secret );
+		$tenant_id     = isset( $_POST['tenant_id'] ) ? sanitize_text_field( wp_unslash( $_POST['tenant_id'] ) ) : '';
+
+		// Fall back to stored credentials.
+		if ( empty( $client_id ) || empty( $client_secret ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( $stored_connection && 'office365' === ( isset( $stored_connection['connection_type'] ) ? $stored_connection['connection_type'] : '' ) ) {
+				if ( empty( $client_id ) && ! empty( $stored_connection['client_id'] ) ) {
+					$client_id = $stored_connection['client_id'];
+				}
+				if ( empty( $client_secret ) && ! empty( $stored_connection['client_secret'] ) ) {
+					$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['client_secret'] );
+				}
+				if ( empty( $tenant_id ) && ! empty( $stored_connection['tenant_id'] ) ) {
+					$tenant_id = $stored_connection['tenant_id'];
+				}
+			}
+		}
+
+		if ( empty( $client_id ) || empty( $client_secret ) ) {
+			wp_send_json_error( __( 'Application (Client) ID and Client Secret are required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$tenant = ! empty( $tenant_id ) ? $tenant_id : 'common';
+
+		// Request an access token using client credentials grant.
+		$token_url = 'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/token';
+
+		$token_response = wp_remote_post(
+			$token_url,
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'grant_type'    => 'client_credentials',
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'scope'         => 'https://graph.microsoft.com/.default',
+				),
+			)
+		);
+
+		if ( is_wp_error( $token_response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Microsoft identity platform: %s', 'mcp-ai-wpoos-pro' ),
+					$token_response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$token_code = wp_remote_retrieve_response_code( $token_response );
+		$token_data = json_decode( wp_remote_retrieve_body( $token_response ), true );
+
+		if ( 200 !== (int) $token_code || empty( $token_data['access_token'] ) ) {
+			$error_desc = isset( $token_data['error_description'] ) ? $token_data['error_description'] : __( 'Failed to obtain an access token.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Microsoft Graph authentication error: %s', 'mcp-ai-wpoos-pro' ),
+					$error_desc
+				)
+			);
+			return;
+		}
+
+		$result = array(
+			'display_name' => '',
+			'mail'         => '',
+			'tenant_id'    => $tenant,
+		);
+
+		// Try calling the /organization endpoint to verify the token works.
+		$org_response = wp_remote_get(
+			'https://graph.microsoft.com/v1.0/organization',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $token_data['access_token'],
+				),
+			)
+		);
+
+		if ( ! is_wp_error( $org_response ) && 200 === (int) wp_remote_retrieve_response_code( $org_response ) ) {
+			$org_data = json_decode( wp_remote_retrieve_body( $org_response ), true );
+			if ( ! empty( $org_data['value'][0] ) ) {
+				$org = $org_data['value'][0];
+				$result['display_name'] = isset( $org['displayName'] ) ? $org['displayName'] : '';
+				$result['tenant_id']    = isset( $org['id'] ) ? $org['id'] : $tenant;
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test Office 365 auto-reply by simulating an incoming email.
+	 *
+	 * Uses the same pattern as the Telegram auto-reply test: calls the internal chat
+	 * endpoint with the first assigned assistant and returns the AI reply.
+	 */
+	public function ajax_test_office365_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_office365_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id  = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message   = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_recipient = isset( $_POST['test_recipient'] ) ? sanitize_email( wp_unslash( $_POST['test_recipient'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a recipient email was provided, try to send via Outlook Mail API.
+		if ( ! empty( $test_recipient ) && ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) ) {
+			$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+			$tenant        = ! empty( $connection['tenant_id'] ) ? $connection['tenant_id'] : 'common';
+			$token_url     = 'https://login.microsoftonline.com/' . rawurlencode( $tenant ) . '/oauth2/v2.0/token';
+
+			$token_response = wp_remote_post(
+				$token_url,
+				array(
+					'timeout' => 15,
+					'body'    => array(
+						'grant_type'    => 'client_credentials',
+						'client_id'     => $connection['client_id'],
+						'client_secret' => $client_secret,
+						'scope'         => 'https://graph.microsoft.com/.default',
+					),
+				)
+			);
+
+			if ( ! is_wp_error( $token_response ) ) {
+				$token_data = json_decode( wp_remote_retrieve_body( $token_response ), true );
+				if ( ! empty( $token_data['access_token'] ) ) {
+					$mail_body = wp_json_encode(
+						array(
+							'message' => array(
+								'subject'      => __( 'Auto-Reply Test', 'mcp-ai-wpoos-pro' ),
+								'body'         => array(
+									'contentType' => 'Text',
+									'content'     => wp_strip_all_tags( $ai_reply ),
+								),
+								'toRecipients' => array(
+									array(
+										'emailAddress' => array(
+											'address' => $test_recipient,
+										),
+									),
+								),
+							),
+						)
+					);
+
+					if ( false !== $mail_body ) {
+						// Graph API: /users/{userPrincipalName}/sendMail sends FROM that
+						// user's mailbox (requires Mail.Send application permission).
+						// The test_recipient email doubles as the sender UPN, creating a
+						// self-addressed test email — a common pattern for verifying the
+						// end-to-end mail flow without requiring a separate "from" address.
+						$send_result = wp_remote_post(
+							'https://graph.microsoft.com/v1.0/users/' . rawurlencode( $test_recipient ) . '/sendMail',
+							array(
+								'headers' => array(
+									'Authorization' => 'Bearer ' . $token_data['access_token'],
+									'Content-Type'  => 'application/json',
+								),
+								'timeout' => 20,
+								'body'    => $mail_body,
+							)
+						);
+
+						$send_code = wp_remote_retrieve_response_code( $send_result );
+						if ( ! is_wp_error( $send_result ) && ( 202 === (int) $send_code || 200 === (int) $send_code ) ) {
+							$result['sent'] = true;
+						} else {
+							$send_body            = is_wp_error( $send_result ) ? '' : wp_remote_retrieve_body( $send_result );
+							$send_error_decoded   = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+							$result['send_error'] = is_wp_error( $send_result )
+								? $send_result->get_error_message()
+								: ( isset( $send_error_decoded['error']['message'] ) ? $send_error_decoded['error']['message'] : $send_body );
+						}
+					}
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test iCloud Drive gateway connection.
+	 *
+	 * Sends a simple GET request to the gateway API URL with the API key
+	 * to verify connectivity. Falls back to stored credentials when fields
+	 * are left blank.
+	 */
+	public function ajax_test_icloud_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_icloud_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$gateway_url = isset( $_POST['gateway_url'] ) ? esc_url_raw( wp_unslash( $_POST['gateway_url'] ) ) : '';
+		$api_key     = isset( $_POST['api_key'] ) ? wp_unslash( $_POST['api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- API keys must not be sanitized.
+		$api_key     = trim( (string) $api_key );
+
+		// Fall back to stored credentials.
+		if ( empty( $gateway_url ) || empty( $api_key ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( $stored_connection && 'icloud' === ( isset( $stored_connection['connection_type'] ) ? $stored_connection['connection_type'] : '' ) ) {
+				if ( empty( $gateway_url ) && ! empty( $stored_connection['gateway_api_url'] ) ) {
+					$gateway_url = $stored_connection['gateway_api_url'];
+				}
+				if ( empty( $api_key ) && ! empty( $stored_connection['api_key'] ) ) {
+					$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+				}
+			}
+		}
+
+		if ( empty( $gateway_url ) ) {
+			wp_send_json_error( __( 'Gateway API URL is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( empty( $api_key ) ) {
+			wp_send_json_error( __( 'Gateway API Key is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_get(
+			$gateway_url,
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to iCloud gateway: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+
+		if ( $response_code >= 400 ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'iCloud gateway returned HTTP %d. Please check your credentials and gateway URL.', 'mcp-ai-wpoos-pro' ),
+					$response_code
+				)
+			);
+			return;
+		}
+
+		$result = array(
+			'gateway_url' => $gateway_url,
+			'status'      => sprintf(
+				/* translators: %d: HTTP status code */
+				__( 'HTTP %d', 'mcp-ai-wpoos-pro' ),
+				$response_code
+			),
+			'message'     => __( 'Gateway is reachable and accepted the request.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test iCloud auto-reply by simulating an incoming file event.
+	 *
+	 * Uses the same pattern as the Telegram auto-reply test.
+	 */
+	public function ajax_test_icloud_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_icloud_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'ai_reply' => $ai_reply ) );
 	}
 
 	/**
@@ -7640,6 +10365,653 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test Slack bot token by calling the auth.test API.
+	 *
+	 * Accepts (POST): bot_token, connection_id, nonce.
+	 */
+	public function ajax_test_slack_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_slack_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
+		$bot_token = trim( (string) $bot_token );
+
+		// Fall back to stored token when the field is blank.
+		if ( empty( $bot_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+		}
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Bot Token is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_post(
+			'https://slack.com/api/auth.test',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $bot_token,
+					'Content-Type'  => 'application/json; charset=utf-8',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Slack API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $body['ok'] ) ) {
+			$error = isset( $body['error'] ) ? $body['error'] : __( 'Unknown error.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'Slack API error: %s', 'mcp-ai-wpoos-pro' ),
+					$error
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'team'     => isset( $body['team'] ) ? $body['team'] : '',
+				'bot_user' => isset( $body['user'] ) ? $body['user'] : '',
+				'team_id'  => isset( $body['team_id'] ) ? $body['team_id'] : '',
+				'user_id'  => isset( $body['user_id'] ) ? $body['user_id'] : '',
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Simulate an incoming Slack message and return the AI reply.
+	 * Optionally sends the reply to a Slack channel via chat.postMessage.
+	 *
+	 * Accepts (POST): connection_id, test_message, test_channel (optional), nonce.
+	 */
+	public function ajax_test_slack_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_slack_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_channel  = isset( $_POST['test_channel'] ) ? sanitize_text_field( wp_unslash( $_POST['test_channel'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a channel was provided, send the reply via the Slack API.
+		if ( ! empty( $test_channel ) && ! empty( $connection['api_key'] ) ) {
+			$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+			if ( '' !== $bot_token ) {
+				$slack_body = wp_strip_all_tags( $ai_reply );
+				$slack_body = html_entity_decode( $slack_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+				$payload = wp_json_encode(
+					array(
+						'channel' => $test_channel,
+						'text'    => $slack_body,
+					)
+				);
+
+				if ( false !== $payload ) {
+					$send_result = wp_remote_post(
+						'https://slack.com/api/chat.postMessage',
+						array(
+							'headers' => array(
+								'Authorization' => 'Bearer ' . $bot_token,
+								'Content-Type'  => 'application/json; charset=utf-8',
+							),
+							'timeout' => 20,
+							'body'    => $payload,
+						)
+					);
+
+					if ( ! is_wp_error( $send_result ) ) {
+						$send_body = json_decode( wp_remote_retrieve_body( $send_result ), true );
+						if ( ! empty( $send_body['ok'] ) ) {
+							$result['sent'] = true;
+						} else {
+							$result['send_error'] = isset( $send_body['error'] ) ? $send_body['error'] : __( 'Unknown Slack error.', 'mcp-ai-wpoos-pro' );
+						}
+					} else {
+						$result['send_error'] = $send_result->get_error_message();
+					}
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test Discord bot token by calling the users/@me API.
+	 *
+	 * Accepts (POST): bot_token, connection_id, nonce.
+	 */
+	public function ajax_test_discord_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_discord_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = isset( $_POST['bot_token'] ) ? wp_unslash( $_POST['bot_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
+		$bot_token = trim( (string) $bot_token );
+
+		// Fall back to stored token when the field is blank.
+		if ( empty( $bot_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['api_key'] ) ) {
+				$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['api_key'] );
+			}
+		}
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Bot Token is required.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_get(
+			'https://discord.com/api/v10/users/@me',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bot ' . $bot_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Discord API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $status_code ) {
+			$error_msg = isset( $body['message'] ) ? $body['message'] : __( 'Invalid response from Discord API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Discord API error: %s', 'mcp-ai-wpoos-pro' ),
+					$error_msg
+				)
+			);
+			return;
+		}
+
+		$username = isset( $body['username'] ) ? $body['username'] : '';
+		// Discord migrated to unique usernames (2023+); discriminator '0' means the new system is in use.
+		$discriminator = isset( $body['discriminator'] ) && '0' !== $body['discriminator'] ? '#' . $body['discriminator'] : '';
+
+		wp_send_json_success(
+			array(
+				'bot_username' => $username . $discriminator,
+				'bot_id'       => isset( $body['id'] ) ? $body['id'] : '',
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Simulate an incoming Discord message and return the AI reply.
+	 * Optionally sends the reply to a Discord channel via the Bot API.
+	 *
+	 * Accepts (POST): connection_id, test_message, test_channel (optional), nonce.
+	 */
+	public function ajax_test_discord_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_discord_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+		$test_channel  = isset( $_POST['test_channel'] ) ? sanitize_text_field( wp_unslash( $_POST['test_channel'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$result = array(
+			'ai_reply' => $ai_reply,
+			'sent'     => false,
+		);
+
+		// If a channel ID was provided, send the reply via the Discord Bot API.
+		if ( ! empty( $test_channel ) && ! empty( $connection['api_key'] ) ) {
+			$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+			if ( '' !== $bot_token ) {
+				$discord_body = wp_strip_all_tags( $ai_reply );
+				$discord_body = html_entity_decode( $discord_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				// Discord enforces a 2000-character limit for text messages.
+				if ( mb_strlen( $discord_body ) > 2000 ) {
+					$discord_body = mb_substr( $discord_body, 0, 1997 ) . '...';
+				}
+
+				$endpoint = 'https://discord.com/api/v10/channels/' . rawurlencode( $test_channel ) . '/messages';
+				$payload  = wp_json_encode( array( 'content' => $discord_body ) );
+
+				if ( false !== $payload ) {
+					$send_result = wp_remote_post(
+						$endpoint,
+						array(
+							'headers' => array(
+								'Authorization' => 'Bot ' . $bot_token,
+								'Content-Type'  => 'application/json',
+							),
+							'timeout' => 20,
+							'body'    => $payload,
+						)
+					);
+
+					if ( ! is_wp_error( $send_result ) && 200 === (int) wp_remote_retrieve_response_code( $send_result ) ) {
+						$result['sent'] = true;
+					} else {
+						$send_body          = is_wp_error( $send_result ) ? '' : wp_remote_retrieve_body( $send_result );
+						$send_error_decoded = ! empty( $send_body ) ? json_decode( $send_body, true ) : null;
+						$result['send_error'] = is_wp_error( $send_result )
+							? $send_result->get_error_message()
+							: ( isset( $send_error_decoded['message'] ) ? $send_error_decoded['message'] : $send_body );
+					}
+				}
+			}
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX handler: Test Microsoft Teams Graph token by calling the Microsoft Graph /me endpoint.
+	 *
+	 * Accepts (POST): graph_token, connection_id, nonce.
+	 */
+	public function ajax_test_teams_live() {
+		check_ajax_referer( 'wp_mcp_ai_test_teams_live', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$graph_token = isset( $_POST['graph_token'] ) ? wp_unslash( $_POST['graph_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tokens must not be sanitized.
+		$graph_token = trim( (string) $graph_token );
+
+		// Fall back to stored token when the field is blank.
+		if ( empty( $graph_token ) ) {
+			$connection_id     = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+			$stored_connection = ! empty( $connection_id ) ? WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id ) : null;
+			if ( ! empty( $stored_connection['token'] ) ) {
+				$graph_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $stored_connection['token'] );
+			}
+		}
+
+		if ( empty( $graph_token ) ) {
+			wp_send_json_error( __( 'Microsoft Graph Access Token is required. Enter it in the Graph Token field or save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$response = wp_remote_get(
+			'https://graph.microsoft.com/v1.0/me',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $graph_token,
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Microsoft Graph API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$body        = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $status_code ) {
+			$error_msg = isset( $body['error']['message'] ) ? $body['error']['message'] : __( 'Invalid response from Microsoft Graph API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Microsoft Graph API error: %s', 'mcp-ai-wpoos-pro' ),
+					$error_msg
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'display_name' => isset( $body['displayName'] ) ? $body['displayName'] : '',
+				'user_id'      => isset( $body['id'] ) ? $body['id'] : '',
+				'mail'         => isset( $body['mail'] ) ? $body['mail'] : '',
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: Simulate an incoming Teams message and return the AI reply.
+	 *
+	 * Accepts (POST): connection_id, test_message, nonce.
+	 */
+	public function ajax_test_teams_auto_reply() {
+		check_ajax_referer( 'wp_mcp_ai_test_teams_auto_reply', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+		$test_message  = isset( $_POST['test_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['test_message'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( '' === $test_message ) {
+			wp_send_json_error( __( 'Please enter a test message.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		if ( empty( $assigned_assistant_ids ) ) {
+			wp_send_json_error( __( 'No assistants are assigned to this connection. Please assign at least one assistant and save before testing auto-reply.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$assistant_id = $assigned_assistant_ids[0];
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_body_params(
+			array(
+				'assistant_id' => $assistant_id,
+				'messages'     => array(
+					array(
+						'role'    => 'user',
+						'content' => $test_message,
+					),
+				),
+				'stream'       => false,
+			)
+		);
+
+		$original_user_id = get_current_user_id();
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$response = rest_do_request( $request );
+		wp_set_current_user( $original_user_id );
+
+		if ( $response->is_error() ) {
+			$error_data = $response->get_data();
+			$code       = is_array( $error_data ) && isset( $error_data['code'] ) ? $error_data['code'] : 'unknown_error';
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error code */
+					__( 'The AI assistant returned an error (%s). Check that the assistant is configured correctly and that your AI provider credentials are valid.', 'mcp-ai-wpoos-pro' ),
+					$code
+				)
+			);
+			return;
+		}
+
+		$ai_reply = '';
+		$data     = $response->get_data();
+		if ( is_array( $data ) ) {
+			$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+			$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
+			if ( ! empty( $choices ) ) {
+				$first_choice = reset( $choices );
+				if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
+					$ai_reply = $first_choice['message']['content'];
+				}
+			}
+		}
+
+		if ( '' === $ai_reply ) {
+			wp_send_json_error( __( 'The AI assistant returned an empty reply. Check the assistant configuration and AI provider settings.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'ai_reply' => $ai_reply,
+			)
+		);
+	}
+
+	/**
+	 * Resolve enabled_services from POST data based on connection type.
+	 *
+	 * Office 365 connections use office365_enabled_services[] and iCloud connections
+	 * use icloud_enabled_services[]. Each value is validated against the known service
+	 * keys for the respective connection type.
+	 *
+	 * @param string $connection_type The connection type being saved.
+	 * @return array Sanitised list of enabled service keys, or empty array if not applicable.
+	 */
+	private function resolve_enabled_services( $connection_type ) {
+		$allowed = array();
+		$field   = '';
+
+		if ( 'office365' === $connection_type ) {
+			$allowed = array( 'outlook_mail', 'onedrive' );
+			$field   = 'office365_enabled_services';
+		} elseif ( 'icloud' === $connection_type ) {
+			$allowed = array( 'icloud_drive' );
+			$field   = 'icloud_enabled_services';
+		}
+
+		if ( empty( $field ) || ! isset( $_POST[ $field ] ) || ! is_array( $_POST[ $field ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return array();
+		}
+
+		$raw = array_map( 'sanitize_key', wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		return array_values( array_intersect( $raw, $allowed ) );
 	}
 }
 

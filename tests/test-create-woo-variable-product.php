@@ -189,14 +189,14 @@ class WP_MCP_AI_Create_Woo_Variable_Product_Test extends WP_UnitTestCase {
 						'sale_price'    => '18.99',
 					),
 					array(
-						'attributes'    => array(
+						'attributes'     => array(
 							'Size'  => 'Large',
 							'Color' => 'Red',
 						),
-						'sku'           => 'TSHIRT-L-RED',
-						'regular_price' => '23.99',
-						'stock_status'  => 'instock',
-						'manage_stock'  => true,
+						'sku'            => 'TSHIRT-L-RED',
+						'regular_price'  => '23.99',
+						'stock_status'   => 'instock',
+						'manage_stock'   => true,
 						'stock_quantity' => 50,
 					),
 				),

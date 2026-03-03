@@ -43,25 +43,22 @@ class WP_MCP_AI_Pro_License {
 	/**
 	 * Check if Pro is active
 	 *
+	 * All features included in the base plugin are fully available without any
+	 * license key requirement, in compliance with WordPress.org guidelines.
+	 * The constant WP_MCP_AI_PRO_DASHBOARD_ENABLED (default: true) allows
+	 * site administrators to optionally disable Pro Dashboard features.
+	 *
 	 * @return bool
 	 */
 	public static function is_pro_active() {
-		// Check for wp-config.php constant first (recommended method).
-		if ( defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED ) {
-			return true;
+		// All built-in features are fully available without a license key.
+		// The constant provides an opt-out mechanism for administrators.
+		if ( defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && ! WP_MCP_AI_PRO_DASHBOARD_ENABLED ) {
+			return false;
 		}
 
 		// Allow override via filter for testing/development (backward compatibility).
-		$force_pro = apply_filters( 'wp_mcp_ai_pro_dashboard_available', false );
-		if ( $force_pro ) {
-			return true;
-		}
-
-		// Check license status.
-		$license_status = get_option( 'wp_mcp_ai_pro_license_status', '' );
-		$license_key    = get_option( 'wp_mcp_ai_pro_license_key', '' );
-
-		return 'valid' === $license_status && ! empty( $license_key );
+		return apply_filters( 'wp_mcp_ai_pro_dashboard_available', true );
 	}
 
 	/**
@@ -76,14 +73,14 @@ class WP_MCP_AI_Pro_License {
 	/**
 	 * Check if feature is available
 	 *
+	 * All features included in the base plugin are fully available.
+	 * This method determines which features belong to which plan tier
+	 * for informational purposes and future external add-on support.
+	 *
 	 * @param string $feature Feature name.
 	 * @return bool
 	 */
 	public static function has_feature( $feature ) {
-		if ( ! self::is_pro_active() ) {
-			return false;
-		}
-
 		$plan     = self::get_pro_plan();
 		$features = array(
 			'compliance'   => array(

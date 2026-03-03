@@ -135,7 +135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 					'label'       => __( 'Allowed File MIME Types', 'mcp-ai-wpoos' ),
 					'description' => __( 'Comma-separated list of allowed file extensions for chat uploads and AI processing. Leave empty to use WordPress defaults. This controls what file types users can upload through chat and assistant interfaces. For security, only include file types you trust.', 'mcp-ai-wpoos' ),
 					'default'     => '',
-					'placeholder' => 'jpg, jpeg, png, pdf, doc, docx, txt',
+					'placeholder' => 'jpg, jpeg, png, pdf, doc, docx, xls, xlsx, ppt, pptx, txt, md, csv',
 					'rows'        => 4,
 				),
 			);

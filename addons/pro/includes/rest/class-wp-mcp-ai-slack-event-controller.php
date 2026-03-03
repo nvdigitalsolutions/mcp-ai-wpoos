@@ -586,6 +586,10 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	/**
 	 * Retrieve the HMAC signing secret from the first active Slack connection.
 	 *
+	 * Checks `signing_secret` first (populated by the updated admin form).
+	 * Falls back to `api_secret` for legacy connections saved before the admin
+	 * form was updated to write the correct field.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return string Signing secret or empty string if not configured.
@@ -593,7 +597,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	protected function get_signing_secret() {
 		$connection = $this->get_active_slack_connection();
 
-		if ( ! $connection || empty( $connection['signing_secret'] ) ) {
+		if ( ! $connection ) {
+			return '';
+		}
+
+		// Prefer the canonical field; fall back to api_secret for legacy connections.
+		$secret = ! empty( $connection['signing_secret'] ) ? $connection['signing_secret']
+			: ( ! empty( $connection['api_secret'] ) ? $connection['api_secret'] : '' );
+
+		if ( '' === $secret ) {
 			return '';
 		}
 
@@ -601,7 +613,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
 
-		return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['signing_secret'] );
+		return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $secret );
 	}
 
 	/**

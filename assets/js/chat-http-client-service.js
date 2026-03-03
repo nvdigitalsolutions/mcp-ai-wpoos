@@ -58,7 +58,9 @@ import ky from 'ky';
 			retry: retryConfig,
 			timeout: options.timeout || DEFAULT_TIMEOUT,
 			hooks: {
-				beforeRetry: []
+				beforeRetry: [],
+				beforeRequest: [],
+				afterResponse: []
 			}
 		};
 
@@ -71,6 +73,34 @@ import ky from 'ky';
 					retryCount: retryCount,
 					maxRetries: retryConfig.limit
 				});
+			});
+		}
+
+		// Add beforeRequest hooks for request instrumentation
+		if (options.beforeRequest && typeof options.beforeRequest === 'function') {
+			kyOptions.hooks.beforeRequest.push(function(request) {
+				options.beforeRequest(request);
+			});
+		}
+
+		// Add afterResponse hook for global response handling (e.g., auth failure detection)
+		kyOptions.hooks.afterResponse.push(function(request, responseOptions, response) {
+			// Handle 401 Unauthorized globally - notify consumers to refresh auth
+			if (response.status === 401 && options.onAuthFailure && typeof options.onAuthFailure === 'function') {
+				options.onAuthFailure({
+					url: request.url,
+					status: response.status,
+					statusText: response.statusText
+				});
+			}
+			return response;
+		});
+
+		// Add custom afterResponse hook if provided
+		if (options.afterResponse && typeof options.afterResponse === 'function') {
+			kyOptions.hooks.afterResponse.push(function(request, responseOptions, response) {
+				options.afterResponse(request, response);
+				return response;
 			});
 		}
 

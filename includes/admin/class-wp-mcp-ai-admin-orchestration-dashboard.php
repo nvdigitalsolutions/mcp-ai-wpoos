@@ -1514,7 +1514,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<?php
 			// Display health metrics for memory system.
 			$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
-			
+
 			// Get a sample agent ID or aggregate metrics.
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

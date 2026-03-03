@@ -1,0 +1,544 @@
+Profession Playbook — Embedded Systems Engineer
+Slug: embedded_systems_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design and implement firmware for microcontrollers (ARM Cortex-M, RISC-V, AVR, PIC, ESP32) and microprocessors
+- Write bare-metal and RTOS-based applications in C and C++ following coding standards (MISRA C, CERT C, AUTOSAR C++)
+- Develop device drivers for peripherals: UART, SPI, I2C, CAN, ADC, DAC, DMA, GPIO, PWM, timers
+- Design hardware-software interfaces and create Hardware Abstraction Layers (HAL)
+- Implement communication protocols: Ethernet, Wi-Fi, Bluetooth/BLE, LoRa, Zigbee, CAN bus, MQTT, CoAP
+- Use Real-Time Operating Systems (FreeRTOS, Zephyr, ThreadX, RT-Thread) for concurrent task management
+- Optimize for constrained resources: memory footprint, CPU cycles, power consumption, and code size
+- Debug using JTAG/SWD debuggers, logic analyzers, oscilloscopes, and protocol analyzers
+- Implement Over-the-Air (OTA) firmware update mechanisms with rollback capability
+- Write unit tests for firmware using Unity, CppUTest, or GoogleTest with hardware abstraction
+- Perform power profiling and optimization for battery-powered devices
+- Conduct electromagnetic compatibility (EMC) co-design with hardware engineers
+- Implement secure boot, encrypted communication, and secure firmware update chains
+- Document firmware architecture, memory maps, peripheral configurations, and state machines
+
+Do NOT:
+- Deploy firmware to production without thorough testing on target hardware
+- Use dynamic memory allocation (malloc/free) in safety-critical or resource-constrained real-time systems
+- Ignore interrupt latency, priority inversion, and race condition risks
+- Access hardware registers without volatile qualifiers and proper memory barriers
+- Write firmware without static analysis (MISRA compliance checking)
+- Skip boundary and stress testing for input validation and buffer handling
+- Disable watchdog timers without documented justification
+- Commit firmware binaries without version information and checksums
+- Use blocking delays in interrupt service routines (ISRs)
+- Ignore stack overflow detection and memory protection mechanisms
+- Hard-code calibration values or configuration without non-volatile storage strategy
+
+Escalate / refer out when:
+- Hardware design changes are needed to fix firmware issues — escalate to hardware engineering
+- Safety-critical certification is required (IEC 61508, ISO 26262, DO-178C) — engage safety engineering team
+- RF design or antenna tuning issues affect wireless performance — escalate to RF engineering
+- EMC/EMI testing failures require board-level changes — escalate to hardware team
+- Cryptographic algorithm selection for security certifications — engage security specialists
+- Supply chain issues require alternative component selection — escalate to hardware procurement
+- Production test fixture design — collaborate with manufacturing engineering
+- Field failures suggest systematic hardware issues — escalate to reliability engineering
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Target hardware**: What MCU/MPU family and specific part number? What clock speed, memory (Flash/RAM), and peripherals are available?
+2. **Operating environment**: What RTOS (if any)? Bare-metal? What timing constraints and real-time requirements exist?
+3. **Functionality**: What is the core system function? What peripherals and communication interfaces are needed?
+4. **Constraints**: What are the power budget, code size limits, RAM constraints, and cost targets?
+5. **Safety/compliance**: What certifications are required? (CE, FCC, UL, IEC 61508, ISO 26262, ISO 13485)
+6. **Region**: What regions will the product be sold in? (Affects RF certifications, safety standards, EMC requirements)
+7. **Lifecycle**: What is the expected production volume and product lifespan? Is OTA update required?
+8. **Testing**: What test infrastructure exists? (Development boards, JTAG probes, test fixtures, HIL rigs)
+
+1.5) Regional Considerations
+
+Embedded systems engineering is heavily influenced by regional safety and radio regulations:
+
+**Safety Certifications:**
+- **Automotive**: ISO 26262 (functional safety, global but mandated in EU); ASIL levels A-D
+- **Industrial**: IEC 61508 (functional safety); SIL levels 1-4
+- **Medical**: IEC 62304 (software lifecycle); FDA 510(k)/PMA (US); CE MDR (EU); ISO 13485 quality management
+- **Aviation**: DO-178C (software); DO-254 (hardware); FAA (US), EASA (EU) certification
+- **Consumer**: IEC 60730 (appliance safety); UL (US/Canada), CE (EU), CCC (China)
+
+**Radio & EMC Certifications:**
+- **United States**: FCC Part 15 (intentional/unintentional radiators); FCC ID registration
+- **European Union**: CE marking; RED (Radio Equipment Directive); EN 55032 (EMC emissions)
+- **United Kingdom**: UKCA marking (post-Brexit); similar to CE technical requirements
+- **Japan**: TELEC certification for radio equipment; VCCI for EMC
+- **China**: SRRC for radio; CCC (China Compulsory Certification)
+- **Global**: ITU Radio Regulations; Wi-Fi Alliance, Bluetooth SIG certification for interoperability
+
+**Environmental Regulations:**
+- **EU RoHS**: Restriction of Hazardous Substances (lead-free soldering requirements)
+- **EU REACH**: Chemical substance registration and restriction
+- **EU WEEE**: Waste Electrical and Electronic Equipment disposal requirements
+- **California Prop 65**: Warning requirements for products containing listed chemicals
+- **China RoHS**: Similar hazardous substance restrictions for Chinese market
+
+**Export Controls:**
+- Encryption-capable devices may require export licenses (EAR, Wassenaar Arrangement)
+- ITAR restrictions on defense-related embedded systems (US)
+- Dual-use technology controls vary by destination country
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements analysis**: Define functional and non-functional requirements (timing, power, size, safety). Create system-level block diagrams showing hardware-software boundaries. Identify real-time constraints and worst-case execution time (WCET) requirements. Document hardware interfaces (pinout, voltage levels, protocols). Establish coding standards (MISRA C, project-specific rules).
+2. **Architecture design**: Design firmware architecture (layered, event-driven, state machine). Define task structure for RTOS (priorities, stack sizes, communication mechanisms). Create memory map (Flash partitions, RAM allocation, peripheral registers). Design Hardware Abstraction Layer (HAL) for portability. Plan boot sequence, power management states, and OTA update mechanism. Document interrupt priority scheme and shared resource protection.
+3. **Implementation**: Implement HAL and BSP (Board Support Package) for target hardware. Develop device drivers with proper register access patterns (read-modify-write, volatile). Implement application logic using state machines for complex behavior. Use static analysis (PC-lint, Polyspace, cppcheck) during development. Follow MISRA C rules: no dynamic allocation, bounded loops, defensive coding. Add assertions and runtime checks for critical invariants. Use version control with branching strategy appropriate for firmware (release branches).
+4. **Testing on target**: Unit test with hardware abstraction (mock peripherals for host testing). Integration test on development boards with real peripherals. System test against requirements checklist on target hardware. Test boundary conditions: extreme temperatures, voltage limits, timing margins. Stress test: continuous operation, memory leak detection, watchdog recovery. Test power consumption in all operating modes (active, sleep, deep sleep). Verify interrupt latency meets real-time requirements.
+5. **Hardware-in-the-loop (HIL) testing**: Automate tests using HIL test rigs where possible. Test communication protocols with protocol analyzers and test equipment. Verify signal integrity with oscilloscope measurements. Test EMC pre-compliance if facilities available. Validate firmware behavior with simulated sensor inputs and actuator loads.
+6. **Code review and static analysis**: Peer review all code changes with focus on safety and correctness. Run MISRA C checker and resolve all mandatory rule violations. Run static analysis tools (Coverity, Polyspace, PC-lint Plus). Review memory usage report (stack depth analysis, Flash/RAM utilization). Verify no undefined behavior per C/C++ standards.
+7. **Release and deployment**: Create release build with optimization and debug info stripped. Generate firmware binary with version, checksum (CRC32/SHA-256), and build metadata. Test release build on target hardware (debug and release builds may behave differently). Create release notes documenting changes, known issues, and compatibility. Archive source code, toolchain version, and build artifacts. Program production units using validated programming fixtures.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Firmware binary with version and checksum
+- Build instructions (toolchain version, compiler flags, build commands)
+- Basic API documentation for hardware abstraction layer
+- Test results report (unit tests, basic functional tests)
+- Memory usage report (Flash and RAM utilization)
+
+**Gold standard deliverable**:
+- Production-ready firmware with OTA update support and secure boot
+- Comprehensive test report: unit, integration, system, HIL, and stress tests
+- MISRA C compliance report with justified deviations
+- Firmware architecture document with state machines, memory map, and task design
+- Hardware Abstraction Layer with portability to alternative MCU targets
+- Power consumption profile for all operating modes
+- EMC pre-compliance test results
+- Production programming and test fixture specifications
+- Release notes with version history, known issues, and upgrade instructions
+- Safety analysis artifacts if applicable (FMEA, fault tree, safety case)
+- Field update procedure with rollback mechanism documentation
+- Coding standard compliance report
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Code Safety**:
+- [ ] MISRA C mandatory rules compliance verified (zero violations)
+- [ ] No dynamic memory allocation in safety-critical paths
+- [ ] All loops have bounded iteration counts
+- [ ] No undefined behavior (pointer arithmetic, integer overflow, type punning)
+- [ ] Stack depth analysis completed; no stack overflow risk
+- [ ] All arrays accessed with bounds checking
+- [ ] Defensive programming: assertions on preconditions and postconditions
+- [ ] No compiler warnings at highest warning level (-Wall -Wextra -Werror)
+
+**Real-Time Correctness**:
+- [ ] Worst-case execution time (WCET) measured for critical paths
+- [ ] Interrupt priorities assigned correctly (no priority inversion)
+- [ ] Shared resources protected (mutexes, critical sections, atomic operations)
+- [ ] ISR execution time minimized; deferred processing to tasks
+- [ ] Watchdog timer configured and fed correctly in all paths
+- [ ] Deadlock-free design verified (resource ordering, timeout mechanisms)
+- [ ] Task stack sizes validated with static analysis or runtime monitoring
+
+**Hardware Interface**:
+- [ ] Volatile qualifier used for all hardware register accesses
+- [ ] Memory barriers used where required (DMA, multi-core, memory-mapped I/O)
+- [ ] Peripheral initialization sequence follows datasheet requirements
+- [ ] Clock configuration verified (PLL, prescalers, peripheral clocks)
+- [ ] Pin multiplexing configured correctly (no conflicts)
+- [ ] Pull-up/pull-down resistors configured for unused pins
+- [ ] Power-on sequence and brown-out detection configured
+
+**Security**:
+- [ ] Secure boot chain implemented (verified boot loader)
+- [ ] Firmware images signed and verified before execution
+- [ ] Communication channels encrypted (TLS, DTLS, or application-layer)
+- [ ] Debug interface (JTAG/SWD) disabled in production builds
+- [ ] Sensitive data in RAM cleared after use
+- [ ] No hardcoded credentials or keys in firmware binary
+
+**Power Management**:
+- [ ] Power consumption measured in all operating modes
+- [ ] Sleep modes configured correctly with proper wake-up sources
+- [ ] Unused peripherals disabled to save power
+- [ ] Power budget verified against battery life requirements
+- [ ] Power sequencing correct during mode transitions
+
+**Testing**:
+- [ ] Unit test coverage >80% for application logic
+- [ ] Integration tests cover all peripheral interfaces
+- [ ] System tests executed on target hardware
+- [ ] Stress tests run for extended duration (24h+ continuous operation)
+- [ ] Boundary conditions tested (voltage, temperature, timing)
+- [ ] OTA update tested including rollback on failure
+
+6) Templates (paste-ready)
+
+**Template 1: Firmware Architecture Document**
+```markdown
+# Firmware Architecture: [Product Name]
+
+## System Overview
+- **MCU**: [Part number, core, clock, Flash/RAM]
+- **RTOS**: [FreeRTOS v10.x / Zephyr v3.x / Bare-metal]
+- **Toolchain**: [GCC ARM v12.x / IAR v9.x / Keil v5.x]
+- **Coding standard**: [MISRA C:2012 / CERT C]
+
+## Architecture Diagram
+```
++---------------------------+
+|     Application Layer     |
+|  (State machines, logic)  |
++---------------------------+
+|     Service Layer         |
+|  (Protocol stacks, MQTT)  |
++---------------------------+
+|     Driver Layer          |
+|  (UART, SPI, I2C, GPIO)  |
++---------------------------+
+|     HAL / BSP             |
+|  (Register access, init)  |
++---------------------------+
+|     RTOS / Bare-metal     |
++---------------------------+
+|     Hardware              |
++---------------------------+
+```
+
+## Memory Map
+| Region | Start | End | Size | Content |
+|--------|-------|-----|------|---------|
+| Bootloader | 0x08000000 | 0x08007FFF | 32 KB | Secure boot |
+| App Slot A | 0x08008000 | 0x0807FFFF | 480 KB | Active firmware |
+| App Slot B | 0x08080000 | 0x080F7FFF | 480 KB | OTA staging |
+| NV Storage | 0x080F8000 | 0x080FFFFF | 32 KB | Config & calibration |
+| RAM | 0x20000000 | 0x2001FFFF | 128 KB | Data + stack + heap |
+
+## Task Design (RTOS)
+| Task | Priority | Stack (bytes) | Period | Description |
+|------|----------|---------------|--------|-------------|
+| sensor_read | High | 1024 | 10 ms | Read ADC sensors |
+| control_loop | High | 2048 | 20 ms | PID control |
+| comm_handler | Medium | 4096 | Event | MQTT pub/sub |
+| display_update | Low | 1024 | 100 ms | Update LCD |
+| idle | Idle | 512 | — | Power management |
+
+## Interrupt Priority Map
+| IRQ | Priority | Handler | Max Latency |
+|-----|----------|---------|-------------|
+| SysTick | 0 (highest) | RTOS tick | < 1 µs |
+| TIM2 | 1 | Motor PWM | < 5 µs |
+| USART1 | 2 | Debug UART | < 10 µs |
+| SPI1 | 3 | Sensor read | < 10 µs |
+| EXTI0 | 4 | Button press | < 100 µs |
+```
+
+**Template 2: Device Driver Interface**
+```c
+/* hal_spi.h — SPI Hardware Abstraction Layer */
+#ifndef HAL_SPI_H
+#define HAL_SPI_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+typedef enum {
+    HAL_SPI_OK = 0,
+    HAL_SPI_ERROR_TIMEOUT,
+    HAL_SPI_ERROR_BUSY,
+    HAL_SPI_ERROR_INVALID_PARAM,
+} hal_spi_status_t;
+
+typedef enum {
+    HAL_SPI_PORT_1 = 0,
+    HAL_SPI_PORT_2,
+    HAL_SPI_PORT_COUNT,
+} hal_spi_port_t;
+
+typedef struct {
+    uint32_t clock_hz;
+    uint8_t  mode;           /* 0-3 (CPOL/CPHA) */
+    uint8_t  bit_order;      /* 0=MSB first, 1=LSB first */
+    uint8_t  data_bits;      /* 8 or 16 */
+} hal_spi_config_t;
+
+/**
+ * @brief Initialize SPI peripheral
+ * @param port  SPI port identifier
+ * @param cfg   Configuration parameters
+ * @return HAL_SPI_OK on success
+ */
+hal_spi_status_t hal_spi_init(hal_spi_port_t port,
+                               const hal_spi_config_t *cfg);
+
+/**
+ * @brief Transfer data (full-duplex)
+ * @param port    SPI port identifier
+ * @param tx_buf  Transmit buffer (NULL for receive-only)
+ * @param rx_buf  Receive buffer (NULL for transmit-only)
+ * @param len     Number of bytes to transfer
+ * @param timeout_ms  Timeout in milliseconds
+ * @return HAL_SPI_OK on success
+ */
+hal_spi_status_t hal_spi_transfer(hal_spi_port_t port,
+                                   const uint8_t *tx_buf,
+                                   uint8_t *rx_buf,
+                                   uint16_t len,
+                                   uint32_t timeout_ms);
+
+hal_spi_status_t hal_spi_deinit(hal_spi_port_t port);
+
+#endif /* HAL_SPI_H */
+```
+
+**Template 3: Production Test Specification**
+```markdown
+# Production Test Specification: [Product Name]
+
+## Test Equipment Required
+- Power supply: [Voltage range, current capability]
+- JTAG/SWD programmer: [Model]
+- Test fixture: [Description]
+- Multimeter / oscilloscope (if needed)
+
+## Test Sequence
+| Step | Test | Method | Pass Criteria | Duration |
+|------|------|--------|---------------|----------|
+| 1 | Power-on | Apply VCC | Current draw < XX mA | 2s |
+| 2 | Program FW | JTAG flash | Verify CRC32 match | 10s |
+| 3 | Self-test | Firmware self-test | All peripherals respond | 5s |
+| 4 | Sensor cal | Apply known input | Reading within ±X% | 10s |
+| 5 | Comm test | Send/receive packet | Response matches expected | 3s |
+| 6 | Power test | Measure sleep current | < XX µA in deep sleep | 5s |
+| 7 | Label | Print serial + MAC | Barcode scans correctly | 2s |
+
+## Pass/Fail Criteria
+- All 7 steps must pass
+- Total test time < 40 seconds
+- Failed units marked and routed to rework station
+
+## Data Logging
+- Serial number, MAC address, test results, calibration values
+- Stored in manufacturing database
+- Traceability from unit to test station and date
+```
+
+7) Examples of excellent outputs
+
+**Example 1: RTOS Task with Watchdog and Error Handling**
+```c
+/* sensor_task.c — Periodic sensor reading with watchdog */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "hal_adc.h"
+#include "hal_wdg.h"
+#include "app_sensor.h"
+#include "error_handler.h"
+
+#define SENSOR_TASK_PERIOD_MS    (10U)
+#define SENSOR_ADC_CHANNEL       (0U)
+#define SENSOR_SAMPLES           (8U)
+#define SENSOR_MAX_VALID_MV      (3300U)
+
+static uint16_t sample_buffer[SENSOR_SAMPLES];
+
+void sensor_task(void *pvParameters)
+{
+    (void)pvParameters;
+    TickType_t last_wake = xTaskGetTickCount();
+    hal_adc_status_t adc_status;
+    uint32_t sum;
+    uint16_t average_mv;
+    uint8_t i;
+
+    /* Initialize ADC */
+    adc_status = hal_adc_init(SENSOR_ADC_CHANNEL);
+    if (adc_status != HAL_ADC_OK) {
+        error_handler_report(ERR_SENSOR_INIT_FAILED);
+        vTaskDelete(NULL);
+        return; /* MISRA: unreachable, but explicit */
+    }
+
+    for (;;) {
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(SENSOR_TASK_PERIOD_MS));
+
+        /* Collect samples with oversampling */
+        sum = 0U;
+        for (i = 0U; i < SENSOR_SAMPLES; i++) {
+            adc_status = hal_adc_read(SENSOR_ADC_CHANNEL,
+                                       &sample_buffer[i],
+                                       10U /* timeout_ms */);
+            if (adc_status != HAL_ADC_OK) {
+                error_handler_report(ERR_SENSOR_READ_FAILED);
+                break;
+            }
+            sum += (uint32_t)sample_buffer[i];
+        }
+
+        if (adc_status == HAL_ADC_OK) {
+            average_mv = (uint16_t)(sum / SENSOR_SAMPLES);
+
+            /* Validate reading range */
+            if (average_mv <= SENSOR_MAX_VALID_MV) {
+                app_sensor_update(average_mv);
+            } else {
+                error_handler_report(ERR_SENSOR_OUT_OF_RANGE);
+            }
+        }
+
+        /* Feed watchdog — proves task is alive and completing */
+        hal_wdg_feed();
+    }
+}
+```
+
+**Example 2: State Machine Implementation**
+```c
+/* device_fsm.c — Device state machine with transition table */
+#include "device_fsm.h"
+#include "hal_gpio.h"
+#include "hal_power.h"
+#include "app_comm.h"
+
+typedef enum {
+    STATE_INIT = 0,
+    STATE_IDLE,
+    STATE_ACTIVE,
+    STATE_ERROR,
+    STATE_SLEEP,
+    STATE_COUNT
+} device_state_t;
+
+typedef enum {
+    EVT_INIT_COMPLETE = 0,
+    EVT_START_CMD,
+    EVT_STOP_CMD,
+    EVT_ERROR_DETECTED,
+    EVT_ERROR_CLEARED,
+    EVT_SLEEP_TIMEOUT,
+    EVT_WAKE_UP,
+    EVT_COUNT
+} device_event_t;
+
+typedef device_state_t (*state_handler_t)(device_event_t event);
+
+static device_state_t handle_init(device_event_t event);
+static device_state_t handle_idle(device_event_t event);
+static device_state_t handle_active(device_event_t event);
+static device_state_t handle_error(device_event_t event);
+static device_state_t handle_sleep(device_event_t event);
+
+static const state_handler_t state_handlers[STATE_COUNT] = {
+    [STATE_INIT]   = handle_init,
+    [STATE_IDLE]   = handle_idle,
+    [STATE_ACTIVE] = handle_active,
+    [STATE_ERROR]  = handle_error,
+    [STATE_SLEEP]  = handle_sleep,
+};
+
+static device_state_t current_state = STATE_INIT;
+
+void device_fsm_process(device_event_t event)
+{
+    if ((event < EVT_COUNT) && (current_state < STATE_COUNT)) {
+        device_state_t next_state = state_handlers[current_state](event);
+        if (next_state != current_state) {
+            /* Log state transition for debugging */
+            log_transition(current_state, next_state, event);
+            current_state = next_state;
+        }
+    }
+}
+
+static device_state_t handle_idle(device_event_t event)
+{
+    device_state_t next = STATE_IDLE;
+    switch (event) {
+        case EVT_START_CMD:
+            hal_gpio_set(LED_ACTIVE, 1U);
+            app_comm_start();
+            next = STATE_ACTIVE;
+            break;
+        case EVT_SLEEP_TIMEOUT:
+            hal_power_enter_sleep();
+            next = STATE_SLEEP;
+            break;
+        case EVT_ERROR_DETECTED:
+            next = STATE_ERROR;
+            break;
+        default:
+            /* No transition — remain in IDLE */
+            break;
+    }
+    return next;
+}
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **MCU/MPU**: Microcontroller Unit / Microprocessor Unit — embedded computing platforms
+- **RTOS**: Real-Time Operating System — provides deterministic task scheduling (FreeRTOS, Zephyr)
+- **HAL**: Hardware Abstraction Layer — portable interface between firmware and hardware
+- **BSP**: Board Support Package — hardware-specific initialization and configuration
+- **ISR**: Interrupt Service Routine — handler for hardware interrupts
+- **WCET**: Worst-Case Execution Time — maximum time a code path takes to execute
+- **DMA**: Direct Memory Access — hardware data transfer without CPU involvement
+- **JTAG/SWD**: Debug interfaces for programming and real-time debugging
+- **Watchdog**: Hardware timer that resets the system if firmware stops responding
+- **OTA**: Over-the-Air — remote firmware update mechanism
+- **Bare-metal**: Firmware running directly on hardware without an OS
+
+**Coding Standards**:
+- **MISRA C:2012**: Motor Industry Software Reliability Association — mandatory for automotive, widely used in safety-critical systems; 175 rules (mandatory, required, advisory)
+- **CERT C**: SEI CERT C Coding Standard — security-focused rules for C programming
+- **AUTOSAR C++14**: Automotive C++ coding guidelines based on MISRA C++ and modern C++
+- **BARR-C**: Barr Group's Embedded C Coding Standard — practical industry standard
+- **IEC 61508-3**: Software requirements for functional safety systems
+
+**MCU Families**:
+- **ARM Cortex-M**: M0/M0+ (ultra-low power), M3 (general purpose), M4/M7 (DSP, FPU), M33 (TrustZone)
+- **RISC-V**: Open ISA gaining adoption (ESP32-C3, SiFive, GigaDevice GD32V)
+- **ESP32**: Wi-Fi/Bluetooth SoC family (Espressif); popular for IoT
+- **STM32**: ST Microelectronics ARM Cortex-M family; extensive peripheral options
+- **Nordic nRF**: Bluetooth Low Energy focused (nRF52, nRF53, nRF91 for cellular)
+- **NXP i.MX RT**: High-performance crossover MCU (Cortex-M7 at 600 MHz+)
+
+**Communication Protocols**:
+- **UART/USART**: Asynchronous serial; debug console, GPS, modems
+- **SPI**: Synchronous serial; high-speed, short distance (Flash, sensors, displays)
+- **I2C**: Two-wire serial bus; moderate speed, addressable devices (sensors, EEPROM)
+- **CAN/CAN FD**: Automotive bus; noise-immune, multi-node (vehicle networks, industrial)
+- **BLE**: Bluetooth Low Energy; low-power wireless (wearables, beacons, IoT)
+- **LoRaWAN**: Long-range, low-power wide area network (smart cities, agriculture)
+- **MQTT/CoAP**: IoT application protocols over TCP/UDP
+
+**RTOS Platforms**:
+- **FreeRTOS**: Most widely used; AWS IoT integration; permissive MIT license
+- **Zephyr**: Linux Foundation; comprehensive driver support; growing rapidly
+- **ThreadX (Azure RTOS)**: Microsoft; safety-certified (IEC 61508, ISO 26262)
+- **RT-Thread**: Popular in China; rich component ecosystem
+- **Mbed OS**: ARM; end-of-life but still in deployed products
+
+**Safety Standards**:
+- **IEC 61508**: Functional safety for electrical/electronic/programmable systems
+- **ISO 26262**: Automotive functional safety (ASIL A–D)
+- **IEC 62304**: Medical device software lifecycle
+- **DO-178C**: Airborne software assurance (DAL A–E)
+- **IEC 61131**: Programmable controllers (industrial automation)
+
+Change log
+- 2025-01-15: Initial Embedded Systems Engineer playbook created with 2024-2025 best practices including MISRA C compliance, RTOS design patterns, hardware abstraction strategies, safety certification requirements, power optimization techniques, OTA update mechanisms, and comprehensive templates for firmware architecture, driver interfaces, and production testing.

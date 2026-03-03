@@ -54,16 +54,16 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'     => array(
+				'action'      => array(
 					'type'        => 'string',
 					'description' => __( 'Lifecycle action to perform', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'refresh', 'compress', 'merge', 'analyze', 'prune', 'update', 'delete' ),
 				),
-				'agent_id'   => array(
+				'agent_id'    => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
 				),
-				'context_id' => array(
+				'context_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Context ID for single-context actions (refresh, compress, update, delete)', 'mcp-ai-wpoos' ),
 				),
@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Multiple context IDs for merge action', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'options'    => array(
+				'options'     => array(
 					'type'        => 'object',
 					'description' => __( 'Action-specific options', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -383,11 +383,11 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 			}
 
 			return array(
-				'success'         => true,
-				'message'         => __( 'Contexts merged successfully.', 'mcp-ai-wpoos' ),
-				'new_context_id'  => $result['context_id'],
-				'merged_count'    => count( $contexts ),
-				'original_ids'    => $context_ids,
+				'success'        => true,
+				'message'        => __( 'Contexts merged successfully.', 'mcp-ai-wpoos' ),
+				'new_context_id' => $result['context_id'],
+				'merged_count'   => count( $contexts ),
+				'original_ids'   => $context_ids,
 			);
 		}
 
@@ -440,13 +440,13 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => sprintf(
+			'success'        => true,
+			'message'        => sprintf(
 				/* translators: %d: number of pruned contexts */
 				__( 'Pruned %d unused contexts.', 'mcp-ai-wpoos' ),
 				$pruned_count
 			),
-			'pruned_count'  => $pruned_count,
+			'pruned_count'   => $pruned_count,
 			'threshold_days' => $threshold_days,
 		);
 	}
@@ -503,9 +503,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 
 		if ( isset( $update_data['metadata'] ) && is_array( $update_data['metadata'] ) ) {
 			// Merge new metadata with existing.
-			$existing_metadata          = isset( $context['data']['metadata'] ) ? $context['data']['metadata'] : array();
+			$existing_metadata           = isset( $context['data']['metadata'] ) ? $context['data']['metadata'] : array();
 			$context['data']['metadata'] = array_merge( $existing_metadata, $update_data['metadata'] );
-			$updated_fields[]           = 'metadata';
+			$updated_fields[]            = 'metadata';
 		}
 
 		if ( isset( $update_data['tags'] ) && is_array( $update_data['tags'] ) ) {
@@ -532,9 +532,9 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 		if ( ! isset( $context['data']['metadata'] ) ) {
 			$context['data']['metadata'] = array();
 		}
-		$context['data']['metadata']['last_updated']    = current_time( 'mysql' );
-		$context['data']['metadata']['updated_fields']  = $updated_fields;
-		$context['data']['metadata']['update_count']    = isset( $context['data']['metadata']['update_count'] ) ? $context['data']['metadata']['update_count'] + 1 : 1;
+		$context['data']['metadata']['last_updated']   = current_time( 'mysql' );
+		$context['data']['metadata']['updated_fields'] = $updated_fields;
+		$context['data']['metadata']['update_count']   = isset( $context['data']['metadata']['update_count'] ) ? $context['data']['metadata']['update_count'] + 1 : 1;
 
 		// Re-store updated context.
 		$remaining_ttl = strtotime( $context['expires_at'] ) - time();
@@ -623,12 +623,12 @@ class WP_MCP_AI_Tool_Manage_Context_Lifecycle implements WP_MCP_AI_Tool_Interfac
 
 		if ( $deleted ) {
 			return array(
-				'success'     => true,
-				'message'     => __( 'Context deleted successfully.', 'mcp-ai-wpoos' ),
-				'context_id'  => $context_id,
-				'deleted_at'  => current_time( 'mysql' ),
+				'success'      => true,
+				'message'      => __( 'Context deleted successfully.', 'mcp-ai-wpoos' ),
+				'context_id'   => $context_id,
+				'deleted_at'   => current_time( 'mysql' ),
 				'context_type' => $context['context_type'],
-				'title'       => isset( $context['data']['title'] ) ? $context['data']['title'] : '',
+				'title'        => isset( $context['data']['title'] ) ? $context['data']['title'] : '',
 			);
 		}
 

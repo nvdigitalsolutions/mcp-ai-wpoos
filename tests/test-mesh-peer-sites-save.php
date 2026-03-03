@@ -25,8 +25,8 @@ class WP_MCP_AI_Mesh_Peer_Sites_Save_Test extends WP_UnitTestCase {
 		// Simulate saving the federation_mesh subtab with a new peer.
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_mesh'       => '1', // Mesh must be enabled.
-			'mesh_peer_sites'   => array(
+			'enable_mesh'     => '1', // Mesh must be enabled.
+			'mesh_peer_sites' => array(
 				0 => array(
 					'name'    => 'Test Peer',
 					'url'     => 'https://peer.example.com',

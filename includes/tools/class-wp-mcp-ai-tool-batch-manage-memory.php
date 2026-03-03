@@ -219,11 +219,11 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$updates       = $arguments['updates'];
+		$updates         = $arguments['updates'];
 		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
-		$updated_count = 0;
-		$failed_count  = 0;
-		$changes       = array();
+		$updated_count   = 0;
+		$failed_count    = 0;
+		$changes         = array();
 
 		foreach ( $context_ids as $context_id ) {
 			$context = $context_manager->retrieve_context( $agent_id, $context_id, false );
@@ -246,14 +246,14 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			if ( isset( $updates['add_tags'] ) && is_array( $updates['add_tags'] ) ) {
-				$existing_tags          = isset( $context['data']['tags'] ) ? $context['data']['tags'] : array();
-				$context['data']['tags'] = array_unique( array_merge( $existing_tags, $updates['add_tags'] ) );
+				$existing_tags                 = isset( $context['data']['tags'] ) ? $context['data']['tags'] : array();
+				$context['data']['tags']       = array_unique( array_merge( $existing_tags, $updates['add_tags'] ) );
 				$context_changes['tags_added'] = $updates['add_tags'];
 			}
 
 			if ( isset( $updates['metadata'] ) && is_array( $updates['metadata'] ) ) {
-				$existing_metadata          = isset( $context['data']['metadata'] ) ? $context['data']['metadata'] : array();
-				$context['data']['metadata'] = array_merge( $existing_metadata, $updates['metadata'] );
+				$existing_metadata                   = isset( $context['data']['metadata'] ) ? $context['data']['metadata'] : array();
+				$context['data']['metadata']         = array_merge( $existing_metadata, $updates['metadata'] );
 				$context_changes['metadata_updated'] = array_keys( $updates['metadata'] );
 			}
 
@@ -324,7 +324,7 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$deleted_count = 0;
+		$deleted_count    = 0;
 		$deleted_contexts = array();
 
 		foreach ( $context_ids as $context_id ) {
@@ -494,9 +494,9 @@ class WP_MCP_AI_Tool_Batch_Manage_Memory implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$tags              = array_map( 'sanitize_text_field', $arguments['tags'] );
-		$context_manager   = WP_MCP_AI_Agent_Context_Manager::get_instance();
-		$updated_count     = 0;
+		$tags            = array_map( 'sanitize_text_field', $arguments['tags'] );
+		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$updated_count   = 0;
 
 		foreach ( $context_ids as $context_id ) {
 			$context = $context_manager->retrieve_context( $agent_id, $context_id, false );

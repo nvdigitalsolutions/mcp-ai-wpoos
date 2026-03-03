@@ -186,7 +186,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 	public function test_parallel_execution_result_structure() {
 		// Use reflection to test the internal parallel execution method.
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_parallel_steps' );
+		$method     = $reflection->getMethod( 'execute_parallel_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -221,7 +221,7 @@ class Test_Slash_Command_Workflow_Parallel extends WP_UnitTestCase {
 	public function test_parallel_execution_respects_timeout() {
 		// Use reflection to test timeout behavior.
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_parallel_steps' );
+		$method     = $reflection->getMethod( 'execute_parallel_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(

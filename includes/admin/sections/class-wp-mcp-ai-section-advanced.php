@@ -843,19 +843,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			foreach ( $roles as $role ) {
 				$query                = new WP_Query(
 					array(
-						'post_type'   => 'mcp_ai_profession',
-						'post_status' => 'publish',
-						'meta_query'  => array(
+						'post_type'      => 'mcp_ai_profession',
+						'post_status'    => 'publish',
+						'posts_per_page' => -1,
+						'meta_query'     => array(
 							array(
-								'key'     => '_wp_mcp_ai_profession_agent_role',
-								'value'   => $role,
-								'compare' => '=',
+								'key'   => '_wp_mcp_ai_profession_agent_role',
+								'value' => $role,
 							),
 						),
-						'fields'      => 'ids',
+						'fields'         => 'ids',
 					)
 				);
-				$role_counts[ $role ] = $query->post_count;
+				$role_counts[ $role ] = $query->found_posts;
 				wp_reset_postdata();
 			}
 			$total_with_roles = array_sum( $role_counts );
@@ -1675,6 +1675,202 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				});
 				</script>
 			</div>
+
+			<!-- SKILLS DATA MANAGEMENT SECTION -->
+			<?php
+			// Load skill registry classes.
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
+			}
+
+			$skill_registry   = WP_MCP_AI_Skill_Registry::instance();
+			$installed_skills = $skill_registry->get_all_skills();
+			$installed_count  = count( $installed_skills );
+
+			// Count bundled skills available.
+			$bundled_dir   = $skill_registry->get_bundled_skills_dir();
+			$bundled_count = 0;
+			if ( is_dir( $bundled_dir ) ) {
+				$bundled_dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
+				if ( is_array( $bundled_dirs ) ) {
+					foreach ( $bundled_dirs as $b_dir ) {
+						if ( file_exists( $b_dir . '/SKILL.md' ) ) {
+							++$bundled_count;
+						}
+					}
+				}
+			}
+
+			// Determine if bundled skills need installing.
+			$skills_sync_needed = ( $installed_count < $bundled_count );
+			$skills_sync_class  = $skills_sync_needed ? 'warning' : 'success';
+			$skills_sync_text   = $skills_sync_needed ? __( 'Bundled Skills Available', 'mcp-ai-wpoos' ) : __( 'Up to Date', 'mcp-ai-wpoos' );
+			?>
+			<div class="wp-mcp-ai-skills-data-management-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Skills Data Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage Agent Skills (SKILL.md) installed on this site. Skills provide specialized instructions that can be attached to assistants to enhance their capabilities.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-skills-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li><strong><?php esc_html_e( 'Installed Skills:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $installed_count ); ?></li>
+						<li><strong><?php esc_html_e( 'Bundled Skills Available:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $bundled_count ); ?></li>
+						<li><strong><?php esc_html_e( 'Sync Status:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $skills_sync_class ); ?>">
+								<?php echo esc_html( $skills_sync_text ); ?>
+							</span>
+							<?php if ( $skills_sync_needed ) : ?>
+								<span class="description">
+									<?php
+									echo esc_html(
+										sprintf(
+											/* translators: %d: Number of new bundled skills available */
+											_n( '(%d bundled skill not yet installed)', '(%d bundled skills not yet installed)', $bundled_count - $installed_count, 'mcp-ai-wpoos' ),
+											$bundled_count - $installed_count
+										)
+									);
+									?>
+								</span>
+							<?php endif; ?>
+						</li>
+					</ul>
+				</div>
+
+				<div class="wp-mcp-ai-skills-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Manage Skills', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Refresh the skills index or install bundled skills that ship with the plugin:', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-refresh-skills-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Refresh Skills Index', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Rescans the skills directory and updates the cached index.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-install-bundled-skills-btn">
+								<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Install Bundled Skills', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Installs bundled skills that are not yet installed. Existing skills are preserved.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-force-install-bundled-skills-btn">
+								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Force Reinstall Bundled Skills', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Removes and reinstalls all bundled skills, resetting them to their default versions.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-skills-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performSkillsAction(actionType, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-skills-message');
+						var originalText = $button.html();
+
+						// Disable all skills buttons.
+						$('#wp-mcp-ai-refresh-skills-btn, #wp-mcp-ai-install-bundled-skills-btn, #wp-mcp-ai-force-install-bundled-skills-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text.
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
+
+						// Hide any previous messages.
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_refresh_skills',
+								action_type: actionType,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_refresh_skills' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload stats after a short delay.
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text.
+								$('#wp-mcp-ai-refresh-skills-btn, #wp-mcp-ai-install-bundled-skills-btn, #wp-mcp-ai-force-install-bundled-skills-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-refresh-skills-btn').on('click', function(e) {
+						e.preventDefault();
+						performSkillsAction('refresh', '#wp-mcp-ai-refresh-skills-btn');
+					});
+
+					$('#wp-mcp-ai-install-bundled-skills-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will install any bundled skills that are not yet installed. Existing skills will be preserved. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performSkillsAction('install_bundled', '#wp-mcp-ai-install-bundled-skills-btn');
+						}
+					});
+
+					$('#wp-mcp-ai-force-install-bundled-skills-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will remove and reinstall all bundled skills, resetting them to their default versions. Any customizations to bundled skills will be lost. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performSkillsAction('force_install_bundled', '#wp-mcp-ai-force-install-bundled-skills-btn');
+						}
+					});
+				});
+				</script>
+			</div>
 			<?php
 		}
 
@@ -1780,7 +1976,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			}
 
 			// Get all professions from knowledge base.
-			$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+			$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 			$professions = $loader->load_all();
 
 			// Return count, handling WP_Error if load failed.

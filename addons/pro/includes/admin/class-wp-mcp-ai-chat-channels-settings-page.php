@@ -123,6 +123,109 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	}
 
 	/**
+	 * Override the configuration form to include the Global Settings section
+	 * inside the WordPress Settings API form so values are properly saved.
+	 */
+	protected function render_configuration_form() {
+		$settings = get_option( $this->option_name, array() );
+
+		$saved_assistant       = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+		$enable_logging        = ! empty( $settings['enable_logging'] );
+		$enable_rate_limiting  = isset( $settings['enable_rate_limiting'] ) ? (bool) $settings['enable_rate_limiting'] : true;
+		$verify_webhook        = isset( $settings['verify_webhook_signatures'] ) ? (bool) $settings['verify_webhook_signatures'] : true;
+
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<form method="post" action="options.php">
+				<?php settings_fields( $this->option_name . '_group' ); ?>
+				<?php do_settings_sections( $this->option_name ); ?>
+
+				<h2 style="margin-top: 20px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<label for="cc-default-assistant-setting"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></label>
+						</th>
+						<td>
+							<select id="cc-default-assistant-setting" name="<?php echo esc_attr( $this->option_name ); ?>[default_assistant]" class="regular-text">
+								<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
+								<?php foreach ( $assistants as $assistant ) : ?>
+									<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $saved_assistant, $assistant->ID ); ?>>
+										<?php echo esc_html( $assistant->post_title ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages (used by the Telegram Mini App and other channels).', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_logging]" value="1" <?php checked( $enable_logging ); ?> />
+								<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[enable_rate_limiting]" value="1" <?php checked( $enable_rate_limiting ); ?> />
+								<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="<?php echo esc_attr( $this->option_name ); ?>[verify_webhook_signatures]" value="1" <?php checked( $verify_webhook ); ?> />
+								<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
+							</label>
+						</td>
+					</tr>
+				</table>
+
+				<?php submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+			</form>
+		</div><!-- .toolkit-card -->
+		<?php
+		$this->render_configuration_tab();
+	}
+
+	/**
+	 * Override sanitize_settings to include the Global Settings fields.
+	 *
+	 * @param array $input Settings input from the form.
+	 * @return array Sanitized settings array.
+	 */
+	public function sanitize_settings( $input ) {
+		// Call the parent to handle any base-class fields (enable_remote_sites, enable_research,
+		// research_assistant_id) – these are disabled for this toolkit but calling the parent
+		// is harmless and future-proofs the code if they are ever enabled.
+		$sanitized = parent::sanitize_settings( $input );
+
+		// Chat Channels Global Settings fields.
+		$sanitized['default_assistant']        = isset( $input['default_assistant'] ) ? absint( $input['default_assistant'] ) : 0;
+		$sanitized['enable_logging']           = ! empty( $input['enable_logging'] );
+		$sanitized['enable_rate_limiting']     = ! empty( $input['enable_rate_limiting'] );
+		$sanitized['verify_webhook_signatures'] = ! empty( $input['verify_webhook_signatures'] );
+
+		return $sanitized;
+	}
+
+	/**
 	 * Render overview tab
 	 */
 	protected function render_overview_tab() {
@@ -131,7 +234,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<h2><?php esc_html_e( 'Chat Channels Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'Enterprise-grade chat channel integration toolkit with 21 specialized tools for managing communications across Telegram, WhatsApp, Slack, Discord, Microsoft Teams, and Facebook Messenger.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Enterprise-grade chat channel integration toolkit with specialized tools for managing communications across Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Office 365 (Outlook, OneDrive), and iCloud Drive.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<p><strong><?php esc_html_e( 'Built with research from OpenClaw.ai\'s extensive multi-platform chat integration experience.', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 			</div>
 
@@ -172,6 +275,14 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					<h4 style="margin-top: 0;">📘 Facebook Messenger</h4>
 					<p><?php esc_html_e( 'Page messaging with quick replies and persistent menus', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
+				<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+					<h4 style="margin-top: 0;">📧 Office 365</h4>
+					<p><?php esc_html_e( 'Outlook mail, OneDrive files, and Office document integration via Microsoft Graph API', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+				<div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+					<h4 style="margin-top: 0;">☁️ iCloud</h4>
+					<p><?php esc_html_e( 'iCloud Drive file management via a configurable gateway service', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
 			</div>
 
 			<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -200,62 +311,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_slack_config(); ?>
 			<?php $this->render_discord_config(); ?>
 			<?php $this->render_teams_config(); ?>
+			<?php $this->render_office365_config(); ?>
 			<?php $this->render_messenger_config(); ?>
 			<?php $this->render_twitter_config(); ?>
-
-			<h2 style="margin-top: 40px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<table class="form-table">
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<select name="default_assistant" class="regular-text">
-							<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
-							<?php
-							$assistants = get_posts(
-								array(
-									'post_type'      => 'mcp_ai_assistant',
-									'posts_per_page' => -1,
-									'post_status'    => 'publish',
-								)
-							);
-							foreach ( $assistants as $assistant ) :
-								?>
-								<option value="<?php echo esc_attr( $assistant->ID ); ?>">
-									<?php echo esc_html( $assistant->post_title ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-						<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages', 'mcp-ai-wpoos-pro' ); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_logging" value="1" />
-							<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="enable_rate_limiting" value="1" checked />
-							<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
-					<td>
-						<label>
-							<input type="checkbox" name="verify_webhook_signatures" value="1" checked />
-							<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
-						</label>
-					</td>
-				</tr>
-			</table>
+			<?php $this->render_icloud_config(); ?>
 		</div>
 
 		<style>
@@ -321,6 +380,9 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 * Render Telegram configuration section
 	 */
 	protected function render_telegram_config() {
+		$mini_app_url = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' )
+			? WP_MCP_AI_Telegram_Mini_App_Controller::get_mini_app_url()
+			: rest_url( 'mcp-ai/v1/telegram-mini-app' );
 		?>
 		<div class="platform-config">
 			<div class="platform-config-header">
@@ -352,12 +414,135 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							<p class="description"><?php esc_html_e( 'Configure this URL in your Telegram bot settings', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Mini App URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $mini_app_url ); ?>" class="large-text code" onclick="this.select();" onfocus="this.select();" style="background-color:#f0f0f0;" />
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: opening <a> tag, 2: closing </a> tag */
+									esc_html__( 'Provide this URL to @BotFather when configuring your bot\'s %1$sMini App (Web App)%2$s. In BotFather, use /newapp or /setmenubutton and paste this URL to enable the "Open App" button for your users.', 'mcp-ai-wpoos-pro' ),
+									'<a href="https://core.telegram.org/bots/webapps" target="_blank" rel="noopener noreferrer">',
+									'</a>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
 				</table>
+
+				<h4><?php esc_html_e( 'Group & Community Chat', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'To allow your bot to respond in Telegram groups and supergroups, enable the "Enable Group Chats" option on the Telegram connection in the Remote Site Manager. By default the bot responds to every message in the group. Optionally enable "Require Mention" so the bot only replies when @mentioned or when a message is a reply to the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ol>
+					<li><?php esc_html_e( 'Go to the Remote Site Manager and edit your Telegram connection', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Check "Enable Group Chats" to allow the bot to respond in groups', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Optionally check "Require Mention" so the bot only replies when @mentioned', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter the Bot Username (e.g. @mybot) so mention detection works correctly', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the bot to your Telegram group and send it a message', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<div class="notice notice-info inline" style="margin: 12px 0;">
+					<p><strong><?php esc_html_e( 'Important: Telegram Bot Privacy Mode', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+					<p><?php esc_html_e( 'By default Telegram bots run in Privacy Mode, which means the bot only receives messages that directly @mention it, replies to its messages, or commands (messages starting with /). To allow the bot to receive and respond to ALL messages in a group:', 'mcp-ai-wpoos-pro' ); ?></p>
+					<ol>
+						<li><?php esc_html_e( 'Open Telegram and message @BotFather', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Send /setprivacy', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Select your bot', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Choose "Disable" to turn off Privacy Mode', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ol>
+					<p><?php esc_html_e( 'After disabling Privacy Mode, remove and re-add the bot to existing groups for the change to take effect.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+
+				<h4><?php esc_html_e( 'Test Group Link', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'Paste a Telegram group invite link or @username below to quickly open the group and verify your bot is active. To send a test message from your bot, use the "Test Send to Group/Channel" feature on the connection edit page in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Group Link', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<div style="display: flex; gap: 8px; align-items: flex-start;">
+								<input type="text" id="wp-mcp-ai-tg-group-link" class="regular-text" placeholder="<?php esc_attr_e( 'https://t.me/+abc123 or https://t.me/groupname or @groupname', 'mcp-ai-wpoos-pro' ); ?>" style="flex: 1;" />
+								<button type="button" id="wp-mcp-ai-tg-open-group-btn" class="button button-secondary">
+									<?php esc_html_e( 'Open Group', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
+							<div id="wp-mcp-ai-tg-group-link-result" style="display: none; margin-top: 8px;"></div>
+							<p class="description">
+								<?php esc_html_e( 'Enter a Telegram group invite link (e.g. https://t.me/+abc123 or https://t.me/groupname) or an @username. Clicking "Open Group" will open the link in a new tab so you can verify the bot is a member and receiving messages.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p class="description" style="margin-top: 4px;">
+								<strong><?php esc_html_e( 'Tip:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'For private groups (links with +), you need the numeric chat ID (e.g. -1001234567890) to send test messages via the API. Open the group, send /start to your bot, then check the plugin logs for the chat ID.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+				<script>
+				(function() {
+					var openBtn   = document.getElementById('wp-mcp-ai-tg-open-group-btn');
+					var linkInput = document.getElementById('wp-mcp-ai-tg-group-link');
+					var resultDiv = document.getElementById('wp-mcp-ai-tg-group-link-result');
+					if (!openBtn || !linkInput) { return; }
+
+					openBtn.addEventListener('click', function() {
+						var val = linkInput.value.trim();
+						if (!val) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Please enter a Telegram group link or @username.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+
+						var url = '';
+
+						// Already a full URL.
+						if (/^https?:\/\//i.test(val)) {
+							url = val;
+						}
+						// @username format.
+						else if (/^@/.test(val)) {
+							url = 'https://t.me/' + val.replace(/^@/, '');
+						}
+						// Bare username (letters, digits, underscores, 5+ chars).
+						else if (/^[a-zA-Z][a-zA-Z0-9_]{4,}$/.test(val)) {
+							url = 'https://t.me/' + val;
+						}
+						// Numeric chat ID — cannot open directly; show guidance.
+						else if (/^-?\d+$/.test(val)) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-info inline" style="margin:0;"><p><?php echo esc_js( __( 'Numeric chat IDs cannot be opened as a link. Use the "Test Send to Group/Channel" feature on the connection edit page to send a test message to this chat ID.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+						else {
+							url = 'https://t.me/' + val;
+						}
+
+						// Validate URL scheme — only allow https (and http for local dev).
+						if (!/^https?:\/\//i.test(url)) {
+							if (resultDiv) {
+								resultDiv.style.display = 'block';
+								resultDiv.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p><?php echo esc_js( __( 'Invalid URL. Only http and https links are supported.', 'mcp-ai-wpoos-pro' ) ); ?></p></div>';
+							}
+							return;
+						}
+
+						if (resultDiv) {
+							resultDiv.style.display = 'block';
+							resultDiv.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p><?php echo esc_js( __( 'Opening group link in a new tab…', 'mcp-ai-wpoos-pro' ) ); ?> <a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer">' + url.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</a></p></div>';
+						}
+						window.open(url, '_blank', 'noopener,noreferrer');
+					});
+				})();
+				</script>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://core.telegram.org/bots" target="_blank"><?php esc_html_e( 'Telegram Bot API Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://core.telegram.org/bots/api" target="_blank"><?php esc_html_e( 'API Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://core.telegram.org/bots/webapps" target="_blank"><?php esc_html_e( 'Mini Apps (Web Apps) Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
@@ -699,6 +884,181 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	}
 
 	/**
+	 * Render Office 365 configuration section
+	 */
+	protected function render_office365_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>📧 <?php esc_html_e( 'Office 365 Configuration (Outlook, OneDrive)', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'Office 365 integration provides Outlook mail, OneDrive file management, and Office document access via the Microsoft Graph API. Uses the same Azure AD application as Microsoft Teams.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Use the same Azure AD application configured for Microsoft Teams (or register a new one in the Azure Portal)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the required Microsoft Graph API permissions listed below', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Grant admin consent for the added permissions', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Configure the Outlook webhook URL below to receive new mail notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Test Connection" on the connection edit page to verify your credentials with Microsoft Graph', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Assign AI Assistants and use "Test Auto-Reply" to simulate incoming email responses', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Application (Client) ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" name="office365_client_id" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD application ID (can be the same as Microsoft Teams)', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Client Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="office365_client_secret" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD client secret', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Tenant ID', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="text" name="office365_tenant_id" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Your Azure AD tenant ID', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Outlook Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/outlook' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Use this URL as the notificationUrl when creating a Microsoft Graph subscription for mail changes.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Client State (Webhook Secret)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="office365_client_state" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Optional shared secret sent with change notifications for signature validation. Set this value when creating the Graph subscription.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'Required API Permissions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<div class="code-snippet">Mail.Read, Mail.Send, Files.Read.All, Files.ReadWrite.All, User.Read</div>
+
+				<h4><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'Send Outlook Mail', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Send emails via Microsoft Outlook', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get Outlook Messages', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve inbox or folder messages', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'List OneDrive Files', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Browse files and folders in OneDrive', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get OneDrive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve file metadata and download URL', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Upload OneDrive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Upload files to OneDrive', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'After adding an Office 365 connection in the Remote Site Manager, use the following features on the connection edit page:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies your Azure AD credentials by requesting an access token from the Microsoft identity platform and querying the Graph API.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming Outlook email and generates an AI-powered reply using the first assigned assistant. Optionally sends the reply to a specified email address.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/mail-api-overview" target="_blank"><?php esc_html_e( 'Microsoft Graph Mail API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/onedrive" target="_blank"><?php esc_html_e( 'Microsoft Graph OneDrive API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/webhooks" target="_blank"><?php esc_html_e( 'Microsoft Graph Webhooks (Change Notifications)', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render iCloud configuration section
+	 */
+	protected function render_icloud_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>☁️ <?php esc_html_e( 'iCloud Drive Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'iCloud Drive integration enables file management via a configured gateway service. Since Apple does not provide a direct third-party REST API for iCloud, this channel communicates through a gateway that bridges to Apple CloudKit or iCloud services.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Set up an iCloud gateway service that provides REST API access to iCloud Drive (e.g. via Apple CloudKit JS or a server-side CloudKit integration)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Obtain the gateway API URL and authentication credentials', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Configure the signing secret for webhook signature verification', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Set up the webhook URL in your gateway to receive file change notifications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Click "Test Connection" on the connection edit page to verify gateway connectivity', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Assign AI Assistants and use "Test Auto-Reply" to simulate incoming file event responses', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Gateway API URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="url" name="icloud_gateway_url" class="regular-text" placeholder="https://your-gateway.example.com/api/icloud" />
+							<p class="description"><?php esc_html_e( 'Base URL of your iCloud gateway REST API (must be HTTPS)', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="icloud_api_key" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'API key or bearer token for authenticating with your iCloud gateway', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook Signing Secret', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<input type="password" name="icloud_signing_secret" class="regular-text" />
+							<p class="description"><?php esc_html_e( 'Shared HMAC-SHA256 signing secret for validating incoming webhook payloads from the gateway', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/icloud' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Configure this URL in your iCloud gateway to receive file change notifications', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'List iCloud Drive Files', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Browse files and folders in iCloud Drive', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Get iCloud Drive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Retrieve file metadata and download information', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Upload iCloud Drive File', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Upload files to iCloud Drive', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Supported Webhook Events', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><code>file_created</code> — <?php esc_html_e( 'New file uploaded', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_modified</code> — <?php esc_html_e( 'Existing file changed', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_deleted</code> — <?php esc_html_e( 'File removed', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><code>file_shared</code> — <?php esc_html_e( 'File sharing event', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'After adding an iCloud Drive connection in the Remote Site Manager, use the following features on the connection edit page:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies your gateway credentials by sending a request to the iCloud gateway API URL and confirming connectivity.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming file event and generates an AI-powered reply using the first assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://developer.apple.com/documentation/cloudkit" target="_blank"><?php esc_html_e( 'Apple CloudKit Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developer.apple.com/icloud/" target="_blank"><?php esc_html_e( 'Apple iCloud Developer Resources', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render Facebook Messenger configuration section
 	 */
 	protected function render_messenger_config() {
@@ -822,7 +1182,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<div class="code-snippet">messages, messaging_postbacks, messaging_optins, message_deliveries, message_reads, messaging_referrals, message_reactions</div>
 				<p style="margin-top:8px; font-size:13px;">
 					<strong><?php esc_html_e( 'Required permissions:', 'mcp-ai-wpoos-pro' ); ?></strong>
-					<code>pages_messaging</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>
+					<code>pages_messaging</code>
 				</p>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>

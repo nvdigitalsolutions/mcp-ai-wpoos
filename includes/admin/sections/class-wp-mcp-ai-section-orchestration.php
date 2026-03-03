@@ -4431,7 +4431,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				array(
 					'post_type'      => 'mcp_ai_profession',
 					'post_status'    => 'publish',
-					'posts_per_page' => 100,
+					'posts_per_page' => -1,
+					'nopaging'       => true,
 					'orderby'        => 'title',
 					'order'          => 'ASC',
 				)
