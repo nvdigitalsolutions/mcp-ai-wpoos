@@ -105,8 +105,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 		// Create a post with "documentation" in title.
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Documentation: Getting Started',
-				'post_status' => 'publish',
+				'post_title'   => 'Documentation: Getting Started',
+				'post_status'  => 'publish',
 				'post_content' => '<h2>Installation</h2><p>Instructions here.</p>',
 			)
 		);
@@ -131,8 +131,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 		// Create a post with broken internal link.
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Documentation Guide',
-				'post_status' => 'publish',
+				'post_title'   => 'Documentation Guide',
+				'post_status'  => 'publish',
 				'post_content' => '<a href="' . home_url( '/non-existent-page/' ) . '">Broken Link</a>',
 			)
 		);
@@ -157,8 +157,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 		// Create post with outdated WordPress version reference.
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'WordPress Tutorial',
-				'post_status' => 'publish',
+				'post_title'   => 'WordPress Tutorial',
+				'post_status'  => 'publish',
 				'post_content' => 'This guide is for WordPress 5.0 and newer.',
 			)
 		);
@@ -184,8 +184,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 		// Create post with outdated version.
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Guide',
-				'post_status' => 'publish',
+				'post_title'   => 'Guide',
+				'post_status'  => 'publish',
 				'post_content' => 'Requires WordPress 5.0',
 			)
 		);
@@ -210,8 +210,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 		// Create post without required sections.
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Tutorial',
-				'post_status' => 'publish',
+				'post_title'   => 'Tutorial',
+				'post_status'  => 'publish',
 				'post_content' => '<p>Just some content without proper sections.</p>',
 			)
 		);
@@ -235,8 +235,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 	public function test_skip_links_flag() {
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Guide',
-				'post_status' => 'publish',
+				'post_title'   => 'Guide',
+				'post_status'  => 'publish',
 				'post_content' => '<a href="' . home_url( '/broken/' ) . '">Link</a>',
 			)
 		);
@@ -262,8 +262,8 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 	public function test_skip_code_flag() {
 		$post_id = $this->factory->post->create(
 			array(
-				'post_title'  => 'Code Tutorial',
-				'post_status' => 'publish',
+				'post_title'   => 'Code Tutorial',
+				'post_status'  => 'publish',
 				'post_content' => '<code>mysql_query("SELECT * FROM table")</code>',
 			)
 		);
@@ -305,10 +305,10 @@ class Test_Slash_Command_Sync_Docs extends WP_UnitTestCase {
 	 */
 	public function test_dry_run_prevents_changes() {
 		$original_content = 'Requires WordPress 5.0';
-		$post_id = $this->factory->post->create(
+		$post_id          = $this->factory->post->create(
 			array(
-				'post_title'  => 'Guide',
-				'post_status' => 'publish',
+				'post_title'   => 'Guide',
+				'post_status'  => 'publish',
 				'post_content' => $original_content,
 			)
 		);

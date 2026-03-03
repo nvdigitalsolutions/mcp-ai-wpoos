@@ -7,7 +7,7 @@
  * @package WP_MCP_AI
  */
 
-if ( ! defined( 'ABSPATH' )) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 				}
 
 				$this->process_event( $event );
-				$processed++;
+				++$processed;
 			}
 
 			// Log successful processing.
@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 
 			return new WP_REST_Response(
 				array(
-					'success'  => true,
+					'success'   => true,
 					'processed' => $processed,
 				),
 				200

@@ -67,7 +67,7 @@ spl_autoload_register(
 		// Check if this is a section class we should autoload.
 		if ( isset( $section_files[ $class_name ] ) ) {
 			$file = $section_files[ $class_name ];
-			
+
 			// Handle both absolute paths (Pro sections) and relative paths (base sections).
 			// Check if path is already absolute (cross-platform compatible).
 			$is_absolute = (
@@ -80,11 +80,11 @@ spl_autoload_register(
 				// Windows UNC path (e.g., \\server\share).
 				0 === strpos( $file, '\\\\' )
 			);
-			
+
 			if ( ! $is_absolute ) {
 				$file = WP_MCP_AI_PATH . $file;
 			}
-			
+
 			if ( file_exists( $file ) ) {
 				require_once $file;
 			}
@@ -151,7 +151,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// The class is still loaded and instantiated by the container for subtab merging.
 		// $pro_providers_section = $container->get( 'section.pro_providers' );
 		// if ( null !== $pro_providers_section ) {
-		// 	WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
+		// WP_MCP_AI_Settings_Registry::register_section( $pro_providers_section );
 		// }
 
 		// Pro Integrations section is only available with Pro addon.

@@ -167,7 +167,7 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 	 */
 	public function test_admin_pages_registered_when_disabled() {
 		// Disable the document generation toolkit.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                                       = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_document_generation_toolkit'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -231,28 +231,28 @@ class Test_Document_Template_Admin_Pages extends WP_UnitTestCase {
 		$settings_page = new WP_MCP_AI_Document_Generation_Settings_Page();
 
 		// Test sanitization - valid value.
-		$input = array(
+		$input     = array(
 			'ocr_max_pages_default' => 50,
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertSame( 50, $sanitized['ocr_max_pages_default'], 'Valid OCR max pages should be sanitized correctly' );
 
 		// Test sanitization - value above max (should be capped at 100).
-		$input = array(
+		$input     = array(
 			'ocr_max_pages_default' => 150,
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertSame( 100, $sanitized['ocr_max_pages_default'], 'OCR max pages above 100 should be capped at 100' );
 
 		// Test sanitization - value below min (should be set to 0).
-		$input = array(
+		$input     = array(
 			'ocr_max_pages_default' => -5,
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertSame( 0, $sanitized['ocr_max_pages_default'], 'Negative OCR max pages should be set to 0' );
 
 		// Test sanitization - zero value (unlimited).
-		$input = array(
+		$input     = array(
 			'ocr_max_pages_default' => 0,
 		);
 		$sanitized = $settings_page->sanitize_settings( $input );

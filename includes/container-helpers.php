@@ -51,3 +51,42 @@ function wp_mcp_ai( $id = null ) {
 function wp_mcp_ai_make( $class, $params = array() ) {
 	return wp_mcp_ai_container()->make( $class, $params );
 }
+
+/**
+ * Recursively sanitize an array of values (e.g. decoded JSON input).
+ *
+ * Strings are passed through sanitize_text_field(), integers and floats
+ * are cast to their respective types, booleans are preserved, and
+ * nested arrays are sanitized recursively.
+ *
+ * @since 1.1.3
+ *
+ * @param array $data The data to sanitize.
+ * @return array Sanitized data.
+ */
+function wp_mcp_ai_sanitize_recursive( $data ) {
+	if ( ! is_array( $data ) ) {
+		return array();
+	}
+
+	$sanitized = array();
+	foreach ( $data as $key => $value ) {
+		$clean_key = is_int( $key ) ? $key : sanitize_text_field( $key );
+
+		if ( is_array( $value ) ) {
+			$sanitized[ $clean_key ] = wp_mcp_ai_sanitize_recursive( $value );
+		} elseif ( is_bool( $value ) ) {
+			$sanitized[ $clean_key ] = $value;
+		} elseif ( is_int( $value ) ) {
+			$sanitized[ $clean_key ] = (int) $value;
+		} elseif ( is_float( $value ) ) {
+			$sanitized[ $clean_key ] = (float) $value;
+		} elseif ( is_null( $value ) ) {
+			$sanitized[ $clean_key ] = null;
+		} else {
+			$sanitized[ $clean_key ] = sanitize_text_field( (string) $value );
+		}
+	}
+
+	return $sanitized;
+}

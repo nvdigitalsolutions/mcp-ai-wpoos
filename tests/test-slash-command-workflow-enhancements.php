@@ -206,7 +206,7 @@ class Test_Slash_Command_Workflow_Enhancements extends WP_UnitTestCase {
 	public function test_metrics_structure() {
 		// Use reflection to test internal metrics structure.
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_workflow' );
+		$method     = $reflection->getMethod( 'execute_workflow' );
 		$method->setAccessible( true );
 
 		$workflow = array(
@@ -239,7 +239,7 @@ class Test_Slash_Command_Workflow_Enhancements extends WP_UnitTestCase {
 	 */
 	public function test_metrics_duration_accurate() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_workflow' );
+		$method     = $reflection->getMethod( 'execute_workflow' );
 		$method->setAccessible( true );
 
 		$workflow = array(

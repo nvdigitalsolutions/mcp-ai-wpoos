@@ -19,7 +19,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 	public function test_create_assistant_button_no_phpcs_comments() {
 		// Capture output of add_create_button method.
 		ob_start();
-		$views = WP_MCP_AI_Admin_Create_Assistant_Button::add_create_button( array() );
+		$views  = WP_MCP_AI_Admin_Create_Assistant_Button::add_create_button( array() );
 		$output = ob_get_clean();
 
 		// Verify that phpcs:ignore comments are NOT in the output.
@@ -57,7 +57,7 @@ class Test_Admin_Assistant_Buttons extends WP_UnitTestCase {
 	public function test_create_team_button_no_phpcs_comments() {
 		// Capture output of add_create_button method.
 		ob_start();
-		$views = WP_MCP_AI_Admin_Create_Team_Button::add_create_button( array() );
+		$views  = WP_MCP_AI_Admin_Create_Team_Button::add_create_button( array() );
 		$output = ob_get_clean();
 
 		// Verify that phpcs:ignore comments are NOT in the output.

@@ -50,32 +50,32 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'connection_id' => array(
+				'connection_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional Google Drive connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos' ),
 				),
-				'query'         => array(
+				'query'          => array(
 					'type'        => 'string',
 					'description' => __( 'Search query. Simple text (e.g., "360" or "report") searches all file and folder content. Advanced syntax supported: "name contains \'text\'" for names, "mimeType = \'application/pdf\'" for file types, "mimeType = \'application/vnd.google-apps.folder\'" for folders. Combine with "and"/"or". Auto-excludes trashed items unless "trashed = true" specified.', 'mcp-ai-wpoos' ),
 				),
-				'item_type'     => array(
+				'item_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter results by type: "all" (default, includes both files and folders), "files" (files only), or "folders" (folders only).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'all', 'files', 'folders' ),
 					'default'     => 'all',
 				),
-				'max_results'   => array(
+				'max_results'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of files to return (1-50).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
-				'page_token'    => array(
+				'page_token'     => array(
 					'type'        => 'string',
 					'description' => __( 'Page token returned by a previous Drive search response to fetch the next page of results.', 'mcp-ai-wpoos' ),
 				),
-				'folder_id'     => array(
+				'folder_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Optional folder ID to limit search to a specific folder.', 'mcp-ai-wpoos' ),
 				),
@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'description' => __( 'Include files and folders shared with the user. When true, searches both owned and shared items. Default is false (owned items only).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'sort_by'       => array(
+				'sort_by'        => array(
 					'type'        => 'string',
 					'description' => __( 'Sort results by time: "modified" (default, most recently modified first) or "created" (most recently created/added first).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'modified', 'created' ),

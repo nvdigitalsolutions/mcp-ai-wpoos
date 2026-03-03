@@ -64,6 +64,9 @@ docs
 !CHANGELOG.md
 !README.md
 !CONTRIBUTING.md
+!includes/bundled-skills/
+!includes/bundled-skills/*/
+!includes/bundled-skills/*/SKILL.md
 
 # Other development files
 Makefile

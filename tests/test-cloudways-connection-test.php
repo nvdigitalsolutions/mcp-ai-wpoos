@@ -45,7 +45,7 @@ class Test_Cloudways_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_cloudways_test_button_renders() {
 		// Clear credentials.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                      = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['cloudways_email']   = '';
 		$settings['cloudways_api_key'] = '';
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -119,14 +119,14 @@ class Test_Cloudways_Connection_Test extends WP_UnitTestCase {
 	 * Test that Cloudways is in the connections subtab groups.
 	 */
 	public function test_cloudways_in_subtab_groups() {
-		$section       = new WP_MCP_AI_Section_Integrations();
-		$reflection    = new ReflectionClass( $section );
-		$method        = $reflection->getMethod( 'get_subtab_groups' );
+		$section    = new WP_MCP_AI_Section_Integrations();
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'cloudways', $subtab_groups, 'Cloudways should be in subtab groups' );
-		
+
 		$cloudways_group = $subtab_groups['cloudways'];
 		$this->assertEquals( 'cloudways', $cloudways_group['id'] );
 	}

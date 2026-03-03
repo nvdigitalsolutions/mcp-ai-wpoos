@@ -116,7 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_menu', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-			
+
 			// Initialize delegate pages immediately (not on admin_init hook).
 			// The admin_menu hook fires before admin_init, so delegates must be
 			// instantiated early so their menu registration hooks are active.

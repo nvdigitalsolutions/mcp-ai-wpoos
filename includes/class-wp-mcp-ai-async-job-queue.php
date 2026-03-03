@@ -230,12 +230,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Emit SSE event if chat session provided.
 			if ( ! empty( $args['chat_session'] ) ) {
-				self::emit_sse_event( 'job_queued', array(
-					'job_id'       => $job_id,
-					'job_type'     => $args['job_type'],
-					'priority'     => $job_data['priority'],
-					'chat_session' => $args['chat_session'],
-				) );
+				self::emit_sse_event(
+					'job_queued',
+					array(
+						'job_id'       => $job_id,
+						'job_type'     => $args['job_type'],
+						'priority'     => $job_data['priority'],
+						'chat_session' => $args['chat_session'],
+					)
+				);
 			}
 
 			// Log activity.
@@ -397,10 +400,13 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			}
 
 			// Update job status to running.
-			self::update_job( $job['id'], array(
-				'status'     => self::STATUS_RUNNING,
-				'started_at' => current_time( 'mysql' ),
-			) );
+			self::update_job(
+				$job['id'],
+				array(
+					'status'     => self::STATUS_RUNNING,
+					'started_at' => current_time( 'mysql' ),
+				)
+			);
 
 			// Decode job data.
 			$job['job_data'] = json_decode( $job['job_data'], true );
@@ -410,12 +416,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				$result = self::execute_job( $job );
 
 				// Update job as completed.
-				self::update_job( $job['id'], array(
-					'status'       => self::STATUS_COMPLETED,
-					'progress'     => 100,
-					'result'       => $result,
-					'completed_at' => current_time( 'mysql' ),
-				) );
+				self::update_job(
+					$job['id'],
+					array(
+						'status'       => self::STATUS_COMPLETED,
+						'progress'     => 100,
+						'result'       => $result,
+						'completed_at' => current_time( 'mysql' ),
+					)
+				);
 
 				// Send webhook notification if configured.
 				self::send_webhook_notification( $job, $result );
@@ -431,18 +440,24 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				// Check if we should retry.
 				if ( $job['retries'] < $job['max_retries'] ) {
 					// Retry the job.
-					self::update_job( $job['id'], array(
-						'status'  => self::STATUS_QUEUED,
-						'error'   => $error,
-						'retries' => $job['retries'] + 1,
-					) );
+					self::update_job(
+						$job['id'],
+						array(
+							'status'  => self::STATUS_QUEUED,
+							'error'   => $error,
+							'retries' => $job['retries'] + 1,
+						)
+					);
 				} else {
 					// Max retries exceeded, move to dead letter queue.
-					self::update_job( $job['id'], array(
-						'status'       => self::STATUS_FAILED,
-						'error'        => $error,
-						'completed_at' => current_time( 'mysql' ),
-					) );
+					self::update_job(
+						$job['id'],
+						array(
+							'status'       => self::STATUS_FAILED,
+							'error'        => $error,
+							'completed_at' => current_time( 'mysql' ),
+						)
+					);
 
 					// Add to dead letter queue.
 					if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
@@ -556,7 +571,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			// TODO: Implement agentic loop execution.
 			// This would integrate with the chat controller's agentic loop logic
 			// but allow for unlimited iterations in the background.
-			
+
 			throw new Exception( __( 'Agentic loop execution not yet implemented.', 'mcp-ai-wpoos' ) );
 		}
 
@@ -631,10 +646,13 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function cancel_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status'       => self::STATUS_CANCELLED,
-				'completed_at' => current_time( 'mysql' ),
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status'       => self::STATUS_CANCELLED,
+					'completed_at' => current_time( 'mysql' ),
+				)
+			);
 		}
 
 		/**
@@ -644,9 +662,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function pause_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status' => self::STATUS_PAUSED,
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status' => self::STATUS_PAUSED,
+				)
+			);
 		}
 
 		/**
@@ -656,9 +677,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function resume_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status' => self::STATUS_QUEUED,
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status' => self::STATUS_QUEUED,
+				)
+			);
 		}
 
 		/**
@@ -789,7 +813,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 						echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
 						echo '<th>' . esc_html__( 'Created', 'mcp-ai-wpoos' ) . '</th>';
 						echo '</tr></thead><tbody>';
-						
+
 						foreach ( $recent_jobs as $job ) {
 							echo '<tr>';
 							echo '<td>' . esc_html( $job['id'] ) . '</td>';
@@ -799,7 +823,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 							echo '<td>' . esc_html( $job['created_at'] ) . '</td>';
 							echo '</tr>';
 						}
-						
+
 						echo '</tbody></table>';
 					}
 					?>

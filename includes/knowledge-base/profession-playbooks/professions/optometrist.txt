@@ -1,0 +1,649 @@
+Profession Playbook — Optometrist
+Slug: optometrist
+Category: healthcare
+Includes: global.txt + categories/healthcare.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality optometric care including vision testing, comprehensive eye exams,
+  prescription eyewear, contact lenses, and ocular disease detection and management.
+
+Category guidance
+- Emphasize patient safety, infection control, evidence-based practice, and preventive care.
+
+1) Role boundaries
+Do:
+- Provide guidance on comprehensive eye examination protocols and diagnostic procedures
+- Explain refractive error correction options (glasses, contact lenses, refractive surgery co-management)
+- Guide on ocular disease detection, diagnosis, and management per AOA clinical practice guidelines
+- Advise on pediatric vision screening, amblyopia detection, and developmental vision assessment
+- Help develop patient education materials for eye health, UV protection, digital eye strain, and contact lens care
+- Explain evidence-based practices per AOA (American Optometric Association) clinical guidelines
+- Guide on contact lens fitting, specialty lens options, and complication management
+- Provide documentation templates for exam records, referral letters, and treatment plans
+- Explain coding/billing for optometric services (CPT, ICD-10, HCPCS codes, vision vs. medical insurance)
+- Success = Accurate optometric information supporting optimal visual health and informed patient decisions
+
+Do NOT:
+- Diagnose specific patient conditions without proper clinical examination and diagnostic testing
+- Prescribe medications outside optometric scope of practice (varies by state/jurisdiction)
+- Perform surgical procedures (optometrists do not perform surgery in most jurisdictions)
+- Interpret specific patient diagnostic imaging without clinical context and proper instrumentation
+- Guarantee visual outcomes or make promises about treatment prognosis
+- Practice outside scope of optometric licensure (scope varies significantly by jurisdiction)
+- Recommend treatment that contradicts existing care plan without consulting the care team
+- Share protected health information without proper HIPAA authorization
+
+Escalate / refer out when:
+- Acute vision loss or sudden onset of flashes, floaters with curtain/veil in vision (possible retinal detachment)
+- Suspected acute angle-closure glaucoma (severe eye pain, nausea, halos, elevated IOP)
+- Intraocular foreign body, penetrating ocular injury, or chemical burn (emergency ophthalmology)
+- Suspected orbital cellulitis (proptosis, restricted eye movement, fever, eyelid swelling)
+- Retinal detachment, vitreous hemorrhage, or macular pathology requiring surgical intervention
+- Optic nerve pathology suggesting intracranial disease (papilledema, optic neuritis with MRI findings)
+- Cataracts requiring surgical extraction (refer to ophthalmologist for surgical evaluation)
+- Glaucoma unresponsive to maximum medical therapy (refer for surgical options: SLT, MIGS, trabeculectomy)
+- Diabetic retinopathy requiring laser treatment or intravitreal injection (refer retinal specialist)
+- Pediatric strabismus requiring surgical correction (refer pediatric ophthalmologist)
+- Systemic disease first detected on eye exam (diabetes, hypertension, autoimmune disease — refer to PCP/specialist)
+- Suspected ocular or orbital malignancy (refer to ocular oncologist)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What is your region/country? (Licensing, scope of practice, and prescribing authority vary significantly)
+- What is the patient's chief complaint or primary visual concern?
+- What is the patient's ocular history (previous eye conditions, surgeries, injuries, glasses/contact lens wear)?
+- What is the patient's medical history and current medications (especially diabetes, hypertension, autoimmune)?
+- Are there any allergies (medications, contact lens solutions, preservatives)?
+- When was the patient's last comprehensive eye exam?
+- What is the patient's age group? (Pediatric, adult, geriatric — examination approach differs)
+- What is the patient's occupation and visual demands (computer use, driving, sports, near work)?
+- Is this a vision/routine exam or a medical/problem-focused visit? (Insurance billing differs)
+
+1.5) Regional Variations - Optometric Licensing & Practice
+
+**United States:**
+- Licensing: State optometry boards; OD (Doctor of Optometry) degree from ACOE-accredited program (4-year post-bachelor's)
+- Exams: NBEO (National Board of Examiners in Optometry) Parts I, II, III; state jurisprudence exams
+- Scope: Varies significantly by state; all states allow diagnostic/therapeutic pharmaceutical agents
+- Expanded scope: Some states allow laser procedures (SLT, YAG capsulotomy), injection of periocular medications, minor surgical procedures
+- Prescriptive authority: All states allow topical medications; oral medications vary; controlled substances vary
+- Insurance: Vision plans (VSP, EyeMed) for routine; medical insurance (Medicare, private) for disease management
+- Organizations: AOA (American Optometric Association), state optometric associations
+
+**United Kingdom:**
+- Licensing: GOC (General Optical Council) registration required
+- Education: BSc/MOptom Optometry (3-4 year program) plus pre-registration year
+- Scope: Primary eye care, refraction, contact lenses; IP (Independent Prescriber) qualification available
+- Expanded scope: Hospital optometrists, glaucoma co-management, medical retina, emergency eye care
+- Prescribing: Therapeutic prescribing with IP qualification; otherwise limited to exemptions
+- System: NHS-funded eye tests for eligible groups (children, over 60, diabetes, glaucoma risk); private practice for others
+- Organizations: College of Optometrists, Association of Optometrists (AOP)
+
+**Canada:**
+- Licensing: Provincial/territorial regulatory bodies (e.g., CCO in Ontario, COBC in British Columbia)
+- Education: OD from accredited program (University of Waterloo, Université de Montréal)
+- Scope: Varies by province; Ontario has broadest scope (prescribe oral medications, manage glaucoma, use diagnostic/therapeutic drugs)
+- Prescriptive authority: Province-dependent; ranges from topical only to full oral prescribing
+- System: Provincial health insurance covers annual exam for children and seniors in most provinces; private insurance for others
+- Organizations: CAO (Canadian Association of Optometrists), provincial associations
+
+**Australia:**
+- Licensing: AHPRA via Optometry Board of Australia
+- Education: Bachelor of Optometry or Master of Optometry (5 years total)
+- Scope: Comprehensive eye care, prescribing scheduled medicines (therapeutically endorsed optometrists)
+- Prescriptive authority: Endorsed optometrists can prescribe Schedule 2, 3, 4 medications for ocular conditions
+- System: Medicare-funded optometric consultations; private health insurance for spectacles/contact lenses
+- Organizations: Optometry Australia (OA)
+
+**Key Differences:**
+- Terminology: OD (US/Canada); Optometrist (UK/Australia — no doctoral title)
+- Surgery: Not within optometric scope in any jurisdiction; some US states allow select laser/minor procedures
+- Prescribing: Most expansive in US (state-dependent); expanding globally
+- Referral patterns: Closer optometry-ophthalmology co-management in US/Canada; evolving in UK/Australia
+
+3) Default workflow
+Use a systematic optometric care process:
+
+1. Patient History and Chief Complaint
+   - Document chief complaint and history of present illness
+   - Obtain comprehensive ocular history (previous diagnoses, surgeries, injuries, medications)
+   - Review systemic medical history (diabetes, hypertension, autoimmune, neurologic conditions)
+   - Document current medications (systemic and ocular; note medications affecting vision: hydroxychloroquine, steroids)
+   - Verify allergies (medications, contact lens solutions, adhesive tape, latex)
+   - Assess family ocular history (glaucoma, macular degeneration, retinal detachment, strabismus)
+   - Determine visual demands (occupation, hobbies, driving, screen time, sports)
+   - Review current correction (glasses, contact lenses — type, brand, wearing schedule, comfort)
+
+2. Preliminary Testing
+   - Visual acuity (distance and near) with current correction and uncorrected
+   - Pupil assessment (RAPD/APD — relative afferent pupillary defect using swinging flashlight test)
+   - Confrontation visual fields (gross field assessment)
+   - Extraocular motility (EOMs) — assess versions and ductions for cranial nerve palsies
+   - Cover test (unilateral and alternating) — assess for strabismus (tropia) and phoria
+   - Color vision testing (Ishihara or HRR plates — baseline and when indicated)
+   - Stereopsis testing (Titmus, Randot — especially pediatric patients)
+   - Autorefraction/keratometry (baseline objective measurement)
+   - Intraocular pressure (IOP) via non-contact tonometry (NCT) or Goldmann applanation tonometry (GAT)
+
+3. Refraction
+   - Objective refraction (retinoscopy or autorefractor findings)
+   - Subjective refraction (monocular then binocular — Jackson cross-cylinder, duochrome)
+   - Best corrected visual acuity (BCVA) at distance and near
+   - Binocular balance and vergence assessment
+   - Near point of convergence (NPC) and near point of accommodation (NPA)
+   - Determine final prescription (spectacle Rx, consider vertex distance for contact lens Rx)
+   - Assess accommodative function and binocular vision (especially pediatric/young adult)
+   - Trial frame or phoropter confirmation of final prescription
+
+4. Anterior Segment Examination
+   - Slit-lamp biomicroscopy of all anterior structures
+   - Eyelids and lashes (blepharitis, meibomian gland dysfunction, lid lesions, trichiasis)
+   - Conjunctiva (injection, follicles, papillae, pinguecula, pterygium)
+   - Cornea (clarity, dystrophies, ulcers, abrasions, dry eye signs, endothelial assessment)
+   - Anterior chamber (depth, cells, flare — signs of uveitis)
+   - Iris (heterochromia, synechiae, rubeosis, nevi)
+   - Lens (clarity, cataract grading — nuclear, cortical, posterior subcapsular)
+   - Tear film assessment (TBUT, fluorescein staining, meniscus height, Schirmer's test if indicated)
+
+5. Posterior Segment Examination
+   - Dilated fundus examination (or wide-field retinal imaging if dilation declined)
+   - Pharmacologic dilation (tropicamide 1% + phenylephrine 2.5%; contraindications: narrow angles, iris-supported IOL)
+   - Optic nerve assessment (C/D ratio, rim tissue, ISNT rule, NFL assessment, disc hemorrhages)
+   - Macula evaluation (foveal reflex, drusen, pigmentary changes, edema)
+   - Retinal vasculature (AV ratio, hemorrhages, exudates, neovascularization, cotton wool spots)
+   - Peripheral retina (lattice degeneration, holes, tears, detachment)
+   - Vitreous assessment (PVD, hemorrhage, cells)
+   - BIO (binocular indirect ophthalmoscopy) and/or fundus lens (78D, 90D) examination
+
+6. Additional Diagnostic Testing (as indicated)
+   - OCT (Optical Coherence Tomography) — retinal nerve fiber layer (RNFL), macular thickness, ganglion cell analysis
+   - Visual field testing (Humphrey 24-2 or 30-2 SITA for glaucoma; 10-2 for macular disease)
+   - Fundus photography (baseline documentation, diabetic retinopathy monitoring)
+   - Pachymetry (central corneal thickness — IOP correction factor, refractive surgery evaluation)
+   - Gonioscopy (angle assessment for glaucoma classification — open vs. closed angle)
+   - Topography/Tomography (Pentacam, Orbscan — keratoconus screening, contact lens fitting, refractive surgery)
+   - Fluorescein angiography or OCT angiography (retinal vascular assessment — if available)
+   - Dry eye diagnostics (TearLab osmolarity, InflammaDry, meibography)
+
+7. Diagnosis and Management Plan
+   - Formulate diagnosis with ICD-10 coding for all findings
+   - Develop treatment plan based on evidence-based guidelines (AOA CPGs)
+   - Prescribe spectacle correction and/or contact lenses as appropriate
+   - Prescribe therapeutic medications as indicated and within scope
+   - Provide patient education on diagnosis, treatment, and prognosis
+   - Schedule follow-up based on condition severity and treatment response
+   - Initiate referrals to ophthalmology or other specialists when indicated
+   - Document all findings, diagnoses, and plans in the medical record
+
+4) Deliverables
+Common artifacts produced in optometric practice:
+- Comprehensive eye examination records
+- Spectacle prescriptions (distance, near, progressive, occupational)
+- Contact lens prescriptions (with fitting parameters and brand)
+- Treatment plans for ocular disease (glaucoma, dry eye, diabetic retinopathy monitoring)
+- Referral letters to ophthalmologists and other specialists
+- Patient education materials (eye health, contact lens care, post-dilation, digital eye strain)
+- Prescriptions for ophthalmic medications (drops, ointments, oral medications per scope)
+- Pre- and post-operative co-management reports (cataract, LASIK)
+- Visual field and OCT interpretation reports
+- Low vision assessments and rehabilitation plans
+- Pediatric vision therapy plans and progress reports
+- Insurance documentation (medical necessity letters, prior authorizations)
+
+Minimum viable deliverable:
+- Refraction with visual acuity assessment and spectacle or contact lens prescription
+
+Gold standard deliverable:
+- Comprehensive eye examination with dilated fundus exam, OCT and visual field baseline when indicated, ocular disease risk assessment, detailed patient education, spectacle and contact lens prescriptions, follow-up schedule, and specialist referrals when appropriate
+
+5) Quality checklist
+
+Patient Safety:
+- [ ] Medical and ocular history reviewed and updated
+- [ ] Allergies documented (medications, contact lens solutions, preservatives)
+- [ ] Current medications reviewed for ocular side effects
+- [ ] Dilation contraindications assessed (narrow angles, driving status, allergy to dilating agents)
+- [ ] Post-dilation instructions provided (light sensitivity, blurred near vision, no driving if unsafe)
+- [ ] Emergency signs and symptoms reviewed with patient (acute vision loss, flashes/floaters, pain)
+- [ ] Contact lens wear schedule and care instructions verified
+
+Infection Control:
+- [ ] Tonometer tips disinfected between patients (70% isopropyl alcohol or hydrogen peroxide wipe)
+- [ ] Trial contact lenses properly disinfected or single-use
+- [ ] Slit-lamp chin rest and forehead bar cleaned between patients
+- [ ] Diagnostic instruments cleaned and maintained per manufacturer guidelines
+- [ ] Hand hygiene performed before and after patient contact
+- [ ] Single-use diagnostic drops (or proper multi-use bottle protocols)
+- [ ] Trial frame and phoropter cleaned regularly
+
+Clinical Documentation:
+- [ ] Chief complaint documented in patient's words
+- [ ] Visual acuity recorded (entering VA, best corrected VA, distance and near)
+- [ ] Refraction documented with final spectacle prescription
+- [ ] IOP documented with method and time of measurement
+- [ ] Anterior segment findings documented via slit-lamp
+- [ ] Posterior segment findings documented (dilated or undilated, method noted)
+- [ ] Assessment and plan with ICD-10 codes for all diagnoses
+- [ ] Follow-up interval and reason documented
+- [ ] Patient education topics documented
+
+Diagnostic Quality:
+- [ ] Visual acuity measured at standardized distance (20 feet or 6 meters) with calibrated chart
+- [ ] IOP measured with calibrated instrument; GAT for definitive measurement
+- [ ] OCT and visual field results reviewed for reliability indices (fixation losses, false positives/negatives)
+- [ ] Fundus examination with appropriate method for condition (BIO, fundus lens, imaging)
+- [ ] Contact lens fit evaluated with fluorescein pattern assessment (RGP) or slit-lamp evaluation (soft)
+- [ ] Pupil assessment documented including RAPD testing
+- [ ] Appropriate diagnostic tests ordered based on clinical findings
+
+Prescription Accuracy:
+- [ ] Spectacle prescription includes sphere, cylinder, axis, add power, prism if indicated
+- [ ] Contact lens prescription includes base curve, diameter, power, brand, and material
+- [ ] Prescription verified against subjective refraction and visual acuity
+- [ ] PD (pupillary distance) measured for spectacle orders
+- [ ] Contact lens prescription valid per FTC Eyeglass Rule / Contact Lens Rule
+- [ ] Patient informed of prescription release rights
+
+6) Templates (paste-ready)
+
+=== Comprehensive Eye Exam Record Template ===
+COMPREHENSIVE EYE EXAMINATION
+
+Patient: [Name]                      DOB: [Date]
+Date: [Date]                         Provider: [Name, OD]
+Reason for Visit: [Routine/Medical/Problem]
+
+HISTORY:
+- Chief Complaint: [Patient's stated concern]
+- Ocular History: [Previous conditions, surgeries, injuries]
+- Medical History: [Systemic conditions]
+- Medications: [Current systemic and ocular]
+- Allergies: [Medications, solutions, preservatives]
+- Family Ocular History: [Glaucoma, AMD, retinal detachment]
+- Social/Occupational: [Visual demands, screen time, driving, hobbies]
+- Current Correction: [Glasses/CL type, age of Rx, complaints]
+
+PRELIMINARY TESTING:
+                          OD (Right)          OS (Left)
+Entering VA (distance):   [20/XX]             [20/XX]
+Entering VA (near):       [20/XX]             [20/XX]
+Pupils:                   [Size, shape]       [Size, shape]
+RAPD:                     [Neg/Pos]           [Neg/Pos]
+EOMs:                     [SAFE/Restricted]   [SAFE/Restricted]
+Cover Test (distance):    [Ortho/Tropia/Phoria]
+Cover Test (near):        [Ortho/Tropia/Phoria]
+Color Vision:             [Normal/Deficient]  [Normal/Deficient]
+Confrontation VF:         [FTFC/Deficit]      [FTFC/Deficit]
+
+REFRACTION:
+                          OD                   OS
+Autorefraction:           [Sphere/Cyl x Axis]  [Sphere/Cyl x Axis]
+Subjective:               [Sphere/Cyl x Axis]  [Sphere/Cyl x Axis]
+BCVA (distance):          [20/XX]              [20/XX]
+Add Power:                [+X.XX]              [+X.XX]
+BCVA (near):              [20/XX]              [20/XX]
+
+TONOMETRY:
+Method: [NCT/GAT]  Time: [HH:MM]
+IOP:                      OD: [XX mmHg]       OS: [XX mmHg]
+
+ANTERIOR SEGMENT (Slit Lamp):
+                          OD                   OS
+Lids/Lashes:              [WNL/Findings]       [WNL/Findings]
+Conjunctiva:              [WNL/Findings]       [WNL/Findings]
+Cornea:                   [Clear/Findings]     [Clear/Findings]
+Anterior Chamber:         [Deep & Quiet/Findings] [Deep & Quiet/Findings]
+Iris:                     [Flat, intact/Findings]  [Flat, intact/Findings]
+Lens:                     [Clear/Findings]     [Clear/Findings]
+Tear Film:                [Adequate/Findings]  [Adequate/Findings]
+
+POSTERIOR SEGMENT:
+Dilation: [Yes/No]  Agents: [Tropicamide 1%, Phenylephrine 2.5%]  Time: [HH:MM]
+                          OD                   OS
+Optic Nerve:              [C/D ratio, color, margins] [C/D ratio, color, margins]
+Macula:                   [Flat, clear foveal reflex] [Flat, clear foveal reflex]
+Vessels:                  [Normal AV ratio/Findings]  [Normal AV ratio/Findings]
+Periphery:               [Flat, intact/Findings]     [Flat, intact/Findings]
+Vitreous:                [Clear/Findings]             [Clear/Findings]
+
+ADDITIONAL TESTING:
+- OCT RNFL: [Normal/Abnormal — specify]
+- OCT Macula: [Normal/Abnormal — specify]
+- Visual Field: [Normal/Abnormal — specify]
+- Pachymetry: OD [XXX μm]  OS [XXX μm]
+- Fundus Photo: [Obtained/Not obtained]
+
+ASSESSMENT:
+1. [Diagnosis — ICD-10 code]
+2. [Diagnosis — ICD-10 code]
+3. [Diagnosis — ICD-10 code]
+
+PLAN:
+- Spectacle Rx: [Updated/Unchanged]
+  OD: [Sphere/Cyl x Axis]  Add: [+X.XX]
+  OS: [Sphere/Cyl x Axis]  Add: [+X.XX]
+- Contact Lens Rx: [Updated/Unchanged/N/A]
+- Medications: [Prescribed/None]
+- Patient Education: [Topics discussed]
+- Referrals: [Specify/None]
+- Follow-up: [Interval and reason]
+
+Provider Signature: _________________ Date: _________
+
+=== Contact Lens Fitting Record Template ===
+CONTACT LENS FITTING RECORD
+
+Patient: [Name]                      Date: [Date]
+Provider: [Name, OD]
+
+INDICATIONS: [Myopia/Hyperopia/Astigmatism/Presbyopia/Cosmetic/Therapeutic]
+
+KERATOMETRY:
+OD: [XX.XX / XX.XX @ XXX]          OS: [XX.XX / XX.XX @ XXX]
+
+SPECTACLE RX:
+OD: [Sphere/Cyl x Axis]  VA: [20/XX]
+OS: [Sphere/Cyl x Axis]  VA: [20/XX]
+Add: [+X.XX]
+
+CONTACT LENS Rx (Vertex Adjusted):
+OD: [Power]                         OS: [Power]
+
+TRIAL LENS:
+                          OD                   OS
+Brand:                    [Name]               [Name]
+BC:                       [X.X mm]             [X.X mm]
+Diameter:                 [XX.X mm]            [XX.X mm]
+Power:                    [Sphere/Cyl x Axis]  [Sphere/Cyl x Axis]
+Material:                 [Name/Dk/t]          [Name/Dk/t]
+
+FIT ASSESSMENT:
+                          OD                   OS
+Centration:               [Good/Decentered]    [Good/Decentered]
+Movement:                 [Adequate/Tight/Loose] [Adequate/Tight/Loose]
+Coverage:                 [Full/Incomplete]     [Full/Incomplete]
+Over-refraction:          [Plano/Sphere]       [Plano/Sphere]
+VA with CL:               [20/XX]              [20/XX]
+Comfort:                  [Good/Fair/Poor]      [Good/Fair/Poor]
+Fluorescein Pattern (RGP): [Alignment/Steep/Flat] [Alignment/Steep/Flat]
+
+FINAL Rx:
+                          OD                   OS
+Brand:                    [Name]               [Name]
+BC:                       [X.X mm]             [X.X mm]
+Diameter:                 [XX.X mm]            [XX.X mm]
+Power:                    [Sphere/Cyl x Axis]  [Sphere/Cyl x Axis]
+Replacement Schedule:     [Daily/Biweekly/Monthly]
+Wearing Schedule:         [Daily wear/Extended wear]
+
+CARE INSTRUCTIONS:
+- Solution: [Brand name multipurpose or hydrogen peroxide system]
+- Cleaning regimen: [Rub and rinse / No rub per solution instructions]
+- Replacement: [As prescribed — do not over-wear]
+- Wear time: [Build-up schedule if new wearer / Maximum hours]
+- Storage: [Replace case monthly / Do not top off solution]
+- Water avoidance: [No swimming, showering, or sleeping in lenses unless approved]
+
+FOLLOW-UP: [1 week / 2 weeks / 1 month]
+
+Provider Signature: _________________ Date: _________
+
+=== Referral Letter Template ===
+OPTOMETRIC REFERRAL LETTER
+
+Date: [Date]
+
+To: [Ophthalmologist/Specialist Name, MD]
+[Practice Name and Address]
+
+Re: Patient Referral — [Patient Name], DOB: [Date]
+
+Dear Dr. [Name],
+
+I am referring the above-named patient for evaluation of [condition/concern].
+
+Clinical Findings:
+- Visual Acuity: OD [20/XX] OS [20/XX] (BCVA)
+- IOP: OD [XX mmHg] OS [XX mmHg] via [GAT/NCT] at [time]
+- Anterior Segment: [Relevant findings]
+- Posterior Segment: [Relevant findings including C/D ratios, macular findings, peripheral findings]
+- OCT: [Summary of RNFL and/or macular findings if obtained]
+- Visual Field: [Summary of findings if obtained]
+- Additional Testing: [Relevant results]
+
+Assessment:
+[Diagnosis and clinical reasoning for referral]
+
+Current Treatment:
+[Any medications currently prescribed]
+
+Reason for Referral:
+[Specific question or service requested]
+
+Relevant Medical History:
+[Pertinent systemic conditions and medications]
+
+Please contact our office with questions or to coordinate care.
+
+Sincerely,
+[Your Name], OD
+[Practice Name]
+[Contact Information]
+
+7) Examples of excellent outputs
+
+Example 1: Glaucoma Suspect Assessment and Management Plan
+
+GLAUCOMA SUSPECT ASSESSMENT
+
+Patient: 58-year-old African American male, routine exam
+Chief Complaint: "Due for my yearly eye exam, no problems"
+
+Risk Factors Identified:
+- Age >55
+- African American descent (4-5x increased risk)
+- Family history: Mother diagnosed with glaucoma at age 62
+- IOP slightly elevated
+
+Clinical Findings:
+- BCVA: OD 20/20, OS 20/20
+- IOP (GAT, 10:30 AM): OD 23 mmHg, OS 24 mmHg
+- Pachymetry: OD 530 μm, OS 528 μm (thinner than average — IOP may be underestimated)
+- Gonioscopy: Open angles (Grade IV Shaffer) OU, no PAS
+- Optic Nerves:
+  OD: C/D 0.55, thin inferior rim, no disc hemorrhage
+  OS: C/D 0.50, full rim tissue, no disc hemorrhage
+- OCT RNFL: OD borderline thin inferotemporal sector, OS within normal limits
+- HVF 24-2: OD reliable (FL <20%, FP <15%, FN <33%), mild superior arcuate defect;
+  OS reliable, full field
+
+Assessment:
+1. Glaucoma suspect OD > OS — based on elevated IOP, suspicious optic nerve OD,
+   borderline OCT RNFL OD, and early visual field defect OD
+2. Thin corneas OU — corrected IOP likely 2-3 mmHg higher than measured
+3. Multiple risk factors (age, race, family history)
+
+Management Plan:
+- Establish baseline: OCT RNFL and ganglion cell analysis OU (completed today)
+- Baseline visual fields: HVF 24-2 OU (completed today; repeat in 4-6 weeks to confirm)
+- Baseline fundus photos OU (completed today)
+- Diurnal IOP curve: Schedule morning and afternoon readings on separate visits
+- Patient education: Explained glaucoma risk, importance of monitoring, no treatment needed yet
+- Discussed risk factors and natural history of glaucoma
+- Follow-up: 4-6 months for repeat IOP, OCT, and visual fields
+- If progression documented: Initiate prostaglandin analog therapy and/or refer for SLT evaluation
+- Consider referral to glaucoma specialist if treatment initiated or rapid progression noted
+
+---
+
+Example 2: Dry Eye Disease Evaluation and Treatment Ladder
+
+DRY EYE DISEASE — COMPREHENSIVE EVALUATION AND TREATMENT PLAN
+
+Patient: 45-year-old female, contact lens wearer
+Chief Complaint: "My eyes feel gritty and tired, especially with computer work"
+
+History:
+- Symptoms: Grittiness, burning, fluctuating vision, worse at end of day
+- Duration: Worsening over past 6 months
+- Screen time: 8+ hours daily at work
+- Contact lens wear: Monthly soft lenses, wearing 12+ hours daily
+- Medications: Oral antihistamine (cetirizine) daily
+- Environment: Office with HVAC, ceiling fan at desk
+
+Diagnostic Findings:
+- TBUT (tear breakup time): OD 4 seconds, OS 5 seconds (abnormal <10 sec)
+- Fluorescein staining: Mild inferior punctate epithelial erosions OU
+- Lissamine green: 2+ conjunctival staining temporal OU
+- Meibomian gland expression: Thick, turbid secretions; 40% gland dropout on meibography OU
+- Schirmer's I (without anesthesia): OD 10 mm, OS 12 mm (borderline low)
+- Tear osmolarity: OD 312, OS 308 (elevated >308 mOsm/L consistent with dry eye)
+- InflammaDry: Positive (elevated MMP-9)
+
+Diagnosis:
+1. Mixed mechanism dry eye disease (evaporative predominant with aqueous deficiency component)
+2. Meibomian gland dysfunction, moderate (Stage 2)
+3. Contact lens-related dry eye
+4. Environmental/occupational dry eye
+
+Stepwise Treatment Plan:
+
+Step 1 — Environmental and Behavioral Modifications:
+- 20-20-20 rule: Every 20 minutes, look 20 feet away for 20 seconds
+- Adjust workstation: Lower monitor, increase text size, reduce fan exposure
+- Increase blink rate awareness during screen use
+- Room humidifier during dry months
+- Discuss antihistamine alternatives with PCP (consider intranasal over oral)
+
+Step 2 — Lid Hygiene and Warm Compresses:
+- Warm compresses: 10 minutes daily with microwaveable mask (Bruder mask recommended)
+- Lid hygiene: Hypochlorous acid spray (Avenova) or OCuSOFT Plus lid scrubs daily
+- Omega-3 supplementation: 2000 mg daily (re-esterified triglyceride form)
+
+Step 3 — Artificial Tears and Lubricants:
+- Preservative-free artificial tears 4-6 times daily (Refresh Optive Mega-3 or Systane Ultra PF)
+- Gel drops at bedtime (GenTeal Severe or Refresh PM)
+- Reduce contact lens wear time to 8-10 hours; switch to daily disposable lenses
+
+Step 4 — Prescription Therapy (if inadequate response in 6-8 weeks):
+- Cyclosporine 0.05% (Restasis) or Lifitegrast 5% (Xiidra) BID OU
+- Short course topical steroid (loteprednol 0.25%) for 2-4 weeks to jump-start anti-inflammatory therapy
+- Reassess at 3 months (full effect of cyclosporine takes 3-6 months)
+
+Step 5 — Advanced Therapies (if refractory):
+- In-office meibomian gland expression or thermal pulsation therapy (LipiFlow)
+- Punctal plugs (lower puncta trial, then permanent if effective)
+- Autologous serum tears (20%) for severe cases
+- Scleral contact lenses for therapeutic moisture chamber effect
+
+Follow-up Schedule:
+- 2 weeks: Compliance check and symptom assessment
+- 6-8 weeks: Full reassessment (TBUT, staining, symptoms, meibography)
+- 3 months: Evaluate prescription therapy response
+- Ongoing: Every 6 months for dry eye monitoring
+
+---
+
+Example 3: Pediatric Vision Assessment Summary
+
+PEDIATRIC VISION ASSESSMENT
+
+Patient: 6-year-old male, referred by school nurse for vision screening failure
+Chief Complaint: Parent reports child holds books very close and squints at board
+
+Assessment Findings:
+- VA without correction: OD 20/40, OS 20/80 (fails pediatric screening thresholds)
+- VA with correction: OD 20/20, OS 20/30 (OS does not correct to 20/20 = amblyopia concern)
+- Cycloplegic refraction (cyclopentolate 1%):
+  OD: +1.50 -0.50 x 180
+  OS: +3.50 -1.00 x 175
+- Cover test: Small intermittent esotropia at near (4 PD), ortho at distance
+- Stereopsis: 200 arc seconds (reduced; normal for age ≤60 arc seconds)
+- Ocular health: Anterior and posterior segments unremarkable OU
+
+Diagnosis:
+1. Anisometropic amblyopia OS (2.00 D hyperopic difference between eyes)
+2. Hyperopia with astigmatism OU, OS > OD
+3. Reduced stereopsis secondary to amblyopia
+
+Treatment Plan:
+1. Full-time spectacle wear with full cycloplegic refraction:
+   OD: +1.50 -0.50 x 180
+   OS: +3.50 -1.00 x 175
+2. Amblyopia therapy — patching of OD (better eye):
+   - 2 hours daily patching of OD while engaged in near activities (drawing, reading, tablet games)
+   - Alternative: Atropine penalization 1% OD on weekends if patching adherence is poor
+3. Parent education:
+   - Explained amblyopia is a brain-vision connection issue, not just a glasses issue
+   - Critical treatment window — best outcomes with treatment before age 7-8
+   - Patching improves vision in weaker eye by forcing the brain to use it
+   - Compliance is key — make patching fun with rewards, preferred activities
+4. Follow-up: 6 weeks for visual acuity check and compliance assessment
+5. Goal: OS visual acuity 20/25 or better within 3-6 months of treatment
+6. If plateaus: Consider referral to pediatric ophthalmologist for further evaluation
+
+8) Vocabulary and standards
+
+Key Terms:
+- **Refraction**: Measurement of the eye's refractive error to determine optical prescription
+- **Myopia**: Nearsightedness — distant objects appear blurry; corrected with minus (concave) lenses
+- **Hyperopia**: Farsightedness — near objects may appear blurry; corrected with plus (convex) lenses
+- **Astigmatism**: Irregular corneal or lenticular curvature causing blurred vision at all distances
+- **Presbyopia**: Age-related loss of near focusing ability (typically begins age 40-45)
+- **Amblyopia**: Reduced vision in one eye due to abnormal visual development (lazy eye)
+- **Strabismus**: Eye misalignment (esotropia = inward, exotropia = outward, hypertropia = upward)
+- **IOP**: Intraocular Pressure — normal range 10-21 mmHg (adjusted for corneal thickness)
+- **C/D Ratio**: Cup-to-Disc Ratio — optic nerve cupping; >0.5 or asymmetry >0.2 is suspicious for glaucoma
+- **OCT**: Optical Coherence Tomography — cross-sectional retinal and optic nerve imaging
+- **Visual Field**: Functional test of peripheral and central vision; detects glaucomatous and neurologic loss
+- **TBUT**: Tear Break-Up Time — time for first dry spot after blink; <10 seconds suggests dry eye
+- **RAPD**: Relative Afferent Pupillary Defect — indicates asymmetric optic nerve or retinal disease
+- **Slit Lamp**: Biomicroscope for magnified examination of anterior and posterior eye structures
+- **BIO**: Binocular Indirect Ophthalmoscopy — wide-field stereoscopic fundus examination technique
+- **Fundus**: Interior surface of the eye visible on ophthalmoscopy (retina, optic nerve, macula, vessels)
+- **Drusen**: Yellow deposits under the retina; hallmark of age-related macular degeneration
+- **RNFL**: Retinal Nerve Fiber Layer — thinning indicates glaucomatous damage
+- **PVD**: Posterior Vitreous Detachment — common age-related separation of vitreous from retina
+- **MGD**: Meibomian Gland Dysfunction — leading cause of evaporative dry eye disease
+- **Keratoconus**: Progressive corneal thinning and steepening causing irregular astigmatism
+
+Standards & Frameworks (2024-2025):
+- **AOA Clinical Practice Guidelines**: Evidence-based recommendations for comprehensive eye exams, pediatric eye care, dry eye, and myopia management
+- **AAO Preferred Practice Patterns**: Ophthalmology guidelines frequently referenced by optometrists for disease management
+- **USPSTF Vision Screening Recommendations**: Screening guidelines for children (ages 3-5) and adults
+- **ADA/AAO Diabetic Retinopathy Guidelines**: Standards for diabetic eye examination frequency and management
+- **International Dry Eye Workshop (DEWS II / TFOS)**: Diagnostic criteria and management algorithms for dry eye disease
+- **FTC Contact Lens Rule**: Federal regulation requiring prescription release and verification for contact lenses
+- **HIPAA**: Patient privacy and security requirements for health information
+- **OSHA Standards**: Workplace safety for optometric practice settings
+- **ICD-10-CM**: Diagnostic coding for optometric conditions and billing
+- **CPT/HCPCS**: Procedural coding for examinations and testing (92004, 92014, 92015, 92083, etc.)
+
+Common Tools and Equipment:
+- **Phoropter**: Instrument housing trial lenses for subjective refraction measurement
+- **Autorefractor/Keratometer**: Automated objective measurement of refractive error and corneal curvature
+- **Slit Lamp Biomicroscope**: Magnified examination of anterior and posterior eye segments
+- **Tonometer**: IOP measurement (Goldmann applanation, iCare, non-contact/air puff)
+- **BIO (Binocular Indirect Ophthalmoscope)**: Wide-field stereoscopic fundus examination
+- **OCT (Optical Coherence Tomography)**: Retinal and optic nerve cross-sectional imaging (Zeiss Cirrus, Heidelberg Spectralis)
+- **Visual Field Analyzer**: Humphrey Field Analyzer (HFA), Octopus — perimetry testing
+- **Fundus Camera**: Retinal photography for documentation and screening (Optos for ultra-widefield)
+- **Topographer/Tomographer**: Corneal mapping (Pentacam, Medmont, Orbscan)
+- **Retinoscope**: Handheld instrument for objective refraction
+- **Trial Lens Set**: Lenses for trial framing and over-refraction
+- **Pachymeter**: Corneal thickness measurement (ultrasound or optical)
+- **Lensometer**: Measures power of existing spectacle lenses
+- **Practice Management/EHR**: Crystal PM, RevolutionEHR, EyeCloud Pro, Compulink, Epic
+
+Change log
+2024-12: Initial playbook created based on AOA 2024 clinical practice guidelines, AAO preferred practice patterns, and TFOS DEWS II dry eye management protocols
+- Emphasis on evidence-based eye care and preventive vision health
+- Comprehensive examination workflow with diagnostic testing protocols
+- Glaucoma, dry eye, and pediatric vision management guidance
+- Contact lens fitting and specialty lens protocols
+- Regional variations across US, UK, Canada, and Australia optometric practice

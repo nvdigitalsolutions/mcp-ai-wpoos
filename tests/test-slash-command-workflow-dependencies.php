@@ -97,7 +97,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_resolve_step_dependencies_simple() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'resolve_step_dependencies' );
+		$method     = $reflection->getMethod( 'resolve_step_dependencies' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -117,7 +117,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertIsArray( $result );
 		$this->assertCount( 2, $result );
-		
+
 		// step_a should come before step_b.
 		$this->assertEquals( 'step_a', $result[0]['name'] );
 		$this->assertEquals( 'step_b', $result[1]['name'] );
@@ -128,7 +128,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_resolve_step_dependencies_complex() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'resolve_step_dependencies' );
+		$method     = $reflection->getMethod( 'resolve_step_dependencies' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -158,10 +158,10 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertIsArray( $result );
 		$this->assertCount( 4, $result );
-		
+
 		// step_a should be first.
 		$this->assertEquals( 'step_a', $result[0]['name'] );
-		
+
 		// step_d should be last (depends on b and c).
 		$this->assertEquals( 'step_d', $result[3]['name'] );
 	}
@@ -171,7 +171,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_resolve_step_dependencies_circular() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'resolve_step_dependencies' );
+		$method     = $reflection->getMethod( 'resolve_step_dependencies' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -198,7 +198,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_resolve_step_dependencies_missing_name() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'resolve_step_dependencies' );
+		$method     = $reflection->getMethod( 'resolve_step_dependencies' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -219,7 +219,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_has_step_dependencies() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'has_step_dependencies' );
+		$method     = $reflection->getMethod( 'has_step_dependencies' );
 		$method->setAccessible( true );
 
 		// Steps with dependencies.
@@ -281,7 +281,7 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 	 */
 	public function test_resolve_step_dependencies_diamond() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'resolve_step_dependencies' );
+		$method     = $reflection->getMethod( 'resolve_step_dependencies' );
 		$method->setAccessible( true );
 
 		// Diamond pattern: A -> B, A -> C, B -> D, C -> D.
@@ -311,13 +311,13 @@ class Test_Slash_Command_Workflow_Dependencies extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result );
 		$this->assertCount( 4, $result );
-		
+
 		// a should be first.
 		$this->assertEquals( 'a', $result[0]['name'] );
-		
+
 		// d should be last.
 		$this->assertEquals( 'd', $result[3]['name'] );
-		
+
 		// b and c can be in any order (both at positions 1 or 2).
 		$middle_names = array( $result[1]['name'], $result[2]['name'] );
 		$this->assertContains( 'b', $middle_names );

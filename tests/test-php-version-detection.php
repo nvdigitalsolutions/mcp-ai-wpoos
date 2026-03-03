@@ -91,10 +91,10 @@ class WP_MCP_AI_PHP_Version_Detection_Test extends WP_UnitTestCase {
 
 		// Remove common version constraint characters.
 		$required_clean = trim( $required_version, '^><=~' );
-		
+
 		// Compare versions.
 		$meets_requirement = version_compare( $current_version, $required_clean, '>=' );
-		
+
 		$this->assertTrue(
 			$meets_requirement,
 			sprintf(

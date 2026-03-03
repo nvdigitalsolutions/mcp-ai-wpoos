@@ -188,21 +188,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Register settings with WordPress.
 		 *
-		 * IMPORTANT: We do NOT register a sanitize_callback here because:
-		 * 1. We manually sanitize in handle_save_settings() with proper context
-		 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
-		 * 3. The callback has no POST context during update_option(), breaking subtab protection
-		 * 4. This would cause provider keys to be cleared when navigating tabs
-		 *
-		 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
+		 * The sanitize_callback provides a safety net for any direct update_option() calls.
+		 * Primary sanitization is handled in handle_save_settings() with full context
+		 * (active tab/subtab awareness) to prevent data loss during partial-form saves.
 		 */
 		public function register_settings() {
 			register_setting(
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
-					'type' => 'array',
-				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
+					'type'              => 'array',
+					'sanitize_callback' => array( $this, 'sanitize_settings_callback' ),
 				)
 			);
 
@@ -220,6 +216,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					);
 				}
 			}
+		}
+
+		/**
+		 * Sanitize callback for register_setting().
+		 *
+		 * Provides a safety net for any direct update_option() calls.
+		 * Sanitizes all sections when called via the Settings API.
+		 *
+		 * @param mixed $input Raw settings input.
+		 * @return array Sanitized settings.
+		 */
+		public function sanitize_settings_callback( $input ) {
+			if ( ! is_array( $input ) ) {
+				// Preserve existing settings if input is invalid.
+				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				return is_array( $existing ) ? $existing : array();
+			}
+			return $this->sanitize_settings( $input );
 		}
 
 		/**

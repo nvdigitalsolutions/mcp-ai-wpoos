@@ -790,7 +790,16 @@
 }
 
 .wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant .wp-mcp-ai-chat__bubble-attachment a {
-    color: var(--wp-mcp-ai-color-bubble-link-text, #fff);
+    color: var(--wp-mcp-ai-color-bubble-link-text, #2563eb);
+}
+
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant .wp-mcp-ai-chat__bubble-attachment--file {
+    background: var(--wp-mcp-ai-color-assistant-file-background, rgba(37, 99, 235, 0.06));
+}
+
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant .wp-mcp-ai-chat__bubble-attachments .wp-mcp-ai-chat__attachments-meta {
+    color: var(--wp-mcp-ai-color-assistant-meta-text, #646970);
+    opacity: 1;
 }
 
 .wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant strong {
@@ -1480,7 +1489,8 @@
     background: var(--wp-mcp-ai-color-attachments-item-background, #fff);
     border: 1px solid var(--wp-mcp-ai-color-attachments-border, #e2e4e7);
     border-radius: 6px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.625rem 0.75rem;
+    min-height: 3rem;
 }
 
 .wp-mcp-ai-chat__attachments-info {
@@ -1523,12 +1533,42 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.5rem;
     color: var(--wp-mcp-ai-color-bubble-attachments-text, #fff);
 }
 
 .wp-mcp-ai-chat__bubble-attachment {
     color: inherit;
+}
+
+.wp-mcp-ai-chat__bubble-attachment--file {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 2.75rem;
+    background: var(--wp-mcp-ai-color-bubble-file-background, rgba(255, 255, 255, 0.1));
+    border-radius: 6px;
+}
+
+.wp-mcp-ai-chat__file-icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 2rem;
+    text-align: center;
+}
+
+.wp-mcp-ai-chat__file-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.125rem;
+}
+
+.wp-mcp-ai-chat__file-name {
+    word-break: break-word;
 }
 
 .wp-mcp-ai-chat__bubble-attachment a {
@@ -1545,6 +1585,7 @@
 .wp-mcp-ai-chat__bubble-attachments .wp-mcp-ai-chat__attachments-meta {
     color: inherit;
     opacity: 0.85;
+    font-size: 0.8rem;
 }
 
 /* Video player styles */

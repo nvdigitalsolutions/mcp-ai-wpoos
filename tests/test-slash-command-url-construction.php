@@ -45,7 +45,7 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 
 		$data = json_decode( $matches[1], true );
 		$this->assertIsArray( $data, 'mcpAiData should be valid JSON' );
-		
+
 		// Check that specific endpoint URLs are provided.
 		$this->assertArrayHasKey( 'slashCommandEndpoint', $data, 'mcpAiData should have slashCommandEndpoint key' );
 		$this->assertArrayHasKey( 'slashCommandListEndpoint', $data, 'mcpAiData should have slashCommandListEndpoint key' );
@@ -56,7 +56,7 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 		// Test slashCommandEndpoint.
 		$slash_command_endpoint = $data['slashCommandEndpoint'];
 		$this->assertStringEndsWith( '/slash-command', $slash_command_endpoint, 'slashCommandEndpoint should end with /slash-command' );
-		
+
 		// Count occurrences of 'mcp-ai/v1' - should be exactly 1.
 		$count = substr_count( $slash_command_endpoint, 'mcp-ai/v1' );
 		$this->assertEquals( 1, $count, 'slashCommandEndpoint should contain mcp-ai/v1 exactly once, not duplicated' );
@@ -81,7 +81,7 @@ class Test_Slash_Command_URL_Construction extends WP_UnitTestCase {
 		$rest_url = $data['restUrl'];
 		$this->assertStringEndsWith( '/', $rest_url, 'restUrl should have a trailing slash' );
 		$this->assertStringContainsString( '/mcp-ai/v1/', $rest_url, 'restUrl should contain /mcp-ai/v1/' );
-		
+
 		$count = substr_count( $rest_url, 'mcp-ai/v1' );
 		$this->assertEquals( 1, $count, 'restUrl should contain mcp-ai/v1 exactly once, not duplicated' );
 	}

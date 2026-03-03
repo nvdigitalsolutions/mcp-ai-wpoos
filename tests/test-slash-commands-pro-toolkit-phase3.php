@@ -42,7 +42,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 * Test Phase 3 e-commerce commands are registered.
 	 */
 	public function test_phase3_ecommerce_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'bundle-create', $commands );
@@ -54,7 +54,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 * Test Phase 3 social media commands are registered.
 	 */
 	public function test_phase3_social_media_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'post-optimize', $commands );
@@ -66,7 +66,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 * Test Phase 3 video production commands are registered.
 	 */
 	public function test_phase3_video_commands_registered() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$this->assertArrayHasKey( 'video-trim', $commands );
@@ -82,7 +82,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameters.
-		$args = array( 'name' => 'Test Bundle' );
+		$args    = array( 'name' => 'Test Bundle' );
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_bundle_create( $args, $context );
@@ -165,7 +165,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameter.
-		$args = array();
+		$args    = array();
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_post_optimize( $args, $context );
@@ -253,7 +253,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameters.
-		$args = array( 'video-id' => 123 );
+		$args    = array( 'video-id' => 123 );
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_video_trim( $args, $context );
@@ -323,7 +323,7 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 	 * Test all Phase 3 commands have documentation.
 	 */
 	public function test_phase3_commands_have_documentation() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		$phase3_commands = array(
@@ -341,10 +341,10 @@ class Test_Slash_Commands_Pro_Toolkit_Phase3 extends WP_UnitTestCase {
 		foreach ( $phase3_commands as $command_name ) {
 			$this->assertArrayHasKey( $command_name, $commands );
 			$command = $commands[ $command_name ];
-			
+
 			$this->assertArrayHasKey( 'usage', $command );
 			$this->assertNotEmpty( $command['usage'] );
-			
+
 			$this->assertArrayHasKey( 'parameters', $command );
 		}
 	}

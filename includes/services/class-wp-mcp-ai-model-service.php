@@ -398,28 +398,28 @@ class WP_MCP_AI_Model_Service {
 		if ( ! $requires_vision && ! $requires_multimodal ) {
 			$common_models = array(
 				// DeepSeek (top performers for reasoning/coding in 2025-2026).
-				'deepseek-ai/DeepSeek-R1'                 => 'DeepSeek R1 (Reasoning)',
-				'deepseek-ai/DeepSeek-V3'                 => 'DeepSeek V3',
-				'deepseek-ai/DeepSeek-Coder-V2-Instruct'  => 'DeepSeek Coder V2 Instruct',
+				'deepseek-ai/DeepSeek-R1'                => 'DeepSeek R1 (Reasoning)',
+				'deepseek-ai/DeepSeek-V3'                => 'DeepSeek V3',
+				'deepseek-ai/DeepSeek-Coder-V2-Instruct' => 'DeepSeek Coder V2 Instruct',
 				// Qwen (multilingual, strong coder).
-				'Qwen/Qwen3-72B-Instruct'                 => 'Qwen 3 72B Instruct',
-				'Qwen/Qwen3-32B-Instruct'                 => 'Qwen 3 32B Instruct',
-				'Qwen/Qwen2.5-72B-Instruct'               => 'Qwen 2.5 72B Instruct',
-				'Qwen/Qwen2.5-32B-Instruct'               => 'Qwen 2.5 32B Instruct',
-				'Qwen/Qwen2.5-14B-Instruct'               => 'Qwen 2.5 14B Instruct',
-				'Qwen/Qwen2.5-7B-Instruct'                => 'Qwen 2.5 7B Instruct',
+				'Qwen/Qwen3-72B-Instruct'                => 'Qwen 3 72B Instruct',
+				'Qwen/Qwen3-32B-Instruct'                => 'Qwen 3 32B Instruct',
+				'Qwen/Qwen2.5-72B-Instruct'              => 'Qwen 2.5 72B Instruct',
+				'Qwen/Qwen2.5-32B-Instruct'              => 'Qwen 2.5 32B Instruct',
+				'Qwen/Qwen2.5-14B-Instruct'              => 'Qwen 2.5 14B Instruct',
+				'Qwen/Qwen2.5-7B-Instruct'               => 'Qwen 2.5 7B Instruct',
 				// Llama (Meta flagship).
-				'meta-llama/Llama-3.3-70B-Instruct'       => 'Llama 3.3 70B Instruct',
-				'meta-llama/Llama-3.2-3B-Instruct'        => 'Llama 3.2 3B Instruct',
-				'meta-llama/Llama-3.1-8B-Instruct'        => 'Llama 3.1 8B Instruct',
+				'meta-llama/Llama-3.3-70B-Instruct'      => 'Llama 3.3 70B Instruct',
+				'meta-llama/Llama-3.2-3B-Instruct'       => 'Llama 3.2 3B Instruct',
+				'meta-llama/Llama-3.1-8B-Instruct'       => 'Llama 3.1 8B Instruct',
 				// Mistral.
-				'mistralai/Mistral-7B-Instruct-v0.3'      => 'Mistral 7B Instruct v0.3',
-				'mistralai/Mixtral-8x7B-Instruct-v0.1'    => 'Mixtral 8x7B Instruct',
+				'mistralai/Mistral-7B-Instruct-v0.3'     => 'Mistral 7B Instruct v0.3',
+				'mistralai/Mixtral-8x7B-Instruct-v0.1'   => 'Mixtral 8x7B Instruct',
 				// Google Gemma.
-				'google/gemma-2-27b-it'                   => 'Gemma 2 27B Instruct',
-				'google/gemma-2-9b-it'                    => 'Gemma 2 9B Instruct',
+				'google/gemma-2-27b-it'                  => 'Gemma 2 27B Instruct',
+				'google/gemma-2-9b-it'                   => 'Gemma 2 9B Instruct',
 				// Microsoft Phi.
-				'microsoft/Phi-3.5-mini-instruct'         => 'Phi-3.5 Mini Instruct',
+				'microsoft/Phi-3.5-mini-instruct'        => 'Phi-3.5 Mini Instruct',
 			);
 
 			foreach ( $common_models as $model_id => $model_name ) {
@@ -452,24 +452,24 @@ class WP_MCP_AI_Model_Service {
 		// Add common Ollama models.
 		$common_ollama_models = array(
 			// Latest flagship models (2025-2026).
-			'llama4'          => 'Llama 4 (Latest Meta flagship)',
-			'deepseek-r1'     => 'DeepSeek R1 (Reasoning)',
-			'deepseek-v3'     => 'DeepSeek V3',
-			'qwen3'           => 'Qwen 3',
+			'llama4'        => 'Llama 4 (Latest Meta flagship)',
+			'deepseek-r1'   => 'DeepSeek R1 (Reasoning)',
+			'deepseek-v3'   => 'DeepSeek V3',
+			'qwen3'         => 'Qwen 3',
 			// Established models.
-			'llama3.3'        => 'Llama 3.3',
-			'llama3.2'        => 'Llama 3.2',
-			'llama3.1'        => 'Llama 3.1',
-			'llama3'          => 'Llama 3',
-			'mistral'         => 'Mistral',
-			'mistral-large'   => 'Mistral Large',
-			'mixtral'         => 'Mixtral',
-			'gemma3'          => 'Gemma 3',
-			'gemma2'          => 'Gemma 2',
-			'phi4'            => 'Phi-4',
-			'phi3'            => 'Phi-3',
-			'codellama'       => 'CodeLlama',
-			'qwen2.5'         => 'Qwen 2.5',
+			'llama3.3'      => 'Llama 3.3',
+			'llama3.2'      => 'Llama 3.2',
+			'llama3.1'      => 'Llama 3.1',
+			'llama3'        => 'Llama 3',
+			'mistral'       => 'Mistral',
+			'mistral-large' => 'Mistral Large',
+			'mixtral'       => 'Mixtral',
+			'gemma3'        => 'Gemma 3',
+			'gemma2'        => 'Gemma 2',
+			'phi4'          => 'Phi-4',
+			'phi3'          => 'Phi-3',
+			'codellama'     => 'CodeLlama',
+			'qwen2.5'       => 'Qwen 2.5',
 		);
 
 		// Add common models that match requirements.
@@ -504,45 +504,45 @@ class WP_MCP_AI_Model_Service {
 		// Add common LM Studio models (popular models from lmstudio.ai - 2025-2026).
 		$common_lm_studio_models = array(
 			// Llama 4 (Meta's latest flagship - 2026).
-			'meta-llama/llama-4-scout-17b-16e-instruct'   => 'Llama 4 Scout 17B (Multimodal)',
+			'meta-llama/llama-4-scout-17b-16e-instruct' => 'Llama 4 Scout 17B (Multimodal)',
 			'meta-llama/llama-4-maverick-17b-128e-instruct' => 'Llama 4 Maverick 17B',
 			// Qwen 3 (top open-source performer 2025-2026).
-			'qwen/qwen3-30b-a3b'                          => 'Qwen 3 30B A3B',
-			'qwen/qwen3-14b'                              => 'Qwen 3 14B',
-			'qwen/qwen3-8b'                               => 'Qwen 3 8B',
+			'qwen/qwen3-30b-a3b'                        => 'Qwen 3 30B A3B',
+			'qwen/qwen3-14b'                            => 'Qwen 3 14B',
+			'qwen/qwen3-8b'                             => 'Qwen 3 8B',
 			// Qwen 2.5 (coding and multilingual models).
-			'qwen/qwen3-coder-30b'                        => 'Qwen 3 Coder 30B',
-			'qwen/qwen2.5-coder-32b'                      => 'Qwen 2.5 Coder 32B',
-			'qwen/qwen2.5-32b'                            => 'Qwen 2.5 32B',
-			'qwen/qwen2.5-14b'                            => 'Qwen 2.5 14B',
-			'qwen/qwen2.5-7b'                             => 'Qwen 2.5 7B',
+			'qwen/qwen3-coder-30b'                      => 'Qwen 3 Coder 30B',
+			'qwen/qwen2.5-coder-32b'                    => 'Qwen 2.5 Coder 32B',
+			'qwen/qwen2.5-32b'                          => 'Qwen 2.5 32B',
+			'qwen/qwen2.5-14b'                          => 'Qwen 2.5 14B',
+			'qwen/qwen2.5-7b'                           => 'Qwen 2.5 7B',
 			// Llama 3.x (Meta's established models).
-			'meta-llama/llama-3.3-70b-instruct'           => 'Llama 3.3 70B Instruct',
-			'meta-llama/llama-3.2-3b-instruct'            => 'Llama 3.2 3B Instruct',
-			'meta-llama/llama-3.2-1b-instruct'            => 'Llama 3.2 1B Instruct',
-			'meta-llama/llama-3.1-8b-instruct'            => 'Llama 3.1 8B Instruct',
+			'meta-llama/llama-3.3-70b-instruct'         => 'Llama 3.3 70B Instruct',
+			'meta-llama/llama-3.2-3b-instruct'          => 'Llama 3.2 3B Instruct',
+			'meta-llama/llama-3.2-1b-instruct'          => 'Llama 3.2 1B Instruct',
+			'meta-llama/llama-3.1-8b-instruct'          => 'Llama 3.1 8B Instruct',
 			// Mistral (efficient reasoning).
-			'mistralai/mistral-large-3'                   => 'Mistral Large 3',
-			'mistralai/mistral-large-2411'                => 'Mistral Large 2411',
-			'mistralai/mistral-nemo-2407'                 => 'Mistral Nemo 2407',
-			'mistralai/mistral-7b-instruct-v0.3'          => 'Mistral 7B Instruct v0.3',
-			'mistralai/mixtral-8x7b-instruct'             => 'Mixtral 8x7B Instruct',
-			'mistralai/mixtral-8x22b-instruct'            => 'Mixtral 8x22B Instruct',
+			'mistralai/mistral-large-3'                 => 'Mistral Large 3',
+			'mistralai/mistral-large-2411'              => 'Mistral Large 2411',
+			'mistralai/mistral-nemo-2407'               => 'Mistral Nemo 2407',
+			'mistralai/mistral-7b-instruct-v0.3'        => 'Mistral 7B Instruct v0.3',
+			'mistralai/mixtral-8x7b-instruct'           => 'Mixtral 8x7B Instruct',
+			'mistralai/mixtral-8x22b-instruct'          => 'Mixtral 8x22B Instruct',
 			// DeepSeek (reasoning specialist).
-			'deepseek-ai/deepseek-r1'                     => 'DeepSeek R1 (Reasoning)',
-			'deepseek-ai/deepseek-r1-distill-qwen-32b'   => 'DeepSeek R1 Distill Qwen 32B',
-			'deepseek-ai/deepseek-r1-distill-qwen-14b'   => 'DeepSeek R1 Distill Qwen 14B',
-			'deepseek-ai/deepseek-r1-distill-qwen-7b'    => 'DeepSeek R1 Distill Qwen 7B',
-			'deepseek-ai/deepseek-v3'                     => 'DeepSeek V3',
-			'deepseek-ai/deepseek-coder-33b-instruct'    => 'DeepSeek Coder 33B Instruct',
+			'deepseek-ai/deepseek-r1'                   => 'DeepSeek R1 (Reasoning)',
+			'deepseek-ai/deepseek-r1-distill-qwen-32b'  => 'DeepSeek R1 Distill Qwen 32B',
+			'deepseek-ai/deepseek-r1-distill-qwen-14b'  => 'DeepSeek R1 Distill Qwen 14B',
+			'deepseek-ai/deepseek-r1-distill-qwen-7b'   => 'DeepSeek R1 Distill Qwen 7B',
+			'deepseek-ai/deepseek-v3'                   => 'DeepSeek V3',
+			'deepseek-ai/deepseek-coder-33b-instruct'   => 'DeepSeek Coder 33B Instruct',
 			// Microsoft Phi (small but capable).
-			'microsoft/phi-4'                             => 'Phi-4',
-			'microsoft/phi-4-mini-instruct'               => 'Phi-4 Mini Instruct',
-			'microsoft/phi-3.5-mini-instruct'             => 'Phi-3.5 Mini Instruct',
+			'microsoft/phi-4'                           => 'Phi-4',
+			'microsoft/phi-4-mini-instruct'             => 'Phi-4 Mini Instruct',
+			'microsoft/phi-3.5-mini-instruct'           => 'Phi-3.5 Mini Instruct',
 			// Google Gemma.
-			'google/gemma-3-12b-it'                       => 'Gemma 3 12B Instruct',
-			'google/gemma-2-27b-it'                       => 'Gemma 2 27B Instruct',
-			'google/gemma-2-9b-it'                        => 'Gemma 2 9B Instruct',
+			'google/gemma-3-12b-it'                     => 'Gemma 3 12B Instruct',
+			'google/gemma-2-27b-it'                     => 'Gemma 2 27B Instruct',
+			'google/gemma-2-9b-it'                      => 'Gemma 2 9B Instruct',
 		);
 
 		// Add common models that match requirements.

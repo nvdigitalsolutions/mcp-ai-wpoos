@@ -117,7 +117,7 @@ class WP_MCP_AI_Slash_Command_Help {
 			return __( 'No commands available.', 'mcp-ai-wpoos' );
 		}
 
-		$help = "# Available Slash Commands\n\n";
+		$help  = "# Available Slash Commands\n\n";
 		$help .= sprintf(
 			/* translators: %d: number of commands */
 			__( 'You have access to %d command(s). Use `/help <command>` for detailed information.', 'mcp-ai-wpoos' ),

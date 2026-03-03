@@ -55,18 +55,18 @@ class WP_MCP_AI_Slash_Command_Parser {
 			);
 		}
 
-		$command = $matches[1];
+		$command     = $matches[1];
 		$args_string = trim( $matches[2] );
 
 		// Parse arguments and flags
 		$parsed_args = $this->parse_arguments( $args_string );
 
 		return array(
-			'command' => $command,
+			'command'   => $command,
 			'raw_input' => '/' . $input,
-			'args' => $parsed_args['positional'],
-			'flags' => $parsed_args['flags'],
-			'raw_args' => $args_string,
+			'args'      => $parsed_args['positional'],
+			'flags'     => $parsed_args['flags'],
+			'raw_args'  => $args_string,
 		);
 	}
 
@@ -85,7 +85,7 @@ class WP_MCP_AI_Slash_Command_Parser {
 	private function parse_arguments( $args_string ) {
 		$parsed = array(
 			'positional' => array(),
-			'flags' => array(),
+			'flags'      => array(),
 		);
 
 		if ( empty( $args_string ) ) {
@@ -102,7 +102,7 @@ class WP_MCP_AI_Slash_Command_Parser {
 			// Long flag: --key=value
 			if ( preg_match( '/^--([a-zA-Z0-9_-]+)=(.+)$/', $token, $matches ) ) {
 				$parsed['flags'][ $matches[1] ] = $this->unquote( $matches[2] );
-				$i++;
+				++$i;
 				continue;
 			}
 
@@ -112,11 +112,11 @@ class WP_MCP_AI_Slash_Command_Parser {
 				// Check if next token is a value (not another flag)
 				if ( isset( $tokens[ $i + 1 ] ) && ! $this->is_flag( $tokens[ $i + 1 ] ) ) {
 					$parsed['flags'][ $key ] = $this->unquote( $tokens[ $i + 1 ] );
-					$i += 2;
+					$i                      += 2;
 				} else {
 					// Boolean flag
 					$parsed['flags'][ $key ] = true;
-					$i++;
+					++$i;
 				}
 				continue;
 			}
@@ -127,18 +127,18 @@ class WP_MCP_AI_Slash_Command_Parser {
 				// Check if next token is a value
 				if ( isset( $tokens[ $i + 1 ] ) && ! $this->is_flag( $tokens[ $i + 1 ] ) ) {
 					$parsed['flags'][ $key ] = $this->unquote( $tokens[ $i + 1 ] );
-					$i += 2;
+					$i                      += 2;
 				} else {
 					// Boolean flag
 					$parsed['flags'][ $key ] = true;
-					$i++;
+					++$i;
 				}
 				continue;
 			}
 
 			// Positional argument
 			$parsed['positional'][] = $this->unquote( $token );
-			$i++;
+			++$i;
 		}
 
 		return $parsed;
@@ -151,25 +151,25 @@ class WP_MCP_AI_Slash_Command_Parser {
 	 * @return array Array of tokens.
 	 */
 	private function tokenize( $input ) {
-		$tokens = array();
-		$length = strlen( $input );
+		$tokens        = array();
+		$length        = strlen( $input );
 		$current_token = '';
-		$in_quotes = false;
-		$quote_char = '';
+		$in_quotes     = false;
+		$quote_char    = '';
 
 		for ( $i = 0; $i < $length; $i++ ) {
 			$char = $input[ $i ];
 
 			// Handle quotes
 			if ( ( '"' === $char || "'" === $char ) && ! $in_quotes ) {
-				$in_quotes = true;
-				$quote_char = $char;
+				$in_quotes      = true;
+				$quote_char     = $char;
 				$current_token .= $char;
 				continue;
 			}
 
 			if ( $in_quotes && $char === $quote_char ) {
-				$in_quotes = false;
+				$in_quotes      = false;
 				$current_token .= $char;
 				continue;
 			}
@@ -177,7 +177,7 @@ class WP_MCP_AI_Slash_Command_Parser {
 			// Handle whitespace (token separator when not in quotes)
 			if ( ! $in_quotes && ( ' ' === $char || "\t" === $char ) ) {
 				if ( ! empty( $current_token ) ) {
-					$tokens[] = $current_token;
+					$tokens[]      = $current_token;
 					$current_token = '';
 				}
 				continue;

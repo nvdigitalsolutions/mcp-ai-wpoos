@@ -130,6 +130,7 @@ class WP_MCP_AI_Model_Manager_Ajax {
 		// Validate inputs.
 		$model_id = isset( $_POST['model_id'] ) ? sanitize_text_field( wp_unslash( $_POST['model_id'] ) ) : '';
 		$config   = isset( $_POST['config'] ) ? json_decode( wp_unslash( $_POST['config'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$config   = is_array( $config ) ? wp_mcp_ai_sanitize_recursive( $config ) : array();
 
 		if ( empty( $model_id ) || empty( $config ) ) {
 			wp_send_json_error( __( 'Model ID and configuration are required.', 'mcp-ai-wpoos' ) );

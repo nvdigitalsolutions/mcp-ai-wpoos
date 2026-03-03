@@ -152,26 +152,26 @@ class WP_MCP_AI_Optional_Components {
 	public static function download_vectorizer() {
 		$base_url     = self::get_download_base_url();
 		$download_url = $base_url . '/neplex-vectorizer.zip';
-		
+
 		// Use uploads directory instead of plugin directory.
 		$upload_dir = wp_upload_dir();
-		
+
 		// Check for upload directory errors.
 		if ( ! empty( $upload_dir['error'] ) ) {
 			$error_msg = $upload_dir['error'];
 			self::update_status( 'vectorizer', 'error', $error_msg );
 			return new WP_Error( 'upload_dir_error', $error_msg );
 		}
-		
+
 		$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/vendor/';
-		
+
 		// Create directory if it doesn't exist.
 		if ( ! wp_mkdir_p( $target_dir ) ) {
 			$error_msg = __( 'Failed to create vendor directory in uploads folder.', 'mcp-ai-wpoos' );
 			self::update_status( 'vectorizer', 'error', $error_msg );
 			return new WP_Error( 'mkdir_failed', $error_msg );
 		}
-		
+
 		$temp_file = download_url( $download_url );
 
 		if ( is_wp_error( $temp_file ) ) {
@@ -200,26 +200,26 @@ class WP_MCP_AI_Optional_Components {
 	public static function download_knowledge_base() {
 		$base_url     = self::get_download_base_url();
 		$download_url = $base_url . '/knowledge-base.zip';
-		
+
 		// Use uploads directory instead of plugin directory.
 		$upload_dir = wp_upload_dir();
-		
+
 		// Check for upload directory errors.
 		if ( ! empty( $upload_dir['error'] ) ) {
 			$error_msg = $upload_dir['error'];
 			self::update_status( 'knowledge_base', 'error', $error_msg );
 			return new WP_Error( 'upload_dir_error', $error_msg );
 		}
-		
+
 		$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'mcp-ai-wpoos/knowledge-base/';
-		
+
 		// Create directory if it doesn't exist.
 		if ( ! wp_mkdir_p( $target_dir ) ) {
 			$error_msg = __( 'Failed to create knowledge base directory in uploads folder.', 'mcp-ai-wpoos' );
 			self::update_status( 'knowledge_base', 'error', $error_msg );
 			return new WP_Error( 'mkdir_failed', $error_msg );
 		}
-		
+
 		$temp_file = download_url( $download_url );
 
 		if ( is_wp_error( $temp_file ) ) {

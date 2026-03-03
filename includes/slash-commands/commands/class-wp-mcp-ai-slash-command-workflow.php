@@ -172,7 +172,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		if ( ! empty( $workflow['trigger'] ) ) {
-			$output .= "**Trigger:** ";
+			$output .= '**Trigger:** ';
 			if ( isset( $workflow['trigger']['schedule'] ) ) {
 				$output .= sprintf( "Schedule: %s\n", esc_html( $workflow['trigger']['schedule'] ) );
 			} elseif ( isset( $workflow['trigger']['event'] ) ) {
@@ -185,14 +185,14 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		foreach ( $workflow['steps'] as $index => $step ) {
 			$step_num = $index + 1;
-			$output .= sprintf(
+			$output  .= sprintf(
 				"%d. **%s**\n",
 				$step_num,
 				esc_html( $step['task'] )
 			);
 
 			if ( ! empty( $step['params'] ) ) {
-				$output .= "   - Parameters: `" . wp_json_encode( $step['params'] ) . "`\n";
+				$output .= '   - Parameters: `' . wp_json_encode( $step['params'] ) . "`\n";
 			}
 
 			$output .= "\n";
@@ -257,7 +257,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$output .= $prefix . sprintf( "%d. [Parallel Block ⇉]\n", $step_num );
 				foreach ( $step['parallel'] as $sub_index => $sub_step ) {
 					$task_name = isset( $sub_step['name'] ) ? $sub_step['name'] : $sub_step['task'];
-					$output .= $prefix . sprintf( "   ├─ %s\n", esc_html( $task_name ) );
+					$output   .= $prefix . sprintf( "   ├─ %s\n", esc_html( $task_name ) );
 				}
 				continue;
 			}
@@ -265,22 +265,22 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			// Conditional block.
 			if ( isset( $step['condition'] ) ) {
 				$output .= $prefix . sprintf( "%d. [Conditional ⚡]: %s\n", $step_num, esc_html( $step['condition'] ) );
-				
+
 				if ( isset( $step['then'] ) ) {
-					$output .= $prefix . "   ├─ THEN:\n";
+					$output    .= $prefix . "   ├─ THEN:\n";
 					$then_steps = is_array( $step['then'] ) ? $step['then'] : array( $step['then'] );
 					foreach ( $then_steps as $then_step ) {
 						$task_name = isset( $then_step['name'] ) ? $then_step['name'] : $then_step['task'];
-						$output .= $prefix . sprintf( "   │  └─ %s\n", esc_html( $task_name ) );
+						$output   .= $prefix . sprintf( "   │  └─ %s\n", esc_html( $task_name ) );
 					}
 				}
-				
+
 				if ( isset( $step['else'] ) ) {
-					$output .= $prefix . "   └─ ELSE:\n";
+					$output    .= $prefix . "   └─ ELSE:\n";
 					$else_steps = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
 					foreach ( $else_steps as $else_step ) {
 						$task_name = isset( $else_step['name'] ) ? $else_step['name'] : $else_step['task'];
-						$output .= $prefix . sprintf( "      └─ %s\n", esc_html( $task_name ) );
+						$output   .= $prefix . sprintf( "      └─ %s\n", esc_html( $task_name ) );
 					}
 				}
 				continue;
@@ -289,12 +289,12 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			// Loop block.
 			if ( isset( $step['repeat_until'] ) || isset( $step['repeat'] ) ) {
 				$condition = isset( $step['repeat_until'] ) ? $step['repeat_until'] : 'max iterations';
-				$output .= $prefix . sprintf( "%d. [Loop ↻]: until %s\n", $step_num, esc_html( $condition ) );
-				
+				$output   .= $prefix . sprintf( "%d. [Loop ↻]: until %s\n", $step_num, esc_html( $condition ) );
+
 				if ( isset( $step['steps'] ) && is_array( $step['steps'] ) ) {
 					foreach ( $step['steps'] as $loop_step ) {
 						$task_name = isset( $loop_step['name'] ) ? $loop_step['name'] : $loop_step['task'];
-						$output .= $prefix . sprintf( "   ↻─ %s\n", esc_html( $task_name ) );
+						$output   .= $prefix . sprintf( "   ↻─ %s\n", esc_html( $task_name ) );
 					}
 				}
 				continue;
@@ -302,7 +302,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 			// Regular step.
 			$task_name = isset( $step['name'] ) ? $step['name'] : ( isset( $step['task'] ) ? $step['task'] : 'unknown' );
-			$output .= $prefix . sprintf( "%d. %s →\n", $step_num, esc_html( $task_name ) );
+			$output   .= $prefix . sprintf( "%d. %s →\n", $step_num, esc_html( $task_name ) );
 		}
 
 		return $output;
@@ -318,12 +318,12 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		$output = "**DAG Structure:**\n\n```\n";
 
 		// Build dependency map.
-		$dep_map = array();
+		$dep_map      = array();
 		$reverse_deps = array(); // Track what depends on each step.
 
 		foreach ( $steps as $step ) {
-			$name = $step['name'];
-			$deps = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
+			$name             = $step['name'];
+			$deps             = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
 			$dep_map[ $name ] = $deps;
 
 			// Build reverse dependencies.
@@ -345,22 +345,22 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		// Visualize layers.
 		$visited = array();
-		$layer = 0;
+		$layer   = 0;
 
 		$current_layer = $roots;
 
 		while ( ! empty( $current_layer ) ) {
 			$output .= sprintf( "Layer %d:\n", $layer );
-			
+
 			foreach ( $current_layer as $node ) {
 				$dependents = isset( $reverse_deps[ $node ] ) ? $reverse_deps[ $node ] : array();
-				$output .= sprintf( "  %s", $node );
-				
+				$output    .= sprintf( '  %s', $node );
+
 				if ( ! empty( $dependents ) ) {
-					$output .= sprintf( " → [%s]", implode( ', ', $dependents ) );
+					$output .= sprintf( ' → [%s]', implode( ', ', $dependents ) );
 				}
-				
-				$output .= "\n";
+
+				$output          .= "\n";
 				$visited[ $node ] = true;
 			}
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			}
 
 			$current_layer = $next_layer;
-			$layer++;
+			++$layer;
 
 			if ( $layer > 20 ) { // Safety limit.
 				break;
@@ -422,9 +422,9 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		// Add metadata to export.
 		$export_data = array(
 			'metadata' => array(
-				'exported_at' => gmdate( 'Y-m-d H:i:s' ),
+				'exported_at'    => gmdate( 'Y-m-d H:i:s' ),
 				'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
-				'export_format' => '1.0',
+				'export_format'  => '1.0',
 			),
 			'workflow' => $workflow,
 		);
@@ -435,7 +435,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		} else {
 			// Fallback to JSON format if YAML not available.
 			$yaml_content = wp_json_encode( $export_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
-			$export_file = str_replace( '.yml', '.json', $export_file );
+			$export_file  = str_replace( '.yml', '.json', $export_file );
 		}
 
 		// Save file.
@@ -449,7 +449,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			);
 		}
 
-		$output = "## Workflow Exported Successfully\n\n";
+		$output  = "## Workflow Exported Successfully\n\n";
 		$output .= sprintf( "**Workflow:** %s\n", esc_html( $workflow['name'] ) );
 		$output .= sprintf( "**File:** `%s`\n", esc_html( basename( $export_file ) ) );
 		$output .= sprintf( "**Location:** `%s`\n", esc_html( $export_file ) );
@@ -580,7 +580,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			);
 		}
 
-		$output = "## Workflow Imported Successfully\n\n";
+		$output  = "## Workflow Imported Successfully\n\n";
 		$output .= sprintf( "**Workflow Name:** %s\n", esc_html( $workflow_name ) );
 		$output .= sprintf( "**Source File:** `%s`\n", esc_html( basename( $file_path ) ) );
 		$output .= sprintf( "**Saved As:** `%s`\n", esc_html( basename( $custom_file ) ) );
@@ -619,7 +619,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		// Load custom workflows from uploads directory.
-		$upload_dir = wp_upload_dir();
+		$upload_dir   = wp_upload_dir();
 		$workflow_dir = $upload_dir['basedir'] . '/mcp-ai/workflows';
 
 		if ( is_dir( $workflow_dir ) ) {
@@ -630,7 +630,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$name = basename( $name, '.yaml' );
 
 				try {
-					$content = file_get_contents( $file );
+					$content  = file_get_contents( $file );
 					$workflow = yaml_parse( $content );
 
 					if ( $workflow && isset( $workflow['name'] ) ) {
@@ -666,10 +666,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		// Load from custom workflows.
-		$upload_dir = wp_upload_dir();
+		$upload_dir   = wp_upload_dir();
 		$workflow_dir = $upload_dir['basedir'] . '/mcp-ai/workflows';
-		$file_yml = $workflow_dir . '/' . $workflow_name . '.yml';
-		$file_yaml = $workflow_dir . '/' . $workflow_name . '.yaml';
+		$file_yml     = $workflow_dir . '/' . $workflow_name . '.yml';
+		$file_yaml    = $workflow_dir . '/' . $workflow_name . '.yaml';
 
 		$file = file_exists( $file_yml ) ? $file_yml : ( file_exists( $file_yaml ) ? $file_yaml : null );
 
@@ -685,7 +685,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		try {
-			$content = file_get_contents( $file );
+			$content  = file_get_contents( $file );
 			$workflow = yaml_parse( $content );
 
 			if ( ! $workflow ) {
@@ -802,7 +802,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 * Get required capability for a task
 	 *
 	 * Maps workflow task names to their required WordPress capabilities.
-	 * 
+	 *
 	 * Task Naming Convention:
 	 * - Primary task names use kebab-case (e.g., 'optimize-perf', 'clean-content')
 	 * - Descriptive aliases use snake_case (e.g., 'check_performance', 'publish_post')
@@ -814,21 +814,21 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	private function get_task_required_capability( $task ) {
 		// Map tasks to their required capabilities based on the slash command they call.
 		$task_capabilities = array(
-			'next-task'       => 'edit_posts',
-			'check_drafts'    => 'edit_posts',
-			'audit_drafts'    => 'edit_posts',
-			'ship'            => 'publish_posts',
-			'publish_post'    => 'publish_posts',
-			'clean-content'   => 'edit_posts',
-			'check_content'   => 'edit_posts',
-			'optimize-perf'   => 'manage_options',
+			'next-task'         => 'edit_posts',
+			'check_drafts'      => 'edit_posts',
+			'audit_drafts'      => 'edit_posts',
+			'ship'              => 'publish_posts',
+			'publish_post'      => 'publish_posts',
+			'clean-content'     => 'edit_posts',
+			'check_content'     => 'edit_posts',
+			'optimize-perf'     => 'manage_options',
 			'check_performance' => 'manage_options',
-			'sync-docs'       => 'edit_posts',
-			'check_docs'      => 'edit_posts',
-			'notify_admin'    => 'edit_posts',
-			'send_email'      => 'edit_posts',
-			'wait'            => null,
-			'sleep'           => null,
+			'sync-docs'         => 'edit_posts',
+			'check_docs'        => 'edit_posts',
+			'notify_admin'      => 'edit_posts',
+			'send_email'        => 'edit_posts',
+			'wait'              => null,
+			'sleep'             => null,
 		);
 
 		return isset( $task_capabilities[ $task ] ) ? $task_capabilities[ $task ] : null;
@@ -869,7 +869,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 				// Execute 'then' branch if condition is true.
 				if ( $condition_met && isset( $step['then'] ) ) {
-					$branch_steps = is_array( $step['then'] ) ? $step['then'] : array( $step['then'] );
+					$branch_steps  = is_array( $step['then'] ) ? $step['then'] : array( $step['then'] );
 					$branch_result = $this->execute_branch_steps(
 						$branch_steps,
 						$results['context'],
@@ -898,7 +898,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				}
 				// Execute 'else' branch if condition is false.
 				elseif ( ! $condition_met && isset( $step['else'] ) ) {
-					$branch_steps = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
+					$branch_steps  = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
 					$branch_result = $this->execute_branch_steps(
 						$branch_steps,
 						$results['context'],
@@ -933,7 +933,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 						'status'  => 'skipped',
 						'message' => sprintf(
 							/* translators: %s: condition expression */
-							__( 'Condition %s: %s (no branch available)', 'mcp-ai-wpoos' ),
+							__( 'Condition %1$s: %2$s (no branch available)', 'mcp-ai-wpoos' ),
 							$condition_met ? 'met' : 'not met',
 							$step['condition']
 						),
@@ -963,7 +963,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$results['context'] = array_merge( $results['context'], $parallel_result['context'] );
 
 				// Track parallel execution metrics.
-				$results['metrics']['parallel_blocks']++;
+				++$results['metrics']['parallel_blocks'];
 
 				// Stop on failure unless continue_on_error is set.
 				if ( $parallel_result['failed'] > 0 && empty( $step['continue_on_error'] ) ) {
@@ -981,10 +981,10 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 				if ( empty( $loop_steps ) ) {
 					$results['step_results'][] = array(
-						'step'    => $step_num,
-						'task'    => 'loop',
-						'status'  => 'failed',
-						'error'   => __( 'Loop block has no steps defined', 'mcp-ai-wpoos' ),
+						'step'   => $step_num,
+						'task'   => 'loop',
+						'status' => 'failed',
+						'error'  => __( 'Loop block has no steps defined', 'mcp-ai-wpoos' ),
 					);
 					continue;
 				}
@@ -1041,13 +1041,13 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$step_result = $this->execute_step( $step, $results['context'], $context );
 
 			if ( is_wp_error( $step_result ) ) {
-				$results['steps_failed']++;
+				++$results['steps_failed'];
 				$results['step_results'][] = array(
-					'step'    => $step_num,
-					'task'    => $step['task'],
-					'status'  => 'failed',
-					'error'   => $step_result->get_error_message(),
-					'name'    => $step_name,
+					'step'   => $step_num,
+					'task'   => $step['task'],
+					'status' => 'failed',
+					'error'  => $step_result->get_error_message(),
+					'name'   => $step_name,
 				);
 
 				// Stop on failure unless continue_on_error is set.
@@ -1055,13 +1055,13 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					break;
 				}
 			} else {
-				$results['steps_completed']++;
+				++$results['steps_completed'];
 				$results['step_results'][] = array(
-					'step'    => $step_num,
-					'task'    => $step['task'],
-					'status'  => 'completed',
-					'result'  => $step_result,
-					'name'    => $step_name,
+					'step'   => $step_num,
+					'task'   => $step['task'],
+					'status' => 'completed',
+					'result' => $step_result,
+					'name'   => $step_name,
 				);
 
 				// Update context with step results.
@@ -1108,13 +1108,13 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 */
 	private function resolve_step_dependencies( $steps ) {
 		// Build dependency graph.
-		$graph          = array(); // step_name => [dependencies].
-		$in_degree      = array(); // step_name => count of dependencies.
-		$step_by_name   = array(); // step_name => step definition.
+		$graph        = array(); // step_name => [dependencies].
+		$in_degree    = array(); // step_name => count of dependencies.
+		$step_by_name = array(); // step_name => step definition.
 
 		foreach ( $steps as $step ) {
 			$step_name = isset( $step['name'] ) ? $step['name'] : null;
-			
+
 			if ( ! $step_name ) {
 				return new WP_Error(
 					'workflow_dag_error',
@@ -1123,14 +1123,14 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			}
 
 			$step_by_name[ $step_name ] = $step;
-			$dependencies = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
-			$graph[ $step_name ] = $dependencies;
-			$in_degree[ $step_name ] = count( $dependencies );
+			$dependencies               = isset( $step['depends_on'] ) ? (array) $step['depends_on'] : array();
+			$graph[ $step_name ]        = $dependencies;
+			$in_degree[ $step_name ]    = count( $dependencies );
 		}
 
 		// Topological sort using Kahn's algorithm.
 		$sorted = array();
-		$queue = array();
+		$queue  = array();
 
 		// Find all nodes with no dependencies.
 		foreach ( $in_degree as $name => $degree ) {
@@ -1140,13 +1140,13 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		while ( ! empty( $queue ) ) {
-			$current = array_shift( $queue );
+			$current  = array_shift( $queue );
 			$sorted[] = $step_by_name[ $current ];
 
 			// Reduce in-degree for dependent steps.
 			foreach ( $graph as $name => $dependencies ) {
 				if ( in_array( $current, $dependencies, true ) ) {
-					$in_degree[ $name ]--;
+					--$in_degree[ $name ];
 					if ( 0 === $in_degree[ $name ] ) {
 						$queue[] = $name;
 					}
@@ -1214,7 +1214,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 * @return mixed|WP_Error Step result or error.
 	 */
 	private function execute_step( $step, $workflow_context, $execution_context ) {
-		$task = $step['task'];
+		$task   = $step['task'];
 		$params = isset( $step['params'] ) ? $step['params'] : array();
 
 		// Replace context variables in params.
@@ -1293,8 +1293,8 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		// Execute each step in the parallel block.
 		foreach ( $steps as $sub_index => $step ) {
-			$step_num    = $base_step_num . '.' . ( $sub_index + 1 );
-			$step_name   = isset( $step['name'] ) ? $step['name'] : ( isset( $step['task'] ) ? $step['task'] : 'parallel-' . $sub_index );
+			$step_num     = $base_step_num . '.' . ( $sub_index + 1 );
+			$step_name    = isset( $step['name'] ) ? $step['name'] : ( isset( $step['task'] ) ? $step['task'] : 'parallel-' . $sub_index );
 			$step_timeout = isset( $step['timeout'] ) ? absint( $step['timeout'] ) : 60; // Default 60s.
 
 			if ( $dry_run ) {
@@ -1310,26 +1310,26 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			// Check if we've exceeded overall timeout (cumulative for all parallel steps).
 			$elapsed = microtime( true ) - $start_time;
 			if ( $elapsed > 300 ) { // 5 minute hard limit for parallel block.
-				$parallel_results['failed']++;
+				++$parallel_results['failed'];
 				$parallel_results['step_results'][] = array(
-					'step'    => $step_num,
-					'task'    => $step_name,
-					'status'  => 'failed',
-					'error'   => __( 'Parallel execution timeout exceeded (5 minutes)', 'mcp-ai-wpoos' ),
+					'step'   => $step_num,
+					'task'   => $step_name,
+					'status' => 'failed',
+					'error'  => __( 'Parallel execution timeout exceeded (5 minutes)', 'mcp-ai-wpoos' ),
 				);
 				break;
 			}
 
 			// Execute the step with timeout awareness.
-			$step_start = microtime( true );
-			$step_result = $this->execute_step( $step, $workflow_context, $execution_context );
+			$step_start    = microtime( true );
+			$step_result   = $this->execute_step( $step, $workflow_context, $execution_context );
 			$step_duration = microtime( true ) - $step_start;
 
 			// Check for timeout (soft limit - step already executed).
 			$timed_out = $step_duration > $step_timeout;
 
 			if ( is_wp_error( $step_result ) ) {
-				$parallel_results['failed']++;
+				++$parallel_results['failed'];
 				$parallel_results['step_results'][] = array(
 					'step'     => $step_num,
 					'task'     => $step_name,
@@ -1343,7 +1343,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					break;
 				}
 			} else {
-				$parallel_results['completed']++;
+				++$parallel_results['completed'];
 				$parallel_results['step_results'][] = array(
 					'step'     => $step_num,
 					'task'     => $step_name,
@@ -1404,7 +1404,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$step_result = $this->execute_step( $step, $workflow_context, $execution_context );
 
 			if ( is_wp_error( $step_result ) ) {
-				$branch_results['failed']++;
+				++$branch_results['failed'];
 				$branch_results['step_results'][] = array(
 					'step'   => $step_num,
 					'task'   => $step['task'],
@@ -1417,7 +1417,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					break;
 				}
 			} else {
-				$branch_results['completed']++;
+				++$branch_results['completed'];
 				$branch_results['step_results'][] = array(
 					'step'   => $step_num,
 					'task'   => $step['task'],
@@ -1455,11 +1455,11 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 */
 	private function execute_loop_steps( $steps, $exit_condition, $max_iterations, $workflow_context, $execution_context, $dry_run, $base_step_num ) {
 		$loop_results = array(
-			'completed'  => 0,
-			'failed'     => 0,
+			'completed'    => 0,
+			'failed'       => 0,
 			'step_results' => array(),
-			'context'    => $workflow_context, // Preserve context across iterations.
-			'iterations' => 0,
+			'context'      => $workflow_context, // Preserve context across iterations.
+			'iterations'   => 0,
 		);
 
 		// Execute loop iterations.
@@ -1484,7 +1484,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$step_result = $this->execute_step( $step, $loop_results['context'], $execution_context );
 
 				if ( is_wp_error( $step_result ) ) {
-					$loop_results['failed']++;
+					++$loop_results['failed'];
 					$loop_results['step_results'][] = array(
 						'step'   => $step_num,
 						'task'   => $step['task'],
@@ -1497,7 +1497,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 						return $loop_results;
 					}
 				} else {
-					$loop_results['completed']++;
+					++$loop_results['completed'];
 					$loop_results['step_results'][] = array(
 						'step'   => $step_num,
 						'task'   => $step['task'],
@@ -1593,7 +1593,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		if ( 'email' === $channel ) {
 			$admin_email = get_option( 'admin_email' );
-			$subject = isset( $params['subject'] ) ? $params['subject'] : __( 'Workflow Notification', 'mcp-ai-wpoos' );
+			$subject     = isset( $params['subject'] ) ? $params['subject'] : __( 'Workflow Notification', 'mcp-ai-wpoos' );
 
 			$sent = wp_mail( $admin_email, $subject, $message );
 
@@ -1645,7 +1645,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 	 */
 	private function get_builtin_templates() {
 		return array(
-			'daily-review' => array(
+			'daily-review'        => array(
 				'name'        => 'Daily Content Review',
 				'description' => 'Review draft posts and perform basic checks',
 				'steps'       => array(
@@ -1666,7 +1666,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
-			'publish-ready' => array(
+			'publish-ready'       => array(
 				'name'        => 'Check and Publish Ready Posts',
 				'description' => 'Find draft posts ready to publish and ship them',
 				'steps'       => array(
@@ -1685,7 +1685,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
-			'site-health' => array(
+			'site-health'         => array(
 				'name'        => 'Site Health Check',
 				'description' => 'Comprehensive site health and performance check',
 				'steps'       => array(
@@ -1713,37 +1713,37 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
-			'parallel-checks' => array(
+			'parallel-checks'     => array(
 				'name'        => 'Parallel Site Checks',
 				'description' => 'Run multiple site checks concurrently for faster execution',
 				'steps'       => array(
 					array(
-						'parallel' => array(
+						'parallel'          => array(
 							array(
-								'task'    => 'clean-content',
-								'name'    => 'content-check',
-								'timeout' => 30,
-								'params'  => array(
+								'task'       => 'clean-content',
+								'name'       => 'content-check',
+								'timeout'    => 30,
+								'params'     => array(
 									'limit'   => 5,
 									'dry-run' => true,
 								),
 								'output_var' => 'content_result',
 							),
 							array(
-								'task'    => 'optimize-perf',
-								'name'    => 'perf-check',
-								'timeout' => 30,
-								'params'  => array(
+								'task'       => 'optimize-perf',
+								'name'       => 'perf-check',
+								'timeout'    => 30,
+								'params'     => array(
 									'phases'  => '1,2',
 									'dry-run' => true,
 								),
 								'output_var' => 'perf_result',
 							),
 							array(
-								'task'    => 'sync-docs',
-								'name'    => 'docs-check',
-								'timeout' => 30,
-								'params'  => array(
+								'task'       => 'sync-docs',
+								'name'       => 'docs-check',
+								'timeout'    => 30,
+								'params'     => array(
 									'type'    => 'posts',
 									'dry-run' => true,
 								),
@@ -1784,7 +1784,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 								),
 							),
 						),
-						'else' => array(
+						'else'      => array(
 							array(
 								'task'   => 'notify_admin',
 								'params' => array(
@@ -1796,14 +1796,14 @@ class WP_MCP_AI_Slash_Command_Workflow {
 					),
 				),
 			),
-			'autonomous-audit' => array(
+			'autonomous-audit'    => array(
 				'name'        => 'Autonomous Content Audit Loop',
 				'description' => 'Continuously audit content until quality score is acceptable',
 				'steps'       => array(
 					array(
-						'repeat_until'    => '{{quality_score}} >= 8',
-						'max_iterations'  => 5,
-						'steps'           => array(
+						'repeat_until'   => '{{quality_score}} >= 8',
+						'max_iterations' => 5,
+						'steps'          => array(
 							array(
 								'task'       => 'clean-content',
 								'params'     => array(
@@ -1822,8 +1822,8 @@ class WP_MCP_AI_Slash_Command_Workflow {
 								'output_var' => 'draft_result',
 							),
 							array(
-								'task'       => 'wait',
-								'params'     => array( 'seconds' => 2 ),
+								'task'   => 'wait',
+								'params' => array( 'seconds' => 2 ),
 							),
 						),
 					),
@@ -1907,15 +1907,15 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$output .= "**Performance Metrics:**\n";
 			$output .= sprintf( "- Total Duration: %ss\n", $metrics['total_duration'] );
 			$output .= sprintf( "- Steps Executed: %d\n", $metrics['steps_executed'] );
-			
+
 			if ( $metrics['parallel_blocks'] > 0 ) {
 				$output .= sprintf( "- Parallel Blocks: %d\n", $metrics['parallel_blocks'] );
 			}
-			
+
 			if ( $metrics['loop_iterations'] > 0 ) {
 				$output .= sprintf( "- Loop Iterations: %d\n", $metrics['loop_iterations'] );
 			}
-			
+
 			$output .= "\n";
 		}
 
@@ -1923,11 +1923,11 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		foreach ( $results['step_results'] as $step_result ) {
 			$status_icon = array(
-				'completed'              => '✅',
-				'completed-timeout'      => '⚠️',
-				'completed-with-errors'  => '⚠️',
-				'failed'                 => '❌',
-				'skipped'                => '⏭️',
+				'completed'             => '✅',
+				'completed-timeout'     => '⚠️',
+				'completed-with-errors' => '⚠️',
+				'failed'                => '❌',
+				'skipped'               => '⏭️',
 			);
 
 			$icon = isset( $status_icon[ $step_result['status'] ] ) ? $status_icon[ $step_result['status'] ] : '❓';
@@ -2013,7 +2013,15 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		// Parse comparison operators.
 		$operators = array(
-			'>=', '<=', '==', '!=', '>', '<', 'contains', 'empty', 'not_empty',
+			'>=',
+			'<=',
+			'==',
+			'!=',
+			'>',
+			'<',
+			'contains',
+			'empty',
+			'not_empty',
 		);
 
 		foreach ( $operators as $operator ) {

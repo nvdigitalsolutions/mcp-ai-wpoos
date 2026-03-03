@@ -80,9 +80,32 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
+		// Hub verification args shared by the GET endpoints.
+		// Note: Meta sends hub.mode, hub.verify_token, hub.challenge (with dots).
+		// PHP converts dots to underscores in $_GET, so they arrive as hub_mode, etc.
+		// We do NOT mark these as required so that server configurations that don't
+		// perform the dot-to-underscore conversion receive a clean 403 instead of a
+		// WordPress-level rest_missing_callback_param 400, and to let the callback
+		// handle validation and return the plain-text challenge Meta expects.
+		$hub_args = array(
+			'hub_mode'         => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'hub_verify_token' => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'hub_challenge'    => array(
+				'required'          => false,
+				'type'              => 'string',
+				'sanitize_callback' => 'sanitize_text_field',
+			),
+		);
+
 		// Webhook verification endpoint (GET).
-		// Note: WordPress converts dots to underscores in query parameters,
-		// so hub.mode becomes hub_mode, hub.verify_token becomes hub_verify_token, etc.
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -90,23 +113,7 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'verify_webhook' ),
 				'permission_callback' => '__return_true', // Public endpoint for webhook verification.
-				'args'                => array(
-					'hub_mode'         => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'hub_verify_token' => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'hub_challenge'    => array(
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
+				'args'                => $hub_args,
 			)
 		);
 
@@ -138,6 +145,19 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		$mode         = $request->get_param( 'hub_mode' );
 		$verify_token = $request->get_param( 'hub_verify_token' );
 		$challenge    = $request->get_param( 'hub_challenge' );
+
+		// Handle missing required parameters — return 403 so Meta shows a clear error.
+		// Parameters can be absent on servers that don't convert dots to underscores
+		// in query strings (e.g., some Nginx/PHP configurations) instead of the
+		// WordPress-level 400 that would result from marking them as required in the
+		// route args.
+		if ( empty( $mode ) || empty( $verify_token ) || empty( $challenge ) ) {
+			return new WP_Error(
+				'messenger_verification_failed',
+				__( 'Messenger webhook verification failed.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'messenger_webhook_verification_attempt',
@@ -171,11 +191,25 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'Messenger webhook successfully verified.'
 			);
 
-			// Return challenge as plain text (not JSON) to complete verification.
-			// Meta requires the exact challenge string without any wrapping.
-			$response = new WP_REST_Response( $challenge, 200 );
-			$response->header( 'Content-Type', 'text/plain; charset=utf-8' );
-			return $response;
+			// Meta requires the challenge returned as a plain text string without any
+			// JSON encoding or wrapping. WordPress REST API always runs wp_json_encode
+			// on the response body, so we hook into rest_pre_serve_request to output
+			// the raw challenge ourselves and signal WordPress to skip its normal output.
+			add_filter(
+				'rest_pre_serve_request',
+				static function ( $served ) use ( $challenge ) {
+					if ( $served ) {
+						return $served;
+					}
+					status_header( 200 );
+					header( 'Content-Type: text/plain; charset=utf-8' );
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo sanitize_text_field( $challenge );
+					return true;
+				}
+			);
+
+			return new WP_REST_Response( $challenge, 200 );
 		}
 
 		WP_MCP_AI_Logger::log_error(
@@ -1212,8 +1246,16 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Get app secret from connection settings.
 	 *
-	 * For security, this should be the App Secret from Meta Developer Dashboard,
-	 * not the access token. The signature is validated using the app secret.
+	 * Returns the App Secret from the Meta Developer Dashboard, which is used
+	 * for HMAC-SHA256 signature validation of incoming webhooks. The Page Access
+	 * Token (api_key) is intentionally NOT used as a fallback — the two values
+	 * serve entirely different purposes and confusing them causes signature
+	 * validation to reject every valid webhook with "Missing X-Hub-Signature-256
+	 * header." when no App Secret is configured in the Meta Developer Dashboard.
+	 *
+	 * When no App Secret is stored, an empty string is returned so that
+	 * validate_webhook_signature() skips HMAC validation and logs a security
+	 * warning, consistent with the WhatsApp webhook controller behaviour.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1223,21 +1265,11 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		$connections = $this->get_messenger_connections();
 
 		foreach ( $connections as $connection ) {
-			// Try to get dedicated app secret field first.
 			if ( isset( $connection['api_secret'] ) && ! empty( $connection['api_secret'] ) ) {
 				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
 				}
 				return $connection['api_secret'];
-			}
-
-			// Fallback: Use access token for signature validation if app secret not set.
-			// Note: This is not ideal. App secret should be configured separately.
-			if ( isset( $connection['api_key'] ) && ! empty( $connection['api_key'] ) ) {
-				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
-				}
-				return $connection['api_key'];
 			}
 		}
 

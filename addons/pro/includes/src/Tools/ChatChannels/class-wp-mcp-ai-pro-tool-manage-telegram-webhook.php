@@ -156,6 +156,14 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 		$payload = array(
 			'url'             => $url,
 			'max_connections' => $max_connections,
+			'allowed_updates' => array(
+				'message',
+				'edited_message',
+				'channel_post',
+				'edited_channel_post',
+				'my_chat_member',
+				'chat_member',
+			),
 		);
 
 		$body = wp_json_encode( $payload );
@@ -195,7 +203,15 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			);
 		}
 
-		return $this->handle_response( $response, 'setWebhook' );
+		$result = $this->handle_response( $response, 'setWebhook' );
+
+		// Automatically register default bot commands with Telegram when the
+		// webhook is successfully configured (industry best practice).
+		if ( ! is_wp_error( $result ) ) {
+			$this->sync_default_commands( $token );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -234,6 +250,88 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 		}
 
 		return $this->handle_response( $response, 'deleteWebhook' );
+	}
+
+	/**
+	 * Register the default bot commands with Telegram after webhook setup.
+	 *
+	 * Calls setMyCommands for three scopes following Telegram best practices:
+	 * 1. Default scope – available everywhere as fallback.
+	 * 2. All private chats – user-facing commands.
+	 * 3. All group chats – group-relevant commands.
+	 *
+	 * Failures are logged but do not affect the webhook result since commands
+	 * can always be registered later via the manage_telegram_commands tool.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $token Bot token.
+	 */
+	protected function sync_default_commands( $token ) {
+		$webhook_controller = 'WP_MCP_AI_Telegram_Webhook_Controller';
+
+		if ( ! class_exists( $webhook_controller ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! method_exists( $webhook_controller, 'get_default_commands' ) ) {
+			return;
+		}
+
+		$commands = WP_MCP_AI_Telegram_Webhook_Controller::get_default_commands();
+
+		if ( empty( $commands ) ) {
+			return;
+		}
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/setMyCommands', rawurlencode( $token ) );
+
+		// Register for default scope (fallback for all chats).
+		$scopes = array(
+			null, // default scope (omit scope parameter).
+			array( 'type' => 'all_private_chats' ),
+			array( 'type' => 'all_group_chats' ),
+		);
+
+		foreach ( $scopes as $scope ) {
+			$payload = array( 'commands' => $commands );
+			if ( null !== $scope ) {
+				$payload['scope'] = $scope;
+			}
+
+			$body = wp_json_encode( $payload );
+			if ( false === $body ) {
+				continue;
+			}
+
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'body'    => $body,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Telegram setMyCommands failed during webhook setup.',
+					array(
+						'scope' => $scope ? $scope['type'] : 'default',
+						'error' => $response->get_error_message(),
+					)
+				);
+			}
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_commands_synced',
+			'Default bot commands registered with Telegram.',
+			array( 'command_count' => count( $commands ) )
+		);
 	}
 
 	/**

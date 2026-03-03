@@ -773,3 +773,11 @@ if [ "$BUILD_CORE_ONLY" = true ]; then
 fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
+
+# Step: Rebuild production autoloader after all ZIPs are created.
+# This ensures vendor/ is left in the optimised production state
+# (no dev packages, classmap-only autoloading) for any subsequent
+# deployment or commit step.
+echo "Rebuilding production autoloader..."
+composer install --no-dev --classmap-authoritative --no-interaction --quiet
+echo "✅ Production autoloader rebuilt"

@@ -9,25 +9,43 @@
 
 namespace WP_MCP_AI\Cache;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use Symfony\Component\Cache\Adapter\ApcuAdapter;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-use Symfony\Component\Cache\Adapter\RedisAdapter;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Component\Cache\Adapter\FilesystemTagAwareAdapter;
+use Symfony\Component\Cache\Adapter\RedisTagAwareAdapter;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Class WP_MCP_AI_Cache_Service
  *
  * Wraps Symfony Cache with automatic adapter detection and tag support.
+ *
+ * The $cache property implements both TagAwareCacheInterface (Symfony contracts,
+ * providing get(key, callback), delete(), clear(), and invalidateTags()) and
+ * \Psr\Cache\CacheItemPoolInterface (PSR-6, providing getItem() and save()).
+ * All Symfony tag-aware adapters implement both interfaces at runtime.
  */
 class WP_MCP_AI_Cache_Service {
 
 	/**
 	 * Cache instance.
 	 *
-	 * @var CacheInterface
+	 * Implements TagAwareCacheInterface and \Psr\Cache\CacheItemPoolInterface.
+	 *
+	 * @var TagAwareCacheInterface
 	 */
 	private $cache;
+
+	/**
+	 * Human-readable adapter type set during construction.
+	 *
+	 * @var string One of 'redis', 'apcu', 'filesystem'.
+	 */
+	private $adapter_type = 'filesystem';
 
 	/**
 	 * Singleton instance.
@@ -56,9 +74,13 @@ class WP_MCP_AI_Cache_Service {
 	}
 
 	/**
-	 * Create the best available cache adapter.
+	 * Create the best available tag-aware cache adapter.
 	 *
-	 * @return CacheInterface
+	 * All returned adapters implement TagAwareCacheInterface (for tag
+	 * invalidation and the Symfony contracts get/delete/clear API) as well
+	 * as \Psr\Cache\CacheItemPoolInterface (for getItem/save).
+	 *
+	 * @return TagAwareCacheInterface
 	 */
 	private function create_adapter() {
 		// Try Redis if available and configured.
@@ -69,7 +91,8 @@ class WP_MCP_AI_Cache_Service {
 				$port  = defined( 'WP_REDIS_PORT' ) ? WP_REDIS_PORT : 6379;
 
 				if ( $redis->connect( $host, $port ) ) {
-					return new RedisAdapter( $redis, 'wp_mcp_ai' );
+					$this->adapter_type = 'redis';
+					return new RedisTagAwareAdapter( $redis, 'wp_mcp_ai' );
 				}
 			} catch ( \Exception $e ) {
 				// Fall through to next adapter.
@@ -80,20 +103,25 @@ class WP_MCP_AI_Cache_Service {
 		// Try APCu if available.
 		if ( function_exists( 'apcu_enabled' ) && apcu_enabled() ) {
 			try {
-				return new ApcuAdapter( 'wp_mcp_ai' );
+				// ApcuAdapter does not implement TagAwareCacheInterface on its own;
+				// wrap it with TagAwareAdapter to gain full tag support.
+				$apcu               = new ApcuAdapter( 'wp_mcp_ai' );
+				$this->adapter_type = 'apcu';
+				return new \Symfony\Component\Cache\Adapter\TagAwareAdapter( $apcu );
 			} catch ( \Exception $e ) {
 				// Fall through to filesystem.
 				error_log( 'WP MCP AI: APCu initialization failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 		}
 
-		// Fall back to filesystem cache.
+		// Fall back to filesystem tag-aware cache (supports tag invalidation via symlinks).
 		$cache_dir = WP_CONTENT_DIR . '/cache/wp-mcp-ai';
 		if ( ! is_dir( $cache_dir ) ) {
 			wp_mkdir_p( $cache_dir );
 		}
 
-		return new FilesystemAdapter( 'wp_mcp_ai', 0, $cache_dir );
+		$this->adapter_type = 'filesystem';
+		return new FilesystemTagAwareAdapter( 'wp_mcp_ai', 0, $cache_dir );
 	}
 
 	/**
@@ -182,10 +210,7 @@ class WP_MCP_AI_Cache_Service {
 	 * @return bool Success status.
 	 */
 	public function invalidate_tags( array $tags ) {
-		if ( method_exists( $this->cache, 'invalidateTags' ) ) {
-			return $this->cache->invalidateTags( $tags );
-		}
-		return false;
+		return $this->cache->invalidateTags( $tags );
 	}
 
 	/**
@@ -203,12 +228,6 @@ class WP_MCP_AI_Cache_Service {
 	 * @return string Adapter type (redis|apcu|filesystem).
 	 */
 	public function get_adapter_type() {
-		if ( $this->cache instanceof RedisAdapter ) {
-			return 'redis';
-		} elseif ( $this->cache instanceof ApcuAdapter ) {
-			return 'apcu';
-		} else {
-			return 'filesystem';
-		}
+		return $this->adapter_type;
 	}
 }

@@ -75,7 +75,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	 */
 	protected function load_workflows() {
 		$this->workflows = array(
-			'content_pipeline' => array(
+			'content_pipeline'               => array(
 				'name'        => __( 'Content Publishing Pipeline', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete workflow for creating and publishing content', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -97,7 +97,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'ai_tool_setup' => array(
+			'ai_tool_setup'                  => array(
 				'name'        => __( 'AI Tool Creation & Setup', 'mcp-ai-wpoos' ),
 				'description' => __( 'Create and configure a new AI tool', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -111,7 +111,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'ecommerce_product_launch' => array(
+			'ecommerce_product_launch'       => array(
 				'name'        => __( 'E-Commerce Product Launch', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete workflow for launching a new product', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -125,11 +125,14 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command' => 'social-post',
-						'params'  => array( 'platform' => 'all', 'content' => '{announcement}' ),
+						'params'  => array(
+							'platform' => 'all',
+							'content'  => '{announcement}',
+						),
 					),
 				),
 			),
-			'abandoned_cart_campaign' => array(
+			'abandoned_cart_campaign'        => array(
 				'name'        => __( 'Abandoned Cart Recovery Campaign', 'mcp-ai-wpoos' ),
 				'description' => __( 'Automated workflow to identify and recover abandoned carts', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -139,7 +142,10 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command' => 'abandoned-recover',
-						'params'  => array( 'action' => 'recover', 'send-email' => true ),
+						'params'  => array(
+							'action'     => 'recover',
+							'send-email' => true,
+						),
 					),
 					array(
 						'command' => 'ecom-analytics',
@@ -147,13 +153,16 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'social_media_campaign' => array(
+			'social_media_campaign'          => array(
 				'name'        => __( 'Multi-Platform Social Media Campaign', 'mcp-ai-wpoos' ),
 				'description' => __( 'Create and publish content across all social platforms', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'hashtag-suggest',
-						'params'  => array( 'content' => '{post_content}', 'count' => 10 ),
+						'params'  => array(
+							'content' => '{post_content}',
+							'count'   => 10,
+						),
 					),
 					array(
 						'command' => 'social-post',
@@ -168,17 +177,23 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'video_marketing_workflow' => array(
+			'video_marketing_workflow'       => array(
 				'name'        => __( 'Video Marketing Production', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete video creation and distribution workflow', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'video-template',
-						'params'  => array( 'template' => '{template_name}', 'input' => '{video_assets}' ),
+						'params'  => array(
+							'template' => '{template_name}',
+							'input'    => '{video_assets}',
+						),
 					),
 					array(
 						'command' => 'video-subtitle',
-						'params'  => array( 'video-id' => '{previous.video_id}', 'auto-generate' => true ),
+						'params'  => array(
+							'video-id'      => '{previous.video_id}',
+							'auto-generate' => true,
+						),
 					),
 					array(
 						'command' => 'social-post',
@@ -190,13 +205,16 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'ecommerce_upsell_optimization' => array(
+			'ecommerce_upsell_optimization'  => array(
 				'name'        => __( 'E-Commerce Upsell Optimization', 'mcp-ai-wpoos' ),
 				'description' => __( 'Analyze and optimize product upsells and cross-sells', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'ecom-analytics',
-						'params'  => array( 'metrics' => 'top-products', 'period' => 'month' ),
+						'params'  => array(
+							'metrics' => 'top-products',
+							'period'  => 'month',
+						),
 					),
 					array(
 						'command' => 'upsell-suggest',
@@ -214,29 +232,44 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'steps'       => array(
 					array(
 						'command' => 'inventory-forecast',
-						'params'  => array( 'period' => 30, 'include-seasonal' => true ),
+						'params'  => array(
+							'period'           => 30,
+							'include-seasonal' => true,
+						),
 					),
 					array(
 						'command' => 'ecom-analytics',
-						'params'  => array( 'metrics' => 'low-stock, stock-out-risk', 'format' => 'json' ),
+						'params'  => array(
+							'metrics' => 'low-stock, stock-out-risk',
+							'format'  => 'json',
+						),
 					),
 					array(
 						'command' => 'customer-segment',
-						'params'  => array( 'criteria' => 'rfm', 'min-orders' => 3 ),
+						'params'  => array(
+							'criteria'   => 'rfm',
+							'min-orders' => 3,
+						),
 					),
 				),
 			),
-			'social_content_planning' => array(
+			'social_content_planning'        => array(
 				'name'        => __( 'Social Content Planning', 'mcp-ai-wpoos' ),
 				'description' => __( 'Strategic social media content planning workflow', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'competitor-track',
-						'params'  => array( 'competitor' => '{competitor_handle}', 'platform' => '{platform}' ),
+						'params'  => array(
+							'competitor' => '{competitor_handle}',
+							'platform'   => '{platform}',
+						),
 					),
 					array(
 						'command' => 'content-calendar',
-						'params'  => array( 'action' => 'create', 'period' => 30 ),
+						'params'  => array(
+							'action' => 'create',
+							'period' => 30,
+						),
 					),
 					array(
 						'command' => 'social-schedule',
@@ -248,25 +281,34 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'video_post_production' => array(
+			'video_post_production'          => array(
 				'name'        => __( 'Video Post Production Workflow', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete video post-production pipeline', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'video-merge',
-						'params'  => array( 'videos' => '{video_clips}', 'transitions' => true ),
+						'params'  => array(
+							'videos'      => '{video_clips}',
+							'transitions' => true,
+						),
 					),
 					array(
 						'command' => 'video-thumbnail',
-						'params'  => array( 'video-id' => '{previous.video_id}', 'count' => 5 ),
+						'params'  => array(
+							'video-id' => '{previous.video_id}',
+							'count'    => 5,
+						),
 					),
 					array(
 						'command' => 'video-compress',
-						'params'  => array( 'video-id' => '{previous.video_id}', 'quality' => 'medium' ),
+						'params'  => array(
+							'video-id' => '{previous.video_id}',
+							'quality'  => 'medium',
+						),
 					),
 				),
 			),
-			'product_launch_complete' => array(
+			'product_launch_complete'        => array(
 				'name'        => __( 'Complete Product Launch Workflow', 'mcp-ai-wpoos' ),
 				'description' => __( 'End-to-end product launch automation', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -297,17 +339,23 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command' => 'inventory-forecast',
-						'params'  => array( 'product-id' => '{previous.product_id}', 'period' => 30 ),
+						'params'  => array(
+							'product-id' => '{previous.product_id}',
+							'period'     => 30,
+						),
 					),
 				),
 			),
-			'social_campaign_automation' => array(
+			'social_campaign_automation'     => array(
 				'name'        => __( 'Social Campaign Automation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Automated social media campaign from planning to execution', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'influencer-find',
-						'params'  => array( 'niche' => '{campaign_niche}', 'min-followers' => 5000 ),
+						'params'  => array(
+							'niche'         => '{campaign_niche}',
+							'min-followers' => 5000,
+						),
 					),
 					array(
 						'command' => 'post-optimize',
@@ -335,13 +383,16 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'comprehensive_ecommerce_suite' => array(
+			'comprehensive_ecommerce_suite'  => array(
 				'name'        => __( 'Comprehensive E-Commerce Suite', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete e-commerce automation workflow from analytics to customer engagement', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'ecom-analytics',
-						'params'  => array( 'period' => 'month', 'metrics' => 'all' ),
+						'params'  => array(
+							'period'  => 'month',
+							'metrics' => 'all',
+						),
 					),
 					array(
 						'command' => 'inventory-forecast',
@@ -365,42 +416,66 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'video_production_complete' => array(
+			'video_production_complete'      => array(
 				'name'        => __( 'Complete Video Production Pipeline', 'mcp-ai-wpoos' ),
 				'description' => __( 'Full video production workflow from editing to publishing', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'video-edit',
-						'params'  => array( 'video-id' => '{video_id}', 'operation' => 'basic' ),
+						'params'  => array(
+							'video-id'  => '{video_id}',
+							'operation' => 'basic',
+						),
 					),
 					array(
 						'command' => 'video-trim',
-						'params'  => array( 'video-id' => '{video_id}', 'start' => 0, 'duration' => '{target_duration}' ),
+						'params'  => array(
+							'video-id' => '{video_id}',
+							'start'    => 0,
+							'duration' => '{target_duration}',
+						),
 					),
 					array(
 						'command' => 'video-effect',
-						'params'  => array( 'video-id' => '{video_id}', 'effect' => '{desired_effect}' ),
+						'params'  => array(
+							'video-id' => '{video_id}',
+							'effect'   => '{desired_effect}',
+						),
 					),
 					array(
 						'command' => 'video-music',
-						'params'  => array( 'video-id' => '{video_id}', 'track' => '{music_track}', 'volume' => 70 ),
+						'params'  => array(
+							'video-id' => '{video_id}',
+							'track'    => '{music_track}',
+							'volume'   => 70,
+						),
 					),
 					array(
 						'command' => 'video-subtitle',
-						'params'  => array( 'video-id' => '{video_id}', 'auto-generate' => true ),
+						'params'  => array(
+							'video-id'      => '{video_id}',
+							'auto-generate' => true,
+						),
 					),
 					array(
 						'command' => 'video-render',
-						'params'  => array( 'project-id' => '{video_id}', 'quality' => 'high', 'format' => 'mp4' ),
+						'params'  => array(
+							'project-id' => '{video_id}',
+							'quality'    => 'high',
+							'format'     => 'mp4',
+						),
 					),
 					array(
 						'command' => 'video-publish',
-						'params'  => array( 'video-id' => '{video_id}', 'platforms' => '{target_platforms}' ),
+						'params'  => array(
+							'video-id'  => '{video_id}',
+							'platforms' => '{target_platforms}',
+						),
 					),
 				),
 			),
 			// Phase 5: Advanced workflows with conditional logic and error handling.
-			'smart_inventory_replenishment' => array(
+			'smart_inventory_replenishment'  => array(
 				'name'        => __( 'Smart Inventory Replenishment (Advanced)', 'mcp-ai-wpoos' ),
 				'description' => __( 'Intelligent inventory management with conditional stock ordering', 'mcp-ai-wpoos' ),
 				'steps'       => array(
@@ -415,10 +490,13 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command'   => 'wholesale-pricing',
-						'params'    => array( 'action' => 'calculate', 'quantity' => '{previous.recommended_quantity}' ),
+						'params'    => array(
+							'action'   => 'calculate',
+							'quantity' => '{previous.recommended_quantity}',
+						),
 						'condition' => array(
-							'field'        => 'stock_level',
-							'less_than'    => 50,
+							'field'     => 'stock_level',
+							'less_than' => 50,
 						),
 						'on_error'  => array(
 							'fallback' => 'ecom-analytics',
@@ -431,22 +509,31 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 				),
 			),
-			'adaptive_content_publishing' => array(
+			'adaptive_content_publishing'    => array(
 				'name'        => __( 'Adaptive Content Publishing (Advanced)', 'mcp-ai-wpoos' ),
 				'description' => __( 'Intelligent content publishing with quality checks and fallbacks', 'mcp-ai-wpoos' ),
 				'steps'       => array(
 					array(
 						'command' => 'post-optimize',
-						'params'  => array( 'content' => '{content}', 'goal' => 'engagement' ),
+						'params'  => array(
+							'content' => '{content}',
+							'goal'    => 'engagement',
+						),
 					),
 					array(
 						'command'   => 'hashtag-suggest',
-						'params'    => array( 'content' => '{previous.optimized_content}', 'count' => 15 ),
+						'params'    => array(
+							'content' => '{previous.optimized_content}',
+							'count'   => 15,
+						),
 						'condition' => array( 'if_success' => true ),
 					),
 					array(
 						'command'   => 'social-post',
-						'params'    => array( 'content' => '{previous.optimized_content}', 'platforms' => 'all' ),
+						'params'    => array(
+							'content'   => '{previous.optimized_content}',
+							'platforms' => 'all',
+						),
 						'condition' => array(
 							'field'        => 'engagement_score',
 							'greater_than' => 70,
@@ -468,11 +555,17 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 				'steps'       => array(
 					array(
 						'command' => 'video-edit',
-						'params'  => array( 'video-id' => '{video_id}', 'operation' => 'advanced' ),
+						'params'  => array(
+							'video-id'  => '{video_id}',
+							'operation' => 'advanced',
+						),
 					),
 					array(
 						'command'   => 'video-compress',
-						'params'    => array( 'video-id' => '{video_id}', 'quality' => 'high' ),
+						'params'    => array(
+							'video-id' => '{video_id}',
+							'quality'  => 'high',
+						),
 						'condition' => array( 'if_success' => true ),
 						'on_error'  => array(
 							'fallback' => 'video-render',
@@ -480,15 +573,21 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 					),
 					array(
 						'command'   => 'video-thumbnail',
-						'params'    => array( 'video-id' => '{video_id}', 'count' => 5 ),
+						'params'    => array(
+							'video-id' => '{video_id}',
+							'count'    => 5,
+						),
 						'condition' => array( 'if_success' => true ),
 					),
 					array(
 						'command'   => 'video-publish',
-						'params'    => array( 'video-id' => '{video_id}', 'platforms' => 'youtube,vimeo' ),
+						'params'    => array(
+							'video-id'  => '{video_id}',
+							'platforms' => 'youtube,vimeo',
+						),
 						'condition' => array(
-							'field'        => 'video_size_mb',
-							'less_than'    => 500,
+							'field'     => 'video_size_mb',
+							'less_than' => 500,
 						),
 					),
 					array(
@@ -537,20 +636,20 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			);
 		}
 
-		$workflow = $this->workflows[ $workflow_name ];
-		$results  = array();
+		$workflow        = $this->workflows[ $workflow_name ];
+		$results         = array();
 		$previous_result = null;
-		
+
 		// Use existing execution_id or generate new one with better uniqueness.
-		$execution_id = isset( $options['execution_id'] ) && $options['execution_id'] 
-			? $options['execution_id'] 
+		$execution_id = isset( $options['execution_id'] ) && $options['execution_id']
+			? $options['execution_id']
 			: wp_generate_uuid4();
 
 		// Parse options.
 		$continue_on_error = isset( $options['continue_on_error'] ) ? $options['continue_on_error'] : false;
-		$save_state = isset( $options['save_state'] ) ? $options['save_state'] : false;
-		$max_retries = isset( $options['max_retries'] ) ? absint( $options['max_retries'] ) : $this->max_retries;
-		$resume_from_step = isset( $options['resume_from_step'] ) ? absint( $options['resume_from_step'] ) : 1;
+		$save_state        = isset( $options['save_state'] ) ? $options['save_state'] : false;
+		$max_retries       = isset( $options['max_retries'] ) ? absint( $options['max_retries'] ) : $this->max_retries;
+		$resume_from_step  = isset( $options['resume_from_step'] ) ? absint( $options['resume_from_step'] ) : 1;
 
 		// Initialize execution state.
 		if ( $save_state ) {
@@ -559,7 +658,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 		foreach ( $workflow['steps'] as $index => $step ) {
 			$step_number = $index + 1;
-			
+
 			// Skip steps if resuming from a later step.
 			if ( $step_number < $resume_from_step ) {
 				continue;
@@ -587,7 +686,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 			// Store result.
 			$step_index = count( $results );
-			$results[] = array(
+			$results[]  = array(
 				'step'    => $step_number,
 				'command' => $step['command'],
 				'params'  => $step_result['params'],
@@ -611,7 +710,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 						$step_result['result'],
 						$context
 					);
-					$results[] = array(
+					$results[]       = array(
 						'step'     => $step_number,
 						'command'  => $step['on_error']['fallback'],
 						'fallback' => true,
@@ -728,10 +827,10 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	 * @return array Step result with retry count.
 	 */
 	protected function execute_step_with_retry( $step, $workflow_params, $previous_result, $context, $max_retries ) {
-		$retries = 0;
+		$retries         = 0;
 		$resolved_params = $this->resolve_parameters( $step['params'], $workflow_params, $previous_result );
-		$result = null;
-		$retry_delay = apply_filters( 'wp_mcp_ai_workflow_retry_delay', $this->retry_delay, $step );
+		$result          = null;
+		$retry_delay     = apply_filters( 'wp_mcp_ai_workflow_retry_delay', $this->retry_delay, $step );
 
 		while ( $retries <= $max_retries ) {
 			// Build command string.
@@ -758,10 +857,10 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 
 			// Retry if not max attempts yet.
 			if ( $retries < $max_retries ) {
-				$retries++;
+				++$retries;
 				// Use exponential backoff if enabled.
-				$delay = apply_filters( 'wp_mcp_ai_workflow_use_exponential_backoff', false ) 
-					? $retry_delay * pow( 2, $retries - 1 ) 
+				$delay = apply_filters( 'wp_mcp_ai_workflow_use_exponential_backoff', false )
+					? $retry_delay * pow( 2, $retries - 1 )
 					: $retry_delay;
 				sleep( $delay );
 				continue;
@@ -781,10 +880,10 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		}
 
 		return array(
-			'result'         => $result,
-			'params'         => $resolved_params,
-			'retries'        => $retries,
-			'retries_maxed'  => true,
+			'result'        => $result,
+			'params'        => $resolved_params,
+			'retries'       => $retries,
+			'retries_maxed' => true,
 		);
 	}
 
@@ -877,12 +976,12 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 	protected function execute_fallback_step( $command, $workflow_params, $previous_result, $error_info, $context ) {
 		// Build command with error context.
 		$command_string = '/' . $command;
-		
+
 		// Pass error information to fallback command if it can use it.
 		if ( isset( $error_info['error'] ) ) {
 			$command_string .= " --error=\"{$error_info['error']}\"";
 		}
-		
+
 		return $this->handler->execute( $command_string, $context );
 	}
 
@@ -905,7 +1004,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		);
 
 		// Save to database for persistence across requests.
-		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+		$saved_states                  = get_option( 'wp_mcp_ai_workflow_states', array() );
 		$saved_states[ $execution_id ] = $this->execution_state[ $execution_id ];
 		update_option( 'wp_mcp_ai_workflow_states', $saved_states );
 	}
@@ -932,7 +1031,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		);
 
 		// Update database.
-		$saved_states = get_option( 'wp_mcp_ai_workflow_states', array() );
+		$saved_states                  = get_option( 'wp_mcp_ai_workflow_states', array() );
 		$saved_states[ $execution_id ] = $this->execution_state[ $execution_id ];
 		update_option( 'wp_mcp_ai_workflow_states', $saved_states );
 	}
@@ -974,7 +1073,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			);
 		}
 
-		$state = $saved_states[ $execution_id ];
+		$state               = $saved_states[ $execution_id ];
 		$last_completed_step = count( $state['steps'] );
 
 		// Resume from next step.
@@ -1047,7 +1146,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 		);
 
 		// Save to database for persistence.
-		$saved_workflows = get_option( 'wp_mcp_ai_custom_workflows', array() );
+		$saved_workflows          = get_option( 'wp_mcp_ai_custom_workflows', array() );
 		$saved_workflows[ $slug ] = $this->workflows[ $slug ];
 		update_option( 'wp_mcp_ai_custom_workflows', $saved_workflows );
 

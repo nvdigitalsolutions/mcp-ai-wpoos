@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Providers_Autoloader_Test extends WP_UnitTestCase {
 			$pro_providers,
 			'Pro Providers section should NOT be registered in Settings Registry (prevents duplicate rendering)'
 		);
-		
+
 		// But it should be available from the container.
 		if ( function_exists( 'wp_mcp_ai_container' ) ) {
 			$container     = wp_mcp_ai_container();
