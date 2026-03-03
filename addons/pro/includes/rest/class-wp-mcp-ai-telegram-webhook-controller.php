@@ -397,13 +397,6 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// In private chats, when the connection has require_mention enabled,
-		// only reply if the message addresses an assigned assistant by @slug.
-		// (In groups, mention checks were already performed above.)
-		if ( ! $is_group && ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
-			return;
-		}
-
 		/**
 		 * Filter whether to auto-reply to Telegram messages.
 		 *
