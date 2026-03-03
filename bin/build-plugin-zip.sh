@@ -219,6 +219,9 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'archive' \
+        --exclude 'packages' \
+        --exclude 'src' \
         --exclude 'ARCHITECTURE.md' \
         --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
@@ -670,6 +673,9 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'archive' \
+        --exclude 'packages' \
+        --exclude 'src' \
         --exclude 'ARCHITECTURE.md' \
         --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
