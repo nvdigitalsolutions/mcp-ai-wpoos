@@ -268,7 +268,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 */
 	private function render_commands_table( $commands, $compact = false ) {
 		?>
-		<table class="wp-list-table widefat fixed striped <?php echo $compact ? 'compact-view' : ''; ?>">
+		<table class="wp-list-table widefat fixed striped <?php echo esc_attr( $compact ? 'compact-view' : '' ); ?>">
 			<thead>
 				<tr>
 					<th><?php esc_html_e( 'Command', 'mcp-ai-wpoos' ); ?></th>

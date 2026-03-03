@@ -356,7 +356,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard_with_tabs' ),
 				'dashicons-shield-alt',
-				85
+				null // Let WordPress automatically position the menu to avoid conflicts.
 			);
 
 			// Add submenu pages.
