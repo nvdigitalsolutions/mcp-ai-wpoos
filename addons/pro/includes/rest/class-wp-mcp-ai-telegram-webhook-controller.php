@@ -56,6 +56,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	protected $rest_base = 'webhooks/telegram';
 
 	/**
+	 * Tracks the connection_id resolved from the incoming request URL so every
+	 * helper called during the request lifecycle targets the correct bot without
+	 * requiring connection_id to be threaded through every method signature.
+	 *
+	 * @var string|null
+	 */
+	protected $current_connection_id = null;
+
+	/**
 	 * Cron hook for dispatching AI replies to incoming Telegram messages.
 	 */
 	const REPLY_CRON_HOOK = 'wp_mcp_ai_telegram_send_ai_reply';
@@ -90,7 +99,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
-		// Webhook event receiver endpoint (POST).
+		// Global webhook endpoint (backward-compatible, single-bot setups).
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -98,6 +107,25 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_webhook' ),
 				'permission_callback' => array( $this, 'validate_webhook_secret' ),
+			)
+		);
+
+		// Per-connection webhook endpoint so multiple Telegram bots can each
+		// have a dedicated URL: /mcp-ai/v1/webhooks/telegram/{connection_id}.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_webhook' ),
+				'permission_callback' => array( $this, 'validate_webhook_secret' ),
+				'args'                => array(
+					'connection_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
 			)
 		);
 	}
@@ -116,13 +144,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @return bool True if the secret token is valid or not configured.
 	 */
 	public function validate_webhook_secret( $request ) {
-		$stored_secret = $this->get_secret_token();
+		$connection_id = $request->get_param( 'connection_id' );
+		$stored_secret = $this->get_secret_token( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'telegram_webhook_no_secret_token',
 				'Telegram webhook received without secret token configured. Header validation skipped. Configure a secret_token in the connection settings for enhanced security.',
-				array()
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return true;
 		}
@@ -155,6 +184,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response Response object (always 200 to prevent Telegram retries).
 	 */
 	public function handle_webhook( $request ) {
+		// Resolve the per-connection ID from the URL so all helper methods in
+		// this request lifecycle can target the correct Telegram bot.
+		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+
 		$payload = $request->get_json_params();
 
 		if ( empty( $payload ) || ! is_array( $payload ) ) {
@@ -860,14 +893,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve the secret_token from the first active Telegram connection.
+	 * Retrieve the secret_token from the active Telegram connection.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string|null $connection_id Optional connection ID to target a specific bot.
 	 * @return string Secret token or empty string if not configured.
 	 */
-	protected function get_secret_token() {
-		$connection = $this->get_active_telegram_connection();
+	protected function get_secret_token( $connection_id = null ) {
+		$connection = $this->get_active_telegram_connection( $connection_id );
 
 		if ( ! $connection || empty( $connection['secret_token'] ) ) {
 			return '';
@@ -881,7 +915,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Find the first active (enabled) Telegram connection.
+	 * Find the active (enabled) Telegram connection.
+	 *
+	 * When a connection_id is provided (either via param or the instance
+	 * property set at the top of handle_webhook()), the method resolves that
+	 * specific connection. Falls back to the first active Telegram connection
+	 * for backward compatibility with single-bot setups.
 	 *
 	 * Unlike the previous implementation, this no longer requires
 	 * assigned_assistant_ids to be set on the connection so that the global
@@ -890,12 +929,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string|null $connection_id Optional connection ID. When null the instance
+	 *                                   property $this->current_connection_id is used,
+	 *                                   then falls back to the first active connection.
 	 * @return array|null Connection array or null if none found.
 	 */
-	protected function get_active_telegram_connection() {
+	protected function get_active_telegram_connection( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
+
+		// Resolve target connection ID: explicit param > instance property.
+		$target_id = $connection_id ?? $this->current_connection_id;
 
 		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 
@@ -903,6 +948,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return null;
 		}
 
+		// When a specific connection is requested, look it up directly.
+		if ( $target_id ) {
+			foreach ( $connections as $connection ) {
+				if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
+					continue;
+				}
+
+				if ( empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				if ( isset( $connection['id'] ) && $connection['id'] === $target_id ) {
+					return $connection;
+				}
+			}
+		}
+
+		// Fallback: return the first active Telegram connection (single-bot / legacy behaviour).
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
 				continue;

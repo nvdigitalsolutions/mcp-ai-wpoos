@@ -356,6 +356,186 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertEquals( 'telegram', $connection['connection_type'] );
 	}
 
+	// -----------------------------------------------------------------------
+	// Per-connection webhook endpoint tests (mirrors Apple Messages fix).
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Test that register_routes() registers both the global and per-connection
+	 * webhook routes for Telegram.
+	 */
+	public function test_register_routes_registers_per_connection_route() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Trigger route registration.
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes( 'mcp-ai/v1' );
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/webhooks/telegram',
+			$routes,
+			'Global (backward-compatible) Telegram webhook route should be registered'
+		);
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/webhooks/telegram/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			$routes,
+			'Per-connection Telegram webhook route should be registered'
+		);
+	}
+
+	/**
+	 * Test that $current_connection_id defaults to null.
+	 */
+	public function test_current_connection_id_defaults_to_null() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$property   = $reflection->getProperty( 'current_connection_id' );
+		$property->setAccessible( true );
+
+		$this->assertNull(
+			$property->getValue( $controller ),
+			'$current_connection_id should default to null'
+		);
+	}
+
+	/**
+	 * Test that get_active_telegram_connection() resolves a specific connection
+	 * when a valid connection_id is passed.
+	 */
+	public function test_get_active_telegram_connection_resolves_by_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Create two distinct Telegram connections.
+		$id_a = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Bot A',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '1111111111:BotATokenABCDEFGHIJKLMNOPQRSTUVWX',
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $id_a, 'Bot A connection should be saved' );
+
+		$id_b = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Bot B',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '2222222222:BotBTokenABCDEFGHIJKLMNOPQRSTUVWX',
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $id_b, 'Bot B connection should be saved' );
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_telegram_connection' );
+		$method->setAccessible( true );
+
+		// Ask for Bot B specifically.
+		$resolved = $method->invoke( $controller, $id_b );
+
+		$this->assertNotNull( $resolved, 'Should resolve Bot B by ID' );
+		$this->assertEquals( $id_b, $resolved['id'], 'Resolved connection should be Bot B' );
+	}
+
+	/**
+	 * Test that get_active_telegram_connection() uses $this->current_connection_id
+	 * when no explicit parameter is passed.
+	 */
+	public function test_get_active_telegram_connection_uses_instance_property() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$conn_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'Instance Prop Bot',
+				'url'             => 'https://api.telegram.org',
+				'connection_type' => 'telegram',
+				'auth_type'       => 'none',
+				'enabled'         => true,
+				'api_key'         => '3333333333:InstancePropTokenABCDEFGHIJKLMNOPQ',
+			)
+		);
+		$this->assertNotInstanceOf( 'WP_Error', $conn_id );
+
+		$reflection = new ReflectionClass( $controller );
+
+		// Set the instance property.
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $conn_id );
+
+		$method = $reflection->getMethod( 'get_active_telegram_connection' );
+		$method->setAccessible( true );
+
+		// Call without explicit argument — should use instance property.
+		$resolved = $method->invoke( $controller );
+
+		$this->assertNotNull( $resolved, 'Should resolve using $current_connection_id property' );
+		$this->assertEquals(
+			$conn_id,
+			$resolved['id'],
+			'Connection resolved via instance property should match the saved connection'
+		);
+	}
+
+	/**
+	 * Test that get_secret_token() accepts a connection_id parameter.
+	 */
+	public function test_get_secret_token_accepts_connection_id_parameter() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_secret_token' );
+
+		$this->assertEquals(
+			1,
+			$method->getNumberOfParameters(),
+			'get_secret_token() should accept exactly one parameter (connection_id)'
+		);
+
+		$param = $method->getParameters()[0];
+		$this->assertEquals(
+			'connection_id',
+			$param->getName(),
+			'Parameter should be named connection_id'
+		);
+		$this->assertTrue(
+			$param->isOptional(),
+			'connection_id parameter should be optional'
+		);
+	}
+
 	/**
 	 * Test that process_message() uses the default_assistant_id from automation
 	 * rules as a fallback when no per-connection assistant is assigned.
