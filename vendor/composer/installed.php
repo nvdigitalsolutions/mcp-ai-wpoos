@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-readme-for-wordpress-compliance',
-        'version' => 'dev-copilot/update-readme-for-wordpress-compliance',
-        'reference' => 'f6c168b8a2693ab67b8a20ecede225ed7d5ae370',
+        'pretty_version' => 'dev-copilot/fix-base-plugin-casing-error',
+        'version' => 'dev-copilot/fix-base-plugin-casing-error',
+        'reference' => '7dfa863ee3083ce37b41182f8fd7884ed9e0afd4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-readme-for-wordpress-compliance',
-            'version' => 'dev-copilot/update-readme-for-wordpress-compliance',
-            'reference' => 'f6c168b8a2693ab67b8a20ecede225ed7d5ae370',
+            'pretty_version' => 'dev-copilot/fix-base-plugin-casing-error',
+            'version' => 'dev-copilot/fix-base-plugin-casing-error',
+            'reference' => '7dfa863ee3083ce37b41182f8fd7884ed9e0afd4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
