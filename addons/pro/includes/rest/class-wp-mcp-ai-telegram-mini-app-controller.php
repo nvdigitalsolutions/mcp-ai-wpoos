@@ -1813,6 +1813,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       var isImg  = item.mime_type && item.mime_type.indexOf(\'image/\') === 0;
       var isVid  = item.mime_type && item.mime_type.indexOf(\'video/\') === 0;
       var isAud  = item.mime_type && item.mime_type.indexOf(\'audio/\') === 0;
+      var extBadge = item.ext ? \'<span class="tma-media-ext-badge">.\' + escHtml(item.ext.toUpperCase()) + \'</span>\' : \'\';
       var thumb;
       if (isImg && item.thumb) {
         thumb = \'<img src="\' + escHtml(item.thumb) + \'" alt="\' + escHtml(item.title) + \'" class="tma-media-thumb" loading="lazy">\';
@@ -1823,7 +1824,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
       } else if (isAud && item.url) {
         thumb = \'<div class="tma-media-icon tma-media-icon--audio"><div class="tma-media-icon-emoji">\' + mimeIcon(item.mime_type) + \'</div><audio class="tma-media-audio-preview" src="\' + escHtml(item.url) + \'" controls preload="none"></audio></div>\';
       } else {
-        thumb = \'<div class="tma-media-icon tma-media-icon--\' + mimeTypeClass(item.mime_type) + \'">\' + mimeIcon(item.mime_type) + \'</div>\';
+        thumb = \'<div class="tma-media-icon tma-media-icon--\' + mimeTypeClass(item.mime_type) + \'"><span class="tma-media-icon-emoji">\' + mimeIcon(item.mime_type) + \'</span>\' + extBadge + \'</div>\';
       }
       var typeLabel = mimeLabel(item.mime_type);
       var metaParts = [];
@@ -3181,6 +3182,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'mime_type' => $mime_type,
 				'date'      => $post->post_date,
 				'filesize'  => $filesize,
+				'ext'       => $full_url ? strtolower( (string) pathinfo( $full_url, PATHINFO_EXTENSION ) ) : '',
 			);
 		}
 
@@ -4141,7 +4143,9 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 .tma-media-item{background:var(--tma-section-bg);border:1px solid var(--tma-border);border-radius:var(--tma-radius);overflow:hidden;cursor:pointer;transition:opacity var(--tma-transition);min-height:60px}
 .tma-media-item:active{opacity:.7}
 .tma-media-thumb{width:100%;aspect-ratio:1;object-fit:cover;object-position:center;display:block}
-.tma-media-icon{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;background:var(--tma-secondary-bg)}
+.tma-media-icon{width:100%;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:32px;background:var(--tma-secondary-bg)}
+.tma-media-icon-emoji{line-height:1}
+.tma-media-ext-badge{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--tma-section-bg,#fff);background:rgba(0,0,0,.35);border-radius:3px;padding:1px 5px;font-family:monospace,monospace;max-width:80%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tma-media-icon-wrap{position:relative;width:100%;aspect-ratio:1}
 .tma-media-icon-wrap .tma-media-thumb{width:100%;height:100%;object-fit:cover;object-position:center}
 .tma-media-video-preview{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
