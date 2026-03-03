@@ -284,9 +284,95 @@ The review noted the following items for awareness. These are not blocking issue
 
 ---
 
+## Post-Review Audit — Additional Base Plugin Fixes (March 3, 2026)
+
+After applying the fixes above, a full compliance audit of the base plugin was run to catch any remaining issues before re-submission. The following additional fixes were applied to the base plugin only (no changes to the Pro add-on).
+
+---
+
+### Fix A: Output Escaping — Unescaped CSS Class Attributes
+
+#### Problem
+Five locations in admin PHP files used unescaped PHP expressions directly inside HTML `class="..."` attributes. WordPress Coding Standards require all dynamic attribute values to be wrapped in `esc_attr()`.
+
+#### Fixes Applied
+
+| File | Line | Before | After |
+|------|------|--------|-------|
+| `includes/admin/class-wp-mcp-ai-admin-profession-settings.php` | 186 | `echo $active_tab === $tab_slug ? 'nav-tab-active' : ''` | `echo esc_attr( $active_tab === $tab_slug ? 'nav-tab-active' : '' )` |
+| `includes/admin/class-wp-mcp-ai-admin-team-settings.php` | 191 | `echo $active_tab === $tab_slug ? 'nav-tab-active' : ''` | `echo esc_attr( $active_tab === $tab_slug ? 'nav-tab-active' : '' )` |
+| `includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php` | 271 | `echo $compact ? 'compact-view' : ''` | `echo esc_attr( $compact ? 'compact-view' : '' )` |
+| `includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php` | 1541 | `echo $health_metrics['health_score'] >= 70 ? 'good' : (... ? 'fair' : 'poor')` | `echo esc_attr( $health_metrics['health_score'] >= 70 ? 'good' : (... ? 'fair' : 'poor') )` |
+| `includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php` | 1562 | `echo $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : ''` | `echo esc_attr( $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : '' )` |
+
+One additional instance in `includes/admin/sections/class-wp-mcp-ai-section-tools.php` (line 1145) outputs a `wp_json_encode()` result inside an inline `<script>` block. Since `wp_json_encode()` already produces safe output for script contexts, a `phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped` comment with justification was added in place of re-escaping (which would corrupt the JSON).
+
+---
+
+### Fix B: Missing ABSPATH Direct-Access Guards
+
+#### Problem
+Four PHP files were missing the standard WordPress direct-access guard at the top of the file:
+
+```php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+```
+
+This guard prevents the file from being executed directly via the web server, bypassing WordPress's bootstrap.
+
+#### Fixes Applied
+
+| File | Note |
+|------|------|
+| `includes/toolkit-metadata-mapping.php` | Guard added after PHPDoc block |
+| `includes/filesystem/class-wp-mcp-ai-filesystem-service.php` | Guard added after `namespace` declaration (PHP requires `namespace` to be first) |
+| `includes/services/class-wp-mcp-ai-process-service.php` | Guard added after `namespace` declaration |
+| `includes/validators/class-wp-mcp-ai-validator-service.php` | Guard added after `namespace` declaration |
+
+**Note on ordering:** For namespaced files, PHP requires the `namespace` declaration to appear before any other code. The ABSPATH guard therefore follows `namespace` rather than preceding it. This is the correct pattern for namespaced WordPress plugin files.
+
+---
+
+### Fix C: Remaining Hardcoded Admin Menu Position
+
+#### Problem
+`includes/admin/class-wp-mcp-ai-pro-dashboard.php` still used a hardcoded position argument (`85`) in its `add_menu_page()` call. This had been missed in the v1.1.2 sweep that removed hardcoded positions from the five other locations. Hardcoded menu positions can conflict with other plugins that use the same position slot.
+
+#### Fix Applied
+
+**File:** `includes/admin/class-wp-mcp-ai-pro-dashboard.php` — `register_menu()` method
+
+Changed:
+```php
+add_menu_page( ..., 'dashicons-shield-alt', 85 );
+```
+To:
+```php
+add_menu_page( ..., 'dashicons-shield-alt', null ); // Let WordPress automatically position the menu to avoid conflicts.
+```
+
+All six `add_menu_page()` calls in the base plugin now use `null` for the position argument.
+
+---
+
+### Post-Audit Compliance Status
+
+| Category | Status |
+|----------|--------|
+| Output escaping (all `echo` with dynamic values) | ✅ All escaped with `esc_html()`, `esc_attr()`, `esc_url()`, or documented exemption |
+| ABSPATH guards in all PHP files | ✅ Present in all files that ship in the WordPress.org ZIP |
+| Hardcoded admin menu positions | ✅ None — all six `add_menu_page()` calls use `null` |
+| All issues from original review email | ✅ Resolved (see Issues 1–9 above) |
+
+**Plugin version at submission: 1.1.3**
+
+---
+
 ## Files Changed
 
-### Code Changes
+### Code Changes (Original Review — Issues 1–9)
 1. `includes/admin/class-wp-mcp-ai-settings-dashboard.php` — Added sanitize_callback and sanitize_settings_callback()
 2. `includes/admin/class-wp-mcp-ai-pro-license.php` — Removed license-key gating from is_pro_active() and has_feature()
 3. `includes/admin/class-wp-mcp-ai-workflow-editor-page.php` — Added wp_mcp_ai_sanitize_recursive() for json_decode outputs
@@ -299,13 +385,26 @@ The review noted the following items for awareness. These are not blocking issue
 10. `includes/class-wp-mcp-ai-simple-jwt-login-integration.php` — Sanitized $_SERVER keys before third-party library
 11. `includes/class-wp-mcp-ai-proxy-utils.php` — Sanitized $_SERVER['HTTP_X_FORWARDED_HOST']
 
+### Code Changes (Post-Audit — Fix A, B, C)
+12. `includes/admin/class-wp-mcp-ai-admin-profession-settings.php` — Added esc_attr() to nav-tab class attribute (Fix A)
+13. `includes/admin/class-wp-mcp-ai-admin-team-settings.php` — Added esc_attr() to nav-tab class attribute (Fix A)
+14. `includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php` — Added esc_attr() to compact-view class attribute (Fix A)
+15. `includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php` — Added esc_attr() to health-score and warning class attributes (Fix A)
+16. `includes/admin/sections/class-wp-mcp-ai-section-tools.php` — Added phpcs:ignore with justification for wp_json_encode() in script context (Fix A)
+17. `includes/toolkit-metadata-mapping.php` — Added ABSPATH exit guard (Fix B)
+18. `includes/filesystem/class-wp-mcp-ai-filesystem-service.php` — Added ABSPATH exit guard (Fix B)
+19. `includes/services/class-wp-mcp-ai-process-service.php` — Added ABSPATH exit guard (Fix B)
+20. `includes/validators/class-wp-mcp-ai-validator-service.php` — Added ABSPATH exit guard (Fix B)
+21. `includes/admin/class-wp-mcp-ai-pro-dashboard.php` — Changed hardcoded menu position 85 → null (Fix C)
+22. `mcp-ai-wpoos.php` — Bumped version constant to 1.1.3
+
 ### Documentation Changes
-12. `readme.txt` — Fixed URLs, added 15 external service disclosures (31 total), updated privacy policy
-13. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This document
+23. `readme.txt` — Fixed URLs, added 15 external service disclosures (31 total), updated privacy policy; bumped Stable tag to 1.1.3; added 1.1.3 changelog entry
+24. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This document
 
 ### Dependency Updates
-14. `composer.lock` — Updated Symfony packages to v6.4.34
-15. `vendor/symfony/cache/*` — Updated to v6.4.34
-16. `vendor/symfony/filesystem/*` — Updated to v6.4.34
-17. `vendor/symfony/http-client/*` — Updated to v6.4.34
-18. `vendor/symfony/validator/*` — Updated to v6.4.34
+25. `composer.lock` — Updated Symfony packages to v6.4.34
+26. `vendor/symfony/cache/*` — Updated to v6.4.34
+27. `vendor/symfony/filesystem/*` — Updated to v6.4.34
+28. `vendor/symfony/http-client/*` — Updated to v6.4.34
+29. `vendor/symfony/validator/*` — Updated to v6.4.34
