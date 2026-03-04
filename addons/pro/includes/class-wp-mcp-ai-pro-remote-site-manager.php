@@ -203,6 +203,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['new_user_role'] = $existing_connection['new_user_role'];
 			}
 
+			// Preserve existing allowed_chat_ids (Telegram) if not provided.
+			if ( ! isset( $connection_data['allowed_chat_ids'] ) && isset( $existing_connection['allowed_chat_ids'] ) ) {
+				$connection_data['allowed_chat_ids'] = $existing_connection['allowed_chat_ids'];
+			}
+
 			// Preserve existing WhatsApp-specific fields if not provided.
 			if ( empty( $connection_data['phone_number_id'] ) && ! empty( $existing_connection['phone_number_id'] ) ) {
 				$connection_data['phone_number_id'] = $existing_connection['phone_number_id'];
@@ -434,7 +439,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				? array_values( array_map( 'absint', $connection_data['assigned_assistant_ids'] ) )
 				: array(),
 			// Chat-channel setting: only auto-reply when an assigned assistant is @mentioned.
-			'require_mention' => ! empty( $connection_data['require_mention'] ),
+			'require_mention'  => ! empty( $connection_data['require_mention'] ),
+			// Telegram allowlist: numeric user/chat IDs permitted to interact with the bot.
+			'allowed_chat_ids' => isset( $connection_data['allowed_chat_ids'] ) && is_array( $connection_data['allowed_chat_ids'] )
+				? array_values(
+					array_filter(
+						array_map( 'sanitize_text_field', $connection_data['allowed_chat_ids'] ),
+						static function ( $id ) {
+							return '' !== $id && preg_match( '/^-?\d+$/', $id );
+						}
+					)
+				)
+				: array(),
 			// Generic API test endpoint.
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
