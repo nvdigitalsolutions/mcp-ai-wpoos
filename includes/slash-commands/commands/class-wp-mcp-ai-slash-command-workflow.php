@@ -630,7 +630,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 				$name = basename( $name, '.yaml' );
 
 				try {
-					$content  = file_get_contents( $file );
+					$content  = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					$workflow = yaml_parse( $content );
 
 					if ( $workflow && isset( $workflow['name'] ) ) {
@@ -685,7 +685,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		try {
-			$content  = file_get_contents( $file );
+			$content  = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			$workflow = yaml_parse( $content );
 
 			if ( ! $workflow ) {

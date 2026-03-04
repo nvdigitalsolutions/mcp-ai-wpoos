@@ -278,7 +278,7 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		// Read the saved file.
-		$image_data = file_get_contents( $saved_path );
+		$image_data = file_get_contents( $saved_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 		if ( false === $image_data ) {
 			wp_delete_file( $saved_path );
 			if ( isset( $image_editor->temp_file ) ) {

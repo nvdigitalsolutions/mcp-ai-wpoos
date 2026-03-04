@@ -3395,7 +3395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $soa_file );
+			$content = file_get_contents( $soa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3498,7 +3498,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return 0;
 			}
 
-			$content = file_get_contents( $soc2_file );
+			$content = file_get_contents( $soc2_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
@@ -3538,7 +3538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return 0;
 			}
 
-			$content = file_get_contents( $hipaa_file );
+			$content = file_get_contents( $hipaa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
@@ -3580,7 +3580,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $soc2_file );
+			$content = file_get_contents( $soc2_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3670,7 +3670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $hipaa_file );
+			$content = file_get_contents( $hipaa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3942,7 +3942,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $risk_file );
+			$content = file_get_contents( $risk_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -4373,7 +4373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function get_system_uptime() {
 			// Try to get actual system uptime if available (Linux only).
 			if ( function_exists( 'sys_getloadavg' ) && is_readable( '/proc/uptime' ) ) {
-				$uptime_data = file_get_contents( '/proc/uptime' );
+				$uptime_data = file_get_contents( '/proc/uptime' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 				if ( false !== $uptime_data ) {
 					$uptime_parts = explode( ' ', $uptime_data );
 					if ( isset( $uptime_parts[0] ) && is_numeric( $uptime_parts[0] ) ) {

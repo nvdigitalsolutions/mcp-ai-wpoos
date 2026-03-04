@@ -322,8 +322,8 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			WHERE meta_key IN ('last_login', 'login_count', 'failed_login_count')
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$results = $wpdb->get_results( $meta_query ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Security audit query requires real-time data; cached results could miss recent security events.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $meta_query is a hardcoded SQL string with no user input; security audit requires real-time data.
+		$results = $wpdb->get_results( $meta_query );
 
 		if ( empty( $results ) ) {
 			return $data;

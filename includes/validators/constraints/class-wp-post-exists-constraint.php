@@ -49,7 +49,7 @@ class WPPostExists extends Constraint {
 	 * @param array $groups  Validation groups.
 	 * @param mixed $payload Payload.
 	 */
-	public function __construct( $options = null, array $groups = null, $payload = null ) {
+	public function __construct( $options = null, array $groups = null, $payload = null ) { // phpcs:ignore Generic.CodeAnalysis.UselessOverridingMethod.Found -- Method kept for forward-compatibility; allows future extension without interface changes.
 		parent::__construct( $options, $groups, $payload );
 	}
 }

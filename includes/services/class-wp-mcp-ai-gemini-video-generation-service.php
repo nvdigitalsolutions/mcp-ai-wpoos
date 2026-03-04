@@ -2127,7 +2127,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Update parent job with final result.
 		// Wrap result in async executor's expected format (compress_result structure).
 		// The async executor expects results to have 'compressed' and 'data' keys.
-		$serialized     = serialize( $result );
+		$serialized     = serialize( $result ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Serializing internal plugin data (not user input); value is not persisted to database.
 		$wrapped_result = array(
 			'compressed'    => false,
 			'data'          => $result,

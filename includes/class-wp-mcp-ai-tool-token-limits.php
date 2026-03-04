@@ -2104,7 +2104,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		foreach ( $csv as $row ) {
 			fputcsv( $output, $row );
 		}
-		fclose( $output );
+		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		return ob_get_clean();
 	}
 

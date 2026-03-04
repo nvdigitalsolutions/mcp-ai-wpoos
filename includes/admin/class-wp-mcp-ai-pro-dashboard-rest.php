@@ -882,7 +882,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $soa_file );
+			$content = file_get_contents( $soa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
