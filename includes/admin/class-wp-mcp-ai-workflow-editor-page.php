@@ -213,9 +213,9 @@ class WP_MCP_AI_Workflow_Editor_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		$name        = isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '';
-		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( $_POST['description'] ) : '';
-		$steps       = isset( $_POST['steps'] ) ? json_decode( stripslashes( $_POST['steps'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$name        = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
+		$steps       = isset( $_POST['steps'] ) ? json_decode( wp_unslash( $_POST['steps'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$steps       = is_array( $steps ) ? wp_mcp_ai_sanitize_recursive( $steps ) : array();
 
 		if ( empty( $name ) || empty( $steps ) ) {
@@ -296,7 +296,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 		}
 
 		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( $_POST['workflow'] ) : '';
-		$params        = isset( $_POST['params'] ) ? json_decode( stripslashes( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$params        = isset( $_POST['params'] ) ? json_decode( wp_unslash( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$params        = is_array( $params ) ? wp_mcp_ai_sanitize_recursive( $params ) : array();
 
 		if ( empty( $workflow_slug ) ) {

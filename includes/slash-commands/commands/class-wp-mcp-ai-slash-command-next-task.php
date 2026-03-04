@@ -283,7 +283,7 @@ class WP_MCP_AI_Slash_Command_Next_Task {
 	 */
 	private function find_outdated_content( $options ) {
 		// Find posts older than 1 year with no updates.
-		$cutoff_date = date( 'Y-m-d', strtotime( '-1 year' ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-1 year' ) );
 
 		$posts = get_posts(
 			array(

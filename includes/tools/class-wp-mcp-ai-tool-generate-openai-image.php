@@ -255,7 +255,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// Normalize quality to match the model's allowed values.
 		// Different models support different quality parameters:
 		// - DALL-E 2/3: 'standard', 'hd'
-		// - gpt-image-1/1.5: 'low', 'medium', 'high', 'auto'
+		// - gpt-image-1/1.5: 'low', 'medium', 'high', 'auto'.
 		$quality = $this->normalise_quality_for_model( $quality, $model );
 		if ( '' === $quality ) {
 			// If quality is invalid for the model, use the model's default.

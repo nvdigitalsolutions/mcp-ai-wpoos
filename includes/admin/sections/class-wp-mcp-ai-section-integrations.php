@@ -304,7 +304,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 				'plaid_secret'                  => array(
 					'type'         => 'password',
@@ -312,7 +312,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 				'plaid_environment'             => array(
 					'type'        => 'select',
@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'sandbox',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.

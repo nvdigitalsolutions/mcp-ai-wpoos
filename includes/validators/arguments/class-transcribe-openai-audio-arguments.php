@@ -9,6 +9,7 @@
 
 
 namespace WP_MCP_AI\Tools\Arguments;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }

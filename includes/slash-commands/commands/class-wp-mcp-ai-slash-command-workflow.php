@@ -895,9 +895,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 							$step['condition']
 						),
 					);
-				}
-				// Execute 'else' branch if condition is false.
-				elseif ( ! $condition_met && isset( $step['else'] ) ) {
+				} elseif ( ! $condition_met && isset( $step['else'] ) ) {
 					$branch_steps  = is_array( $step['else'] ) ? $step['else'] : array( $step['else'] );
 					$branch_result = $this->execute_branch_steps(
 						$branch_steps,
@@ -924,9 +922,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 							$step['condition']
 						),
 					);
-				}
-				// No branch executed.
-				else {
+				} else {
 					$results['step_results'][] = array(
 						'step'    => $step_num,
 						'task'    => 'conditional',

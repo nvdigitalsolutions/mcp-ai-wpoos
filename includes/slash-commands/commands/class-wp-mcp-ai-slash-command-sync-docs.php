@@ -335,7 +335,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 		foreach ( $all_links as $url ) {
 			// Skip external links and anchors.
-			if ( strpos( $url, '#' ) === 0 || strpos( $url, 'http' ) === 0 && strpos( $url, $site_url ) !== 0 ) {
+			if ( 0 === strpos( $url, '#' ) || ( 0 === strpos( $url, 'http' ) && 0 !== strpos( $url, $site_url ) ) ) {
 				continue;
 			}
 

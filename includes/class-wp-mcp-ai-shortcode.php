@@ -1171,14 +1171,12 @@ class WP_MCP_AI_Shortcode {
 				// that is already included in systemPrompt.
 				if ( 'embedded' !== $assistant_provider ) {
 					$config['professionalPrompt'] = $professional_prompt;
-				} else {
+				} elseif ( ! empty( $config['systemPrompt'] ) ) {
 					// Merge professional role first, then assistant instructions — the same separator
 					// and ordering used by the server-side REST handler (class-wp-mcp-ai-rest.php).
-					if ( ! empty( $config['systemPrompt'] ) ) {
-						$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
-					} else {
-						$config['systemPrompt'] = $professional_prompt;
-					}
+					$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
+				} else {
+					$config['systemPrompt'] = $professional_prompt;
 				}
 			}
 

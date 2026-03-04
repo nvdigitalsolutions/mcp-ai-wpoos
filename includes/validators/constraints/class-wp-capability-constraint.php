@@ -9,6 +9,7 @@
 
 
 namespace WP_MCP_AI\Validators\Constraints;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }

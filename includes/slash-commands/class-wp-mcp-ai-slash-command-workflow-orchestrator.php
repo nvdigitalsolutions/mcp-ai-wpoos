@@ -695,7 +695,7 @@ class WP_MCP_AI_Slash_Command_Workflow_Orchestrator {
 			);
 
 			// Update execution state (batched - only on errors or every 5 steps).
-			if ( $save_state && ( $step_number % 5 === 0 || ! $step_result['result']['success'] ) ) {
+			if ( $save_state && ( 0 === $step_number % 5 || ! $step_result['result']['success'] ) ) {
 				$this->update_execution_state( $execution_id, $step_number, $step_result );
 			}
 

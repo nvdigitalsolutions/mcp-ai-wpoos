@@ -2847,7 +2847,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			foreach ( $products as $product ) {
 				$stock_qty = $product->get_stock_quantity();
-				if ( $stock_qty !== null && $stock_qty <= $low_stock_threshold ) {
+				if ( null !== $stock_qty && $stock_qty <= $low_stock_threshold ) {
 					$low_stock_items[] = array(
 						'id'    => $product->get_id(),
 						'name'  => $product->get_name(),
@@ -3826,6 +3826,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'calendar_booking',
@@ -3849,6 +3850,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'chat_channels',
@@ -4012,6 +4014,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'dj_management',
@@ -4035,6 +4038,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'document_generation',
@@ -4297,6 +4301,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'manage_woocommerce',
 					'toolkit'     => 'ecommerce_pro',
@@ -4321,6 +4326,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'fantasy_football',
@@ -4344,6 +4350,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'financial_planner',
@@ -4367,6 +4374,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'upload_files',
 					'toolkit'     => 'image_production',
@@ -4390,6 +4398,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'upload_files',
 					'toolkit'     => 'media_pro',
@@ -4413,6 +4422,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'multilingual',
@@ -4436,6 +4446,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'manage_options',
 					'toolkit'     => 'regulatory_registration',
@@ -4459,6 +4470,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_theme_options',
 					'toolkit'     => 'site_creator',
@@ -4721,6 +4733,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'edit_posts',
 					'toolkit'     => 'social_media',
@@ -4984,6 +4997,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'name'   => $name,
 				'config' => array(
 					'handler'     => array( $this, 'handle_generic_command' ),
+					// translators: %s is the slash command name.
 					'description' => sprintf( __( '%s command - Implementation coming soon', 'mcp-ai-wpoos' ), $name ),
 					'capability'  => 'upload_files',
 					'toolkit'     => 'video_production',
@@ -7199,6 +7213,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					$issues[] = array(
 						'type'     => 'structure',
 						'severity' => 'high',
+						// translators: %s is the required file path.
 						'message'  => sprintf( __( 'Missing required file: %s', 'mcp-ai-wpoos' ), $file ),
 					);
 					$score   -= 15;
@@ -7285,7 +7300,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$memory_peak  = memory_get_peak_usage( true );
 
 			// Execution time.
-			$execution_time = microtime( true ) - (float) ( $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime( true ) );
+			$execution_time = microtime( true ) - (float) wp_unslash( $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime( true ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- float server var, cast to float for safety
 
 			// Check for common performance issues.
 			$recommendations = array();
@@ -7352,7 +7367,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			$issues = array();
 
-			if ( $type === 'plugin' && ! empty( $name ) ) {
+			if ( 'plugin' === $type && ! empty( $name ) ) {
 				$plugin = get_plugin_data( WP_PLUGIN_DIR . '/' . $name );
 
 				if ( empty( $plugin ) ) {
@@ -7384,6 +7399,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$required_extensions = array( 'mysqli', 'json', 'mbstring', 'curl' );
 			foreach ( $required_extensions as $ext ) {
 				if ( ! extension_loaded( $ext ) ) {
+					// translators: %s is the name of the missing PHP extension.
 					$issues[] = sprintf( __( 'Missing PHP extension: %s', 'mcp-ai-wpoos' ), $ext );
 				}
 			}
@@ -7404,6 +7420,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				$result,
 				count( $issues ) === 0
 					? __( 'All dependencies satisfied.', 'mcp-ai-wpoos' )
+					// translators: %d is the number of dependency issues found.
 					: sprintf( __( 'Found %d dependency issues.', 'mcp-ai-wpoos' ), count( $issues ) )
 			);
 
@@ -7431,7 +7448,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			$file = ! empty( $args['file'] ) ? sanitize_text_field( $args['file'] ) : '';
-			$fix  = ! empty( $args['fix'] ) && $args['fix'] === 'true';
+			$fix  = ! empty( $args['fix'] ) && 'true' === $args['fix'];
 
 			if ( empty( $file ) || ! file_exists( $file ) ) {
 				return $this->error_response( __( 'Valid file path is required.', 'mcp-ai-wpoos' ) );
@@ -7508,7 +7525,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$product_query = new WP_Query(
 				array(
 					'post_type'      => 'product',
-					'posts_per_page' => $products === 'all' ? -1 : 100,
+					'posts_per_page' => 'all' === $products ? -1 : 100,
 					'post_status'    => 'publish',
 				)
 			);
@@ -7527,6 +7544,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 					++$synced_count;
 				} catch ( Exception $e ) {
+					// translators: %1$d is the product ID, %2$s is the error message.
 					$errors[] = sprintf( __( 'Failed to sync product %1$d: %2$s', 'mcp-ai-wpoos' ), $product_post->ID, $e->getMessage() );
 				}
 			}
@@ -7604,7 +7622,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				// Create WooCommerce coupon.
 				$coupon = new WC_Coupon();
 				$coupon->set_code( $code );
-				$coupon->set_discount_type( $type === 'percentage' ? 'percent' : 'fixed_cart' );
+				$coupon->set_discount_type( 'percentage' === $type ? 'percent' : 'fixed_cart' );
 				$coupon->set_amount( $amount );
 				$coupon->set_minimum_amount( $minimum );
 				$discount_id = $coupon->save();
@@ -7688,7 +7706,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				}
 
 				// Apply segment criteria.
-				if ( $segment_type === 'high_value' && $order_count >= $min_orders && $order_total >= $min_total ) {
+				if ( 'high_value' === $segment_type && $order_count >= $min_orders && $order_total >= $min_total ) {
 					$segment[] = array(
 						'user_id'     => $user->ID,
 						'email'       => $user->user_email,
@@ -7745,7 +7763,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			$action     = ! empty( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'recover';
-			$send_email = ! empty( $args['send_email'] ) && $args['send_email'] === 'true';
+			$send_email = ! empty( $args['send_email'] ) && 'true' === $args['send_email'];
 
 			// Get abandoned carts (simplified - would normally query cart table).
 			$abandoned_carts = get_option( 'wp_mcp_ai_abandoned_carts', array() );
@@ -7754,7 +7772,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$email_sent_count = 0;
 
 			foreach ( $abandoned_carts as $cart_id => $cart_data ) {
-				if ( $action === 'recover' ) {
+				if ( 'recover' === $action ) {
 					// Check if cart is older than 1 hour.
 					$cart_time = strtotime( $cart_data['abandoned_time'] );
 					if ( time() - $cart_time > 3600 ) {
@@ -7912,6 +7930,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						'version'        => $wp_version,
 						'severity'       => 'high',
 						'description'    => __( 'WordPress core is outdated and may contain vulnerabilities.', 'mcp-ai-wpoos' ),
+						// translators: %s is the WordPress version number to update to.
 						'recommendation' => sprintf( __( 'Update to version %s', 'mcp-ai-wpoos' ), $latest_version ),
 					);
 				}
@@ -7948,6 +7967,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				$result,
 				count( $vulnerabilities ) === 0
 					? __( 'No vulnerabilities detected.', 'mcp-ai-wpoos' )
+					// translators: %d is the number of potential vulnerabilities found.
 					: sprintf( __( 'Found %d potential vulnerabilities.', 'mcp-ai-wpoos' ), count( $vulnerabilities ) )
 			);
 
@@ -7988,15 +8008,15 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$items_backed_up = array();
 
 			// Database backup.
-			if ( $type === 'full' || $type === 'database' ) {
+			if ( 'full' === $type || 'database' === $type ) {
 				// Simplified - would normally use mysqldump or WordPress DB backup.
 				$db_file = $backup_path . $backup_id . '_database.sql';
-				// file_put_contents( $db_file, '-- Database backup placeholder' );
+				// file_put_contents( $db_file, '-- Database backup placeholder' );.
 				$items_backed_up[] = 'database';
 			}
 
 			// Files backup.
-			if ( $type === 'full' || $type === 'files' ) {
+			if ( 'full' === $type || 'files' === $type ) {
 				// Simplified - would normally zip files.
 				$items_backed_up[] = 'uploads';
 				$items_backed_up[] = 'themes';
@@ -8082,7 +8102,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				if ( isset( $params['options']['ssl']['peer_certificate'] ) ) {
 					$cert_valid = true;
 					// Would normally parse certificate for expiry date.
-					$expiry_date = date( 'Y-m-d', strtotime( '+90 days' ) );
+					$expiry_date = gmdate( 'Y-m-d', strtotime( '+90 days' ) );
 				}
 				fclose( $socket );
 			} else {
@@ -8106,6 +8126,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				$result,
 				count( $issues ) === 0
 					? __( 'SSL configuration is valid.', 'mcp-ai-wpoos' )
+					// translators: %d is the number of SSL issues found.
 					: sprintf( __( 'Found %d SSL issues.', 'mcp-ai-wpoos' ), count( $issues ) )
 			);
 
@@ -8157,7 +8178,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'task_type' => $task_type,
 				'schedule'  => $schedule,
 				'time'      => $time,
-				'next_run'  => date( 'Y-m-d H:i:s', $next_run ),
+				'next_run'  => gmdate( 'Y-m-d H:i:s', $next_run ),
 				'hook'      => $hook_name,
 				'status'    => $scheduled ? 'scheduled' : 'failed',
 			);
@@ -8216,7 +8237,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$webhook_id = 'webhook_' . md5( $event . $url . time() );
 
 			// Generate HMAC secret for authentication.
-			$secret = $auth === 'hmac' ? wp_generate_password( 32, false ) : null;
+			$secret = 'hmac' === $auth ? wp_generate_password( 32, false ) : null;
 
 			$webhook_data = array(
 				'id'      => $webhook_id,
@@ -8237,7 +8258,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			// Register action hook.
 			// add_action( $event, function() use ( $webhook_data ) {
 			// Would trigger webhook here.
-			// } );
+			// } );.
 
 			$result = $webhook_data;
 
@@ -9301,7 +9322,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$influencers[] = array(
 				'name'            => 'Influencer ' . ( $i + 1 ),
 				'handle'          => '@influencer' . ( $i + 1 ),
-				'platform'        => $platform === 'all' ? array( 'twitter', 'instagram' )[ rand( 0, 1 ) ] : $platform,
+				'platform'        => 'all' === $platform ? array( 'twitter', 'instagram' )[ rand( 0, 1 ) ] : $platform,
 				'followers'       => rand( $min_followers, $min_followers * 10 ),
 				'engagement_rate' => rand( 2, 15 ) . '%',
 				'niche'           => $niche,
@@ -9349,7 +9370,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'duration'   => $duration,
 			'budget'     => $budget,
 			'start_date' => current_time( 'mysql' ),
-			'end_date'   => date( 'Y-m-d H:i:s', strtotime( "+{$duration} days" ) ),
+			'end_date'   => gmdate( 'Y-m-d H:i:s', strtotime( "+{$duration} days" ) ),
 			'status'     => 'active',
 			'created_at' => current_time( 'mysql' ),
 		);
@@ -9576,6 +9597,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		for ( $i = 1; $i <= $limit; $i++ ) {
 			$suggestions[] = array(
 				'product_id'    => $product_id + $i,
+				// translators: %d is the cross-sell product number.
 				'title'         => sprintf( __( 'Cross-sell Product %d', 'mcp-ai-wpoos' ), $i ),
 				'relevance'     => 95 - ( $i * 5 ),
 				'price'         => number_format( 29.99 * $i, 2 ),
@@ -9648,7 +9670,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						'subscription_id' => $subscription_id,
 						'status'          => 'active',
 						'renewed_at'      => current_time( 'mysql' ),
-						'next_billing'    => date( 'Y-m-d', strtotime( '+1 month' ) ),
+						'next_billing'    => gmdate( 'Y-m-d', strtotime( '+1 month' ) ),
 					),
 					__( 'Subscription renewed successfully.', 'mcp-ai-wpoos' )
 				);
@@ -9662,14 +9684,14 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						'customer'     => __( 'John Doe', 'mcp-ai-wpoos' ),
 						'product'      => __( 'Monthly Plan', 'mcp-ai-wpoos' ),
 						'status'       => 'active',
-						'next_billing' => date( 'Y-m-d', strtotime( '+15 days' ) ),
+						'next_billing' => gmdate( 'Y-m-d', strtotime( '+15 days' ) ),
 					),
 					array(
 						'id'           => 1002,
 						'customer'     => __( 'Jane Smith', 'mcp-ai-wpoos' ),
 						'product'      => __( 'Annual Plan', 'mcp-ai-wpoos' ),
 						'status'       => 'active',
-						'next_billing' => date( 'Y-m-d', strtotime( '+6 months' ) ),
+						'next_billing' => gmdate( 'Y-m-d', strtotime( '+6 months' ) ),
 					),
 				);
 
@@ -9701,7 +9723,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$product_id = isset( $args['product-id'] ) ? absint( $args['product-id'] ) : 0;
 		$quantity   = isset( $args['quantity'] ) ? absint( $args['quantity'] ) : 1;
 
-		if ( $action === 'calculate' ) {
+		if ( 'calculate' === $action ) {
 			if ( ! $product_id || ! $quantity ) {
 				return $this->error_response( __( 'Product ID and quantity required for calculation.', 'mcp-ai-wpoos' ) );
 			}
@@ -9753,11 +9775,11 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 		$marketplaces = array( 'amazon', 'ebay', 'etsy', 'shopify' );
 
-		if ( $marketplace !== 'all' && ! in_array( $marketplace, $marketplaces, true ) ) {
+		if ( 'all' !== $marketplace && ! in_array( $marketplace, $marketplaces, true ) ) {
 			return $this->error_response( __( 'Invalid marketplace specified.', 'mcp-ai-wpoos' ) );
 		}
 
-		$sync_targets = ( $marketplace === 'all' ) ? $marketplaces : array( $marketplace );
+		$sync_targets = ( 'all' === $marketplace ) ? $marketplaces : array( $marketplace );
 
 		$results = array();
 		foreach ( $sync_targets as $target ) {
@@ -9902,11 +9924,11 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 		$suppliers = array( 'supplier-a', 'supplier-b', 'supplier-c' );
 
-		if ( $supplier !== 'all' && ! in_array( $supplier, $suppliers, true ) ) {
+		if ( 'all' !== $supplier && ! in_array( $supplier, $suppliers, true ) ) {
 			return $this->error_response( __( 'Invalid supplier specified.', 'mcp-ai-wpoos' ) );
 		}
 
-		$sync_targets = ( $supplier === 'all' ) ? $suppliers : array( $supplier );
+		$sync_targets = ( 'all' === $supplier ) ? $suppliers : array( $supplier );
 
 		$results = array();
 		foreach ( $sync_targets as $target ) {
@@ -9956,14 +9978,14 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'time'     => '10:00',
 			),
 			array(
-				'date'     => date( 'Y-m-d', strtotime( $date . ' +1 day' ) ),
+				'date'     => gmdate( 'Y-m-d', strtotime( $date . ' +1 day' ) ),
 				'platform' => 'instagram',
 				'content'  => __( 'Behind the scenes photo', 'mcp-ai-wpoos' ),
 				'status'   => 'scheduled',
 				'time'     => '14:00',
 			),
 			array(
-				'date'     => date( 'Y-m-d', strtotime( $date . ' +2 days' ) ),
+				'date'     => gmdate( 'Y-m-d', strtotime( $date . ' +2 days' ) ),
 				'platform' => 'facebook',
 				'content'  => __( 'Customer testimonial video', 'mcp-ai-wpoos' ),
 				'status'   => 'scheduled',
@@ -10006,10 +10028,10 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'replied'  => 0,
 		);
 
-		if ( $action === 'reply' ) {
+		if ( 'reply' === $action ) {
 			$engagement_data['replied'] = $engagement_data['mentions'];
 			$message                    = __( 'Auto-replied to all mentions.', 'mcp-ai-wpoos' );
-		} elseif ( $action === 'like' ) {
+		} elseif ( 'like' === $action ) {
 			$engagement_data['liked'] = $engagement_data['mentions'];
 			$message                  = __( 'Liked all mentions.', 'mcp-ai-wpoos' );
 		} else {
@@ -10334,7 +10356,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			return $this->error_response( __( 'Project name is required.', 'mcp-ai-wpoos' ) );
 		}
 
-		if ( $action === 'create' ) {
+		if ( 'create' === $action ) {
 			$storyboard_id = 'sb_' . time();
 			return $this->success_response(
 				array(
