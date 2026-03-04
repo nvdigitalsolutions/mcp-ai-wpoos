@@ -844,27 +844,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				<!-- Tab Navigation -->
 				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Pro Dashboard tabs', 'mcp-ai-wpoos' ); ?>">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo esc_attr( 'iso27001' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-list-view"></span>
 						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo esc_attr( 'overview' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-dashboard"></span>
 						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo esc_attr( 'reports' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-media-document"></span>
 						<?php esc_html_e( 'Reports', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" class="nav-tab <?php echo esc_attr( 'monitoring' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Monitoring', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="nav-tab <?php echo esc_attr( 'risk' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-warning"></span>
 						<?php esc_html_e( 'Risk Management', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" class="nav-tab <?php echo esc_attr( 'multi-framework' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-networking"></span>
 						<?php esc_html_e( 'Multi-Framework', 'mcp-ai-wpoos' ); ?>
 					</a>

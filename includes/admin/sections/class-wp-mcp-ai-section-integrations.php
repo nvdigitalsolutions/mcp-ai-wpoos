@@ -1066,7 +1066,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</p>
 			<?php endif; ?>
 			<p>
-				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo ! $is_pro_active ? 'disabled' : ''; ?>>
+				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo esc_attr( ! $is_pro_active ? 'disabled' : '' ); ?>>
 					<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<span id="wp-mcp-ai-yahoo-test-result" style="margin-left: 10px;"></span>
