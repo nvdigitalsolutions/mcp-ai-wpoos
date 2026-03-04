@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/audit-dependency-vulnerabilities',
-        'version' => 'dev-copilot/audit-dependency-vulnerabilities',
-        'reference' => '0c2aa0dd3a764efa9e6b317ab250e48594f3a605',
+        'pretty_version' => 'dev-copilot/run-composer-classmap',
+        'version' => 'dev-copilot/run-composer-classmap',
+        'reference' => 'b2c6728e3a80fc02d311e7c61a2d8bd6dc6068fb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/audit-dependency-vulnerabilities',
-            'version' => 'dev-copilot/audit-dependency-vulnerabilities',
-            'reference' => '0c2aa0dd3a764efa9e6b317ab250e48594f3a605',
+            'pretty_version' => 'dev-copilot/run-composer-classmap',
+            'version' => 'dev-copilot/run-composer-classmap',
+            'reference' => 'b2c6728e3a80fc02d311e7c61a2d8bd6dc6068fb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
