@@ -9232,8 +9232,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		}
 
 		// Scan recent orders.
-		$flagged_orders = array();
-		for ( $i = 0; $i < wp_rand( 2, 5 ); $i++ ) {
+		$flagged_orders   = array();
+		$flagged_count    = wp_rand( 2, 5 );
+		for ( $i = 0; $i < $flagged_count; $i++ ) {
 			$flagged_orders[] = array(
 				'order_id'   => wp_rand( 1000, 9999 ),
 				'risk_score' => wp_rand( 60, 95 ),
@@ -9317,8 +9318,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$min_followers = isset( $args['min-followers'] ) ? absint( $args['min-followers'] ) : 1000;
 
 		// Mock influencer data.
-		$influencers = array();
-		for ( $i = 0; $i < wp_rand( 3, 8 ); $i++ ) {
+		$influencers      = array();
+		$influencer_count = wp_rand( 3, 8 );
+		for ( $i = 0; $i < $influencer_count; $i++ ) {
 			$influencers[] = array(
 				'name'            => 'Influencer ' . ( $i + 1 ),
 				'handle'          => '@influencer' . ( $i + 1 ),

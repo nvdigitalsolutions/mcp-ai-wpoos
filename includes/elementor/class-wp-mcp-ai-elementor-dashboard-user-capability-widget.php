@@ -374,6 +374,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 	 */
 	protected function get_jetengine_details( $user_id ) {
 		$available  = function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- External JetEngine hook uses slash-separated naming convention.
 		$capability = apply_filters( 'jet-engine/settings/capability', 'manage_options' );
 
 		if ( ! is_string( $capability ) || '' === $capability ) {

@@ -84,6 +84,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			.wp-mcp-ai-dlq__actions a{margin-right:0.5rem;}
 		';
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
 		wp_register_style( 'wp-mcp-ai-dlq-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-dlq-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-dlq-inline', $inline_css );

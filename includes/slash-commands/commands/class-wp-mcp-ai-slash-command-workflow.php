@@ -2054,9 +2054,9 @@ class WP_MCP_AI_Slash_Command_Workflow {
 						case '<=':
 							return (float) $left <= (float) $right;
 						case '==':
-							return (float) $left == (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
+							return (float) $left == (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison, Universal.Operators.StrictComparisons.LooseEqual -- Intentional loose float comparison for workflow expressions.
 						case '!=':
-							return (float) $left != (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
+							return (float) $left != (float) $right; // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison, Universal.Operators.StrictComparisons.LooseNotEqual -- Intentional loose float comparison for workflow expressions.
 					}
 				}
 
