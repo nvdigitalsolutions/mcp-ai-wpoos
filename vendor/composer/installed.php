@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/conduct-compliance-review',
-        'version' => 'dev-copilot/conduct-compliance-review',
-        'reference' => '027166f5e33296ecb03d0b092a7421938f697fa1',
+        'pretty_version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
+        'version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
+        'reference' => 'd9b6b83b1b52487792622d7be557e73d86858063',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/conduct-compliance-review',
-            'version' => 'dev-copilot/conduct-compliance-review',
-            'reference' => '027166f5e33296ecb03d0b092a7421938f697fa1',
+            'pretty_version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
+            'version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
+            'reference' => 'd9b6b83b1b52487792622d7be557e73d86858063',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
