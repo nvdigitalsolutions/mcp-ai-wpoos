@@ -9,6 +9,10 @@
 
 
 namespace WP_MCP_AI\Tools\Arguments;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 
 use Symfony\Component\Validator\Constraints as Assert;
 use WP_MCP_AI\Validators\Constraints\WPPostExists;

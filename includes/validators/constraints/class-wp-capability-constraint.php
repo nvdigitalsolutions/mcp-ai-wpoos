@@ -9,6 +9,10 @@
 
 
 namespace WP_MCP_AI\Validators\Constraints;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 
 use Symfony\Component\Validator\Constraint;
 
