@@ -503,6 +503,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'web_login_redirect_url' => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
 				'auto_create_wp_user'  => ! empty( $_POST['telegram_auto_create_wp_user'] ),
 				'new_user_role'        => isset( $_POST['telegram_new_user_role'] ) ? sanitize_key( wp_unslash( $_POST['telegram_new_user_role'] ) ) : 'subscriber',
+				'allowed_chat_ids'     => isset( $_POST['telegram_allowed_chat_ids'] )
+					? array_values(
+						array_filter(
+							array_map(
+								static function ( $id ) {
+									return sanitize_text_field( trim( $id ) );
+								},
+								explode( ',', wp_unslash( $_POST['telegram_allowed_chat_ids'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized in array_map above.
+							),
+							static function ( $id ) {
+								return '' !== $id && preg_match( '/^-?\d+$/', $id );
+							}
+						)
+					)
+					: array(),
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -1851,6 +1866,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'Only reply when the bot is @mentioned or the message is a reply to the bot', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Applies to groups only. In private chats the bot always replies. When unchecked (default), the bot replies to every group message. When checked, the bot only auto-replies in groups when explicitly @mentioned, when an assigned assistant @slug is mentioned, or when the message is a direct reply to one of the bot\'s own messages. Fill in the Bot Username above for reliable mention detection.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Allowed Chat IDs', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$tg_allowed_ids = '';
+						if ( $is_edit && isset( $connection['allowed_chat_ids'] ) && is_array( $connection['allowed_chat_ids'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+							$tg_allowed_ids = implode( ', ', array_map( 'esc_attr', $connection['allowed_chat_ids'] ) );
+						}
+						?>
+						<textarea name="telegram_allowed_chat_ids" id="telegram_allowed_chat_ids" class="large-text" rows="3" placeholder="<?php esc_attr_e( 'e.g. 123456789, -1001234567890', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $tg_allowed_ids ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Optional. Enter Telegram user IDs and/or chat IDs (comma-separated) that are allowed to interact with this bot. When the list is non-empty, messages from any ID not on the list will be silently ignored. Leave blank to allow everyone to chat with the bot.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Use positive integers for user IDs (e.g. 123456789) and negative integers for group/channel IDs (e.g. -1001234567890). You can find chat IDs by forwarding a message to @userinfobot on Telegram.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 

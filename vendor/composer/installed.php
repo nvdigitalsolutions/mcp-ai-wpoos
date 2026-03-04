@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
-        'version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
-        'reference' => 'd9b6b83b1b52487792622d7be557e73d86858063',
+        'pretty_version' => 'dev-copilot/secure-telegram-bot-connection',
+        'version' => 'dev-copilot/secure-telegram-bot-connection',
+        'reference' => '7288975ea8ee8b0fa5b71b998415cc6aeffc20d6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
-            'version' => 'dev-copilot/add-webhook-endpoints-telegram-again',
-            'reference' => 'd9b6b83b1b52487792622d7be557e73d86858063',
+            'pretty_version' => 'dev-copilot/secure-telegram-bot-connection',
+            'version' => 'dev-copilot/secure-telegram-bot-connection',
+            'reference' => '7288975ea8ee8b0fa5b71b998415cc6aeffc20d6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
