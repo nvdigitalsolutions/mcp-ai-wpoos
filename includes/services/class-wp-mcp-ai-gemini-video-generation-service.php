@@ -1886,7 +1886,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 				array(
 					'key'     => '_veo_job_id',
 					'value'   => $sanitized_job_id,
@@ -2200,7 +2200,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 				array(
 					'key'     => '_veo_job_id',
 					'value'   => sanitize_key( $job_id ),
@@ -2239,7 +2239,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'post_status'    => 'inherit',
 				'post_mime_type' => 'video/mp4',
 				'posts_per_page' => 20,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 					'relation' => 'OR',
 					array(
 						'key'     => '_veo_prompt',

@@ -216,7 +216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Insert into database.
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$inserted   = $wpdb->insert( $table_name, $job_data );
+			$inserted   = $wpdb->insert( $table_name, $job_data ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 
 			if ( false === $inserted ) {
 				return new WP_Error(
@@ -268,6 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$job = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM $table_name WHERE id = %d",  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
@@ -339,6 +340,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			}
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$updated    = $wpdb->update(
 				$table_name,
 				$update_data,
@@ -390,6 +392,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			// Get next job to process (highest priority first).
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$job = $wpdb->get_row(
 				"SELECT * FROM $table_name
 				WHERE status = 'queued' 
@@ -630,6 +633,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			$age_days   = apply_filters( 'wp_mcp_ai_job_queue_cleanup_age_days', self::CLEANUP_AGE_DAYS );
 
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM $table_name
@@ -707,6 +711,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$jobs = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM $table_name
@@ -745,7 +750,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 			return array(
-				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is a safe, plugin-controlled value.
 				'queued'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'queued'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
 				'running'   => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'running'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
 				'completed' => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.

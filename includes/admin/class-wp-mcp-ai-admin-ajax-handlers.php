@@ -1443,7 +1443,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$deleted = $wpdb->delete(
 				$wpdb->usermeta,
-				array( 'meta_key' => $meta_key ),
+				array( 'meta_key' => $meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
 				array( '%s' )
 			);
 
@@ -1462,7 +1462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->delete(
 				$wpdb->usermeta,
-				array( 'meta_key' => $tool_meta_key ),
+				array( 'meta_key' => $tool_meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
 				array( '%s' )
 			);
 

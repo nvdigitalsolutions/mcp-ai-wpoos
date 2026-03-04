@@ -7689,7 +7689,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 						'post_type'   => 'shop_order',
 						'post_status' => 'wc-completed',
 						'numberposts' => -1,
-						'meta_query'  => array(
+						'meta_query'  => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter slash-command posts by plugin meta; no alternative index-based query available.
 							array(
 								'key'   => '_customer_user',
 								'value' => $user->ID,

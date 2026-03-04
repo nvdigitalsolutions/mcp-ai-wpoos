@@ -219,6 +219,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			}
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 		$result = $wpdb->insert(
 			$table,
 			$email_data

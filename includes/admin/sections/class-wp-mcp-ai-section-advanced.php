@@ -846,7 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						'post_type'      => 'mcp_ai_profession',
 						'post_status'    => 'publish',
 						'posts_per_page' => -1,
-						'meta_query'     => array(
+						'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by configuration meta; no alternative index-based query available.
 							array(
 								'key'   => '_wp_mcp_ai_profession_agent_role',
 								'value' => $role,
@@ -2371,6 +2371,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Get backup count.
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Admin settings import query against wp_options; direct query needed to enumerate plugin backup option names.
 			$backup_count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",

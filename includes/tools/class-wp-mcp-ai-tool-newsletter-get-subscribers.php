@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 			}
 		}
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
-		$total = (int) $wpdb->get_var( $count_query );
+		$total = (int) $wpdb->get_var( $count_query ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 
 		// Format subscribers.
 		$results = array();

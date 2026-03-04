@@ -323,7 +323,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		";
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$results = $wpdb->get_results( $meta_query );
+		$results = $wpdb->get_results( $meta_query ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Security audit query requires real-time data; cached results could miss recent security events.
 
 		if ( empty( $results ) ) {
 			return $data;

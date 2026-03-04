@@ -900,7 +900,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$args = array(
 			'post_type'      => 'post',
 			'posts_per_page' => $limit,
-			'meta_key'       => '_wp_mcp_ai_engagement_score',
+			'meta_key'       => '_wp_mcp_ai_engagement_score', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to filter posts by content recommendation meta; no alternative lookup method available.
 			'orderby'        => 'meta_value_num',
 			'order'          => 'DESC',
 		);
