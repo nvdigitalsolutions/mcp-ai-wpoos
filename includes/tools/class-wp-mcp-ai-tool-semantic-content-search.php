@@ -50,11 +50,15 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'        => array(
+				'query'           => array(
 					'type'        => 'string',
 					'description' => __( 'Search query text to find semantically similar content.', 'mcp-ai-wpoos' ),
 				),
-				'post_types'   => array(
+				'vector_store_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional OpenAI vector store ID to search. When provided (or configured on the assistant), the tool searches the vector store in addition to local WordPress content.', 'mcp-ai-wpoos' ),
+				),
+				'post_types'      => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
@@ -62,21 +66,21 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Array of post types to search. Defaults to ["post", "page"].', 'mcp-ai-wpoos' ),
 					'default'     => array( 'post', 'page' ),
 				),
-				'limit'        => array(
+				'limit'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return.', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'threshold'    => array(
+				'threshold'       => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum similarity score threshold (0-1). Higher values return more similar results.', 'mcp-ai-wpoos' ),
 					'default'     => 0.7,
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'include_meta' => array(
+				'include_meta'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include post metadata in results.', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -91,7 +95,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context including user_id.
+	 * @param array $context   Execution context including user_id and assistant_config.
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
@@ -122,17 +126,83 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		$threshold    = isset( $arguments['threshold'] ) ? floatval( $arguments['threshold'] ) : 0.7;
 		$include_meta = isset( $arguments['include_meta'] ) ? (bool) $arguments['include_meta'] : false;
 
+		// Resolve vector store ID: explicit argument > assistant context configuration.
+		$vector_store_id = '';
+		if ( ! empty( $arguments['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $arguments['vector_store_id'] );
+		} elseif ( ! empty( $context['assistant_config']['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $context['assistant_config']['vector_store_id'] );
+		}
+
 		// Ensure limit is within bounds.
 		$limit = max( 1, min( 100, $limit ) );
 
 		// Ensure threshold is within bounds.
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
-		// Generate embedding for the search query.
-		$client           = new WP_MCP_AI_OpenAI_Client();
+		$client          = new WP_MCP_AI_OpenAI_Client();
+		$results         = array();
+		$vector_results  = array();
+		$embedding_model = '';
+
+		// Search the OpenAI vector store when one is configured.
+		if ( ! empty( $vector_store_id ) ) {
+			$vs_response = $client->search_vector_store(
+				$vector_store_id,
+				$query,
+				array( 'max_num_results' => $limit )
+			);
+
+			if ( ! is_wp_error( $vs_response ) && ! empty( $vs_response['data'] ) ) {
+				foreach ( $vs_response['data'] as $item ) {
+					$content_text = '';
+					if ( ! empty( $item['content'] ) && is_array( $item['content'] ) ) {
+						foreach ( $item['content'] as $chunk ) {
+							if ( isset( $chunk['text'] ) ) {
+								$content_text .= $chunk['text'] . ' ';
+							}
+						}
+						$content_text = trim( $content_text );
+					}
+
+					$vector_results[] = array(
+						'source'           => 'vector_store',
+						'vector_store_id'  => $vector_store_id,
+						'file_id'          => isset( $item['file_id'] ) ? $item['file_id'] : '',
+						'filename'         => isset( $item['filename'] ) ? $item['filename'] : '',
+						'excerpt'          => $content_text,
+						'similarity_score' => isset( $item['score'] ) ? round( floatval( $item['score'] ), 4 ) : 0.0,
+					);
+				}
+			}
+		}
+
+		// Generate embedding for the search query (used for local WordPress content search).
 		$embedding_result = $client->create_embeddings( $query );
 
 		if ( is_wp_error( $embedding_result ) ) {
+			// If embedding fails but we have vector store results, return those.
+			if ( ! empty( $vector_results ) ) {
+				$summary_text = sprintf(
+					/* translators: 1: number of results, 2: search query */
+					__( 'Found %1$d result(s) in the vector store for "%2$s". Local WordPress content search was unavailable.', 'mcp-ai-wpoos' ),
+					count( $vector_results ),
+					$query
+				);
+
+				return array(
+					'success'               => true,
+					'results'               => array_slice( $vector_results, 0, $limit ),
+					'total_found'           => count( $vector_results ),
+					'query'                 => $query,
+					'query_embedding_model' => '',
+					'threshold'             => $threshold,
+					'vector_store_id'       => $vector_store_id,
+					'message'               => $summary_text,
+					'summary'               => $summary_text,
+				);
+			}
+
 			return new WP_Error(
 				$embedding_result->get_error_code(),
 				$embedding_result->get_error_message(),
@@ -167,7 +237,6 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		);
 
 		$posts_query = new WP_Query( $args );
-		$results     = array();
 
 		if ( $posts_query->have_posts() ) {
 			while ( $posts_query->have_posts() ) {
@@ -192,6 +261,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 				}
 
 				$result = array(
+					'source'           => 'wordpress',
 					'post_id'          => $post_id,
 					'title'            => get_the_title(),
 					'excerpt'          => get_the_excerpt(),
@@ -215,31 +285,35 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			wp_reset_postdata();
 		}
 
-		// Sort results by similarity score (descending).
+		// Merge vector store and local WordPress results.
+		$all_results = array_merge( $vector_results, $results );
+
+		// Sort combined results by similarity score (descending).
 		usort(
-			$results,
+			$all_results,
 			function ( $a, $b ) {
 				return $b['similarity_score'] <=> $a['similarity_score'];
 			}
 		);
 
 		// Limit results.
-		$results = array_slice( $results, 0, $limit );
+		$all_results = array_slice( $all_results, 0, $limit );
 
 		$summary_text = sprintf(
 			/* translators: 1: number of results, 2: search query */
 			__( 'Found %1$d semantically similar results for "%2$s".', 'mcp-ai-wpoos' ),
-			count( $results ),
+			count( $all_results ),
 			$query
 		);
 
 		return array(
 			'success'               => true,
-			'results'               => $results,
-			'total_found'           => count( $results ),
+			'results'               => $all_results,
+			'total_found'           => count( $all_results ),
 			'query'                 => $query,
 			'query_embedding_model' => $embedding_model,
 			'threshold'             => $threshold,
+			'vector_store_id'       => $vector_store_id,
 			'message'               => $summary_text,
 			'summary'               => $summary_text,
 		);
