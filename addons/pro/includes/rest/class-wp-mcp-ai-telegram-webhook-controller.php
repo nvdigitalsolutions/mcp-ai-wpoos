@@ -133,17 +133,37 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Validate incoming webhook request using the optional secret token.
 	 *
-	 * Telegram sends the secret token set via setWebhook in the
-	 * X-Telegram-Bot-Api-Secret-Token header. When no secret token is
-	 * configured on the connection the webhook is allowed through with a
-	 * security warning so that incoming messages can still be processed.
+	 * Applies two independent security checks (both are filterable):
+	 *
+	 * 1. **IP range validation** – verifies the request originates from one of
+	 *    Telegram's published IP ranges (149.154.160.0/20, 91.108.4.0/22).
+	 *    Can be disabled via the `wp_mcp_ai_telegram_ip_validation_enabled`
+	 *    filter for sites behind a reverse proxy.
+	 *
+	 * 2. **Secret-token header verification** – when a secret_token is stored
+	 *    on the connection, checks that Telegram's
+	 *    X-Telegram-Bot-Api-Secret-Token header matches the stored value.
+	 *    When no token is configured, the request is logged and allowed
+	 *    through with a security warning.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the secret token is valid or not configured.
+	 * @return bool True if the request passes all configured security checks.
 	 */
 	public function validate_webhook_secret( $request ) {
+		// --- Layer 1: IP range validation -------------------------------------------
+		if ( ! $this->is_request_from_telegram( $request ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: request did not originate from a Telegram IP range.',
+				array(
+					'remote_addr' => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
+				)
+			);
+			return false;
+		}
+
+		// --- Layer 2: Secret-token header verification ------------------------------
 		$connection_id = $request->get_param( 'connection_id' );
 		$stored_secret = $this->get_secret_token( $connection_id );
 
@@ -890,6 +910,132 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function is_duplicate_update( $update_id ) {
 		return (bool) get_transient( 'wp_mcp_ai_tg_dedup_' . $update_id );
+	}
+
+	/**
+	 * Telegram IP CIDR ranges as published at https://core.telegram.org/bots/webhooks.
+	 *
+	 * These are the only IP addresses Telegram uses to deliver webhook updates.
+	 * The list is filterable via `wp_mcp_ai_telegram_allowed_ip_ranges` so site
+	 * operators can extend it if Telegram adds new ranges in future.
+	 */
+	const TELEGRAM_IP_RANGES = array(
+		'149.154.160.0/20',
+		'91.108.4.0/22',
+	);
+
+	/**
+	 * Check whether the request originates from a known Telegram IP range.
+	 *
+	 * Returns true when IP validation is disabled via the filter, or when the
+	 * remote address falls within one of Telegram's published CIDR blocks.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request Incoming request object.
+	 * @return bool True if the request IP is a Telegram IP (or validation is disabled).
+	 */
+	protected function is_request_from_telegram( $request ) {
+		/**
+		 * Filter: disable Telegram IP validation entirely.
+		 *
+		 * Set to false on sites behind a proxy that changes the apparent
+		 * source IP. When false, only the secret-token header is checked.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool            $enabled Whether IP range validation is enabled. Default true.
+		 * @param WP_REST_Request $request The incoming webhook request.
+		 */
+		$enabled = apply_filters( 'wp_mcp_ai_telegram_ip_validation_enabled', true, $request );
+
+		if ( ! $enabled ) {
+			return true;
+		}
+
+		// Retrieve remote address — fall back to empty string so the check
+		// below will reject the request rather than silently pass it.
+		$remote_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+		/**
+		 * Filter: override the remote IP used for Telegram IP range validation.
+		 *
+		 * Useful on sites behind a reverse proxy that stores the real client IP
+		 * in a header such as X-Forwarded-For.  The value MUST be sanitized and
+		 * trusted before use to avoid spoofing.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string          $remote_ip The IP address to validate.
+		 * @param WP_REST_Request $request   The incoming webhook request.
+		 */
+		$remote_ip = apply_filters( 'wp_mcp_ai_telegram_webhook_remote_ip', $remote_ip, $request );
+		$remote_ip = sanitize_text_field( (string) $remote_ip );
+
+		if ( '' === $remote_ip ) {
+			return false;
+		}
+
+		/**
+		 * Filter: allowed Telegram CIDR ranges.
+		 *
+		 * Extends or replaces the default list of Telegram IP ranges.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string[] $ranges Array of CIDR strings.
+		 */
+		$allowed_ranges = apply_filters( 'wp_mcp_ai_telegram_allowed_ip_ranges', self::TELEGRAM_IP_RANGES );
+
+		foreach ( $allowed_ranges as $cidr ) {
+			if ( $this->ip_in_cidr( $remote_ip, $cidr ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether an IP address falls within a CIDR range.
+	 *
+	 * Supports IPv4 only; IPv6 addresses are treated as non-matching since
+	 * Telegram currently uses IPv4 exclusively for webhook deliveries.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $ip   IP address to test (dotted-decimal notation).
+	 * @param string $cidr CIDR range string, e.g. "149.154.160.0/20".
+	 * @return bool True if the IP falls within the CIDR range.
+	 */
+	protected function ip_in_cidr( $ip, $cidr ) {
+		if ( false === strpos( $cidr, '/' ) ) {
+			return $ip === $cidr;
+		}
+
+		list( $subnet, $prefix ) = explode( '/', $cidr, 2 );
+
+		$prefix = (int) $prefix;
+
+		// Only handle IPv4.
+		if ( false !== strpos( $ip, ':' ) || false !== strpos( $subnet, ':' ) ) {
+			return false;
+		}
+
+		$ip_long     = ip2long( $ip );
+		$subnet_long = ip2long( $subnet );
+
+		if ( false === $ip_long || false === $subnet_long || $prefix < 0 || $prefix > 32 ) {
+			return false;
+		}
+
+		if ( 0 === $prefix ) {
+			return true;
+		}
+
+		$mask = ~( ( 1 << ( 32 - $prefix ) ) - 1 );
+
+		return ( $ip_long & $mask ) === ( $subnet_long & $mask );
 	}
 
 	/**

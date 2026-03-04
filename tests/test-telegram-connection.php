@@ -2792,4 +2792,245 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 
 		wp_delete_post( $assistant_id, true );
 	}
+
+	// =========================================================================
+	// Webhook security – IP range validation (is_request_from_telegram)
+	// =========================================================================
+
+	/**
+	 * Test that ip_in_cidr() correctly identifies IPs inside Telegram's ranges.
+	 */
+	public function test_ip_in_cidr_matches_telegram_ips() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'ip_in_cidr' );
+		$method->setAccessible( true );
+
+		// Addresses within 149.154.160.0/20.
+		$this->assertTrue( $method->invoke( $controller, '149.154.160.1', '149.154.160.0/20' ), '149.154.160.1 should be in 149.154.160.0/20' );
+		$this->assertTrue( $method->invoke( $controller, '149.154.175.255', '149.154.160.0/20' ), '149.154.175.255 should be in 149.154.160.0/20' );
+
+		// Addresses within 91.108.4.0/22.
+		$this->assertTrue( $method->invoke( $controller, '91.108.4.1', '91.108.4.0/22' ), '91.108.4.1 should be in 91.108.4.0/22' );
+		$this->assertTrue( $method->invoke( $controller, '91.108.7.255', '91.108.4.0/22' ), '91.108.7.255 should be in 91.108.4.0/22' );
+	}
+
+	/**
+	 * Test that ip_in_cidr() correctly rejects IPs outside Telegram's ranges.
+	 */
+	public function test_ip_in_cidr_rejects_non_telegram_ips() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'ip_in_cidr' );
+		$method->setAccessible( true );
+
+		$this->assertFalse( $method->invoke( $controller, '1.2.3.4', '149.154.160.0/20' ), '1.2.3.4 should not be in 149.154.160.0/20' );
+		$this->assertFalse( $method->invoke( $controller, '91.108.8.1', '91.108.4.0/22' ), '91.108.8.1 should not be in 91.108.4.0/22' );
+		$this->assertFalse( $method->invoke( $controller, '192.168.1.1', '149.154.160.0/20' ), 'Private IP should not be in Telegram range' );
+	}
+
+	/**
+	 * Test that ip_in_cidr() handles an exact IP (no prefix) correctly.
+	 */
+	public function test_ip_in_cidr_exact_match() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'ip_in_cidr' );
+		$method->setAccessible( true );
+
+		$this->assertTrue( $method->invoke( $controller, '149.154.160.1', '149.154.160.1' ), 'Exact IP match should return true' );
+		$this->assertFalse( $method->invoke( $controller, '149.154.160.2', '149.154.160.1' ), 'Different IP should not match exact' );
+	}
+
+	/**
+	 * Test that ip_in_cidr() returns false for IPv6 addresses.
+	 */
+	public function test_ip_in_cidr_rejects_ipv6() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'ip_in_cidr' );
+		$method->setAccessible( true );
+
+		$this->assertFalse(
+			$method->invoke( $controller, '::1', '149.154.160.0/20' ),
+			'IPv6 loopback should not match an IPv4 CIDR range'
+		);
+	}
+
+	/**
+	 * Test that is_request_from_telegram() returns true when IP validation is
+	 * disabled via the filter.
+	 */
+	public function test_is_request_from_telegram_disabled_via_filter() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		add_filter( 'wp_mcp_ai_telegram_ip_validation_enabled', '__return_false' );
+
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/telegram' );
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'is_request_from_telegram' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request );
+
+		remove_filter( 'wp_mcp_ai_telegram_ip_validation_enabled', '__return_false' );
+
+		$this->assertTrue( $result, 'is_request_from_telegram() should return true when validation is disabled' );
+	}
+
+	/**
+	 * Test that is_request_from_telegram() returns true when the remote IP
+	 * matches a Telegram range (injected via the remote-IP filter).
+	 */
+	public function test_is_request_from_telegram_allows_known_telegram_ip() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		add_filter(
+			'wp_mcp_ai_telegram_webhook_remote_ip',
+			static function () {
+				return '149.154.160.1';
+			}
+		);
+
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/telegram' );
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'is_request_from_telegram' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request );
+
+		remove_all_filters( 'wp_mcp_ai_telegram_webhook_remote_ip' );
+
+		$this->assertTrue( $result, 'A known Telegram IP should pass IP validation' );
+	}
+
+	/**
+	 * Test that is_request_from_telegram() returns false for a non-Telegram IP.
+	 */
+	public function test_is_request_from_telegram_rejects_unknown_ip() {
+		$controller = $this->load_telegram_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		add_filter(
+			'wp_mcp_ai_telegram_webhook_remote_ip',
+			static function () {
+				return '1.2.3.4';
+			}
+		);
+
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/telegram' );
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'is_request_from_telegram' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, $request );
+
+		remove_all_filters( 'wp_mcp_ai_telegram_webhook_remote_ip' );
+
+		$this->assertFalse( $result, 'An unknown IP should fail IP validation' );
+	}
+
+	// =========================================================================
+	// Webhook security – manage_telegram_webhook tool secret_token support
+	// =========================================================================
+
+	/**
+	 * Test that manage_telegram_webhook tool includes secret_token in schema.
+	 */
+	public function test_manage_telegram_webhook_tool_has_secret_token_in_schema() {
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
+		if ( ! file_exists( $tool_file ) ) {
+			$this->markTestSkipped( 'manage_telegram_webhook tool not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook' ) ) {
+			require_once $tool_file;
+		}
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'secret_token', $schema['properties'], 'secret_token should be in the parameters schema' );
+		$this->assertEquals( 'string', $schema['properties']['secret_token']['type'], 'secret_token should be of type string' );
+	}
+
+	/**
+	 * Test that an invalid secret_token is rejected by the execute method.
+	 */
+	public function test_manage_telegram_webhook_tool_rejects_invalid_secret_token() {
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php';
+		if ( ! file_exists( $tool_file ) ) {
+			$this->markTestSkipped( 'manage_telegram_webhook tool not available' );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook' ) ) {
+			require_once $tool_file;
+		}
+
+		// Grant manage_options so the capability check passes.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook();
+
+		$result = $tool->execute(
+			array(
+				'token'        => '1234567890:ABCdefGHIjklMNOpqrsTUVwxyz_testtoken',
+				'action'       => 'set',
+				'url'          => 'https://example.com/webhook',
+				'secret_token' => 'invalid token with spaces!', // Invalid characters.
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Invalid secret token should return WP_Error' );
+		$this->assertEquals( 'wp_mcp_ai_invalid_secret_token', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that is_valid_telegram_secret_token() validates characters correctly.
+	 */
+	public function test_is_valid_telegram_secret_token_validates_characters() {
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Valid tokens.
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( 'abc123' ), 'Alphanumeric token should be valid' );
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( 'my-secret_token-123' ), 'Token with hyphens and underscores should be valid' );
+		$this->assertTrue( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( str_repeat( 'A', 256 ) ), '256-character token should be valid' );
+
+		// Invalid tokens.
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( '' ), 'Empty token should be invalid' );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( 'has spaces' ), 'Token with spaces should be invalid' );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( 'has!special#chars' ), 'Token with special characters should be invalid' );
+		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( str_repeat( 'A', 257 ) ), 'Token over 256 chars should be invalid' );
+	}
 }
