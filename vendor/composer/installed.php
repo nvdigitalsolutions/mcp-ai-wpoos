@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/conduct-compliance-review',
         'version' => 'dev-copilot/conduct-compliance-review',
-        'reference' => '0aab87a1b0ae84a5dab244519f90226096dde898',
+        'reference' => 'aefd6ecff7ef42f79e36afc7603f9cb42468185a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/conduct-compliance-review',
             'version' => 'dev-copilot/conduct-compliance-review',
-            'reference' => '0aab87a1b0ae84a5dab244519f90226096dde898',
+            'reference' => 'aefd6ecff7ef42f79e36afc7603f9cb42468185a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
