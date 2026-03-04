@@ -64,6 +64,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		if ( ! in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(50), user_id)
 				-- Only for token tier meta keys"
@@ -74,6 +75,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		if ( ! in_array( 'idx_wp_mcp_ai_usage', $indexes, true ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(50), user_id)
 				-- Only for token usage meta keys"
@@ -136,6 +138,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		if ( in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta} DROP INDEX idx_wp_mcp_ai_token_tier"
 			);
 		}
@@ -144,6 +147,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		if ( in_array( 'idx_wp_mcp_ai_usage', $indexes, true ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.NoCaching -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta} DROP INDEX idx_wp_mcp_ai_usage"
 			);
 		}

@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @return array|WP_Error Time range or error.
 	 */
 	private function calculate_time_range( $period, $start_date, $end_date ) {
-		$now = current_time( 'timestamp' );
+		$now = time();
 
 		if ( 'custom' === $period ) {
 			if ( empty( $start_date ) || empty( $end_date ) ) {
@@ -322,7 +322,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			WHERE meta_key IN ('last_login', 'login_count', 'failed_login_count')
 		";
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- $meta_query is a hardcoded SQL string with no user input; security audit requires real-time data.
 		$results = $wpdb->get_results( $meta_query );
 
 		if ( empty( $results ) ) {
@@ -419,7 +419,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are in dynamic $where_sql built from hardcoded strings; spread operator used for values.
 			$wpdb->prepare( 'SELECT ctime, fail, username, IP, blocked FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);
@@ -556,7 +556,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are in dynamic $where_sql built from hardcoded strings; spread operator used for values.
 			$wpdb->prepare( 'SELECT timestamp, type, username, remote_ip, module FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),
 			ARRAY_A
 		);

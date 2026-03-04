@@ -234,7 +234,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					'post_type'      => 'mcp_ai_profession',
 					'post_status'    => 'publish',
 					'posts_per_page' => -1,
-					'meta_query'     => array(
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 						array(
 							'key'   => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
 							'value' => $role,
@@ -252,7 +252,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 					array(
 						'key'     => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
 						'compare' => 'EXISTS',
@@ -269,7 +269,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 					array(
 						'key'     => WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS,
 						'value'   => '{}',

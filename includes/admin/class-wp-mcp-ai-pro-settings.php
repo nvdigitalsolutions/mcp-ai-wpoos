@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return $packages;
 			}
 
-			$json_content = file_get_contents( $package_json_path );
+			$json_content = file_get_contents( $package_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $json_content ) {
 				$packages['error'] = 'Unable to read package.json';
 				return $packages;
@@ -93,7 +93,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_package_json_path = WP_MCP_AI_PRO_PATH . 'package.json';
 				if ( file_exists( $pro_package_json_path ) ) {
-					$pro_json_content = file_get_contents( $pro_package_json_path );
+					$pro_json_content = file_get_contents( $pro_package_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					if ( false !== $pro_json_content ) {
 						$pro_package_data = json_decode( $pro_json_content, true );
 						if ( null !== $pro_package_data ) {
@@ -138,7 +138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return $packages;
 			}
 
-			$json_content = file_get_contents( $composer_json_path );
+			$json_content = file_get_contents( $composer_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $json_content ) {
 				$packages['error'] = 'Unable to read composer.json';
 				return $packages;
@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_composer_json_path = WP_MCP_AI_PRO_PATH . 'composer.json';
 				if ( file_exists( $pro_composer_json_path ) ) {
-					$pro_json_content = file_get_contents( $pro_composer_json_path );
+					$pro_json_content = file_get_contents( $pro_composer_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					if ( false !== $pro_json_content ) {
 						$pro_composer_data = json_decode( $pro_json_content, true );
 						if ( null !== $pro_composer_data ) {

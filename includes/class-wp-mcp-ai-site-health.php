@@ -314,7 +314,7 @@ class WP_MCP_AI_Site_Health {
 			'post_status'    => 'publish',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to query plugin-specific post meta; no alternative index-based query available.
 				array(
 					'key'     => '_wp_mcp_ai_credentials',
 					'compare' => 'EXISTS',

@@ -605,7 +605,7 @@ class WP_MCP_AI_Transcript_Repository {
 		$where_sql = implode( ' AND ', $where_clauses );
 
 		// Get the most recent record ID for this session.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $where_sql contains only hardcoded placeholders; spread operator used for values.
 		$query = $wpdb->prepare(
 			"SELECT _ID FROM {$table} WHERE {$where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$where_values
@@ -630,7 +630,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$author_where_sql = implode( ' AND ', $author_where_clauses );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is escaped with esc_sql(), $author_where_sql contains only hardcoded placeholders.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $table is escaped with esc_sql(), $author_where_sql contains only hardcoded placeholders; spread operator used for values.
 		$author_query = $wpdb->prepare(
 			"SELECT _ID FROM {$table} WHERE {$author_where_sql} ORDER BY cct_created DESC, _ID DESC LIMIT 1",
 			$author_where_values

@@ -82,7 +82,11 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Result array.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate results.
@@ -286,6 +290,7 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 	 * @return string HTML output.
 	 */
 	private function generate_chart_html( $charts ) {
+		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Script tag is part of generated HTML output string, not enqueued via wp_enqueue_script.
 		$html = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -350,6 +355,7 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 </body>
 </html>';
 
+		// phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 		return $html;
 	}
 

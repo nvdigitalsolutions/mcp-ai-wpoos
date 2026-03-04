@@ -210,6 +210,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		);
 
 		// Check database size.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$db_size = $wpdb->get_var(
 			$wpdb->prepare(
 				'SELECT SUM(data_length + index_length) / 1024 / 1024 
@@ -224,6 +225,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for auto-loaded options.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$autoload_size = $wpdb->get_var(
 			"SELECT SUM(LENGTH(option_value)) / 1024 
 			FROM {$wpdb->options} 
@@ -242,6 +244,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for transients.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$expired_transients = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) 
@@ -265,6 +268,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for post revisions.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$revision_count = $wpdb->get_var(
 			"SELECT COUNT(*) 
 			FROM {$wpdb->posts} 
@@ -550,14 +554,17 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		);
 
 		// Find cleanup candidates.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$spam_comments = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved = 'spam'"
 		);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$trash_comments = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved = 'trash'"
 		);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$trashed_posts = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'"
 		);

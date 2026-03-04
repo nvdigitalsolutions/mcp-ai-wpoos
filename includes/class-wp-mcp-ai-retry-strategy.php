@@ -232,8 +232,9 @@ class WP_MCP_AI_Retry_Strategy {
 		$max_attempts = isset( $config['max_attempts'] ) ? absint( $config['max_attempts'] ) : self::DEFAULT_MAX_ATTEMPTS;
 		$schedule     = self::get_retry_schedule( $config );
 
-		$total_delay = 0;
-		for ( $i = 0; $i <= min( $attempt, $max_attempts - 1 ); $i++ ) {
+		$total_delay    = 0;
+		$loop_max_index = min( $attempt, $max_attempts - 1 );
+		for ( $i = 0; $i <= $loop_max_index; $i++ ) {
 			if ( isset( $schedule[ $i ] ) ) {
 				$total_delay += $schedule[ $i ];
 			}

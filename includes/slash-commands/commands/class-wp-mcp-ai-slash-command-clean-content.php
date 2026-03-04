@@ -454,7 +454,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		$question_count = substr_count( $content, '?' );
 		$word_count     = str_word_count( $content );
 
-		if ( $word_count > 500 && $question_count === 0 ) {
+		if ( $word_count > 500 && 0 === $question_count ) {
 			$suggestions[] = array(
 				'type'      => 'engagement',
 				'certainty' => 'LOW',

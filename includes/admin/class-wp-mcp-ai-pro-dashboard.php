@@ -844,27 +844,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				<!-- Tab Navigation -->
 				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Pro Dashboard tabs', 'mcp-ai-wpoos' ); ?>">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo esc_attr( 'iso27001' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-list-view"></span>
 						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo esc_attr( 'overview' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-dashboard"></span>
 						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo esc_attr( 'reports' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-media-document"></span>
 						<?php esc_html_e( 'Reports', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" class="nav-tab <?php echo esc_attr( 'monitoring' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Monitoring', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="nav-tab <?php echo esc_attr( 'risk' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-warning"></span>
 						<?php esc_html_e( 'Risk Management', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" class="nav-tab <?php echo esc_attr( 'multi-framework' === $current_tab ? 'nav-tab-active' : '' ); ?>">
 						<span class="dashicons dashicons-networking"></span>
 						<?php esc_html_e( 'Multi-Framework', 'mcp-ai-wpoos' ); ?>
 					</a>
@@ -3395,7 +3395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $soa_file );
+			$content = file_get_contents( $soa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3498,7 +3498,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return 0;
 			}
 
-			$content = file_get_contents( $soc2_file );
+			$content = file_get_contents( $soc2_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
@@ -3538,7 +3538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return 0;
 			}
 
-			$content = file_get_contents( $hipaa_file );
+			$content = file_get_contents( $hipaa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
@@ -3580,7 +3580,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $soc2_file );
+			$content = file_get_contents( $soc2_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3670,7 +3670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $hipaa_file );
+			$content = file_get_contents( $hipaa_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -3942,7 +3942,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$content = file_get_contents( $risk_file );
+			$content = file_get_contents( $risk_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( empty( $content ) ) {
 				return array();
 			}
@@ -4373,7 +4373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function get_system_uptime() {
 			// Try to get actual system uptime if available (Linux only).
 			if ( function_exists( 'sys_getloadavg' ) && is_readable( '/proc/uptime' ) ) {
-				$uptime_data = file_get_contents( '/proc/uptime' );
+				$uptime_data = file_get_contents( '/proc/uptime' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 				if ( false !== $uptime_data ) {
 					$uptime_parts = explode( ' ', $uptime_data );
 					if ( isset( $uptime_parts[0] ) && is_numeric( $uptime_parts[0] ) ) {
@@ -4386,8 +4386,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback: Use WordPress installation time.
-			$wp_install_time = get_option( 'wp_mcp_ai_install_time', current_time( 'timestamp' ) );
-			$uptime_seconds  = current_time( 'timestamp' ) - $wp_install_time;
+			$wp_install_time = get_option( 'wp_mcp_ai_install_time', time() );
+			$uptime_seconds  = time() - $wp_install_time;
 			$days            = floor( $uptime_seconds / 86400 );
 			return sprintf( '%d days', $days );
 		}
@@ -4538,14 +4538,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				}
 
 				$event_type = isset( $event['type'] ) ? $event['type'] : 'default';
-				$timestamp  = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+				$timestamp  = isset( $event['timestamp'] ) ? $event['timestamp'] : time();
 
 				// Convert MySQL datetime string to Unix timestamp if needed.
 				if ( ! is_numeric( $timestamp ) ) {
 					$timestamp = strtotime( $timestamp );
 					// If conversion fails, use current time.
 					if ( false === $timestamp ) {
-						$timestamp = current_time( 'timestamp' );
+						$timestamp = time();
 					}
 				} else {
 					// Ensure numeric timestamp is an integer.
@@ -4560,7 +4560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'message'      => $event['message'],
 					'severity'     => isset( $event['level'] ) ? $event['level'] : 'info',
 					'timestamp'    => $timestamp,
-					'time_display' => human_time_diff( $timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' ),
+					'time_display' => human_time_diff( $timestamp, time() ) . ' ' . __( 'ago', 'mcp-ai-wpoos' ),
 					'details'      => isset( $event['details'] ) ? $event['details'] : '',
 				);
 

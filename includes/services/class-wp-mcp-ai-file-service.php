@@ -314,7 +314,7 @@ class WP_MCP_AI_File_Service {
 			}
 
 			// Read file content.
-			$content = file_get_contents( $file_path );
+			$content = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 			if ( false === $content ) {
 				continue; // Skip if can't read.

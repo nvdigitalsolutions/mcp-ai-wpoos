@@ -528,7 +528,7 @@ class WP_MCP_AI_Slash_Command_Ship {
 			$schedule_date = strtotime( $options['schedule'] );
 			if ( $schedule_date && $schedule_date > time() ) {
 				$post_data['post_status'] = 'future';
-				$post_data['post_date']   = date( 'Y-m-d H:i:s', $schedule_date );
+				$post_data['post_date']   = gmdate( 'Y-m-d H:i:s', $schedule_date );
 			} else {
 				return new WP_Error(
 					'invalid_schedule_date',
