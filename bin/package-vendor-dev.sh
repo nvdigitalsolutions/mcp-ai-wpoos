@@ -88,7 +88,7 @@ done
 
 # Note: We do NOT include vendor/autoload.php or vendor/composer/ 
 # because those are already in the repository with production dependencies.
-# The install script will run 'composer dump-autoload' to regenerate them.
+# The install script will run 'composer install' to regenerate them.
 
 echo ""
 
