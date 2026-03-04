@@ -150,7 +150,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			'component'   => sanitize_key( $component ),
 			'message'     => sanitize_text_field( $message ),
 			'context'     => $context,
-			'timestamp'   => current_time( 'timestamp' ),
+			'timestamp'   => time(),
 			'user_id'     => get_current_user_id(),
 			'ip_address'  => $this->get_client_ip(),
 			'request_uri' => isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
@@ -248,7 +248,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			return array();
 		}
 
-		$cutoff_time = current_time( 'timestamp' ) - $time_period;
+		$cutoff_time = time() - $time_period;
 		$filtered    = array();
 
 		foreach ( $errors as $error ) {
@@ -278,7 +278,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 
 		// Filter by time period if specified.
 		if ( null !== $time_period ) {
-			$cutoff_time = current_time( 'timestamp' ) - $time_period;
+			$cutoff_time = time() - $time_period;
 			$errors      = array_filter(
 				$errors,
 				function ( $error ) use ( $cutoff_time ) {
@@ -313,7 +313,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			return array();
 		}
 
-		$cutoff_time = current_time( 'timestamp' ) - $time_period;
+		$cutoff_time = time() - $time_period;
 		$stats       = array();
 
 		foreach ( $errors as $error ) {
@@ -388,7 +388,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			return;
 		}
 
-		$cutoff_time = current_time( 'timestamp' ) - self::RETENTION_PERIOD;
+		$cutoff_time = time() - self::RETENTION_PERIOD;
 		$filtered    = array();
 
 		foreach ( $errors as $error ) {

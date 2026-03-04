@@ -41,7 +41,7 @@ class WP_MCP_AI_Report_Generator {
 		}
 
 		$report_id = wp_generate_uuid4();
-		$timestamp = current_time( 'timestamp' );
+		$timestamp = time();
 
 		$report_data = $this->gather_report_data( $scope );
 

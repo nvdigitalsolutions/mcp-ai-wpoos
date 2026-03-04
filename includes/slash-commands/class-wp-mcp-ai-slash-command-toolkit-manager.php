@@ -6700,7 +6700,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 			// Validate date is not in the past.
 			$booking_datetime = strtotime( $date . ' ' . $time );
-			if ( $booking_datetime < current_time( 'timestamp' ) ) {
+			if ( $booking_datetime < time() ) {
 				return $this->error_response(
 					new WP_Error(
 						'E004',
@@ -6764,7 +6764,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 					'ip'                => $validator->get_client_ip(),
 					'user_agent'        => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 					'booking_timestamp' => $booking_datetime,
-					'days_until'        => ceil( ( $booking_datetime - current_time( 'timestamp' ) ) / DAY_IN_SECONDS ),
+					'days_until'        => ceil( ( $booking_datetime - time() ) / DAY_IN_SECONDS ),
 				),
 			);
 
@@ -7593,7 +7593,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				return $this->error_response( __( 'You do not have permission to create discounts.', 'mcp-ai-wpoos' ) );
 			}
 
-			$code    = ! empty( $args['code'] ) ? strtoupper( sanitize_text_field( $args['code'] ) ) : 'DISCOUNT' . rand( 1000, 9999 );
+			$code    = ! empty( $args['code'] ) ? strtoupper( sanitize_text_field( $args['code'] ) ) : 'DISCOUNT' . wp_rand( 1000, 9999 );
 			$type    = ! empty( $args['type'] ) ? sanitize_text_field( $args['type'] ) : 'percentage';
 			$amount  = ! empty( $args['amount'] ) ? floatval( $args['amount'] ) : 10;
 			$minimum = ! empty( $args['minimum'] ) ? floatval( $args['minimum'] ) : 0;
@@ -7875,7 +7875,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'dimensions'         => $dimensions,
 				'shipping_cost'      => round( $final_cost, 2 ),
 				'currency'           => 'USD',
-				'estimated_days'     => rand( 3, 7 ),
+				'estimated_days'     => wp_rand( 3, 7 ),
 			);
 
 			$this->log_activity( 'shipping-calculate', $args, $result );
@@ -8480,10 +8480,10 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'platform'    => $platform,
 			'period'      => $period,
 			'total_posts' => count( $posts ),
-			'engagement'  => rand( 100, 1000 ),
-			'reach'       => rand( 1000, 10000 ),
-			'clicks'      => rand( 50, 500 ),
-			'impressions' => rand( 5000, 50000 ),
+			'engagement'  => wp_rand( 100, 1000 ),
+			'reach'       => wp_rand( 1000, 10000 ),
+			'clicks'      => wp_rand( 50, 500 ),
+			'impressions' => wp_rand( 5000, 50000 ),
 		);
 
 		return $this->success_response(
@@ -8600,10 +8600,10 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$analytics = array(
 			'video_id'       => $video_id,
 			'period'         => $period,
-			'views'          => rand( 100, 5000 ),
-			'engagement'     => rand( 10, 500 ) . '%',
-			'completion'     => rand( 40, 95 ) . '%',
-			'avg_watch_time' => rand( 30, 300 ) . 's',
+			'views'          => wp_rand( 100, 5000 ),
+			'engagement'     => wp_rand( 10, 500 ) . '%',
+			'completion'     => wp_rand( 40, 95 ) . '%',
+			'avg_watch_time' => wp_rand( 30, 300 ) . 's',
 		);
 
 		return $this->success_response(
@@ -8827,10 +8827,10 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$competitor_data = array(
 				'competitor'      => $competitor,
 				'platform'        => $platform,
-				'followers'       => rand( 1000, 100000 ),
-				'posts_count'     => rand( 50, 500 ),
-				'engagement_rate' => rand( 2, 10 ) . '%',
-				'avg_likes'       => rand( 100, 5000 ),
+				'followers'       => wp_rand( 1000, 100000 ),
+				'posts_count'     => wp_rand( 50, 500 ),
+				'engagement_rate' => wp_rand( 2, 10 ) . '%',
+				'avg_likes'       => wp_rand( 100, 5000 ),
 				'tracked_at'      => current_time( 'mysql' ),
 			);
 
@@ -9159,9 +9159,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		// Mock shipping optimization data.
 		$optimization_data = array(
 			'zone'              => $zone,
-			'current_cost'      => rand( 500, 2000 ),
-			'optimized_cost'    => rand( 300, 1500 ),
-			'potential_savings' => rand( 100, 500 ),
+			'current_cost'      => wp_rand( 500, 2000 ),
+			'optimized_cost'    => wp_rand( 300, 1500 ),
+			'potential_savings' => wp_rand( 100, 500 ),
 			'recommendations'   => array(
 				'Use bulk shipping rates',
 				'Consider flat rate for orders over $50',
@@ -9202,7 +9202,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			}
 
 			// Mock fraud detection.
-			$risk_score = rand( 0, 100 );
+			$risk_score = wp_rand( 0, 100 );
 			$risk_level = $risk_score > 70 ? 'high' : ( $risk_score > 40 ? 'medium' : 'low' );
 
 			$fraud_data = array(
@@ -9233,10 +9233,10 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 		// Scan recent orders.
 		$flagged_orders = array();
-		for ( $i = 0; $i < rand( 2, 5 ); $i++ ) {
+		for ( $i = 0; $i < wp_rand( 2, 5 ); $i++ ) {
 			$flagged_orders[] = array(
-				'order_id'   => rand( 1000, 9999 ),
-				'risk_score' => rand( 60, 95 ),
+				'order_id'   => wp_rand( 1000, 9999 ),
+				'risk_score' => wp_rand( 60, 95 ),
 				'risk_level' => 'high',
 			);
 		}
@@ -9291,7 +9291,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 				'original'         => $content,
 				'optimized'        => $optimized_content,
 				'suggestions'      => $suggestions,
-				'engagement_score' => rand( 60, 95 ),
+				'engagement_score' => wp_rand( 60, 95 ),
 				'platform'         => $platform,
 			),
 			__( 'Post optimized successfully.', 'mcp-ai-wpoos' )
@@ -9318,13 +9318,13 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 
 		// Mock influencer data.
 		$influencers = array();
-		for ( $i = 0; $i < rand( 3, 8 ); $i++ ) {
+		for ( $i = 0; $i < wp_rand( 3, 8 ); $i++ ) {
 			$influencers[] = array(
 				'name'            => 'Influencer ' . ( $i + 1 ),
 				'handle'          => '@influencer' . ( $i + 1 ),
-				'platform'        => 'all' === $platform ? array( 'twitter', 'instagram' )[ rand( 0, 1 ) ] : $platform,
-				'followers'       => rand( $min_followers, $min_followers * 10 ),
-				'engagement_rate' => rand( 2, 15 ) . '%',
+				'platform'        => 'all' === $platform ? array( 'twitter', 'instagram' )[ wp_rand( 0, 1 ) ] : $platform,
+				'followers'       => wp_rand( $min_followers, $min_followers * 10 ),
+				'engagement_rate' => wp_rand( 2, 15 ) . '%',
 				'niche'           => $niche,
 			);
 		}
@@ -9786,7 +9786,7 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$results[] = array(
 				'marketplace'     => $target,
 				'status'          => 'synced',
-				'products_synced' => rand( 10, 100 ),
+				'products_synced' => wp_rand( 10, 100 ),
 				'updated'         => current_time( 'mysql' ),
 			);
 		}
@@ -9935,8 +9935,8 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			$results[] = array(
 				'supplier'      => $target,
 				'status'        => 'synced',
-				'items_updated' => rand( 50, 200 ),
-				'price_changes' => rand( 5, 20 ),
+				'items_updated' => wp_rand( 50, 200 ),
+				'price_changes' => wp_rand( 5, 20 ),
 				'last_sync'     => current_time( 'mysql' ),
 			);
 		}
@@ -10022,9 +10022,9 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$action   = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'reply';
 
 		$engagement_data = array(
-			'mentions' => rand( 10, 50 ),
-			'comments' => rand( 20, 100 ),
-			'messages' => rand( 5, 30 ),
+			'mentions' => wp_rand( 10, 50 ),
+			'comments' => wp_rand( 20, 100 ),
+			'messages' => wp_rand( 5, 30 ),
 			'replied'  => 0,
 		);
 
@@ -10071,13 +10071,13 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		foreach ( $keyword_list as $keyword ) {
 			$monitoring_results[] = array(
 				'keyword'   => $keyword,
-				'mentions'  => rand( 5, 50 ),
+				'mentions'  => wp_rand( 5, 50 ),
 				'sentiment' => array(
 					'positive' => 70,
 					'neutral'  => 20,
 					'negative' => 10,
 				),
-				'reach'     => rand( 1000, 10000 ),
+				'reach'     => wp_rand( 1000, 10000 ),
 			);
 		}
 
@@ -10112,20 +10112,20 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 		$trends = array(
 			array(
 				'topic'     => '#AITechnology',
-				'volume'    => rand( 10000, 100000 ),
-				'growth'    => '+' . rand( 10, 200 ) . '%',
+				'volume'    => wp_rand( 10000, 100000 ),
+				'growth'    => '+' . wp_rand( 10, 200 ) . '%',
 				'sentiment' => __( 'Positive', 'mcp-ai-wpoos' ),
 			),
 			array(
 				'topic'     => '#Sustainability',
-				'volume'    => rand( 5000, 50000 ),
-				'growth'    => '+' . rand( 5, 150 ) . '%',
+				'volume'    => wp_rand( 5000, 50000 ),
+				'growth'    => '+' . wp_rand( 5, 150 ) . '%',
 				'sentiment' => __( 'Very Positive', 'mcp-ai-wpoos' ),
 			),
 			array(
 				'topic'     => '#RemoteWork',
-				'volume'    => rand( 8000, 80000 ),
-				'growth'    => '+' . rand( 15, 180 ) . '%',
+				'volume'    => wp_rand( 8000, 80000 ),
+				'growth'    => '+' . wp_rand( 15, 180 ) . '%',
 				'sentiment' => __( 'Neutral', 'mcp-ai-wpoos' ),
 			),
 		);
@@ -10164,24 +10164,24 @@ class WP_MCP_AI_Slash_Command_Toolkit_Manager {
 			'period'    => $period,
 			'platform'  => $platform,
 			'metrics'   => array(
-				'total_posts'     => rand( 50, 200 ),
-				'total_reach'     => rand( 10000, 100000 ),
-				'engagement_rate' => rand( 3, 15 ) . '%',
-				'follower_growth' => '+' . rand( 100, 5000 ),
+				'total_posts'     => wp_rand( 50, 200 ),
+				'total_reach'     => wp_rand( 10000, 100000 ),
+				'engagement_rate' => wp_rand( 3, 15 ) . '%',
+				'follower_growth' => '+' . wp_rand( 100, 5000 ),
 				'top_post'        => __( 'Product Launch Announcement', 'mcp-ai-wpoos' ),
 			),
 			'platforms' => array(
 				'twitter'   => array(
-					'posts'      => rand( 20, 80 ),
-					'engagement' => rand( 1000, 10000 ),
+					'posts'      => wp_rand( 20, 80 ),
+					'engagement' => wp_rand( 1000, 10000 ),
 				),
 				'instagram' => array(
-					'posts'      => rand( 15, 60 ),
-					'engagement' => rand( 2000, 15000 ),
+					'posts'      => wp_rand( 15, 60 ),
+					'engagement' => wp_rand( 2000, 15000 ),
 				),
 				'facebook'  => array(
-					'posts'      => rand( 10, 40 ),
-					'engagement' => rand( 1500, 12000 ),
+					'posts'      => wp_rand( 10, 40 ),
+					'engagement' => wp_rand( 1500, 12000 ),
 				),
 			),
 		);

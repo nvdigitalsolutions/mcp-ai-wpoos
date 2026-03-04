@@ -2029,10 +2029,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<?php
 					// If accessed via connection parameter (e.g., from Tools > Connections),
 					// preserve it for redirect after save.
-					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
-					if ( isset( $_GET['connection'] ) ) :
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only UI state parameter, not used for data modification.
+					$connection_param = isset( $_GET['connection'] ) ? sanitize_key( wp_unslash( $_GET['connection'] ) ) : '';
+					if ( '' !== $connection_param ) :
 						?>
-						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<input type="hidden" name="connection" value="<?php echo esc_attr( $connection_param ); ?>" />
 						<?php
 					endif;
 					?>

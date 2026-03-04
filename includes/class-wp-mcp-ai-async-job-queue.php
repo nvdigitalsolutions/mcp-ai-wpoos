@@ -268,7 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-			$job        = $wpdb->get_row(
+			$job = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT * FROM $table_name WHERE id = %d",  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
 					$job_id
@@ -390,7 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			// Get next job to process (highest priority first).
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-			$job        = $wpdb->get_row(
+			$job = $wpdb->get_row(
 				"SELECT * FROM $table_name
 				WHERE status = 'queued' 
 				ORDER BY priority ASC, created_at ASC 
@@ -707,7 +707,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
-			$jobs       = $wpdb->get_results(
+			$jobs = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM $table_name
 					WHERE status = %s 

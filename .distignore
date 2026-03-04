@@ -85,6 +85,7 @@ src/
 *.log
 *.bak
 *.backup
+*-backup.php
 .DS_Store
 Thumbs.db
 *.swp

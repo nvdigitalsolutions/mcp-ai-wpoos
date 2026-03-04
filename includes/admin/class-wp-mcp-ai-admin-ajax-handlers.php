@@ -3115,7 +3115,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
 
 			// Update last sync timestamp.
-			update_option( 'wp_mcp_ai_playbooks_last_sync', current_time( 'timestamp' ) );
+			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
 
 			$message = $force
 				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )

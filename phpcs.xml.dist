@@ -22,6 +22,7 @@
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 <exclude-pattern>*/addons/pro/*</exclude-pattern>
+<exclude-pattern>*-backup.php</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>

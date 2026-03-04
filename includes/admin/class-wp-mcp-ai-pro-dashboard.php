@@ -4386,8 +4386,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Fallback: Use WordPress installation time.
-			$wp_install_time = get_option( 'wp_mcp_ai_install_time', current_time( 'timestamp' ) );
-			$uptime_seconds  = current_time( 'timestamp' ) - $wp_install_time;
+			$wp_install_time = get_option( 'wp_mcp_ai_install_time', time() );
+			$uptime_seconds  = time() - $wp_install_time;
 			$days            = floor( $uptime_seconds / 86400 );
 			return sprintf( '%d days', $days );
 		}
@@ -4538,14 +4538,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				}
 
 				$event_type = isset( $event['type'] ) ? $event['type'] : 'default';
-				$timestamp  = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+				$timestamp  = isset( $event['timestamp'] ) ? $event['timestamp'] : time();
 
 				// Convert MySQL datetime string to Unix timestamp if needed.
 				if ( ! is_numeric( $timestamp ) ) {
 					$timestamp = strtotime( $timestamp );
 					// If conversion fails, use current time.
 					if ( false === $timestamp ) {
-						$timestamp = current_time( 'timestamp' );
+						$timestamp = time();
 					}
 				} else {
 					// Ensure numeric timestamp is an integer.
@@ -4560,7 +4560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'message'      => $event['message'],
 					'severity'     => isset( $event['level'] ) ? $event['level'] : 'info',
 					'timestamp'    => $timestamp,
-					'time_display' => human_time_diff( $timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' ),
+					'time_display' => human_time_diff( $timestamp, time() ) . ' ' . __( 'ago', 'mcp-ai-wpoos' ),
 					'details'      => isset( $event['details'] ) ? $event['details'] : '',
 				);
 

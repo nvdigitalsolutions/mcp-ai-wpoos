@@ -279,7 +279,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Start and end timestamps.
 	 */
 	private function calculate_time_range( $period, $arguments ) {
-		$end_time = current_time( 'timestamp' );
+		$end_time = time();
 
 		if ( 'custom' === $period ) {
 			$start_time = isset( $arguments['start_date'] ) ? strtotime( $arguments['start_date'] ) : $end_time - DAY_IN_SECONDS;

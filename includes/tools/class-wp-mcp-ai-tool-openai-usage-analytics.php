@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 	 * @return array|WP_Error Date range array or error.
 	 */
 	private function get_date_range( $period, $arguments ) {
-		$now = current_time( 'timestamp' );
+		$now = time();
 
 		switch ( $period ) {
 			case 'today':

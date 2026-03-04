@@ -93,7 +93,7 @@ class WP_MCP_AI_Slash_Command_Parser {
 		}
 
 		// Tokenize the arguments string.
-		$tokens     = $this->tokenize( $args_string );
+		$tokens      = $this->tokenize( $args_string );
 		$token_count = count( $tokens );
 
 		$i = 0;
