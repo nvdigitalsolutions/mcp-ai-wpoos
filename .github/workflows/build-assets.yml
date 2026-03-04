@@ -102,18 +102,9 @@ jobs:
 
       - name: Build plugin distributions
         run: |
-          echo "🔨 Building plugin ZIP files..."
-          chmod +x bin/build-plugin-zip.sh
-          ./bin/build-plugin-zip.sh --all
-          
-          echo ""
-          echo "📦 Original plugin distributions:"
-          ls -lh build/*.zip
-          
-          echo ""
-          echo "🔨 Building WordPress.org packages..."
-          chmod +x bin/build-wordpress-org-from-base.sh
-          ./bin/build-wordpress-org-from-base.sh
+          echo "🔨 Building all 8 plugin ZIP files..."
+          chmod +x bin/rebuild-all-zips.sh
+          ./bin/rebuild-all-zips.sh --skip-npm-build
           
           echo ""
           echo "📦 All plugin distributions (8 total):"
