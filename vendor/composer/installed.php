@@ -3,11 +3,11 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/conduct-compliance-review',
         'version' => 'dev-copilot/conduct-compliance-review',
-        'reference' => 'aefd6ecff7ef42f79e36afc7603f9cb42468185a',
+        'reference' => 'f8c4f81d4add1dda9ac4d622956809682e54ee3e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'cweagans/composer-configurable-plugin' => array(
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/conduct-compliance-review',
             'version' => 'dev-copilot/conduct-compliance-review',
-            'reference' => 'aefd6ecff7ef42f79e36afc7603f9cb42468185a',
+            'reference' => 'f8c4f81d4add1dda9ac4d622956809682e54ee3e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -691,15 +691,6 @@
             'reference' => '15fd216bf6516670d8d07b938675925bfa5c15b0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wp-phpunit/wp-phpunit',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'yoast/phpunit-polyfills' => array(
-            'pretty_version' => '4.0.0',
-            'version' => '4.0.0.0',
-            'reference' => '134921bfca9b02d8f374c48381451da1d98402f9',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../yoast/phpunit-polyfills',
             'aliases' => array(),
             'dev_requirement' => true,
         ),

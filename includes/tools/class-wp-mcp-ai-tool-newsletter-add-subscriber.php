@@ -170,8 +170,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		if ( $existing ) {
 			// Update existing subscriber.
 			$subscriber_data['id'] = $existing->id;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
-			$result                = $wpdb->update( // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.IncorrectWarning -- Alignment intentional for readability within this assignment block.
+			$result                = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 				$table,
 				$subscriber_data,
 				array( 'id' => $existing->id ),

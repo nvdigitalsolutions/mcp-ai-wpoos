@@ -340,8 +340,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			}
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
-			$updated    = $wpdb->update( // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.IncorrectWarning -- Alignment intentional for readability within this assignment block.
+			$updated    = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 				$table_name,
 				$update_data,
 				array( 'id' => $job_id )
