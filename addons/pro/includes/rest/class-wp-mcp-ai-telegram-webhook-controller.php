@@ -2605,6 +2605,30 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$text
 		);
 
+		// 2b. Extract existing HTML anchor tags so they survive the HTML-escaping
+		//     pass in step 3. AI responses sometimes emit raw <a href="…">…</a>
+		//     links (e.g. from tool output) instead of Markdown [text](url) syntax.
+		$html_links = array();
+		$hl_index   = 0;
+		$hl_ph      = "\x07TGHL:";
+
+		$text = preg_replace_callback(
+			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
+			function ( $m ) use ( &$html_links, &$hl_index, $hl_ph ) {
+				$url       = esc_url( $m[1] );
+				$link_text = htmlspecialchars( wp_strip_all_tags( $m[2] ), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				if ( '' === $url ) {
+					return $link_text;
+				}
+				$tag = '<a href="' . htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $link_text . '</a>';
+				$key = $hl_ph . $hl_index . "\x07";
+				$html_links[ $key ] = $tag;
+				++$hl_index;
+				return $key;
+			},
+			$text
+		);
+
 		// 3. Escape HTML special characters in the remaining text so that raw
 		//    `<`, `>`, and `&` do not break Telegram's HTML parser.
 		$text = htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
@@ -2653,12 +2677,17 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$text
 		);
 
-		// 10. Restore inline code placeholders.
+		// 10. Restore HTML anchor tag placeholders.
+		if ( ! empty( $html_links ) ) {
+			$text = str_replace( array_keys( $html_links ), array_values( $html_links ), $text );
+		}
+
+		// 11. Restore inline code placeholders.
 		if ( ! empty( $inline_codes ) ) {
 			$text = str_replace( array_keys( $inline_codes ), array_values( $inline_codes ), $text );
 		}
 
-		// 11. Restore fenced code block placeholders.
+		// 12. Restore fenced code block placeholders.
 		if ( ! empty( $code_blocks ) ) {
 			$text = str_replace( array_keys( $code_blocks ), array_values( $code_blocks ), $text );
 		}
