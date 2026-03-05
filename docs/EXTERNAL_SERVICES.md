@@ -2,8 +2,8 @@
 
 This document provides a comprehensive list of all external services used by the Open Operator System (oOS) plugin, including their purpose, data transmission details, and links to Terms of Service and Privacy Policies.
 
-**Last Updated:** January 2026  
-**Plugin Version:** 1.1.0
+**Last Updated:** March 2026  
+**Plugin Version:** 1.1.3
 
 ---
 
@@ -13,8 +13,9 @@ This document provides a comprehensive list of all external services used by the
 2. [Research & Data Services](#research--data-services)
 3. [Infrastructure & CDN Services](#infrastructure--cdn-services)
 4. [OAuth Integration Services](#oauth-integration-services)
-5. [WordPress Core Services](#wordpress-core-services)
-6. [Implementation Guidelines](#implementation-guidelines)
+5. [Chat Channel Services](#chat-channel-services)
+6. [WordPress Core Services](#wordpress-core-services)
+7. [Implementation Guidelines](#implementation-guidelines)
 
 ---
 
@@ -406,6 +407,72 @@ These services are **only used if you explicitly configure OAuth integrations**.
 
 **Related Files:**
 - `includes/tools/class-wp-mcp-ai-tool-flowhub-get-inventory.php`
+
+---
+
+## Chat Channel Services
+
+These services are used by the Chat Channels Toolkit pro addon for messaging platform integrations.
+
+### 18. Microsoft Graph API (Office 365)
+
+**Service URL:** `https://graph.microsoft.com/v1.0/`  
+**Purpose:** Office 365 email and file management via Microsoft Outlook and OneDrive  
+**Data Sent:**
+- Microsoft Graph API bearer token (provided by the calling user)
+- Email recipient addresses, subjects, and body content (Outlook tools)
+- File paths, file content (base64-encoded), MIME types (OneDrive tools)
+- Folder paths and item IDs (OneDrive file listing/retrieval)
+- OData filter expressions (optional, for message filtering)
+
+**When Used:**
+- When the `send_outlook_mail` tool is used to send an email via Outlook
+- When the `get_outlook_messages` tool is used to retrieve Outlook messages
+- When `list_onedrive_files`, `get_onedrive_file`, or `upload_onedrive_file` tools are used
+- When the `WP_MCP_AI_Outlook_Webhook_Controller` receives Outlook subscription notifications
+
+**Legal & Privacy:**
+- **Microsoft Privacy Statement:** https://privacy.microsoft.com/en-us/privacystatement
+- **Microsoft Services Agreement:** https://www.microsoft.com/en-us/servicesagreement
+- **Microsoft Graph API Terms:** https://learn.microsoft.com/en-us/legal/microsoft-apis/terms-of-use
+- **Microsoft 365 Compliance:** https://www.microsoft.com/en-us/trust-center
+
+**Related Files:**
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-outlook-mail.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-outlook-messages.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-list-onedrive-files.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-onedrive-file.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-upload-onedrive-file.php`
+- `addons/pro/includes/rest/class-wp-mcp-ai-outlook-webhook-controller.php`
+
+---
+
+### 19. iCloud Drive Gateway (User-Configured)
+
+**Service URL:** User-configured HTTPS gateway URL (no fixed default URL)  
+**Purpose:** iCloud Drive file listing, retrieval, and upload via a user-provided proxy/gateway service. Apple does not provide a direct third-party REST API for iCloud Drive; a self-hosted or third-party gateway that bridges to Apple CloudKit is required.  
+**Data Sent:**
+- Gateway API key or bearer token (provided by the calling user)
+- File IDs, folder IDs, pagination cursors (listing/retrieval)
+- File content (base64-encoded), filenames, and MIME types (upload)
+
+**When Used:**
+- When `list_icloud_drive_files`, `get_icloud_drive_file`, or `upload_icloud_drive_file` tools are used with a configured gateway
+- When the `WP_MCP_AI_iCloud_Webhook_Controller` receives iCloud gateway push notifications
+
+**Legal & Privacy:**
+- The privacy policy and terms of service depend on the gateway service configured by the site administrator
+- **Apple iCloud Terms:** https://www.apple.com/legal/internet-services/icloud/
+- **Apple Privacy Policy:** https://www.apple.com/legal/privacy/
+- **Apple CloudKit:** https://developer.apple.com/icloud/
+
+**Security Note:** The gateway URL is validated to be a valid HTTPS URL. HTTP gateway URLs are rejected.
+
+**Related Files:**
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-list-icloud-drive-files.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-icloud-drive-file.php`
+- `addons/pro/includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-upload-icloud-drive-file.php`
+- `addons/pro/includes/rest/class-wp-mcp-ai-icloud-webhook-controller.php`
 
 ---
 

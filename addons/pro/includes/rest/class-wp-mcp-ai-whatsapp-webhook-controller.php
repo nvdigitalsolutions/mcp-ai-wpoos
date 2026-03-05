@@ -72,6 +72,15 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	const CONVERSATION_HISTORY_TTL = 86400;
 
 	/**
+	 * Default maximum agentic loop iterations for WhatsApp reply jobs.
+	 *
+	 * The /mcp-ai/v1/chat endpoint defaults to 1 iteration. WhatsApp reply jobs
+	 * use a higher cap so multi-step tool workflows (e.g. search → analyse →
+	 * respond) can complete before the reply is dispatched.
+	 */
+	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -1142,7 +1151,14 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Raise the agentic-loop iteration cap for WhatsApp reply jobs so that
+		// multi-step tool workflows (search → analyse → respond, etc.) can run
+		// to completion. Without this, the /mcp-ai/v1/chat endpoint defaults to
+		// a single iteration and the final content remains null when a second
+		// tool round is needed.
+		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_whatsapp_max_agentic_iterations' ), 10, 2 );
 		$response = rest_do_request( $request );
+		remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_whatsapp_max_agentic_iterations' ), 10 );
 
 		// Restore the original user regardless of the response result.
 		wp_set_current_user( $original_user_id );
@@ -1161,10 +1177,20 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 
 		// The /mcp-ai/v1/chat endpoint wraps the OpenAI-format LLM response in a
 		// 'data' key. Extract the assistant reply from the first choice's message.
-		$content = $this->extract_content_from_chat_response( $response->get_data() );
+		$response_data = $response->get_data();
+		$content       = $this->extract_content_from_chat_response( $response_data );
 
 		if ( '' === $content ) {
-			WP_MCP_AI_Logger::log_error( 'WhatsApp AI reply: empty content from assistant.', array( 'assistant_id' => $assistant_id ) );
+			WP_MCP_AI_Logger::log_error(
+				'WhatsApp AI reply: empty content from assistant.',
+				array(
+					'assistant_id'  => $assistant_id,
+					'has_data'      => isset( $response_data['data'] ),
+					'has_choices'   => isset( $response_data['data']['choices'] ),
+					'choices_count' => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
+					'finish_reason' => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+				)
+			);
 			return;
 		}
 
@@ -1491,6 +1517,39 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function get_conversation_history_key( $from, $phone_number_id ) {
 		return 'wp_mcp_ai_wa_conv_' . md5( $from . '_' . $phone_number_id );
+	}
+
+	/**
+	 * Return the maximum agentic loop iterations for WhatsApp reply jobs.
+	 *
+	 * Priority order (highest first):
+	 * 1. Per-assistant `max_agentic_iterations` config value.
+	 * 2. Admin setting (`filter_max_agentic_iterations`).
+	 * 3. WhatsApp default (self::DEFAULT_MAX_AGENTIC_ITERATIONS).
+	 *
+	 * Attached to the `wp_mcp_ai_max_agentic_iterations` filter during internal
+	 * REST requests made by `handle_whatsapp_reply_job()`.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $default_max      Current maximum (may include admin setting).
+	 * @param array $assistant_config Assistant configuration array.
+	 * @return int Maximum iterations to allow.
+	 */
+	public function get_whatsapp_max_agentic_iterations( $default_max, $assistant_config = array() ) {
+		// Per-assistant override takes highest priority.
+		if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
+			return absint( $assistant_config['max_agentic_iterations'] );
+		}
+
+		// If an admin setting or earlier filter has already raised the cap above
+		// the hard-coded base of 1, honour that value.
+		if ( $default_max > 1 ) {
+			return $default_max;
+		}
+
+		// Fall back to the WhatsApp-specific default.
+		return self::DEFAULT_MAX_AGENTIC_ITERATIONS;
 	}
 
 	/**
@@ -2510,6 +2569,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	 * a 'data' key:
 	 *   { assistant_id: ..., data: { choices: [{ message: { content: '...' } }] } }
 	 *
+	 * When an agentic tool-calling workflow runs, OpenAI (and compatible providers)
+	 * set `message.content` to null on intermediate responses where
+	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
+	 * all choices and falling back to `agentic_tool_messages` (intermediate
+	 * assistant messages attached to the response by the chat service) so that
+	 * the last assistant message with non-empty text is returned.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param mixed $response_data Data returned by WP_REST_Response::get_data().
@@ -2520,16 +2586,57 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return '';
 		}
 
-		$llm_data = isset( $response_data['data'] ) && is_array( $response_data['data'] ) ? $response_data['data'] : array();
+		// Normalise: the endpoint wraps the raw LLM response under 'data'.
+		$llm_data = isset( $response_data['data'] ) && is_array( $response_data['data'] ) ? $response_data['data'] : $response_data;
 		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		if ( empty( $choices ) ) {
-			return '';
+		// --- Pass 1: scan every choice for a non-empty string content value.
+		// Prefer choices whose finish_reason is 'stop' (the definitive final answer)
+		// over 'tool_calls' (an intermediate tool-calling step).
+		$best_content = '';
+		foreach ( $choices as $choice ) {
+			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
+			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+
+			if ( '' === $content ) {
+				continue;
+			}
+
+			$finish = isset( $choice['finish_reason'] ) ? (string) $choice['finish_reason'] : '';
+
+			// A 'stop' finish is the definitive final answer — return immediately.
+			if ( 'stop' === $finish ) {
+				return $content;
+			}
+
+			// Keep as a candidate in case no 'stop' choice is found.
+			if ( '' === $best_content ) {
+				$best_content = $content;
+			}
 		}
 
-		$first_choice = reset( $choices );
-		if ( isset( $first_choice['message']['content'] ) && is_string( $first_choice['message']['content'] ) ) {
-			return $first_choice['message']['content'];
+		if ( '' !== $best_content ) {
+			return $best_content;
+		}
+
+		// --- Pass 2: fall back to agentic_tool_messages.
+		// When all choices have null/empty content (e.g. the loop exhausted its
+		// iteration cap before the model produced a final text reply), the chat
+		// service attaches intermediate assistant messages to the response under
+		// `agentic_tool_messages`. Return the last one that contains text so the
+		// user at least receives the most recent partial answer.
+		$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+			? $llm_data['agentic_tool_messages']
+			: array();
+
+		foreach ( array_reverse( $agentic_messages ) as $msg ) {
+			if ( ! is_array( $msg ) ) {
+				continue;
+			}
+			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			if ( '' !== $content ) {
+				return $content;
+			}
 		}
 
 		return '';

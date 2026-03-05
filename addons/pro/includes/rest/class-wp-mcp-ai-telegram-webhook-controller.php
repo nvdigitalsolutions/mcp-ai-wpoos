@@ -86,6 +86,16 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	const MAX_MESSAGE_LENGTH = 4096;
 
 	/**
+	 * Default maximum agentic loop iterations for Telegram reply jobs.
+	 *
+	 * The /mcp-ai/v1/chat endpoint defaults to 1 iteration. Telegram reply jobs
+	 * use a higher cap so multi-step tool workflows (e.g. search → analyse →
+	 * respond) can complete before the reply is dispatched. This mirrors the
+	 * pattern used by the browser chat-client endpoint.
+	 */
+	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -649,7 +659,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Raise the agentic-loop iteration cap for Telegram reply jobs so that
+		// multi-step tool workflows (search → analyse → respond, etc.) can run
+		// to completion. Without this, the /mcp-ai/v1/chat endpoint defaults to
+		// a single iteration and the final content remains null when a second
+		// tool round is needed.
+		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_telegram_max_agentic_iterations' ), 10, 2 );
 		$response = rest_do_request( $request );
+		remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_telegram_max_agentic_iterations' ), 10 );
+
 		wp_set_current_user( $original_user_id );
 
 		if ( $response->is_error() ) {
@@ -660,10 +678,25 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$content = $this->extract_content_from_chat_response( $response->get_data() );
+		$response_data = $response->get_data();
+		$content       = $this->extract_content_from_chat_response( $response_data );
 
 		if ( '' === $content ) {
-			WP_MCP_AI_Logger::log_error( 'Telegram AI reply: empty content from assistant.' );
+			WP_MCP_AI_Logger::log_error(
+				'Telegram AI reply: empty content from assistant.',
+				array(
+					'assistant_id'  => $assistant_id,
+					'has_data'      => isset( $response_data['data'] ),
+					'has_choices'   => isset( $response_data['data']['choices'] ),
+					'choices_count' => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
+					'finish_reason' => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+				)
+			);
+
+			// Industry best practice: always reply to the user rather than silently
+			// dropping the message. Send a graceful fallback so the user knows the
+			// bot received their message even if AI generation failed.
+			$this->send_telegram_fallback_reply( $bot_token, $chat_id, $chat_type, $reply_to_message_id );
 			return;
 		}
 
@@ -898,6 +931,39 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function get_conversation_history_key( $from_id, $connection_id ) {
 		return 'wp_mcp_ai_tg_conv_' . md5( $from_id . '_' . $connection_id );
+	}
+
+	/**
+	 * Return the maximum agentic loop iterations for Telegram reply jobs.
+	 *
+	 * Priority order (highest first):
+	 * 1. Per-assistant `max_agentic_iterations` config value.
+	 * 2. Admin setting (`filter_max_agentic_iterations`).
+	 * 3. Telegram default (self::DEFAULT_MAX_AGENTIC_ITERATIONS).
+	 *
+	 * Attached to the `wp_mcp_ai_max_agentic_iterations` filter during internal
+	 * REST requests made by `handle_telegram_reply_job()`.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $default_max      Current maximum (may include admin setting).
+	 * @param array $assistant_config Assistant configuration array.
+	 * @return int Maximum iterations to allow.
+	 */
+	public function get_telegram_max_agentic_iterations( $default_max, $assistant_config = array() ) {
+		// Per-assistant override takes highest priority.
+		if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
+			return absint( $assistant_config['max_agentic_iterations'] );
+		}
+
+		// If an admin setting or earlier filter has already raised the cap above
+		// the hard-coded base of 1, honour that value.
+		if ( $default_max > 1 ) {
+			return $default_max;
+		}
+
+		// Fall back to the Telegram-specific default.
+		return self::DEFAULT_MAX_AGENTIC_ITERATIONS;
 	}
 
 	/**
@@ -1162,27 +1228,80 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Extract the plain-text reply from the internal /mcp-ai/v1/chat response.
 	 *
+	 * The /mcp-ai/v1/chat endpoint wraps the LLM response under a `data` key:
+	 *
+	 *   { assistant_id, data: { choices: [{ message: { content, role }, finish_reason }] } }
+	 *
+	 * When an agentic tool-calling workflow runs, OpenAI (and compatible providers)
+	 * set `message.content` to null on intermediate responses where
+	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
+	 * all choices and falling back to `agentic_tool_messages` (intermediate
+	 * assistant messages attached to the response by the chat service) so that
+	 * the last assistant message with non-empty text is returned.
+	 *
 	 * @since 1.0.0
 	 *
-	 * @param mixed $data Response data from the chat endpoint.
-	 * @return string Plain-text content or empty string.
+	 * @param mixed $data Response data from the chat endpoint (WP_REST_Response::get_data()).
+	 * @return string Plain-text assistant content, or empty string when none found.
 	 */
 	protected function extract_content_from_chat_response( $data ) {
 		if ( ! is_array( $data ) ) {
 			return '';
 		}
 
-		$choices = isset( $data['data']['choices'] ) ? $data['data']['choices']
-			: ( isset( $data['choices'] ) ? $data['choices'] : array() );
+		// Normalise: the endpoint wraps the raw LLM response under 'data'.
+		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		if ( ! is_array( $choices ) || empty( $choices ) ) {
-			return '';
+		// --- Pass 1: scan every choice for a non-empty string content value.
+		// The final response from a completed agentic workflow will normally be
+		// found here with finish_reason = 'stop'. We prefer choices whose
+		// finish_reason is 'stop' over 'tool_calls' so that a partial tool-call
+		// message is not mistakenly returned as the final answer.
+		$best_content = '';
+		foreach ( $choices as $choice ) {
+			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
+			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+
+			if ( '' === $content ) {
+				continue;
+			}
+
+			$finish = isset( $choice['finish_reason'] ) ? (string) $choice['finish_reason'] : '';
+
+			// A 'stop' finish is the definitive final answer — return immediately.
+			if ( 'stop' === $finish ) {
+				return $content;
+			}
+
+			// Keep as a candidate in case no 'stop' choice is found.
+			if ( '' === $best_content ) {
+				$best_content = $content;
+			}
 		}
 
-		$first = reset( $choices );
+		if ( '' !== $best_content ) {
+			return $best_content;
+		}
 
-		if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
-			return trim( $first['message']['content'] );
+		// --- Pass 2: fall back to agentic_tool_messages.
+		// When all choices have null/empty content (e.g. the loop exhausted its
+		// iteration cap before the model produced a final text reply), the chat
+		// service attaches intermediate assistant messages to the response under
+		// `agentic_tool_messages`. Return the last one that contains text so the
+		// user at least receives the most recent partial answer.
+		$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+			? $llm_data['agentic_tool_messages']
+			: array();
+
+		foreach ( array_reverse( $agentic_messages ) as $msg ) {
+			if ( ! is_array( $msg ) ) {
+				continue;
+			}
+			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			if ( '' !== $content ) {
+				return $content;
+			}
 		}
 
 		return '';
@@ -2350,6 +2469,69 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	// =========================================================================
 	// Markdown → Telegram HTML conversion
 	// =========================================================================
+
+	/**
+	 * Send a user-friendly fallback message when AI content generation fails.
+	 *
+	 * Industry best practice for Telegram bots: always reply rather than leaving
+	 * users hanging. When the assistant returns empty content (e.g. due to an
+	 * agentic workflow error or an unexpected API response), this method sends a
+	 * brief apology so the user knows their message was received.
+	 *
+	 * The fallback message text is filterable via
+	 * `wp_mcp_ai_telegram_fallback_reply_text` so site operators can customise it.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $bot_token          Decrypted Telegram bot token.
+	 * @param string $chat_id            Telegram chat ID.
+	 * @param string $chat_type          Chat type ('private', 'group', 'supergroup', etc.).
+	 * @param string $reply_to_message_id Original message ID for threaded replies in groups.
+	 * @return void
+	 */
+	protected function send_telegram_fallback_reply( $bot_token, $chat_id, $chat_type, $reply_to_message_id ) {
+		/**
+		 * Filter the fallback message sent to Telegram when the AI returns empty content.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $text Default fallback message text.
+		 */
+		$fallback_text = (string) apply_filters(
+			'wp_mcp_ai_telegram_fallback_reply_text',
+			__( 'I was not able to generate a response right now. Please try again in a moment.', 'mcp-ai-wpoos' )
+		);
+
+		if ( '' === $fallback_text ) {
+			return;
+		}
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $bot_token ) );
+
+		$payload = array(
+			'chat_id' => $chat_id,
+			'text'    => $fallback_text,
+		);
+
+		if ( '' !== $reply_to_message_id && in_array( $chat_type, array( 'group', 'supergroup' ), true ) ) {
+			$payload['reply_to_message_id']         = (int) $reply_to_message_id;
+			$payload['allow_sending_without_reply'] = true;
+		}
+
+		$body = wp_json_encode( $payload );
+		if ( false === $body ) {
+			return;
+		}
+
+		wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 10,
+				'body'    => $body,
+			)
+		);
+	}
 
 	/**
 	 * Convert Markdown produced by AI assistants to Telegram-compatible HTML.

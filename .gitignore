@@ -23,6 +23,10 @@ composer.phar
 /build/mcp-ai-wpoos-base/
 /build/mcp-ai-wpoos-pro/
 /build/mcp-ai-wpoos-core/
+/build/nvdigital-open-operator-system-oos/
+/build/nvdigital-open-operator-system-oos-pro/
+/build/nvdigital-open-operator-system-oos-complete/
+/build/nvdigital-open-operator-system-oos-core/
 
 # Ignore base build directory (workflow builder moved to pro addon)
 /build/workflow-builder/
