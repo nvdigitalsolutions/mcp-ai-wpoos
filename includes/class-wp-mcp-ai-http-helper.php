@@ -402,7 +402,7 @@ class WP_MCP_AI_HTTP_Helper {
 
 				// Validate the interface configuration before applying.
 				if ( self::is_valid_network_interface( $interface, $ollama_endpoint ) ) {
-					curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+					curl_setopt( $handle, CURLOPT_INTERFACE, $interface ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- cURL used for streaming/chunked responses not supported by wp_remote_get().
 				}
 				return $handle;
 			}
@@ -416,7 +416,7 @@ class WP_MCP_AI_HTTP_Helper {
 
 				// Validate the interface configuration before applying.
 				if ( self::is_valid_network_interface( $interface, $lm_studio_endpoint ) ) {
-					curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+					curl_setopt( $handle, CURLOPT_INTERFACE, $interface ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- cURL used for streaming/chunked responses not supported by wp_remote_get().
 				}
 				return $handle;
 			}
@@ -465,7 +465,7 @@ class WP_MCP_AI_HTTP_Helper {
 
 			// Set connection timeout to match overall timeout.
 			// This prevents connection phase from timing out prematurely.
-			curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, $timeout );
+			curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, $timeout ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- cURL used for streaming/chunked responses not supported by wp_remote_get().
 		}
 
 		return $handle;

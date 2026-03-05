@@ -944,6 +944,7 @@ class WP_MCP_AI_Shortcode {
 				'filesEndpoint'          => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
 				'transcriptsEndpoint'    => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
 				'embeddedConfigEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/embedded-client-config' ) ) ),
+				'vectorStorePreloadEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/vector-store-preload' ) ) ),
 				'crawl4aiTaskEndpoint'   => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
 				'crawl4aiDefaultPollMs'  => 5000,
 				'requiredCapability'     => $capability ? $capability : '',
@@ -1171,14 +1172,12 @@ class WP_MCP_AI_Shortcode {
 				// that is already included in systemPrompt.
 				if ( 'embedded' !== $assistant_provider ) {
 					$config['professionalPrompt'] = $professional_prompt;
-				} else {
+				} elseif ( ! empty( $config['systemPrompt'] ) ) {
 					// Merge professional role first, then assistant instructions — the same separator
 					// and ordering used by the server-side REST handler (class-wp-mcp-ai-rest.php).
-					if ( ! empty( $config['systemPrompt'] ) ) {
-						$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
-					} else {
-						$config['systemPrompt'] = $professional_prompt;
-					}
+					$config['systemPrompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['systemPrompt'];
+				} else {
+					$config['systemPrompt'] = $professional_prompt;
 				}
 			}
 

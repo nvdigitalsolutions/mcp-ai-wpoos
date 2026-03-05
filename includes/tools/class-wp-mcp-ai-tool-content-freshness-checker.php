@@ -252,7 +252,7 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		// Calculate post age.
 		$post_date     = strtotime( $post->post_date );
 		$modified_date = strtotime( $post->post_modified );
-		$current_time  = current_time( 'timestamp' );
+		$current_time  = time();
 		$age_days      = floor( ( $current_time - $modified_date ) / DAY_IN_SECONDS );
 
 		// Initialize scores.

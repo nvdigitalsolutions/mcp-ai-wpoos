@@ -304,7 +304,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 				'plaid_secret'                  => array(
 					'type'         => 'password',
@@ -312,7 +312,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 				'plaid_environment'             => array(
 					'type'        => 'select',
@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'sandbox',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
@@ -1066,7 +1066,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</p>
 			<?php endif; ?>
 			<p>
-				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo ! $is_pro_active ? 'disabled' : ''; ?>>
+				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo esc_attr( ! $is_pro_active ? 'disabled' : '' ); ?>>
 					<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<span id="wp-mcp-ai-yahoo-test-result" style="margin-left: 10px;"></span>
@@ -2029,10 +2029,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<?php
 					// If accessed via connection parameter (e.g., from Tools > Connections),
 					// preserve it for redirect after save.
-					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
-					if ( isset( $_GET['connection'] ) ) :
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only UI state parameter, not used for data modification.
+					$connection_param = isset( $_GET['connection'] ) ? sanitize_key( wp_unslash( $_GET['connection'] ) ) : '';
+					if ( '' !== $connection_param ) :
 						?>
-						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<input type="hidden" name="connection" value="<?php echo esc_attr( $connection_param ); ?>" />
 						<?php
 					endif;
 					?>

@@ -315,8 +315,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 
 			$user_ids = get_users(
 				array(
-					'meta_key'   => self::META_SUBJECT,
-					'meta_value' => $subject,
+					'meta_key'   => self::META_SUBJECT, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find Gravatar-linked user accounts; no alternative lookup method available.
+					'meta_value' => $subject, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to match Gravatar user identifiers; no alternative lookup method available.
 					'fields'     => 'ids',
 					'number'     => 1,
 				)
@@ -333,8 +333,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 
 			$user_ids = get_users(
 				array(
-					'meta_key'   => self::META_WORDPRESS_ID,
-					'meta_value' => $identifier,
+					'meta_key'   => self::META_WORDPRESS_ID, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find Gravatar-linked user accounts; no alternative lookup method available.
+					'meta_value' => $identifier, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to match Gravatar user identifiers; no alternative lookup method available.
 					'fields'     => 'ids',
 					'number'     => 1,
 				)

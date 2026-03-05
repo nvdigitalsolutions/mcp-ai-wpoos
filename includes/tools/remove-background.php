@@ -104,7 +104,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	}
 
 	// Read image file.
-	$image_data = file_get_contents( $realpath );
+	$image_data = file_get_contents( $realpath ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 	if ( false === $image_data ) {
 		return new WP_Error(
 			'wp_mcp_ai_image_read_failed',

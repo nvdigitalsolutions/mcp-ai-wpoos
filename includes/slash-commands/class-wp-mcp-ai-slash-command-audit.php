@@ -224,7 +224,7 @@ class WP_MCP_AI_Slash_Command_Audit {
 		$where_clause = implode( ' AND ', $where );
 
 		// Get statistics.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Internal table, safe query construction.
 		$stats = $wpdb->get_row(
 			"SELECT 
 				COUNT(*) as total_executions,
@@ -239,6 +239,7 @@ class WP_MCP_AI_Slash_Command_Audit {
 			WHERE {$where_clause}",
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared
 
 		return $stats;
 	}

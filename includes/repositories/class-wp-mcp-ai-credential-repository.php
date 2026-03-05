@@ -178,7 +178,7 @@ class WP_MCP_AI_Credential_Repository {
 		}
 
 		$expires_timestamp = strtotime( $credential['expires_at'] );
-		$current_timestamp = current_time( 'timestamp' );
+		$current_timestamp = time();
 
 		return $current_timestamp > $expires_timestamp;
 	}

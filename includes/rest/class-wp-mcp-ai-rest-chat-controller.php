@@ -323,6 +323,27 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
+		// /vector-store-preload - Pre-load vector store metadata for an assistant.
+		// Called during chat UI initialization to eagerly fetch vector store status
+		// so it is immediately available for the agentic workflow.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/vector-store-preload',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'callback'            => array( $this, 'handle_vector_store_preload' ),
+				'args'                => array(
+					'assistant_id' => array(
+						'description'       => __( 'ID of the assistant whose vector store to pre-load.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
 		// /track-embedded-usage - Track usage from embedded LLM (client-side).
 		register_rest_route(
 			self::REST_NAMESPACE,
@@ -1761,6 +1782,118 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'tools'               => $tools,
 				'memory_files'        => $memory_files,
 				'vector_store_id'     => $vector_store,
+			)
+		);
+	}
+
+	/**
+	 * Handle GET /vector-store-preload request.
+	 *
+	 * Pre-loads and returns vector store metadata for the assistant's configured
+	 * vector store. Called during chat UI initialization so that vector store
+	 * status is immediately available for the agentic workflow without waiting
+	 * for the first tool call.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_vector_store_preload( WP_REST_Request $request ) {
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		if ( ! $assistant_id ) {
+			return $this->error(
+				'wp_mcp_ai_invalid_assistant',
+				__( 'A valid assistant_id is required.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_class',
+				__( 'Assistant configuration class not available.', 'mcp-ai-wpoos' ),
+				500
+			);
+		}
+
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+		if ( empty( $assistant_config ) ) {
+			return $this->error(
+				'wp_mcp_ai_assistant_not_found',
+				__( 'Assistant not found or has no configuration.', 'mcp-ai-wpoos' ),
+				404
+			);
+		}
+
+		$vector_store_id = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
+
+		if ( empty( $vector_store_id ) ) {
+			return rest_ensure_response(
+				array(
+					'has_vector_store' => false,
+					'vector_store_id'  => '',
+					'message'          => __( 'This assistant has no vector store configured.', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
+
+		// Fetch vector store details from OpenAI.
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_class',
+				__( 'OpenAI client class not available.', 'mcp-ai-wpoos' ),
+				500
+			);
+		}
+
+		$client = new WP_MCP_AI_OpenAI_Client();
+		$result = $client->retrieve_vector_store( $vector_store_id );
+
+		if ( is_wp_error( $result ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'vector_store_preload_error',
+					'Failed to pre-load vector store for assistant',
+					array(
+						'assistant_id'    => $assistant_id,
+						'vector_store_id' => $vector_store_id,
+						'error'           => $result->get_error_message(),
+					)
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'has_vector_store' => true,
+					'vector_store_id'  => $vector_store_id,
+					'status'           => 'error',
+					'error'            => $result->get_error_message(),
+				)
+			);
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'vector_store_preloaded',
+				'Vector store pre-loaded during chat initialization',
+				array(
+					'assistant_id'    => $assistant_id,
+					'vector_store_id' => $vector_store_id,
+					'status'          => isset( $result['status'] ) ? $result['status'] : 'unknown',
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'has_vector_store' => true,
+				'vector_store_id'  => $vector_store_id,
+				'status'           => isset( $result['status'] ) ? $result['status'] : null,
+				'name'             => isset( $result['name'] ) ? $result['name'] : null,
+				'file_counts'      => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
+				'created_at'       => isset( $result['created_at'] ) ? $result['created_at'] : null,
+				'last_active_at'   => isset( $result['last_active_at'] ) ? $result['last_active_at'] : null,
 			)
 		);
 	}

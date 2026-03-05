@@ -561,7 +561,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 			}
 
-			$image_data = file_get_contents( $file_path );
+			$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $image_data ) {
 				return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read the image file.', 'mcp-ai-wpoos' ) );
 			}
@@ -590,7 +590,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				$file_path = get_attached_file( $resolved_attachment_id );
 
 				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
-					$image_data = file_get_contents( $file_path );
+					$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 					if ( false !== $image_data && '' !== $image_data ) {
 						$mime_type = get_post_mime_type( $resolved_attachment_id );
@@ -618,7 +618,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 				if ( $file_path && file_exists( $file_path ) && is_readable( $file_path ) ) {
 					// Read the file directly from the filesystem.
-					$image_data = file_get_contents( $file_path );
+					$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 					if ( false !== $image_data && '' !== $image_data ) {
 						// Determine MIME type from file.
@@ -1176,7 +1176,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			return array();
 		}
 
-		$file_contents = file_get_contents( $file_path );
+		$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 		if ( false === $file_contents || '' === $file_contents ) {
 			return array();

@@ -846,7 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						'post_type'      => 'mcp_ai_profession',
 						'post_status'    => 'publish',
 						'posts_per_page' => -1,
-						'meta_query'     => array(
+						'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by configuration meta; no alternative index-based query available.
 							array(
 								'key'   => '_wp_mcp_ai_profession_agent_role',
 								'value' => $role,
@@ -1939,7 +1939,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$last_sync_timestamp = get_option( 'wp_mcp_ai_playbooks_last_sync', 0 );
 			$last_sync           = '';
 			if ( $last_sync_timestamp ) {
-				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
+				$last_sync = human_time_diff( $last_sync_timestamp, time() ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
 			}
 
 			return array(
@@ -2183,7 +2183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 												// Format last verified.
 												$last_verify_display = __( 'Never', 'mcp-ai-wpoos' );
 												if ( $last_verify ) {
-													$last_verify_display = human_time_diff( strtotime( $last_verify ), current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
+													$last_verify_display = human_time_diff( strtotime( $last_verify ), time() ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
 												}
 
 												$edit_url = admin_url( 'post.php?post=' . $peer_id . '&action=edit' );
@@ -2371,6 +2371,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Get backup count.
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Admin settings import query against wp_options; direct query needed to enumerate plugin backup option names.
 			$backup_count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",

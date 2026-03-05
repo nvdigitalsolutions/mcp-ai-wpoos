@@ -523,8 +523,8 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	// Strategy: Build each endpoint as a complete absolute URL.
 	// We DON'T pass the namespace to rest_url() to avoid filter-based duplication.
 	// Instead, we get the REST root and manually append the namespace + endpoint path.
-	$rest_root = rest_url(); // e.g., https://example.com/wp-json/
-	$namespace = WP_MCP_AI_REST::REST_NAMESPACE; // mcp-ai/v1
+	$rest_root = rest_url(); // e.g., https://example.com/wp-json/.
+	$namespace = WP_MCP_AI_REST::REST_NAMESPACE; // mcp-ai/v1.
 
 	// Build complete URLs for each endpoint.
 	$rest_url_base               = trailingslashit( $rest_root ) . trailingslashit( $namespace );

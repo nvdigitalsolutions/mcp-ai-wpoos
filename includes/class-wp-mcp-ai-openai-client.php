@@ -5344,6 +5344,110 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Search a vector store for matching content using OpenAI's vector store search API.
+		 *
+		 * Sends a semantic query to the OpenAI vector store and returns ranked chunks from
+		 * the indexed files. Requires the vector store to be in "completed" status.
+		 *
+		 * @param string $vector_store_id Vector store ID.
+		 * @param string $query           Natural-language search query.
+		 * @param array  $options         Optional parameters:
+		 *                                - max_num_results (int, 1-50): Maximum results to return. Default 10.
+		 *                                - filters (array): Attribute filters to narrow results.
+		 * @return array|WP_Error Search results array or WP_Error on failure.
+		 *                        Success structure:
+		 *                        - data: array of result objects, each with file_id, filename, score, content
+		 *                        - has_more: bool
+		 *                        - first_id: string|null
+		 *                        - last_id: string|null
+		 */
+		public function search_vector_store( $vector_store_id, $query, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$vector_store_id = sanitize_text_field( $vector_store_id );
+			$query           = sanitize_text_field( $query );
+
+			if ( empty( $vector_store_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_id',
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $query ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_query',
+					__( 'A search query is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = absint( $settings['request_timeout'] );
+			$timeout  = max( 5, $timeout );
+
+			$body = array(
+				'query' => $query,
+			);
+
+			if ( ! empty( $options['max_num_results'] ) ) {
+				$body['max_num_results'] = max( 1, min( 50, absint( $options['max_num_results'] ) ) );
+			}
+
+			if ( ! empty( $options['filters'] ) && is_array( $options['filters'] ) ) {
+				$body['filters'] = $options['filters'];
+			}
+
+			$endpoint = self::VECTOR_STORES_ENDPOINT . '/' . $vector_store_id . '/search';
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'OpenAI-Beta'   => 'assistants=v2',
+				),
+				'body'    => wp_json_encode( $body ),
+				'timeout' => $timeout,
+				'method'  => 'POST',
+			);
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'OpenAI vector store search request failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+
+				return new WP_Error( 'wp_mcp_ai_openai_vector_store_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
 		 * Create a batch processing job for asynchronous operations.
 		 *
 		 * The Batch API allows you to process large jobs asynchronously with 50% cost reduction

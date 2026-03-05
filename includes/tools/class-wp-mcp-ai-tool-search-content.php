@@ -190,11 +190,11 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( ! empty( $taxonomy_filters ) ) {
-			$query_args['tax_query'] = $taxonomy_filters;
+			$query_args['tax_query'] = $taxonomy_filters; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- tax_query required for taxonomy-based content filtering; no alternative index-based query available.
 		}
 
 		if ( ! empty( $meta_filters ) ) {
-			$query_args['meta_query'] = $meta_filters;
+			$query_args['meta_query'] = $meta_filters; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required for user-defined content search filters; no alternative index-based query available.
 		}
 
 		$query = new WP_Query( $query_args );

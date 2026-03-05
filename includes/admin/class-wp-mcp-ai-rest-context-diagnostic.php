@@ -61,6 +61,7 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 			return;
 		}
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style with no URL; version not applicable.
 		wp_enqueue_style( 'wp-mcp-ai-diagnostic', false );
 		wp_add_inline_style(
 			'wp-mcp-ai-diagnostic',

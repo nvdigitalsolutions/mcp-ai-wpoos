@@ -694,7 +694,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 								<?php if ( $agent['last_used'] ) : ?>
 									<div class="meta-row">
 										<span class="meta-label"><?php esc_html_e( 'Last Used:', 'mcp-ai-wpoos' ); ?></span>
-										<span class="meta-value"><?php echo esc_html( human_time_diff( strtotime( $agent['last_used'] ), current_time( 'timestamp' ) ) . ' ago' ); ?></span>
+										<span class="meta-value"><?php echo esc_html( human_time_diff( strtotime( $agent['last_used'] ), time() ) . ' ago' ); ?></span>
 									</div>
 								<?php endif; ?>
 							</div>

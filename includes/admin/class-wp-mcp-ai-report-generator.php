@@ -41,7 +41,7 @@ class WP_MCP_AI_Report_Generator {
 		}
 
 		$report_id = wp_generate_uuid4();
-		$timestamp = current_time( 'timestamp' );
+		$timestamp = time();
 
 		$report_data = $this->gather_report_data( $scope );
 
@@ -243,11 +243,11 @@ class WP_MCP_AI_Report_Generator {
 		if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 			global $wpdb;
 			$evidence_table = $wpdb->prefix . 'mcp_ai_evidence';
-			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
+			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
 
 			return array(
 				'total_evidence' => (int) $count,
-				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
+				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
 			);
 		}
 
@@ -295,7 +295,7 @@ class WP_MCP_AI_Report_Generator {
 
 		$html = $this->build_html_report( $data );
 
-		$result = file_put_contents( $filepath, $html );
+		$result = file_put_contents( $filepath, $html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $result ) {
 			return array(
@@ -491,7 +491,7 @@ class WP_MCP_AI_Report_Generator {
 		$filename = sprintf( 'compliance-report-%s.csv', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
-		$fp = fopen( $filepath, 'w' );
+		$fp = fopen( $filepath, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $fp ) {
 			return array(
@@ -549,7 +549,7 @@ class WP_MCP_AI_Report_Generator {
 			}
 		}
 
-		fclose( $fp );
+		fclose( $fp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		return array(
 			'success'   => true,
@@ -581,7 +581,7 @@ class WP_MCP_AI_Report_Generator {
 
 		$json = wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 
-		$result = file_put_contents( $filepath, $json );
+		$result = file_put_contents( $filepath, $json ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( false === $result ) {
 			return array(
