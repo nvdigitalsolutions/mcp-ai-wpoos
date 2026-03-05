@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-plugin-content-analysis',
-        'version' => 'dev-copilot/enhance-plugin-content-analysis',
-        'reference' => '1741d73b4a21b6cd2b89929cd134d9d1b4d50116',
+        'pretty_version' => 'dev-copilot/update-readme-and-docs-please-work',
+        'version' => 'dev-copilot/update-readme-and-docs-please-work',
+        'reference' => '88a07d560062ca38465cca12bdf948479c6d66fe',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-plugin-content-analysis',
-            'version' => 'dev-copilot/enhance-plugin-content-analysis',
-            'reference' => '1741d73b4a21b6cd2b89929cd134d9d1b4d50116',
+            'pretty_version' => 'dev-copilot/update-readme-and-docs-please-work',
+            'version' => 'dev-copilot/update-readme-and-docs-please-work',
+            'reference' => '88a07d560062ca38465cca12bdf948479c6d66fe',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

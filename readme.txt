@@ -672,6 +672,26 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
+= Chat Channel Services (Pro Addon Only) =
+
+These services are only called when the Chat Channels Toolkit pro addon is active and the relevant tools are used.
+
+**32. Microsoft Graph API (Office 365)**
+* **Purpose:** Office 365 email and file management (Outlook send/receive, OneDrive list/download/upload)
+* **Data Sent:** Bearer token, email addresses, email subject/body, file paths, file content (base64), MIME types
+* **When:** When `send_outlook_mail`, `get_outlook_messages`, `list_onedrive_files`, `get_onedrive_file`, or `upload_onedrive_file` tools are used
+* **Service URL:** https://graph.microsoft.com/v1.0/
+* **Terms of Service:** https://www.microsoft.com/en-us/servicesagreement
+* **Privacy Policy:** https://privacy.microsoft.com/en-us/privacystatement
+
+**33. iCloud Drive Gateway (User-Configured)**
+* **Purpose:** iCloud Drive file listing, retrieval, and upload via a user-provided HTTPS gateway/proxy service (Apple does not provide a direct third-party iCloud REST API)
+* **Data Sent:** Gateway API key, file IDs, folder IDs, file content (base64), filenames, MIME types
+* **When:** When `list_icloud_drive_files`, `get_icloud_drive_file`, or `upload_icloud_drive_file` tools are used
+* **Service URL:** User-configured HTTPS gateway URL (must be HTTPS; HTTP is rejected)
+* **Terms:** Depends on the gateway service; see Apple's iCloud Terms: https://www.apple.com/legal/internet-services/icloud/
+* **Privacy Policy:** Apple Privacy Policy: https://www.apple.com/legal/privacy/
+
 = Data Processing Summary =
 
 **What is sent to external services:**
