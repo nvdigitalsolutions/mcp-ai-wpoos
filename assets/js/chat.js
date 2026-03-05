@@ -8071,6 +8071,220 @@
     }
 
     /**
+     * Check if a result object has the structure of a stored agent context response.
+     *
+     * store_agent_context returns {success, context_id, agent_id, stored_at, expires_at, ttl_human}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a store_agent_context response
+     */
+    function isAgentMemoryStoredStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               typeof result.context_id === 'string' &&
+               typeof result.agent_id !== 'undefined' &&
+               typeof result.stored_at === 'string';
+    }
+
+    /**
+     * Extract a human-readable summary from a store_agent_context tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractAgentMemoryStoredSummary(result) {
+        if (!isAgentMemoryStoredStructure(result)) {
+            return null;
+        }
+
+        const parts = [];
+        parts.push('✓ Memory stored (ID: ' + result.context_id + ')');
+
+        if (result.ttl_human && typeof result.ttl_human === 'string') {
+            parts.push('expires in ' + result.ttl_human);
+        }
+
+        if (result.ingested_source && result.ingested_source.type) {
+            const sourceType = result.ingested_source.type;
+            const sourceLabel = sourceType === 'vector_store' ? 'Vector Store'
+                : sourceType === 'post' ? 'WordPress post'
+                : sourceType === 'url' ? 'web page'
+                : sourceType;
+            parts.push('ingested from ' + sourceLabel);
+            if (result.ingested_source.summary && typeof result.ingested_source.summary === 'string') {
+                parts.push('— ' + result.ingested_source.summary);
+            }
+        }
+
+        return parts.join(', ');
+    }
+
+    /**
+     * Check if a result object has the structure of a retrieve_agent_memory or
+     * semantic_context_search response.
+     *
+     * These tools return {success, contexts: [...], count, query}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a memory retrieval response
+     */
+    function isAgentMemoryRetrievedStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               Array.isArray(result.contexts) &&
+               typeof result.count === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a retrieve_agent_memory or
+     * semantic_context_search tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractAgentMemoryRetrievedSummary(result) {
+        if (!isAgentMemoryRetrievedStructure(result)) {
+            return null;
+        }
+
+        const count = result.count || 0;
+        const method = result.method === 'semantic_similarity' ? 'semantic' : 'keyword';
+        let text = 'Found ' + count + ' ' + method + ' memory match' + (count !== 1 ? 'es' : '');
+
+        if (result.query && typeof result.query === 'string' && result.query.trim()) {
+            text += ' for "' + result.query.trim() + '"';
+        }
+
+        // Append first few context titles.
+        if (count > 0 && result.contexts.length > 0) {
+            const titles = [];
+            const displayCount = Math.min(3, result.contexts.length);
+            for (let i = 0; i < displayCount; i++) {
+                const ctx = result.contexts[i];
+                if (ctx && typeof ctx.title === 'string' && ctx.title.trim()) {
+                    titles.push(ctx.title.trim());
+                }
+            }
+            if (titles.length > 0) {
+                text += ': ' + titles.join('; ');
+                if (count > displayCount) {
+                    text += ' (+' + (count - displayCount) + ' more)';
+                }
+            }
+        }
+
+        // Note vector store coverage if present.
+        if (result.vector_store && result.vector_store.vector_store_id) {
+            const fileCount = Array.isArray(result.vector_store.files) ? result.vector_store.files.length : 0;
+            text += '. Vector Store ' + result.vector_store.vector_store_id + ': ' + fileCount + ' indexed file' + (fileCount !== 1 ? 's' : '');
+        } else if (result.vector_store_id && typeof result.vector_store_id === 'string') {
+            text += ' (Vector Store: ' + result.vector_store_id + ')';
+        }
+
+        return text;
+    }
+
+    /**
+     * Check if a result object has the structure of a prioritize_context response.
+     *
+     * prioritize_context returns {success, prioritized: [...], count, total_tokens, budget}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a prioritize_context response
+     */
+    function isContextPrioritizedStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               Array.isArray(result.prioritized) &&
+               typeof result.budget === 'number' &&
+               typeof result.total_tokens === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a prioritize_context tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractContextPrioritizedSummary(result) {
+        if (!isContextPrioritizedStructure(result)) {
+            return null;
+        }
+
+        const selected = result.count || 0;
+        const total = selected + (result.excluded_count || 0);
+        const tokenPct = typeof result.budget_used_pct === 'number' ? result.budget_used_pct : 0;
+
+        return 'Prioritized ' + selected + ' of ' + total + ' contexts'
+            + ' (' + result.total_tokens + ' / ' + result.budget + ' tokens, '
+            + tokenPct + '% budget used)';
+    }
+
+    /**
+     * Valid action names for the manage_context_lifecycle tool.
+     * Defined once so isContextLifecycleStructure and extractContextLifecycleSummary
+     * share the same source of truth without creating a new array on every call.
+     */
+    const CONTEXT_LIFECYCLE_ACTIONS = ['refresh', 'compress', 'merge', 'analyze', 'prune', 'update', 'delete'];
+
+    /**
+     * Check if a result object has the structure of a manage_context_lifecycle response.
+     *
+     * manage_context_lifecycle returns {success, action, ...} where action is one of
+     * refresh, compress, merge, analyze, prune, update, delete.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a manage_context_lifecycle response
+     */
+    function isContextLifecycleStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               typeof result.action === 'string' &&
+               CONTEXT_LIFECYCLE_ACTIONS.indexOf(result.action) !== -1;
+    }
+
+    /**
+     * Extract a human-readable summary from a manage_context_lifecycle tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractContextLifecycleSummary(result) {
+        if (!isContextLifecycleStructure(result)) {
+            return null;
+        }
+
+        const actionLabels = {
+            refresh:  'TTL refreshed',
+            compress: 'Context compressed',
+            merge:    'Contexts merged',
+            analyze:  'Lifecycle analyzed',
+            prune:    'Expired contexts pruned',
+            update:   'Context updated',
+            'delete': 'Context deleted'
+        };
+
+        const label = actionLabels[result.action] || ('Action: ' + result.action);
+        let text  = label;
+
+        if (result.context_id && typeof result.context_id === 'string') {
+            text += ' (ID: ' + result.context_id + ')';
+        }
+        if (result.merged_context_id && typeof result.merged_context_id === 'string') {
+            text += ' → new ID: ' + result.merged_context_id;
+        }
+        if (typeof result.pruned_count === 'number') {
+            text += ' — ' + result.pruned_count + ' context' + (result.pruned_count !== 1 ? 's' : '') + ' removed';
+        }
+
+        return text;
+    }
+
+    /**
      * Extract displayable content from generic tool responses that don't have downloadable assets.
      * Looks for common fields like message, text, links, IDs, and status information.
      *
@@ -8150,6 +8364,30 @@
                         });
                     });
                 }
+            }
+        } else if (isAgentMemoryStoredStructure(result)) {
+            // Handle store_agent_context tool result
+            const memoryStoredText = extractAgentMemoryStoredSummary(result);
+            if (memoryStoredText) {
+                text = memoryStoredText;
+            }
+        } else if (isAgentMemoryRetrievedStructure(result)) {
+            // Handle retrieve_agent_memory and semantic_context_search tool results
+            const memoryRetrievedText = extractAgentMemoryRetrievedSummary(result);
+            if (memoryRetrievedText) {
+                text = memoryRetrievedText;
+            }
+        } else if (isContextPrioritizedStructure(result)) {
+            // Handle prioritize_context tool result
+            const prioritizedText = extractContextPrioritizedSummary(result);
+            if (prioritizedText) {
+                text = prioritizedText;
+            }
+        } else if (isContextLifecycleStructure(result)) {
+            // Handle manage_context_lifecycle tool result
+            const lifecycleText = extractContextLifecycleSummary(result);
+            if (lifecycleText) {
+                text = lifecycleText;
             }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
