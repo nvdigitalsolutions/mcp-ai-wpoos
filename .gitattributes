@@ -56,6 +56,18 @@
 *.node binary
 *.exe binary
 
+# AI model files (binary) — should never be committed; add to .gitignore instead.
+# Listed here so git handles them correctly if they are accidentally staged.
+*.gguf binary
+*.ggml binary
+*.safetensors binary
+*.pt binary
+*.pth binary
+*.ckpt binary
+*.onnx binary
+*.tflite binary
+*.mlmodel binary
+
 # Source maps - mark as binary to prevent inefficient text processing
 # These are large JSON files not meant for human editing or diff
 *.js.map binary

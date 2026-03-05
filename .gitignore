@@ -15,7 +15,30 @@ composer.phar
 # Temporary files
 /tmp/
 
-# Build output - keep only ZIP files, ignore extracted directories
+# AI model files — these are large binaries downloaded at runtime and must never
+# be committed to git. Committing them bloats pack files (gigabytes per version).
+# Models are fetched on demand via Ollama, LM Studio, or the plugin's model loader.
+*.gguf
+*.ggml
+*.ggml.bin
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.tflite
+*.pb
+*.h5
+*.keras
+*.mlmodel
+
+# WordPress uploads directory — contains user-uploaded media and plugin-generated
+# files (including downloaded AI models). These are site-specific runtime data and
+# must never be committed to the plugin repository.
+wp-content/uploads/
+
+# Build output - ignore all build artifacts including ZIPs.
+# ZIPs are published as GitHub Releases; deploying via git should use --depth=1.
 /build/wp-mcp-ai/
 /build/wp-mcp-ai-base/
 /build/wp-mcp-ai-pro/
@@ -23,6 +46,7 @@ composer.phar
 /build/mcp-ai-wpoos-base/
 /build/mcp-ai-wpoos-pro/
 /build/mcp-ai-wpoos-core/
+/build/*.zip
 
 # Ignore base build directory (workflow builder moved to pro addon)
 /build/workflow-builder/
@@ -30,10 +54,10 @@ composer.phar
 # Allow workflow-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/workflow-builder/
 
-# Ignore ZIP files everywhere except in build directory
+# Ignore ZIP files everywhere (build artifacts are available via GitHub Releases)
+# Do not commit large ZIP archives to git - they bloat pack files in git history.
+# Deployments should use: git clone --depth=1 or download from GitHub Releases.
 *.zip
-!/build/*.zip
-!/build/optional-components/*.zip
 
 # Ignore all vendor by default
 /vendor/*
@@ -140,6 +164,63 @@ composer.phar
 !/addons/pro/vendor/
 !/addons/pro/composer.json
 !/addons/pro/composer.lock
+
+# Exclude test/dev files from pro addon vendor packages (mirrors root /vendor/ rules above).
+# These are not needed for plugin functionality and bloat the repository.
+addons/pro/vendor/*/*/test/
+addons/pro/vendor/*/*/tests/
+addons/pro/vendor/*/*/Tests/
+addons/pro/vendor/*/*/Test/
+addons/pro/vendor/*/*/*/test/
+addons/pro/vendor/*/*/*/tests/
+addons/pro/vendor/*/*/*/Tests/
+addons/pro/vendor/*/*/*/Test/
+addons/pro/vendor/*/*/examples/
+addons/pro/vendor/*/*/*/examples/
+addons/pro/vendor/*/*/.github/
+addons/pro/vendor/*/*/*/.github/
+addons/pro/vendor/*/*/phpunit.xml*
+addons/pro/vendor/*/*/*/phpunit.xml*
+addons/pro/vendor/*/*/phpstan*.neon*
+addons/pro/vendor/*/*/*/phpstan*.neon*
+addons/pro/vendor/*/*/phpstan*.php
+addons/pro/vendor/*/*/*/phpstan*.php
+addons/pro/vendor/*/*/psalm*.xml
+addons/pro/vendor/*/*/*/psalm*.xml
+addons/pro/vendor/*/*/psalm*.php
+addons/pro/vendor/*/*/*/psalm*.php
+addons/pro/vendor/*/*/.editorconfig
+addons/pro/vendor/*/*/*/.editorconfig
+addons/pro/vendor/*/*/.gitignore
+addons/pro/vendor/*/*/*/.gitignore
+addons/pro/vendor/*/*/.gitattributes
+addons/pro/vendor/*/*/*/.gitattributes
+addons/pro/vendor/*/*/Makefile
+addons/pro/vendor/*/*/*/Makefile
+addons/pro/vendor/*/*/Dockerfile
+addons/pro/vendor/*/*/*/Dockerfile
+addons/pro/vendor/*/*/docs/
+addons/pro/vendor/*/*/*/docs/
+addons/pro/vendor/*/*/doc/
+addons/pro/vendor/*/*/*/doc/
+addons/pro/vendor/*/*/spec/
+addons/pro/vendor/*/*/*/spec/
+addons/pro/vendor/*/*/*.md
+addons/pro/vendor/*/*/*/*.md
+addons/pro/vendor/*/*/CHANGELOG*
+addons/pro/vendor/*/*/*/CHANGELOG*
+addons/pro/vendor/*/*/CODE_OF_CONDUCT*
+addons/pro/vendor/*/*/*/CODE_OF_CONDUCT*
+addons/pro/vendor/*/*/CONTRIBUTING*
+addons/pro/vendor/*/*/*/CONTRIBUTING*
+addons/pro/vendor/*/*/CREDITS*
+addons/pro/vendor/*/*/*/CREDITS*
+addons/pro/vendor/*/*/codecov.yml
+addons/pro/vendor/*/*/*/codecov.yml
+addons/pro/vendor/*/*/.travis.yml
+addons/pro/vendor/*/*/*/.travis.yml
+addons/pro/vendor/*/*/rector.php
+addons/pro/vendor/*/*/*/rector.php
 
 # Include vendor directory (generated from node_modules, included in distribution)
 !/addons/pro/assets/vendor/

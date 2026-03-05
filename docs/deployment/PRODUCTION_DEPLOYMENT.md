@@ -6,22 +6,56 @@ This repository is configured as a **production-ready WordPress plugin** with op
 
 ## Quick Start
 
-### Option 1: Direct Clone (Recommended)
+### Option 1: Shallow Clone (Recommended for Cloudways and shared hosting)
 
-Clone directly into your WordPress plugins directory:
+Use a **shallow clone** to avoid downloading the full git history. This dramatically reduces disk usage — especially on servers like Cloudways where full git histories can grow to many gigabytes.
+
+```bash
+cd /path/to/wordpress/wp-content/plugins/
+git clone --depth=1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+```
+
+**Why shallow clone?**
+- Downloads only the latest commit instead of the full git history
+- Reduces cloned repository disk usage by over 90%
+- All plugin files are still fully present and functional
+- Avoids the multi-GB `.git/objects` directories caused by historically committed binary artifacts
+
+To update an existing shallow clone:
+
+```bash
+cd /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+git pull --depth=1
+```
+
+### Option 2: Download Release ZIP (Recommended for simple deployments)
+
+Download a pre-built release ZIP directly — no git history at all:
+
+```bash
+# Download latest release (replace X.X.X with the current version)
+wget https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/latest/download/mcp-ai-wpoos.zip
+
+# Extract to WordPress plugins directory
+unzip mcp-ai-wpoos.zip -d /path/to/wordpress/wp-content/plugins/
+
+# Activate in WordPress admin
+```
+
+Or visit the [GitHub Releases page](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases) and download the ZIP manually.
+
+### Option 3: Full Clone (Development only)
+
+A full clone is only needed if you plan to contribute or inspect the complete git history:
 
 ```bash
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 ```
 
+> ⚠️ **Do not use a full clone on production servers.** The git history contains large binary artifacts (build archives, vendor test fixtures) from historical commits that inflate `.git/objects` to many gigabytes. Use `--depth=1` instead.
+
 **No additional steps needed!** The vendor directory is included with production dependencies.
-
-### Option 2: Download ZIP
-
-1. Download the repository as a ZIP file from GitHub
-2. Extract to `wp-content/plugins/mcp-ai-wpoos/`
-3. Activate the plugin in WordPress admin
 
 ## What's Included
 
@@ -59,11 +93,11 @@ php -l mcp-ai-wpoos.php
 
 ## Development vs Production
 
-### This Branch (Production)
+### Production (Cloudways / Shared Hosting)
 
 ```bash
-# Already configured for production
-git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# Shallow clone — minimal disk usage, full plugin functionality
+git clone --depth=1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 # Ready to use!
 ```
 
