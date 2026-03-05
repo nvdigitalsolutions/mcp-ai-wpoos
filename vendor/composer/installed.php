@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/check-wordpress-plugin-compliance',
-        'version' => 'dev-copilot/check-wordpress-plugin-compliance',
-        'reference' => '38fec30700b08d51e8b8e0076650620d712a2b09',
+        'pretty_version' => 'dev-copilot/rebuild-wordpress-zips',
+        'version' => 'dev-copilot/rebuild-wordpress-zips',
+        'reference' => '8ca50e9e3abf5a83cfde14b25edba2f11e48675d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/check-wordpress-plugin-compliance',
-            'version' => 'dev-copilot/check-wordpress-plugin-compliance',
-            'reference' => '38fec30700b08d51e8b8e0076650620d712a2b09',
+            'pretty_version' => 'dev-copilot/rebuild-wordpress-zips',
+            'version' => 'dev-copilot/rebuild-wordpress-zips',
+            'reference' => '8ca50e9e3abf5a83cfde14b25edba2f11e48675d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

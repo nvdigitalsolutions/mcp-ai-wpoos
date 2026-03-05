@@ -130,7 +130,9 @@ class WP_MCP_AI_Pro_Tool_Upload_OneDrive_File implements WP_MCP_AI_Tool_Interfac
 
 		$content_type = isset( $arguments['content_type'] ) ? sanitize_text_field( $arguments['content_type'] ) : 'application/octet-stream';
 
-		$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $file_path . ':/content';
+		// URL-encode each path segment individually, preserving '/' as the separator.
+		$encoded_path = implode( '/', array_map( 'rawurlencode', explode( '/', $file_path ) ) );
+		$endpoint     = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $encoded_path . ':/content';
 
 		WP_MCP_AI_Logger::log_event(
 			'onedrive_upload_file_request',
