@@ -3033,4 +3033,274 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( 'has!special#chars' ), 'Token with special characters should be invalid' );
 		$this->assertFalse( WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( str_repeat( 'A', 257 ) ), 'Token over 256 chars should be invalid' );
 	}
+
+	// =========================================================================
+	// extract_content_from_chat_response tests
+	// =========================================================================
+
+	/**
+	 * Return a ready-to-use (reflection-unlocked) extract_content_from_chat_response
+	 * method from a Telegram webhook controller instance.
+	 *
+	 * @return array{0: WP_MCP_AI_Telegram_Webhook_Controller, 1: ReflectionMethod}
+	 */
+	private function get_telegram_extract_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * Test standard successful response extraction.
+	 */
+	public function test_telegram_extract_content_standard_response() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Hello from Telegram bot!',
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Hello from Telegram bot!',
+			$method->invoke( $controller, $response_data ),
+			'Should extract content from choices[0].message.content'
+		);
+	}
+
+	/**
+	 * Test that null content (agentic tool_calls response) falls back to agentic_tool_messages.
+	 */
+	public function test_telegram_extract_content_null_content_uses_agentic_fallback() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Simulate an agentic workflow where the loop exhausted its cap:
+		// choices[0].content is null (finish_reason = tool_calls), but
+		// agentic_tool_messages contains a partial assistant message.
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices'               => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'       => 'assistant',
+							'content'    => null,
+							'tool_calls' => array(
+								array( 'id' => 'call_x', 'function' => array( 'name' => 'web_search', 'arguments' => '{}' ) ),
+							),
+						),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array(
+						'role'    => 'assistant',
+						'content' => 'I found the answer via the search tool.',
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'I found the answer via the search tool.',
+			$method->invoke( $controller, $response_data ),
+			'Should fall back to agentic_tool_messages when choices content is null'
+		);
+	}
+
+	/**
+	 * Test that the most recent agentic_tool_message is returned when multiple exist.
+	 */
+	public function test_telegram_extract_content_returns_last_agentic_message() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices'               => array(
+					array(
+						'message'       => array( 'role' => 'assistant', 'content' => null ),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array( 'role' => 'assistant', 'content' => 'First intermediate step.' ),
+					array( 'role' => 'assistant', 'content' => 'Second intermediate step.' ),
+					array( 'role' => 'assistant', 'content' => 'Most recent partial answer.' ),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Most recent partial answer.',
+			$method->invoke( $controller, $response_data ),
+			'Should return the most recent agentic_tool_message with content'
+		);
+	}
+
+	/**
+	 * Test that a choice with finish_reason=stop is preferred over tool_calls.
+	 */
+	public function test_telegram_extract_content_prefers_stop_finish_reason() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'message'       => array( 'role' => 'assistant', 'content' => 'Tool-calling step.' ),
+						'finish_reason' => 'tool_calls',
+					),
+					array(
+						'message'       => array( 'role' => 'assistant', 'content' => 'Final complete answer.' ),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Final complete answer.',
+			$method->invoke( $controller, $response_data ),
+			'Should prefer the choice with finish_reason=stop'
+		);
+	}
+
+	/**
+	 * Test that empty/null/missing data returns empty string.
+	 */
+	public function test_telegram_extract_content_returns_empty_for_invalid_data() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$this->assertEquals( '', $method->invoke( $controller, null ), 'null input → empty string' );
+		$this->assertEquals( '', $method->invoke( $controller, 'string' ), 'string input → empty string' );
+		$this->assertEquals( '', $method->invoke( $controller, array() ), 'empty array → empty string' );
+		$this->assertEquals( '', $method->invoke( $controller, array( 'data' => array( 'choices' => array() ) ) ), 'empty choices → empty string' );
+	}
+
+	/**
+	 * Test get_telegram_max_agentic_iterations returns Telegram default when base=1.
+	 */
+	public function test_get_telegram_max_agentic_iterations_returns_default() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$result     = $controller->get_telegram_max_agentic_iterations( 1, array() );
+
+		$this->assertEquals(
+			WP_MCP_AI_Telegram_Webhook_Controller::DEFAULT_MAX_AGENTIC_ITERATIONS,
+			$result,
+			'Should return the Telegram default when the base default of 1 is passed'
+		);
+	}
+
+	/**
+	 * Test get_telegram_max_agentic_iterations honours per-assistant config.
+	 */
+	public function test_get_telegram_max_agentic_iterations_honours_assistant_config() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller       = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$assistant_config = array( 'max_agentic_iterations' => 5 );
+
+		$this->assertEquals(
+			5,
+			$controller->get_telegram_max_agentic_iterations( 1, $assistant_config ),
+			'Per-assistant config should take highest priority'
+		);
+	}
+
+	/**
+	 * Test get_telegram_max_agentic_iterations honours an already-raised admin value.
+	 */
+	public function test_get_telegram_max_agentic_iterations_honours_raised_admin_value() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+
+		// Simulate admin setting having already raised the default to 7.
+		$result = $controller->get_telegram_max_agentic_iterations( 7, array() );
+		$this->assertEquals( 7, $result, 'Already-raised admin value should be honoured' );
+	}
 }

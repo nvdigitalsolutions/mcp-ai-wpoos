@@ -30,7 +30,7 @@ Built by `build-wordpress-org-from-base.sh` with WordPress.org text domains tran
 
 ### 1. BASE Package (WordPress.org Submission)
 **Original:** `mcp-ai-wpoos-base-1.1.3.zip`  
-**WordPress.org:** `nvdigital-open-operator-system-oos-1.1.3.zip` (5.2M)
+**WordPress.org:** `nvdigital-open-operator-system-oos-1.1.3.zip` (5.3M)
 
 **What's Included:**
 - 127 base tools

@@ -1784,4 +1784,164 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		// Clean up.
 		wp_delete_post( $assistant_id, true );
 	}
+
+	/**
+	 * Test that extract_content_from_chat_response handles agentic tool-call responses
+	 * where message.content is null (OpenAI standard: content = null when finish_reason = tool_calls).
+	 */
+	public function test_extract_content_handles_null_content_with_agentic_fallback() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		// Simulate a response where the agentic loop exhausted its iteration cap:
+		// choices[0].message.content is null (tool_calls finish_reason), but
+		// agentic_tool_messages contains a partial assistant message with text.
+		$response_data = array(
+			'assistant_id' => 42,
+			'data'         => array(
+				'choices'               => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'       => 'assistant',
+							'content'    => null,
+							'tool_calls' => array(
+								array( 'id' => 'call_1', 'function' => array( 'name' => 'web_search', 'arguments' => '{}' ) ),
+							),
+						),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array(
+						'role'       => 'assistant',
+						'content'    => 'I searched the web and found the answer.',
+						'tool_calls' => array(),
+					),
+				),
+			),
+		);
+
+		$content = $method->invoke( $controller, $response_data );
+
+		$this->assertEquals(
+			'I searched the web and found the answer.',
+			$content,
+			'Should fall back to agentic_tool_messages when choices content is null'
+		);
+	}
+
+	/**
+	 * Test that extract_content_from_chat_response prefers finish_reason=stop choices
+	 * over tool_calls choices when multiple choices are present.
+	 */
+	public function test_extract_content_prefers_stop_finish_reason() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		// First choice has text but finish_reason = tool_calls (intermediate step).
+		// Second choice has finish_reason = stop (definitive final answer).
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Intermediate tool thinking text.',
+						),
+						'finish_reason' => 'tool_calls',
+					),
+					array(
+						'index'         => 1,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'Final definitive answer.',
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$content = $method->invoke( $controller, $response_data );
+
+		$this->assertEquals(
+			'Final definitive answer.',
+			$content,
+			'Should prefer the choice with finish_reason=stop'
+		);
+	}
+
+	/**
+	 * Test that get_whatsapp_max_agentic_iterations returns the correct value.
+	 */
+	public function test_get_whatsapp_max_agentic_iterations_returns_default() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+
+		// When default_max is 1 (the base /chat endpoint default) and no
+		// assistant config override is set, the WhatsApp default should be returned.
+		$result = $controller->get_whatsapp_max_agentic_iterations( 1, array() );
+		$this->assertEquals(
+			WP_MCP_AI_WhatsApp_Webhook_Controller::DEFAULT_MAX_AGENTIC_ITERATIONS,
+			$result,
+			'Should return the WhatsApp default when base default of 1 is passed'
+		);
+	}
+
+	/**
+	 * Test that get_whatsapp_max_agentic_iterations honours per-assistant config.
+	 */
+	public function test_get_whatsapp_max_agentic_iterations_honours_assistant_config() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller     = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$assistant_config = array( 'max_agentic_iterations' => 3 );
+
+		$result = $controller->get_whatsapp_max_agentic_iterations( 1, $assistant_config );
+		$this->assertEquals( 3, $result, 'Per-assistant config should take highest priority' );
+	}
 }

@@ -110,7 +110,9 @@ class WP_MCP_AI_Pro_Tool_List_OneDrive_Files implements WP_MCP_AI_Tool_Interface
 		if ( '' === $folder_path ) {
 			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/root/children';
 		} else {
-			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $folder_path . ':/children';
+			// URL-encode each path segment individually, preserving '/' as the separator.
+			$encoded_path = implode( '/', array_map( 'rawurlencode', explode( '/', $folder_path ) ) );
+			$endpoint     = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $encoded_path . ':/children';
 		}
 
 		$top = isset( $arguments['top'] ) ? absint( $arguments['top'] ) : 25;
