@@ -22,7 +22,14 @@ $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_chat_channels_toolkit'] );
 $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' );
 
-// Only load if enabled and not in base version (Pro plugin active overrides base version restriction).
+// Always load the Google Chat webhook handler when the pro addon is active
+// so that the bot responds to messages even if the toolkit toggle is off.
+$google_chat_webhook_init = WP_MCP_AI_PRO_PATH . 'includes/google-chat-webhook-init.php';
+if ( file_exists( $google_chat_webhook_init ) ) {
+	require_once $google_chat_webhook_init;
+}
+
+// Only load if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
 
 	// --- CCTs: Channel Messages and Channel Contacts ---

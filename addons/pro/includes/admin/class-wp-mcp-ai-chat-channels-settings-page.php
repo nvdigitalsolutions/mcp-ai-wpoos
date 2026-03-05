@@ -315,6 +315,61 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			<?php $this->render_messenger_config(); ?>
 			<?php $this->render_twitter_config(); ?>
 			<?php $this->render_icloud_config(); ?>
+			<?php $this->render_google_chat_config(); ?>
+
+			<h2 style="margin-top: 40px;"><?php esc_html_e( 'Global Settings', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<table class="form-table">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Default AI Assistant', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<select name="default_assistant" class="regular-text">
+							<option value=""><?php esc_html_e( '-- Select Assistant --', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php
+							$assistants = get_posts(
+								array(
+									'post_type'      => 'mcp_ai_assistant',
+									'posts_per_page' => -1,
+									'post_status'    => 'publish',
+								)
+							);
+							foreach ( $assistants as $assistant ) :
+								?>
+								<option value="<?php echo esc_attr( $assistant->ID ); ?>">
+									<?php echo esc_html( $assistant->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Default AI assistant for handling chat channel messages', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable Logging', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="enable_logging" value="1" />
+							<?php esc_html_e( 'Log all chat channel activities for debugging', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="enable_rate_limiting" value="1" checked />
+							<?php esc_html_e( 'Enable automatic rate limiting to prevent API quota exhaustion', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Webhook Security', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="verify_webhook_signatures" value="1" checked />
+							<?php esc_html_e( 'Verify webhook signatures (recommended for security)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</td>
+				</tr>
+			</table>
 		</div>
 
 		<style>
@@ -1383,6 +1438,53 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<ul>
 					<li><a href="https://developer.twitter.com/en/docs/twitter-api/direct-messages" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Twitter API v2 Direct Messages', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://developer.twitter.com/en/docs/twitter-api/enterprise/account-activity-api/guides/securing-webhooks" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Securing Account Activity Webhooks', 'mcp-ai-wpoos-pro' ); ?></a></li>
+				</ul>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Google Chat configuration section.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function render_google_chat_config() {
+		?>
+		<div class="platform-config">
+			<div class="platform-config-header">
+				<h3>💬 <?php esc_html_e( 'Google Chat Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+			</div>
+			<div class="platform-config-content">
+				<p><?php esc_html_e( 'Google Chat integration enables bot responses to @mentions in Spaces and direct messages using the Google Chat API.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ol>
+					<li><?php esc_html_e( 'Go to Google Cloud Console and create or select a project.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Under Google Chat API → Configuration, set the App URL to the Webhook URL below.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enable "Allow the app to join spaces and group conversations" so @mentions work.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Set App visibility and enable "Receive messages from spaces" and "Respond to @mentions".', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Add the bot to your Space and @mention it — it will respond.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Webhook URL (App URL)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?></code>
+							<p class="description"><?php esc_html_e( 'Set this as the App URL in Google Cloud Console → Google Chat API → Configuration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h4><?php esc_html_e( 'How @mentions Work', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'When a user types "@YourBot what can you do?" in a Space, Google Chat sends a MESSAGE event to the Webhook URL above. This plugin strips the mention markup and fires the wp_mcp_ai_google_chat_message action so you can provide a reply via the wp_mcp_ai_google_chat_message_response filter.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><a href="https://developers.google.com/chat/how-tos/bots-develop" target="_blank"><?php esc_html_e( 'Google Chat Bot Development', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.google.com/chat/reference/rest/v1/spaces.messages" target="_blank"><?php esc_html_e( 'Google Chat Messages API', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
