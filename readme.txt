@@ -62,6 +62,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
 * **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
 * **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
+* **Chat Channels** - Telegram, WhatsApp, Slack, Discord, Teams, Messenger, Google Chat, Twitter/X, Apple Messages, Office 365 (Outlook + OneDrive), iCloud Drive (47 Pro tools across 11 platforms)
 * **JetEngine Integration** - AI metaboxes for CPTs/taxonomies, Research & Add pages with automatic field mapping (Pro tools)
 * **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
 * **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
@@ -255,13 +256,28 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 127+ base tools, 70 Pro tools (197 total) for content, media, research, and operations
+4. **Tool Registry** - 165 base tools, 354+ Pro tools (519+ total) for content, media, research, chat channels, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
 
 = 1.1.3 - March 2026 =
+
+**Office 365 & iCloud Drive Integration (Chat Channels Toolkit)**
+
+* Added Office 365 – Outlook tools: `send_outlook_mail` and `get_outlook_messages` via Microsoft Graph API
+* Added Office 365 – OneDrive tools: `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` via Microsoft Graph API
+* Added iCloud Drive tools: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via configurable HTTPS gateway
+* Added `WP_MCP_AI_Outlook_Webhook_Controller` and `WP_MCP_AI_iCloud_Webhook_Controller` REST webhook controllers
+* Added Office 365 and iCloud Drive configuration panels to NV oOS → Chat Channels Toolkit settings
+* Chat Channels Toolkit now includes **47 tools across 11 platforms** (up from 39 tools across 9 platforms)
+
+**Telegram Mini App Authentication Fix**
+
+* Added TMA session token mechanism as authentication fallback when `wp_set_auth_cookie()` cookies don't persist in Telegram WebView
+* Changed `check_permission()` from `edit_posts` to `read` for GET endpoints so subscriber-level Telegram users can access the app
+* Fixed `validateInitData()` infinite loop: function now rejects on failure and limits auto-retry attempts
 
 **WordPress.org Compliance — Final Audit**
 
