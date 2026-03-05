@@ -154,9 +154,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$interaction_type    = isset( $arguments['interaction_type'] ) ? sanitize_text_field( $arguments['interaction_type'] ) : 'view';
 
 		// Research pattern parameters.
-		$use_research    = isset( $arguments['use_research'] ) ? (bool) $arguments['use_research'] : false;
-		$research_depth  = isset( $arguments['research_depth'] ) ? sanitize_text_field( $arguments['research_depth'] ) : 'standard';
-		$focus_areas     = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
+		$use_research   = isset( $arguments['use_research'] ) ? (bool) $arguments['use_research'] : false;
+		$research_depth = isset( $arguments['research_depth'] ) ? sanitize_text_field( $arguments['research_depth'] ) : 'standard';
+		$focus_areas    = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
 
 		// Validate research_depth.
 		if ( ! in_array( $research_depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
@@ -245,7 +245,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			case 'trending':
 				// Use research pattern for trending if enabled.
 				if ( $use_research ) {
-					$result = $this->get_trending_content_with_research( $limit, $exclude_categories, $include_post_types, $recency_weight, $research_depth, $focus_areas, $context );
+					$result          = $this->get_trending_content_with_research( $limit, $exclude_categories, $include_post_types, $recency_weight, $research_depth, $focus_areas, $context );
 					$recommendations = $result['recommendations'];
 					$research_data   = $result['research_data'];
 				} else {
@@ -900,7 +900,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$args = array(
 			'post_type'      => 'post',
 			'posts_per_page' => $limit,
-			'meta_key'       => '_wp_mcp_ai_engagement_score',
+			'meta_key'       => '_wp_mcp_ai_engagement_score', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to filter posts by content recommendation meta; no alternative lookup method available.
 			'orderby'        => 'meta_value_num',
 			'order'          => 'DESC',
 		);
@@ -1049,7 +1049,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 							'title'   => isset( $result['title'] ) ? $result['title'] : '',
 							'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
 						);
-						$seen_urls[] = $url;
+						$seen_urls[]   = $url;
 					}
 				}
 			}
@@ -1128,14 +1128,14 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		if ( ! empty( $focus_areas ) ) {
 			$prompt .= "## Focus Areas\n";
 			foreach ( $focus_areas as $area ) {
-				$prompt .= "- " . $area . "\n";
+				$prompt .= '- ' . $area . "\n";
 			}
 			$prompt .= "\n";
 		}
 
 		// Add sources.
 		if ( ! empty( $search_results['sources'] ) ) {
-			$prompt .= "## Sources\n";
+			$prompt      .= "## Sources\n";
 			$source_count = 0;
 
 			foreach ( array_slice( $search_results['sources'], 0, 10 ) as $source ) {

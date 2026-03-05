@@ -18,10 +18,10 @@ class Test_Mesh_Peer_Sync extends WP_UnitTestCase {
 
 		// Enable mesh computing and directory.
 		$settings = array(
-			'enable_mesh'                => true,
-			'enable_federation'          => true,
+			'enable_mesh'                 => true,
+			'enable_federation'           => true,
 			'enable_federation_directory' => true,
-			'mesh_peer_sites'            => array(),
+			'mesh_peer_sites'             => array(),
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -272,7 +272,7 @@ class Test_Mesh_Peer_Sync extends WP_UnitTestCase {
 	 */
 	public function test_sync_triggered_on_option_update() {
 		// Simulate updating the option with mesh peers.
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings                    = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$settings['mesh_peer_sites'] = array(
 			array(
 				'name'    => 'Auto Synced Peer',

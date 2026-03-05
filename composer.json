@@ -21,7 +21,7 @@
         "squizlabs/php_codesniffer": "*",
         "wp-coding-standards/wpcs": "^3.0",
         "phpunit/phpunit": "^9.6",
-        "wp-phpunit/wp-phpunit": "^6.9",
+        "wp-phpunit/wp-phpunit": "*",
         "yoast/phpunit-polyfills": "^4.0"
     },
     "scripts": {
@@ -34,6 +34,7 @@
         "test": "vendor/bin/phpunit",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage.xml",
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
+        "build:autoload": "composer install --no-dev --prefer-dist --no-interaction",
         "ci:all": [
             "@lint:errors-only",
             "@test:coverage"

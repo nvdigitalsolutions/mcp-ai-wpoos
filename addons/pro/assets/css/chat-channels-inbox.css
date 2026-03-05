@@ -1,0 +1,537 @@
+/**
+ * Chat Channels Inbox & Dashboard Styles
+ *
+ * Covers: KPI cards, Chart.js chart containers, channel tab strip,
+ * split-pane inbox layout, message thread, reply box, contacts table,
+ * tag modal, and automation form sections.
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+/* ============================================================
+   Page wrapper
+   ============================================================ */
+.wp-mcp-ai-chat-channels-wrap {
+	margin-top: 16px;
+}
+
+/* ============================================================
+   Dashboard – KPI cards
+   ============================================================ */
+.cc-kpi-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.cc-kpi-card {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 20px 24px;
+	flex: 1 1 150px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.cc-kpi-value {
+	font-size: 2rem;
+	font-weight: 700;
+	color: #1e293b;
+	line-height: 1;
+}
+
+.cc-kpi-label {
+	margin-top: 8px;
+	font-size: .8125rem;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+/* ============================================================
+   Dashboard – Chart cards
+   ============================================================ */
+.cc-charts-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.cc-chart-card {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 20px;
+	flex: 1 1 260px;
+	box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.cc-chart-card--wide {
+	flex: 2 1 400px;
+}
+
+.cc-chart-card h3 {
+	margin: 0 0 12px;
+	font-size: .9375rem;
+	color: #334155;
+}
+
+/* ============================================================
+   Dashboard – Quick-nav
+   ============================================================ */
+.cc-quick-nav {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+/* ============================================================
+   Channel tab strip (Inbox)
+   ============================================================ */
+.cc-channel-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px 8px 0 0;
+	padding: 6px 8px;
+	margin-bottom: 0;
+}
+
+.cc-channel-tab {
+	display: inline-block;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: .875rem;
+	font-weight: 500;
+	color: #475569;
+	text-decoration: none;
+	transition: background .15s, color .15s;
+}
+
+.cc-channel-tab:hover {
+	background: #e2e8f0;
+	color: #1e293b;
+}
+
+.cc-channel-tab--active,
+.cc-channel-tab--active:hover {
+	background: #4f46e5;
+	color: #fff;
+}
+
+/* ============================================================
+   Toolbar
+   ============================================================ */
+.cc-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 0;
+	flex-wrap: wrap;
+}
+
+.cc-filters {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.cc-select,
+.cc-input {
+	font-size: .875rem;
+	padding: 5px 8px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	min-width: 140px;
+}
+
+/* ============================================================
+   Split-pane layout
+   ============================================================ */
+.cc-layout {
+	display: flex;
+	height: calc(100vh - 300px);
+	min-height: 480px;
+	border: 1px solid #e2e8f0;
+	border-radius: 0 0 8px 8px;
+	overflow: hidden;
+	background: #fff;
+}
+
+/* Left: conversation list */
+.cc-conversations-panel {
+	width: 320px;
+	min-width: 240px;
+	flex-shrink: 0;
+	border-right: 1px solid #e2e8f0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.cc-conversations-list {
+	flex: 1;
+	overflow-y: auto;
+}
+
+.cc-conversation-item {
+	display: flex;
+	flex-direction: column;
+	padding: 12px 14px;
+	border-bottom: 1px solid #f1f5f9;
+	cursor: pointer;
+	transition: background .12s;
+}
+
+.cc-conversation-item:hover,
+.cc-conversation-item--active {
+	background: #f0f4ff;
+}
+
+.cc-conv-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-bottom: 2px;
+}
+
+.cc-conv-name {
+	font-weight: 600;
+	font-size: .875rem;
+	color: #1e293b;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cc-conv-time {
+	font-size: .75rem;
+	color: #94a3b8;
+	white-space: nowrap;
+	margin-left: 8px;
+}
+
+.cc-conv-preview {
+	font-size: .8125rem;
+	color: #64748b;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cc-conv-meta {
+	display: flex;
+	gap: 6px;
+	margin-top: 4px;
+	align-items: center;
+}
+
+/* Channel badge */
+.cc-badge {
+	display: inline-block;
+	font-size: .6875rem;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: 20px;
+	text-transform: uppercase;
+	letter-spacing: .03em;
+	background: #e0e7ff;
+	color: #4338ca;
+}
+
+.cc-badge--whatsapp    { background: #dcfce7; color: #166534; }
+.cc-badge--telegram    { background: #dbeafe; color: #1d4ed8; }
+.cc-badge--slack       { background: #fef9c3; color: #854d0e; }
+.cc-badge--discord     { background: #ede9fe; color: #6d28d9; }
+.cc-badge--teams       { background: #e0e7ff; color: #4338ca; }
+.cc-badge--messenger   { background: #dbeafe; color: #1d4ed8; }
+.cc-badge--google_chat { background: #fce7f3; color: #9d174d; }
+.cc-badge--twitter     { background: #f0f9ff; color: #0369a1; }
+.cc-badge--webchat     { background: #f1f5f9; color: #334155; }
+
+/* Status dot */
+.cc-status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	display: inline-block;
+}
+.cc-status-dot--new      { background: #3b82f6; }
+.cc-status-dot--active   { background: #22c55e; }
+.cc-status-dot--resolved { background: #94a3b8; }
+.cc-status-dot--blocked  { background: #ef4444; }
+
+/* Takeover indicator */
+.cc-takeover-indicator {
+	font-size: .6875rem;
+	background: #fef2f2;
+	color: #dc2626;
+	border-radius: 4px;
+	padding: 0 5px;
+}
+
+/* Right: thread */
+.cc-thread-panel {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: #f8fafc;
+}
+
+.cc-thread-placeholder {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: #94a3b8;
+}
+
+.cc-thread-placeholder .dashicons {
+	font-size: 3rem;
+	width: 3rem;
+	height: 3rem;
+	margin-bottom: 12px;
+	color: #cbd5e1;
+}
+
+.cc-thread-content {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+/* Thread header */
+.cc-thread-header {
+	padding: 12px 16px;
+	background: #fff;
+	border-bottom: 1px solid #e2e8f0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.cc-thread-contact-name {
+	font-weight: 700;
+	font-size: .9375rem;
+	color: #1e293b;
+}
+
+.cc-thread-actions {
+	margin-left: auto;
+	display: flex;
+	gap: 6px;
+}
+
+/* Messages list */
+.cc-messages {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.cc-message {
+	max-width: 75%;
+	padding: 9px 13px;
+	border-radius: 12px;
+	font-size: .875rem;
+	line-height: 1.5;
+	word-break: break-word;
+}
+
+.cc-message--inbound {
+	align-self: flex-start;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 0 12px 12px 12px;
+	color: #1e293b;
+}
+
+.cc-message--outbound {
+	align-self: flex-end;
+	background: #4f46e5;
+	color: #fff;
+	border-radius: 12px 0 12px 12px;
+}
+
+.cc-message-time {
+	display: block;
+	font-size: .6875rem;
+	margin-top: 4px;
+	opacity: .65;
+}
+
+/* Reply box */
+.cc-reply-box {
+	background: #fff;
+	border-top: 1px solid #e2e8f0;
+	padding: 12px 16px;
+}
+
+.cc-reply-textarea {
+	width: 100%;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	padding: 8px;
+	font-size: .875rem;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+.cc-reply-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+}
+
+/* ============================================================
+   Contacts table
+   ============================================================ */
+.cc-contacts-table td,
+.cc-contacts-table th {
+	vertical-align: middle;
+}
+
+.cc-tag-pill {
+	display: inline-block;
+	background: #e0e7ff;
+	color: #3730a3;
+	border-radius: 20px;
+	padding: 1px 8px;
+	font-size: .75rem;
+	font-weight: 500;
+	margin: 1px 2px;
+}
+
+/* ============================================================
+   Tag modal
+   ============================================================ */
+.cc-modal {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.45);
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.cc-modal-inner {
+	background: #fff;
+	border-radius: 10px;
+	padding: 28px 32px;
+	min-width: 320px;
+	box-shadow: 0 8px 30px rgba(0,0,0,.18);
+}
+
+.cc-modal-inner h3 {
+	margin: 0 0 16px;
+}
+
+.cc-modal-actions {
+	margin-top: 16px;
+	display: flex;
+	gap: 8px;
+}
+
+/* ============================================================
+   Pagination
+   ============================================================ */
+.cc-pagination {
+	padding: 8px 14px;
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	border-top: 1px solid #f1f5f9;
+	background: #fff;
+}
+
+.cc-page-btn {
+	cursor: pointer;
+	padding: 4px 10px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+	font-size: .8125rem;
+}
+
+.cc-page-btn:disabled {
+	opacity: .45;
+	cursor: default;
+}
+
+.cc-page-info {
+	font-size: .8125rem;
+	color: #64748b;
+}
+
+/* ============================================================
+   Automation settings
+   ============================================================ */
+.cc-settings-section {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 20px 24px;
+	margin-bottom: 20px;
+}
+
+.cc-settings-section h2 {
+	margin: 0 0 12px;
+	padding: 0;
+	border: none;
+	font-size: 1rem;
+	color: #1e293b;
+}
+
+/* ============================================================
+   Placeholder / loading states
+   ============================================================ */
+.cc-placeholder {
+	padding: 24px;
+	text-align: center;
+	color: #94a3b8;
+	font-size: .875rem;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 900px) {
+	.cc-layout {
+		flex-direction: column;
+		height: auto;
+	}
+
+	.cc-conversations-panel {
+		width: 100%;
+		height: 280px;
+		border-right: none;
+		border-bottom: 1px solid #e2e8f0;
+	}
+
+	.cc-thread-panel {
+		height: 480px;
+	}
+
+	.cc-kpi-card {
+		flex: 1 1 140px;
+	}
+}

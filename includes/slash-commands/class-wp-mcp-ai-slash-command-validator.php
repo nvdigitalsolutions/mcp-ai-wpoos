@@ -47,7 +47,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	public static function validate_email( $email ) {
 		$email = sanitize_email( $email );
-		
+
 		if ( empty( $email ) ) {
 			return new WP_Error(
 				self::ERROR_CODES['missing_required'],
@@ -77,7 +77,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	public static function validate_phone( $phone ) {
 		$phone = sanitize_text_field( $phone );
-		
+
 		if ( empty( $phone ) ) {
 			return new WP_Error(
 				self::ERROR_CODES['missing_required'],
@@ -87,7 +87,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 
 		// Remove common formatting characters.
 		$cleaned = preg_replace( '/[\s\(\)\-\.]/', '', $phone );
-		
+
 		// Check for valid international phone number pattern.
 		// Supports formats like: +1234567890, 1234567890, (123) 456-7890.
 		if ( ! preg_match( '/^\+?[0-9]{7,15}$/', $cleaned ) ) {
@@ -110,7 +110,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	public static function validate_url( $url ) {
 		$url = esc_url_raw( $url );
-		
+
 		if ( empty( $url ) ) {
 			return new WP_Error(
 				self::ERROR_CODES['missing_required'],
@@ -225,7 +225,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 			if ( isset( $rules['min'] ) || isset( $rules['max'] ) ) {
 				$min = isset( $rules['min'] ) ? $rules['min'] : PHP_INT_MIN;
 				$max = isset( $rules['max'] ) ? $rules['max'] : PHP_INT_MAX;
-				
+
 				$range_check = self::validate_range( $value, $min, $max );
 				if ( is_wp_error( $range_check ) ) {
 					$errors[] = sprintf(
@@ -346,7 +346,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	protected static function validate_date( $date ) {
 		$date = sanitize_text_field( $date );
-		
+
 		if ( empty( $date ) ) {
 			return new WP_Error(
 				self::ERROR_CODES['missing_required'],
@@ -376,7 +376,7 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	protected static function validate_datetime( $datetime ) {
 		$datetime = sanitize_text_field( $datetime );
-		
+
 		if ( empty( $datetime ) ) {
 			return new WP_Error(
 				self::ERROR_CODES['missing_required'],
@@ -447,10 +447,10 @@ class WP_MCP_AI_Slash_Command_Validator {
 	 */
 	public static function check_duplicate_lead( $email ) {
 		$email = self::normalize_email( $email );
-		
+
 		// Check in stored leads option.
 		$leads = get_option( 'wp_mcp_ai_crm_leads', array() );
-		
+
 		foreach ( $leads as $lead ) {
 			if ( isset( $lead['email'] ) && self::normalize_email( $lead['email'] ) === $email ) {
 				return new WP_Error(

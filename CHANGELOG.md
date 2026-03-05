@@ -1,34 +1,84 @@
 # oOS – Changelog
 
-## [1.1.2] - 2026-02-16
-
-### Fixed - WordPress.org Compliance
-- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 5 locations
-  - Changed Assistant CPT menu_position from 56 to null for automatic positioning
-  - Changed Team CPT menu_position from 58 to null for automatic positioning  
-  - Changed Profession CPT menu_position from 57 to null for automatic positioning
-  - Changed AI Peer CPT menu_position from 57 to null for automatic positioning
-  - Changed Main Admin Menu position from 30 to null for automatic positioning
-  - Prevents conflicts with other plugins per WordPress.org guidelines
-  - Related to PR #3741 compliance fixes
-
-- **Pro Integration Settings Architecture (February 16, 2026)**: Moved pro-only integration settings to pro addon
-  - Moved Mailjet settings to pro addon (5 fields) - Tools exist in pro
-  - Moved Google Analytics settings to pro addon (3 fields) - Tools exist in pro
-  - Moved Yahoo Fantasy settings to pro addon (2 fields) - Tools exist in pro
-  - Moved ESPN Fantasy settings to pro addon (2 fields) - Tools exist in pro
-  - Created `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php`
-  - Base plugin now only includes settings for base tools
-  - Pro addon adds its own settings when active
-  - Better architecture: Settings match tool location
-  - Still WordPress.org compliant: No gating, proper separation
-
-### Changed
-- Updated plugin version to 1.1.2 across all files
-- Base plugin integration settings reduced to base-only features
-- Pro addon integration settings added for pro-only features
 
 ## [Unreleased]
+
+### Added - March 2026
+- **Office 365 and iCloud Drive Connection Types (March 2026)**: Added new chat channel connection types for Office 365 and iCloud Drive (PR #3971)
+  - **Office 365 – Outlook (2 tools)**:
+    - `send_outlook_mail` - Send email via Microsoft Outlook using the Microsoft Graph API; supports plain text and HTML body, CC recipients
+    - `get_outlook_messages` - Retrieve messages from any Outlook mail folder (inbox, sent, drafts, or custom) with OData filter support
+  - **Office 365 – OneDrive (3 tools)**:
+    - `list_onedrive_files` - List files and folders in a OneDrive drive via Microsoft Graph API
+    - `get_onedrive_file` - Download a OneDrive file and return its contents
+    - `upload_onedrive_file` - Upload a file to a OneDrive folder
+  - **iCloud Drive (3 tools)** (via configurable gateway):
+    - `list_icloud_drive_files` - List files and folders via an HTTPS iCloud gateway API
+    - `get_icloud_drive_file` - Download a file from iCloud Drive via the gateway
+    - `upload_icloud_drive_file` - Upload a file to iCloud Drive via the gateway
+  - **New REST webhook controllers**:
+    - `WP_MCP_AI_Outlook_Webhook_Controller` - Handles Office 365 Outlook subscription notifications
+    - `WP_MCP_AI_iCloud_Webhook_Controller` - Handles iCloud Drive gateway push notifications
+  - **Admin settings**: Office 365 and iCloud Drive configuration panels added to NV oOS → Chat Channels Toolkit settings page
+  - **Chat Channels Toolkit**: Updated tool count from 39 to 47 tools across 11 platforms
+  - **Security**: All tools validate bearer tokens, enforce HTTPS gateway URLs for iCloud, require `manage_options` capability (filterable), and log via `WP_MCP_AI_Logger`
+- **Telegram Mini App Authentication Fix (March 1, 2026)**: Fixed Mini App stuck on "Authenticating" screen in Telegram WebView
+  - Added TMA session token mechanism as auth fallback when `wp_set_auth_cookie()` cookies don't persist in Telegram WebView
+  - Changed `check_permission()` from `edit_posts` to `read` for GET endpoints so subscriber-level Telegram users can access the app
+  - Fixed `validateInitData()` infinite loop: function now rejects on failure and limits auto-retry attempts (PR #3971)
+
+### Added - Late February 2026 (February 19 – March 1)
+- **Telegram Mini App CMS Overhaul (February 28, 2026)**: Transformed Telegram Mini App from a basic chat shell into a full WordPress CMS interface (PR #3959)
+  - Added REST endpoints for WordPress CPTs, tools, and media management within the Telegram WebView
+  - Completely redesigned Mini App UI with navigation panels for content management
+  - Users can now browse and manage WordPress content types directly from Telegram
+- **Elementor Telegram Login Widget (February 27, 2026)**: New Elementor widget wrapping the `[mcp_ai_telegram_login]` shortcode (PR #3940)
+  - Drag-and-drop Telegram Login button integration for Elementor-built pages
+  - All shortcode settings exposed as Elementor widget controls
+- **Discord/Telegram Reactions + Discord Voice Channel Members (February 27, 2026)**: OpenClaw Feb 2026 parity additions
+  - Added `add_discord_message_reaction` tool – add emoji reactions to Discord messages
+  - Added `add_telegram_message_reaction` tool – add emoji reactions to Telegram messages (Bot API 7.0+)
+  - Added `get_discord_voice_channel_members` tool – list users currently in a Discord voice channel
+  - Fixed `chat-channels-toolkit-init.php` to register all platform tools; added tests
+
+### Fixed - Late February 2026 (February 19 – March 1)
+- **WhatsApp Test Connection 403 Errors (February 20, 2026)**: Fixed multiple WhatsApp API 403 permission failures (PR #3818, #3819)
+  - Isolated `quality_rating` field request into a non-fatal optional step; core connection test succeeds without it
+  - Fixed field-permission error when verifying WhatsApp Business Account token
+- **WhatsApp Auto-Reply Error #133010 + Messenger Enhancements (February 22, 2026)** (PR #3840)
+  - Fixed WhatsApp Cloud API error `#133010` (message sending failure) in auto-reply flow
+  - Enhanced Facebook Messenger chat channel settings: added App ID field, token generation, "Test Connection" button, API version dropdown, and more
+- **WhatsApp/Messenger Webhook Processing Without App Secret (February 22, 2026)** (PR #3841)
+  - Fixed assistant not responding to real messages when App Secret is not yet configured
+  - Webhook processing now proceeds when `verify_webhook_signatures` is disabled or App Secret is blank
+- **WhatsApp Group Routing (February 23, 2026)** (PR #3859)
+  - AI auto-replies to WhatsApp group messages now route to the group thread instead of the individual sender
+  - Implemented `group_id` routing logic in the webhook handler
+- **Inbox CCT Registration Fix (February 23, 2026)** (PR #3860)
+  - Fixed `channel_messages` and `channel_contacts` JetEngine Custom Content Types never being registered
+  - Inbox messages now correctly stored and displayed after this fix
+- **Embedded Chat Client System Prompt Fixes (February 23–25, 2026)** (PR #3878, #3880, #3899)
+  - Fixed embedded LLM client not sending the system prompt and professional roles to the AI
+  - Fixed stored system prompt not being injected when the caller omits it
+  - Fixed system prompt silently dropped when `wp_kses_post()` preserves HTML tags inside the prompt; replaced `textarea.innerHTML` decode with `div.textContent` to correctly strip tags in all browsers
+- **Google Chat HTTP 404 Test Connection + OAuth UX (February 24, 2026)** (PR #3879)
+  - Fixed HTTP 404 error when testing Google Chat connection (wrong endpoint path)
+  - Added missing service account key upload indicator in the admin UI
+  - Improved OAuth button UX and feedback messaging
+- **Google Chat Auto-Reply Improvements (February 25, 2026)** (PR #3898)
+  - Bypassed native `@mention` check that was silently dropping AI auto-replies in Google Chat spaces
+  - Added support for thread replies so bot responses appear in the correct conversation thread
+  - Fixed OAuth welcome message not being sent on first bot installation
+  - Added `send_reply` handler and OAuth support for test auto-reply scenarios
+- **Google Chat Audience URL Clearable (February 27, 2026)**
+  - Fixed Google Chat Audience URL field that could not be cleared due to the `verify_token` preservation logic
+- **OpenAI File Attachment Errors (February 26, 2026)** (PR #3919)
+  - Fixed `Unknown parameter: 'url'` and `Unknown parameter: 'file_name'` errors for file attachments in the OpenAI Responses API
+  - Added full PDF file support in the attachment handling layer
+  - Fixed `sse_tool_fatal_error` crash when using the Analyze Video tool with OpenAI provider
+  - Removed unsupported `fps` parameter from the Sora video generation API payload
+- **Facebook Messenger Connection Test Fix (February 28, 2026)** (PR #3958)
+  - Fixed "Test Connection" button failure on the Messenger chat channel settings page
 
 ### Added - February 2026
 - **JetEngine CPT/Taxonomy AI Integration (February 12, 2026)**: Comprehensive AI assistance for all JetEngine custom post types and taxonomies
@@ -514,6 +564,70 @@
   - Updated build scripts to generate correct plugin names
   - No breaking changes: text domains, function prefixes, and slugs remain unchanged
   - This is purely a branding update with no functionality changes
+
+
+
+## [1.1.3] - 2026-03-03
+
+### Fixed - WordPress.org Compliance Final Audit
+- **Output Escaping (March 3, 2026)**: Added `esc_attr()` to 5 unescaped CSS class attribute echoes
+  - `class-wp-mcp-ai-admin-profession-settings.php`: nav-tab active class conditional
+  - `class-wp-mcp-ai-admin-team-settings.php`: nav-tab active class conditional
+  - `class-wp-mcp-ai-admin-slash-commands-dashboard.php`: compact-view class conditional
+  - `class-wp-mcp-ai-admin-orchestration-dashboard.php`: health-score-circle and warning class conditionals
+  - Added `phpcs:ignore` with justification for safe `wp_json_encode()` output inside inline `<script>` block
+- **ABSPATH Security Guards (March 3, 2026)**: Added `if ( ! defined( 'ABSPATH' ) ) { exit; }` to 4 files
+  - `includes/toolkit-metadata-mapping.php`
+  - `includes/filesystem/class-wp-mcp-ai-filesystem-service.php`
+  - `includes/services/class-wp-mcp-ai-process-service.php`
+  - `includes/validators/class-wp-mcp-ai-validator-service.php`
+- **Hardcoded Admin Menu Position (March 3, 2026)**: Removed last hardcoded menu position from Pro Dashboard
+  - Changed `add_menu_page()` position argument from `85` to `null` (automatic positioning)
+  - Now consistent with v1.1.2 fix applied to all other menu registrations
+- **PR #4004 Compliance Review**: Reviewed and confirmed Telegram Mini App media tab changes are fully compliant
+  - PHP: `pathinfo( $full_url, PATHINFO_EXTENSION )` safely cast to string and lowercased
+  - JS: `escHtml()` used for all user-derived badge content
+  - CSS: Layout-only changes, no compliance concerns
+
+### Added - Telegram Mini App
+- **Media Tab Extension Badges (PR #4004, March 2, 2026)**: Non-renderable files now show extension badge
+  - Adds `ext` field (lowercase extension) to all `handle_media()` REST responses
+  - JS: `extBadge` computed from `item.ext`, rendered with `escHtml()` escaping
+  - New CSS `.tma-media-icon-emoji`: base `line-height:1` rule for consistent icon sizing
+  - New CSS `.tma-media-ext-badge`: monospace pill with `rgba(0,0,0,.35)` background and `var(--tma-section-bg,#fff)` text for WCAG-compliant contrast in Telegram light/dark themes; truncates long extensions with ellipsis
+  - `.tma-media-icon` updated to `flex-direction:column` + `gap:4px` for vertical icon/badge stacking; font-size 36px → 32px
+
+
+
+## [1.1.2] - 2026-02-16
+
+### Fixed - WordPress.org Compliance
+- **Hardcoded Admin Menu Positions (February 16, 2026)**: Removed hardcoded menu positions from 5 locations
+  - Changed Assistant CPT menu_position from 56 to null for automatic positioning
+  - Changed Team CPT menu_position from 58 to null for automatic positioning  
+  - Changed Profession CPT menu_position from 57 to null for automatic positioning
+  - Changed AI Peer CPT menu_position from 57 to null for automatic positioning
+  - Changed Main Admin Menu position from 30 to null for automatic positioning
+  - Prevents conflicts with other plugins per WordPress.org guidelines
+  - Related to PR #3741 compliance fixes
+
+- **Pro Integration Settings Architecture (February 16, 2026)**: Moved pro-only integration settings to pro addon
+  - Moved Mailjet settings to pro addon (5 fields) - Tools exist in pro
+  - Moved Google Analytics settings to pro addon (3 fields) - Tools exist in pro
+  - Moved Yahoo Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Moved ESPN Fantasy settings to pro addon (2 fields) - Tools exist in pro
+  - Created `addons/pro/includes/admin/sections/class-wp-mcp-ai-section-pro-integrations.php`
+  - Base plugin now only includes settings for base tools
+  - Pro addon adds its own settings when active
+  - Better architecture: Settings match tool location
+  - Still WordPress.org compliant: No gating, proper separation
+
+### Changed
+- Updated plugin version to 1.1.2 across all files
+- Base plugin integration settings reduced to base-only features
+- Pro addon integration settings added for pro-only features
+
+
 
 ## [1.1.0] - 2025-12-24
 

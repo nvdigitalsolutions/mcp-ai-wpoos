@@ -312,6 +312,114 @@
 					callback(error, jqXHR);
 				}
 			};
+		},
+
+		/**
+		 * Make an AJAX request with automatic retry and exponential backoff.
+		 *
+		 * Retries on timeout, network errors, and 5xx server errors.
+		 * Uses exponential backoff with jitter to avoid thundering herd.
+		 *
+		 * @param {Object} options - jQuery AJAX options.
+		 * @param {Object} handlers - Success/error/complete handlers.
+		 * @param {Object} retryOptions - Retry configuration.
+		 * @param {number} retryOptions.maxRetries - Maximum retry attempts (default: 3).
+		 * @param {number} retryOptions.baseDelay - Base delay in ms (default: 1000).
+		 * @param {number} retryOptions.maxDelay - Maximum delay in ms (default: 30000).
+		 * @param {Function} retryOptions.onRetry - Callback on each retry attempt.
+		 * @return {Promise} Promise that resolves on success or rejects after all retries.
+		 */
+		requestWithRetry: function(options, handlers, retryOptions) {
+			retryOptions = $.extend({
+				maxRetries: 3,
+				baseDelay: 1000,
+				maxDelay: 30000,
+				onRetry: null,
+				_attempt: 0
+			}, retryOptions || {});
+
+			handlers = handlers || {};
+			const self = this;
+
+			return new Promise(function(resolve, reject) {
+				function attempt(attemptNum) {
+					const xhr = self.request(options, {
+						success: function(response, textStatus, jqXHR) {
+							if (handlers.success) {
+								handlers.success.call(this, response, textStatus, jqXHR);
+							}
+							resolve(response);
+						},
+						error: function(error, jqXHR) {
+							// Determine if the error is retriable
+							const isRetriable = self.isRetriableError(error);
+
+							if (isRetriable && attemptNum < retryOptions.maxRetries) {
+								// Calculate delay with exponential backoff + jitter
+								let delay = Math.min(
+									retryOptions.baseDelay * Math.pow(2, attemptNum),
+									retryOptions.maxDelay
+								);
+								// Add jitter (±25% randomization)
+								delay = delay * (0.75 + Math.random() * 0.5);
+
+								if (retryOptions.onRetry && typeof retryOptions.onRetry === 'function') {
+									retryOptions.onRetry({
+										attempt: attemptNum + 1,
+										maxRetries: retryOptions.maxRetries,
+										delay: delay,
+										error: error
+									});
+								}
+
+								setTimeout(function() {
+									attempt(attemptNum + 1);
+								}, delay);
+							} else {
+								// Final failure - call original error handler
+								if (handlers.error) {
+									handlers.error.call(this, error, jqXHR);
+								}
+								reject(error);
+							}
+						},
+						complete: handlers.complete
+					});
+
+					return xhr;
+				}
+
+				attempt(0);
+			});
+		},
+
+		/**
+		 * Check if an error is retriable.
+		 *
+		 * Retries on timeout, network errors, and 5xx server errors.
+		 * Does not retry on client errors (4xx) or parse errors.
+		 *
+		 * @param {Object} error - Parsed error object from parseError().
+		 * @return {boolean} True if the error is retriable.
+		 */
+		isRetriableError: function(error) {
+			// Retry on timeout
+			if (error.type === this.ERROR_TYPES.TIMEOUT) {
+				return true;
+			}
+
+			// Retry on network errors (status 0 = no connection)
+			if (error.type === this.ERROR_TYPES.ERROR && error.statusCode === 0) {
+				return true;
+			}
+
+			// Retry on server errors (5xx) and 429 (rate limit)
+			if (error.statusCode >= 500 || error.statusCode === 429) {
+				return true;
+			}
+
+			// Don't retry on abort, parse errors, or client errors (4xx)
+			return false;
 		}
 	};
 

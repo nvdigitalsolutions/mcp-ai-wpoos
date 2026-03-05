@@ -97,7 +97,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_execute_loop_steps() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -125,7 +125,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'step_results', $result );
 		$this->assertArrayHasKey( 'context', $result );
 		$this->assertArrayHasKey( 'iterations', $result );
-		
+
 		// Should execute 3 iterations.
 		$this->assertEquals( 3, $result['iterations'] );
 		$this->assertEquals( 3, $result['completed'] );
@@ -136,7 +136,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_loop_with_exit_condition() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -163,7 +163,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 
 		// Should exit after first iteration due to condition.
 		$this->assertEquals( 1, $result['iterations'] );
-		
+
 		// Should have exit condition message in results.
 		$exit_found = false;
 		foreach ( $result['step_results'] as $step_result ) {
@@ -180,7 +180,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_loop_reaches_max_iterations() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -204,7 +204,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 
 		// Should execute all 3 iterations.
 		$this->assertEquals( 3, $result['iterations'] );
-		
+
 		// Should have iteration limit message in results.
 		$limit_found = false;
 		foreach ( $result['step_results'] as $step_result ) {
@@ -221,7 +221,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_loop_step_numbering() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -259,7 +259,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_loop_dry_run_mode() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -310,7 +310,7 @@ class Test_Slash_Command_Workflow_Loop extends WP_UnitTestCase {
 	 */
 	public function test_loop_context_preservation() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_loop_steps' );
+		$method     = $reflection->getMethod( 'execute_loop_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(

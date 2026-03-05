@@ -35,7 +35,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 		wp_mcp_ai_init_slash_commands();
 
 		// Get handler and create orchestrator.
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler            = wp_mcp_ai_get_slash_command_handler();
 		$this->orchestrator = new WP_MCP_AI_Slash_Command_Workflow_Orchestrator( $handler );
 	}
 
@@ -75,7 +75,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_abandoned_cart_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['abandoned_cart_campaign'];
+		$workflow  = $workflows['abandoned_cart_campaign'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -87,7 +87,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_social_media_campaign_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['social_media_campaign'];
+		$workflow  = $workflows['social_media_campaign'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -99,7 +99,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_video_marketing_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['video_marketing_workflow'];
+		$workflow  = $workflows['video_marketing_workflow'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -111,7 +111,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_ecommerce_upsell_workflow_structure() {
 		$workflows = $this->orchestrator->get_workflows();
-		$workflow = $workflows['ecommerce_upsell_optimization'];
+		$workflow  = $workflows['ecommerce_upsell_optimization'];
 
 		$this->assertNotEmpty( $workflow['name'] );
 		$this->assertNotEmpty( $workflow['description'] );
@@ -153,7 +153,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 
 		// Get internal workflow definition (not just metadata).
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
@@ -178,12 +178,12 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_social_media_campaign_workflow_placeholders() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['social_media_campaign'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// First step should use {post_content} placeholder.
 		$this->assertArrayHasKey( 'content', $steps[0]['params'] );
@@ -199,12 +199,12 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_video_marketing_workflow_parameter_passing() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['video_marketing_workflow'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Second step should reference previous.video_id.
 		$this->assertArrayHasKey( 'video-id', $steps[1]['params'] );
@@ -220,12 +220,12 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_ecommerce_upsell_workflow_chaining() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 
 		$workflow = $all_workflows['ecommerce_upsell_optimization'];
-		$steps = $workflow['steps'];
+		$steps    = $workflow['steps'];
 
 		// Second step should use result from first step.
 		$this->assertArrayHasKey( 'product-id', $steps[1]['params'] );
@@ -237,7 +237,7 @@ class Test_Slash_Commands_Pro_Workflows extends WP_UnitTestCase {
 	 */
 	public function test_all_workflows_have_required_fields() {
 		$reflection = new ReflectionClass( $this->orchestrator );
-		$property = $reflection->getProperty( 'workflows' );
+		$property   = $reflection->getProperty( 'workflows' );
 		$property->setAccessible( true );
 		$all_workflows = $property->getValue( $this->orchestrator );
 

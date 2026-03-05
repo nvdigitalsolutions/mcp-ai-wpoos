@@ -544,11 +544,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$provider_labels = array(
 				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
 				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
+				'google'      => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'webllm'      => __( 'WebLLM (Browser)', 'mcp-ai-wpoos' ),
 			);
 
 			foreach ( $models_by_provider as $provider => $provider_models ) {
@@ -2103,7 +2104,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		foreach ( $csv as $row ) {
 			fputcsv( $output, $row );
 		}
-		fclose( $output );
+		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		return ob_get_clean();
 	}
 
@@ -2369,6 +2370,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! $tier_index_exists ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
 			);
@@ -2385,6 +2387,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! $usage_index_exists ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin-managed schema change to add/remove performance indexes on plugin-controlled usermeta keys.
 				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"
 			);

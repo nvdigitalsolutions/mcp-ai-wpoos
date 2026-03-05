@@ -97,7 +97,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_greater_than() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		// Test numeric comparison.
@@ -111,7 +111,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_equals() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'status' => 'active' );
@@ -124,7 +124,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_contains() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'message' => 'Hello World' );
@@ -137,7 +137,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_empty() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'value' => '' );
@@ -152,7 +152,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_not_empty() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'value' => 'something' );
@@ -167,7 +167,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_execute_branch_steps() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'execute_branch_steps' );
+		$method     = $reflection->getMethod( 'execute_branch_steps' );
 		$method->setAccessible( true );
 
 		$steps = array(
@@ -215,7 +215,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_less_than() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'count' => 2 );
@@ -228,7 +228,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_greater_than_or_equals() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'count' => 5 );
@@ -242,7 +242,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_not_equals() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'status' => 'active' );
@@ -255,7 +255,7 @@ class Test_Slash_Command_Workflow_Conditional extends WP_UnitTestCase {
 	 */
 	public function test_evaluate_condition_boolean() {
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'evaluate_condition' );
+		$method     = $reflection->getMethod( 'evaluate_condition' );
 		$method->setAccessible( true );
 
 		$context = array( 'enabled' => 'true' );

@@ -225,6 +225,139 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that when the fallback model is switched, the provider is also updated
+	 * to match the fallback model's provider so the request goes to the correct LLM API.
+	 */
+	public function test_agentic_loop_switches_provider_with_fallback_model() {
+		$assistant_id = $this->create_assistant_post();
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4o-mini' );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Capture the options passed to each LLM call so we can verify the provider.
+		$captured_options = array();
+
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->onlyMethods( array( 'create_chat_completion' ) )
+			->getMock();
+
+		$mock_client
+			->expects( $this->exactly( 2 ) )
+			->method( 'create_chat_completion' )
+			->willReturnCallback(
+				function ( $messages, $options ) use ( &$captured_options ) {
+					$captured_options[] = $options;
+
+					// First call: return tool_calls.
+					if ( 1 === count( $captured_options ) ) {
+						return array(
+							'id'      => 'chatcmpl-provider-switch-test',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'       => 'assistant',
+										'content'    => 'Let me get the weather.',
+										'tool_calls' => array(
+											array(
+												'id'       => 'call_weather_789',
+												'type'     => 'function',
+												'function' => array(
+													'name' => 'get_open_meteo_forecast',
+													'arguments' => wp_json_encode(
+														array(
+															'latitude'  => 48.8566,
+															'longitude' => 2.3522,
+															'hourly'    => 'temperature_2m',
+														)
+													),
+												),
+											),
+										),
+									),
+								),
+							),
+						);
+					}
+
+					// Second call: return final response (with fallback model/provider).
+					return array(
+						'id'      => 'chatcmpl-provider-switch-final',
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'The weather is sunny.',
+								),
+							),
+						),
+					);
+				}
+			);
+
+		$this->bootstrap_rest_controller( $mock_client );
+
+		// Configure fallback model to gemini-2.5-flash (provider: gemini).
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_high_token_model_switch' => true,
+				'high_token_fallback_model'      => 'gemini-2.5-flash',
+			)
+		);
+
+		// Set TPM limit for gpt-4o-mini very low to trigger model switch after tool execution.
+		// gemini-2.5-flash has 1M TPM so it can handle the request.
+		add_filter(
+			'wp_mcp_ai_model_tpm_limit',
+			function ( $limit, $model ) {
+				if ( 'gpt-4o-mini' === $model ) {
+					return 1000; // Force TPM failure so fallback model is triggered.
+				}
+				if ( 'gemini-2.5-flash' === $model ) {
+					return 1000000; // Plenty of tokens for the fallback model.
+				}
+				return $limit;
+			},
+			10,
+			2
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'What is the weather in Paris?',
+				),
+			)
+		);
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+
+		// We should have captured options from two calls.
+		$this->assertCount( 2, $captured_options, 'Should make exactly two LLM calls' );
+
+		// First call should use the original openai provider.
+		$this->assertSame( 'openai', $captured_options[0]['provider'], 'First LLM call should use openai provider' );
+
+		// Second call (after fallback model switch) should use the gemini provider,
+		// not openai, so the request goes to the correct LLM API endpoint.
+		$this->assertSame( 'gemini-2.5-flash', $captured_options[1]['model'], 'Second LLM call should use fallback model' );
+		$this->assertSame( 'gemini', $captured_options[1]['provider'], 'Second LLM call should switch provider to match fallback model' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
 	 * Prepare the REST controller instance for testing.
 	 *
 	 * @param WP_MCP_AI_Language_Model_Router $mock_client Mocked language model router.

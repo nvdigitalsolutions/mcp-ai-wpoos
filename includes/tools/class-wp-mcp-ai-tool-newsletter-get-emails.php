@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 				$count_query = $wpdb->prepare( $count_query, $count_where_values ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Query is properly prepared above; querying Newsletter plugin's custom tables not managed by WordPress object cache.
 		$total = (int) $wpdb->get_var( $count_query );
 
 		// Format emails.
@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 		foreach ( $emails as $email ) {
 			$stats_table = $wpdb->prefix . 'newsletter_stats';
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
-			$sent_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sent_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 			$results[] = array(
 				'id'         => (int) $email->id,

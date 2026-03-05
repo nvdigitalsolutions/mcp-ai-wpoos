@@ -1,7 +1,7 @@
 /**
  * Workflow Sidebar Component
  *
- * Contains node palette and workflow templates.
+ * Contains node palette, workflow templates, and saved workflows.
  *
  * @package WP_MCP_AI
  * @since 2.0.0
@@ -38,10 +38,13 @@ const nodeCategories = {
 /**
  * Workflow Sidebar Component
  */
-const WorkflowSidebar = ( { onLoadTemplate } ) => {
+const WorkflowSidebar = ( { onLoadTemplate, onLoadWorkflow, onDeleteWorkflow } ) => {
 	const [activeTab, setActiveTab] = useState( 'nodes' );
 	const [templates, setTemplates] = useState( [] );
+	const [savedWorkflows, setSavedWorkflows] = useState( [] );
 	const [loadingTemplates, setLoadingTemplates] = useState( false );
+	const [loadingWorkflows, setLoadingWorkflows] = useState( false );
+	const [confirmDelete, setConfirmDelete] = useState( null );
 
 	/**
 	 * Load templates from backend
@@ -49,6 +52,15 @@ const WorkflowSidebar = ( { onLoadTemplate } ) => {
 	useEffect( () => {
 		if ( activeTab === 'templates' && templates.length === 0 ) {
 			loadTemplates();
+		}
+	}, [activeTab] );
+
+	/**
+	 * Load saved workflows when that tab is active
+	 */
+	useEffect( () => {
+		if ( activeTab === 'workflows' ) {
+			loadSavedWorkflows();
 		}
 	}, [activeTab] );
 
@@ -71,10 +83,53 @@ const WorkflowSidebar = ( { onLoadTemplate } ) => {
 				setTemplates( Object.values( result.data.templates ) );
 			}
 		} catch ( error ) {
+			// eslint-disable-next-line no-console
 			console.error( 'Error loading templates:', error );
 		} finally {
 			setLoadingTemplates( false );
 		}
+	};
+
+	const loadSavedWorkflows = async () => {
+		// First try the pre-loaded workflows from localized data.
+		const preloaded = window.mcpAiWorkflowBuilder?.workflows;
+		if ( preloaded && Object.keys( preloaded ).length > 0 ) {
+			setSavedWorkflows( Object.values( preloaded ) );
+			return;
+		}
+
+		setLoadingWorkflows( true );
+		try {
+			const response = await fetch( window.mcpAiWorkflowBuilder?.ajaxUrl || '/wp-admin/admin-ajax.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams( {
+					action: 'wp_mcp_ai_list_pro_workflows',
+					nonce: window.mcpAiWorkflowBuilder?.nonce || '',
+				} ),
+			} );
+
+			const result = await response.json();
+			if ( result.success && result.data.workflows ) {
+				setSavedWorkflows( result.data.workflows );
+			}
+		} catch ( error ) {
+			// eslint-disable-next-line no-console
+			console.error( 'Error loading saved workflows:', error );
+		} finally {
+			setLoadingWorkflows( false );
+		}
+	};
+
+	const handleDeleteWorkflow = async ( workflowId ) => {
+		if ( onDeleteWorkflow ) {
+			await onDeleteWorkflow( workflowId );
+		}
+		// Refresh the list.
+		setSavedWorkflows( ( prev ) => prev.filter( ( w ) => w.id !== workflowId ) );
+		setConfirmDelete( null );
 	};
 
 	/**
@@ -112,6 +167,12 @@ const WorkflowSidebar = ( { onLoadTemplate } ) => {
 					onClick={() => setActiveTab( 'templates' )}
 				>
 					{__( 'Templates', 'mcp-ai-wpoos' )}
+				</button>
+				<button
+					className={`tab-button ${activeTab === 'workflows' ? 'active' : ''}`}
+					onClick={() => setActiveTab( 'workflows' )}
+				>
+					{__( 'Saved', 'mcp-ai-wpoos' )}
 				</button>
 			</div>
 
@@ -177,6 +238,85 @@ const WorkflowSidebar = ( { onLoadTemplate } ) => {
 										</div>
 									);
 								} )}
+							</div>
+						)}
+					</div>
+				)}
+
+				{activeTab === 'workflows' && (
+					<div className="saved-workflows">
+						<div className="saved-workflows-header">
+							<p className="templates-intro">
+								{__( 'Click a workflow to load it into the editor', 'mcp-ai-wpoos' )}
+							</p>
+							<button
+								className="refresh-button"
+								onClick={loadSavedWorkflows}
+								title={__( 'Refresh', 'mcp-ai-wpoos' )}
+							>
+								🔄
+							</button>
+						</div>
+
+						{loadingWorkflows && (
+							<div className="template-placeholder">
+								{__( 'Loading workflows...', 'mcp-ai-wpoos' )}
+							</div>
+						)}
+						{! loadingWorkflows && savedWorkflows.length === 0 && (
+							<div className="template-placeholder">
+								{__( 'No saved workflows yet. Build one and click Save!', 'mcp-ai-wpoos' )}
+							</div>
+						)}
+						{! loadingWorkflows && savedWorkflows.length > 0 && (
+							<div className="workflow-list">
+								{savedWorkflows.map( ( workflow ) => (
+									<div key={workflow.id} className="workflow-list-item">
+										<div
+											className="workflow-list-item-info"
+											onClick={() => onLoadWorkflow && onLoadWorkflow( workflow )}
+										>
+											<div className="workflow-list-name">{workflow.name}</div>
+											{workflow.description && (
+												<div className="workflow-list-description">
+													{workflow.description}
+												</div>
+											)}
+											<div className="workflow-list-meta">
+												{( workflow.nodes || [] ).length}{' '}
+												{__( 'nodes', 'mcp-ai-wpoos' )}
+											</div>
+										</div>
+										<div className="workflow-list-item-actions">
+											{confirmDelete === workflow.id ? (
+												<>
+													<button
+														className="workflow-action-button workflow-action-confirm"
+														onClick={() => handleDeleteWorkflow( workflow.id )}
+														title={__( 'Confirm Delete', 'mcp-ai-wpoos' )}
+													>
+														✓
+													</button>
+													<button
+														className="workflow-action-button workflow-action-cancel"
+														onClick={() => setConfirmDelete( null )}
+														title={__( 'Cancel', 'mcp-ai-wpoos' )}
+													>
+														✕
+													</button>
+												</>
+											) : (
+												<button
+													className="workflow-action-button workflow-action-delete"
+													onClick={() => setConfirmDelete( workflow.id )}
+													title={__( 'Delete Workflow', 'mcp-ai-wpoos' )}
+												>
+													🗑
+												</button>
+											)}
+										</div>
+									</div>
+								) )}
 							</div>
 						)}
 					</div>

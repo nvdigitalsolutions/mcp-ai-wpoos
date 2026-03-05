@@ -95,8 +95,8 @@ class WP_MCP_AI_Quick_Actions_Handler {
 
 		// Get tool from registry.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( $tool_slug );
-		
+		$tool     = $registry->get_tool( $tool_slug );
+
 		if ( ! $tool ) {
 			wp_send_json_error( __( 'Invalid tool specified.', 'mcp-ai-wpoos' ) );
 		}
@@ -111,28 +111,28 @@ class WP_MCP_AI_Quick_Actions_Handler {
 
 		// Prepare arguments.
 		$arguments = array();
-		
+
 		// Handle file upload.
 		if ( ! empty( $_FILES['file'] ) ) {
-			$file_data = $this->handle_file_upload( $_FILES['file'] );
+			$file_data = $this->handle_file_upload( $_FILES['file'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- file upload array passed to dedicated handler
 			if ( is_wp_error( $file_data ) ) {
 				wp_send_json_error( $file_data->get_error_message() );
 			}
 			$arguments['file'] = $file_data;
 		}
-		
+
 		// Handle media library selection.
 		if ( isset( $_POST['media_id'] ) ) {
-			$media_id = absint( $_POST['media_id'] );
+			$media_id   = absint( $_POST['media_id'] );
 			$attachment = get_post( $media_id );
-			
+
 			if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 				wp_send_json_error( __( 'Invalid media ID.', 'mcp-ai-wpoos' ) );
 			}
-			
+
 			$arguments['attachment_id'] = $media_id;
-			$arguments['file_url'] = wp_get_attachment_url( $media_id );
-			$arguments['file_path'] = get_attached_file( $media_id );
+			$arguments['file_url']      = wp_get_attachment_url( $media_id );
+			$arguments['file_path']     = get_attached_file( $media_id );
 		}
 
 		// Prepare context.
@@ -144,16 +144,16 @@ class WP_MCP_AI_Quick_Actions_Handler {
 		// Execute tool.
 		try {
 			$result = $registry->execute_tool( $tool_slug, $arguments, $context );
-			
+
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( $result->get_error_message() );
 			}
-			
+
 			// Format result for display.
 			$formatted_result = $this->format_tool_result( $result, $tool_slug );
-			
+
 			wp_send_json_success( $formatted_result );
-			
+
 		} catch ( Exception $e ) {
 			wp_send_json_error( $e->getMessage() );
 		}
@@ -262,7 +262,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 			if ( isset( $result['message'] ) ) {
 				$formatted['message'] = esc_html( $result['message'] );
 			}
-			
+
 			// Include the full result for debugging if WP_DEBUG is enabled.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				$formatted['_raw'] = $result;

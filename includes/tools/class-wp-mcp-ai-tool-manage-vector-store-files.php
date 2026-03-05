@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications.', 'mcp-ai-wpoos' );
+		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications. Best file formats: PDF, TXT, DOCX, MD, JSON, HTML. Avoid CSV/XLSX (convert to PDF/TXT first for reliable parsing).', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'vector_store_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the vector store to manage.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The ID of the vector store to manage. When omitted, the assistant\'s configured vector store is used.', 'mcp-ai-wpoos' ),
 				),
 				'action'          => array(
 					'type'        => 'string',
@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 					'default'     => 'desc',
 				),
 			),
-			'required'   => array( 'vector_store_id', 'action' ),
+			'required'   => array( 'action' ),
 		);
 	}
 
@@ -91,14 +91,6 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Validate vector_store_id.
-		if ( empty( $arguments['vector_store_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The vector_store_id parameter is required.', 'mcp-ai-wpoos' ),
-			);
-		}
-
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
 			return array(
@@ -107,8 +99,22 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
-		$vector_store_id = sanitize_text_field( $arguments['vector_store_id'] );
-		$action          = sanitize_key( $arguments['action'] );
+		// Resolve vector store ID: explicit argument > assistant context configuration.
+		$vector_store_id = '';
+		if ( ! empty( $arguments['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $arguments['vector_store_id'] );
+		} elseif ( ! empty( $context['assistant_config']['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $context['assistant_config']['vector_store_id'] );
+		}
+
+		if ( empty( $vector_store_id ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'No vector store ID provided and none configured for this assistant.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$action = sanitize_key( $arguments['action'] );
 
 		$client = new WP_MCP_AI_OpenAI_Client();
 
@@ -155,9 +161,18 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			$result = $client->add_vector_store_files( $vector_store_id, array( $file_id ) );
 
 			if ( is_wp_error( $result ) ) {
+				$error_message = $result->get_error_message();
+
+				// Enhance error with helpful guidance.
+				if ( stripos( $error_message, 'invalid file' ) !== false || stripos( $error_message, 'unsupported' ) !== false ) {
+					$error_message .= ' ' . __( 'Tip: Use PDF, TXT, DOCX, MD, JSON, or HTML formats. Avoid CSV/XLSX (convert to PDF first).', 'mcp-ai-wpoos' );
+				} elseif ( stripos( $error_message, 'not found' ) !== false ) {
+					$error_message .= ' ' . __( 'File may have been deleted or expired. Re-upload the file to OpenAI first.', 'mcp-ai-wpoos' );
+				}
+
 				$errors[] = array(
 					'file_id' => $file_id,
-					'error'   => $result->get_error_message(),
+					'error'   => $error_message,
 				);
 			} else {
 				$results[] = array(

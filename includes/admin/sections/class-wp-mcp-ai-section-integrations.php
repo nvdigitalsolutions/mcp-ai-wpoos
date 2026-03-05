@@ -77,19 +77,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			// Note: Gmail and Drive support 1 connection in base, multiple in pro via Remote Sites.
-			$gmail_notice  = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
-			$drive_notice  = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
+			$gmail_notice = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
+			$drive_notice = ' <em>' . __( '(Pro enables multiple connections via Remote Sites)', 'mcp-ai-wpoos' ) . '</em>';
 
 			return array(
 				// Gmail OAuth.
-				'gmail_client_id'                   => array(
+				'gmail_client_id'               => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'gmail_client_secret'               => array(
+				'gmail_client_secret'           => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $gmail_notice,
@@ -98,14 +98,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Google Drive OAuth.
-				'google_drive_client_id'            => array(
+				'google_drive_client_id'        => array(
 					'type'         => 'text',
 					'label'        => __( 'Google Drive OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Google Drive integration.', 'mcp-ai-wpoos' ) . $drive_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'google_drive_client_secret'        => array(
+				'google_drive_client_secret'    => array(
 					'type'         => 'password',
 					'label'        => __( 'Google Drive OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $drive_notice,
@@ -114,14 +114,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Crawl4AI.
-				'crawl4ai_base_url'                 => array(
+				'crawl4ai_base_url'             => array(
 					'type'         => 'url',
 					'label'        => __( 'Crawl4AI Base URL', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'mcp-ai-wpoos' ),
 					'placeholder'  => 'http://localhost:8000',
 					'autocomplete' => 'url',
 				),
-				'crawl4ai_api_key'                  => array(
+				'crawl4ai_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Crawl4AI API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Crawl4AI service (if required).', 'mcp-ai-wpoos' ),
@@ -130,7 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Brave Search.
-				'brave_search_api_key'              => array(
+				'brave_search_api_key'          => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Mubert Music API.
-				'mubert_api_key'                    => array(
+				'mubert_api_key'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Mubert API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -156,20 +156,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Cloudflare.
-				'cloudflare_api_token'              => array(
+				'cloudflare_api_token'          => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_zone_id'                => array(
+				'cloudflare_zone_id'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'enable_cloudflare_pro_toolkit'     => array(
+				'enable_cloudflare_pro_toolkit' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cloudflare Pro Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Cloudflare advanced features and integrations (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -178,26 +178,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Cloudways.
-				'cloudways_api_key'                 => array(
+				'cloudways_api_key'             => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Cloudways hosting integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudways_email'                   => array(
+				'cloudways_email'               => array(
 					'type'        => 'email',
 					'label'       => __( 'Cloudways Account Email', 'mcp-ai-wpoos' ),
 					'description' => __( 'Email address associated with your Cloudways account.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'you@example.com',
 				),
-				'cloudways_server_id'               => array(
+				'cloudways_server_id'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Server ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudways server identifier for server management operations. Find this in your Cloudways dashboard under Servers.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'cloudways_app_id'                  => array(
+				'cloudways_app_id'              => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudways Application ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudways application identifier for app-specific operations. Find this in your Cloudways dashboard under Applications.', 'mcp-ai-wpoos' ),
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// remove.bg API.
-				'removebg_api_key'                  => array(
+				'removebg_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'remove.bg API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				// These settings have been removed. Please use Remote Sites page to manage these connections.
 
 				// ITA Tariff Rate API.
-				'ita_tariff_api_key'                => array(
+				'ita_tariff_api_key'            => array(
 					'type'         => 'password',
 					'label'        => __( 'ITA Tariff Rate API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -234,58 +234,58 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Meta.
-				'meta_access_token'                 => array(
+				'meta_access_token'             => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta Access Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Long-lived access token for Meta Graph API. Used for Facebook, Instagram, and WhatsApp integrations.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_app_id'                       => array(
+				'meta_app_id'                   => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta App ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Meta (Facebook) App ID.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'meta_app_secret'                   => array(
+				'meta_app_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'Meta App Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Your Meta (Facebook) App Secret.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'meta_business_account_id'          => array(
+				'meta_business_account_id'      => array(
 					'type'        => 'text',
 					'label'       => __( 'Meta Business Account ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Meta Business Account ID (for WhatsApp Business API).', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'meta_connected_user_name'          => array(
+				'meta_connected_user_name'      => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'meta_connected_user_id'            => array(
+				'meta_connected_user_id'        => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
 
 				// TikTok.
-				'tiktok_access_token'               => array(
+				'tiktok_access_token'           => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Access Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Access token for TikTok Open API with video.share scope.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'tiktok_client_key'                 => array(
+				'tiktok_client_key'             => array(
 					'type'        => 'text',
 					'label'       => __( 'TikTok Client Key', 'mcp-ai-wpoos' ),
 					'description' => __( 'Client Key from TikTok developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'tiktok_client_secret'              => array(
+				'tiktok_client_secret'          => array(
 					'type'         => 'password',
 					'label'        => __( 'TikTok Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Client Secret from TikTok developer portal.', 'mcp-ai-wpoos' ),
@@ -294,7 +294,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 
 				// Plaid (Financial Services).
-				'plaid_client_id'                   => array(
+				'plaid_client_id'               => array(
 					'type'         => 'text',
 					'label'        => __( 'Plaid Client ID', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -304,17 +304,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
-				'plaid_secret'                      => array(
+				'plaid_secret'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Plaid Secret Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
-				'plaid_environment'                 => array(
+				'plaid_environment'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Plaid Environment', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ),
@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'sandbox',
-					// Removed pro gating - WordPress.org compliance
+					// Removed pro gating - WordPress.org compliance.
 				),
 
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
@@ -339,62 +339,62 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'gmail'            => array(
+				'gmail'        => array(
 					'id'     => 'gmail',
 					'label'  => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email',
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
 				),
-				'google_drive'     => array(
+				'google_drive' => array(
 					'id'     => 'google_drive',
 					'label'  => __( 'Google Drive', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
 				),
-				'crawl4ai'         => array(
+				'crawl4ai'     => array(
 					'id'     => 'crawl4ai',
 					'label'  => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'crawl4ai_base_url', 'crawl4ai_api_key' ),
 				),
-				'brave_search'     => array(
+				'brave_search' => array(
 					'id'     => 'brave_search',
 					'label'  => __( 'Brave Search', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
-				'mubert'           => array(
+				'mubert'       => array(
 					'id'     => 'mubert',
 					'label'  => __( 'Mubert', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-audio',
 					'fields' => array( 'mubert_api_key' ),
 				),
 				// PayHere, Flowhub, iSAMS, and QuickBooks have been moved to Remote Sites.
-				'removebg'         => array(
+				'removebg'     => array(
 					'id'     => 'removebg',
 					'label'  => __( 'remove.bg', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'removebg_api_key' ),
 				),
-				'cloudflare'       => array(
+				'cloudflare'   => array(
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
 					'fields' => array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' ),
 				),
-				'cloudways'        => array(
+				'cloudways'    => array(
 					'id'     => 'cloudways',
 					'label'  => __( 'Cloudways', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud-upload',
 					'fields' => array( 'cloudways_api_key', 'cloudways_email', 'cloudways_server_id', 'cloudways_app_id' ),
 				),
-				'meta'             => array(
+				'meta'         => array(
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-share',
 					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				),
-				'tiktok'           => array(
+				'tiktok'       => array(
 					'id'     => 'tiktok',
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
@@ -992,8 +992,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$yahoo_success = isset( $_GET['yahoo_success'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_success'] ) ) : '';
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$yahoo_error = isset( $_GET['yahoo_error'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_error'] ) ) : '';
-		?>
-		<?php if ( $yahoo_success ) : ?>
+			?>
+			<?php if ( $yahoo_success ) : ?>
 		<tr>
 			<th scope="row"></th>
 			<td>
@@ -1003,7 +1003,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</td>
 		</tr>
 	<?php endif; ?>
-		<?php if ( $yahoo_error ) : ?>
+			<?php if ( $yahoo_error ) : ?>
 		<tr>
 			<th scope="row"></th>
 			<td>
@@ -1066,7 +1066,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</p>
 			<?php endif; ?>
 			<p>
-				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo ! $is_pro_active ? 'disabled' : ''; ?>>
+				<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo esc_attr( ! $is_pro_active ? 'disabled' : '' ); ?>>
 					<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<span id="wp-mcp-ai-yahoo-test-result" style="margin-left: 10px;"></span>
@@ -1122,7 +1122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</div>
 		</td>
 	</tr>
-		<?php
+			<?php
 		}
 
 		/**
@@ -1134,7 +1134,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$has_swid      = ! empty( $settings['espn_fantasy_swid'] );
 			$has_both      = $has_espn_s2 && $has_swid;
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-		?>
+			?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'ESPN Sports Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -1218,7 +1218,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</div>
 			</td>
 		</tr>
-		<?php
+			<?php
 		}
 
 		/**
@@ -2029,10 +2029,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<?php
 					// If accessed via connection parameter (e.g., from Tools > Connections),
 					// preserve it for redirect after save.
-					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
-					if ( isset( $_GET['connection'] ) ) :
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only UI state parameter, not used for data modification.
+					$connection_param = isset( $_GET['connection'] ) ? sanitize_key( wp_unslash( $_GET['connection'] ) ) : '';
+					if ( '' !== $connection_param ) :
 						?>
-						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<input type="hidden" name="connection" value="<?php echo esc_attr( $connection_param ); ?>" />
 						<?php
 					endif;
 					?>

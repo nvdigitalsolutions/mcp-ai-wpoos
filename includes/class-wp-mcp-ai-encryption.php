@@ -253,7 +253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$updated = $wpdb->update(
 					$wpdb->postmeta,
-					array( 'meta_value' => $new_encrypted ),
+					array( 'meta_value' => $new_encrypted ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to find users by encrypted plugin token; no alternative lookup method available.
 					array( 'meta_id' => $meta_id ),
 					array( '%s' ),
 					array( '%d' )
@@ -312,7 +312,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 					$result = $wpdb->update(
 						$wpdb->postmeta,
-						array( 'meta_value' => $original_values[ $meta_id ] ),
+						array( 'meta_value' => $original_values[ $meta_id ] ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to find users by encrypted plugin token; no alternative lookup method available.
 						array( 'meta_id' => $meta_id ),
 						array( '%s' ),
 						array( '%d' )

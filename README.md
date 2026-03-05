@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.1  
-**Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
-**Latest Updates:** February 2026 - Package pre-bundling, Product Research page fixes, Pro Workflow Builder stability  
+**Version:** 1.1.3  
+**Release Date:** 2026-03-03 (March 2026 — WordPress.org compliance audit complete, Telegram Mini App media tab extension badges)  
+**Latest Updates:** March 2026 - WordPress.org compliance 100% complete (output escaping audit, ABSPATH guards, menu position fix), Telegram Mini App media tab extension badges, Office 365 & iCloud Drive connection types, Discord/Telegram reactions, WhatsApp group routing  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -24,8 +24,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (February 2026)](#-latest-updates-february-2026)
-- [🆕 Latest Updates (January 2026)](#-latest-updates-january-2026)
+- [🆕 Latest Updates (February & March 2026)](#-latest-updates-februarymarch-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
@@ -103,11 +102,11 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama**: Self-hosted (no external data transmission)
 
-See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 17 services.  
+See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
+The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 79 Pro tools (total 230 tool files across base and Pro).
+> **Note on Tool Count:** Tools include base WordPress operations, content management, media generation, research capabilities, and optional third-party integrations. The base version (165 tools) works standalone. The full version requires the Pro addon and provides 519 total tools including specialized toolkits for e-commerce, social media, analytics, document generation, and more.
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -266,7 +265,101 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (January-February 2026)
+## 🆕 Latest Updates (February–March 2026)
+
+### WordPress.org Compliance — Final Audit Complete (March 3, 2026) ✅ **FULLY COMPLIANT**
+
+**All 20 compliance categories resolved (PR #4004 + compliance audit)**
+
+- ✅ **Output escaping audit**: Added `esc_attr()` to 5 unescaped CSS class attribute echoes in admin pages
+- ✅ **ABSPATH guards**: Added missing `if ( ! defined( 'ABSPATH' ) ) { exit; }` to 4 PHP files
+- ✅ **Menu position**: Removed last hardcoded position (85 → null) from Pro Dashboard `add_menu_page()` 
+- ✅ **PR #4004 review**: Telegram Mini App media tab changes confirmed fully compliant (pathinfo() safely cast, JS uses escHtml(), CSS-only layout changes)
+- ✅ **WordPress.org submission status: 100% — READY** (was 82% in January 2026)
+- [Full Compliance Report →](docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md)
+
+### Telegram Mini App: File-Type Extension Badges (March 2, 2026) ⭐ **NEW**
+
+**PR #4004 – Media tab now shows extension badges for non-renderable files**
+
+- ✅ `.TXT`, `.PDF`, `.DOCX` etc. extension badge overlaid on file-type icon thumbnail
+- ✅ New `ext` field in `handle_media()` REST response (lowercase extension via pathinfo)
+- ✅ New CSS: `.tma-media-ext-badge` (monospace pill, WCAG-compliant contrast in Telegram light/dark)
+- ✅ Icon layout updated to `flex-direction:column` for icon/badge vertical stacking
+
+### Office 365 & iCloud Drive Connection Types (March 1, 2026) ⭐ **NEW**
+
+**8 new tools across 3 new integration platforms (PR #3971)**
+
+- ✅ **Outlook Mail**: `send_outlook_mail` (HTML/plain-text, CC support) + `get_outlook_messages` (any folder, OData filter)
+- ✅ **OneDrive**: `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` via Microsoft Graph API
+- ✅ **iCloud Drive**: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via HTTPS gateway
+- ✅ **Admin UI**: New Office 365 and iCloud Drive config panels in NV oOS → Chat Channels Toolkit
+- ✅ Chat Channels Toolkit grows to **47 tools across 11 platforms**
+- [Setup Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md#office-365-setup)
+
+### Telegram Mini App CMS (February 28, 2026) ⭐ **NEW**
+
+**PR #3959 – Transformed Telegram Mini App from chat shell into full WordPress CMS**
+
+- ✅ New REST endpoints for WordPress CPTs, tools, and media within the Telegram WebView
+- ✅ Redesigned Mini App UI with navigation panels for content management
+- ✅ Fixed Mini App stuck on "Authenticating": session token fallback auth, infinite-loop prevention, subscriber-level permission (PR #3971)
+- [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
+
+### Discord/Telegram Reactions + Discord Voice (February 27, 2026) ⭐ **NEW**
+
+**OpenClaw Feb 2026 parity – 3 new tools**
+
+- ✅ `add_discord_message_reaction` – add emoji reactions to Discord messages
+- ✅ `add_telegram_message_reaction` – add emoji reactions to Telegram messages (Bot API 7.0+)
+- ✅ `get_discord_voice_channel_members` – list users currently in a Discord voice channel
+- ✅ **Elementor Telegram Login Widget** (PR #3940) – drag-and-drop `[mcp_ai_telegram_login]` shortcode integration
+
+### Chat Channel Connection Fixes (February 19–28, 2026)
+
+**Comprehensive stabilization sprint across WhatsApp, Messenger, Google Chat, and inbox storage**
+
+- ✅ **WhatsApp** (PR #3818, #3819): Fixed 403 field-permission errors on test connection
+- ✅ **WhatsApp** (PR #3840): Fixed auto-reply error #133010
+- ✅ **WhatsApp** (PR #3841): Fixed assistant silently ignoring real messages when App Secret not configured
+- ✅ **WhatsApp** (PR #3859): AI auto-replies to group messages now route to the group thread
+- ✅ **Messenger** (PR #3840): Added App ID, token generator, Test Connection, API version dropdown
+- ✅ **Messenger** (PR #3958): Fixed Test Connection button failure in Messenger settings
+- ✅ **Google Chat** (PR #3879): Fixed HTTP 404 on test connection, improved OAuth UX, service account key indicator
+- ✅ **Google Chat** (PR #3898): Fixed auto-reply silently dropped, added thread replies, fixed OAuth welcome message
+- ✅ **Google Chat**: Fixed Audience URL field not clearable (verify_token preservation bug)
+- ✅ **Inbox CCT** (PR #3860): Fixed `channel_messages` / `channel_contacts` CCTs never registering — inbox messages now persist and display correctly
+- ✅ **Embedded Client** (PR #3878, #3880, #3899): Fixed system prompt + professional roles not sent to LLM; fixed HTML-in-prompt silently dropping entire prompt
+
+
+
+**Version 1.1.2 Released: Critical WordPress.org compliance updates**
+
+**Hardcoded Admin Menu Positions Removed:**
+- ✅ Removed hardcoded menu positions from 5 locations (CPTs and main menu)
+- ✅ Changed from fixed positions to null for automatic positioning
+- ✅ Prevents conflicts with other plugins per WordPress.org guidelines
+- ✅ Affects: Assistant CPT, Team CPT, Profession CPT, AI Peer CPT, Main Admin Menu
+
+**Pro Integration Settings Architecture:**
+- ✅ Moved pro-only integration settings to pro addon
+- ✅ Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings relocated
+- ✅ Base plugin now only includes settings for base tools
+- ✅ Better architecture: Settings match tool location
+- ✅ Still WordPress.org compliant: No gating, proper separation
+
+### JetEngine CPT/Taxonomy AI Integration (February 12, 2026) ⭐ **NEW**
+
+**Comprehensive AI assistance for all JetEngine custom post types and taxonomies**
+
+- ✅ **AI Assistant Metaboxes**: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+- ✅ **Research & Add Pages**: Dedicated submenu pages for each JetEngine CPT with AI-powered content creation
+- ✅ **Automatic Field Mapping**: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.)
+- ✅ **Version Compatibility**: Full support for JetEngine 3.7+ with compatibility layer
+- ✅ **Settings**: Two independent toggles for metaboxes and research pages
+- ✅ **Testing**: Comprehensive test suite with 100% passing tests
+- [Complete Integration Guide →](docs/jetengine-integration-guide.md)
 
 ### Package Pre-Bundling System (February 12, 2026) ⭐ **NEW**
 
@@ -363,17 +456,24 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 
 ### Chat Channels & WebChat Integration (February 2026) ⭐ **NEW**
 
-**Production-Ready: 6 chat platforms + collaborative rooms with AI assistants**
+**Production-Ready: 11 platforms + collaborative rooms with AI assistants**
 
-**Chat Channels Toolkit (21 Tools):**
-- **Telegram (3)**: Send messages, get updates, manage webhooks
-- **WhatsApp (3)**: Send messages/templates, get message history
+**Chat Channels Toolkit (47 Tools):**
+- **Telegram (4)**: Send messages, get updates, manage webhooks, add message reactions
+- **WhatsApp (4)**: Send template/interactive/media messages, get message history
 - **Slack (4)**: Send messages, get channels/messages, create channels
-- **Discord (4)**: Send messages, get channels/messages, create channels
+- **Discord (6)**: Send messages, get channels/messages, create channels, add reactions, voice channel members
 - **Microsoft Teams (3)**: Send messages, get channels/messages
 - **Facebook Messenger (3)**: Send messages, get conversations, create broadcasts
+- **Apple Messages for Business (4)**: Send text/interactive/group messages, retrieve conversation history
+- **Google Chat / Spaces (7)**: Send messages, list/create spaces, manage members, retrieve history
+- **Twitter/X (3)**: Send/receive Direct Messages, manage Account Activity webhooks
+- **Office 365 – Outlook (2)** ⭐ **NEW**: Send and retrieve Outlook mail via Microsoft Graph API
+- **Office 365 – OneDrive (3)** ⭐ **NEW**: List, download, and upload OneDrive files via Microsoft Graph API
+- **iCloud Drive (3)** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway
+- **WebChat (1)**: `send_webchat_message` - Send to P2P WebChat rooms
 - **Unified Hub (1)**: `unified_channel_broadcast` - Simultaneous multi-platform messaging
-- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit
+- **Admin Interface**: Comprehensive settings at NV oOS → Chat Channels Toolkit, including Office 365 and iCloud Drive configuration
 - [Chat Channels Guide →](addons/pro/docs/CHAT_CHANNELS_TOOLKIT.md)
 
 **WebChat Rooms:**
@@ -767,7 +867,9 @@ Multiple fixes to ensure Product Research and Consolidate pages work reliably:
 - [Documentation →](docs/SLASH_COMMANDS_GUIDE.md) | [Pro Commands →](docs/PRO_TOOLKIT_SLASH_COMMANDS.md)
 
 ### Chat Channels & Messaging Integration ⭐ **NEW**
-- 💬 **Chat Channels Toolkit (21 Tools)**: Integrate with 6 major platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger
+- 💬 **Chat Channels Toolkit (47 Tools)**: Integrate with 11 platforms - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Apple Messages for Business, Google Chat/Spaces, Twitter/X, Office 365 (Outlook + OneDrive), iCloud Drive
+- 📧 **Office 365 Integration** ⭐ **NEW**: Send and retrieve Outlook mail, list/download/upload OneDrive files via Microsoft Graph API (5 tools)
+- ☁️ **iCloud Drive Integration** ⭐ **NEW**: List, download, and upload iCloud Drive files via a configurable gateway service (3 tools)
 - 🌐 **Unified Broadcasting**: Send messages across multiple platforms simultaneously with `unified_channel_broadcast` tool
 - 🏠 **WebChat Rooms**: Custom post type for real-time collaborative chat rooms with AI assistant assignment
 - 📝 **Message Persistence**: JetEngine CCT integration for permanent message history

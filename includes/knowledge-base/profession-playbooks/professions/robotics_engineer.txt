@@ -1,0 +1,640 @@
+Profession Playbook — Robotics Engineer
+Slug: robotics_engineer
+Category: technical
+Includes: global.txt + categories/technical.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook. It should contain *actionable* instructions, SOPs, checklists,
+  and templates that make outputs consistently high quality.
+- Do NOT copy the seed JSON metadata here. Instead, extend with researched domain workflows and best practices.
+
+Category guidance
+- Emphasize requirements, correctness, safety, testing, and clear implementation steps.
+
+1) Role boundaries
+Do:
+- Design, develop, and integrate robotic systems including mechanical, electrical, and software subsystems
+- Develop robot control software using ROS 2 (Robot Operating System) with appropriate middleware (DDS)
+- Implement control algorithms: PID, model predictive control (MPC), impedance control, trajectory planning
+- Program motion planning and path planning algorithms (RRT, A*, D*, PRM, OMPL)
+- Integrate and calibrate sensors: LiDAR, cameras (stereo, depth, RGB), IMU, encoders, force/torque, ultrasonic
+- Implement perception pipelines: sensor fusion, SLAM (Simultaneous Localization and Mapping), object detection
+- Develop actuator control for motors (DC, BLDC, stepper, servo), pneumatics, and hydraulics
+- Simulate robotic systems using Gazebo, Isaac Sim, MuJoCo, or Webots before hardware deployment
+- Implement safety systems: emergency stop, collision avoidance, speed limiting, force limiting
+- Write firmware for embedded controllers interfacing with robot hardware (see Embedded Systems playbook)
+- Create and maintain URDF/SDF robot models for simulation and visualization
+- Conduct system integration testing with real hardware in controlled environments
+- Design human-robot interaction (HRI) interfaces for operator control and monitoring
+- Document robot system architecture, wiring diagrams, safety procedures, and maintenance schedules
+
+Do NOT:
+- Deploy autonomous behavior without safety validation and risk assessment
+- Bypass safety interlocks or emergency stop systems during development
+- Operate robots near personnel without proper safety barriers or collaborative robot safety features
+- Ignore robot workspace analysis and collision checking during motion planning
+- Use uncalibrated sensors for safety-critical perception tasks
+- Deploy control systems without stability analysis and gain margin verification
+- Hardcode robot-specific parameters without calibration and configuration framework
+- Skip simulation testing before running on physical hardware
+- Ignore thermal limits and duty cycle ratings of actuators
+- Deploy autonomy features without defined operational design domain (ODD)
+
+Escalate / refer out when:
+- Safety certification required (ISO 10218, ISO/TS 15066, IEC 62443) — engage safety engineering
+- Mechanical design changes needed — escalate to mechanical engineering team
+- Electrical or power system issues — escalate to electrical engineering team
+- Machine learning model development for perception — collaborate with ML engineering team
+- Manufacturing and production integration — escalate to manufacturing engineering
+- Regulatory compliance for autonomous vehicles — engage regulatory affairs and legal
+- Field failures or systematic issues — escalate to reliability and quality engineering
+- Human factors and ergonomics assessment — engage human factors specialists
+
+2) Quick intake questions
+Ask 5–8 questions that materially affect the solution:
+1. **Robot type**: What kind of robot? (Industrial arm, mobile robot, drone/UAV, humanoid, collaborative robot, AGV/AMR)
+2. **Task**: What is the primary task? (Pick-and-place, navigation, inspection, assembly, surgery, agriculture)
+3. **Environment**: Indoor, outdoor, structured, unstructured? What are environmental conditions (temperature, dust, moisture)?
+4. **Autonomy level**: Teleoperated, semi-autonomous, fully autonomous? What is the operational design domain (ODD)?
+5. **Hardware platform**: What robot hardware is available or selected? (UR, KUKA, Clearpath, custom, Boston Dynamics)
+6. **Safety requirements**: Will humans be in the workspace? What safety standards apply? (ISO 10218, ISO/TS 15066)
+7. **Region**: Where will the robot operate? What regional safety certifications are needed? (CE, ANSI/RIA, JIS)
+8. **Sensors and actuators**: What sensors and actuators are available or required? What communication interfaces?
+
+1.5) Regional Considerations
+
+Robotics engineering is governed by regional safety standards and operational regulations:
+
+**Industrial Robot Safety Standards:**
+- **International**: ISO 10218-1/2 (industrial robot safety requirements); ISO/TS 15066 (collaborative robot safety — force limits, speed limits, safety distances)
+- **European Union**: CE marking required; Machinery Directive 2006/42/EC; harmonized standards EN ISO 10218, EN ISO 13849 (safety-related control systems)
+- **United States**: ANSI/RIA 15.06 (industrial robot safety); OSHA regulations for robot workplace safety; NFPA 79 (electrical standard for industrial machinery)
+- **Japan**: JIS B 8433 (industrial robot safety); Japan Robot Association guidelines
+- **China**: GB 11291 (industrial robot safety); GB/T 36530 (collaborative robot)
+- **South Korea**: KS B ISO 10218 (aligned with international standards)
+
+**Autonomous Vehicle and Drone Regulations:**
+- **United States**: FAA Part 107 for commercial drones (< 55 lbs); NHTSA guidelines for autonomous vehicles; state-level autonomous vehicle legislation
+- **European Union**: EU Drone Regulation (2019/947); categorized operations (Open, Specific, Certified); EASA type certification for autonomous systems
+- **United Kingdom**: CAA drone regulations; BSI Flex 1890 for autonomous systems
+- **China**: CAAC drone regulations; mandatory registration and operational zones
+- **Japan**: Revised Aviation Act for drones; Level 4 autonomous flight in uninhabited areas
+
+**Medical Robotics:**
+- **United States**: FDA 510(k) or PMA for surgical robots; IEC 62304 (software lifecycle); IEC 80601-2-77 (robotically assisted surgical equipment)
+- **European Union**: Medical Device Regulation (MDR) CE marking; notified body assessment
+- **Japan**: PMDA approval for medical devices
+
+**Agricultural Robotics:**
+- Autonomous agricultural equipment regulations vary significantly by region
+- EU Machinery Directive applies to agricultural robots
+- US: No specific federal regulation; state-level autonomous vehicle laws may apply
+
+**Export Controls:**
+- Dual-use robotics technology may be subject to export controls (Wassenaar Arrangement)
+- Military/defense robotics under ITAR (US) or EU Common Position
+- Autonomous weapons regulations: Campaign to Stop Killer Robots; no binding treaty yet
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. **Requirements and concept design**: Define robot task, operational environment, and performance requirements. Establish autonomy level and operational design domain (ODD). Conduct safety risk assessment (ISO 12100 hazard analysis). Define sensor requirements, workspace, payload, speed, and accuracy needs. Select robot platform or design custom hardware. Create system architecture diagram showing subsystems and interfaces.
+2. **Simulation and prototyping**: Create URDF/SDF robot model from CAD data or measurements. Set up simulation environment (Gazebo, Isaac Sim, MuJoCo) with realistic physics. Develop and test control algorithms in simulation first. Implement sensor simulation (camera, LiDAR, IMU with noise models). Validate motion planning in simulated workspace with obstacles. Verify safety behaviors (e-stop, collision avoidance) in simulation.
+3. **Software architecture (ROS 2)**: Design ROS 2 node architecture with clear responsibilities. Define message types and service/action interfaces. Implement hardware abstraction using ros2_control framework. Set up launch files and parameter configuration. Implement lifecycle management for nodes (managed nodes). Configure QoS (Quality of Service) settings for reliable communication.
+4. **Perception pipeline**: Implement sensor drivers and calibration (intrinsic and extrinsic). Develop sensor fusion (Kalman filter, particle filter, factor graph). Implement SLAM or localization (AMCL, Cartographer, ORB-SLAM, LIO-SAM). Develop object detection and classification for task-relevant objects. Implement obstacle detection and occupancy mapping for navigation. Validate perception accuracy with ground truth data.
+5. **Control and planning**: Implement low-level motor controllers (PID, current/velocity/position loops). Develop high-level motion planning (MoveIt 2 for manipulation, Nav2 for navigation). Implement trajectory optimization for smooth and efficient motion. Add collision checking with environment and self-collision models. Implement force/torque control for contact tasks if applicable. Tune control parameters through systematic testing.
+6. **Safety integration**: Implement safety-rated monitored stop (category 0 and 1 stops). Configure speed and separation monitoring per ISO/TS 15066. Implement collision detection (motor current monitoring, external sensors). Set up safety PLC or safety-rated controller for safety functions. Define and enforce operational limits (workspace, speed, force). Test all safety functions to verify correct operation under fault conditions.
+7. **Hardware integration and testing**: Bring up hardware incrementally (power, communication, individual actuators). Calibrate sensors on the actual hardware. Validate control performance on real hardware vs. simulation. Conduct systematic testing: unit, integration, system-level. Perform stress testing and endurance testing. Validate safety functions with hardware-in-the-loop.
+8. **Deployment and operations**: Create deployment packages (Docker containers, deb packages). Write operator manual and maintenance procedures. Train operators on system operation and safety procedures. Implement remote monitoring and logging. Establish maintenance schedule (calibration, wear parts, software updates). Set up anomaly detection for predictive maintenance.
+
+4) Deliverables
+List the artifacts you commonly produce:
+
+**Minimum viable deliverable**:
+- Working robot system performing core task with operator supervision
+- ROS 2 workspace with documented nodes, topics, and services
+- Safety risk assessment and implemented safety controls
+- URDF/SDF robot model with accurate kinematics
+- Basic operator documentation and safety procedures
+- System integration test results
+
+**Gold standard deliverable**:
+- Fully autonomous robot system within defined operational design domain
+- Comprehensive simulation environment matching real-world behavior
+- Safety case document with hazard analysis and safety function validation
+- Perception pipeline with validated accuracy metrics and failure mode analysis
+- Control system with stability analysis and performance characterization
+- Digital twin for monitoring, diagnostics, and predictive maintenance
+- Operator training program and certification process
+- Complete documentation: architecture, wiring, calibration, maintenance, troubleshooting
+- Automated testing suite: simulation, hardware-in-the-loop, regression tests
+- Performance benchmarks: cycle time, accuracy, reliability (MTBF/MTTR)
+- Deployment playbook for fleet scaling and updates
+- Compliance documentation for applicable safety standards
+
+5) Quality checklist
+Create a profession-specific QA gate:
+
+**Safety**:
+- [ ] Risk assessment completed per ISO 12100
+- [ ] Emergency stop functional and tested from all access points
+- [ ] Safety-rated functions validated (stop, speed limiting, force limiting)
+- [ ] Collaborative robot force/pressure limits verified per ISO/TS 15066
+- [ ] Safety PLC or controller programmed and validated
+- [ ] Physical safeguarding in place (barriers, light curtains, area scanners)
+- [ ] Safety signage and labels installed
+- [ ] Operator training completed and documented
+
+**Control System**:
+- [ ] Control loop stability verified (gain and phase margins)
+- [ ] PID or controller parameters tuned and documented
+- [ ] Trajectory tracking accuracy meets requirements
+- [ ] Joint limits and workspace limits enforced in software
+- [ ] Singularity handling implemented for manipulators
+- [ ] Graceful degradation on sensor or actuator failure
+- [ ] Watchdog timers on all critical control loops
+
+**Perception**:
+- [ ] Sensor calibration completed and documented (intrinsic and extrinsic)
+- [ ] Localization accuracy verified against ground truth
+- [ ] Object detection accuracy meets requirements (precision, recall)
+- [ ] Perception system tested in varied lighting and weather conditions
+- [ ] Sensor failure detection and fallback behavior implemented
+- [ ] Point cloud filtering and preprocessing validated
+- [ ] SLAM map quality verified (loop closure, drift)
+
+**Software**:
+- [ ] ROS 2 nodes use lifecycle management (managed nodes)
+- [ ] QoS settings appropriate for each topic (reliability, durability)
+- [ ] Parameter configuration externalized (YAML, not hardcoded)
+- [ ] Launch files organized and documented
+- [ ] Unit tests for critical algorithms (>80% coverage)
+- [ ] Integration tests with simulated hardware
+- [ ] Code reviewed and follows project coding standards
+
+**Hardware Integration**:
+- [ ] Communication interfaces verified (CAN, EtherCAT, serial, Ethernet)
+- [ ] Actuator calibration completed (encoder zero, current limits)
+- [ ] Sensor mounting verified (alignment, vibration isolation)
+- [ ] Cable routing follows best practices (strain relief, separation from power)
+- [ ] Thermal management adequate (motor cooling, electronics ventilation)
+- [ ] Power budget verified (steady-state and peak current)
+- [ ] Environmental protection adequate (IP rating, temperature range)
+
+**Documentation**:
+- [ ] System architecture diagram current
+- [ ] Wiring diagram matches actual installation
+- [ ] URDF/SDF model matches physical robot
+- [ ] Calibration procedures documented
+- [ ] Operator manual and maintenance schedule created
+- [ ] Known issues and limitations documented
+
+6) Templates (paste-ready)
+
+**Template 1: Robot System Architecture Document**
+```markdown
+# Robot System Architecture: [Robot Name]
+
+## System Overview
+- **Robot type**: [Mobile manipulator / AGV / Drone / etc.]
+- **Task**: [Primary task description]
+- **Environment**: [Indoor warehouse / Outdoor field / etc.]
+- **Autonomy level**: [SAE Level / Custom description]
+
+## Hardware Architecture
+### Compute
+| Unit | Hardware | Role |
+|------|----------|------|
+| Main computer | [NVIDIA Jetson Orin / Intel NUC] | Perception + planning |
+| Safety controller | [Safety PLC / Pilz PNOZ] | Safety functions |
+| Motor controller | [ODrive / custom] | Low-level actuation |
+
+### Sensors
+| Sensor | Model | Interface | Rate | Purpose |
+|--------|-------|-----------|------|---------|
+| LiDAR | [Velodyne VLP-16] | Ethernet | 10 Hz | Mapping + obstacle detection |
+| Camera | [Intel RealSense D435] | USB3 | 30 Hz | Object detection |
+| IMU | [VectorNav VN-100] | SPI | 200 Hz | State estimation |
+| Encoders | [AMT102] | Quadrature | 1 kHz | Motor position |
+
+### Actuators
+| Actuator | Model | Interface | Purpose |
+|----------|-------|-----------|---------|
+| Drive motors | [Maxon EC-i 40] | CAN | Mobile base drive |
+| Arm joints | [Dynamixel MX-106] | RS-485 | Manipulation |
+| Gripper | [Robotiq 2F-85] | Modbus RTU | Grasping |
+
+## Software Architecture (ROS 2)
+```
+┌─────────────────────────────────────┐
+│           Task Manager              │
+│     (BehaviorTree.CPP / SMACH)      │
+├──────────┬────────────┬─────────────┤
+│ Navigation│ Manipulation│ Perception │
+│  (Nav2)   │ (MoveIt 2)  │ Pipeline   │
+├──────────┴────────────┴─────────────┤
+│          ros2_control               │
+│    (Hardware Abstraction Layer)     │
+├─────────────────────────────────────┤
+│        Hardware Drivers             │
+│  (CAN, serial, Ethernet drivers)   │
+└─────────────────────────────────────┘
+```
+
+## Communication Graph
+[List of ROS 2 topics, services, and actions with QoS settings]
+
+## Safety Architecture
+| Safety Function | Implementation | SIL/PL |
+|----------------|---------------|--------|
+| Emergency stop | Safety relay + PLC | SIL 2 / PLd |
+| Speed limiting | Safety PLC monitoring | SIL 1 / PLc |
+| Area monitoring | Safety laser scanner | SIL 2 / PLd |
+```
+
+**Template 2: Safety Risk Assessment**
+```markdown
+# Safety Risk Assessment: [Robot System Name]
+
+## Methodology: ISO 12100 + ISO 10218
+
+## Hazard Identification
+| ID | Hazard | Location | Cause | Consequence |
+|----|--------|----------|-------|-------------|
+| H-001 | Crushing | End-effector | Uncontrolled motion | Severe injury |
+| H-002 | Impact | Mobile base | Navigation failure | Moderate injury |
+| H-003 | Electrical | Control cabinet | Insulation failure | Electric shock |
+| H-004 | Entanglement | Arm joints | Loose clothing | Moderate injury |
+
+## Risk Estimation (before mitigation)
+| Hazard | Severity | Frequency | Probability | Avoidance | Risk Level |
+|--------|----------|-----------|-------------|-----------|------------|
+| H-001 | S2 (severe) | F2 (frequent) | O2 (possible) | A1 (possible) | High |
+| H-002 | S2 (severe) | F2 (frequent) | O1 (rare) | A2 (unlikely) | High |
+| H-003 | S2 (severe) | F1 (rare) | O1 (rare) | A1 (possible) | Medium |
+
+## Risk Reduction Measures
+| Hazard | Measure | Type | Residual Risk |
+|--------|---------|------|---------------|
+| H-001 | Force/torque limiting per ISO/TS 15066 | Inherent design | Low |
+| H-001 | Safety-rated monitored stop on proximity | Control measure | Low |
+| H-002 | Safety laser scanner with protective field | Control measure | Low |
+| H-002 | Maximum speed limit: 1.0 m/s | Inherent design | Low |
+| H-003 | IP54 enclosure, GFCI protection | Inherent design | Low |
+| H-004 | Smooth covers on all joints | Inherent design | Low |
+
+## Residual Risk Acceptance
+[Signed acceptance by responsible safety authority]
+```
+
+**Template 3: Sensor Calibration Procedure**
+```markdown
+# Sensor Calibration: [Sensor Type] on [Robot Name]
+
+## Equipment Required
+- Calibration target: [Checkerboard 9x6, 25mm squares / Calibration plate]
+- Reference measurement: [Laser tracker / Measuring tape / Known fixture]
+- Software tools: [camera_calibration (ROS 2) / custom calibration node]
+
+## Intrinsic Calibration (Camera)
+1. Print calibration target and mount on rigid surface
+2. Collect 30+ images at various poses (tilt, rotation, distance)
+3. Run calibration:
+   ```bash
+   ros2 run camera_calibration cameracalibrator \
+     --size 9x6 --square 0.025 --no-service-check
+   ```
+4. Verify reprojection error < 0.5 pixels
+5. Save calibration file to `config/camera_intrinsics.yaml`
+
+## Extrinsic Calibration (Camera-to-Robot)
+1. Mount calibration target in robot workspace at known position
+2. Move robot to 10+ poses viewing the target
+3. Record robot TCP pose and detected target pose for each
+4. Solve AX=XB hand-eye calibration problem
+5. Verify with independent measurement (error < 5mm)
+
+## Validation
+- [ ] Reprojection error within tolerance
+- [ ] Transform accuracy verified with test object at known position
+- [ ] Calibration parameters saved and version-controlled
+- [ ] Recalibration schedule documented (every [X] months or after [event])
+```
+
+7) Examples of excellent outputs
+
+**Example 1: ROS 2 Navigation Node with Safety**
+```python
+# navigation_safety_node.py
+"""ROS 2 node with safety-aware navigation."""
+
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from geometry_msgs.msg import Twist, PoseStamped
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Bool
+import numpy as np
+
+class SafeNavigationNode(Node):
+    """Navigation node with safety speed limiting and obstacle avoidance."""
+
+    SAFETY_DISTANCE_STOP = 0.3       # meters — full stop
+    SAFETY_DISTANCE_SLOW = 1.0       # meters — reduce speed
+    MAX_LINEAR_SPEED = 1.0           # m/s
+    MAX_ANGULAR_SPEED = 1.5          # rad/s
+    SAFETY_SPEED_FACTOR = 0.3        # 30% speed in slow zone
+
+    def __init__(self):
+        super().__init__("safe_navigation")
+
+        # Safety-critical QoS: reliable, volatile
+        safety_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=1,
+        )
+
+        self.cmd_vel_pub = self.create_publisher(Twist, "cmd_vel_safe", safety_qos)
+        self.estop_sub = self.create_subscription(
+            Bool, "emergency_stop", self.estop_callback, safety_qos
+        )
+        self.scan_sub = self.create_subscription(
+            LaserScan, "scan", self.scan_callback, 10
+        )
+        self.cmd_vel_sub = self.create_subscription(
+            Twist, "cmd_vel_nav", self.nav_cmd_callback, 10
+        )
+
+        self.estop_active = False
+        self.min_obstacle_distance = float("inf")
+        self.latest_nav_cmd = Twist()
+
+        # Watchdog: stop if no command received in 500ms
+        self.watchdog_timer = self.create_timer(0.5, self.watchdog_callback)
+        self.last_cmd_time = self.get_clock().now()
+
+        self.get_logger().info("Safe navigation node started")
+
+    def estop_callback(self, msg: Bool):
+        self.estop_active = msg.data
+        if self.estop_active:
+            self.get_logger().warn("EMERGENCY STOP ACTIVATED")
+            self.publish_stop()
+
+    def scan_callback(self, msg: LaserScan):
+        valid_ranges = [r for r in msg.ranges
+                       if msg.range_min < r < msg.range_max]
+        self.min_obstacle_distance = min(valid_ranges) if valid_ranges else 0.0
+
+    def nav_cmd_callback(self, msg: Twist):
+        self.latest_nav_cmd = msg
+        self.last_cmd_time = self.get_clock().now()
+        self.publish_safe_velocity()
+
+    def publish_safe_velocity(self):
+        """Apply safety limits to navigation command."""
+        if self.estop_active:
+            self.publish_stop()
+            return
+
+        cmd = Twist()
+
+        if self.min_obstacle_distance < self.SAFETY_DISTANCE_STOP:
+            self.publish_stop()
+            self.get_logger().warn(
+                f"Obstacle at {self.min_obstacle_distance:.2f}m — stopped"
+            )
+            return
+
+        speed_factor = 1.0
+        if self.min_obstacle_distance < self.SAFETY_DISTANCE_SLOW:
+            speed_factor = self.SAFETY_SPEED_FACTOR
+
+        cmd.linear.x = np.clip(
+            self.latest_nav_cmd.linear.x * speed_factor,
+            -self.MAX_LINEAR_SPEED,
+            self.MAX_LINEAR_SPEED,
+        )
+        cmd.angular.z = np.clip(
+            self.latest_nav_cmd.angular.z * speed_factor,
+            -self.MAX_ANGULAR_SPEED,
+            self.MAX_ANGULAR_SPEED,
+        )
+        self.cmd_vel_pub.publish(cmd)
+
+    def publish_stop(self):
+        self.cmd_vel_pub.publish(Twist())
+
+    def watchdog_callback(self):
+        elapsed = (self.get_clock().now() - self.last_cmd_time).nanoseconds / 1e9
+        if elapsed > 0.5:
+            self.publish_stop()
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = SafeNavigationNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+```
+
+**Example 2: PID Controller with Anti-Windup**
+```cpp
+// pid_controller.hpp
+#pragma once
+
+#include <algorithm>
+#include <chrono>
+
+class PIDController {
+public:
+    struct Config {
+        double kp = 0.0;
+        double ki = 0.0;
+        double kd = 0.0;
+        double output_min = -1.0;
+        double output_max = 1.0;
+        double integral_max = 10.0;  // Anti-windup limit
+    };
+
+    explicit PIDController(const Config& config) : config_(config) {}
+
+    double compute(double setpoint, double measurement, double dt) {
+        if (dt <= 0.0) { return 0.0; }
+
+        double error = setpoint - measurement;
+
+        // Proportional
+        double p_term = config_.kp * error;
+
+        // Integral with anti-windup (clamping)
+        integral_ += error * dt;
+        integral_ = std::clamp(integral_, -config_.integral_max, config_.integral_max);
+        double i_term = config_.ki * integral_;
+
+        // Derivative (on measurement to avoid setpoint kick)
+        double derivative = -(measurement - prev_measurement_) / dt;
+        double d_term = config_.kd * derivative;
+
+        // Compute and clamp output
+        double output = p_term + i_term + d_term;
+        output = std::clamp(output, config_.output_min, config_.output_max);
+
+        // Back-calculation anti-windup
+        if ((output == config_.output_max && error > 0) ||
+            (output == config_.output_min && error < 0)) {
+            integral_ -= error * dt;  // Undo integration
+        }
+
+        prev_measurement_ = measurement;
+        prev_error_ = error;
+
+        return output;
+    }
+
+    void reset() {
+        integral_ = 0.0;
+        prev_error_ = 0.0;
+        prev_measurement_ = 0.0;
+    }
+
+private:
+    Config config_;
+    double integral_ = 0.0;
+    double prev_error_ = 0.0;
+    double prev_measurement_ = 0.0;
+};
+```
+
+**Example 3: URDF Robot Model Snippet**
+```xml
+<?xml version="1.0"?>
+<robot name="mobile_manipulator" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="base_length" value="0.6"/>
+  <xacro:property name="base_width" value="0.4"/>
+  <xacro:property name="base_height" value="0.2"/>
+  <xacro:property name="wheel_radius" value="0.08"/>
+  <xacro:property name="wheel_width" value="0.04"/>
+
+  <!-- Base link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.3 0.3 0.3 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="20.0"/>
+      <inertia ixx="0.47" ixy="0" ixz="0" iyy="0.87" iyz="0" izz="1.07"/>
+    </inertial>
+  </link>
+
+  <!-- Left wheel -->
+  <xacro:macro name="wheel" params="prefix y_offset">
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.0013" ixy="0" ixz="0" iyy="0.0013" iyz="0" izz="0.0025"/>
+      </inertial>
+    </link>
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel_link"/>
+      <origin xyz="0 ${y_offset} -${base_height/2}" rpy="-1.5708 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel prefix="left" y_offset="${base_width/2 + wheel_width/2}"/>
+  <xacro:wheel prefix="right" y_offset="-${base_width/2 + wheel_width/2}"/>
+
+  <!-- LiDAR sensor mount -->
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="0.04" length="0.07"/></geometry>
+    </visual>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.2 0 ${base_height/2 + 0.05}" rpy="0 0 0"/>
+  </joint>
+</robot>
+```
+
+8) Vocabulary and standards
+
+**Key Terms**:
+- **ROS 2**: Robot Operating System 2 — middleware framework for robot software development
+- **SLAM**: Simultaneous Localization and Mapping — building maps while tracking robot position
+- **DOF**: Degrees of Freedom — number of independent motion axes
+- **URDF/SDF**: Unified Robot Description Format / Simulation Description Format — robot models
+- **PID**: Proportional-Integral-Derivative — fundamental feedback control algorithm
+- **MPC**: Model Predictive Control — optimization-based control predicting future states
+- **EKF**: Extended Kalman Filter — state estimation for nonlinear systems
+- **RRT/PRM**: Rapidly-exploring Random Tree / Probabilistic Roadmap — motion planning algorithms
+- **ODD**: Operational Design Domain — conditions under which autonomous system is designed to operate
+- **MTBF/MTTR**: Mean Time Between Failures / Mean Time To Repair — reliability metrics
+- **Cobot**: Collaborative Robot — designed for safe human-robot workspace sharing
+
+**ROS 2 Ecosystem**:
+- **Nav2**: Navigation stack for mobile robots (path planning, obstacle avoidance, localization)
+- **MoveIt 2**: Motion planning framework for robot manipulators
+- **ros2_control**: Hardware abstraction and controller framework
+- **Gazebo / Isaac Sim**: Physics-based robot simulation environments
+- **BehaviorTree.CPP**: Task-level behavior orchestration framework
+- **micro-ROS**: ROS 2 for microcontrollers (embedded systems integration)
+- **OMPL**: Open Motion Planning Library — sampling-based planners
+
+**Safety Standards**:
+- **ISO 10218-1/2**: Industrial robot safety requirements (robot and system)
+- **ISO/TS 15066**: Collaborative robot safety — biomechanical limits
+- **ISO 13849**: Safety of machinery — safety-related parts of control systems (Performance Levels a-e)
+- **IEC 62443**: Industrial communication networks — cybersecurity for industrial automation
+- **IEC 61508**: Functional safety of electrical/electronic/programmable systems
+
+**Sensor Technologies**:
+- **LiDAR**: 2D (Hokuyo, SICK) and 3D (Velodyne, Ouster, Livox) laser scanning
+- **Depth cameras**: Intel RealSense, Stereolabs ZED, Microsoft Azure Kinect
+- **IMU**: Inertial Measurement Unit — accelerometer + gyroscope (± magnetometer)
+- **Force/torque**: ATI, OnRobot — for contact sensing and compliance
+- **Encoders**: Incremental and absolute — for motor position feedback
+
+**Actuator Technologies**:
+- **DC motors**: Brushed and brushless (BLDC) with various drive topologies
+- **Servo motors**: Integrated motor + encoder + controller (Dynamixel, Robotis)
+- **Stepper motors**: Precise positioning without feedback (3D printers, CNC)
+- **Pneumatics/Hydraulics**: High force-to-weight; used in industrial and heavy-duty applications
+- **Linear actuators**: Electric, pneumatic, or hydraulic for linear motion
+
+**Simulation Platforms**:
+- **Gazebo**: Open-source, ROS-native, ODE/Bullet/DART physics engines
+- **NVIDIA Isaac Sim**: GPU-accelerated, photorealistic, Omniverse-based
+- **MuJoCo**: Fast and accurate contact physics (acquired by Google DeepMind)
+- **Webots**: Cross-platform, extensive robot library, Cyberbotics
+
+Change log
+- 2025-01-15: Initial Robotics Engineer playbook created with 2024-2025 best practices including ROS 2 architecture patterns, safety standards (ISO 10218, ISO/TS 15066), sensor fusion and SLAM, control system design, simulation-first development, and comprehensive templates for system architecture, risk assessment, and sensor calibration.

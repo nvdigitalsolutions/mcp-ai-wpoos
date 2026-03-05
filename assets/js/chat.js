@@ -4,11 +4,13 @@
     const defaultGlobalConfig = {
         restUrl: '',
         uploadEndpoint: '',
+        prepareEndpoint: '',
         filesEndpoint: '',
         toolsEndpoint: '',
         transcriptsEndpoint: '',
         nonce: '',
         historyPerPage: 20,
+        maxHistoryMessages: 8,
         asyncToolTimeout: 300000,
         strings: {},
     };
@@ -6110,6 +6112,69 @@
         });
     }
 
+    /**
+     * Step 2 of the multi-step attachment pipeline: pre-register the uploaded file
+     * with the AI provider's Files API so it is ready before the user sends their
+     * chat message.
+     *
+     * This is a best-effort operation. If the prepare endpoint is not configured or
+     * the request fails, the attachment remains usable — the server will register it
+     * at chat-send time instead.
+     *
+     * On success, the attachment record is augmented with `providerFileId` and
+     * `provider` so that the server can skip the upload step later.
+     *
+     * @param {Object} state  Chat instance state.
+     * @param {Object} record Normalised attachment record (output of normaliseUploadResponse).
+     * @return {Promise<Object>} Resolves to the (possibly augmented) record.
+     */
+    function prepareAttachment(state, record) {
+        if (!state || !record || !state.config || !state.config.prepareEndpoint) {
+            return Promise.resolve(record);
+        }
+
+        const preparingMessage = formatString(getString('processingFile', 'Processing "%s"…'), record.name || '');
+        setStatus(state.container, preparingMessage);
+
+        const usage = record.isImage ? 'image' : 'file';
+        const headers = buildJsonHeaders(state);
+
+        return postJson(
+            state.config.prepareEndpoint,
+            {
+                attachment_id: record.id,
+                assistant_id: (state.config && state.config.assistantId) ? parseInt(state.config.assistantId, 10) || 0 : 0,
+                usage: usage,
+            },
+            headers,
+            { state: state }
+        )
+            .then(function (response) {
+                return response.json().catch(function () { return null; });
+            })
+            .then(function (data) {
+                if (data && data.file_id) {
+                    record.providerFileId = data.file_id;
+                    record.provider = data.provider || '';
+                    if (window.console && console.log) {
+                        console.log('[NV oOS] Attachment pre-registered with provider:', {
+                            attachment_id: record.id,
+                            file_id: data.file_id,
+                            provider: data.provider,
+                        });
+                    }
+                }
+                return record;
+            })
+            .catch(function (error) {
+                // Non-fatal: fall back to server-side registration at chat-send time.
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] Attachment prepare step failed (non-fatal, will retry at send time):', error);
+                }
+                return record;
+            });
+    }
+
     function uploadAttachment(state, file) {
         if (!state || !state.canUploadAttachments) {
             return Promise.resolve();
@@ -6169,6 +6234,9 @@
                 state.pendingAttachments.push(record);
                 state.attachmentLibrary[record.fileId] = record;
                 renderPendingAttachments(state);
+
+                // Step 2: pre-register the file with the AI provider before send.
+                return prepareAttachment(state, record);
             })
             .catch(function (error) {
                 hadError = true;
@@ -6307,6 +6375,17 @@
             const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__attachments-item';
 
+            // Add file type icon
+            var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+            if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
+                fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo(attachment);
+            }
+            const icon = document.createElement('span');
+            icon.className = 'wp-mcp-ai-chat__file-icon';
+            icon.textContent = fileInfo.icon;
+            icon.setAttribute('aria-hidden', 'true');
+            item.appendChild(icon);
+
             const info = document.createElement('div');
             info.className = 'wp-mcp-ai-chat__attachments-info';
 
@@ -6327,10 +6406,16 @@
                     metaText: metaText
                 });
             }
+
+            // Prepend file type label to metadata
+            var fullMeta = fileInfo.label || '';
             if (metaText) {
+                fullMeta += (fullMeta ? ' • ' : '') + metaText;
+            }
+            if (fullMeta) {
                 const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                meta.textContent = metaText;
+                meta.textContent = fullMeta;
                 info.appendChild(meta);
             }
 
@@ -7986,6 +8071,267 @@
     }
 
     /**
+     * Check if a result object has the structure of a deep_research tool response.
+     *
+     * deep_research returns {topic, report, provider, model, word_count, sources, source_count}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a deep_research response
+     */
+    function isDeepResearchStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               typeof result.topic === 'string' &&
+               typeof result.report === 'string' &&
+               typeof result.word_count === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a deep_research tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractDeepResearchSummary(result) {
+        if (!isDeepResearchStructure(result)) {
+            return null;
+        }
+
+        const topic      = result.topic.trim();
+        const wordCount  = result.word_count || 0;
+        const srcCount   = typeof result.source_count === 'number' ? result.source_count : (Array.isArray(result.sources) ? result.sources.length : 0);
+        const provider   = result.provider ? result.provider : '';
+        const model      = result.model ? result.model : '';
+        const cached     = result.cached === true ? ' (cached)' : '';
+        const siteItems  = typeof result.site_content_count === 'number' && result.site_content_count > 0
+            ? ', ' + result.site_content_count + ' site content match' + (result.site_content_count !== 1 ? 'es' : '')
+            : '';
+
+        let text = 'Research: "' + topic + '" — ' + wordCount.toLocaleString() + ' words, ' + srcCount + ' source' + (srcCount !== 1 ? 's' : '') + siteItems + cached;
+
+        if (provider || model) {
+            const modelParts = [provider, model].filter(Boolean);
+            text += ' [' + modelParts.join('/') + ']';
+        }
+
+        return text;
+    }
+
+    /**
+     * Check if a result object has the structure of a stored agent context response.
+     *
+     * store_agent_context returns {success, context_id, agent_id, stored_at, expires_at, ttl_human}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a store_agent_context response
+     */
+    function isAgentMemoryStoredStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               typeof result.context_id === 'string' &&
+               typeof result.agent_id !== 'undefined' &&
+               typeof result.stored_at === 'string';
+    }
+
+    /**
+     * Extract a human-readable summary from a store_agent_context tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractAgentMemoryStoredSummary(result) {
+        if (!isAgentMemoryStoredStructure(result)) {
+            return null;
+        }
+
+        const parts = [];
+        parts.push('✓ Memory stored (ID: ' + result.context_id + ')');
+
+        if (result.ttl_human && typeof result.ttl_human === 'string') {
+            parts.push('expires in ' + result.ttl_human);
+        }
+
+        if (result.ingested_source && result.ingested_source.type) {
+            const sourceType = result.ingested_source.type;
+            const sourceLabel = sourceType === 'vector_store' ? 'Vector Store'
+                : sourceType === 'post' ? 'WordPress post'
+                : sourceType === 'url' ? 'web page'
+                : sourceType;
+            parts.push('ingested from ' + sourceLabel);
+            if (result.ingested_source.summary && typeof result.ingested_source.summary === 'string') {
+                parts.push('— ' + result.ingested_source.summary);
+            }
+        }
+
+        return parts.join(', ');
+    }
+
+    /**
+     * Check if a result object has the structure of a retrieve_agent_memory or
+     * semantic_context_search response.
+     *
+     * These tools return {success, contexts: [...], count, query}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a memory retrieval response
+     */
+    function isAgentMemoryRetrievedStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               Array.isArray(result.contexts) &&
+               typeof result.count === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a retrieve_agent_memory or
+     * semantic_context_search tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractAgentMemoryRetrievedSummary(result) {
+        if (!isAgentMemoryRetrievedStructure(result)) {
+            return null;
+        }
+
+        const count = result.count || 0;
+        const method = result.method === 'semantic_similarity' ? 'semantic' : 'keyword';
+        let text = 'Found ' + count + ' ' + method + ' memory match' + (count !== 1 ? 'es' : '');
+
+        if (result.query && typeof result.query === 'string' && result.query.trim()) {
+            text += ' for "' + result.query.trim() + '"';
+        }
+
+        // Append first few context titles.
+        if (count > 0 && result.contexts.length > 0) {
+            const titles = [];
+            const displayCount = Math.min(3, result.contexts.length);
+            for (let i = 0; i < displayCount; i++) {
+                const ctx = result.contexts[i];
+                if (ctx && typeof ctx.title === 'string' && ctx.title.trim()) {
+                    titles.push(ctx.title.trim());
+                }
+            }
+            if (titles.length > 0) {
+                text += ': ' + titles.join('; ');
+                if (count > displayCount) {
+                    text += ' (+' + (count - displayCount) + ' more)';
+                }
+            }
+        }
+
+        // Note vector store coverage if present.
+        if (result.vector_store && result.vector_store.vector_store_id) {
+            const fileCount = Array.isArray(result.vector_store.files) ? result.vector_store.files.length : 0;
+            text += '. Vector Store ' + result.vector_store.vector_store_id + ': ' + fileCount + ' indexed file' + (fileCount !== 1 ? 's' : '');
+        } else if (result.vector_store_id && typeof result.vector_store_id === 'string') {
+            text += ' (Vector Store: ' + result.vector_store_id + ')';
+        }
+
+        return text;
+    }
+
+    /**
+     * Check if a result object has the structure of a prioritize_context response.
+     *
+     * prioritize_context returns {success, prioritized: [...], count, total_tokens, budget}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a prioritize_context response
+     */
+    function isContextPrioritizedStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               Array.isArray(result.prioritized) &&
+               typeof result.budget === 'number' &&
+               typeof result.total_tokens === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a prioritize_context tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractContextPrioritizedSummary(result) {
+        if (!isContextPrioritizedStructure(result)) {
+            return null;
+        }
+
+        const selected = result.count || 0;
+        const total = selected + (result.excluded_count || 0);
+        const tokenPct = typeof result.budget_used_pct === 'number' ? result.budget_used_pct : 0;
+
+        return 'Prioritized ' + selected + ' of ' + total + ' contexts'
+            + ' (' + result.total_tokens + ' / ' + result.budget + ' tokens, '
+            + tokenPct + '% budget used)';
+    }
+
+    /**
+     * Valid action names for the manage_context_lifecycle tool.
+     * Defined once so isContextLifecycleStructure and extractContextLifecycleSummary
+     * share the same source of truth without creating a new array on every call.
+     */
+    const CONTEXT_LIFECYCLE_ACTIONS = ['refresh', 'compress', 'merge', 'analyze', 'prune', 'update', 'delete'];
+
+    /**
+     * Check if a result object has the structure of a manage_context_lifecycle response.
+     *
+     * manage_context_lifecycle returns {success, action, ...} where action is one of
+     * refresh, compress, merge, analyze, prune, update, delete.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a manage_context_lifecycle response
+     */
+    function isContextLifecycleStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               result.success === true &&
+               typeof result.action === 'string' &&
+               CONTEXT_LIFECYCLE_ACTIONS.indexOf(result.action) !== -1;
+    }
+
+    /**
+     * Extract a human-readable summary from a manage_context_lifecycle tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractContextLifecycleSummary(result) {
+        if (!isContextLifecycleStructure(result)) {
+            return null;
+        }
+
+        const actionLabels = {
+            refresh:  'TTL refreshed',
+            compress: 'Context compressed',
+            merge:    'Contexts merged',
+            analyze:  'Lifecycle analyzed',
+            prune:    'Expired contexts pruned',
+            update:   'Context updated',
+            'delete': 'Context deleted'
+        };
+
+        const label = actionLabels[result.action] || ('Action: ' + result.action);
+        let text  = label;
+
+        if (result.context_id && typeof result.context_id === 'string') {
+            text += ' (ID: ' + result.context_id + ')';
+        }
+        if (result.merged_context_id && typeof result.merged_context_id === 'string') {
+            text += ' → new ID: ' + result.merged_context_id;
+        }
+        if (typeof result.pruned_count === 'number') {
+            text += ' — ' + result.pruned_count + ' context' + (result.pruned_count !== 1 ? 's' : '') + ' removed';
+        }
+
+        return text;
+    }
+
+    /**
      * Extract displayable content from generic tool responses that don't have downloadable assets.
      * Looks for common fields like message, text, links, IDs, and status information.
      *
@@ -8065,6 +8411,36 @@
                         });
                     });
                 }
+            }
+        } else if (isDeepResearchStructure(result)) {
+            // Handle deep_research tool result
+            const deepResearchText = extractDeepResearchSummary(result);
+            if (deepResearchText) {
+                text = deepResearchText;
+            }
+        } else if (isAgentMemoryStoredStructure(result)) {
+            // Handle store_agent_context tool result
+            const memoryStoredText = extractAgentMemoryStoredSummary(result);
+            if (memoryStoredText) {
+                text = memoryStoredText;
+            }
+        } else if (isAgentMemoryRetrievedStructure(result)) {
+            // Handle retrieve_agent_memory and semantic_context_search tool results
+            const memoryRetrievedText = extractAgentMemoryRetrievedSummary(result);
+            if (memoryRetrievedText) {
+                text = memoryRetrievedText;
+            }
+        } else if (isContextPrioritizedStructure(result)) {
+            // Handle prioritize_context tool result
+            const prioritizedText = extractContextPrioritizedSummary(result);
+            if (prioritizedText) {
+                text = prioritizedText;
+            }
+        } else if (isContextLifecycleStructure(result)) {
+            // Handle manage_context_lifecycle tool result
+            const lifecycleText = extractContextLifecycleSummary(result);
+            if (lifecycleText) {
+                text = lifecycleText;
             }
         } else if (typeof result.title === 'string' && result.title.trim()) {
             text = result.title.trim();
@@ -11009,6 +11385,13 @@
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
 
+            // Pre-load vector store metadata if the assistant has one configured.
+            // This ensures the vector store status and file counts are immediately
+            // available for the agentic workflow without waiting for the first tool call.
+            if (state.config.vectorStoreId && state.config.vectorStorePreloadEndpoint) {
+                preloadVectorStore(state);
+            }
+
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
@@ -11326,6 +11709,62 @@
         }
     }
 
+    /**
+     * Pre-loads vector store metadata for the assistant during chat initialization.
+     *
+     * Fetches vector store status, file counts, and name from the server so that
+     * this information is immediately available for the agentic workflow without
+     * waiting for the first tool call. Results are stored in state.vectorStoreCache.
+     *
+     * @param {Object} state - Chat instance state.
+     */
+    function preloadVectorStore(state) {
+        if (!state || !state.config || !state.config.vectorStoreId || !state.config.vectorStorePreloadEndpoint) {
+            return;
+        }
+
+        var vectorStoreId = state.config.vectorStoreId;
+        var assistantId = state.config.assistantId;
+        var url = state.config.vectorStorePreloadEndpoint + '?assistant_id=' + encodeURIComponent(assistantId);
+
+        console.log('[NV oOS] Pre-loading vector store for assistant:', {
+            assistantId: assistantId,
+            vectorStoreId: vectorStoreId
+        });
+
+        fetch(url, { headers: buildJsonHeaders(state) })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.has_vector_store) {
+                    state.vectorStoreCache = {
+                        id: data.vector_store_id || vectorStoreId,
+                        name: data.name || null,
+                        status: data.status || null,
+                        file_counts: data.file_counts || {},
+                        created_at: data.created_at || null,
+                        last_active_at: data.last_active_at || null,
+                        preloaded_at: Date.now()
+                    };
+                    console.log('[NV oOS] Vector store pre-loaded successfully:', {
+                        id: state.vectorStoreCache.id,
+                        name: state.vectorStoreCache.name,
+                        status: state.vectorStoreCache.status,
+                        file_counts: state.vectorStoreCache.file_counts
+                    });
+                } else {
+                    console.log('[NV oOS] No vector store configured for this assistant.');
+                }
+            })
+            .catch(function(err) {
+                console.warn('[NV oOS] Could not pre-load vector store (will be available on first tool call):', err.message);
+            });
+    }
+
     function handleSubmit(event, state) {
         event.preventDefault();
         if (state.busy) {
@@ -11560,6 +11999,82 @@
             return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
+        // If the embedded client hasn't been created yet and neither a system prompt nor a
+        // professional prompt is available in the client-side config (e.g. page was served from
+        // cache), fetch fresh configuration from the server before initialising the client.
+        // New page renders always have systemPrompt pre-combined by PHP; this fetch only fires
+        // for stale cached pages where both values are absent.  We only fetch once per state
+        // instance so that normal (non-cached) page loads are unaffected.
+        if (
+            !state.embeddedClient &&
+            !state.embeddedConfigFetched &&
+            (!state.config.systemPrompt && !state.config.professionalPrompt) &&
+            state.config.embeddedConfigEndpoint &&
+            state.config.assistantId
+        ) {
+            state.embeddedConfigFetched = true; // Prevent repeated fetches on re-entry
+
+            // Use embeddedAssistantId (always a valid integer) for the server fetch.
+            // For profession tests assistantId is "profession_XXX" which fails absint() server-side.
+            // Explicitly check for undefined/null rather than relying on falsy, since 0 is a
+            // distinct "no valid assistant" case and must not fall back to "profession_XXX".
+            var fetchAssistantId = (state.config.embeddedAssistantId !== undefined && state.config.embeddedAssistantId !== null)
+                ? state.config.embeddedAssistantId
+                : state.config.assistantId;
+            var fetchUrl = state.config.embeddedConfigEndpoint + '?assistant_id=' + encodeURIComponent(fetchAssistantId);
+            if (state.config.professionId) {
+                fetchUrl += '&profession_id=' + encodeURIComponent(state.config.professionId);
+            }
+            console.log('[NV oOS] System/professional prompt not in client-side config. Fetching fresh embedded config from server:', fetchUrl);
+
+            var applyServerConfig = function(serverConfig) {
+                if (serverConfig && (serverConfig.system_prompt || serverConfig.professional_prompt)) {
+                    // Pre-combine professional_prompt + system_prompt, matching PHP shortcode behaviour
+                    // for embedded providers so the client always has a single populated systemPrompt.
+                    var fetchedSystemPrompt = serverConfig.system_prompt || '';
+                    var fetchedProfessionalPrompt = serverConfig.professional_prompt || '';
+                    var combinedSystemPrompt = '';
+                    if (fetchedProfessionalPrompt && fetchedSystemPrompt) {
+                        combinedSystemPrompt = fetchedProfessionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + fetchedSystemPrompt;
+                    } else {
+                        combinedSystemPrompt = fetchedProfessionalPrompt || fetchedSystemPrompt;
+                    }
+                    if (combinedSystemPrompt && !state.config.systemPrompt) {
+                        console.log('[NV oOS] Fetched and pre-combined system prompt from server:', {
+                            systemPromptLength: combinedSystemPrompt.length,
+                            hasTools: !!(serverConfig.tools && serverConfig.tools.length),
+                            hasKnowledge: !!(serverConfig.memory_files && serverConfig.memory_files.length) || !!serverConfig.vector_store_id
+                        });
+                        state.config.systemPrompt = combinedSystemPrompt;
+                    }
+                }
+                if (serverConfig && serverConfig.tools && serverConfig.tools.length > 0 && (!state.config.tools || !state.config.tools.length)) {
+                    state.config.tools = serverConfig.tools;
+                }
+                if (serverConfig && serverConfig.memory_files && serverConfig.memory_files.length > 0 && (!state.config.memoryFiles || !state.config.memoryFiles.length)) {
+                    state.config.memoryFiles = serverConfig.memory_files;
+                }
+                if (serverConfig && serverConfig.vector_store_id && !state.config.vectorStoreId) {
+                    state.config.vectorStoreId = serverConfig.vector_store_id;
+                }
+                // Re-enter sendChatEmbedded with the updated state — embeddedConfigFetched prevents looping
+                return sendChatEmbedded(state, messages, finalize, submissionContext);
+            };
+
+            return fetch(fetchUrl, { headers: buildJsonHeaders(state) })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Server returned ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(applyServerConfig)
+                .catch(function(err) {
+                    console.warn('[NV oOS] Could not fetch embedded client config from server (proceeding without server-side system prompt):', err.message);
+                    return applyServerConfig(null);
+                });
+        }
+
         // Create embedded client instance for this widget if not already created
         if (!state.embeddedClient) {
             // Generate unique instance ID
@@ -11586,21 +12101,25 @@
                 });
             }
             
-            // Build complete system prompt by combining assistant system prompt with professional prompt
-            // This ensures embedded client receives both the assistant's instructions and professional role
-            var completeSystemPrompt = state.config.systemPrompt || '';
-            if (state.config.professionalPrompt) {
-                if (completeSystemPrompt) {
-                    // Combine: assistant system prompt + professional role prompt
-                    completeSystemPrompt = completeSystemPrompt + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    // Use professional prompt as the system prompt if no assistant prompt exists
-                    completeSystemPrompt = state.config.professionalPrompt;
+            // Build the system prompt that will be passed to the embedded client constructor.
+            // New page renders: PHP pre-combines professional + assistant prompts into systemPrompt.
+            // Old cached pages: may have only professionalPrompt (no systemPrompt) or both.
+            var completeSystemPrompt = '';
+            if (state.config.systemPrompt) {
+                // PHP has already merged any professional-role content into systemPrompt.
+                // Use it directly to avoid duplicating professional content.
+                completeSystemPrompt = state.config.systemPrompt;
+                if (state.config.professionalPrompt) {
+                    console.log('[NV oOS] Using pre-combined system prompt (includes professional role):', {
+                        professionalPromptLength: state.config.professionalPrompt.length,
+                        totalLength: completeSystemPrompt.length
+                    });
                 }
-                console.log('[NV oOS] Combined system prompt with professional prompt:', {
-                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    combinedLength: completeSystemPrompt.length
+            } else if (state.config.professionalPrompt) {
+                // Fallback for stale cached configs from before this change: combine here in JS.
+                completeSystemPrompt = state.config.professionalPrompt;
+                console.log('[NV oOS] Using professionalPrompt as system prompt (stale cache fallback):', {
+                    professionalPromptLength: state.config.professionalPrompt.length
                 });
             }
             
@@ -12012,58 +12531,117 @@
                     .map(function(item) { return item.text; })
                     .join('\n');
             }
-            
-            return {
+
+            const formatted = {
                 role: msg.role,
                 content: content
             };
+
+            // Preserve tool-calling fields required by the OpenAI-compatible WebLLM API.
+            // Assistant messages may carry tool_calls; tool messages require tool_call_id and name.
+            if (msg.tool_calls) {
+                formatted.tool_calls = msg.tool_calls;
+            }
+            if (msg.tool_call_id) {
+                formatted.tool_call_id = msg.tool_call_id;
+            }
+            if (msg.name) {
+                formatted.name = msg.name;
+            }
+
+            return formatted;
         });
 
-        // Build complete system prompt combining assistant prompt, professional prompt, and knowledge context
-        // This ensures embedded providers receive the same system instructions as server-side providers
-        if ((state.config.systemPrompt || state.config.professionalPrompt) && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = state.config.systemPrompt || '';
-            
-            // Add professional prompt if provided (for profession-based assistants)
-            if (state.config.professionalPrompt) {
-                if (systemPromptContent) {
-                    systemPromptContent = systemPromptContent + '\n\n' + state.config.professionalPrompt;
-                } else {
-                    systemPromptContent = state.config.professionalPrompt;
-                }
-                console.log('[NV oOS] Added professional prompt to message system prompt:', {
-                    professionalPromptLength: state.config.professionalPrompt.length,
-                    professionalPromptPreview: state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt
-                });
-            }
-            
-            // Enhance system prompt with base knowledge context if available
-            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+        // Build the effective system prompt per-request from the current state.config values.
+        // This mirrors the server-side approach in sanitize_options() (class-wp-mcp-ai-rest-validator.php)
+        // where the system prompt is assembled fresh on every request by combining the assistant's
+        // system_prompt (which already includes primary professional roles from get_assistant_configuration)
+        // with any additional professional_prompt provided at request time.
+        //
+        // Order matches the server-side REST handler (class-wp-mcp-ai-rest.php):
+        //   professional_prompt prepended to system_prompt, separated by a divider.
+        //
+        // HTML entities and allowed tags (preserved by wp_kses_post()) are decoded to plain text
+        // using a div element. A textarea was previously used, but textarea.value returns an empty
+        // string when innerHTML contains real HTML tags (<p>, <strong>, etc.) in Chrome and other
+        // browsers, silently dropping the entire system prompt.
+        //
+        // Fall back to the client's stored systemPrompt if state.config has no values (e.g. when the
+        // assistant has no system prompt and no professional roles are configured).
+        let rawSystemPrompt = '';
+        if (state.config.professionalPrompt && state.config.systemPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt + '\n\n---\n\n# Additional Instructions\n\n' + state.config.systemPrompt;
+        } else if (state.config.professionalPrompt) {
+            rawSystemPrompt = state.config.professionalPrompt;
+        } else if (state.config.systemPrompt) {
+            rawSystemPrompt = state.config.systemPrompt;
+        }
+
+        let effectiveSystemPrompt;
+        if (rawSystemPrompt) {
+            // Decode HTML entities and strip allowed HTML tags from wp_kses_post() sanitization.
+            // Use a div (not textarea) so that tags like <p> and <strong> are handled correctly;
+            // textarea.value is empty when innerHTML contains HTML tags in Chrome/Firefox/Safari.
+            const decodeEl = document.createElement('div');
+            decodeEl.innerHTML = rawSystemPrompt;
+            effectiveSystemPrompt = (decodeEl.textContent || decodeEl.innerText || rawSystemPrompt) || null;
+        }
+
+        // Fallback: if state.config had no prompt or decoding failed, use the client's stored value.
+        if (!effectiveSystemPrompt) {
+            effectiveSystemPrompt = embeddedClient.systemPrompt;
+        }
+
+        if (rawSystemPrompt && effectiveSystemPrompt) {
+            console.log('[NV oOS] System prompt assembled from state.config (per-request, mirrors server-side):', {
+                systemPromptLength: effectiveSystemPrompt.length,
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
+                assistantId: state.config.assistantId
+            });
+        }
+        if (effectiveSystemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = effectiveSystemPrompt;
+
+            // Enhance system prompt with base knowledge context if available.
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers.
             if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
                 var knowledgeContext = '\n\n## Base Knowledge\n\n';
                 knowledgeContext += 'You have access to the following knowledge base files:\n';
                 knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
                 knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
                 systemPromptContent += knowledgeContext;
-                
+
                 console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
                     memoryFileCount: state.config.memoryFiles.length,
                     vectorStoreId: state.config.vectorStoreId || 'none'
                 });
             }
-            
+
+            // Inject current date/time context so the model knows the current date.
+            // Server-side providers receive this via sanitize_options() in PHP; embedded must add it here.
+            // Format matches PHP: gmdate('l, F j, Y'), gmdate('Y'), gmdate('H:i:s').
+            var now = new Date();
+            var dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            var pad2 = function( n ) { return ( n < 10 ? '0' : '' ) + n; };
+            var dateStr = dayNames[now.getUTCDay()] + ', ' + monthNames[now.getUTCMonth()] + ' ' + now.getUTCDate() + ', ' + now.getUTCFullYear();
+            var timeStr = pad2( now.getUTCHours() ) + ':' + pad2( now.getUTCMinutes() ) + ':' + pad2( now.getUTCSeconds() ) + ' UTC';
+            systemPromptContent += '\n\n---\n\n**Current Context Information:**\n- Current Date: ' + dateStr + '\n- Current Year: ' + now.getUTCFullYear() + '\n- Current Time: ' + timeStr;
+
             formattedMessages.unshift({
                 role: 'system',
                 content: systemPromptContent
             });
-            
+
             console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
-            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+            console.log('[NV oOS] Prepended system prompt to embedded request:', {
                 systemPromptLength: systemPromptContent.length,
                 systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-                systemPromptFull: systemPromptContent,
-                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
                 hasProfessionalPrompt: !!state.config.professionalPrompt,
+                hasAssistantPrompt: !!state.config.systemPrompt,
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                hasDateTimeContext: true,
                 assistantId: state.config.assistantId
             });
         }
@@ -12376,7 +12954,17 @@
         const isEmbeddedProvider = state.config.provider === 'embedded';
         
         if (isEmbeddedProvider) {
-            return sendChatEmbedded(state, cleanMessages, finalize, submissionContext);
+            // Apply max history messages limit for the embedded path.
+            // Server-side providers have this enforced in enforce_chat_request_limits() on the server,
+            // but the embedded provider runs client-side and requires the limit applied here to
+            // maintain the agentic workflow without overflowing the local model's context window.
+            const maxHistoryMessages = (state.config && state.config.maxHistoryMessages)
+                || globalConfig.maxHistoryMessages
+                || 8;
+            const embeddedMessages = (maxHistoryMessages > 0 && cleanMessages.length > maxHistoryMessages)
+                ? cleanMessages.slice(-maxHistoryMessages)
+                : cleanMessages;
+            return sendChatEmbedded(state, embeddedMessages, finalize, submissionContext);
         }
 
         // Check if streaming is enabled
@@ -15964,36 +16552,53 @@
                         item.appendChild(meta);
                     }
                 } else {
-                    // Render as download link (existing behavior)
+                    // Render as file attachment card with icon
+                    item.classList.add('wp-mcp-ai-chat__bubble-attachment--file');
+
+                    // Get file type info for icon display
+                    var fileInfo = { icon: '\uD83D\uDCC4', label: 'File' };
+                    if (window.wpMcpAiChatAttachments && window.wpMcpAiChatAttachments.getFileTypeInfo) {
+                        fileInfo = window.wpMcpAiChatAttachments.getFileTypeInfo({
+                            type: attachment.meta || '',
+                            name: attachment.downloadName || attachment.label || ''
+                        });
+                    }
+
+                    const fileIcon = document.createElement('span');
+                    fileIcon.className = 'wp-mcp-ai-chat__file-icon';
+                    fileIcon.textContent = fileInfo.icon;
+                    fileIcon.setAttribute('aria-hidden', 'true');
+                    item.appendChild(fileIcon);
+
+                    const fileBody = document.createElement('div');
+                    fileBody.className = 'wp-mcp-ai-chat__file-body';
+
                     const link = document.createElement('a');
                     link.href = attachment.url;
                     link.target = '_blank';
                     link.rel = 'noopener noreferrer';
+                    link.className = 'wp-mcp-ai-chat__file-name';
                     link.textContent = attachment.label;
 
                     if (attachment.downloadName) {
                         link.download = attachment.downloadName;
                     }
 
-                    item.appendChild(link);
+                    fileBody.appendChild(link);
 
-                    if (attachment.meta || attachment.url) {
+                    // Build metadata with file type label
+                    if (attachment.meta || fileInfo.label) {
                         const meta = document.createElement('span');
                         meta.className = 'wp-mcp-ai-chat__attachments-meta';
-                        
-                        // Build metadata string with URL
-                        let metaText = '';
+                        let metaText = fileInfo.label || '';
                         if (attachment.meta) {
-                            metaText = attachment.meta;
+                            metaText += (metaText ? ' • ' : '') + attachment.meta;
                         }
-                        if (attachment.url) {
-                            metaText += (metaText ? ' • URL: ' : 'URL: ') + attachment.url;
-                        }
-                        
                         meta.textContent = metaText;
-                        item.appendChild(document.createTextNode(' – '));
-                        item.appendChild(meta);
+                        fileBody.appendChild(meta);
                     }
+
+                    item.appendChild(fileBody);
                 }
 
                 container.appendChild(item);

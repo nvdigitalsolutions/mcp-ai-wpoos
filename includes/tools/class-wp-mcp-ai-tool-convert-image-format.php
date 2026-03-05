@@ -159,7 +159,8 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			return $image_editor;
 		}
 
-		$original_mime = $image_editor->mime_type;
+		// Get original MIME type using public method.
+		$original_mime = $image_editor->get_mime_type();
 
 		// Handle SVG conversion separately.
 		if ( 'svg' === $format ) {
@@ -241,11 +242,110 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			}
 		}
 
-		// Change MIME type.
-		$image_editor->mime_type = $new_mime;
+		// Generate filename with new extension and save with new MIME type.
+		$extension      = $this->get_extension_from_mime_type( $new_mime );
+		$current_file   = $image_editor->generate_filename();
+		$path_info      = pathinfo( $current_file );
+		$base_name      = isset( $path_info['filename'] ) ? $path_info['filename'] : 'image';
+		$converted_file = $image_editor->generate_filename( $base_name, null, $extension );
 
-		// Save as new attachment.
-		$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'converted' );
+		// Save with new MIME type using WordPress API.
+		// The save() method accepts a file path and optional MIME type.
+		$saved = $image_editor->save( $converted_file, $new_mime );
+
+		if ( is_wp_error( $saved ) ) {
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return $saved;
+		}
+
+		// Now create attachment from the saved file.
+		// We need to manually create the attachment since we bypassed save_as_attachment.
+		$saved_path = isset( $saved['path'] ) ? $saved['path'] : '';
+		if ( empty( $saved_path ) || ! file_exists( $saved_path ) ) {
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return new WP_Error( 'wp_mcp_ai_save_error', __( 'Failed to save converted image.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Create the attachment.
+		$title = $this->generate_attachment_title( 'converted', $arguments );
+
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		// Read the saved file.
+		$image_data = file_get_contents( $saved_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
+		if ( false === $image_data ) {
+			wp_delete_file( $saved_path );
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read converted image.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Upload with proper filename.
+		$file_name = sprintf( '%s-converted-%s.%s', sanitize_title( $base_name ), gmdate( 'Ymd-His' ), $extension );
+		$upload    = wp_upload_bits( $file_name, null, $image_data );
+
+		// Delete the temporary saved file.
+		wp_delete_file( $saved_path );
+
+		if ( ! empty( $upload['error'] ) ) {
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return new WP_Error( 'wp_mcp_ai_upload_error', $upload['error'] );
+		}
+
+		$final_file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+		// Create attachment post.
+		$attachment = array(
+			'post_mime_type' => $new_mime,
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		if ( $user_id ) {
+			$attachment['post_author'] = $user_id;
+		}
+
+		$attachment_id = wp_insert_attachment( $attachment, $final_file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $final_file_path );
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return $attachment_id;
+		}
+
+		// Generate attachment metadata.
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		$metadata = wp_generate_attachment_metadata( $attachment_id, $final_file_path );
+		if ( is_array( $metadata ) && ! empty( $metadata ) ) {
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+		}
+
+		$bytes = file_exists( $final_file_path ) ? filesize( $final_file_path ) : 0;
+
+		$storage = array(
+			'attachment_id' => (int) $attachment_id,
+			'file'          => $final_file_path,
+			'file_name'     => wp_basename( $final_file_path ),
+			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
+			'mime_type'     => $new_mime,
+			'bytes'         => $bytes ? (int) $bytes : 0,
+			'title'         => $title,
+		);
 
 		// Clean up temp file if exists.
 		if ( isset( $image_editor->temp_file ) ) {

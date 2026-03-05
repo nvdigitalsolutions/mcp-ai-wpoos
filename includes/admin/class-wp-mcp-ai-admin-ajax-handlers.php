@@ -59,8 +59,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
-				'wp_ajax_wp_mcp_ai_test_plaid_connection' => 'handle_test_plaid_connection',
-				'wp_ajax_wp_mcp_ai_test_yahoo_connection' => 'handle_test_yahoo_connection',
+				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
+				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
 				'wp_ajax_wp_mcp_ai_test_removebg_connection' => 'handle_test_removebg_connection',
 				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
 				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
@@ -86,6 +86,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_seed_task_templates'    => 'handle_seed_task_templates',
 				'wp_ajax_wp_mcp_ai_seed_orchestration'     => 'handle_seed_orchestration',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
+				'wp_ajax_wp_mcp_ai_refresh_skills'         => 'handle_refresh_skills',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
@@ -922,15 +923,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$body = wp_json_encode(
 				array(
-					'client_id'    => $client_id,
-					'secret'       => $secret,
-					'user'         => array(
+					'client_id'     => $client_id,
+					'secret'        => $secret,
+					'user'          => array(
 						'client_user_id' => 'test_user_' . uniqid(),
 					),
-					'client_name'  => get_bloginfo( 'name' ),
-					'products'     => array( 'transactions' ),
+					'client_name'   => get_bloginfo( 'name' ),
+					'products'      => array( 'transactions' ),
 					'country_codes' => array( 'US' ),
-					'language'     => 'en',
+					'language'      => 'en',
 				)
 			);
 
@@ -1123,7 +1124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Success - optionally include account info.
 			$success_message = __( 'Successfully connected to remove.bg API!', 'mcp-ai-wpoos' );
 			if ( isset( $data['data']['attributes']['credits']['total'] ) ) {
-				$credits = absint( $data['data']['attributes']['credits']['total'] );
+				$credits          = absint( $data['data']['attributes']['credits']['total'] );
 				$success_message .= ' ' . sprintf(
 					/* translators: %d: number of API credits */
 					__( 'Account has %d API credits remaining.', 'mcp-ai-wpoos' ),
@@ -1442,7 +1443,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$deleted = $wpdb->delete(
 				$wpdb->usermeta,
-				array( 'meta_key' => $meta_key ),
+				array( 'meta_key' => $meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
 				array( '%s' )
 			);
 
@@ -1461,7 +1462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$wpdb->delete(
 				$wpdb->usermeta,
-				array( 'meta_key' => $tool_meta_key ),
+				array( 'meta_key' => $tool_meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
 				array( '%s' )
 			);
 
@@ -2377,6 +2378,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Clear cache.
 			$repository->clear_cache();
 
+			// Clear available profession count cache.
+			delete_transient( 'wp_mcp_ai_available_profession_count' );
+
 			// Refresh base knowledge documents and MIME types.
 			WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
 
@@ -2891,6 +2895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Get config data.
 			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$config = wp_mcp_ai_sanitize_recursive( $config );
 
 			if ( empty( $config ) ) {
 				wp_send_json_error( __( 'Configuration data is required.', 'mcp-ai-wpoos' ) );
@@ -3110,7 +3115,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			WP_MCP_AI_Profession_Playbook_Seeder::sync_all( $force );
 
 			// Update last sync timestamp.
-			update_option( 'wp_mcp_ai_playbooks_last_sync', current_time( 'timestamp' ) );
+			update_option( 'wp_mcp_ai_playbooks_last_sync', time() );
 
 			$message = $force
 				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
@@ -3193,6 +3198,122 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $message,
+				)
+			);
+		}
+
+		/**
+		 * Handle Skills refresh AJAX request.
+		 *
+		 * Supports 'refresh' (rescan disk index) and 'install_bundled'
+		 * (install or force-reinstall bundled skills shipped with the plugin).
+		 *
+		 * @since 1.9.0
+		 */
+		private function handle_refresh_skills() {
+			check_ajax_referer( 'wp_mcp_ai_refresh_skills', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Get action type: 'refresh', 'install_bundled', or 'force_install_bundled'.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action_type = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'refresh';
+
+			if ( ! in_array( $action_type, array( 'refresh', 'install_bundled', 'force_install_bundled' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Load skill registry.
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-registry.php';
+			}
+			if ( ! class_exists( 'WP_MCP_AI_Skill_Parser' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-skill-parser.php';
+			}
+
+			$registry = WP_MCP_AI_Skill_Registry::instance();
+
+			if ( 'refresh' === $action_type ) {
+				// Force rescan of the skills directory.
+				$skills = $registry->load_skills( true );
+
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %d: Number of skills found */
+							__( 'Skills index refreshed. Found %d installed skills.', 'mcp-ai-wpoos' ),
+							count( $skills )
+						),
+						'count'   => count( $skills ),
+					)
+				);
+				return;
+			}
+
+			// install_bundled or force_install_bundled.
+			$force = ( 'force_install_bundled' === $action_type );
+
+			if ( $force ) {
+				// Remove existing installed bundled skills to force reinstall.
+				$bundled_dir      = $registry->get_bundled_skills_dir();
+				$uninstall_errors = array();
+				if ( is_dir( $bundled_dir ) ) {
+					$dirs = glob( $bundled_dir . '/*', GLOB_ONLYDIR );
+					if ( is_array( $dirs ) ) {
+						foreach ( $dirs as $dir ) {
+							$skill_name       = basename( $dir );
+							$uninstall_result = $registry->uninstall_skill( $skill_name );
+							if ( is_wp_error( $uninstall_result ) ) {
+								$uninstall_errors[] = $skill_name;
+							}
+						}
+					}
+				}
+			}
+
+			$result = $registry->install_bundled_skills();
+
+			$message = sprintf(
+				/* translators: 1: Number installed, 2: Number skipped */
+				__( 'Bundled skills processed. Installed: %1$d, Skipped: %2$d', 'mcp-ai-wpoos' ),
+				$result['installed'],
+				$result['skipped']
+			);
+
+			if ( ! empty( $result['errors'] ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: Number of errors */
+					__( 'Errors: %d', 'mcp-ai-wpoos' ),
+					count( $result['errors'] )
+				);
+			}
+
+			if ( $force && ! empty( $uninstall_errors ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: Number of skills that failed to uninstall */
+					__( 'Failed to uninstall: %d', 'mcp-ai-wpoos' ),
+					count( $uninstall_errors )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message'   => $message,
+					'installed' => $result['installed'],
+					'skipped'   => $result['skipped'],
+					'errors'    => count( $result['errors'] ),
 				)
 			);
 		}

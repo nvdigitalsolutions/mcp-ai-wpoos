@@ -124,3 +124,6 @@ jobs:
           flags: phpunit
           name: phpunit-coverage
         continue-on-error: true
+
+      - name: Build production autoloader
+        run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction

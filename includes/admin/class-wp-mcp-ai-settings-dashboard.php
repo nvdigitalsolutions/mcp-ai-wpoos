@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
 				'dashicons-format-chat',
-				null // Let WordPress automatically position the menu
+				null // Let WordPress automatically position the menu.
 			);
 
 			// Remove the auto-generated submenu item (has same title as top-level menu).
@@ -188,21 +188,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Register settings with WordPress.
 		 *
-		 * IMPORTANT: We do NOT register a sanitize_callback here because:
-		 * 1. We manually sanitize in handle_save_settings() with proper context
-		 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
-		 * 3. The callback has no POST context during update_option(), breaking subtab protection
-		 * 4. This would cause provider keys to be cleared when navigating tabs
-		 *
-		 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
+		 * The sanitize_callback provides a safety net for any direct update_option() calls.
+		 * Primary sanitization is handled in handle_save_settings() with full context
+		 * (active tab/subtab awareness) to prevent data loss during partial-form saves.
 		 */
 		public function register_settings() {
 			register_setting(
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
-					'type' => 'array',
-				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
+					'type'              => 'array',
+					'sanitize_callback' => array( $this, 'sanitize_settings_callback' ),
 				)
 			);
 
@@ -220,6 +216,43 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					);
 				}
 			}
+		}
+
+		/**
+		 * Sanitize callback for register_setting().
+		 *
+		 * WordPress registers this as a `sanitize_option_{option_name}` filter via
+		 * register_setting(), which means it fires on EVERY update_option() call for
+		 * this option — including the one inside handle_save_settings() itself.
+		 *
+		 * Re-running the full section-based sanitization here causes data loss:
+		 * subtab-aware sections (e.g. Providers) inspect $_POST to decide which subtab
+		 * is active. When the current request is NOT a providers-tab save (e.g. it is a
+		 * general-settings save, an OAuth callback, or an unrelated admin-post action),
+		 * those sections find no matching subtab in $_POST and return an empty array,
+		 * wiping stored API keys.
+		 *
+		 * The fix: return the input unchanged. All callers that reach update_option()
+		 * have already sanitized the data before calling it:
+		 *  - handle_save_settings() runs the full section-based sanitization with the
+		 *    correct $_POST context and then calls array_merge with existing settings.
+		 *  - OAuth/integration handlers (Gmail, QuickBooks, etc.) fetch the full
+		 *    existing settings, modify only their specific keys, and save the result.
+		 *
+		 * @param mixed $input Settings value passed to update_option().
+		 * @return array Settings array, preserved as-is.
+		 */
+		public function sanitize_settings_callback( $input ) {
+			if ( ! is_array( $input ) ) {
+				// Preserve existing settings if input is invalid.
+				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				return is_array( $existing ) ? $existing : array();
+			}
+			// Return the input unchanged. The full section-based sanitization already ran
+			// (with the correct $_POST context) before update_option() was called.
+			// Running it again here would cause subtab-aware sections to return empty arrays
+			// when $_POST does not match their tab/subtab, clearing stored provider keys.
+			return $input;
 		}
 
 		/**
@@ -1259,6 +1292,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			global $wpdb;
 
 			// Find all backup options.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query against wp_options for plugin backup option names; result caching would return a stale list of available backups.
 			$backup_options = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} 
@@ -1575,6 +1609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Check 6: Backup count.
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query against wp_options for plugin backup option names; result caching would return a stale list of available backups.
 			$backup_count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",

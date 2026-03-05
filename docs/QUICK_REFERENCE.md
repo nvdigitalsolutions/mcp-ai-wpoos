@@ -1,16 +1,29 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.1.0  
-**Last Updated:** December 24, 2025
+**Version:** 1.1.3  
+**Last Updated:** March 5, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
-## 🆕 Recent Updates (December 2025)
+## 🆕 Recent Updates (March 2026)
 
-- **Symfony Process Integration** - Pro addon tools now use Symfony Process for safer external command execution
-- **27 New Settings Exposed** - Federation, mesh networking, TTS, MIME controls, and more accessible in admin UI
-- **Test Team Modal** - New team testing feature for deploying multi-assistant teams
-- **Pro Tool Reorganization** - 6 exec-based tools moved to Pro addon (breaking change for base users)
+- **Office 365 & iCloud Drive Connection Types** ⭐ NEW – 8 new Chat Channels Toolkit tools: Outlook mail (send/retrieve), OneDrive files (list/download/upload), iCloud Drive files (list/download/upload via HTTPS gateway). Chat Channels Toolkit now has **47 tools across 11 platforms**.
+- **Telegram Mini App Authentication Fix** – Fixed Mini App stuck on "Authenticating" in Telegram WebView; added TMA session token mechanism as auth fallback; reduced `check_permission()` to `read` for GET endpoints so subscriber-level users can access the app.
+- **WordPress.org Compliance — Final Audit** – `esc_attr()` escaping added to 5 admin page attribute echoes; `ABSPATH` guards added to 4 missing files; last hardcoded menu position removed. Status: **100% — Ready for Submission**.
+- **Telegram Mini App Media Badges** – File-type extension badges (`.TXT`, `.PDF`, `.DOCX`) overlaid on file icons in the media tab.
+
+### Previous Updates (February 2026)
+
+- **WordPress.org Compliance** - Removed hardcoded admin menu positions (v1.1.2)
+- **JetEngine CPT/Taxonomy AI Integration** - AI metaboxes and Research & Add pages for all JetEngine CPTs
+- **Package Pre-Bundling** - Critical npm packages pre-bundled in vendor directory (no npm install required)
+- **Product Research Fixes** - Fixed CSS/JS loading and tab system issues
+- **Pro Workflow Builder** - Fixed React initialization and stability issues
+- **OAuth Improvements** - Fixed Google, Yahoo, and Mailjet authentication flows
+- **Telegram Mini App CMS Overhaul** – Full WordPress CMS interface in Telegram WebView (CPTs, tools, media)
+- **Discord/Telegram Reactions** – `add_discord_message_reaction`, `add_telegram_message_reaction`, `get_discord_voice_channel_members`
+- **WhatsApp & Messenger Fixes** – Group routing, auto-reply error #133010, webhook processing, Messenger test connection
+- **Google Chat Fixes** – HTTP 404 test connection fix, auto-reply thread routing, OAuth improvements
 
 ---
 

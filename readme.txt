@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -113,9 +113,9 @@ NV oOS works perfectly standalone. Optional integrations add enhanced functional
 Comprehensive documentation is available in the plugin's `/docs/` directory:
 
 * [Quick Reference Guide](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md)
-* [REST API Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/rest-api.md)
-* [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/tool-reference.md)
-* [MCP Server Authentication](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/mcp-server-authentication.md)
+* [REST API Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/rest-api.md)
+* [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md)
+* [MCP Server Authentication](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/mcp-server-authentication.md)
 
 = Open Source =
 
@@ -205,11 +205,12 @@ NV oOS includes a full MCP server:
 2. Configure your MCP client with the credentials
 3. Use endpoint: `https://yoursite.com/wp-json/mcp-ai/v1/`
 
-See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/mcp-server-authentication.md) for detailed setup.
+See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/mcp-server-authentication.md) for detailed setup.
 
 = Is this plugin GDPR compliant? =
 
 NV oOS includes features to help with GDPR compliance:
+* Activation tracking is opt-out and collects no PII (see External Services section)
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -226,7 +227,7 @@ NV oOS has a developer-friendly tool registry:
     $registry->register_tool( 'My_Custom_Tool_Class' );
 } );`
 
-See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/tool-reference.md) for examples.
+See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md) for examples.
 
 = Where can I get support? =
 
@@ -254,11 +255,76 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 127+ base tools, 70 Pro tools (197 total) for content, media, research, and operations
+4. **Tool Registry** - 165+ base tools for content, media, research, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.3 - March 2026 =
+
+**WordPress.org Compliance — Final Audit**
+
+* Added `esc_attr()` escaping to 5 unescaped CSS class attribute echoes in admin pages (profession settings, team settings, slash commands dashboard, orchestration dashboard)
+* Added `phpcs:ignore` with documented justification for safe JSON/CSS/script buffer echoes
+* Added `ABSPATH` exit guard to 4 PHP files that were missing it (toolkit-metadata-mapping.php, filesystem-service.php, process-service.php, validator-service.php)
+* Removed last hardcoded admin menu position (85 → null) from Pro Dashboard `add_menu_page()` call
+* Reviewed and confirmed Telegram Mini App media tab changes (PR #4004) are fully compliant: `pathinfo()` cast to string, JS uses `escHtml()`, CSS changes only
+* WordPress.org submission compliance status: **100% — READY FOR SUBMISSION**
+
+**Telegram Mini App**
+
+* Media tab now shows file-type extension badge (`.TXT`, `.PDF`, `.DOCX`, etc.) overlaid on file-type icon for non-renderable files
+* Adds `ext` field (lowercase extension) to all `handle_media()` REST responses
+* New CSS classes: `.tma-media-icon-emoji`, `.tma-media-ext-badge` (monospace pill with WCAG-compliant contrast)
+* File icon layout updated to `flex-direction:column` for icon/badge stacking
+
+= 1.1.2 - February 2026 =
+
+**WordPress.org Compliance Fixes**
+
+* Removed hardcoded admin menu positions from 5 locations (Assistant CPT, Team CPT, Profession CPT, AI Peer CPT, Main Admin Menu)
+* Changed menu_position values from fixed numbers to null for automatic positioning
+* Prevents conflicts with other plugins per WordPress.org guidelines
+* Moved pro-only integration settings to pro addon (Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy)
+* Base plugin now only includes settings for base tools
+* Better architecture: Settings match tool location
+
+**JetEngine CPT/Taxonomy AI Integration**
+
+* AI Assistant Metaboxes: Automatically adds AI assistant metabox to all JetEngine CPT and taxonomy edit screens
+* Research & Add Pages: Creates dedicated Research & Add submenu pages for each JetEngine CPT with AI-powered content creation
+* Automatic Field Mapping: Dynamically maps all JetEngine meta fields (text, select, media, gallery, repeater, etc.) to form inputs
+* Version Compatibility: Full support for JetEngine 3.7+ with compatibility layer for different API versions
+* Settings: Two independent toggles - "Enable AI Assistant for JetEngine CPTs" and "Enable Research & Add Pages for JetEngine CPTs"
+
+**Package Pre-Bundling System**
+
+* Enhanced vendor directory pre-bundling for critical npm packages
+* Added pdf-lib, puppeteer-core, pdfkit, docx, exceljs, qrcode, turndown, cheerio
+* Eliminates need for npm install on production servers
+* Faster deployment with packages ready out-of-the-box
+
+**Product Research Page Fixes**
+
+* Fixed admin hook detection pattern causing CSS/JS not to load on Product Consolidate page
+* Fixed all workflow tabs displaying simultaneously
+* Improved asset enqueuing priority and hook detection
+* Removed duplicate "Research & Add" tab
+
+**Pro Workflow Builder Stability**
+
+* Fixed React asset loading and initialization issues
+* Fixed double instantiation causing duplicate DOM elements
+* Fixed initialization timing race conditions
+* Fixed menu placement inconsistencies
+* Fixed empty page display issue
+
+**OAuth & API Connection Fixes**
+
+* Fixed Google OAuth approval prompt not displaying to users
+* Fixed Yahoo OAuth redirect URL construction issues
+* Fixed Mailjet API authentication credential handling
 
 = 1.1.0 - January 2026 =
 
@@ -325,11 +391,9 @@ Initial release. Welcome to Open Operator System!
 
 == External Services ==
 
-**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. 
+**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. All external services used by this plugin are documented below.
 
-**📖 Complete Documentation:** For comprehensive details about all 17 external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
-
-Below is a summary of the most commonly used services:
+**📖 Additional Details:** For supplementary documentation about data transmission and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 
@@ -385,11 +449,11 @@ Below is a summary of the most commonly used services:
 
 These services are only contacted when specific tools/features are used:
 
-**7. Hugging Face Datasets API**
-* **Purpose:** Access to public machine learning datasets
-* **Data Sent:** Dataset queries and filters
-* **When:** When dataset exploration tools are used
-* **Service URL:** https://huggingface.co/api/datasets
+**7. Hugging Face API**
+* **Purpose:** Access to public machine learning datasets and AI model inference (text-to-speech, chat)
+* **Data Sent:** Dataset queries and filters; text or chat prompts for model inference
+* **When:** When dataset exploration tools or Hugging Face AI inference tools are used
+* **Service URL:** https://huggingface.co/api/datasets and https://api-inference.huggingface.co/models/
 * **Terms of Service:** https://huggingface.co/terms-of-service
 * **Privacy Policy:** https://huggingface.co/privacy
 
@@ -433,11 +497,134 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://www.jsdelivr.com/terms
 * **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
-= Optional OAuth/Integration Services (Pro Version Only) =
+**13. DuckDuckGo Instant Answer API**
+* **Purpose:** Fallback web search and instant answers
+* **Data Sent:** Search queries
+* **When:** When the web search tool uses DuckDuckGo as a search provider
+* **Service URL:** https://api.duckduckgo.com/
+* **Terms of Service:** https://duckduckgo.com/terms
+* **Privacy Policy:** https://duckduckgo.com/privacy
+
+**14. National Hurricane Center (NHC / NOAA)**
+* **Purpose:** Active tropical storm and hurricane data
+* **Data Sent:** None (read-only public data retrieval)
+* **When:** When the NHC active storms tool is used
+* **Service URL:** https://www.nhc.noaa.gov/CurrentStorms.json
+* **Terms of Service:** https://www.weather.gov/disclaimer
+* **Privacy Policy:** https://www.weather.gov/privacy
+
+**15. Cloudflare API (Zone and Cache Management)**
+* **Purpose:** CDN cache purging and DNS zone verification
+* **Data Sent:** Zone IDs, cache purge requests, bearer token authentication
+* **When:** When Cloudflare cache purge tools or zone verification features are used
+* **Service URL:** https://api.cloudflare.com/client/v4/zones/
+* **Terms of Service:** https://www.cloudflare.com/terms/
+* **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
+
+**16. Gmail API (Google)**
+* **Purpose:** Email search and retrieval for AI assistants
+* **Data Sent:** OAuth access tokens, search queries, label filters
+* **When:** When Gmail search tools are used after OAuth setup
+* **Service URL:** https://gmail.googleapis.com/gmail/v1/
+* **Terms of Service:** https://policies.google.com/terms
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**17. remove.bg API**
+* **Purpose:** Background removal from images
+* **Data Sent:** API key for account verification; images for background removal
+* **When:** When the remove background tool is used
+* **Service URL:** https://api.remove.bg/v1.0/
+* **Terms of Service:** https://www.remove.bg/terms-of-service
+* **Privacy Policy:** https://www.remove.bg/privacy
+
+**18. Flowhub API**
+* **Purpose:** Cannabis dispensary inventory and compliance management
+* **Data Sent:** Client ID, API key, inventory queries
+* **When:** When Flowhub inventory or compliance tools are used
+* **Service URL:** https://api.flowhub.co
+* **Terms of Service:** https://flowhub.com/terms-of-service
+* **Privacy Policy:** https://flowhub.com/privacy-policy
+
+**19. Plaid API**
+* **Purpose:** Financial data integration and bank account connectivity testing
+* **Data Sent:** Client ID, secret key, connection test requests
+* **When:** When Plaid connection testing or financial tools are used
+* **Service URL:** https://sandbox.plaid.com / https://production.plaid.com
+* **Terms of Service:** https://plaid.com/legal/
+* **Privacy Policy:** https://plaid.com/legal/privacy-policy
+
+**20. PayHere API**
+* **Purpose:** Payment processing for Sri Lankan merchants
+* **Data Sent:** Merchant credentials, payment data
+* **When:** When PayHere payment tools are used
+* **Service URL:** https://www.payhere.lk/merchant/v1/
+* **Terms of Service:** https://www.payhere.lk/terms
+* **Privacy Policy:** https://www.payhere.lk/privacy
+
+**21. Auth0 API**
+* **Purpose:** Enterprise authentication and user management via Auth0
+* **Data Sent:** OAuth tokens, user subject identifiers
+* **When:** When Auth0 integration is configured for authentication
+* **Service URL:** https://{your-auth0-domain}/api/v2/
+* **Terms of Service:** https://auth0.com/web-terms
+* **Privacy Policy:** https://auth0.com/privacy
+
+**22. Mubert Music API**
+* **Purpose:** AI-generated music and audio track creation
+* **Data Sent:** Music generation parameters (tempo, genre, duration), API key
+* **When:** When music generation tools are used
+* **Service URL:** https://music-api.mubert.com/api/v3/public/tracks
+* **Terms of Service:** https://mubert.com/corporate/terms
+* **Privacy Policy:** https://mubert.com/corporate/privacy
+
+**23. GDACS (Global Disaster Alert and Coordination System)**
+* **Purpose:** Global disaster and emergency event data retrieval
+* **Data Sent:** None (read-only public data retrieval)
+* **When:** When the GDACS disaster events tool is used
+* **Service URL:** https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP
+* **Terms of Service:** https://www.gdacs.org/About/termofuse.aspx
+* **Privacy Policy:** https://www.gdacs.org/About/privacy.aspx
+
+**24. Google Maps Platform API**
+* **Purpose:** Geocoding, place search, place details, and autocomplete
+* **Data Sent:** Location queries, coordinates, place IDs, API key
+* **When:** When location/mapping tools are used
+* **Service URL:** https://maps.googleapis.com/maps/api/
+* **Terms of Service:** https://cloud.google.com/maps-platform/terms
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**25. Meta / Facebook Graph API**
+* **Purpose:** OAuth authentication and social media integration
+* **Data Sent:** OAuth tokens, user queries, content data
+* **When:** When Meta/Facebook integration is configured and used
+* **Service URL:** https://graph.facebook.com/v18.0/
+* **Terms of Service:** https://www.facebook.com/legal/terms
+* **Privacy Policy:** https://www.facebook.com/privacy/policy/
+
+= Plugin Services (NV Digital Solutions) =
+
+**26. NV Digital Solutions Activation Tracking**
+* **Purpose:** Anonymous plugin activation/deactivation analytics to understand usage patterns
+* **Data Sent:** Hashed site URL (non-reversible SHA-256 HMAC using per-installation WordPress AUTH_KEY salt), plugin version, WordPress version, PHP version, locale, multisite status. No personally identifiable information is collected.
+* **When:** On plugin activation and deactivation (opt-out available via settings or filter)
+* **Service URL:** https://nvdigitalsolutions.com/api/plugin-tracking/activation
+* **Terms of Service:** https://nvdigitalsolutions.com/terms
+* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
+* **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
+
+**27. NV Digital Solutions License Server**
+* **Purpose:** Optional license validation for future premium add-on support
+* **Data Sent:** License key, site URL, product identifier
+* **When:** Only when a user manually enters and activates a license key
+* **Service URL:** https://nvdigitalsolutions.com/api/licenses
+* **Terms of Service:** https://nvdigitalsolutions.com/terms
+* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
+
+= Optional OAuth/Integration Services =
 
 These services are only used if you explicitly configure OAuth integrations:
 
-**13. GitHub API**
+**28. GitHub API**
 * **Purpose:** Repository management, code search, issue tracking
 * **Data Sent:** OAuth tokens, repository queries, commit data
 * **When:** When GitHub tools are used after OAuth setup
@@ -445,7 +632,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
-**14. Cloudways API**
+**29. Cloudways API**
 * **Purpose:** Server management for Cloudways hosting customers
 * **Data Sent:** OAuth tokens, server management commands
 * **When:** When Cloudways tools are used after OAuth setup
@@ -453,7 +640,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://www.cloudways.com/en/terms-of-service.php
 * **Privacy Policy:** https://www.cloudways.com/en/privacy-policy.php
 
-**15. QuickBooks API (Intuit)**
+**30. QuickBooks API (Intuit)**
 * **Purpose:** Accounting and financial data integration
 * **Data Sent:** OAuth tokens, financial queries
 * **When:** When QuickBooks tools are used after OAuth setup
@@ -461,7 +648,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
 * **Privacy Policy:** https://www.intuit.com/privacy/statement/
 
-**16. Mailjet API**
+**31. Mailjet API**
 * **Purpose:** Email marketing and transactional email
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
@@ -476,6 +663,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * File uploads (AI providers only)
 * Search queries (when using search/weather tools)
 * OAuth credentials (when using optional integrations)
+* Anonymous activation data (opt-out available; see service #26 above)
 
 **What is NOT sent:**
 * WordPress admin credentials
@@ -486,7 +674,7 @@ These services are only used if you explicitly configure OAuth integrations:
 **When data is sent:**
 * Only when you or your users actively use AI features
 * Only to services you have explicitly configured
-* Never for analytics or telemetry purposes
+* Anonymous activation/deactivation tracking on plugin lifecycle events (opt-out available)
 
 **Your control:**
 * You choose which AI provider to use
@@ -516,11 +704,13 @@ These services are only used if you explicitly configure OAuth integrations:
 * Optional: Chat transcripts (if JetEngine integration is enabled)
 * Optional: Usage logs (disabled by default, controlled in settings)
 
-**No External Tracking:**
-* No analytics or telemetry sent to plugin developers
-* No tracking scripts, cookies, or beacons
-* No phone-home functionality
-* Your data stays on your server
+**Activation Tracking (Opt-Out Available):**
+* On plugin activation and deactivation, anonymous usage data is sent to NV Digital Solutions
+* Data collected: hashed site URL (SHA-256 HMAC, non-reversible), plugin version, WordPress version, PHP version, locale, multisite status
+* No personally identifiable information (PII) is collected or stored
+* No tracking scripts, cookies, or beacons are used
+* Opt-out: Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter
+* Tracking is automatically skipped in local/development environments (localhost, .local, .test, .dev)
 
 = What Data is Sent to AI Providers? =
 

@@ -37,6 +37,7 @@ BUILD_BASE=false
 BUILD_PRO=false
 BUILD_COMBINED=false
 BUILD_CORE_ONLY=false
+SKIP_NPM_BUILD=false
 VERSION=""
 
 # Parse arguments
@@ -58,6 +59,10 @@ while [[ $# -gt 0 ]]; do
             BUILD_CORE_ONLY=true
             shift
             ;;
+        --skip-npm-build)
+            SKIP_NPM_BUILD=true
+            shift
+            ;;
         --version)
             VERSION="$2"
             shift 2
@@ -77,6 +82,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --combined        Build base + pro combined package"
             echo "  --core-only       Build core plugin only (lightweight, 4 basic tools)"
             echo "  --all             Build all main versions (base, pro, combined)"
+            echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
             echo ""
@@ -86,6 +92,7 @@ while [[ $# -gt 0 ]]; do
             echo "  $0 --pro                 # Build only pro add-on"
             echo "  $0 --combined            # Build base + pro combined"
             echo "  $0 --core-only           # Build only core plugin"
+            echo "  $0 --skip-npm-build      # Skip npm build (assets already pre-built)"
             echo "  $0 --version 1.0.0       # Specify version"
             exit 0
             ;;
@@ -146,10 +153,15 @@ echo "✅ All requirements met"
 echo ""
 
 # Step 1: Install and build frontend assets
-echo "Step 1: Building frontend assets..."
-npm ci --silent 2>/dev/null || npm install --silent
-npm run build
-echo "✅ Frontend assets built"
+if [ "$SKIP_NPM_BUILD" = true ]; then
+    echo "Step 1: Skipping npm build (--skip-npm-build flag set — using pre-built assets)..."
+    echo "✅ Using pre-built frontend assets from repository"
+else
+    echo "Step 1: Building frontend assets..."
+    npm ci --silent 2>/dev/null || npm install --silent
+    npm run build
+    echo "✅ Frontend assets built"
+fi
 echo ""
 
 # Step 2: Install production Composer dependencies
@@ -207,7 +219,11 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'archive' \
+        --exclude 'packages' \
+        --exclude '/src' \
         --exclude 'ARCHITECTURE.md' \
+        --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -217,6 +233,14 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
+        --exclude 'composer.json' \
+        --exclude 'package.json' \
+        --exclude 'tsconfig.json' \
+        --exclude '.npmrc' \
+        --exclude '.codecov.yml' \
+        --exclude 'esbuild.config.pro.js' \
+        --exclude 'phpcs.xml.dist' \
+        --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
@@ -337,7 +361,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Version: '"${VERSION}"'\
  * Requires at least: 6.0\
  * Requires PHP: 7.4\
- * Tested up to: 6.7.1\
+ * Tested up to: 6.9\
  * Author: NV Digital Solutions\
  * Author URI: https://nvdigitalsolutions.com\
  * License: GPLv3 or later\
@@ -421,6 +445,11 @@ if [ "$BUILD_PRO" = true ]; then
     PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
+    # Note: All NPM packages (Sharp, etc.) are pre-packaged in assets/vendor/ and committed to git.
+    # The copy-dependencies.js script is only used by maintainers when updating vendor packages.
+    # For building the zip, we just copy the pre-packaged vendor directory.
+    echo "ℹ️  Using pre-packaged NPM dependencies from assets/vendor/ (104 MB, 43 packages)"
+    
     # Copy pro addon files with aggressive exclusions to reduce size
     if [ -d "addons/pro" ]; then
         echo "Step 3b.1: Copying Pro add-on files (excluding tests, docs, dev files)..."
@@ -440,7 +469,13 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude '*.js.map' \
             --exclude '*.css.map' \
             --exclude 'assets/vendor/facebook-nodejs-business-sdk' \
-            --exclude 'assets/vendor/canvas/build' \
+            --exclude 'assets/vendor/canvas' \
+            --exclude 'assets/vendor/chart.js' \
+            --exclude 'assets/vendor/katex' \
+            --exclude 'assets/vendor/d3' \
+            --exclude 'assets/vendor/axios' \
+            --exclude 'assets/vendor/mathjs' \
+            --exclude 'assets/vendor/prettier' \
             --exclude 'vendor/*/tests' \
             --exclude 'vendor/*/test' \
             --exclude 'vendor/*/Test' \
@@ -484,7 +519,13 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'vendor/*/Makefile' \
             --exclude 'vendor/*/*/Makefile'
         
-        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB), Canvas native binaries (~181MB)"
+        echo "✓ Excluded: tests (~13MB), docs (~1MB), examples (~2MB), README files (~1MB), CI configs, QA tools, source maps (~16MB), Facebook SDK (~28MB)"
+        echo "✓ Excluded packages requiring system dependencies: canvas (requires libvips/Cairo for PDF OCR)"
+        echo "✓ Excluded CDN packages: chart.js (~420KB), katex (~3.1MB), d3 (~864KB), axios (~1.6MB), mathjs (~17MB), prettier (~500KB)"
+        echo "ℹ️  Note: Excluded packages are kept in git repo but not in ZIP distribution"
+        echo "ℹ️  Note: CDN packages load from jsDelivr with automatic fallback"
+        echo "ℹ️  Note: Canvas requires system-level installation for PDF OCR; install via npm when needed"
+        echo "ℹ️  Note: Other vendor packages (~40+ NPM packages including puppeteer-core) are included for immediate functionality"
         
         # Copy examples and CSV templates from root to Pro (excluded from base)
         if [ -d "examples" ]; then
@@ -632,7 +673,11 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'docs' \
         --exclude 'core' \
         --exclude 'shared' \
+        --exclude 'archive' \
+        --exclude 'packages' \
+        --exclude '/src' \
         --exclude 'ARCHITECTURE.md' \
+        --exclude 'CHANGELOG.md' \
         --exclude 'RELEASE_CHECKLIST.md' \
         --exclude 'CONTRIBUTING.md' \
         --exclude 'SECURITY.md' \
@@ -642,6 +687,14 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude 'PERFORMANCE_BUTTONS_FIX.md' \
         --exclude 'VENDOR-EXEC-USAGE.md' \
         --exclude 'WORDPRESS_ORG_SUBMISSION_GUIDE.md' \
+        --exclude 'composer.json' \
+        --exclude 'package.json' \
+        --exclude 'tsconfig.json' \
+        --exclude '.npmrc' \
+        --exclude '.codecov.yml' \
+        --exclude 'esbuild.config.pro.js' \
+        --exclude 'phpcs.xml.dist' \
+        --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
         --exclude 'verify-*.sh' \
         --exclude '*.zip' \
@@ -756,3 +809,11 @@ if [ "$BUILD_CORE_ONLY" = true ]; then
 fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""
+
+# Step: Rebuild production autoloader after all ZIPs are created.
+# This ensures vendor/ is left in the optimised production state
+# (no dev packages, classmap-only autoloading) for any subsequent
+# deployment or commit step.
+echo "Rebuilding production autoloader..."
+composer install --no-dev --classmap-authoritative --no-interaction --quiet
+echo "✅ Production autoloader rebuilt"

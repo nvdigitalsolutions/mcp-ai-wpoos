@@ -63,9 +63,9 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			array(
 				'recommendedToolCount' => $recommended_count,
 				'strings'              => array(
-					'remove'        => __( 'Remove', 'mcp-ai-wpoos' ),
-					'selected'      => __( 'selected', 'mcp-ai-wpoos' ),
-					'resetConfirm'  => __( 'Are you sure you want to reset the tools selection to the initial state?', 'mcp-ai-wpoos' ),
+					'remove'       => __( 'Remove', 'mcp-ai-wpoos' ),
+					'selected'     => __( 'selected', 'mcp-ai-wpoos' ),
+					'resetConfirm' => __( 'Are you sure you want to reset the tools selection to the initial state?', 'mcp-ai-wpoos' ),
 				),
 			)
 		);

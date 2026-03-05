@@ -140,9 +140,11 @@
 
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
+			embeddedAssistantId: parseInt(assistantId, 10) || 0,
 			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
 			messagesEndpoint: baseRestUrl + 'chat-client',
 			toolsEndpoint: baseRestUrl + 'tools',
+			embeddedConfigEndpoint: baseRestUrl + 'embedded-client-config',
 			filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + 'files/',
 			transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + 'chat-transcripts',
 			crawl4aiTaskEndpoint: baseRestUrl + 'crawl4ai/task/',

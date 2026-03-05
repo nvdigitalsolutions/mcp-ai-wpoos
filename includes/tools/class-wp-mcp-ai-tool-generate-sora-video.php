@@ -28,7 +28,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	const DEFAULT_MODEL    = 'sora-2';
 	const DEFAULT_SIZE     = '1080p';
 	const DEFAULT_DURATION = 5;
-	const DEFAULT_FPS      = 24;
 	const API_ENDPOINT     = 'https://api.openai.com/v1/videos';
 
 	/**
@@ -84,12 +83,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 					'maximum'     => 60,
 					'default'     => $defaults['duration'],
 				),
-				'fps'           => array(
-					'type'        => 'integer',
-					'description' => __( 'Frames per second (24, 30, or 60).', 'mcp-ai-wpoos' ),
-					'enum'        => array( 24, 30, 60 ),
-					'default'     => $defaults['fps'],
-				),
 				'aspect_ratio'  => array(
 					'type'        => 'string',
 					'description' => __( 'Video aspect ratio: "16:9" (landscape), "9:16" (portrait), "1:1" (square).', 'mcp-ai-wpoos' ),
@@ -128,7 +121,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'model'    => self::DEFAULT_MODEL,
 			'size'     => self::DEFAULT_SIZE,
 			'duration' => self::DEFAULT_DURATION,
-			'fps'      => self::DEFAULT_FPS,
 		);
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -147,10 +139,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( ! empty( $settings['openai_video_duration'] ) ) {
 			$defaults['duration'] = absint( $settings['openai_video_duration'] );
-		}
-
-		if ( ! empty( $settings['openai_video_fps'] ) ) {
-			$defaults['fps'] = absint( $settings['openai_video_fps'] );
 		}
 
 		return $defaults;
@@ -308,7 +296,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		$model    = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
 		$size     = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : $defaults['size'];
 		$duration = isset( $arguments['duration'] ) ? absint( $arguments['duration'] ) : $defaults['duration'];
-		$fps      = isset( $arguments['fps'] ) ? absint( $arguments['fps'] ) : $defaults['fps'];
 		$aspect   = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
 		$timeout  = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 300;
 
@@ -329,7 +316,6 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'prompt'       => $prompt,
 			'size'         => $size,
 			'seconds'      => $duration,
-			'fps'          => $fps,
 			'aspect_ratio' => $aspect,
 		);
 

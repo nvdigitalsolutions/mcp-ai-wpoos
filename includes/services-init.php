@@ -73,6 +73,9 @@ require_once plugin_dir_path( __FILE__ ) . 'class-wp-mcp-ai-security-manager.php
 
 // Load Symfony-based services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-process-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'filesystem/class-wp-mcp-ai-filesystem-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'cache/class-wp-mcp-ai-cache-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'http/class-wp-mcp-ai-http-client-service.php';
 
 // Load video-related services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-video-analysis-service.php';
@@ -97,6 +100,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-conte
 
 // Load vector context service (DeepSeek V4 enhancements - Phase 5.5).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
+
+// Load context compression service (RAG enhancements).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-context-compression-service.php';
 
 // Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
@@ -403,6 +409,19 @@ function wp_mcp_ai_get_vector_context_service() {
 }
 
 /**
+ * Get context compression service instance
+ *
+ * Helper function to get the context compression service for
+ * managing context compression, chunking, and summarization.
+ *
+ * @since 1.1.0
+ * @return WP_MCP_AI_Context_Compression_Service Compression service instance.
+ */
+function wp_mcp_ai_get_context_compression_service() {
+	return WP_MCP_AI_Context_Compression_Service::get_instance();
+}
+
+/**
  * Generate fallback text for Gemini image tool results.
  *
  * Creates a contextual text message based on the result fields when the tool
@@ -503,3 +522,67 @@ function wp_mcp_ai_add_gemini_image_fallback_text( $content, $assistant_config )
 }
 add_filter( 'wp_mcp_ai_sanitize_tool_result_llm_generate_gemini_image', 'wp_mcp_ai_add_gemini_image_fallback_text', 10, 2 );
 add_filter( 'wp_mcp_ai_sanitize_tool_result_llm_edit_gemini_image', 'wp_mcp_ai_add_gemini_image_fallback_text', 10, 2 );
+
+/**
+ * Get cache service instance
+ *
+ * Helper function to get the Symfony Cache service with automatic adapter
+ * selection (Redis → APCu → Filesystem) and full tag-invalidation support.
+ *
+ * @return WP_MCP_AI\Cache\WP_MCP_AI_Cache_Service Cache service instance.
+ */
+function wp_mcp_ai_get_cache_service() {
+	return \WP_MCP_AI\Cache\WP_MCP_AI_Cache_Service::get_instance();
+}
+
+/**
+ * Get filesystem service instance
+ *
+ * Helper function to get the Symfony Filesystem service for atomic file
+ * operations (write, copy, rename, chmod, remove).
+ *
+ * @return WP_MCP_AI\Filesystem\WP_MCP_AI_Filesystem_Service Filesystem service instance.
+ */
+function wp_mcp_ai_get_filesystem_service() {
+	return \WP_MCP_AI\Filesystem\WP_MCP_AI_Filesystem_Service::get_instance();
+}
+
+/**
+ * Get process service instance
+ *
+ * Helper function to get the Symfony Process service for executing external
+ * commands with timeout management, streaming output, and WP_Error error
+ * wrapping.
+ *
+ * @return WP_MCP_AI\Services\WP_MCP_AI_Process_Service Process service instance.
+ */
+function wp_mcp_ai_get_process_service() {
+	return \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+}
+
+/**
+ * Get validator service instance
+ *
+ * Helper function to get the Symfony Validator service.
+ * Returns null when Symfony Validator is unavailable or PHP < 8.0.
+ *
+ * @return WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service|null Validator service instance or null.
+ */
+function wp_mcp_ai_get_validator_service() {
+	return \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+}
+
+/**
+ * Get HTTP client service instance
+ *
+ * Helper function to get the Symfony HttpClient service for external HTTP
+ * requests requiring streaming, automatic retry, or SSE consumption.
+ *
+ * Note: WordPress loopback and local-AI requests must continue to use
+ * wp_remote_get/post so WordPress HTTP filters and proxy settings apply.
+ *
+ * @return WP_MCP_AI\Http\WP_MCP_AI_Http_Client_Service HTTP client service instance.
+ */
+function wp_mcp_ai_get_http_client_service() {
+	return \WP_MCP_AI\Http\WP_MCP_AI_Http_Client_Service::get_instance();
+}

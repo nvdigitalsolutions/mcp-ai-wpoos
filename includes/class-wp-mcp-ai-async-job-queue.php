@@ -216,7 +216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Insert into database.
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$inserted   = $wpdb->insert( $table_name, $job_data );
+			$inserted   = $wpdb->insert( $table_name, $job_data ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 
 			if ( false === $inserted ) {
 				return new WP_Error(
@@ -230,12 +230,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Emit SSE event if chat session provided.
 			if ( ! empty( $args['chat_session'] ) ) {
-				self::emit_sse_event( 'job_queued', array(
-					'job_id'       => $job_id,
-					'job_type'     => $args['job_type'],
-					'priority'     => $job_data['priority'],
-					'chat_session' => $args['chat_session'],
-				) );
+				self::emit_sse_event(
+					'job_queued',
+					array(
+						'job_id'       => $job_id,
+						'job_type'     => $args['job_type'],
+						'priority'     => $job_data['priority'],
+						'chat_session' => $args['chat_session'],
+					)
+				);
 			}
 
 			// Log activity.
@@ -264,13 +267,16 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			global $wpdb;
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$job        = $wpdb->get_row(
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
+			$job = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM $table_name WHERE id = %d",
+					"SELECT * FROM $table_name WHERE id = %d",  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
 					$job_id
 				),
 				ARRAY_A
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			if ( ! $job ) {
 				return null;
@@ -334,7 +340,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			}
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$updated    = $wpdb->update(
+			$updated    = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 				$table_name,
 				$update_data,
 				array( 'id' => $job_id )
@@ -384,23 +390,29 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 
 			// Get next job to process (highest priority first).
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$job        = $wpdb->get_row(
-				"SELECT * FROM $table_name 
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
+			$job = $wpdb->get_row(
+				"SELECT * FROM $table_name
 				WHERE status = 'queued' 
 				ORDER BY priority ASC, created_at ASC 
 				LIMIT 1",
 				ARRAY_A
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			if ( ! $job ) {
 				return; // No jobs to process.
 			}
 
 			// Update job status to running.
-			self::update_job( $job['id'], array(
-				'status'     => self::STATUS_RUNNING,
-				'started_at' => current_time( 'mysql' ),
-			) );
+			self::update_job(
+				$job['id'],
+				array(
+					'status'     => self::STATUS_RUNNING,
+					'started_at' => current_time( 'mysql' ),
+				)
+			);
 
 			// Decode job data.
 			$job['job_data'] = json_decode( $job['job_data'], true );
@@ -410,12 +422,15 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				$result = self::execute_job( $job );
 
 				// Update job as completed.
-				self::update_job( $job['id'], array(
-					'status'       => self::STATUS_COMPLETED,
-					'progress'     => 100,
-					'result'       => $result,
-					'completed_at' => current_time( 'mysql' ),
-				) );
+				self::update_job(
+					$job['id'],
+					array(
+						'status'       => self::STATUS_COMPLETED,
+						'progress'     => 100,
+						'result'       => $result,
+						'completed_at' => current_time( 'mysql' ),
+					)
+				);
 
 				// Send webhook notification if configured.
 				self::send_webhook_notification( $job, $result );
@@ -431,18 +446,24 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				// Check if we should retry.
 				if ( $job['retries'] < $job['max_retries'] ) {
 					// Retry the job.
-					self::update_job( $job['id'], array(
-						'status'  => self::STATUS_QUEUED,
-						'error'   => $error,
-						'retries' => $job['retries'] + 1,
-					) );
+					self::update_job(
+						$job['id'],
+						array(
+							'status'  => self::STATUS_QUEUED,
+							'error'   => $error,
+							'retries' => $job['retries'] + 1,
+						)
+					);
 				} else {
 					// Max retries exceeded, move to dead letter queue.
-					self::update_job( $job['id'], array(
-						'status'       => self::STATUS_FAILED,
-						'error'        => $error,
-						'completed_at' => current_time( 'mysql' ),
-					) );
+					self::update_job(
+						$job['id'],
+						array(
+							'status'       => self::STATUS_FAILED,
+							'error'        => $error,
+							'completed_at' => current_time( 'mysql' ),
+						)
+					);
 
 					// Add to dead letter queue.
 					if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
@@ -481,8 +502,8 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 					throw new Exception(
 						sprintf(
 							/* translators: %s: Job type */
-							__( 'Unknown job type: %s', 'mcp-ai-wpoos' ),
-							$job['job_type']
+							__( 'Unknown job type: %s', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
+							$job['job_type'] // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
 						)
 					);
 			}
@@ -493,11 +514,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 *
 		 * @param array $job Job data.
 		 * @return mixed Command result.
+		 * @throws Exception If the slash command toolkit is not available.
 		 */
 		private static function execute_command_job( $job ) {
 			// Integration with slash command toolkit manager.
 			if ( ! class_exists( 'WP_MCP_AI_Slash_Command_Toolkit_Manager' ) ) {
-				throw new Exception( __( 'Slash command toolkit not available.', 'mcp-ai-wpoos' ) );
+				throw new Exception( __( 'Slash command toolkit not available.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
 			}
 
 			$command = $job['job_data']['command'] ?? '';
@@ -513,11 +535,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 *
 		 * @param array $job Job data.
 		 * @return mixed Workflow result.
+		 * @throws Exception If the workflow orchestrator is not available.
 		 */
 		private static function execute_workflow_job( $job ) {
 			// Integration with workflow orchestrator.
 			if ( ! class_exists( 'WP_MCP_AI_Workflow_Orchestrator' ) ) {
-				throw new Exception( __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ) );
+				throw new Exception( __( 'Workflow orchestrator not available.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
 			}
 
 			$workflow_id = $job['job_data']['workflow_id'] ?? '';
@@ -532,11 +555,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 *
 		 * @param array $job Job data.
 		 * @return mixed Tool result.
+		 * @throws Exception If the tool async executor is not available.
 		 */
 		private static function execute_tool_job( $job ) {
 			// Integration with tool async executor.
 			if ( ! class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
-				throw new Exception( __( 'Tool async executor not available.', 'mcp-ai-wpoos' ) );
+				throw new Exception( __( 'Tool async executor not available.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
 			}
 
 			$tool_slug = $job['job_data']['tool_slug'] ?? '';
@@ -551,13 +575,14 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 *
 		 * @param array $job Job data.
 		 * @return mixed Agentic loop result.
+		 * @throws Exception Always thrown as not yet implemented.
 		 */
 		private static function execute_agentic_loop_job( $job ) {
 			// TODO: Implement agentic loop execution.
 			// This would integrate with the chat controller's agentic loop logic
 			// but allow for unlimited iterations in the background.
-			
-			throw new Exception( __( 'Agentic loop execution not yet implemented.', 'mcp-ai-wpoos' ) );
+
+			throw new Exception( __( 'Agentic loop execution not yet implemented.', 'mcp-ai-wpoos' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception thrown, not echoed to output.
 		}
 
 		/**
@@ -606,14 +631,17 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 			$age_days   = apply_filters( 'wp_mcp_ai_job_queue_cleanup_age_days', self::CLEANUP_AGE_DAYS );
 
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
 			$deleted = $wpdb->query(
 				$wpdb->prepare(
-					"DELETE FROM $table_name 
+					"DELETE FROM $table_name
 					WHERE status IN ('completed', 'failed', 'cancelled') 
 					AND completed_at < DATE_SUB(NOW(), INTERVAL %d DAY)",
 					$age_days
 				)
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			if ( $deleted && class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -631,10 +659,13 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function cancel_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status'       => self::STATUS_CANCELLED,
-				'completed_at' => current_time( 'mysql' ),
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status'       => self::STATUS_CANCELLED,
+					'completed_at' => current_time( 'mysql' ),
+				)
+			);
 		}
 
 		/**
@@ -644,9 +675,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function pause_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status' => self::STATUS_PAUSED,
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status' => self::STATUS_PAUSED,
+				)
+			);
 		}
 
 		/**
@@ -656,9 +690,12 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 		 * @return bool True on success, false on failure.
 		 */
 		public static function resume_job( $job_id ) {
-			return self::update_job( $job_id, array(
-				'status' => self::STATUS_QUEUED,
-			) );
+			return self::update_job(
+				$job_id,
+				array(
+					'status' => self::STATUS_QUEUED,
+				)
+			);
 		}
 
 		/**
@@ -672,9 +709,11 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			global $wpdb;
 
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$jobs       = $wpdb->get_results(
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom plugin table not covered by WP object cache; direct query required for real-time job status.
+			$jobs = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM $table_name 
+					"SELECT * FROM $table_name
 					WHERE status = %s 
 					ORDER BY created_at DESC 
 					LIMIT %d",
@@ -683,6 +722,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 				),
 				ARRAY_A
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			// Decode JSON fields.
 			foreach ( $jobs as &$job ) {
@@ -709,11 +749,11 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 			$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 			return array(
-				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ),
-				'queued'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'queued'" ),
-				'running'   => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'running'" ),
-				'completed' => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" ),
-				'failed'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'failed'" ),
+				'total'     => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is a safe, plugin-controlled value.
+				'queued'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'queued'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+				'running'   => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'running'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+				'completed' => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'completed'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
+				'failed'    => $wpdb->get_var( "SELECT COUNT(*) FROM $table_name WHERE status = 'failed'" ),  // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is a safe, plugin-controlled value.
 			);
 		}
 
@@ -789,7 +829,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 						echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
 						echo '<th>' . esc_html__( 'Created', 'mcp-ai-wpoos' ) . '</th>';
 						echo '</tr></thead><tbody>';
-						
+
 						foreach ( $recent_jobs as $job ) {
 							echo '<tr>';
 							echo '<td>' . esc_html( $job['id'] ) . '</td>';
@@ -799,7 +839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Async_Job_Queue' ) ) {
 							echo '<td>' . esc_html( $job['created_at'] ) . '</td>';
 							echo '</tr>';
 						}
-						
+
 						echo '</tbody></table>';
 					}
 					?>

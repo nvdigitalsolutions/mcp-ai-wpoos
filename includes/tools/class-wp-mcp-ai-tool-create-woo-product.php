@@ -221,56 +221,56 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'attributes'      => array(
-								'type'        => 'object',
-								'description' => __( 'Variation attributes (e.g., {"Size": "Large", "Color": "Red"}). Keys must match attribute names.', 'mcp-ai-wpoos' ),
+							'attributes'     => array(
+								'type'                 => 'object',
+								'description'          => __( 'Variation attributes (e.g., {"Size": "Large", "Color": "Red"}). Keys must match attribute names.', 'mcp-ai-wpoos' ),
 								'additionalProperties' => array( 'type' => 'string' ),
 							),
-							'sku'             => array(
+							'sku'            => array(
 								'type'        => 'string',
 								'description' => __( 'SKU for this variation.', 'mcp-ai-wpoos' ),
 							),
-							'regular_price'   => array(
+							'regular_price'  => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Regular price for this variation.', 'mcp-ai-wpoos' ),
 							),
-							'sale_price'      => array(
+							'sale_price'     => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Sale price for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
-							'stock_quantity'  => array(
+							'stock_quantity' => array(
 								'type'        => 'integer',
 								'description' => __( 'Stock quantity for this variation (optional).', 'mcp-ai-wpoos' ),
 								'minimum'     => 0,
 							),
-							'stock_status'    => array(
+							'stock_status'   => array(
 								'type'        => 'string',
 								'description' => __( 'Stock status for this variation: instock, outofstock, or onbackorder.', 'mcp-ai-wpoos' ),
 								'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 								'default'     => 'instock',
 							),
-							'manage_stock'    => array(
+							'manage_stock'   => array(
 								'type'        => 'boolean',
 								'description' => __( 'Whether to enable stock management for this variation.', 'mcp-ai-wpoos' ),
 								'default'     => false,
 							),
-							'weight'          => array(
+							'weight'         => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Weight for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
-							'length'          => array(
+							'length'         => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Length for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
-							'width'           => array(
+							'width'          => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Width for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
-							'height'          => array(
+							'height'         => array(
 								'type'        => array( 'string', 'number' ),
 								'description' => __( 'Height for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
-							'description'     => array(
+							'description'    => array(
 								'type'        => 'string',
 								'description' => __( 'Description for this variation (optional).', 'mcp-ai-wpoos' ),
 							),
@@ -1183,12 +1183,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				$found = false;
 				foreach ( $product_attributes as $product_attr ) {
 					$product_attr_name = $product_attr->get_name();
-					
+
 					// Handle both taxonomy-based (pa_color) and custom (color) attributes.
-					if ( $product_attr_name === $attr_name_sanitized || 
-					     $product_attr_name === wc_attribute_taxonomy_name( $attr_name_sanitized ) ||
-					     wc_sanitize_taxonomy_name( $product_attr_name ) === $attr_name_sanitized ) {
-						
+					if ( $product_attr_name === $attr_name_sanitized ||
+						wc_attribute_taxonomy_name( $attr_name_sanitized ) === $product_attr_name ||
+						wc_sanitize_taxonomy_name( $product_attr_name ) === $attr_name_sanitized ) {
+
 						// For taxonomy-based attributes, use full taxonomy name.
 						if ( taxonomy_exists( $product_attr_name ) ) {
 							$normalized_attributes[ $product_attr_name ] = sanitize_text_field( $attr_value );
@@ -1277,14 +1277,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			$variation_id = $variation->save();
 			if ( $variation_id ) {
 				$variation_ids[] = $variation_id;
-				$created_count++;
+				++$created_count;
 			}
 		}
 
 		if ( $created_count > 0 ) {
 			// Sync the variable product to update its available variations.
 			WC_Product_Variable::sync( $product_id );
-			
+
 			$messages[] = sprintf(
 				/* translators: %d: number of variations created */
 				_n( 'Created %d product variation.', 'Created %d product variations.', $created_count, 'mcp-ai-wpoos' ),

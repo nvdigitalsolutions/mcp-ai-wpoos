@@ -80,7 +80,11 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Result array.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$workflow_file = isset( $arguments['workflow_file'] ) ? $arguments['workflow_file'] : '';
@@ -166,13 +170,13 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 			'errors'   => $errors,
 			'warnings' => $warnings,
 			'summary'  => array(
-				'name'         => $workflow['name'] ?? 'Unnamed',
-				'description'  => $workflow['description'] ?? '',
-				'total_steps'  => count( $workflow['steps'] ?? array() ),
-				'has_parallel' => $this->has_parallel_steps( $workflow['steps'] ?? array() ),
-				'has_loops'    => $this->has_loop_steps( $workflow['steps'] ?? array() ),
+				'name'             => $workflow['name'] ?? 'Unnamed',
+				'description'      => $workflow['description'] ?? '',
+				'total_steps'      => count( $workflow['steps'] ?? array() ),
+				'has_parallel'     => $this->has_parallel_steps( $workflow['steps'] ?? array() ),
+				'has_loops'        => $this->has_loop_steps( $workflow['steps'] ?? array() ),
 				'has_conditionals' => $this->has_conditional_steps( $workflow['steps'] ?? array() ),
-				'has_dag'      => $this->has_dag_structure( $workflow['steps'] ?? array() ),
+				'has_dag'          => $this->has_dag_structure( $workflow['steps'] ?? array() ),
 			),
 		);
 	}
@@ -293,7 +297,7 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 		// Build graph.
 		foreach ( $steps as $step ) {
 			if ( isset( $step['name'] ) ) {
-				$names[] = $step['name'];
+				$names[]                = $step['name'];
 				$graph[ $step['name'] ] = isset( $step['depends_on'] ) ? $step['depends_on'] : array();
 			}
 		}

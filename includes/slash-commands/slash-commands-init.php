@@ -78,7 +78,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'capability'  => 'read',
 			'aliases'     => array( 'h', '?' ),
 			'parameters'  => array(
-				'command' => array(
+				'command'    => array(
 					'description' => __( 'Specific command to get help for', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -104,15 +104,15 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'capability'  => 'edit_posts',
 			'aliases'     => array( 'next' ),
 			'parameters'  => array(
-				'--filter' => array(
+				'--filter'  => array(
 					'description' => __( 'Filter tasks by type (all, drafts, seo, updates)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--type' => array(
+				'--type'    => array(
 					'description' => __( 'Specific task type to focus on', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--limit' => array(
+				'--limit'   => array(
 					'description' => __( 'Maximum number of tasks to process (default: 5)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -120,7 +120,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Show what would be done without making changes', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--auto' => array(
+				'--auto'    => array(
 					'description' => __( 'Execute without waiting for approval', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -141,19 +141,19 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'usage'       => '/ship [post_id...] [--dry-run|-n] [--publish|-p] [--schedule=<date>] [--skip-checks|-s] [--skip-seo] [--skip-images] [--skip-links]',
 			'capability'  => 'publish_posts',
 			'parameters'  => array(
-				'post_id' => array(
+				'post_id'       => array(
 					'description' => __( 'Post ID(s) to ship. If omitted, finds draft posts ready to ship.', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--dry-run' => array(
+				'--dry-run'     => array(
 					'description' => __( 'Preview checks without publishing', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--publish' => array(
+				'--publish'     => array(
 					'description' => __( 'Automatically publish posts that pass checks (70%+ score)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--schedule' => array(
+				'--schedule'    => array(
 					'description' => __( 'Schedule publication for a future date (YYYY-MM-DD HH:MM)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -161,7 +161,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Skip all pre-flight, SEO, and quality checks', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--skip-seo' => array(
+				'--skip-seo'    => array(
 					'description' => __( 'Skip SEO verification checks', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -169,7 +169,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Skip image optimization checks', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--skip-links' => array(
+				'--skip-links'  => array(
 					'description' => __( 'Skip internal linking suggestions', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -191,23 +191,23 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'capability'  => 'edit_posts',
 			'aliases'     => array( 'clean' ),
 			'parameters'  => array(
-				'target' => array(
+				'target'      => array(
 					'description' => __( 'Post ID, "recent" (default), or "all"', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--phase' => array(
+				'--phase'     => array(
 					'description' => __( 'Run specific phase only: 1 (regex), 2 (analysis), 3 (AI review)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--limit' => array(
+				'--limit'     => array(
 					'description' => __( 'Maximum number of posts to check (default: 10)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--dry-run' => array(
+				'--dry-run'   => array(
 					'description' => __( 'Show issues without making changes', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--auto-fix' => array(
+				'--auto-fix'  => array(
 					'description' => __( 'Automatically fix HIGH certainty issues', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -215,7 +215,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Post type to check (default: post)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--verbose' => array(
+				'--verbose'   => array(
 					'description' => __( 'Show detailed output', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -237,15 +237,15 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'capability'  => 'manage_options',
 			'aliases'     => array( 'perf' ),
 			'parameters'  => array(
-				'--phases' => array(
+				'--phases'     => array(
 					'description' => __( 'Comma-separated phase numbers to run (1-10, default: all)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--url' => array(
+				'--url'        => array(
 					'description' => __( 'URL to analyze (default: home page)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--dry-run' => array(
+				'--dry-run'    => array(
 					'description' => __( 'Analyze without applying optimizations', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -253,7 +253,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Automatically apply safe optimizations', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--detailed' => array(
+				'--detailed'   => array(
 					'description' => __( 'Show detailed analysis output', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -275,15 +275,15 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'capability'  => 'edit_posts',
 			'aliases'     => array( 'docs' ),
 			'parameters'  => array(
-				'--type' => array(
+				'--type'       => array(
 					'description' => __( 'Type of documentation to sync (all, posts, pages, readme)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--dry-run' => array(
+				'--dry-run'    => array(
 					'description' => __( 'Check without making changes', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--auto-fix' => array(
+				'--auto-fix'   => array(
 					'description' => __( 'Automatically fix detected issues', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -291,7 +291,7 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Skip broken link checking', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--skip-code' => array(
+				'--skip-code'  => array(
 					'description' => __( 'Skip code example validation', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -312,11 +312,11 @@ function wp_mcp_ai_load_default_slash_commands() {
 			'usage'       => '/workflow <name> [--action=<run|list|show>] [--dry-run|-n] [--list|-l] [--show|-s]',
 			'capability'  => 'edit_posts',
 			'parameters'  => array(
-				'name' => array(
+				'name'      => array(
 					'description' => __( 'Workflow name to execute', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--action' => array(
+				'--action'  => array(
 					'description' => __( 'Action to perform: run, list, show (default: run)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -324,11 +324,11 @@ function wp_mcp_ai_load_default_slash_commands() {
 					'description' => __( 'Preview workflow without executing steps', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--list' => array(
+				'--list'    => array(
 					'description' => __( 'List available workflows', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'--show' => array(
+				'--show'    => array(
 					'description' => __( 'Show workflow definition', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
@@ -519,18 +519,18 @@ function wp_mcp_ai_register_slash_command_scripts() {
 	// Localize script with REST API data.
 	// Build endpoint URLs by providing complete, pre-built URLs to JavaScript.
 	// This prevents any client-side URL construction issues and ensures consistency.
-	
+
 	// Strategy: Build each endpoint as a complete absolute URL.
 	// We DON'T pass the namespace to rest_url() to avoid filter-based duplication.
 	// Instead, we get the REST root and manually append the namespace + endpoint path.
-	$rest_root = rest_url(); // e.g., https://example.com/wp-json/
-	$namespace = WP_MCP_AI_REST::REST_NAMESPACE; // mcp-ai/v1
-	
+	$rest_root = rest_url(); // e.g., https://example.com/wp-json/.
+	$namespace = WP_MCP_AI_REST::REST_NAMESPACE; // mcp-ai/v1.
+
 	// Build complete URLs for each endpoint.
-	$rest_url_base                = trailingslashit( $rest_root ) . trailingslashit( $namespace );
-	$slash_command_endpoint       = $rest_url_base . 'slash-command';
-	$slash_command_list_endpoint  = $rest_url_base . 'slash-command/list';
-	
+	$rest_url_base               = trailingslashit( $rest_root ) . trailingslashit( $namespace );
+	$slash_command_endpoint      = $rest_url_base . 'slash-command';
+	$slash_command_list_endpoint = $rest_url_base . 'slash-command/list';
+
 	wp_localize_script(
 		'mcp-ai-slash-commands',
 		'mcpAiData',

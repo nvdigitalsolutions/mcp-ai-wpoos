@@ -203,6 +203,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			array(
 				'restUrl'             => esc_url_raw( trailingslashit( rest_url( $rest_namespace ) ) ),
 				'uploadEndpoint'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+				'prepareEndpoint'     => esc_url_raw( rest_url( $rest_namespace . '/attachments/prepare' ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( rest_url( $rest_namespace . '/files' ) ) ),
 				'toolsEndpoint'       => esc_url_raw( rest_url( $rest_namespace . '/tools' ) ),
 				'transcriptsEndpoint' => esc_url_raw( rest_url( $rest_namespace . '/chat-transcripts' ) ),
@@ -693,7 +694,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 								<?php if ( $agent['last_used'] ) : ?>
 									<div class="meta-row">
 										<span class="meta-label"><?php esc_html_e( 'Last Used:', 'mcp-ai-wpoos' ); ?></span>
-										<span class="meta-value"><?php echo esc_html( human_time_diff( strtotime( $agent['last_used'] ), current_time( 'timestamp' ) ) . ' ago' ); ?></span>
+										<span class="meta-value"><?php echo esc_html( human_time_diff( strtotime( $agent['last_used'] ), time() ) . ' ago' ); ?></span>
 									</div>
 								<?php endif; ?>
 							</div>

@@ -81,6 +81,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 					'maximum'     => 100,
 					'default'     => 40,
 				),
+				'secret_token'    => array(
+					'type'        => 'string',
+					'description' => __( 'Optional secret token (1–256 characters; A–Z, a–z, 0–9, _ and -). When set, Telegram will include this value in the X-Telegram-Bot-Api-Secret-Token header on every webhook update so the plugin can verify the request is genuinely from Telegram.', 'mcp-ai-wpoos-pro' ),
+					'minLength'   => 1,
+					'maxLength'   => 256,
+					'pattern'     => '^[A-Za-z0-9_-]+$',
+				),
 			),
 			'required'             => array( 'token', 'action' ),
 			'additionalProperties' => false,
@@ -151,12 +158,44 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			$max_connections = 100;
 		}
 
+		// Resolve the webhook secret token: use an explicitly provided value or
+		// fall back to the one stored on the matching connection so that
+		// Telegram will send the X-Telegram-Bot-Api-Secret-Token header on
+		// every update and the incoming request can be verified.
+		$secret_token = isset( $arguments['secret_token'] ) ? trim( (string) $arguments['secret_token'] ) : '';
+
+		if ( ! empty( $secret_token ) ) {
+			// Validate caller-supplied token (A–Z, a–z, 0–9, _ and - only; 1–256 chars).
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+
+			if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( $secret_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_secret_token',
+					__( 'Webhook secret token may only contain A–Z, a–z, 0–9, underscores and hyphens (1–256 characters).', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		$endpoint = sprintf( 'https://api.telegram.org/bot%s/setWebhook', rawurlencode( $token ) );
 
 		$payload = array(
 			'url'             => $url,
 			'max_connections' => $max_connections,
+			'allowed_updates' => array(
+				'message',
+				'edited_message',
+				'channel_post',
+				'edited_channel_post',
+				'my_chat_member',
+				'chat_member',
+			),
 		);
+
+		if ( ! empty( $secret_token ) ) {
+			$payload['secret_token'] = $secret_token;
+		}
 
 		$body = wp_json_encode( $payload );
 
@@ -168,9 +207,10 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			'telegram_set_webhook_request',
 			'Setting Telegram webhook.',
 			array(
-				'endpoint'        => 'https://api.telegram.org/bot***/setWebhook',
-				'url'             => $url,
-				'max_connections' => $max_connections,
+				'endpoint'         => 'https://api.telegram.org/bot***/setWebhook',
+				'url'              => $url,
+				'max_connections'  => $max_connections,
+				'secret_token_set' => ! empty( $secret_token ),
 			)
 		);
 
@@ -195,7 +235,15 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			);
 		}
 
-		return $this->handle_response( $response, 'setWebhook' );
+		$result = $this->handle_response( $response, 'setWebhook' );
+
+		// Automatically register default bot commands with Telegram when the
+		// webhook is successfully configured (industry best practice).
+		if ( ! is_wp_error( $result ) ) {
+			$this->sync_default_commands( $token );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -234,6 +282,88 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 		}
 
 		return $this->handle_response( $response, 'deleteWebhook' );
+	}
+
+	/**
+	 * Register the default bot commands with Telegram after webhook setup.
+	 *
+	 * Calls setMyCommands for three scopes following Telegram best practices:
+	 * 1. Default scope – available everywhere as fallback.
+	 * 2. All private chats – user-facing commands.
+	 * 3. All group chats – group-relevant commands.
+	 *
+	 * Failures are logged but do not affect the webhook result since commands
+	 * can always be registered later via the manage_telegram_commands tool.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $token Bot token.
+	 */
+	protected function sync_default_commands( $token ) {
+		$webhook_controller = 'WP_MCP_AI_Telegram_Webhook_Controller';
+
+		if ( ! class_exists( $webhook_controller ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! method_exists( $webhook_controller, 'get_default_commands' ) ) {
+			return;
+		}
+
+		$commands = WP_MCP_AI_Telegram_Webhook_Controller::get_default_commands();
+
+		if ( empty( $commands ) ) {
+			return;
+		}
+
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/setMyCommands', rawurlencode( $token ) );
+
+		// Register for default scope (fallback for all chats).
+		$scopes = array(
+			null, // default scope (omit scope parameter).
+			array( 'type' => 'all_private_chats' ),
+			array( 'type' => 'all_group_chats' ),
+		);
+
+		foreach ( $scopes as $scope ) {
+			$payload = array( 'commands' => $commands );
+			if ( null !== $scope ) {
+				$payload['scope'] = $scope;
+			}
+
+			$body = wp_json_encode( $payload );
+			if ( false === $body ) {
+				continue;
+			}
+
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => self::DEFAULT_TIMEOUT,
+					'body'    => $body,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Telegram setMyCommands failed during webhook setup.',
+					array(
+						'scope' => $scope ? $scope['type'] : 'default',
+						'error' => $response->get_error_message(),
+					)
+				);
+			}
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'telegram_commands_synced',
+			'Default bot commands registered with Telegram.',
+			array( 'command_count' => count( $commands ) )
+		);
 	}
 
 	/**

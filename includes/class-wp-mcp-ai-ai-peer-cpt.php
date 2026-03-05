@@ -388,7 +388,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 		<?php if ( $last_verified ) : ?>
 			<p>
 				<strong><?php esc_html_e( 'Last Verified:', 'mcp-ai-wpoos' ); ?></strong><br>
-				<?php echo esc_html( human_time_diff( strtotime( $last_verified ), current_time( 'timestamp' ) ) ); ?>
+				<?php echo esc_html( human_time_diff( strtotime( $last_verified ), time() ) ); ?>
 				<?php esc_html_e( 'ago', 'mcp-ai-wpoos' ); ?>
 			</p>
 		<?php endif; ?>
@@ -532,7 +532,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 			case 'last_check':
 				$last_verified = get_post_meta( $post_id, self::META_LAST_VERIFIED, true );
 				if ( $last_verified ) {
-					echo esc_html( human_time_diff( strtotime( $last_verified ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__( 'ago', 'mcp-ai-wpoos' );
+					echo esc_html( human_time_diff( strtotime( $last_verified ), time() ) ) . ' ' . esc_html__( 'ago', 'mcp-ai-wpoos' );
 				} else {
 					echo esc_html__( 'Never', 'mcp-ai-wpoos' );
 				}

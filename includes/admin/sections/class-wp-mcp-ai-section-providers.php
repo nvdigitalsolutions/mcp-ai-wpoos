@@ -83,9 +83,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
+					'gpt-4.1'     => 'GPT-4.1 (Recommended)',
+					'gpt-4.5'     => 'GPT-4.5 (Creative)',
 					'gpt-4o'      => 'GPT-4o',
 					'gpt-4o-mini' => 'GPT-4o Mini',
-					'gpt-4-turbo' => 'GPT-4 Turbo',
 				);
 			}
 
@@ -98,11 +99,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-sonnet-4-5'          => 'Claude Sonnet 4.5 (Recommended)',
+					'claude-sonnet-4-6'          => 'Claude Sonnet 4.6 (Recommended)',
+					'claude-opus-4-6'            => 'Claude Opus 4.6 (Flagship)',
 					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
-					'claude-opus-4-5'            => 'Claude Opus 4.5 (Flagship)',
 					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Legacy)',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku (Legacy)',
 				);
 			}
 
@@ -115,8 +115,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
-					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
+					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Recommended)',
+					'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
+					'gemini-2.0-flash' => 'Gemini 2.0 Flash',
 				);
 			}
 
@@ -129,8 +130,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $cloudflare_models ) ) {
 				$cloudflare_models = array(
-					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct (Recommended)',
+					'@cf/meta/llama-4-scout-17b-16e-instruct' => 'Llama 4 Scout 17B (Recommended)',
 					'@cf/meta/llama-3.3-70b-instruct-fp8-fast' => 'Llama 3.3 70B Instruct FP8 Fast',
+					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct',
 				);
 			}
 
@@ -409,16 +411,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'anthropic_model'                    => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Claude model to use for Anthropic requests. Claude Sonnet 4.6 offers the best balance of intelligence and speed. Claude Haiku 4.5 is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
 					'options'     => $anthropic_models,
-					'default'     => 'claude-3-5-sonnet-20241022',
+					'default'     => 'claude-sonnet-4-6',
 				),
 				'anthropic_vision_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Anthropic Vision Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 3+ models support vision capabilities. Claude 3.5 Sonnet and Opus offer the best vision performance.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 4.x models support vision capabilities. Claude Sonnet 4.6 and Opus 4.6 offer the best vision performance.', 'mcp-ai-wpoos' ),
 					'options'     => $anthropic_models,
-					'default'     => 'claude-3-5-sonnet-20241022',
+					'default'     => 'claude-sonnet-4-6',
 				),
 				'anthropic_max_image_tokens'         => array(
 					'type'        => 'text',
@@ -1145,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						$method = $reflection->getMethod( 'get_fields' );
 						$method->setAccessible( true );
 						$pro_fields = $method->invoke( $pro_providers_section );
-						
+
 						// Render Pro provider fields for the embedded subtab.
 						foreach ( $active_group['fields'] as $key ) {
 							if ( isset( $pro_fields[ $key ] ) ) {
@@ -1370,6 +1372,5 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			return $input;
 		}
-
 	}
 }

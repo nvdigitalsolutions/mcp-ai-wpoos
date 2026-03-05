@@ -295,6 +295,55 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
+		// /embedded-client-config - Return fresh assistant config for embedded LLM clients.
+		// This endpoint is the server-side counterpart to the PHP-rendered inline config.
+		// It lets the embedded client fetch an up-to-date system prompt even when the page
+		// was cached (or the assistant had no system prompt when the page was first rendered).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/embedded-client-config',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'callback'            => array( $this, 'handle_embedded_client_config' ),
+				'args'                => array(
+					'assistant_id'  => array(
+						'description'       => __( 'ID of the embedded assistant whose configuration to retrieve.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'profession_id' => array(
+						'description'       => __( 'Optional ID of a profession whose professional role prompt to include.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
+		// /vector-store-preload - Pre-load vector store metadata for an assistant.
+		// Called during chat UI initialization to eagerly fetch vector store status
+		// so it is immediately available for the agentic workflow.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/vector-store-preload',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'callback'            => array( $this, 'handle_vector_store_preload' ),
+				'args'                => array(
+					'assistant_id' => array(
+						'description'       => __( 'ID of the assistant whose vector store to pre-load.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
+
 		// /track-embedded-usage - Track usage from embedded LLM (client-side).
 		register_rest_route(
 			self::REST_NAMESPACE,
@@ -1633,6 +1682,218 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'success' => true,
 				'message' => __( 'Usage tracked successfully.', 'mcp-ai-wpoos' ),
+			)
+		);
+	}
+
+	/**
+	 * Handle GET /embedded-client-config request.
+	 *
+	 * Returns a fresh copy of the assistant's system prompt, tools, and knowledge
+	 * configuration so the embedded (WebLLM) client can retrieve up-to-date values
+	 * even when the page was served from cache or the system prompt was empty when
+	 * the shortcode first rendered.
+	 *
+	 * Unlike the /chat-client endpoint (which blocks embedded providers), this
+	 * read-only endpoint is specifically designed for the embedded client's
+	 * initialization phase and does not execute any LLM inference.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_embedded_client_config( WP_REST_Request $request ) {
+		$assistant_id  = absint( $request->get_param( 'assistant_id' ) );
+		$profession_id = absint( $request->get_param( 'profession_id' ) );
+
+		if ( ! $assistant_id ) {
+			return $this->error(
+				'wp_mcp_ai_invalid_assistant',
+				__( 'A valid assistant_id is required.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_class',
+				__( 'Assistant configuration class not available.', 'mcp-ai-wpoos' ),
+				500
+			);
+		}
+
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+		if ( empty( $assistant_config ) ) {
+			return $this->error(
+				'wp_mcp_ai_assistant_not_found',
+				__( 'Assistant not found or has no configuration.', 'mcp-ai-wpoos' ),
+				404
+			);
+		}
+
+		// Only serve config for embedded providers.
+		$provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
+		if ( 'embedded' !== $provider ) {
+			return $this->error(
+				'wp_mcp_ai_not_embedded',
+				__( 'This endpoint is only available for assistants using the embedded provider.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		$system_prompt = isset( $assistant_config['system_prompt'] ) ? $assistant_config['system_prompt'] : '';
+		$tools         = isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+		$memory_files  = isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) ? $assistant_config['memory_files'] : array();
+		$vector_store  = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
+
+		// Build professional prompt if a profession ID was provided.
+		$professional_prompt = '';
+		if ( $profession_id > 0 && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+			$profession_post = get_post( $profession_id );
+			if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+				$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+
+				// Merge profession memory files with assistant memory files.
+				$profession_memory_files = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+				if ( is_array( $profession_memory_files ) && ! empty( $profession_memory_files ) ) {
+					$memory_files = array_values( array_unique( array_merge( $memory_files, $profession_memory_files ) ) );
+				}
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'embedded_client_config_fetched',
+				'Embedded client fetched fresh configuration from server',
+				array(
+					'assistant_id'            => $assistant_id,
+					'has_system_prompt'       => ! empty( $system_prompt ),
+					'has_professional_prompt' => ! empty( $professional_prompt ),
+					'tools_count'             => count( $tools ),
+					'has_knowledge'           => ! empty( $memory_files ) || ! empty( $vector_store ),
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'system_prompt'       => $system_prompt,
+				'professional_prompt' => $professional_prompt,
+				'tools'               => $tools,
+				'memory_files'        => $memory_files,
+				'vector_store_id'     => $vector_store,
+			)
+		);
+	}
+
+	/**
+	 * Handle GET /vector-store-preload request.
+	 *
+	 * Pre-loads and returns vector store metadata for the assistant's configured
+	 * vector store. Called during chat UI initialization so that vector store
+	 * status is immediately available for the agentic workflow without waiting
+	 * for the first tool call.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_vector_store_preload( WP_REST_Request $request ) {
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		if ( ! $assistant_id ) {
+			return $this->error(
+				'wp_mcp_ai_invalid_assistant',
+				__( 'A valid assistant_id is required.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_class',
+				__( 'Assistant configuration class not available.', 'mcp-ai-wpoos' ),
+				500
+			);
+		}
+
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+		if ( empty( $assistant_config ) ) {
+			return $this->error(
+				'wp_mcp_ai_assistant_not_found',
+				__( 'Assistant not found or has no configuration.', 'mcp-ai-wpoos' ),
+				404
+			);
+		}
+
+		$vector_store_id = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
+
+		if ( empty( $vector_store_id ) ) {
+			return rest_ensure_response(
+				array(
+					'has_vector_store' => false,
+					'vector_store_id'  => '',
+					'message'          => __( 'This assistant has no vector store configured.', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
+
+		// Fetch vector store details from OpenAI.
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_class',
+				__( 'OpenAI client class not available.', 'mcp-ai-wpoos' ),
+				500
+			);
+		}
+
+		$client = new WP_MCP_AI_OpenAI_Client();
+		$result = $client->retrieve_vector_store( $vector_store_id );
+
+		if ( is_wp_error( $result ) ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'vector_store_preload_error',
+					'Failed to pre-load vector store for assistant',
+					array(
+						'assistant_id'    => $assistant_id,
+						'vector_store_id' => $vector_store_id,
+						'error'           => $result->get_error_message(),
+					)
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'has_vector_store' => true,
+					'vector_store_id'  => $vector_store_id,
+					'status'           => 'error',
+					'error'            => $result->get_error_message(),
+				)
+			);
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'vector_store_preloaded',
+				'Vector store pre-loaded during chat initialization',
+				array(
+					'assistant_id'    => $assistant_id,
+					'vector_store_id' => $vector_store_id,
+					'status'          => isset( $result['status'] ) ? $result['status'] : 'unknown',
+				)
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'has_vector_store' => true,
+				'vector_store_id'  => $vector_store_id,
+				'status'           => isset( $result['status'] ) ? $result['status'] : null,
+				'name'             => isset( $result['name'] ) ? $result['name'] : null,
+				'file_counts'      => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
+				'created_at'       => isset( $result['created_at'] ) ? $result['created_at'] : null,
+				'last_active_at'   => isset( $result['last_active_at'] ) ? $result['last_active_at'] : null,
 			)
 		);
 	}

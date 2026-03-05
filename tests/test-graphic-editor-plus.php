@@ -308,10 +308,9 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test expand scene operation returns not-implemented error.
-	 * This feature is reserved for future implementation.
+	 * Test expand scene operation with valid parameters.
 	 */
-	public function test_execute_expand_scene_not_implemented() {
+	public function test_execute_expand_scene_success() {
 		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
 		$result = $tool->execute(
 			array(
@@ -324,8 +323,46 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 			array( 'user_id' => $this->user_id )
 		);
 
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'attachment_id', $result );
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'operation', $result );
+		$this->assertSame( 'expand_scene', $result['operation'] );
+		$this->assertArrayHasKey( 'direction', $result );
+		$this->assertSame( 'all', $result['direction'] );
+		$this->assertArrayHasKey( 'pixels', $result );
+		$this->assertSame( 50, $result['pixels'] );
+		$this->assertArrayHasKey( 'original_width', $result );
+		$this->assertArrayHasKey( 'original_height', $result );
+		$this->assertArrayHasKey( 'new_width', $result );
+		$this->assertArrayHasKey( 'new_height', $result );
+		$this->assertSame( $result['original_width'] + 100, $result['new_width'] );
+		$this->assertSame( $result['original_height'] + 100, $result['new_height'] );
+		$this->assertArrayHasKey( 'text', $result );
+
+		// Clean up created attachment.
+		if ( isset( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test expand scene operation with invalid direction returns error.
+	 */
+	public function test_execute_expand_scene_invalid_direction() {
+		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$result = $tool->execute(
+			array(
+				'operation'        => 'expand_scene',
+				'attachment_id'    => $this->test_image_id,
+				'expand_direction' => 'diagonal',
+				'expand_pixels'    => 50,
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_not_implemented', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_invalid_direction', $result->get_error_code() );
 	}
 
 	/**

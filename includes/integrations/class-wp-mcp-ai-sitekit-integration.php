@@ -281,6 +281,7 @@ class WP_MCP_AI_SiteKit_Integration {
 		global $wpdb;
 
 		// Delete all transients with our cache group prefix.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Site Kit analytics integration: direct query required to clear custom transient cache entries from wp_options.
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",

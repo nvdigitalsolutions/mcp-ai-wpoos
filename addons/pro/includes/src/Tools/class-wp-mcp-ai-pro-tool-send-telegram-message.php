@@ -22,6 +22,17 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 	const DEFAULT_TIMEOUT = 15;
 
 	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return bool Always true - no dependencies.
+	 */
+	public static function is_available() {
+		return true;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {

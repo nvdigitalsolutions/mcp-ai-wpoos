@@ -52,11 +52,11 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Parse flags.
-		$phases       = isset( $flags['phases'] ) ? array_map( 'absint', explode( ',', $flags['phases'] ) ) : range( 1, 10 );
-		$dry_run      = isset( $flags['dry-run'] ) || isset( $flags['n'] );
-		$auto_apply   = isset( $flags['auto-apply'] ) || isset( $flags['a'] );
-		$detailed     = isset( $flags['detailed'] ) || isset( $flags['v'] );
-		$page_url     = isset( $flags['url'] ) ? esc_url_raw( $flags['url'] ) : home_url( '/' );
+		$phases     = isset( $flags['phases'] ) ? array_map( 'absint', explode( ',', $flags['phases'] ) ) : range( 1, 10 );
+		$dry_run    = isset( $flags['dry-run'] ) || isset( $flags['n'] );
+		$auto_apply = isset( $flags['auto-apply'] ) || isset( $flags['a'] );
+		$detailed   = isset( $flags['detailed'] ) || isset( $flags['v'] );
+		$page_url   = isset( $flags['url'] ) ? esc_url_raw( $flags['url'] ) : home_url( '/' );
 
 		// Run requested phases.
 		$results = array(
@@ -70,7 +70,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 				continue;
 			}
 
-			$phase_result = $this->run_phase( $phase, $page_url, $detailed );
+			$phase_result                = $this->run_phase( $phase, $page_url, $detailed );
 			$results['phases'][ $phase ] = $phase_result;
 		}
 
@@ -80,7 +80,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		// Auto-apply optimizations if requested.
 		if ( $auto_apply && ! $dry_run && isset( $results['phases'][9] ) ) {
-			$apply_result = $this->apply_optimizations( $results['phases'][9]['recommendations'] );
+			$apply_result       = $this->apply_optimizations( $results['phases'][9]['recommendations'] );
 			$results['applied'] = $apply_result;
 		}
 
@@ -135,12 +135,12 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		global $wpdb;
 
 		$measurements = array(
-			'phase'       => 1,
-			'name'        => 'Baseline Measurement',
-			'url'         => $url,
-			'metrics'     => array(),
-			'issues'      => array(),
-			'score'       => 0,
+			'phase'   => 1,
+			'name'    => 'Baseline Measurement',
+			'url'     => $url,
+			'metrics' => array(),
+			'issues'  => array(),
+			'score'   => 0,
 		);
 
 		// Measure database queries.
@@ -150,10 +150,10 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		// Simulate a page load.
 		$response = wp_remote_get( $url );
-		
-		$end_time      = microtime( true );
-		$query_count   = $wpdb->num_queries - $start_queries;
-		$load_time     = ( $end_time - $start_time ) * 1000; // Convert to ms.
+
+		$end_time    = microtime( true );
+		$query_count = $wpdb->num_queries - $start_queries;
+		$load_time   = ( $end_time - $start_time ) * 1000; // Convert to ms.
 
 		$measurements['metrics']['load_time_ms'] = round( $load_time, 2 );
 		$measurements['metrics']['query_count']  = $query_count;
@@ -185,9 +185,9 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Calculate score (0-100).
-		$score = 100;
-		$score -= min( 30, ( max( 0, $load_time - 1000 ) / 100 ) ); // Penalize slow load time.
-		$score -= min( 30, ( max( 0, $query_count - 20 ) ) ); // Penalize excessive queries.
+		$score                 = 100;
+		$score                -= min( 30, ( max( 0, $load_time - 1000 ) / 100 ) ); // Penalize slow load time.
+		$score                -= min( 30, ( max( 0, $query_count - 20 ) ) ); // Penalize excessive queries.
 		$measurements['score'] = max( 0, round( $score ) );
 
 		return $measurements;
@@ -202,19 +202,20 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		global $wpdb;
 
 		$analysis = array(
-			'phase'       => 2,
-			'name'        => 'Database Analysis',
-			'metrics'     => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'   => 2,
+			'name'    => 'Database Analysis',
+			'metrics' => array(),
+			'issues'  => array(),
+			'score'   => 100,
 		);
 
 		// Check database size.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$db_size = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT SUM(data_length + index_length) / 1024 / 1024 
+				'SELECT SUM(data_length + index_length) / 1024 / 1024 
 				FROM information_schema.tables 
-				WHERE table_schema = %s",
+				WHERE table_schema = %s',
 				DB_NAME
 			)
 		);
@@ -224,6 +225,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for auto-loaded options.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$autoload_size = $wpdb->get_var(
 			"SELECT SUM(LENGTH(option_value)) / 1024 
 			FROM {$wpdb->options} 
@@ -242,6 +244,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for transients.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$expired_transients = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) 
@@ -265,6 +268,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for post revisions.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$revision_count = $wpdb->get_var(
 			"SELECT COUNT(*) 
 			FROM {$wpdb->posts} 
@@ -292,11 +296,11 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase3_cache_strategy() {
 		$cache_analysis = array(
-			'phase'       => 3,
-			'name'        => 'Cache Strategy',
-			'status'      => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'  => 3,
+			'name'   => 'Cache Strategy',
+			'status' => array(),
+			'issues' => array(),
+			'score'  => 100,
 		);
 
 		// Check object cache.
@@ -304,14 +308,14 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		if ( ! wp_using_ext_object_cache() ) {
 			$cache_analysis['issues'][] = __( 'No persistent object cache detected (consider Redis/Memcached)', 'mcp-ai-wpoos' );
-			$cache_analysis['score'] -= 30;
+			$cache_analysis['score']   -= 30;
 		}
 
 		// Check for page cache plugins.
 		$cache_plugins = array(
-			'wp-super-cache/wp-cache.php'     => 'WP Super Cache',
-			'w3-total-cache/w3-total-cache.php' => 'W3 Total Cache',
-			'wp-rocket/wp-rocket.php'         => 'WP Rocket',
+			'wp-super-cache/wp-cache.php'         => 'WP Super Cache',
+			'w3-total-cache/w3-total-cache.php'   => 'W3 Total Cache',
+			'wp-rocket/wp-rocket.php'             => 'WP Rocket',
 			'litespeed-cache/litespeed-cache.php' => 'LiteSpeed Cache',
 		);
 
@@ -327,7 +331,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		if ( ! $active_cache_plugin ) {
 			$cache_analysis['issues'][] = __( 'No page cache plugin detected (recommend installing one)', 'mcp-ai-wpoos' );
-			$cache_analysis['score'] -= 20;
+			$cache_analysis['score']   -= 20;
 		}
 
 		// Check transient usage.
@@ -343,11 +347,11 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase4_asset_optimization() {
 		$asset_analysis = array(
-			'phase'       => 4,
-			'name'        => 'Asset Optimization',
-			'metrics'     => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'   => 4,
+			'name'    => 'Asset Optimization',
+			'metrics' => array(),
+			'issues'  => array(),
+			'score'   => 100,
 		);
 
 		// Check for minification.
@@ -360,13 +364,13 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		foreach ( $css_files as $file ) {
 			if ( strpos( basename( $file ), '.min.css' ) !== false ) {
-				$minified_css++;
+				++$minified_css;
 			}
 		}
 
 		foreach ( $js_files as $file ) {
 			if ( strpos( basename( $file ), '.min.js' ) !== false ) {
-				$minified_js++;
+				++$minified_js;
 			}
 		}
 
@@ -377,18 +381,18 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		if ( count( $css_files ) > 0 && $minified_css / count( $css_files ) < 0.5 ) {
 			$asset_analysis['issues'][] = __( 'Less than 50% of CSS files are minified', 'mcp-ai-wpoos' );
-			$asset_analysis['score'] -= 15;
+			$asset_analysis['score']   -= 15;
 		}
 
 		if ( count( $js_files ) > 0 && $minified_js / count( $js_files ) < 0.5 ) {
 			$asset_analysis['issues'][] = __( 'Less than 50% of JS files are minified', 'mcp-ai-wpoos' );
-			$asset_analysis['score'] -= 15;
+			$asset_analysis['score']   -= 15;
 		}
 
 		// Check for image optimization.
-		$upload_dir = wp_upload_dir();
+		$upload_dir    = wp_upload_dir();
 		$image_plugins = array(
-			'imagify/imagify.php'           => 'Imagify',
+			'imagify/imagify.php'                          => 'Imagify',
 			'shortpixel-image-optimiser/wp-shortpixel.php' => 'ShortPixel',
 			'ewww-image-optimizer/ewww-image-optimizer.php' => 'EWWW Image Optimizer',
 		);
@@ -405,7 +409,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		if ( ! $active_image_plugin ) {
 			$asset_analysis['issues'][] = __( 'No image optimization plugin detected', 'mcp-ai-wpoos' );
-			$asset_analysis['score'] -= 10;
+			$asset_analysis['score']   -= 10;
 		}
 
 		return $asset_analysis;
@@ -418,18 +422,18 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase5_plugin_audit() {
 		$plugin_analysis = array(
-			'phase'       => 5,
-			'name'        => 'Plugin Audit',
-			'metrics'     => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'   => 5,
+			'name'    => 'Plugin Audit',
+			'metrics' => array(),
+			'issues'  => array(),
+			'score'   => 100,
 		);
 
 		$all_plugins    = get_plugins();
 		$active_plugins = get_option( 'active_plugins', array() );
 
-		$plugin_analysis['metrics']['total_plugins']  = count( $all_plugins );
-		$plugin_analysis['metrics']['active_plugins'] = count( $active_plugins );
+		$plugin_analysis['metrics']['total_plugins']    = count( $all_plugins );
+		$plugin_analysis['metrics']['active_plugins']   = count( $active_plugins );
 		$plugin_analysis['metrics']['inactive_plugins'] = count( $all_plugins ) - count( $active_plugins );
 
 		// Check for too many active plugins.
@@ -443,7 +447,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		}
 
 		// Check for outdated plugins.
-		$updates = get_site_transient( 'update_plugins' );
+		$updates        = get_site_transient( 'update_plugins' );
 		$outdated_count = 0;
 
 		if ( $updates && isset( $updates->response ) ) {
@@ -481,17 +485,17 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase6_code_profiling() {
 		return array(
-			'phase'       => 6,
-			'name'        => 'Code Profiling',
-			'status'      => 'basic',
-			'metrics'     => array(
+			'phase'   => 6,
+			'name'    => 'Code Profiling',
+			'status'  => 'basic',
+			'metrics' => array(
 				'php_version' => PHP_VERSION,
 				'wp_version'  => get_bloginfo( 'version' ),
 				'theme'       => wp_get_theme()->get( 'Name' ),
 			),
-			'issues'      => array(),
-			'score'       => 100,
-			'note'        => __( 'Advanced code profiling requires Xdebug or similar tools', 'mcp-ai-wpoos' ),
+			'issues'  => array(),
+			'score'   => 100,
+			'note'    => __( 'Advanced code profiling requires Xdebug or similar tools', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -502,17 +506,17 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase7_cdn_check() {
 		$cdn_analysis = array(
-			'phase'       => 7,
-			'name'        => 'CDN Setup',
-			'status'      => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'  => 7,
+			'name'   => 'CDN Setup',
+			'status' => array(),
+			'issues' => array(),
+			'score'  => 100,
 		);
 
 		// Check for CDN plugins.
 		$cdn_plugins = array(
-			'cloudflare/cloudflare.php'       => 'Cloudflare',
-			'cdn-enabler/cdn-enabler.php'     => 'CDN Enabler',
+			'cloudflare/cloudflare.php'   => 'Cloudflare',
+			'cdn-enabler/cdn-enabler.php' => 'CDN Enabler',
 		);
 
 		$active_cdn = null;
@@ -527,7 +531,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 
 		if ( ! $active_cdn ) {
 			$cdn_analysis['issues'][] = __( 'No CDN detected (consider Cloudflare or similar)', 'mcp-ai-wpoos' );
-			$cdn_analysis['score'] -= 20;
+			$cdn_analysis['score']   -= 20;
 		}
 
 		return $cdn_analysis;
@@ -542,29 +546,32 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		global $wpdb;
 
 		$cleanup = array(
-			'phase'       => 8,
-			'name'        => 'Database Cleanup',
-			'candidates'  => array(),
-			'issues'      => array(),
-			'score'       => 100,
+			'phase'      => 8,
+			'name'       => 'Database Cleanup',
+			'candidates' => array(),
+			'issues'     => array(),
+			'score'      => 100,
 		);
 
 		// Find cleanup candidates.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$spam_comments = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved = 'spam'"
 		);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$trash_comments = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved = 'trash'"
 		);
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Performance diagnostic query intentionally bypasses cache to return accurate live metrics.
 		$trashed_posts = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'"
 		);
 
-		$cleanup['candidates']['spam_comments']   = $spam_comments;
-		$cleanup['candidates']['trash_comments']  = $trash_comments;
-		$cleanup['candidates']['trashed_posts']   = $trashed_posts;
+		$cleanup['candidates']['spam_comments']  = $spam_comments;
+		$cleanup['candidates']['trash_comments'] = $trash_comments;
+		$cleanup['candidates']['trashed_posts']  = $trashed_posts;
 
 		if ( $spam_comments > 100 ) {
 			$cleanup['issues'][] = sprintf(
@@ -600,8 +607,8 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase9_optimization_recommendations() {
 		return array(
-			'phase'       => 9,
-			'name'        => 'Optimization Recommendations',
+			'phase'           => 9,
+			'name'            => 'Optimization Recommendations',
 			'recommendations' => array(
 				array(
 					'category' => 'cache',
@@ -616,7 +623,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 					'impact'   => 'moderate',
 				),
 			),
-			'score'       => 100,
+			'score'           => 100,
 		);
 	}
 
@@ -628,11 +635,11 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 */
 	private function phase10_validation( $url ) {
 		return array(
-			'phase'       => 10,
-			'name'        => 'Validation',
-			'status'      => 'baseline_recorded',
-			'note'        => __( 'Re-run after applying optimizations to measure improvement', 'mcp-ai-wpoos' ),
-			'score'       => 100,
+			'phase'  => 10,
+			'name'   => 'Validation',
+			'status' => 'baseline_recorded',
+			'note'   => __( 'Re-run after applying optimizations to measure improvement', 'mcp-ai-wpoos' ),
+			'score'  => 100,
 		);
 	}
 
@@ -643,7 +650,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 	 * @return array Summary.
 	 */
 	private function generate_summary( $phases ) {
-		$total_issues = 0;
+		$total_issues    = 0;
 		$critical_issues = 0;
 
 		foreach ( $phases as $phase ) {
@@ -672,7 +679,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		foreach ( $phases as $phase ) {
 			if ( isset( $phase['score'] ) ) {
 				$total_score += $phase['score'];
-				$phase_count++;
+				++$phase_count;
 			}
 		}
 
@@ -705,7 +712,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 		$output = "## Performance Analysis Report\n\n";
 
 		// Overall score with indicator.
-		$score = $results['total_score'];
+		$score     = $results['total_score'];
 		$indicator = $score >= 80 ? '🟢' : ( $score >= 60 ? '🟡' : '🔴' );
 
 		$output .= sprintf(
@@ -736,7 +743,7 @@ class WP_MCP_AI_Slash_Command_Optimize_Perf {
 			if ( ! empty( $phase['metrics'] ) ) {
 				$output .= "**Metrics:**\n";
 				foreach ( $phase['metrics'] as $key => $value ) {
-					$label = ucwords( str_replace( '_', ' ', $key ) );
+					$label   = ucwords( str_replace( '_', ' ', $key ) );
 					$output .= sprintf( "- %s: %s\n", $label, $value );
 				}
 				$output .= "\n";

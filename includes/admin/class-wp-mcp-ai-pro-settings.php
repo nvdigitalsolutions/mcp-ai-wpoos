@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return $packages;
 			}
 
-			$json_content = file_get_contents( $package_json_path );
+			$json_content = file_get_contents( $package_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $json_content ) {
 				$packages['error'] = 'Unable to read package.json';
 				return $packages;
@@ -93,7 +93,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_package_json_path = WP_MCP_AI_PRO_PATH . 'package.json';
 				if ( file_exists( $pro_package_json_path ) ) {
-					$pro_json_content = file_get_contents( $pro_package_json_path );
+					$pro_json_content = file_get_contents( $pro_package_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					if ( false !== $pro_json_content ) {
 						$pro_package_data = json_decode( $pro_json_content, true );
 						if ( null !== $pro_package_data ) {
@@ -138,7 +138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return $packages;
 			}
 
-			$json_content = file_get_contents( $composer_json_path );
+			$json_content = file_get_contents( $composer_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 			if ( false === $json_content ) {
 				$packages['error'] = 'Unable to read composer.json';
 				return $packages;
@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_composer_json_path = WP_MCP_AI_PRO_PATH . 'composer.json';
 				if ( file_exists( $pro_composer_json_path ) ) {
-					$pro_json_content = file_get_contents( $pro_composer_json_path );
+					$pro_json_content = file_get_contents( $pro_composer_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					if ( false !== $pro_json_content ) {
 						$pro_composer_data = json_decode( $pro_json_content, true );
 						if ( null !== $pro_composer_data ) {
@@ -391,15 +391,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					),
 				),
 				'document_generation'             => array(
-					'name'          => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
-					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
-					'category'      => 'specialized',
-					'php_functions' => array( 'exec' ),
-					'npm_packages'  => array( 'pdfkit', 'docx', 'exceljs', 'pdf-parse', 'qrcode' ),
+					'name'              => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'description'       => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+					'enabled'           => ! empty( $settings['enable_document_generation_toolkit'] ),
+					'category'          => 'specialized',
+					'php_functions'     => array( 'exec' ),
+					'npm_packages'      => array( 'pdfkit', 'docx', 'exceljs', 'pdf-parse', 'qrcode' ),
 					'composer_packages' => array( 'smalot/pdfparser' ),
-					'tools_count'   => 3,
-					'tools'         => array(
+					'tools_count'       => 3,
+					'tools'             => array(
 						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
@@ -833,7 +833,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				if ( isset( $toolkit['composer_packages'] ) && is_array( $toolkit['composer_packages'] ) ) {
 					foreach ( $toolkit['composer_packages'] as $package ) {
-						$status                                = self::get_composer_package_status( $package );
+						$status                                 = self::get_composer_package_status( $package );
 						$toolkit['composer_status'][ $package ] = $status;
 						if ( ! $status['available'] ) {
 							$toolkit['composer_available'] = false;
@@ -2594,7 +2594,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <div class="wp-mcp-ai-settings-card">
 	<h2>
 		<span class="dashicons dashicons-networking" style="color: #2271b1;"></span>
-		<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Visual Workflow Builder', 'mcp-ai-wpoos' ); ?>
 		<span class="pro-badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
 	</h2>
 

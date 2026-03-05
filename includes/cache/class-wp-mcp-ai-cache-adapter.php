@@ -69,19 +69,19 @@ class WP_MCP_AI_Cache_Adapter {
 		if ( class_exists( 'Redis' ) ) {
 			try {
 				$this->redis = new Redis();
-				
+
 				// Try to connect to Redis.
 				$host = defined( 'WP_REDIS_HOST' ) ? WP_REDIS_HOST : '127.0.0.1';
 				$port = defined( 'WP_REDIS_PORT' ) ? WP_REDIS_PORT : 6379;
-				
+
 				if ( $this->redis->connect( $host, $port, 1 ) ) {
 					$this->backend = 'redis';
-					
+
 					// Set key prefix.
 					if ( defined( 'WP_REDIS_PREFIX' ) ) {
 						$this->prefix = WP_REDIS_PREFIX;
 					}
-					
+
 					return;
 				}
 			} catch ( Exception $e ) {
@@ -93,13 +93,13 @@ class WP_MCP_AI_Cache_Adapter {
 		if ( class_exists( 'Memcached' ) ) {
 			try {
 				$this->memcached = new Memcached();
-				
+
 				// Try to connect to Memcached.
 				$host = defined( 'WP_MEMCACHED_HOST' ) ? WP_MEMCACHED_HOST : '127.0.0.1';
 				$port = defined( 'WP_MEMCACHED_PORT' ) ? WP_MEMCACHED_PORT : 11211;
-				
+
 				$this->memcached->addServer( $host, $port );
-				
+
 				// Test connection.
 				$stats = $this->memcached->getStats();
 				if ( ! empty( $stats ) ) {
@@ -134,7 +134,7 @@ class WP_MCP_AI_Cache_Adapter {
 	 * @return bool True if cache backend is available.
 	 */
 	public function is_available() {
-		return $this->backend !== 'none';
+		return 'none' !== $this->backend;
 	}
 
 	/**
@@ -151,11 +151,11 @@ class WP_MCP_AI_Cache_Adapter {
 		switch ( $this->backend ) {
 			case 'redis':
 				$value = $this->redis->get( $full_key );
-				return $value !== false ? maybe_unserialize( $value ) : false;
+				return false !== $value ? maybe_unserialize( $value ) : false;
 
 			case 'memcached':
 				$value = $this->memcached->get( $full_key );
-				return $value !== false ? $value : false;
+				return false !== $value ? $value : false;
 
 			default:
 				return false;
@@ -244,17 +244,17 @@ class WP_MCP_AI_Cache_Adapter {
 	 */
 	public function get_stats() {
 		$stats = array(
-			'backend' => $this->backend,
+			'backend'   => $this->backend,
 			'available' => $this->is_available(),
 		);
 
 		switch ( $this->backend ) {
 			case 'redis':
 				try {
-					$info = $this->redis->info();
+					$info                 = $this->redis->info();
 					$stats['memory_used'] = isset( $info['used_memory_human'] ) ? $info['used_memory_human'] : 'unknown';
-					$stats['total_keys'] = isset( $info['db0'] ) ? $this->parse_redis_db_keys( $info['db0'] ) : 0;
-					$stats['uptime'] = isset( $info['uptime_in_seconds'] ) ? $info['uptime_in_seconds'] : 0;
+					$stats['total_keys']  = isset( $info['db0'] ) ? $this->parse_redis_db_keys( $info['db0'] ) : 0;
+					$stats['uptime']      = isset( $info['uptime_in_seconds'] ) ? $info['uptime_in_seconds'] : 0;
 				} catch ( Exception $e ) {
 					$stats['error'] = $e->getMessage();
 				}
@@ -264,10 +264,10 @@ class WP_MCP_AI_Cache_Adapter {
 				try {
 					$memcached_stats = $this->memcached->getStats();
 					if ( ! empty( $memcached_stats ) ) {
-						$server_stats = reset( $memcached_stats );
+						$server_stats         = reset( $memcached_stats );
 						$stats['memory_used'] = isset( $server_stats['bytes'] ) ? size_format( $server_stats['bytes'] ) : 'unknown';
-						$stats['total_keys'] = isset( $server_stats['curr_items'] ) ? $server_stats['curr_items'] : 0;
-						$stats['uptime'] = isset( $server_stats['uptime'] ) ? $server_stats['uptime'] : 0;
+						$stats['total_keys']  = isset( $server_stats['curr_items'] ) ? $server_stats['curr_items'] : 0;
+						$stats['uptime']      = isset( $server_stats['uptime'] ) ? $server_stats['uptime'] : 0;
 					}
 				} catch ( Exception $e ) {
 					$stats['error'] = $e->getMessage();
@@ -316,9 +316,9 @@ class WP_MCP_AI_Cache_Adapter {
 		if ( $orchestrator ) {
 			$workflows = $orchestrator->get_workflows();
 			if ( $this->set( 'workflows_list', $workflows, 3600 ) ) {
-				$warmed++;
+				++$warmed;
 			} else {
-				$failed++;
+				++$failed;
 			}
 		}
 
@@ -327,9 +327,9 @@ class WP_MCP_AI_Cache_Adapter {
 		if ( $handler ) {
 			$commands = $handler->get_registered_commands();
 			if ( $this->set( 'commands_list', $commands, 3600 ) ) {
-				$warmed++;
+				++$warmed;
 			} else {
-				$failed++;
+				++$failed;
 			}
 		}
 
@@ -354,7 +354,7 @@ class WP_MCP_AI_Cache_Adapter {
  *
  * @return WP_MCP_AI_Cache_Adapter Cache adapter instance.
  */
-function wp_mcp_ai_get_cache_adapter() {
+function wp_mcp_ai_get_cache_adapter() { // phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed -- Helper function in same file for convenience.
 	static $adapter = null;
 
 	if ( null === $adapter ) {

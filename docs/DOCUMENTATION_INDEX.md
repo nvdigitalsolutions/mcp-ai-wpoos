@@ -1,12 +1,30 @@
 # NV oOS Documentation Index
 
-**Last Updated:** February 17, 2026  
-**Plugin Version:** 1.1.2  
+**Last Updated:** March 5, 2026  
+**Plugin Version:** 1.1.3  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 564+ files (554+ in docs/ folder, 3 essential files in root, 53+ archived)
+**Total Documentation:** 570+ files across docs/, root, and archive directories
+
+> **📌 MARCH 5, 2026 UPDATE:** 🌐 **OFFICE 365 & ICLOUD DRIVE + TELEGRAM AUTH FIX** ⭐⭐
+> - **Office 365 Integration** – 5 new tools: `send_outlook_mail`, `get_outlook_messages` (Outlook), `list_onedrive_files`, `get_onedrive_file`, `upload_onedrive_file` (OneDrive) via Microsoft Graph API
+> - **iCloud Drive Integration** – 3 new tools: `list_icloud_drive_files`, `get_icloud_drive_file`, `upload_icloud_drive_file` via configurable HTTPS gateway
+> - **New Webhook Controllers** – `WP_MCP_AI_Outlook_Webhook_Controller` and `WP_MCP_AI_iCloud_Webhook_Controller`
+> - **Chat Channels Toolkit** – Grows to **47 tools across 11 platforms** (was 39)
+> - **Telegram Mini App Auth Fix** – TMA session token fallback when cookies don't persist in Telegram WebView; `check_permission()` reduced to `read` for GET endpoints
+> - **WordPress.org Compliance 100%** – All output escaping, ABSPATH guards, and menu positions corrected; ready for submission
+> - **Version:** 1.1.3 (released March 2026)
+
+> **📌 MARCH 2, 2026 UPDATE:** 📱 **TELEGRAM MINI APP ENHANCEMENT PROPOSAL** ⭐⭐
+> - **Comprehensive Telegram Mini App Enhancement Proposal** - Full integration with Telegram Bot Platform features
+> - **Monetization Strategy** - Stars payments, subscriptions, third-party payments (WooCommerce/Stripe)
+> - **All 23 Pro Toolkits** mapped to Mini App interface with visual toolkit browser and tool execution forms
+> - **New Telegram Features** - Inline mode, deep linking, payment webhooks, full-screen mode
+> - **10 New Tools** proposed - Payment, inline mode, and enhanced bot management tools
+> - **4-Phase Roadmap** - 14 weeks, 200 estimated hours
+> - **See**: [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md)
 
 > **📌 FEBRUARY 17, 2026 UPDATE:** 🧹 **ROOT MARKDOWN FILES CONSOLIDATION** ⭐
 > - **Markdown File Review Complete** - Reviewed and consolidated all root markdown files
@@ -974,6 +992,7 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 |----------|-------------|----------|
 | [PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
 | [WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
+| [TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md](proposals/TELEGRAM_MINI_APP_ENHANCEMENT_PROPOSAL.md) | **NEW (Mar 2026):** Comprehensive Telegram Mini App enhancement - Stars payments, inline mode, deep linking, all 23 Pro toolkits integration, monetization strategy (41KB) | Developers/Stakeholders |
 
 ### Integration Guides
 

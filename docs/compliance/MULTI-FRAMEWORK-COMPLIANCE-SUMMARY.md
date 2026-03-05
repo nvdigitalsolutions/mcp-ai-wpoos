@@ -6,6 +6,37 @@
 
 ---
 
+## March 2026 Update (v1.1.3)
+
+As part of the v1.1.3 WordPress.org review compliance pass, a full Symfony dependency audit and production package vulnerability scan were completed.
+
+### Symfony Package Status (14 packages)
+
+| Package | Installed | Latest Available | Status |
+|---------|-----------|-----------------|--------|
+| symfony/cache | v6.4.34 | v6.4.34 | ✅ Current |
+| symfony/cache-contracts | v3.6.0 | v3.6.0 | ✅ Current |
+| symfony/deprecation-contracts | v3.6.0 | v3.6.0 | ✅ Current |
+| symfony/filesystem | v6.4.34 | v6.4.34 | ✅ Current |
+| symfony/http-client | v6.4.34 | v6.4.34 | ✅ Current |
+| symfony/http-client-contracts | v3.6.0 | v3.6.0 | ✅ Current |
+| symfony/polyfill-ctype | v1.33.0 | v1.33.0 | ✅ Current |
+| symfony/polyfill-mbstring | v1.33.0 | v1.33.0 | ✅ Current |
+| symfony/polyfill-php83 | v1.33.0 | v1.33.0 | ✅ Current |
+| symfony/process | v6.4.33 | v6.4.33 (ceiling) | ✅ Current |
+| symfony/service-contracts | v3.6.1 | v3.6.1 | ✅ Current |
+| symfony/translation-contracts | v3.6.1 | v3.6.1 | ✅ Current |
+| symfony/validator | v6.4.34 | v6.4.34 | ✅ Current |
+| symfony/var-exporter | v6.4.26 | v6.4.26 (ceiling) | ✅ Current |
+
+**`composer audit` result: "No security vulnerability advisories found."**
+
+All 28 production packages scanned via GitHub Advisory Database — **0 advisories**.
+
+See `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` Issue 3 for the complete per-package vulnerability table.
+
+---
+
 ## Problem Statement
 
 The Pro Dashboard at `admin.php?page=nvoos-pro-dashboard-multi-framework` was showing:

@@ -9,6 +9,10 @@
 
 namespace WP_MCP_AI\Filesystem;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 

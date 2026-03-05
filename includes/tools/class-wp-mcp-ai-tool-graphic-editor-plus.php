@@ -436,7 +436,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		return array(
 			'data'      => base64_encode( $image_data ),
-			'mime_type' => $image_editor->mime_type,
+			'mime_type' => $image_editor->get_mime_type(),
 		);
 	}
 

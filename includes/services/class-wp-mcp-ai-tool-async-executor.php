@@ -208,7 +208,29 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Trigger WordPress cron immediately to ensure the async tool execution runs.
 		// WordPress cron is virtual and only runs on page loads by default.
 		// Calling spawn_cron() ensures the job executes even if no subsequent page loads occur.
-		spawn_cron();
+		// Retry spawn_cron up to 3 times with brief delays to handle transient failures.
+		$spawn_success = false;
+		for ( $spawn_attempt = 0; $spawn_attempt < 3; $spawn_attempt++ ) {
+			$spawn_result = spawn_cron();
+			if ( false !== $spawn_result ) {
+				$spawn_success = true;
+				break;
+			}
+			if ( $spawn_attempt < 2 ) {
+				usleep( 100000 ); // 100ms delay between retries.
+			}
+		}
+
+		if ( ! $spawn_success ) {
+			$this->log_error(
+				'spawn_cron() failed after retries - async job may be delayed until next page load',
+				array(
+					'job_id'    => $job_id,
+					'tool_slug' => $tool_slug,
+					'attempts'  => $spawn_attempt,
+				)
+			);
+		}
 
 		// Log queuing event with detailed context for debugging.
 		$this->log_event(
@@ -723,6 +745,43 @@ class WP_MCP_AI_Tool_Async_Executor {
 	protected function compress_result( $result ) {
 		$serialized = maybe_serialize( $result );
 		$size       = strlen( $serialized );
+
+		// Validate result size before storage.
+		if ( $size > self::MAX_RESULT_SIZE ) {
+			$this->log_error(
+				'Async tool result exceeds maximum size limit',
+				array(
+					'size'     => $size,
+					'max_size' => self::MAX_RESULT_SIZE,
+				)
+			);
+
+			// Truncate by storing a summary instead of the full result.
+			$truncated_result = array(
+				'truncated' => true,
+				'message'   => sprintf(
+					/* translators: %s: size description */
+					__( 'Result truncated: original size %s exceeded the maximum allowed size.', 'mcp-ai-wpoos' ),
+					size_format( $size )
+				),
+			);
+
+			// Preserve key metadata if result is an array.
+			if ( is_array( $result ) ) {
+				if ( isset( $result['status'] ) ) {
+					$truncated_result['status'] = $result['status'];
+				}
+				if ( isset( $result['message'] ) ) {
+					$truncated_result['original_message'] = substr( $result['message'], 0, 500 );
+				}
+				if ( isset( $result['url'] ) ) {
+					$truncated_result['url'] = $result['url'];
+				}
+			}
+
+			$serialized = maybe_serialize( $truncated_result );
+			$size       = strlen( $serialized );
+		}
 
 		// If result is too large, compress it.
 		if ( $size > self::MAX_RESULT_SIZE / 10 ) {

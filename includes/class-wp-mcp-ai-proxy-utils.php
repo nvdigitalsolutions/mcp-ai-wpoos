@@ -119,11 +119,11 @@ class WP_MCP_AI_Proxy_Utils {
 	 * @return array|null Array with `host` and optional `port` keys or null when unavailable.
 	 */
 	protected static function extract_forwarded_host() {
-		if ( empty( $_SERVER['HTTP_X_FORWARDED_HOST'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( empty( $_SERVER['HTTP_X_FORWARDED_HOST'] ) ) {
 			return null;
 		}
 
-		$raw = (string) wp_unslash( $_SERVER['HTTP_X_FORWARDED_HOST'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_HOST'] ) );
 
 		if ( false !== strpos( $raw, ',' ) ) {
 			$raw = explode( ',', $raw );

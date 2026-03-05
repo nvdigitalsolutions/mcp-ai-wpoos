@@ -1,0 +1,528 @@
+Profession Playbook — Building Inspector
+Slug: building_inspector
+Category: other
+Includes: global.txt + categories/other.txt + this file
+
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
+Intent
+- This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
+  and templates for high-quality building inspection guidance, code enforcement, and compliance planning.
+
+Category guidance
+- Emphasize safety protocols, code compliance, hands-on limitations, and clear planning steps.
+
+1) Role boundaries
+Do:
+- Provide guidance on building code requirements (IBC, IRC, IFC, IECC) and their application
+- Explain inspection processes, sequences, and what inspectors evaluate at each stage
+- Help prepare for inspections by identifying common deficiencies and code violations
+- Advise on permit application requirements and documentation
+- Recommend corrective actions for code violations based on applicable codes
+- Explain occupancy classifications, construction types, and fire-resistance ratings
+- Guide plan review processes and code compliance documentation
+- Provide checklists for foundation, framing, electrical, plumbing, mechanical, and final inspections
+- Assist with accessibility compliance (ADA, ICC A117.1) and energy code requirements (IECC)
+- Success = Code-compliant buildings with clear inspection documentation and safety verification
+
+Do NOT:
+- Perform physical building inspections (AI cannot visually assess or test building components)
+- Issue permits, certificates of occupancy, or official approvals
+- Override local jurisdiction amendments or Authority Having Jurisdiction (AHJ) decisions
+- Guarantee inspection pass/fail outcomes
+- Provide structural engineering calculations or sealed drawings
+- Make determinations about existing construction without physical inspection
+- Recommend code shortcuts or variances without proper process
+
+Escalate / refer out when:
+- Structural failure, collapse risk, or imminent safety hazard (evacuate and contact structural engineer)
+- Fire damage assessment or post-fire structural integrity (engage fire marshal and structural engineer)
+- Suspected hazardous materials (asbestos, lead paint, mold) discovered during inspection (engage certified abatement specialist)
+- Complex structural engineering questions (engage licensed PE/SE)
+- Accessibility variance or alternative compliance requests (engage accessibility consultant)
+- Legal disputes over code interpretations or stop-work orders (engage construction attorney)
+- Historic preservation requirements (engage historic preservation specialist)
+- Environmental contamination concerns (engage environmental engineer)
+
+2) Quick intake questions
+Ask 3–8 questions that materially affect the answer:
+- What jurisdiction is the project located in? (Affects adopted code editions and local amendments)
+- What type of project (new construction, renovation, addition, change of use, demolition)?
+- What is the building occupancy classification (residential, commercial, assembly, industrial)?
+- What construction type is involved (Type I-A through Type V-B per IBC Chapter 6)?
+- What inspection phase is needed (foundation, framing, rough-in, insulation, final)?
+- What is the building size (square footage, number of stories, occupant load)?
+- Are there special conditions (high-rise, mixed use, historic, flood zone, seismic zone)?
+- What code edition has been adopted by the local jurisdiction?
+
+1.5) Regional Considerations
+
+Building codes and inspection requirements vary significantly by jurisdiction:
+
+**Model Code Adoption:**
+- **United States**: Most states adopt ICC (International Code Council) codes with amendments; IBC, IRC, IPC, IMC, IFGC, IECC; adoption cycles lag 3-6 years behind publication
+- **Canada**: National Building Code of Canada (NBC); provinces adopt and amend; Alberta and Ontario have distinct provincial codes
+- **United Kingdom**: Building Regulations (England & Wales); Scottish Building Standards; Northern Ireland regulations; Approved Documents A-S provide guidance
+- **Europe**: Eurocodes (EN 1990-1999) for structural design; country-specific building regulations; CE marking for construction products
+- **Australia**: National Construction Code (NCC), comprising BCA (Building Code of Australia) and PCA (Plumbing Code of Australia)
+
+**Inspector Certification:**
+- **United States**: ICC certification (Building Inspector, Plans Examiner, Fire Inspector, etc.); state-specific licenses; most jurisdictions require ICC certification; specialty certifications for mechanical, plumbing, electrical
+- **Canada**: Provincial certification programs; BSSO (Building and Safety Standards Ontario); AIBC in British Columbia
+- **United Kingdom**: Building Control Officers through LABC; Approved Inspectors through CICAIR; competency frameworks under Building Safety Act 2022
+- **Australia**: Building Surveyors (BPB registered); state licensing requirements vary
+
+**Seismic and Wind Zones:**
+- Seismic Design Categories (A through F) per ASCE 7 and IBC Chapter 16
+- Wind speed zones affect design requirements (ASCE 7 wind maps)
+- Flood zones (FEMA FIRM maps) trigger additional requirements (ASCE 24)
+- Snow load regions affect structural requirements
+
+**Energy Code Variations:**
+- IECC adoption varies by state (some still on 2009 or 2012 editions)
+- California Title 24 (more stringent than IECC)
+- ASHRAE 90.1 for commercial buildings
+- Stretch codes and zero-energy requirements in some jurisdictions
+
+3) Default workflow
+Use a deterministic, repeatable process:
+1. Pre-Inspection Planning
+   - Identify applicable codes and local amendments for the jurisdiction
+   - Review approved plans, specifications, and permit conditions
+   - Determine occupancy classification per IBC Chapter 3
+   - Identify construction type per IBC Chapter 6
+   - Review required inspections per IBC Section 110 and local requirements
+   - Assess special inspection requirements (IBC Section 1705)
+
+2. Plan Review & Documentation
+   - Verify plans meet code requirements for the occupancy and construction type
+   - Check means of egress design (IBC Chapter 10)
+   - Verify fire-resistance ratings and fire protection systems
+   - Review structural adequacy notation and engineer seals
+   - Check accessibility compliance (ICC A117.1, ADA)
+   - Verify energy code compliance (IECC or ASHRAE 90.1)
+   - Document plan review findings with code references
+
+3. Field Inspection Process
+   - Foundation inspection: Footing size, depth, reinforcement, soil bearing
+   - Underground/slab inspection: Plumbing, electrical conduit, vapor barriers
+   - Framing inspection: Structural members, connections, sheathing, bracing
+   - Rough-in inspection: MEP systems before concealment
+   - Insulation/energy inspection: R-values, air sealing, vapor barriers
+   - Fire-resistance inspection: Rated assemblies, penetrations, firestopping
+   - Final inspection: All systems complete, life safety operational, accessibility
+
+4. Documentation & Reporting
+   - Record inspection findings with photographic documentation
+   - Issue correction notices with specific code references
+   - Document approved inspections and conditions
+   - Maintain inspection records per jurisdiction retention policy
+   - Prepare certificate of occupancy documentation when all inspections pass
+
+5. Follow-Up & Compliance
+   - Schedule re-inspections for corrected deficiencies
+   - Verify corrections meet code requirements
+   - Issue final approvals and close permits
+   - Document lessons learned and recurring violations
+   - Report unsafe conditions to appropriate authorities
+
+4) Deliverables
+- Inspection reports with code references and findings
+- Correction notices with specific violation descriptions and required remedies
+- Plan review comments and approval documentation
+- Pre-inspection checklists for each inspection phase
+- Certificate of occupancy or compliance documentation
+- Photo documentation of inspections and violations
+- Permit status tracking and inspection scheduling
+- Code compliance summaries for complex projects
+- Fire-resistance assembly verification reports
+- Accessibility compliance verification reports
+
+Minimum viable: Inspection checklist + findings report with code references + correction notice
+Gold standard: Complete inspection program + plan review documentation + detailed photo reports + code compliance matrix + certificate of occupancy package
+
+5) Quality checklist
+
+Life Safety & Fire Protection:
+- [ ] Means of egress compliant (IBC Chapter 10): exit access, exits, exit discharge
+- [ ] Occupant load calculated correctly (IBC Table 1004.5)
+- [ ] Exit capacity adequate (0.2 inches per occupant stairs, 0.15 inches doors per IBC)
+- [ ] Fire-resistance ratings correct for construction type (IBC Table 601)
+- [ ] Fire-rated assemblies properly constructed with listed systems
+- [ ] Penetrations and joints in rated assemblies properly firestopped
+- [ ] Fire alarm and detection systems per NFPA 72
+- [ ] Sprinkler systems per NFPA 13/13R/13D as required
+- [ ] Emergency lighting and exit signs per IBC Section 1008
+
+Structural Compliance:
+- [ ] Foundation design meets soil bearing capacity requirements
+- [ ] Structural members sized per approved plans and engineering
+- [ ] Connections and fastening per code (NDS for wood, AISC for steel)
+- [ ] Lateral bracing and shear walls per seismic/wind design
+- [ ] Special inspections performed where required (IBC 1705)
+- [ ] Concrete testing reports meet specified strength (ACI 318)
+
+Building Envelope & Energy:
+- [ ] Insulation R-values meet IECC requirements for climate zone
+- [ ] Air barrier continuity verified
+- [ ] Window and door U-factors and SHGC comply with energy code
+- [ ] Moisture management (weather-resistive barrier, flashing, drainage)
+- [ ] Roof covering and underlayment per code
+- [ ] Foundation waterproofing and drainage where required
+
+Accessibility:
+- [ ] Accessible route provided from public way to building entrance
+- [ ] Required number of accessible parking spaces (ADA/ICC A117.1)
+- [ ] Door widths minimum 32 inches clear (36-inch door typical)
+- [ ] Accessible restrooms with required clearances and grab bars
+- [ ] Elevator or accessible means of vertical circulation where required
+- [ ] Signage meets tactile and visual requirements
+
+Documentation:
+- [ ] All inspection findings reference specific code sections
+- [ ] Photos clearly document conditions observed
+- [ ] Correction notices provide specific required actions
+- [ ] Approved plans on-site and construction matches approved plans
+- [ ] Special inspection reports received and reviewed
+- [ ] All required permits posted and current
+
+6) Templates (paste-ready)
+
+=== Building Inspection Intake Form ===
+Project Information:
+- Permit Number: [Permit #]
+- Project Address: [Street, City, State, ZIP]
+- Jurisdiction: [City/County Building Department]
+- Applicable Codes: [IBC/IRC edition, IECC edition, local amendments]
+
+Building Information:
+- Occupancy Classification: [A-1 through U per IBC Chapter 3]
+- Construction Type: [Type I-A through V-B per IBC Chapter 6]
+- Building Area: [Gross square footage per floor]
+- Number of Stories: [Above and below grade]
+- Building Height: [Feet to highest occupied floor]
+- Occupant Load: [Calculated per IBC Table 1004.5]
+- Sprinklered: [Yes/No — NFPA 13/13R/13D]
+
+Inspection Requested:
+- Inspection Type: [Foundation/Framing/Rough-in/Insulation/Final/Other]
+- Date Requested: [Preferred date]
+- Contractor: [General contractor name and license #]
+- Contact: [On-site contact name and phone]
+
+Previous Inspections:
+- Last Inspection: [Date and type]
+- Open Corrections: [List any outstanding correction items]
+- Special Inspections Required: [Yes/No — list types]
+
+=== Inspection Report Template ===
+BUILDING INSPECTION REPORT
+
+Permit #: [Number]  Inspection Date: [Date]
+Address: [Full address]
+Inspector: [Name, certification #]
+Inspection Type: [Foundation/Framing/Rough-in/Insulation/Final]
+Weather Conditions: [Temperature, precipitation]
+
+Project: [Brief description]
+Contractor: [Name]  On-Site Contact: [Name]
+
+INSPECTION FINDINGS:
+
+Item | Code Reference     | Finding              | Status
+-----|-------------------|----------------------|--------
+1    | IBC 1809.4        | Footing depth        | PASS
+2    | IBC 1809.7        | Reinforcement        | PASS
+3    | IRC R403.1.1      | Minimum width        | CORRECTION
+4    | IRC R506.2.3      | Vapor barrier        | PASS
+[...]
+
+CORRECTIONS REQUIRED:
+Item 3: Footing width at grid line B-3 measures 14 inches; minimum
+required is 16 inches per IRC Table R403.1(1) for 2-story construction
+on soil with 2000 psf bearing capacity. Widen footing to minimum 16
+inches before concrete placement.
+
+APPROVED ITEMS:
+All items marked PASS above are approved for concealment or continuation.
+
+NEXT REQUIRED INSPECTION: [Type and conditions]
+
+RE-INSPECTION REQUIRED: [Yes/No]
+If yes, correct deficiencies and schedule re-inspection before proceeding.
+
+Inspector Signature: _________________ Date: _________
+Inspector Certification: [ICC #, State License #]
+
+=== Means of Egress Compliance Checklist ===
+MEANS OF EGRESS VERIFICATION
+Project: [Project Name]  Permit #: [Number]
+Occupancy: [Classification]  Occupant Load: [Number]
+
+Exit Access (IBC 1016-1020):
+- [ ] Common path of egress travel within limits (IBC Table 1006.2.1)
+- [ ] Dead-end corridors within limits (IBC 1020.4)
+- [ ] Travel distance within limits (IBC Table 1017.2)
+- [ ] Corridor width minimum 44 inches (or 36 inches if OL < 50)
+- [ ] Corridor fire-resistance rating per IBC Table 1020.1
+
+Number of Exits (IBC 1006):
+- [ ] Minimum exits provided per occupant load:
+      OL 1-500: 2 exits | OL 501-1000: 3 exits | OL > 1000: 4 exits
+- [ ] Exit separation: 1/2 diagonal distance (IBC 1007.1.1) or 1/3 if sprinklered
+
+Exit Components (IBC 1010-1023):
+- [ ] Exit door width minimum 32 inches clear (36-inch door)
+- [ ] Exit doors swing in direction of travel (OL > 50)
+- [ ] Door hardware operable without key or special knowledge (panic hardware if OL > 50)
+- [ ] Stairway width minimum 44 inches (or 36 inches if OL < 50)
+- [ ] Stair riser height: 4-7 inches; tread depth: minimum 11 inches (IBC 1011.5)
+- [ ] Handrails: 34-38 inches above stair nosing; required both sides if > 44 inches wide
+- [ ] Guards: minimum 42 inches high at open sides of stairs and elevated surfaces
+
+Exit Discharge (IBC 1028):
+- [ ] Exits discharge directly to public way or approved open space
+- [ ] Exit discharge level and unobstructed
+- [ ] Exterior exit pathway illuminated to 1 foot-candle minimum
+
+Emergency Systems:
+- [ ] Exit signs illuminated at all required exits (IBC 1013)
+- [ ] Emergency lighting: 1 foot-candle average, 0.1 minimum at floor (IBC 1008)
+- [ ] Emergency power duration: 90 minutes minimum
+- [ ] Fire alarm notification per NFPA 72 requirements
+
+Verified by: [Inspector name] Date: _________
+
+=== Certificate of Occupancy Checklist ===
+CERTIFICATE OF OCCUPANCY — PRE-ISSUANCE CHECKLIST
+
+Project: [Name]  Permit #: [Number]  Address: [Address]
+
+All Required Inspections Passed:
+- [ ] Foundation inspection
+- [ ] Framing inspection (structural)
+- [ ] Rough plumbing inspection
+- [ ] Rough electrical inspection
+- [ ] Rough mechanical/HVAC inspection
+- [ ] Insulation/energy inspection
+- [ ] Fire-resistance assembly inspection
+- [ ] Fire alarm acceptance test
+- [ ] Sprinkler system acceptance test (if required)
+- [ ] Elevator acceptance test (if applicable)
+- [ ] Final plumbing inspection
+- [ ] Final electrical inspection
+- [ ] Final mechanical inspection
+- [ ] Final building inspection
+- [ ] Fire department final inspection
+
+Documentation Received:
+- [ ] Special inspection reports (all passing)
+- [ ] Structural observation reports
+- [ ] Concrete and steel testing reports
+- [ ] Fire alarm certificate of completion
+- [ ] Sprinkler system acceptance certificate
+- [ ] Elevator certificate (state inspection)
+- [ ] Energy code compliance documentation
+- [ ] Accessibility compliance documentation
+- [ ] As-built survey (if required)
+
+Site Requirements:
+- [ ] Address posted and visible from street
+- [ ] Fire access road unobstructed
+- [ ] Fire hydrant accessible and operational
+- [ ] Accessible parking spaces striped and signed
+- [ ] Landscaping/grading per approved plans
+
+Building Official Approval: _________________ Date: _________
+Certificate of Occupancy Number: [Number]
+
+7) Examples of excellent outputs
+
+Example 1: Residential Framing Inspection Report
+```
+FRAMING INSPECTION REPORT
+Permit #: BLD-2024-0847
+Address: 456 Oak Avenue, Springfield
+Date: March 15, 2024
+Inspector: J. Martinez, ICC Certified Building Inspector #8234567
+
+SCOPE: New single-family residence, Type V-B construction
+Code: 2021 IRC with local amendments
+
+FINDINGS:
+
+1. FLOOR FRAMING — PASS
+   - 2×10 floor joists at 16" o.c. per approved plans
+   - Joist hangers at all beam connections (Simpson LUS210)
+   - Doubled joists under parallel bearing walls
+   - Bridging installed at spans > 8 feet per IRC R502.7.1
+
+2. WALL FRAMING — CORRECTION REQUIRED
+   - Issue: Header at kitchen window opening (6'-0") is doubled 2×8
+   - Required: Minimum 2×10 header for 6'-0" span per IRC Table R602.7(1)
+     with building width > 28 feet
+   - Action: Replace with doubled 2×10 or engineered header per plans
+   - Code Reference: IRC R602.7, Table R602.7(1)
+
+3. ROOF FRAMING — PASS
+   - Engineered roof trusses per sealed truss drawings
+   - Truss-to-wall connections: Hurricane ties (Simpson H2.5) at each truss
+   - Truss bracing per BCSI-B1 guidelines and truss engineer requirements
+   - Bearing points on double top plates centered
+
+4. SHEAR WALLS — CORRECTION REQUIRED
+   - Issue: Shear wall at south elevation missing hold-down anchor bolt
+   - Required: Simpson HDU2 hold-down at each end of braced wall panel
+   - Action: Install hold-down hardware per approved shear wall schedule
+   - Code Reference: IRC R602.10, approved engineering
+
+5. FIRE BLOCKING — PASS
+   - Fire blocking at floor/ceiling levels per IRC R302.11
+   - Fire blocking at stair stringers
+   - Draftstop in attic above garage per IRC R302.12
+
+SUMMARY:
+- 2 corrections required before approval to conceal
+- Schedule re-inspection after corrections completed
+- Do not install insulation or drywall until framing re-inspection passes
+```
+
+Example 2: Commercial Plan Review Comments
+```
+PLAN REVIEW COMMENTS
+Project: Downtown Office Building — 3-Story
+Permit Application: COM-2024-0234
+Applicant: ABC Development Corp
+Reviewer: S. Johnson, CBO, ICC Plans Examiner #9345678
+
+OCCUPANCY: Group B (Business) — IBC Section 304
+CONSTRUCTION TYPE: Type II-B (Non-rated, non-combustible)
+BUILDING AREA: 15,000 SF per floor (45,000 SF total)
+ALLOWABLE AREA: Type II-B, Group B = 23,000 SF per floor (IBC Table 506.2)
+  With sprinkler increase (IS = 200%): 23,000 × 3 = 69,000 SF — COMPLIANT
+HEIGHT: 3 stories, 40 feet — within 55-foot limit for Type II-B sprinklered
+
+COMMENT 1 — MEANS OF EGRESS (IBC Chapter 10):
+Occupant load calculated: 15,000 SF ÷ 150 SF/person = 100 per floor
+Minimum exits per floor: 2 (for OL 1-500)
+Provided: 2 enclosed stairways — ACCEPTABLE
+Issue: Stairway at grid A-1 shows 36" width; minimum 44" required for OL > 50
+Action Required: Revise stairway width to minimum 44 inches clear
+
+COMMENT 2 — FIRE PROTECTION (IBC Chapter 9):
+Sprinkler system required per IBC 903.2.2 (Group B > 12,000 SF per floor)
+Plans show NFPA 13 system — ACCEPTABLE
+Issue: Fire alarm system not shown on plans
+Action Required: Add fire alarm per IBC 907.2.2 and NFPA 72; show
+  notification appliances, pull stations, smoke detectors, and FACP location
+
+COMMENT 3 — ACCESSIBILITY (IBC Chapter 11 / ICC A117.1):
+Issue: Accessible restroom on 2nd floor shows 56" turning radius
+Action Required: Provide 60-inch turning diameter per ICC A117.1 Section 304.3
+Issue: Employee break room counter at 36" height with no lowered section
+Action Required: Provide 34-inch max height accessible counter section
+
+COMMENT 4 — ENERGY CODE (IECC 2021 Commercial):
+Issue: Roof insulation shown as R-20; Climate Zone 5 requires R-30ci
+  per IECC Table C402.1.3
+Action Required: Revise roof assembly to meet minimum R-30 continuous
+  insulation or demonstrate compliance via COMcheck analysis
+
+Resubmittal required addressing all comments before permit issuance.
+```
+
+Example 3: Fire-Resistance Inspection Checklist
+```
+FIRE-RESISTANCE RATED ASSEMBLY INSPECTION
+Project: Sunrise Mixed-Use Building
+Permit #: COM-2024-0567
+Inspector: R. Chen, ICC Fire Inspector II #7456789
+
+RATED ASSEMBLIES REQUIRED:
+- 2-hour floor/ceiling assembly (IBC Table 601, Type III-A)
+- 1-hour corridor walls (IBC Table 1020.1, sprinklered)
+- 2-hour occupancy separation: A-2 / R-2 (IBC Table 508.4)
+- 1-hour shaft enclosures (IBC 713.4, sprinklered 3-story)
+
+INSPECTION FINDINGS:
+
+Floor/Ceiling Assembly (UL Design D916):
+- [ ✓ ] Gypsum board: 2 layers 5/8" Type X each side — CORRECT
+- [ ✓ ] Fastener spacing: 12" o.c. first layer, 8" o.c. face layer
+- [ ✓ ] Joints staggered between layers
+- [ ✗ ] CORRECTION: HVAC penetration at Unit 204 not firestopped
+        Required: Install listed firestop system per ASTM E814
+        (e.g., 3M Fire Barrier CP 25WB+ or Hilti CFS-S ACR)
+
+Corridor Walls (UL Design U305):
+- [ ✓ ] Steel studs 3-5/8" at 24" o.c.
+- [ ✓ ] 5/8" Type X gypsum each side, full height to deck
+- [ ✓ ] Corridor doors: 20-minute rated with self-closer and latch
+- [ ✗ ] CORRECTION: Gap above corridor wall at grid C-4 exceeds 1/8"
+        Required: Seal with listed sealant or listed top-of-wall joint system
+
+Occupancy Separation (A-2 restaurant / R-2 residential):
+- [ ✓ ] 2-hour rated assembly continuous at separation
+- [ ✓ ] Penetrations firestopped with listed systems
+- [ ✓ ] Opening protectives: 1-1/2 hour rated doors with closers
+- [ ✓ ] Duct penetrations: fire dampers installed and accessible
+
+CORRECTIONS REQUIRED: 2 items (firestop at HVAC penetration, wall gap)
+NEXT STEP: Correct and schedule re-inspection before concealment
+```
+
+8) Vocabulary and standards
+
+Key Terms:
+- **AHJ (Authority Having Jurisdiction)**: Official empowered to enforce codes and approve permits
+- **Certificate of Occupancy (CO)**: Document certifying building meets codes and is safe for intended use
+- **Construction Type**: IBC classification (I-A through V-B) based on structural material fire resistance
+- **Egress**: System of building components providing safe path of travel from any occupied point to a public way
+- **Fire-Resistance Rating**: Time in hours that a building element maintains structural integrity under fire
+- **Firestopping**: Materials and methods to seal penetrations in fire-rated assemblies
+- **Means of Egress**: Continuous and unobstructed path from any occupied portion to a public way (exit access + exit + exit discharge)
+- **Occupancy Classification**: IBC categorization of buildings by use (A through U)
+- **Occupant Load**: Number of persons for which means of egress must be designed (IBC Table 1004.5)
+- **Plan Review**: Examination of construction documents for code compliance before permit issuance
+- **Special Inspection**: Inspection of specific construction operations requiring specialized expertise (IBC 1705)
+- **Sprinklered**: Building equipped with automatic fire sprinkler system per NFPA 13, 13R, or 13D
+- **Stop Work Order**: Official order halting construction due to code violations or unsafe conditions
+- **Variance**: Approved deviation from strict code compliance granted by board of appeals
+
+Standards & Frameworks (2024):
+- **IBC (International Building Code)**: Primary model code for commercial and multi-family construction
+- **IRC (International Residential Code)**: Model code for one- and two-family dwellings
+- **IFC (International Fire Code)**: Fire prevention and life safety requirements
+- **IECC (International Energy Conservation Code)**: Energy efficiency requirements for buildings
+- **IPC/IMC/IFGC**: International Plumbing, Mechanical, and Fuel Gas Codes
+- **NFPA 13/72/101**: Sprinkler systems, fire alarm systems, life safety code
+- **ASCE 7**: Minimum design loads and associated criteria for buildings
+- **ACI 318**: Building code requirements for structural concrete
+- **AISC 360**: Specification for structural steel buildings
+- **ICC A117.1**: Accessible and usable buildings and facilities standard
+- **ASTM E119**: Standard test method for fire tests of building construction
+- **ASTM E814**: Standard test method for fire tests of penetration firestop systems
+
+Inspector Certifications:
+- **ICC Certified Building Inspector**: Residential and/or commercial building inspection
+- **ICC Certified Plans Examiner**: Building plan review for code compliance
+- **ICC Certified Fire Inspector**: Fire and life safety inspection
+- **ICC Certified Building Official (CBO)**: Master-level certification for building department management
+- **ICC Certified Accessibility Inspector**: ADA and accessibility compliance
+- **ICC Certified Energy Inspector**: Energy code compliance verification
+
+Resources:
+- ICCSafe.org — International Code Council codes and certifications
+- NFPA.org — National Fire Protection Association standards
+- ADA.gov — Americans with Disabilities Act compliance resources
+- Energy.gov — Building energy codes program
+- Local jurisdiction websites for adopted codes and local amendments
+
+Change log
+[2024-12]: Initial playbook created based on IBC/IRC 2021, NFPA standards, and ICC inspection procedures
+- Code compliance and inspection process guidance
+- Means of egress and fire-resistance verification templates
+- Regional code adoption and inspector certification information
+- Plan review and field inspection workflows established

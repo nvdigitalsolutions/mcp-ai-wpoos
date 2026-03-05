@@ -48,12 +48,12 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		$target = isset( $args[0] ) ? $args[0] : 'recent';
 
 		// Parse flags.
-		$dry_run      = isset( $flags['dry-run'] ) || isset( $flags['n'] );
-		$auto_fix     = isset( $flags['auto-fix'] ) || isset( $flags['a'] );
-		$phase        = isset( $flags['phase'] ) ? absint( $flags['phase'] ) : 0; // 0 = all phases.
-		$limit        = isset( $flags['limit'] ) ? absint( $flags['limit'] ) : 10;
-		$post_type    = isset( $flags['post-type'] ) ? sanitize_text_field( $flags['post-type'] ) : 'post';
-		$verbose      = isset( $flags['verbose'] ) || isset( $flags['v'] );
+		$dry_run   = isset( $flags['dry-run'] ) || isset( $flags['n'] );
+		$auto_fix  = isset( $flags['auto-fix'] ) || isset( $flags['a'] );
+		$phase     = isset( $flags['phase'] ) ? absint( $flags['phase'] ) : 0; // 0 = all phases.
+		$limit     = isset( $flags['limit'] ) ? absint( $flags['limit'] ) : 10;
+		$post_type = isset( $flags['post-type'] ) ? sanitize_text_field( $flags['post-type'] ) : 'post';
+		$verbose   = isset( $flags['verbose'] ) || isset( $flags['v'] );
 
 		// Get posts to check.
 		$post_ids = $this->get_posts_to_check( $target, $post_type, $limit );
@@ -68,12 +68,12 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 
 		// Process each post.
 		$results = array(
-			'total_posts'    => count( $post_ids ),
-			'posts_checked'  => 0,
-			'posts_cleaned'  => 0,
-			'total_issues'   => 0,
-			'issues_fixed'   => 0,
-			'posts'          => array(),
+			'total_posts'   => count( $post_ids ),
+			'posts_checked' => 0,
+			'posts_cleaned' => 0,
+			'total_issues'  => 0,
+			'issues_fixed'  => 0,
+			'posts'         => array(),
 		);
 
 		foreach ( $post_ids as $post_id ) {
@@ -88,14 +88,14 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 			);
 
 			$results['posts'][] = $post_result;
-			$results['posts_checked']++;
+			++$results['posts_checked'];
 
 			if ( ! empty( $post_result['issues'] ) ) {
 				$results['total_issues'] += count( $post_result['issues'] );
 			}
 
 			if ( ! empty( $post_result['fixed'] ) ) {
-				$results['posts_cleaned']++;
+				++$results['posts_cleaned'];
 				$results['issues_fixed'] += count( $post_result['fixed'] );
 			}
 		}
@@ -126,11 +126,11 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		}
 
 		$args = array(
-			'post_type'      => $post_type,
-			'post_status'    => 'publish',
-			'numberposts'    => $limit,
-			'orderby'        => 'modified',
-			'order'          => 'DESC',
+			'post_type'   => $post_type,
+			'post_status' => 'publish',
+			'numberposts' => $limit,
+			'orderby'     => 'modified',
+			'order'       => 'DESC',
 		);
 
 		if ( 'all' === $target ) {
@@ -184,12 +184,12 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		}
 
 		return array(
-			'post_id'    => $post_id,
-			'title'      => get_the_title( $post_id ),
-			'url'        => get_permalink( $post_id ),
-			'issues'     => $issues,
-			'fixed'      => $fixed,
-			'status'     => empty( $issues ) ? 'clean' : 'needs_attention',
+			'post_id' => $post_id,
+			'title'   => get_the_title( $post_id ),
+			'url'     => get_permalink( $post_id ),
+			'issues'  => $issues,
+			'fixed'   => $fixed,
+			'status'  => empty( $issues ) ? 'clean' : 'needs_attention',
 		);
 	}
 
@@ -221,7 +221,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		}
 
 		// Pattern 2: Draft markers ([TODO], [DRAFT], [TBD]).
-		$draft_markers = array( '\[TODO\]', '\[DRAFT\]', '\[TBD\]', '\[FIXME\]', '\[XXX\]' );
+		$draft_markers  = array( '\[TODO\]', '\[DRAFT\]', '\[TBD\]', '\[FIXME\]', '\[XXX\]' );
 		$marker_pattern = '/' . implode( '|', $draft_markers ) . '/i';
 		if ( preg_match( $marker_pattern, $content ) ) {
 			$issues[] = array(
@@ -336,7 +336,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		foreach ( $sentences as $sentence ) {
 			$sentence_word_count = str_word_count( trim( $sentence ) );
 			if ( $sentence_word_count > 30 ) {
-				$long_sentences++;
+				++$long_sentences;
 			}
 		}
 
@@ -363,7 +363,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 			if ( strpos( $url, get_site_url() ) === 0 ) {
 				$post_id = url_to_postid( $url );
 				if ( ! $post_id || 'publish' !== get_post_status( $post_id ) ) {
-					$broken_links++;
+					++$broken_links;
 				}
 			}
 		}
@@ -437,7 +437,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 
 		foreach ( $informal_words as $word ) {
 			if ( stripos( $content, $word ) !== false ) {
-				$informal_count++;
+				++$informal_count;
 			}
 		}
 
@@ -454,7 +454,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 		$question_count = substr_count( $content, '?' );
 		$word_count     = str_word_count( $content );
 
-		if ( $word_count > 500 && $question_count === 0 ) {
+		if ( $word_count > 500 && 0 === $question_count ) {
 			$suggestions[] = array(
 				'type'      => 'engagement',
 				'certainty' => 'LOW',
@@ -469,7 +469,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 
 		foreach ( $negative_words as $word ) {
 			if ( stripos( $content, $word ) !== false ) {
-				$negative_count++;
+				++$negative_count;
 			}
 		}
 
@@ -557,7 +557,7 @@ class WP_MCP_AI_Slash_Command_Clean_Content {
 			);
 
 			foreach ( $result['issues'] as $issue ) {
-				$certainty = $issue['certainty'];
+				$certainty                    = $issue['certainty'];
 				$by_certainty[ $certainty ][] = $issue;
 			}
 

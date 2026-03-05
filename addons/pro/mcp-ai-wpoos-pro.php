@@ -150,6 +150,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 			require_once $pro_providers_file;
 		}
 
+		// Load Pro Packages Settings Page (Node.js package status).
+		$pro_packages_page = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-packages-settings-page.php';
+		if ( file_exists( $pro_packages_page ) ) {
+			require_once $pro_packages_page;
+		}
+
 		// Load LangChain.js enqueue manager (pro-only feature for embedded LLM orchestration).
 		$langchain_enqueue_file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
 		if ( file_exists( $langchain_enqueue_file ) ) {
@@ -471,19 +477,46 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
 		}
 
-	// Load Regulatory Registration Toolkit if enabled (Pro feature).
-	if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
-	}
+		// Load Regulatory Registration Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
+		}
 
-	// Load Chat Channels Integration Toolkit if enabled (Pro feature).
-	if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
-	}
+		// Load Chat Channels Integration Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
 
-	// ========================================================================
-	// PHASE 6: FRONTEND COMPONENTS INTEGRATION
-	// ========================================================================
+			// Load WhatsApp Webhook Controller for real-time message handling.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+
+			// Load Messenger Webhook Controller for Meta Messenger Platform events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php';
+
+			// Load Telegram Webhook Controller for Telegram Bot API events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+
+			// Load Telegram Login Controller for Web Login widget callback and shortcode.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-login-controller.php';
+
+			// Load Telegram Mini App Controller for BotFather Web App URL endpoint.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-controller.php';
+
+			// Load Slack Event Controller for Slack Events API payloads.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
+
+			// Load Discord Interaction Controller for Discord Interactions Endpoint.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php';
+
+			// Load Teams Webhook Controller for Microsoft Teams outgoing webhooks.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php';
+
+			// Load Google Chat Webhook Controller for Google Chat bot events.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php';
+		}
+
+		// ========================================================================
+		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
+		// ========================================================================
 		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
 		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
@@ -849,6 +882,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_List_Media_Templates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-media-templates.php',
 				'WP_MCP_AI_Tool_Apply_Media_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php',
 				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-template.php',
+				'WP_MCP_AI_Tool_Create_Media_Collection'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-collection.php',
 				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php',
 				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php',
 				// Sharp image optimization tool (enhanced with NPM package).

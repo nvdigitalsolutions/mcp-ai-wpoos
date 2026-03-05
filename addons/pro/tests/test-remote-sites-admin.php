@@ -1134,6 +1134,369 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that ajax_test_whatsapp_live does not include quality_rating in the primary request.
+	 *
+	 * quality_rating requires whatsapp_business_management permission and causes a 403
+	 * with App Access Tokens. The primary request must only ask for
+	 * display_phone_number and verified_name; quality_rating is fetched separately
+	 * and a 403 on that request must not fail the overall test.
+	 */
+	public function test_ajax_test_whatsapp_live_excludes_quality_rating_from_primary_request() {
+		$captured_urls = array();
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_urls ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			$captured_urls[] = $url;
+
+			// Simulate 403 when quality_rating is the only requested field.
+			if ( false !== strpos( $url, 'fields=quality_rating' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => '(#200) You do not have permission to access this field.',
+								'type'    => 'OAuthException',
+								'code'    => 200,
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 403,
+						'message' => 'Forbidden',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// Return success for the primary phone-number request.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'display_phone_number' => '+1 555-000-0000',
+						'verified_name'        => 'Test Business',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = 'test_access_token';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		// Capture JSON output via output buffering.
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		// Clean up POST.
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 403 on quality_rating.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// Verify the primary phone-number URL does not contain quality_rating.
+		$phone_url = '';
+		foreach ( $captured_urls as $url ) {
+			if ( false !== strpos( $url, 'display_phone_number' ) && false === strpos( $url, 'quality_rating' ) ) {
+				$phone_url = $url;
+				break;
+			}
+		}
+		$this->assertNotEmpty( $phone_url, 'Primary phone-number request must have been made without quality_rating' );
+		$this->assertStringNotContainsString( 'quality_rating', $phone_url, 'Primary request must not include quality_rating' );
+
+		// quality_rating should be unknown since the optional request returned 403.
+		$this->assertEquals( 'unknown', $data['data']['quality_rating'], 'quality_rating should be unknown when optional request fails with 403' );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_live succeeds when the fields request returns a 403
+	 * with Facebook error code 200 (field-level permission error).
+	 *
+	 * In this scenario the token can send messages (whatsapp_business_messaging) but
+	 * lacks the permission to read display_phone_number / verified_name.  The handler
+	 * must fall back to the base endpoint, report success, and include a warning.
+	 */
+	public function test_ajax_test_whatsapp_live_succeeds_on_fields_403_with_fallback() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 403 with FB error code 200.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message' => '(#200) You do not have permission to access this field.',
+								'type'    => 'OAuthException',
+								'code'    => 200,
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 403,
+						'message' => 'Forbidden',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '111222333444555' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = 'test_limited_access_token';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 403 on the fields request.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $data['data']['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_live succeeds when the fields request returns HTTP 400
+	 * with Facebook error code 100 ("Tried accessing nonexisting field (display_phone_number)").
+	 *
+	 * The handler must fall back to the base phone number endpoint and report success with
+	 * a warning rather than surfacing the raw API error to the user.
+	 */
+	public function test_ajax_test_whatsapp_live_succeeds_on_fields_400_code_100_with_fallback() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+
+			// The fields=display_phone_number,verified_name request returns 400 with FB error code 100.
+			if ( false !== strpos( $url, 'fields=display_phone_number' ) ) {
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode(
+						array(
+							'error' => array(
+								'message'    => '(#100) Tried accessing nonexisting field (display_phone_number)',
+								'type'       => 'OAuthException',
+								'code'       => 100,
+								'fbtrace_id' => 'xyz100',
+							),
+						)
+					),
+					'response' => array(
+						'code'    => 400,
+						'message' => 'Bad Request',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+
+			// The base endpoint (no fields) succeeds.
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '333444555666777' ) ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']              = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']               = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']        = 'test_token_400_code_100';
+		$_POST['phone_number_id']     = '333444555666777';
+		$_POST['graph_api_version']   = 'v22.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'], $_POST['graph_api_version'] );
+
+		$data = json_decode( $output, true );
+
+		// The handler must succeed despite the 400 + code 100 on the fields request.
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Response must be success=true; got: ' . wp_json_encode( $data ) );
+
+		// A warning about limited field access should be included.
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Result should include a warning about limited field access' );
+		$this->assertStringContainsString( 'permission', strtolower( $data['data']['warning'] ), 'Warning should mention permission' );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_live uses stored credentials when access_token is blank.
+	 *
+	 * When the access token field is left empty (e.g. on page reload), the handler must fall
+	 * back to the encrypted token stored in the connection record so the test can succeed
+	 * without the user having to re-enter sensitive credentials.
+	 */
+	public function test_ajax_test_whatsapp_live_uses_stored_token_when_field_is_blank() {
+		// Save a WhatsApp connection with an encrypted access token.
+		$connection_data = array(
+			'name'            => 'Test WhatsApp',
+			'url'             => 'https://graph.facebook.com/v22.0',
+			'connection_type' => 'whatsapp',
+			'auth_type'       => 'none',
+			'api_key'         => 'stored_system_user_token',
+			'api_secret'      => '',
+			'phone_number_id' => '111222333444555',
+			'enabled'         => true,
+			'cache_ttl'       => 300,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertIsString( $connection_id, 'Connection should be saved successfully' );
+
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'display_phone_number' => '+1 555-000-0000',
+						'verified_name'        => 'Test Business',
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		// Submit with blank access_token but valid connection_id.
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = '';
+		$_POST['phone_number_id'] = '111222333444555';
+		$_POST['connection_id']   = $connection_id;
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'], $_POST['connection_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( isset( $data['success'] ) && $data['success'], 'Should succeed using stored token; got: ' . wp_json_encode( $data ) );
+	}
+
+	/**
+	 * Test that ajax_test_whatsapp_live returns an error when both access_token and connection_id are blank.
+	 */
+	public function test_ajax_test_whatsapp_live_errors_when_no_token_and_no_connection_id() {
+		$_POST['action']          = 'wp_mcp_ai_test_whatsapp_live';
+		$_POST['nonce']           = wp_create_nonce( 'wp_mcp_ai_test_whatsapp_live' );
+		$_POST['access_token']    = '';
+		$_POST['phone_number_id'] = '111222333444555';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_whatsapp_live();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_error calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['phone_number_id'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( isset( $data['success'] ) && $data['success'], 'Should fail when no token and no connection_id' );
+	}
+
+	/**
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.
@@ -1157,5 +1520,283 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 				)
 			),
 		);
+	}
+
+	/**
+	 * Test that generate Messenger token succeeds when Meta API returns a valid token.
+	 */
+	public function test_ajax_generate_messenger_token_success() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'access_token' => 'app_access_token_abc123', 'token_type' => 'bearer' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = '123456789';
+		$_POST['app_secret'] = 'test_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected: wp_send_json_success calls wp_die.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed when Meta API returns a token' );
+		$this->assertSame( 'app_access_token_abc123', $data['data']['access_token'], 'Should return the access token' );
+	}
+
+	/**
+	 * Test that generate Messenger token fails when App ID is missing.
+	 */
+	public function test_ajax_generate_messenger_token_fails_without_app_id() {
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = '';
+		$_POST['app_secret'] = 'test_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when App ID is missing' );
+	}
+
+	/**
+	 * Test that generate Messenger token fails when Meta API returns an error.
+	 */
+	public function test_ajax_generate_messenger_token_handles_api_error() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Invalid App ID', 'type' => 'OAuthException', 'code' => 101 ) ) ),
+				'response' => array( 'code' => 400, 'message' => 'Bad Request' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']     = 'wp_mcp_ai_generate_messenger_token';
+		$_POST['nonce']      = wp_create_nonce( 'wp_mcp_ai_generate_messenger_token' );
+		$_POST['app_id']     = 'bad_app_id';
+		$_POST['app_secret'] = 'bad_app_secret';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_generate_messenger_token();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['app_id'], $_POST['app_secret'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when Meta API returns an error' );
+	}
+
+	/**
+	 * Test that test Messenger live connection succeeds with valid page access token.
+	 */
+	public function test_ajax_test_messenger_live_success_with_page_token() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode(
+					array(
+						'id'        => '987654321',
+						'name'      => 'Test Business Page',
+						'category'  => 'Software',
+						'fan_count' => 1500,
+					)
+				),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = 'EAAtest_page_access_token';
+		$_POST['page_id']      = '987654321';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed with valid page access token' );
+		$this->assertSame( 'Test Business Page', $data['data']['page_name'], 'Should return the page name' );
+		$this->assertSame( '987654321', $data['data']['page_id'], 'Should return the page ID' );
+		$this->assertSame( 'Software', $data['data']['category'], 'Should return the page category' );
+	}
+
+	/**
+	 * Test that test Messenger live returns a warning when using an app token (no page_id).
+	 */
+	public function test_ajax_test_messenger_live_warns_on_app_token() {
+		$mock_callback = function ( $preempt, $parsed_args, $url ) {
+			if ( false === strpos( $url, 'graph.facebook.com' ) ) {
+				return $preempt;
+			}
+			return array(
+				'headers'  => array( 'content-type' => 'application/json' ),
+				'body'     => wp_json_encode( array( 'id' => '123|hash', 'name' => 'My App' ) ),
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = '123456789|app_access_token_hash';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertTrue( $data['success'], 'Should succeed with a valid app access token' );
+		$this->assertArrayHasKey( 'warning', $data['data'], 'Should include a warning for app access tokens' );
+	}
+
+	/**
+	 * Test that test Messenger live fails when no access token is provided.
+	 */
+	public function test_ajax_test_messenger_live_fails_without_access_token() {
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = '';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'v21.0';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$data = json_decode( $output, true );
+		$this->assertNotNull( $data, 'Response should be valid JSON' );
+		$this->assertFalse( $data['success'], 'Should fail when access token is missing' );
+	}
+
+	/**
+	 * Test that test Messenger live sanitizes and validates the api_version parameter.
+	 */
+	public function test_ajax_test_messenger_live_sanitizes_api_version() {
+		$captured_url = '';
+		$mock_callback = function ( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
+			if ( false !== strpos( $url, 'graph.facebook.com' ) ) {
+				$captured_url = $url;
+				return array(
+					'headers'  => array( 'content-type' => 'application/json' ),
+					'body'     => wp_json_encode( array( 'id' => '1', 'name' => 'Page' ) ),
+					'response' => array( 'code' => 200, 'message' => 'OK' ),
+					'cookies'  => array(),
+					'filename' => null,
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $mock_callback, 10, 3 );
+
+		$_POST['action']       = 'wp_mcp_ai_test_messenger_live';
+		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_test_messenger_live' );
+		$_POST['access_token'] = 'EAAtest_token';
+		$_POST['page_id']      = '';
+		$_POST['api_version']  = 'not-a-valid-version';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		ob_start();
+		try {
+			$admin->ajax_test_messenger_live();
+		} catch ( \WPDieException $e ) {
+			// Expected.
+		}
+		ob_get_clean();
+
+		remove_filter( 'pre_http_request', $mock_callback, 10 );
+		unset( $_POST['action'], $_POST['nonce'], $_POST['access_token'], $_POST['page_id'], $_POST['api_version'] );
+
+		$this->assertStringContainsString( 'v21.0', $captured_url, 'Should fall back to v21.0 for invalid api_version' );
 	}
 }

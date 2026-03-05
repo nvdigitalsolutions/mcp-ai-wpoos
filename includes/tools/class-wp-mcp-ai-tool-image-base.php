@@ -390,7 +390,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		$temp_file = wp_tempnam( $filename );
 
-		if ( false === file_put_contents( $temp_file, $data ) ) {
+		if ( false === file_put_contents( $temp_file, $data ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary image file.', 'mcp-ai-wpoos' ) );
 		}
 
@@ -615,7 +615,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Generate unique filename.
-		$extension = $this->get_extension_from_mime_type( $image_editor->mime_type );
+		$extension = $this->get_extension_from_mime_type( $image_editor->get_mime_type() );
 		$file_name = sprintf( '%s-%s-%s.%s', sanitize_title( $file_name ), sanitize_title( $operation ), gmdate( 'Ymd-His' ), $extension );
 
 		// Save to uploads directory.
@@ -636,7 +636,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Read file contents to re-upload with proper name.
-		$image_data = file_get_contents( $file_path );
+		$image_data = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 		if ( false === $image_data ) {
 			wp_delete_file( $file_path );
 			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read saved image file.', 'mcp-ai-wpoos' ) );
@@ -662,7 +662,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$title = $this->generate_attachment_title( $operation, $arguments );
 
 		$attachment = array(
-			'post_mime_type' => $image_editor->mime_type,
+			'post_mime_type' => $image_editor->get_mime_type(),
 			'post_title'     => $title,
 			'post_content'   => '',
 			'post_status'    => 'inherit',
@@ -696,7 +696,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			'file'          => $final_file_path,
 			'file_name'     => wp_basename( $final_file_path ),
 			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-			'mime_type'     => $image_editor->mime_type,
+			'mime_type'     => $image_editor->get_mime_type(),
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
 			'size'          => $image_editor->get_size(),
@@ -814,7 +814,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			return array();
 		}
 
-		$file_contents = file_get_contents( $file_path );
+		$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 		if ( false === $file_contents || '' === $file_contents ) {
 			return array();
@@ -1006,7 +1006,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		// Add .svg extension.
 		$temp_output_svg = $temp_output . '.svg';
-		rename( $temp_output, $temp_output_svg );
+		rename( $temp_output, $temp_output_svg ); // phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		$temp_output = $temp_output_svg;
 
 		// Prepare vectorization options - use sensible defaults for image tool output.
@@ -1052,7 +1052,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Read SVG file.
-		$svg_data = file_get_contents( $temp_output );
+		$svg_data = file_get_contents( $temp_output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 		if ( false === $svg_data || '' === $svg_data ) {
 			wp_delete_file( $temp_output );
 			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos' ) );

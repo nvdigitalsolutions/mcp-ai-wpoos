@@ -29,7 +29,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	public function test_handler_singleton() {
 		$handler1 = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 		$handler2 = WP_MCP_AI_Quick_Actions_Handler::get_instance();
-		
+
 		$this->assertSame( $handler1, $handler2, 'Handler should return the same instance' );
 	}
 
@@ -65,9 +65,9 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Elementor not available' );
 		}
 
-		$widget = new WP_MCP_AI_Elementor_Quick_Actions_Widget();
+		$widget   = new WP_MCP_AI_Elementor_Quick_Actions_Widget();
 		$keywords = $widget->get_keywords();
-		
+
 		$this->assertIsArray( $keywords );
 		$this->assertContains( 'ai', $keywords );
 		$this->assertContains( 'quick', $keywords );
@@ -94,7 +94,7 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_ajax_without_nonce_fails() {
 		$_POST['tool'] = 'test_tool';
-		
+
 		try {
 			$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 			$handler->handle_execute_action();
@@ -109,9 +109,9 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_ajax_without_tool_fails() {
 		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_quick_action' );
-		
+
 		$this->expectException( WPAjaxDieContinueException::class );
-		
+
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
 		$handler->handle_execute_action();
 	}
@@ -121,12 +121,12 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_file_upload_validation() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
-		
+
 		// Use reflection to access protected method
 		$reflection = new ReflectionClass( $handler );
-		$method = $reflection->getMethod( 'handle_file_upload' );
+		$method     = $reflection->getMethod( 'handle_file_upload' );
 		$method->setAccessible( true );
-		
+
 		$file = array(
 			'name'     => 'test.exe',
 			'type'     => 'application/x-executable',
@@ -134,9 +134,9 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 			'error'    => 0,
 			'size'     => 1024,
 		);
-		
+
 		$result = $method->invoke( $handler, $file );
-		
+
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'invalid_file_type', $result->get_error_code() );
 	}
@@ -146,12 +146,12 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_file_upload_size_limit() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
-		
+
 		// Use reflection to access protected method
 		$reflection = new ReflectionClass( $handler );
-		$method = $reflection->getMethod( 'handle_file_upload' );
+		$method     = $reflection->getMethod( 'handle_file_upload' );
 		$method->setAccessible( true );
-		
+
 		$file = array(
 			'name'     => 'test.jpg',
 			'type'     => 'image/jpeg',
@@ -159,9 +159,9 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 			'error'    => 0,
 			'size'     => 99999999, // Way over 10MB limit
 		);
-		
+
 		$result = $method->invoke( $handler, $file );
-		
+
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'file_too_large', $result->get_error_code() );
 	}
@@ -171,12 +171,12 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_is_image_tool() {
 		$handler = WP_MCP_AI_Quick_Actions_Handler::get_instance();
-		
+
 		// Use reflection to access protected method
 		$reflection = new ReflectionClass( $handler );
-		$method = $reflection->getMethod( 'is_image_tool' );
+		$method     = $reflection->getMethod( 'is_image_tool' );
 		$method->setAccessible( true );
-		
+
 		$this->assertTrue( $method->invoke( $handler, 'generate_image' ) );
 		$this->assertTrue( $method->invoke( $handler, 'analyze_image' ) );
 		$this->assertFalse( $method->invoke( $handler, 'create_post' ) );
@@ -187,11 +187,11 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 * Test that widget files are loaded correctly.
 	 */
 	public function test_widget_files_loaded() {
-		$widget_file = WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-quick-actions-widget.php';
+		$widget_file  = WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-quick-actions-widget.php';
 		$handler_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quick-actions-handler.php';
-		$css_file = WP_MCP_AI_PATH . 'assets/css/elementor-quick-actions-widget.css';
-		$js_file = WP_MCP_AI_PATH . 'assets/js/elementor-quick-actions-widget.js';
-		
+		$css_file     = WP_MCP_AI_PATH . 'assets/css/elementor-quick-actions-widget.css';
+		$js_file      = WP_MCP_AI_PATH . 'assets/js/elementor-quick-actions-widget.js';
+
 		$this->assertFileExists( $widget_file );
 		$this->assertFileExists( $handler_file );
 		$this->assertFileExists( $css_file );
@@ -203,8 +203,8 @@ class Test_Quick_Actions_Widget extends WP_UnitTestCase {
 	 */
 	public function test_documentation_exists() {
 		$proposal_file = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-proposal.md';
-		$usage_file = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-usage.md';
-		
+		$usage_file    = WP_MCP_AI_PATH . 'docs/ai-quick-actions-widget-usage.md';
+
 		$this->assertFileExists( $proposal_file );
 		$this->assertFileExists( $usage_file );
 	}

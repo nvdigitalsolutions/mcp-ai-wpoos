@@ -46,7 +46,7 @@ class Test_Workflow_Capability_Validation extends WP_UnitTestCase {
 		$this->command = new WP_MCP_AI_Slash_Command_Workflow();
 
 		// Create test users.
-		$this->admin_id = $this->factory->user->create(
+		$this->admin_id  = $this->factory->user->create(
 			array(
 				'role' => 'administrator',
 			)
@@ -152,7 +152,7 @@ class Test_Workflow_Capability_Validation extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'validate_workflow_capabilities' );
+		$method     = $reflection->getMethod( 'validate_workflow_capabilities' );
 		$method->setAccessible( true );
 
 		// Editor should fail - optimize-perf requires manage_options.
@@ -171,7 +171,7 @@ class Test_Workflow_Capability_Validation extends WP_UnitTestCase {
 	public function test_get_task_required_capability() {
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $this->command );
-		$method = $reflection->getMethod( 'get_task_required_capability' );
+		$method     = $reflection->getMethod( 'get_task_required_capability' );
 		$method->setAccessible( true );
 
 		// Test known capabilities.

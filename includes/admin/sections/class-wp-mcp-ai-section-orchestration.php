@@ -1179,23 +1179,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <div class="wp-mcp-ai-orchestration-section">
 <!-- View Tabs -->
 <nav class="wp-mcp-ai-orchestration__nav">
-<a href="<?php echo esc_url( $this->get_view_url( 'overview' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'overview' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'overview' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'overview' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-dashboard"></span>
 			<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'presets' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'presets' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'presets' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'presets' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-admin-generic"></span>
 			<?php esc_html_e( 'Presets', 'mcp-ai-wpoos' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'settings' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'settings' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-admin-settings"></span>
 			<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'thresholds' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'thresholds' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'mcp-ai-wpoos' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'tools' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'tools' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
 </a>
@@ -1204,7 +1204,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$enable_agent_roles = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
 			if ( $enable_agent_roles ) :
 				?>
-<a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'agents' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'agents' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-groups"></span>
 				<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
 </a>
@@ -1215,7 +1215,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$enable_professions = WP_MCP_AI_Settings_Registry::get_setting( 'enable_professions', true );
 			if ( $enable_professions ) :
 				?>
-<a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'professions' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'professions' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-businessperson"></span>
 				<?php esc_html_e( 'Professions', 'mcp-ai-wpoos' ); ?>
 </a>
@@ -1226,7 +1226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 			if ( $enable_multi_agent_teams ) :
 				?>
-<a href="<?php echo esc_url( $this->get_view_url( 'teams' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'teams' === $active_view ? 'active' : ''; ?>">
+<a href="<?php echo esc_url( $this->get_view_url( 'teams' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo esc_attr( 'teams' === $active_view ? 'active' : '' ); ?>">
 <span class="dashicons dashicons-networking"></span>
 				<?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?>
 </a>
@@ -4431,7 +4431,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				array(
 					'post_type'      => 'mcp_ai_profession',
 					'post_status'    => 'publish',
-					'posts_per_page' => 100,
+					'posts_per_page' => -1,
+					'nopaging'       => true,
 					'orderby'        => 'title',
 					'order'          => 'ASC',
 				)

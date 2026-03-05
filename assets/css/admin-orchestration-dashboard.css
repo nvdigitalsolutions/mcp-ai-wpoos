@@ -388,6 +388,37 @@
 	padding: 10px 0;
 }
 
+.memory-stats-header {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 15px;
+}
+
+.memory-stats-header .refresh-memory-stats {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.memory-stats-header .refresh-memory-stats .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.wp-mcp-ai-spin {
+	animation: wp-mcp-ai-spin-animation 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin-animation {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 .memory-stats-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -876,4 +907,239 @@
 	.workflow-actions .button {
 		font-size: 11px;
 	}
+}
+
+/* RAG Architecture Features */
+.rag-architecture-info {
+background: #fff;
+padding: 20px;
+margin: 20px 0;
+border-radius: 4px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.rag-architecture-info h4 {
+margin-top: 0;
+margin-bottom: 15px;
+font-size: 16px;
+color: #1d2327;
+}
+
+.rag-architecture-info > p {
+margin-bottom: 20px;
+color: #646970;
+}
+
+.rag-features-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+gap: 15px;
+margin-top: 20px;
+}
+
+.rag-feature-card {
+background: #f6f7f7;
+padding: 15px;
+border-radius: 4px;
+border: 1px solid #dcdcde;
+transition: all 0.2s ease;
+}
+
+.rag-feature-card:hover {
+border-color: #2271b1;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.rag-feature-card .feature-icon {
+font-size: 32px;
+margin-bottom: 10px;
+line-height: 1;
+}
+
+.rag-feature-card h5 {
+margin: 0 0 8px 0;
+font-size: 14px;
+color: #1d2327;
+}
+
+.rag-feature-card p {
+margin: 0;
+font-size: 13px;
+color: #646970;
+line-height: 1.5;
+}
+
+/* Memory Health Metrics */
+.memory-health-metrics {
+background: #fff;
+padding: 20px;
+margin: 20px 0;
+border-radius: 4px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.memory-health-metrics h4 {
+margin-top: 0;
+margin-bottom: 20px;
+font-size: 16px;
+color: #1d2327;
+}
+
+.health-score-display {
+display: flex;
+gap: 30px;
+align-items: center;
+margin-bottom: 25px;
+padding-bottom: 25px;
+border-bottom: 1px solid #dcdcde;
+}
+
+.health-score-circle {
+width: 120px;
+height: 120px;
+border-radius: 50%;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+border: 4px solid;
+flex-shrink: 0;
+}
+
+.health-score-circle.good {
+border-color: #00a32a;
+background: rgba(0, 163, 42, 0.05);
+}
+
+.health-score-circle.fair {
+border-color: #f0b849;
+background: rgba(240, 184, 73, 0.05);
+}
+
+.health-score-circle.poor {
+border-color: #d63638;
+background: rgba(214, 54, 56, 0.05);
+}
+
+.health-score-circle .score-value {
+font-size: 36px;
+font-weight: 600;
+line-height: 1;
+margin-bottom: 5px;
+}
+
+.health-score-circle.good .score-value {
+color: #00a32a;
+}
+
+.health-score-circle.fair .score-value {
+color: #f0b849;
+}
+
+.health-score-circle.poor .score-value {
+color: #d63638;
+}
+
+.health-score-circle .score-label {
+font-size: 12px;
+color: #646970;
+text-align: center;
+}
+
+.health-metrics-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+gap: 20px;
+flex: 1;
+}
+
+.metric-item {
+text-align: center;
+padding: 15px;
+background: #f6f7f7;
+border-radius: 4px;
+border: 1px solid #dcdcde;
+}
+
+.metric-item.warning {
+background: #fcf3cd;
+border-color: #f0b849;
+}
+
+.metric-item .metric-value {
+display: block;
+font-size: 24px;
+font-weight: 600;
+color: #1d2327;
+margin-bottom: 5px;
+line-height: 1;
+}
+
+.metric-item.warning .metric-value {
+color: #996800;
+}
+
+.metric-item .metric-label {
+display: block;
+font-size: 12px;
+color: #646970;
+}
+
+.health-insights {
+margin-top: 20px;
+}
+
+.health-insights h5 {
+margin: 0 0 15px 0;
+font-size: 14px;
+color: #1d2327;
+}
+
+.health-insights ul {
+margin: 0;
+padding: 0;
+list-style: none;
+}
+
+.health-insights li {
+padding: 12px 15px;
+margin-bottom: 10px;
+border-radius: 4px;
+border-left: 4px solid;
+font-size: 13px;
+line-height: 1.6;
+}
+
+.health-insights li.info {
+background: #f0f6fc;
+border-left-color: #2271b1;
+color: #1d2327;
+}
+
+.health-insights li.success {
+background: #ecf7ed;
+border-left-color: #00a32a;
+color: #1d2327;
+}
+
+.health-insights li.warning {
+background: #fcf3cd;
+border-left-color: #f0b849;
+color: #996800;
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+.rag-features-grid {
+grid-template-columns: 1fr;
+}
+
+.health-score-display {
+flex-direction: column;
+align-items: flex-start;
+}
+
+.health-metrics-grid {
+grid-template-columns: repeat(2, 1fr);
+}
 }

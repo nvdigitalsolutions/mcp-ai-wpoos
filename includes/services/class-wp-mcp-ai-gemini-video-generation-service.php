@@ -417,6 +417,12 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	protected function should_fallback_to_veo_2( $error ) {
 		$error_message = $error->get_error_message();
 
+		// Content policy violations should never trigger Veo 2 fallback.
+		// The same prompt will be rejected by all models; retrying wastes API quota.
+		if ( 'wp_mcp_ai_content_policy_violation' === $error->get_error_code() || $this->is_content_policy_error( $error_message ) ) {
+			return false;
+		}
+
 		// Quota/rate limit errors.
 		$quota_indicators = array(
 			'quota',
@@ -473,6 +479,26 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Check if an error message indicates a content policy violation.
+	 *
+	 * Content policy violations should not trigger Veo 2.0 fallback because
+	 * the same prompt will be rejected by all models.
+	 *
+	 * @param string $message Error message to check.
+	 * @return bool True if the error is a content policy violation.
+	 */
+	protected function is_content_policy_error( $message ) {
+		$content_policy_indicators = array(
+			'usage guidelines',
+			'does not comply',
+			'content policy',
+			'unsafe content',
+			'harmful content',
+		);
+		return $this->error_message_contains( $message, $content_policy_indicators );
 	}
 
 	/**
@@ -691,23 +717,32 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				$error_message     = $api_error_message;
 
 				// Provide more helpful error messages for common issues.
-				$quota_keywords = array( 'quota', 'rate limit' );
-				if ( 429 === $code || $this->error_message_contains( $api_error_message, $quota_keywords ) ) {
-					$error_code    = 'wp_mcp_ai_quota_exceeded';
+				if ( $this->is_content_policy_error( $api_error_message ) ) {
+					$error_code    = 'wp_mcp_ai_content_policy_violation';
 					$error_message = sprintf(
 						/* translators: %s: API error message */
-						__( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits. Details: %s', 'mcp-ai-wpoos' ),
+						__( 'The video prompt was rejected due to Gemini\'s content policy. Try rephrasing your prompt using neutral, design-focused language (e.g., "architectural visualization", "concept art", "design exploration"). Avoid terms that could be interpreted as harmful or explicit. Details: %s', 'mcp-ai-wpoos' ),
 						$api_error_message
 					);
 				} else {
-					$invalid_keywords = array( 'invalid', 'argument', 'parameter' );
-					if ( $this->error_message_contains( $api_error_message, $invalid_keywords ) ) {
-						$error_code    = 'wp_mcp_ai_invalid_arguments';
+					$quota_keywords = array( 'quota', 'rate limit' );
+					if ( 429 === $code || $this->error_message_contains( $api_error_message, $quota_keywords ) ) {
+						$error_code    = 'wp_mcp_ai_quota_exceeded';
 						$error_message = sprintf(
 							/* translators: %s: API error message */
-							__( 'Invalid video generation parameters: %s', 'mcp-ai-wpoos' ),
+							__( 'Video generation quota exceeded. Please try again later or upgrade your Gemini API plan for higher limits. Details: %s', 'mcp-ai-wpoos' ),
 							$api_error_message
 						);
+					} else {
+						$invalid_keywords = array( 'invalid', 'argument', 'parameter' );
+						if ( $this->error_message_contains( $api_error_message, $invalid_keywords ) ) {
+							$error_code    = 'wp_mcp_ai_invalid_arguments';
+							$error_message = sprintf(
+								/* translators: %s: API error message */
+								__( 'Invalid video generation parameters: %s', 'mcp-ai-wpoos' ),
+								$api_error_message
+							);
+						}
 					}
 				}
 			}
@@ -1851,7 +1886,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 				array(
 					'key'     => '_veo_job_id',
 					'value'   => $sanitized_job_id,
@@ -2092,7 +2127,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Update parent job with final result.
 		// Wrap result in async executor's expected format (compress_result structure).
 		// The async executor expects results to have 'compressed' and 'data' keys.
-		$serialized     = serialize( $result );
+		$serialized     = serialize( $result ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Serializing internal plugin data (not user input); value is not persisted to database.
 		$wrapped_result = array(
 			'compressed'    => false,
 			'data'          => $result,
@@ -2165,7 +2200,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			'post_type'      => 'attachment',
 			'post_status'    => 'inherit',
 			'posts_per_page' => 1,
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 				array(
 					'key'     => '_veo_job_id',
 					'value'   => sanitize_key( $job_id ),
@@ -2204,7 +2239,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				'post_status'    => 'inherit',
 				'post_mime_type' => 'video/mp4',
 				'posts_per_page' => 20,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter video generation jobs by status meta; no alternative index-based query available.
 					'relation' => 'OR',
 					array(
 						'key'     => '_veo_prompt',

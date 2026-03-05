@@ -423,7 +423,7 @@ class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface
 				return new WP_Error( 'wp_mcp_ai_unsafe_delete', __( 'Cannot delete this file for safety reasons.', 'mcp-ai-wpoos' ) );
 			}
 
-			$result = unlink( $filepath );
+			$result = unlink( $filepath ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 			if ( ! $result ) {
 				return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete tool file.', 'mcp-ai-wpoos' ) );

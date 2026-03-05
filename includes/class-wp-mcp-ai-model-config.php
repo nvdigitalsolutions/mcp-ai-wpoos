@@ -249,11 +249,109 @@ class WP_MCP_AI_Model_Config {
 	/**
 	 * Get default configurations for known models.
 	 *
+	 * Pulls from WP_MCP_AI_Model_Rate_Limits_CCT to ensure single source of truth.
+	 *
 	 * @return array Default model configurations.
 	 */
 	protected static function get_default_configs() {
-		return array(
-			// OpenAI Models (November 2025).
+		// Use Model Rate Limits CCT as the single source of truth for model data.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			return array();
+		}
+
+		// Get default model data from CCT.
+		$cct_models = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
+
+		if ( empty( $cct_models ) || ! is_array( $cct_models ) ) {
+			return array();
+		}
+
+		// Convert CCT format to Model Config format.
+		$configs = array();
+		foreach ( $cct_models as $model_data ) {
+			if ( ! isset( $model_data['model_name'] ) ) {
+				continue;
+			}
+
+			$model_id = $model_data['model_name'];
+
+			// Build display name from model name and notes.
+			$name = $model_id;
+			if ( isset( $model_data['notes'] ) && ! empty( $model_data['notes'] ) ) {
+				// Extract a short display name from notes.
+				// Notes follow the format: "Model Name - Description." or "First sentence. More details.".
+				if ( false !== strpos( $model_data['notes'], ' - ' ) ) {
+					// Preferred format: split on " - " separator.
+					$dash_parts = explode( ' - ', $model_data['notes'], 2 );
+					if ( ! empty( $dash_parts[0] ) ) {
+						$name = trim( $dash_parts[0] );
+					}
+				} elseif ( preg_match( '/^(.+?)\.\s+[^0-9]/', $model_data['notes'], $matches ) ) {
+					// Fallback: extract first sentence, splitting at a period followed
+					// by a space and a non-digit character to preserve version numbers
+					// like "GPT-5.2" while still splitting at sentence boundaries.
+					$name = trim( $matches[1] );
+				} else {
+					$name = rtrim( trim( $model_data['notes'] ), '.' );
+				}
+			}
+
+			// Convert CCT model data to config format.
+			$configs[ $model_id ] = array(
+				'name'                  => $name,
+				'provider'              => isset( $model_data['provider'] ) ? $model_data['provider'] : '',
+				'tpm'                   => isset( $model_data['tpm_limit'] ) ? absint( $model_data['tpm_limit'] ) : 0,
+				'rpm'                   => isset( $model_data['rpm_limit'] ) ? absint( $model_data['rpm_limit'] ) : 0,
+				'tpd'                   => 0, // Not in CCT, calculate from TPM if needed.
+				'rpd'                   => 0, // Not in CCT, calculate from RPM if needed.
+				'context_window'        => isset( $model_data['context_window'] ) ? absint( $model_data['context_window'] ) : 0,
+				'max_completion_tokens' => isset( $model_data['max_output_tokens'] ) ? absint( $model_data['max_output_tokens'] ) : 0,
+				'fallback_model'        => isset( $model_data['fallback_model'] ) ? sanitize_text_field( $model_data['fallback_model'] ) : '',
+				'cost_per_1k'           => isset( $model_data['cost_per_1k_input_tokens'] ) ? floatval( $model_data['cost_per_1k_input_tokens'] ) : 0.0,
+				'status'                => 'active',
+			);
+
+			// Calculate TPD and RPD from TPM and RPM (rough estimate: 24 hours * 60 minutes).
+			if ( isset( $model_data['tpm_limit'] ) && $model_data['tpm_limit'] > 0 ) {
+				$configs[ $model_id ]['tpd'] = absint( $model_data['tpm_limit'] ) * 60 * 24;
+			}
+			if ( isset( $model_data['rpm_limit'] ) && $model_data['rpm_limit'] > 0 ) {
+				$configs[ $model_id ]['rpd'] = absint( $model_data['rpm_limit'] ) * 60 * 24;
+			}
+		}
+
+		return $configs;
+	}
+
+	/**
+	 * Merge user configs with defaults.
+			// OpenAI Models (February 2026).
+			// GPT-5.3 series: Latest flagship agentic coding models - Feb 2026.
+			'gpt-5.3-codex'                                => array(
+				'name'           => 'GPT-5.3 Codex (Agentic Coding)',
+				'provider'       => 'openai',
+				'tpm'            => 150000,
+				'rpm'            => 1500,
+				'tpd'            => 15000000,
+				'rpd'            => 75000,
+				'context_window' => 400000,
+				'fallback_model' => 'gpt-5.2',
+				'cost_per_1k'    => 0.012,
+				'status'         => 'active',
+			),
+			'gpt-5.3-codex-spark'                          => array(
+				'name'           => 'GPT-5.3 Codex Spark (Ultra-Fast)',
+				'provider'       => 'openai',
+				'tpm'            => 200000,
+				'rpm'            => 2000,
+				'tpd'            => 20000000,
+				'rpd'            => 100000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-5.3-codex',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+
 			// GPT-5 series: Flagship models (multimodal - vision capable) - 2025.
 			'gpt-5.1'                                      => array(
 				'name'           => 'GPT-5.1 (Flagship)',
@@ -327,6 +425,18 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.006,
 				'status'         => 'active',
 			),
+			'gpt-5.1-codex'                                => array(
+				'name'           => 'GPT-5.1 Codex',
+				'provider'       => 'openai',
+				'tpm'            => 100000,
+				'rpm'            => 1000,
+				'tpd'            => 10000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'gpt-5.1-codex-max',
+				'cost_per_1k'    => 0.008,
+				'status'         => 'active',
+			),
 			// GPT-5.2 series: Flagship models with 400K context window - Dec 2025.
 			'gpt-5.2'                                      => array(
 				'name'           => 'GPT-5.2',
@@ -395,6 +505,19 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 800,
 				'tpd'            => 8000000,
 				'rpd'            => 40000,
+				'context_window' => 400000,
+				'fallback_model' => 'gpt-5.2',
+				'cost_per_1k'    => 0.00175,
+				'status'         => 'active',
+			),
+			// GPT-5.2 Codex (coding-optimized).
+			'gpt-5.2-codex'                                => array(
+				'name'           => 'GPT-5.2 Codex (Advanced Coding)',
+				'provider'       => 'openai',
+				'tpm'            => 100000,
+				'rpm'            => 1000,
+				'tpd'            => 10000000,
+				'rpd'            => 50000,
 				'context_window' => 400000,
 				'fallback_model' => 'gpt-5.2',
 				'cost_per_1k'    => 0.00175,
@@ -876,11 +999,39 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'deprecated',
 			),
 
-			// Anthropic Models (January 2026).
-			// Claude 4.5 series (multimodal - vision capable) - Latest.
+			// Anthropic Models (February 2026).
+			// Claude 4.6 series (multimodal - vision capable) - Latest.
+			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
+			// Context window: 1M tokens (beta) for 4.6 models.
+			'claude-opus-4-6'                              => array(
+				'name'           => 'Claude Opus 4.6 (Flagship)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-sonnet-4-6',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			'claude-sonnet-4-6'                            => array(
+				'name'           => 'Claude Sonnet 4.6 (Recommended)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 1000000,
+				'fallback_model' => 'claude-haiku-4-5',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+
+			// Claude 4.5 series (multimodal - vision capable) - Recent.
 			// Tier 2 Rate Limits: 1K RPM, 450K input TPM, 90K output TPM.
 			'claude-sonnet-4-5'                            => array(
-				'name'           => 'Claude Sonnet 4.5 (Recommended)',
+				'name'           => 'Claude Sonnet 4.5 (Sep 2025)',
 				'provider'       => 'anthropic',
 				'tpm'            => 450000,
 				'rpm'            => 1000,
@@ -904,14 +1055,14 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			'claude-opus-4-5'                              => array(
-				'name'           => 'Claude Opus 4.5 (Flagship)',
+				'name'           => 'Claude Opus 4.5 (Nov 2025)',
 				'provider'       => 'anthropic',
 				'tpm'            => 450000,
 				'rpm'            => 1000,
 				'tpd'            => 25000000,
 				'rpd'            => 50000,
 				'context_window' => 200000,
-				'fallback_model' => 'claude-sonnet-4-5',
+				'fallback_model' => 'claude-sonnet-4-6',
 				'cost_per_1k'    => 0.015,
 				'status'         => 'active',
 			),
@@ -988,8 +1139,85 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.015,
 				'status'         => 'active',
 			),
+			// Claude 4 series (multimodal - vision capable).
+			'claude-sonnet-4-20250514'                     => array(
+				'name'           => 'Claude Sonnet 4 (May 2025)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-sonnet-4-5',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+			'claude-opus-4-20250514'                       => array(
+				'name'           => 'Claude Opus 4 (May 2025)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-opus-4-5',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			// Claude 4.1 series (multimodal - vision capable).
+			'claude-opus-4-1-20250805'                     => array(
+				'name'           => 'Claude Opus 4.1 (Aug 2025)',
+				'provider'       => 'anthropic',
+				'tpm'            => 450000,
+				'rpm'            => 1000,
+				'tpd'            => 25000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-opus-4-5',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			// Claude 3.7 series (multimodal - vision capable).
+			'claude-3-7-sonnet-20250219'                   => array(
+				'name'           => 'Claude 3.7 Sonnet (Feb 2025)',
+				'provider'       => 'anthropic',
+				'tpm'            => 80000,
+				'rpm'            => 1000,
+				'tpd'            => 5000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-sonnet-4-5',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+			// Claude 3 Haiku (legacy).
+			'claude-3-haiku-20240307'                      => array(
+				'name'           => 'Claude 3 Haiku (Legacy)',
+				'provider'       => 'anthropic',
+				'tpm'            => 100000,
+				'rpm'            => 1000,
+				'tpd'            => 5500000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-haiku-4-5',
+				'cost_per_1k'    => 0.00025,
+				'status'         => 'active',
+			),
 
-			// Google Gemini Models (November 2025).
+			// Google Gemini Models (February 2026).
+			// Gemini 3.1 series (multimodal - latest flagship) - Preview.
+			'gemini-3.1-pro-preview'                       => array(
+				'name'           => 'Gemini 3.1 Pro (Preview)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 360,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 1000000,
+				'fallback_model' => 'gemini-2.5-pro',
+				'cost_per_1k'    => 0.002,
+				'status'         => 'active',
+			),
 			// Gemini 3 series (multimodal - latest generation) - Preview.
 			'gemini-3-pro-preview'                         => array(
 				'name'           => 'Gemini 3 Pro (Preview)',
@@ -998,9 +1226,21 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 360,
 				'tpd'            => 50000000,
 				'rpd'            => 1500,
-				'context_window' => 2000000,
+				'context_window' => 1000000,
 				'fallback_model' => 'gemini-2.5-pro',
 				'cost_per_1k'    => 0.001,
+				'status'         => 'active',
+			),
+			'gemini-3-flash-preview'                       => array(
+				'name'           => 'Gemini 3 Flash (Preview)',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 1000000,
+				'fallback_model' => 'gemini-2.5-flash',
+				'cost_per_1k'    => 0.0005,
 				'status'         => 'active',
 			),
 			// Gemini 2.5 series (multimodal - text, image, video) - Stable.
@@ -1011,9 +1251,9 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 360,
 				'tpd'            => 50000000,
 				'rpd'            => 1500,
-				'context_window' => 2000000,
+				'context_window' => 1000000,
 				'fallback_model' => 'gemini-2.5-flash',
-				'cost_per_1k'    => 0.003,
+				'cost_per_1k'    => 0.00125,
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash'                             => array(
@@ -1025,7 +1265,7 @@ class WP_MCP_AI_Model_Config {
 				'rpd'            => 1500,
 				'context_window' => 1000000,
 				'fallback_model' => null,
-				'cost_per_1k'    => 0.0001,
+				'cost_per_1k'    => 0.0003,
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash-lite'                        => array(

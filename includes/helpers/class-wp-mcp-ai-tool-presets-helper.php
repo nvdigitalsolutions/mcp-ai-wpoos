@@ -62,6 +62,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_assistant',
 					'probe_chat',
 					'query_mesh_intelligent',
+					// Workflow validation & monitoring (NEW).
+					'check_workflow_health',
+					'validate_workflow',
+					'visualize_workflow_metrics',
 				),
 			),
 
@@ -104,6 +108,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Content moderation.
 					'moderate_content',
 					'analyze_comment_content',
+					// Client-side AI operations (NEW).
+					'batch_manage_memory',
+					'client_analyze_sentiment',
+					'client_extract_entities',
+					'client_question_answering',
+					'client_semantic_search',
+					'client_summarize_text',
+					'client_translate_text',
+					'enable_reasoning_mode',
+					'manage_context_lifecycle',
+					'memory_audit_trail',
+					'prioritize_context',
+					'semantic_context_search',
+					'validate_reasoning_chain',
 				),
 			),
 
@@ -183,6 +201,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_openai_speech_validated',
 					'transcribe_openai_audio',
 					'transcribe_openai_audio_validated',
+					'analyze_image',
+					'extract_image_text',
+					'generate_cloudflareai_image',
 				),
 			),
 
@@ -371,6 +392,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'newsletter_get_subscriber_stats',
 					'newsletter_get_subscribers',
 					'newsletter_unsubscribe',
+					// Google Site Kit integration (NEW).
+					'sitekit_adsense',
+					'sitekit_analytics',
+					'sitekit_pagespeed',
+					'sitekit_search_console',
 				),
 			),
 
@@ -421,6 +447,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Remote.
 					'remote_wp_connection',
 					'query_remote_site',
+					'analyze_code_sequence',
+					'generate_mermaid',
 				),
 			),
 
@@ -477,6 +505,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'huggingface_dataset_get_parquet',
 					'huggingface_dataset_is_valid',
 					'huggingface_recommended_datasets',
+					'generate_chart',
 				),
 			),
 

@@ -85,28 +85,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<div class="wp-mcp-ai-token-manager">
 				<!-- View Tabs -->
 				<nav class="wp-mcp-ai-token-manager__nav">
-					<a href="<?php echo esc_url( $this->get_view_url( 'per_user' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_user' === $active_view ? 'active' : ''; ?>">
+					<a href="<?php echo esc_url( $this->get_view_url( 'per_user' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'per_user' === $active_view ? 'active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-users"></span>
 						<?php esc_html_e( 'Per User', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_view_url( 'per_tool' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_tool' === $active_view ? 'active' : ''; ?>">
+					<a href="<?php echo esc_url( $this->get_view_url( 'per_tool' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'per_tool' === $active_view ? 'active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-tools"></span>
 						<?php esc_html_e( 'Per Tool', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_view_url( 'per_site' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_site' === $active_view ? 'active' : ''; ?>">
+					<a href="<?php echo esc_url( $this->get_view_url( 'per_site' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'per_site' === $active_view ? 'active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Per Site', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_view_url( 'per_models' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_models' === $active_view ? 'active' : ''; ?>">
+					<a href="<?php echo esc_url( $this->get_view_url( 'per_models' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'per_models' === $active_view ? 'active' : '' ); ?>">
 						<span class="dashicons dashicons-admin-generic"></span>
 						<?php esc_html_e( 'Per Models', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_view_url( 'model_manager' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'model_manager' === $active_view ? 'active' : ''; ?>">
+					<a href="<?php echo esc_url( $this->get_view_url( 'model_manager' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'model_manager' === $active_view ? 'active' : '' ); ?>">
 						<span class="dashicons dashicons-update"></span>
 						<?php esc_html_e( 'Model Manager', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<?php if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) : ?>
-						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'analytics' === $active_view ? 'active' : ''; ?>">
+						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo esc_attr( 'analytics' === $active_view ? 'active' : '' ); ?>">
 							<span class="dashicons dashicons-chart-line"></span>
 							<?php esc_html_e( 'Analytics', 'mcp-ai-wpoos' ); ?>
 						</a>
@@ -1164,12 +1164,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
-			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_model_table() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in render_model_table() method.
+			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
 			// Output JavaScript for inline editing.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML and JavaScript.
-			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_javascript() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in render_javascript() method.
+			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 
 		/**
@@ -1698,15 +1698,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<div class="wp-mcp-ai-analytics">
 				<!-- Analytics Sub-Tabs -->
 				<nav class="wp-mcp-ai-analytics__nav" style="margin-bottom: 20px; border-bottom: 1px solid #ccc;">
-					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'trends' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'trends' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'trends' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'trends' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'trends' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo esc_attr( 'trends' === $analytics_tab ? 'active' : '' ); ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo esc_attr( 'trends' === $analytics_tab ? '2px solid #2271b1' : 'none' ); ?>; font-weight: <?php echo esc_attr( 'trends' === $analytics_tab ? 'bold' : 'normal' ); ?>;">
 						<span class="dashicons dashicons-chart-line"></span>
 						<?php esc_html_e( 'Trends', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'patterns' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'patterns' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'patterns' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'patterns' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'patterns' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo esc_attr( 'patterns' === $analytics_tab ? 'active' : '' ); ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo esc_attr( 'patterns' === $analytics_tab ? '2px solid #2271b1' : 'none' ); ?>; font-weight: <?php echo esc_attr( 'patterns' === $analytics_tab ? 'bold' : 'normal' ); ?>;">
 						<span class="dashicons dashicons-chart-bar"></span>
 						<?php esc_html_e( 'Patterns', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'anomalies' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'anomalies' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'anomalies' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'anomalies' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'anomalies' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo esc_attr( 'anomalies' === $analytics_tab ? 'active' : '' ); ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo esc_attr( 'anomalies' === $analytics_tab ? '2px solid #2271b1' : 'none' ); ?>; font-weight: <?php echo esc_attr( 'anomalies' === $analytics_tab ? 'bold' : 'normal' ); ?>;">
 						<span class="dashicons dashicons-warning"></span>
 						<?php esc_html_e( 'Anomalies', 'mcp-ai-wpoos' ); ?>
 					</a>

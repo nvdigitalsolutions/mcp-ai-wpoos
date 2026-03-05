@@ -53,19 +53,19 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'agent_id'        => array(
+				'agent_id'             => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
 				),
-				'context_id'      => array(
+				'context_id'           => array(
 					'type'        => 'string',
 					'description' => __( 'Specific context ID to retrieve (if known)', 'mcp-ai-wpoos' ),
 				),
-				'query'           => array(
+				'query'                => array(
 					'type'        => 'string',
 					'description' => __( 'Search query for semantic matching against stored contexts', 'mcp-ai-wpoos' ),
 				),
-				'filters'         => array(
+				'filters'              => array(
 					'type'        => 'object',
 					'description' => __( 'Optional filters to narrow results', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -100,17 +100,22 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'limit'           => array(
+				'limit'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'include_expired' => array(
+				'include_expired'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include expired contexts', 'mcp-ai-wpoos' ),
 					'default'     => false,
+				),
+				'include_vector_store' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to include Vector Store file metadata in the response when the assistant has a vector store configured. Defaults to true.', 'mcp-ai-wpoos' ),
+					'default'     => true,
 				),
 			),
 			'required'             => array( 'agent_id' ),
@@ -135,23 +140,38 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Sanitize inputs.
-		$agent_id        = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
-		$context_id      = isset( $arguments['context_id'] ) ? sanitize_text_field( $arguments['context_id'] ) : null;
-		$query           = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
-		$filters         = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
-		$limit           = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$include_expired = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : false;
+		$agent_id             = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$context_id           = isset( $arguments['context_id'] ) ? sanitize_text_field( $arguments['context_id'] ) : null;
+		$query                = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+		$filters              = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
+		$limit                = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$include_expired      = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : false;
+		$include_vector_store = isset( $arguments['include_vector_store'] ) ? (bool) $arguments['include_vector_store'] : true;
 
 		// Validate limit bounds.
 		$limit = max( 1, min( 50, $limit ) );
 
+		// Resolve vector store ID from assistant context when requested.
+		$vector_store_id = '';
+		if ( $include_vector_store && ! empty( $context['assistant_config']['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $context['assistant_config']['vector_store_id'] );
+		}
+
 		// If context_id is provided, retrieve specific context.
 		if ( $context_id ) {
-			return $this->retrieve_specific_context( $agent_id, $context_id, $include_expired );
+			$specific_result = $this->retrieve_specific_context( $agent_id, $context_id, $include_expired );
+			if ( ! empty( $vector_store_id ) ) {
+				$specific_result['vector_store_id'] = $vector_store_id;
+			}
+			return $specific_result;
 		}
 
 		// Otherwise, search all contexts for this agent.
-		return $this->search_contexts( $agent_id, $query, $filters, $limit, $include_expired );
+		$search_result = $this->search_contexts( $agent_id, $query, $filters, $limit, $include_expired );
+		if ( ! empty( $vector_store_id ) ) {
+			$search_result['vector_store_id'] = $vector_store_id;
+		}
+		return $search_result;
 	}
 
 	/**
@@ -163,8 +183,9 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Tool results.
 	 */
 	private function retrieve_specific_context( $agent_id, $context_id, $include_expired ) {
-		$transient_key  = 'mcp_ai_ctx_' . md5( $agent_id . '_' . $context_id );
-		$context_record = get_transient( $transient_key );
+		// Use enhanced retrieval with compression.
+		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
+		$context_record  = $context_manager->retrieve_context_compressed( $agent_id, $context_id, true );
 
 		if ( ! $context_record ) {
 			return array(
@@ -185,10 +206,17 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
+		// Calculate enhanced score.
+		$enhanced_score = $context_manager->calculate_enhanced_score( $context_record );
+
+		$result                   = $this->format_context_result( $context_record );
+		$result['enhanced_score'] = round( $enhanced_score, 3 );
+		$result['access_count']   = isset( $context_record['access_count'] ) ? $context_record['access_count'] : 0;
+
 		return array(
 			'success'  => true,
 			'message'  => __( 'Context retrieved successfully.', 'mcp-ai-wpoos' ),
-			'contexts' => array( $this->format_context_result( $context_record ) ),
+			'contexts' => array( $result ),
 			'count'    => 1,
 		);
 	}

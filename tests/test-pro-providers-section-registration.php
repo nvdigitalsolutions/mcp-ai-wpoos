@@ -15,7 +15,7 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 
 	/**
 	 * Test that Pro Providers section is NOT registered as standalone when Pro is active.
-	 * 
+	 *
 	 * The Pro Providers section should be instantiable from the container but NOT
 	 * registered in the Settings Registry. This prevents duplicate rendering while
 	 * still allowing the base Providers section to merge its subtabs.
@@ -53,7 +53,7 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 
 	/**
 	 * Test that Pro Providers subtabs are merged into base Providers section.
-	 * 
+	 *
 	 * The Pro Providers section should not appear as a standalone section.
 	 * Instead, its subtabs (like 'embedded') should be merged into the base
 	 * Providers section's subtab navigation.
@@ -75,7 +75,7 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 			$found_pro_providers,
 			'Pro Providers section should NOT be found as standalone section (subtabs are merged into base Providers)'
 		);
-		
+
 		// Verify the base Providers section exists.
 		$base_providers_found = false;
 		foreach ( $providers_sections as $section ) {
@@ -84,7 +84,7 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 				break;
 			}
 		}
-		
+
 		$this->assertTrue(
 			$base_providers_found,
 			'Base Providers section should be found in providers tab'
@@ -148,7 +148,7 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 
 	/**
 	 * Test that providers tab has only one section (base Providers).
-	 * 
+	 *
 	 * With the Pro addon active, the providers tab should have only the base
 	 * Providers section. The Pro Providers subtabs are merged into it rather
 	 * than appearing as a separate section.
@@ -159,14 +159,14 @@ class WP_MCP_AI_Pro_Providers_Section_Registration_Test extends WP_UnitTestCase 
 
 		// Count sections with tab='providers'.
 		$providers_tab_count = count( $providers_sections );
-		
+
 		// Should have exactly 1 section (base Providers with merged Pro subtabs).
 		$this->assertEquals(
 			1,
 			$providers_tab_count,
 			'Providers tab should have exactly 1 section (Pro subtabs are merged, not standalone)'
 		);
-		
+
 		// Verify it's the base Providers section.
 		$first_section = reset( $providers_sections );
 		$this->assertEquals(

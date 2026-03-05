@@ -140,7 +140,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// Test missing required parameter.
-		$args = array();
+		$args    = array();
 		$context = array( 'user_id' => $user_id );
 
 		$result = $this->toolkit_manager->handle_video_subtitle( $args, $context );
@@ -199,7 +199,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 	 * Test command parameter documentation.
 	 */
 	public function test_command_parameter_documentation() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		// Check upsell-suggest has proper documentation.
@@ -221,7 +221,7 @@ class Test_Slash_Commands_Pro_Toolkit extends WP_UnitTestCase {
 	 * Test command capability requirements.
 	 */
 	public function test_command_capability_requirements() {
-		$handler = wp_mcp_ai_get_slash_command_handler();
+		$handler  = wp_mcp_ai_get_slash_command_handler();
 		$commands = $handler->get_registered_commands();
 
 		// E-commerce commands should require manage_woocommerce.

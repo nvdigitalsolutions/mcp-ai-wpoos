@@ -251,7 +251,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				'posts_per_page' => $limit,
 				'post_status'    => 'inherit',
 				'fields'         => 'ids',
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter media by optimization status meta; no alternative index-based query available.
 					array(
 						'key'     => '_wp_mcp_ai_compressed',
 						'compare' => 'NOT EXISTS',

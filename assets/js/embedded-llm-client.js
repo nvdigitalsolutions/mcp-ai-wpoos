@@ -24,21 +24,28 @@
 	 * Decode HTML entities in a string
 	 * 
 	 * This is needed because WordPress sanitizes meta fields with wp_kses_post()
-	 * which converts characters like & to &amp;. When passed via wp_json_encode()
+	 * which may preserve allowed HTML tags (e.g. &lt;p&gt;, &lt;strong&gt;) and
+	 * also encodes characters like &amp; to &amp;amp;. When passed via wp_json_encode()
 	 * to JavaScript, these HTML entities need to be decoded back to plain text.
+	 *
+	 * Uses a div element rather than a textarea because setting innerHTML on a
+	 * detached textarea does not reliably update textarea.value when the string
+	 * contains real HTML tags — it returns an empty string in Chrome and other
+	 * browsers. A div's textContent correctly strips tags and decodes entities.
 	 * 
-	 * @param {string} text - Text with potential HTML entities
-	 * @return {string} Decoded text
+	 * @param {string} text - Text with potential HTML entities or tags
+	 * @return {string} Decoded plain text
 	 */
 	function decodeHtmlEntities(text) {
 		if (!text || typeof text !== 'string') {
 			return text;
 		}
 		
-		// Create a temporary DOM element to leverage browser's built-in HTML entity decoding
-		const textarea = document.createElement('textarea');
-		textarea.innerHTML = text;
-		return textarea.value;
+		// Use a div so that both HTML entities (&amp; → &) and allowed HTML tags
+		// (<p>text</p> → text) are resolved to plain text via textContent.
+		const div = document.createElement('div');
+		div.innerHTML = text;
+		return div.textContent || div.innerText || text;
 	}
 
 	/**
@@ -109,6 +116,30 @@
 			recommended: true,
 			functionCalling: true
 		},
+		'Hermes-3-Llama-3.1-8B-q4f16_1-MLC': {
+			name: 'Hermes 3 Llama 3.1 8B',
+			size: '~4.9GB',
+			description: 'Updated Hermes 3 with improved function calling on Llama 3.1',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: true
+		},
+		'DeepSeek-R1-Distill-Llama-8B-q4f16_1-MLC': {
+			name: 'DeepSeek R1 Distill Llama 8B',
+			size: '~5GB',
+			description: 'DeepSeek R1 reasoning model distilled to Llama 8B for advanced reasoning tasks',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
+		'DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC': {
+			name: 'DeepSeek R1 Distill Qwen 7B',
+			size: '~5.1GB',
+			description: 'DeepSeek R1 reasoning model distilled to Qwen 7B for advanced reasoning tasks',
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
 		'Qwen2.5-7B-Instruct-q4f16_1-MLC': {
 			name: 'Qwen2.5 7B Instruct',
 			size: '~4.5GB',
@@ -125,11 +156,27 @@
 			recommended: false,
 			functionCalling: true
 		},
+		'gemma-2-2b-it-q4f16_1-MLC': {
+			name: 'Gemma 2 2B Instruct',
+			size: '~1.9GB',
+			description: "Google's Gemma 2 2B instruction-tuned model, efficient and capable",
+			contextWindow: 4096,
+			recommended: false,
+			functionCalling: false
+		},
 		'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
 			name: 'Llama 3.2 3B Instruct',
 			size: '~2GB',
 			description: 'Balanced model for general chat (does not support function calling)',
 			contextWindow: 131072,
+			recommended: false,
+			functionCalling: false
+		},
+		'SmolLM2-1.7B-Instruct-q4f16_1-MLC': {
+			name: 'SmolLM2 1.7B Instruct',
+			size: '~1.8GB',
+			description: "HuggingFace's efficient SmolLM2 model, ideal for resource-constrained devices",
+			contextWindow: 4096,
 			recommended: false,
 			functionCalling: false
 		},
@@ -470,6 +517,13 @@
 			}
 
 			try {
+				// Inject stored system prompt if caller did not include one, matching the
+				// behaviour of generateStreamingCompletion so both paths behave consistently.
+				const systemMessage = messages.find(msg => msg.role === 'system');
+				if (!systemMessage && this.systemPrompt) {
+					messages = [{ role: 'system', content: this.systemPrompt }].concat(messages);
+				}
+
 				const response = await this.currentEngine.chat.completions.create({
 					messages: messages,
 					temperature: options.temperature || 0.7,
@@ -516,8 +570,8 @@
 					hasTools: !!(options.tools && options.tools.length > 0)
 				});
 				
-				// Diagnostic: Log system prompt configuration
-				const systemMessage = messages.find(msg => msg.role === 'system');
+				// Diagnostic: Log system prompt configuration; inject stored prompt if caller omitted it.
+				let systemMessage = messages.find(msg => msg.role === 'system');
 				if (systemMessage) {
 					console.log('[NV oOS Embedded Client] System prompt included in request (OpenAI-compatible):', {
 						hasSystemPrompt: true,
@@ -525,6 +579,16 @@
 						systemPromptPreview: systemMessage.content.length > 200 ? systemMessage.content.substring(0, 200) + '...' : systemMessage.content,
 						instanceId: this.instanceId,
 						note: 'System prompt must be sent with every request per OpenAI API pattern'
+					});
+				} else if (this.systemPrompt) {
+					// Caller did not inject a system message but this client has a stored system prompt.
+					// Inject it here as a safety net so it is always sent with every request.
+					messages = [{ role: 'system', content: this.systemPrompt }].concat(messages);
+					systemMessage = messages[0];
+					console.log('[NV oOS Embedded Client] Injected stored system prompt (fallback):', {
+						instanceId: this.instanceId,
+						systemPromptLength: this.systemPrompt.length,
+						systemPromptPreview: this.systemPrompt.length > 200 ? this.systemPrompt.substring(0, 200) + '...' : this.systemPrompt
 					});
 				} else {
 					console.warn('[NV oOS Embedded Client] WARNING: No system prompt in messages for instance:', {

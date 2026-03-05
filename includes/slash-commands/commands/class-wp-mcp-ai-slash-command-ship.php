@@ -54,13 +54,13 @@ class WP_MCP_AI_Slash_Command_Ship {
 		}
 
 		// Parse flags.
-		$dry_run         = isset( $flags['dry-run'] ) || isset( $flags['n'] );
-		$skip_checks     = isset( $flags['skip-checks'] ) || isset( $flags['s'] );
-		$schedule_date   = isset( $flags['schedule'] ) ? sanitize_text_field( $flags['schedule'] ) : null;
-		$skip_seo        = isset( $flags['skip-seo'] );
-		$skip_images     = isset( $flags['skip-images'] );
-		$skip_links      = isset( $flags['skip-links'] );
-		$auto_publish    = isset( $flags['publish'] ) || isset( $flags['p'] );
+		$dry_run       = isset( $flags['dry-run'] ) || isset( $flags['n'] );
+		$skip_checks   = isset( $flags['skip-checks'] ) || isset( $flags['s'] );
+		$schedule_date = isset( $flags['schedule'] ) ? sanitize_text_field( $flags['schedule'] ) : null;
+		$skip_seo      = isset( $flags['skip-seo'] );
+		$skip_images   = isset( $flags['skip-images'] );
+		$skip_links    = isset( $flags['skip-links'] );
+		$auto_publish  = isset( $flags['publish'] ) || isset( $flags['p'] );
 
 		// If no post IDs provided, find posts ready to ship.
 		if ( empty( $post_ids ) ) {
@@ -234,8 +234,8 @@ class WP_MCP_AI_Slash_Command_Ship {
 		}
 
 		// Word count.
-		$content_text            = wp_strip_all_tags( $post->post_content );
-		$checks['word_count']    = str_word_count( $content_text );
+		$content_text         = wp_strip_all_tags( $post->post_content );
+		$checks['word_count'] = str_word_count( $content_text );
 
 		if ( $checks['word_count'] < 300 ) {
 			$checks['issues'][] = sprintf(
@@ -306,11 +306,11 @@ class WP_MCP_AI_Slash_Command_Ship {
 	 */
 	private function run_quality_checks( $post ) {
 		$checks = array(
-			'readability_score'   => 0,
-			'has_headings'        => false,
-			'has_images'          => false,
-			'sentence_length_ok'  => true,
-			'issues'              => array(),
+			'readability_score'  => 0,
+			'has_headings'       => false,
+			'has_images'         => false,
+			'sentence_length_ok' => true,
+			'issues'             => array(),
 		);
 
 		$content = $post->post_content;
@@ -330,16 +330,16 @@ class WP_MCP_AI_Slash_Command_Ship {
 		}
 
 		// Simple readability check (Flesch Reading Ease approximation).
-		$text            = wp_strip_all_tags( $content );
-		$word_count      = str_word_count( $text );
-		$sentence_count  = preg_match_all( '/[.!?]+/', $text, $matches );
-		$sentence_count  = max( 1, $sentence_count ); // Avoid division by zero.
+		$text           = wp_strip_all_tags( $content );
+		$word_count     = str_word_count( $text );
+		$sentence_count = preg_match_all( '/[.!?]+/', $text, $matches );
+		$sentence_count = max( 1, $sentence_count ); // Avoid division by zero.
 
 		$avg_sentence_length = $word_count / $sentence_count;
 
 		if ( $avg_sentence_length > 20 ) {
 			$checks['sentence_length_ok'] = false;
-			$checks['issues'][] = sprintf(
+			$checks['issues'][]           = sprintf(
 				/* translators: %d: average sentence length */
 				__( 'Sentences too long (avg %d words, keep under 20 for readability)', 'mcp-ai-wpoos' ),
 				round( $avg_sentence_length )
@@ -370,10 +370,10 @@ class WP_MCP_AI_Slash_Command_Ship {
 		// Check featured image alt text.
 		$thumbnail_id = get_post_thumbnail_id( $post->ID );
 		if ( $thumbnail_id ) {
-			$checks['images_checked']++;
+			++$checks['images_checked'];
 			$alt = get_post_meta( $thumbnail_id, '_wp_attachment_image_alt', true );
 			if ( empty( $alt ) ) {
-				$checks['missing_alt_text']++;
+				++$checks['missing_alt_text'];
 				$checks['issues'][] = __( 'Featured image missing alt text', 'mcp-ai-wpoos' );
 			}
 		}
@@ -382,10 +382,10 @@ class WP_MCP_AI_Slash_Command_Ship {
 		preg_match_all( '/<img[^>]+class="[^"]*wp-image-(\d+)[^"]*"[^>]*>/i', $post->post_content, $matches );
 		if ( ! empty( $matches[1] ) ) {
 			foreach ( $matches[1] as $image_id ) {
-				$checks['images_checked']++;
+				++$checks['images_checked'];
 				$alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
 				if ( empty( $alt ) ) {
-					$checks['missing_alt_text']++;
+					++$checks['missing_alt_text'];
 				}
 			}
 		}
@@ -411,9 +411,9 @@ class WP_MCP_AI_Slash_Command_Ship {
 	 */
 	private function suggest_internal_links( $post ) {
 		$suggestions = array(
-			'found_links'       => 0,
-			'suggested_links'   => array(),
-			'issues'            => array(),
+			'found_links'     => 0,
+			'suggested_links' => array(),
+			'issues'          => array(),
 		);
 
 		// Count existing internal links.
@@ -504,9 +504,9 @@ class WP_MCP_AI_Slash_Command_Ship {
 		}
 
 		return array(
-			'score'      => $percentage,
-			'status'     => $status,
-			'issues'     => $all_issues,
+			'score'        => $percentage,
+			'status'       => $status,
+			'issues'       => $all_issues,
 			'total_issues' => count( $all_issues ),
 		);
 	}
@@ -528,7 +528,7 @@ class WP_MCP_AI_Slash_Command_Ship {
 			$schedule_date = strtotime( $options['schedule'] );
 			if ( $schedule_date && $schedule_date > time() ) {
 				$post_data['post_status'] = 'future';
-				$post_data['post_date']   = date( 'Y-m-d H:i:s', $schedule_date );
+				$post_data['post_date']   = gmdate( 'Y-m-d H:i:s', $schedule_date );
 			} else {
 				return new WP_Error(
 					'invalid_schedule_date',
