@@ -181,7 +181,7 @@ class WP_MCP_AI_Optional_Components {
 
 		// Extract ZIP file.
 		$result = unzip_file( $temp_file, $target_dir );
-		unlink( $temp_file );
+		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( is_wp_error( $result ) ) {
 			self::update_status( 'vectorizer', 'error', $result->get_error_message() );
@@ -229,7 +229,7 @@ class WP_MCP_AI_Optional_Components {
 
 		// Extract ZIP file.
 		$result = unzip_file( $temp_file, $target_dir );
-		unlink( $temp_file );
+		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( is_wp_error( $result ) ) {
 			self::update_status( 'knowledge_base', 'error', $result->get_error_message() );

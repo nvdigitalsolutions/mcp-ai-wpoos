@@ -251,6 +251,7 @@ class WP_MCP_AI_Performance_Benchmark {
 			return;
 		}
 
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- External Query Monitor hook uses slash-separated naming convention.
 		do_action(
 			'qm/debug',
 			array(

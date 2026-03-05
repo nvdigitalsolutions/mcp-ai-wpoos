@@ -98,6 +98,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			. '.wp-mcp-ai-cron-manager__status--recurring{background:#e5f2ff;color:#0c5ba0;}'
 			. '.wp-mcp-ai-cron-manager__status--oneoff{background:#fef7e0;color:#8b6c00;}';
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
 		wp_register_style( 'wp-mcp-ai-cron-manager-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-cron-manager-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-cron-manager-inline', $inline_css );

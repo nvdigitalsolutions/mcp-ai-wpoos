@@ -650,9 +650,9 @@ class WP_MCP_AI_REST_Validator {
 		if ( ! empty( $options['system_prompt'] ) ) {
 			$current_date_context = sprintf(
 				"\n\n---\n\n**Current Context Information:**\n- Current Date: %s\n- Current Year: %s\n- Current Time: %s UTC",
-				gmdate( 'l, F j, Y' ),  // e.g., "Monday, February 3, 2026"
-				gmdate( 'Y' ),           // e.g., "2026"
-				gmdate( 'H:i:s' )       // e.g., "14:30:45"
+				gmdate( 'l, F j, Y' ),  // e.g., "Monday, February 3, 2026".
+				gmdate( 'Y' ),           // e.g., "2026".
+				gmdate( 'H:i:s' )       // e.g., "14:30:45".
 			);
 
 			/**

@@ -148,16 +148,16 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 			<!-- Tabs -->
 			<h2 class="nav-tab-wrapper">
-				<a href="?page=mcp-ai-slash-commands&tab=commands" class="nav-tab <?php echo 'commands' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<a href="?page=mcp-ai-slash-commands&tab=commands" class="nav-tab <?php echo esc_attr( 'commands' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 					<?php esc_html_e( 'Commands', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="?page=mcp-ai-slash-commands&tab=workflows" class="nav-tab <?php echo 'workflows' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<a href="?page=mcp-ai-slash-commands&tab=workflows" class="nav-tab <?php echo esc_attr( 'workflows' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 					<?php esc_html_e( 'Workflows', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="?page=mcp-ai-slash-commands&tab=history" class="nav-tab <?php echo 'history' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<a href="?page=mcp-ai-slash-commands&tab=history" class="nav-tab <?php echo esc_attr( 'history' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 					<?php esc_html_e( 'Execution History', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="?page=mcp-ai-slash-commands&tab=test" class="nav-tab <?php echo 'test' === $active_tab ? 'nav-tab-active' : ''; ?>">
+				<a href="?page=mcp-ai-slash-commands&tab=test" class="nav-tab <?php echo esc_attr( 'test' === $active_tab ? 'nav-tab-active' : '' ); ?>">
 					<?php esc_html_e( 'Test Commands', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</h2>
@@ -268,7 +268,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 */
 	private function render_commands_table( $commands, $compact = false ) {
 		?>
-		<table class="wp-list-table widefat fixed striped <?php echo $compact ? 'compact-view' : ''; ?>">
+		<table class="wp-list-table widefat fixed striped <?php echo esc_attr( $compact ? 'compact-view' : '' ); ?>">
 			<thead>
 				<tr>
 					<th><?php esc_html_e( 'Command', 'mcp-ai-wpoos' ); ?></th>

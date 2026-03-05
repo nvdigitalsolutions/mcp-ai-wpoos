@@ -1186,7 +1186,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 					// Handle both taxonomy-based (pa_color) and custom (color) attributes.
 					if ( $product_attr_name === $attr_name_sanitized ||
-						$product_attr_name === wc_attribute_taxonomy_name( $attr_name_sanitized ) ||
+						wc_attribute_taxonomy_name( $attr_name_sanitized ) === $product_attr_name ||
 						wc_sanitize_taxonomy_name( $product_attr_name ) === $attr_name_sanitized ) {
 
 						// For taxonomy-based attributes, use full taxonomy name.

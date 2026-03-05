@@ -350,12 +350,12 @@ class WP_MCP_AI_Code_Optimizer {
 
 		// Use php -l for syntax checking.
 		$temp_file = tempnam( sys_get_temp_dir(), 'php_syntax_' );
-		file_put_contents( $temp_file, $code );
+		file_put_contents( $temp_file, $code ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
 		$result          = $process_service->run_silent( array( 'php', '-l', $temp_file ), array( 'timeout' => 15 ) );
 
-		unlink( $temp_file );
+		unlink( $temp_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		$valid  = $result['success'];
 		$errors = $valid ? array() : array_values(

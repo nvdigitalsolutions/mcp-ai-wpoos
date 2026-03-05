@@ -113,9 +113,11 @@ class WP_MCP_AI_Pro_Tool_Get_OneDrive_File implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( '' !== $item_id ) {
-			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/items/' . $item_id;
+			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/items/' . rawurlencode( $item_id );
 		} else {
-			$endpoint = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $file_path;
+			// URL-encode each path segment individually, preserving '/' as the separator.
+			$encoded_path = implode( '/', array_map( 'rawurlencode', explode( '/', $file_path ) ) );
+			$endpoint     = 'https://graph.microsoft.com/v1.0/me/drive/root:/' . $encoded_path;
 		}
 
 		WP_MCP_AI_Logger::log_event(

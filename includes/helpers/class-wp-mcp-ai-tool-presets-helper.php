@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_assistant',
 					'probe_chat',
 					'query_mesh_intelligent',
-					// Workflow validation & monitoring (NEW)
+					// Workflow validation & monitoring (NEW).
 					'check_workflow_health',
 					'validate_workflow',
 					'visualize_workflow_metrics',
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Content moderation.
 					'moderate_content',
 					'analyze_comment_content',
-					// Client-side AI operations (NEW)
+					// Client-side AI operations (NEW).
 					'batch_manage_memory',
 					'client_analyze_sentiment',
 					'client_extract_entities',
@@ -392,7 +392,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'newsletter_get_subscriber_stats',
 					'newsletter_get_subscribers',
 					'newsletter_unsubscribe',
-					// Google Site Kit integration (NEW)
+					// Google Site Kit integration (NEW).
 					'sitekit_adsense',
 					'sitekit_analytics',
 					'sitekit_pagespeed',

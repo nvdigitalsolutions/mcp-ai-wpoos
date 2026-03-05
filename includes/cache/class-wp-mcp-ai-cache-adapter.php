@@ -134,7 +134,7 @@ class WP_MCP_AI_Cache_Adapter {
 	 * @return bool True if cache backend is available.
 	 */
 	public function is_available() {
-		return $this->backend !== 'none';
+		return 'none' !== $this->backend;
 	}
 
 	/**
@@ -151,11 +151,11 @@ class WP_MCP_AI_Cache_Adapter {
 		switch ( $this->backend ) {
 			case 'redis':
 				$value = $this->redis->get( $full_key );
-				return $value !== false ? maybe_unserialize( $value ) : false;
+				return false !== $value ? maybe_unserialize( $value ) : false;
 
 			case 'memcached':
 				$value = $this->memcached->get( $full_key );
-				return $value !== false ? $value : false;
+				return false !== $value ? $value : false;
 
 			default:
 				return false;
@@ -354,7 +354,7 @@ class WP_MCP_AI_Cache_Adapter {
  *
  * @return WP_MCP_AI_Cache_Adapter Cache adapter instance.
  */
-function wp_mcp_ai_get_cache_adapter() {
+function wp_mcp_ai_get_cache_adapter() { // phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed -- Helper function in same file for convenience.
 	static $adapter = null;
 
 	if ( null === $adapter ) {

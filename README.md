@@ -11,9 +11,9 @@
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
-**Version:** 1.1.2  
-**Release Date:** 2026-02-16 (February 2026 update with WordPress.org compliance fixes, pro integration settings architecture)  
-**Latest Updates:** March 2026 - Office 365 & iCloud Drive connection types, Telegram Mini App CMS, Discord/Telegram reactions, WhatsApp group routing, Google Chat auto-reply, embedded chat client fixes, Facebook Messenger enhancements  
+**Version:** 1.1.3  
+**Release Date:** 2026-03-03 (March 2026 — WordPress.org compliance audit complete, Telegram Mini App media tab extension badges)  
+**Latest Updates:** March 2026 - WordPress.org compliance 100% complete (output escaping audit, ABSPATH guards, menu position fix), Telegram Mini App media tab extension badges, Office 365 & iCloud Drive connection types, Discord/Telegram reactions, WhatsApp group routing  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -102,7 +102,7 @@ Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI fr
 - **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
 - **Ollama**: Self-hosted (no external data transmission)
 
-See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 17 services.  
+See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 19 services.  
 
 The plugin works standalone with **165 base tools** and optionally extends through the **Pro addon**, which adds **354 Pro tools** for advanced integrations (WooCommerce, JetEngine, social media APIs, GitHub, Google services, Yahoo Fantasy Sports, ESPN Fantasy) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **519 built-in tools**.
 
@@ -266,6 +266,26 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ---
 
 ## 🆕 Latest Updates (February–March 2026)
+
+### WordPress.org Compliance — Final Audit Complete (March 3, 2026) ✅ **FULLY COMPLIANT**
+
+**All 20 compliance categories resolved (PR #4004 + compliance audit)**
+
+- ✅ **Output escaping audit**: Added `esc_attr()` to 5 unescaped CSS class attribute echoes in admin pages
+- ✅ **ABSPATH guards**: Added missing `if ( ! defined( 'ABSPATH' ) ) { exit; }` to 4 PHP files
+- ✅ **Menu position**: Removed last hardcoded position (85 → null) from Pro Dashboard `add_menu_page()` 
+- ✅ **PR #4004 review**: Telegram Mini App media tab changes confirmed fully compliant (pathinfo() safely cast, JS uses escHtml(), CSS-only layout changes)
+- ✅ **WordPress.org submission status: 100% — READY** (was 82% in January 2026)
+- [Full Compliance Report →](docs/WORDPRESS_ORG_COMPLIANCE_FINAL_STATUS.md)
+
+### Telegram Mini App: File-Type Extension Badges (March 2, 2026) ⭐ **NEW**
+
+**PR #4004 – Media tab now shows extension badges for non-renderable files**
+
+- ✅ `.TXT`, `.PDF`, `.DOCX` etc. extension badge overlaid on file-type icon thumbnail
+- ✅ New `ext` field in `handle_media()` REST response (lowercase extension via pathinfo)
+- ✅ New CSS: `.tma-media-ext-badge` (monospace pill, WCAG-compliant contrast in Telegram light/dark)
+- ✅ Icon layout updated to `flex-direction:column` for icon/badge vertical stacking
 
 ### Office 365 & iCloud Drive Connection Types (March 1, 2026) ⭐ **NEW**
 

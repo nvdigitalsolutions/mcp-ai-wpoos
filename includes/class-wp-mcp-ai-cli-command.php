@@ -1276,11 +1276,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				// Write startup message to stderr (not stdout, which is for JSON-RPC).
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				fwrite( STDERR, "[NV oOS] STDIO transport starting...\n" );
+				fwrite( STDERR, "[NV oOS] STDIO transport starting...\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 				if ( $assistant_id > 0 ) {
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					fwrite( STDERR, "[NV oOS] Scoped to assistant ID: {$assistant_id}\n" );
+					fwrite( STDERR, "[NV oOS] Scoped to assistant ID: {$assistant_id}\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 				}
 
 				// Create and run the transport.
@@ -1290,7 +1290,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( function_exists( 'pcntl_signal' ) ) {
 					$shutdown_handler = function () use ( $transport ) {
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						fwrite( STDERR, "\n[NV oOS] Shutting down...\n" );
+						fwrite( STDERR, "\n[NV oOS] Shutting down...\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 						$transport->stop();
 					};
 
@@ -1301,7 +1301,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$transport->run();
 
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				fwrite( STDERR, "[NV oOS] STDIO transport stopped.\n" );
+				fwrite( STDERR, "[NV oOS] STDIO transport stopped.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			}
 		}
 	}

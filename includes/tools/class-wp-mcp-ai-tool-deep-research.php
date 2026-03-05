@@ -80,33 +80,47 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'           => array(
+				'topic'                => array(
 					'type'        => 'string',
 					'description' => __( 'The research topic or question to investigate.', 'mcp-ai-wpoos' ),
 				),
-				'depth'           => array(
+				'depth'                => array(
 					'type'        => 'string',
 					'description' => __( 'Research depth level.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
 					'default'     => 'standard',
 				),
-				'focus_areas'     => array(
+				'focus_areas'          => array(
 					'type'        => 'array',
 					'description' => __( 'Optional specific aspects to focus on (e.g., "technical", "historical", "economic").', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'include_sources' => array(
+				'include_sources'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include source citations in the research report.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'run_mode'        => array(
+				'run_mode'             => array(
 					'type'        => 'string',
 					'description' => __( 'Execution mode: "immediate" runs synchronously, "background" schedules via WordPress cron for long-running research.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'immediate', 'background' ),
 					'default'     => 'immediate',
+				),
+				'include_site_content' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to search local WordPress content and the assistant\'s configured Vector Store as additional research sources. Combines site knowledge with web search results.', 'mcp-ai-wpoos' ),
+					'default'     => true,
+				),
+				'memory_agent_id'      => array(
+					'type'        => array( 'integer', 'string' ),
+					'description' => __( 'Agent or assistant ID used to recall prior research from agent memory before starting. When provided, relevant prior findings are included in the analysis context to avoid duplicate research.', 'mcp-ai-wpoos' ),
+				),
+				'store_to_memory'      => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to automatically store the completed research report in agent memory so it can be recalled in future sessions. Requires memory_agent_id.', 'mcp-ai-wpoos' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'topic' ),
@@ -192,11 +206,19 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$topic           = sanitize_text_field( $arguments['topic'] );
-		$depth           = isset( $arguments['depth'] ) ? sanitize_key( $arguments['depth'] ) : 'standard';
-		$focus_areas     = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
-		$include_sources = isset( $arguments['include_sources'] ) ? (bool) $arguments['include_sources'] : true;
-		$run_mode        = isset( $arguments['run_mode'] ) ? sanitize_key( $arguments['run_mode'] ) : 'immediate';
+		$topic                = sanitize_text_field( $arguments['topic'] );
+		$depth                = isset( $arguments['depth'] ) ? sanitize_key( $arguments['depth'] ) : 'standard';
+		$focus_areas          = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
+		$include_sources      = isset( $arguments['include_sources'] ) ? (bool) $arguments['include_sources'] : true;
+		$run_mode             = isset( $arguments['run_mode'] ) ? sanitize_key( $arguments['run_mode'] ) : 'immediate';
+		$include_site_content = isset( $arguments['include_site_content'] ) ? (bool) $arguments['include_site_content'] : true;
+		$store_to_memory      = isset( $arguments['store_to_memory'] ) ? (bool) $arguments['store_to_memory'] : false;
+		$memory_agent_id      = '';
+		if ( ! empty( $arguments['memory_agent_id'] ) ) {
+			$memory_agent_id = is_numeric( $arguments['memory_agent_id'] )
+				? absint( $arguments['memory_agent_id'] )
+				: sanitize_text_field( $arguments['memory_agent_id'] );
+		}
 
 		// Validate depth.
 		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
@@ -210,7 +232,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Handle background execution mode.
 		if ( 'background' === $run_mode ) {
-			return $this->schedule_background_research( $topic, $depth, $focus_areas, $include_sources, $user_id );
+			return $this->schedule_background_research( $topic, $depth, $focus_areas, $include_sources, $user_id, $include_site_content, $memory_agent_id, $store_to_memory );
 		}
 
 		// Check cache first.
@@ -230,12 +252,20 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'deep_research_started',
 				'Starting deep research',
 				array(
-					'topic'       => $topic,
-					'depth'       => $depth,
-					'focus_areas' => $focus_areas,
-					'user_id'     => $user_id,
+					'topic'                => $topic,
+					'depth'                => $depth,
+					'focus_areas'          => $focus_areas,
+					'user_id'              => $user_id,
+					'include_site_content' => $include_site_content,
+					'memory_agent_id'      => $memory_agent_id ? (string) $memory_agent_id : '',
 				)
 			);
+		}
+
+		// Step 0: Recall prior research from agent memory (if agent ID provided).
+		$prior_memory = array();
+		if ( $memory_agent_id ) {
+			$prior_memory = $this->recall_prior_research( $topic, $memory_agent_id, $context );
 		}
 
 		// Step 1: Perform web searches to gather information.
@@ -245,15 +275,26 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return $search_results;
 		}
 
-		// Step 2: Analyze findings with AI.
-		$analysis_result = $this->analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context );
+		// Step 1b: Optionally search local WordPress content and vector store.
+		$site_content = array();
+		if ( $include_site_content ) {
+			$site_content = $this->gather_site_content( $topic, $focus_areas, $context );
+		}
+
+		// Step 2: Analyze findings with AI (now including site content and prior memory).
+		$analysis_result = $this->analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content, $prior_memory );
 
 		if ( is_wp_error( $analysis_result ) ) {
 			return $analysis_result;
 		}
 
 		// Step 3: Build final research report.
-		$research_report = $this->build_research_report( $topic, $analysis_result, $search_results, $include_sources );
+		$research_report = $this->build_research_report( $topic, $analysis_result, $search_results, $include_sources, $site_content );
+
+		// Step 4: Store research in agent memory if requested.
+		if ( $store_to_memory && $memory_agent_id ) {
+			$this->persist_research( $topic, $depth, $research_report, $memory_agent_id, $context );
+		}
 
 		// Cache the results for 1 hour.
 		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
@@ -279,10 +320,13 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'deep_research_completed',
 				'Deep research completed successfully',
 				array(
-					'topic'        => $topic,
-					'depth'        => $depth,
-					'sources_used' => count( $research_report['sources'] ?? array() ),
-					'word_count'   => str_word_count( $research_report['report'] ?? '' ),
+					'topic'                => $topic,
+					'depth'                => $depth,
+					'sources_used'         => count( $research_report['sources'] ?? array() ),
+					'word_count'           => str_word_count( $research_report['report'] ?? '' ),
+					'site_content_matches' => count( $site_content ),
+					'prior_memory_items'   => count( $prior_memory ),
+					'stored_to_memory'     => $store_to_memory && $memory_agent_id,
 				)
 			);
 		}
@@ -421,9 +465,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param array  $focus_areas    Focus areas.
 	 * @param bool   $include_sources Whether to include sources.
 	 * @param array  $context        Execution context.
+	 * @param array  $site_content   Local site/vector-store content matches.
+	 * @param array  $prior_memory   Prior research recalled from agent memory.
 	 * @return array|WP_Error Analysis result or error.
 	 */
-	protected function analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context ) {
+	protected function analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content = array(), $prior_memory = array() ) {
 		// Get AI client and model.
 		$ai_setup = $this->get_ai_setup();
 
@@ -436,7 +482,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$model    = $ai_setup['model'];
 
 		// Build analysis prompt.
-		$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources );
+		$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory );
 
 		// Build messages array.
 		$messages = array(
@@ -701,9 +747,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param string $depth          Research depth.
 	 * @param array  $focus_areas    Focus areas.
 	 * @param bool   $include_sources Whether to include sources.
+	 * @param array  $site_content   Local site/vector-store content matches.
+	 * @param array  $prior_memory   Prior research recalled from agent memory.
 	 * @return string Analysis prompt.
 	 */
-	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources ) {
+	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content = array(), $prior_memory = array() ) {
 		$prompt = sprintf(
 			/* translators: %s: research topic */
 			__( 'Research Topic: %s', 'mcp-ai-wpoos' ) . "\n\n",
@@ -712,6 +760,22 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! empty( $focus_areas ) ) {
 			$prompt .= __( 'Focus Areas: ', 'mcp-ai-wpoos' ) . implode( ', ', $focus_areas ) . "\n\n";
+		}
+
+		// Include recalled prior research at the top to guide synthesis.
+		if ( ! empty( $prior_memory ) ) {
+			$prompt .= __( 'Prior Research (from agent memory — use to avoid repetition and build on existing knowledge):', 'mcp-ai-wpoos' ) . "\n\n";
+			foreach ( $prior_memory as $index => $memory_item ) {
+				/* translators: %d: memory item number */
+				$title   = isset( $memory_item['title'] ) ? $memory_item['title'] : sprintf( __( 'Prior finding %d', 'mcp-ai-wpoos' ), $index + 1 );
+				$content = isset( $memory_item['content'] ) ? $memory_item['content'] : '';
+				if ( empty( $content ) && isset( $memory_item['data']['content'] ) ) {
+					$content = $memory_item['data']['content'];
+				}
+				if ( ! empty( $content ) ) {
+					$prompt .= sprintf( '[Memory %d] %s: %s', $index + 1, $title, $content ) . "\n\n";
+				}
+			}
 		}
 
 		$prompt .= __( 'Information gathered from web searches:', 'mcp-ai-wpoos' ) . "\n\n";
@@ -735,6 +799,26 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 			$prompt .= "\n";
 			++$source_index;
+		}
+
+		// Include local site content from semantic search / vector store.
+		if ( ! empty( $site_content ) ) {
+			$prompt .= "\n" . __( 'Relevant content from this site\'s knowledge base:', 'mcp-ai-wpoos' ) . "\n\n";
+			foreach ( $site_content as $index => $item ) {
+				/* translators: %d: site content item number */
+				$title   = isset( $item['title'] ) ? $item['title'] : sprintf( __( 'Site content %d', 'mcp-ai-wpoos' ), $index + 1 );
+				$excerpt = isset( $item['excerpt'] ) ? $item['excerpt'] : ( isset( $item['snippet'] ) ? $item['snippet'] : '' );
+				$url     = isset( $item['url'] ) ? $item['url'] : ( isset( $item['permalink'] ) ? $item['permalink'] : '' );
+
+				$prompt .= sprintf( '[Site %d] %s', $index + 1, $title ) . "\n";
+				if ( $excerpt ) {
+					$prompt .= $excerpt . "\n";
+				}
+				if ( $url && $include_sources ) {
+					$prompt .= __( 'Source: ', 'mcp-ai-wpoos' ) . $url . "\n";
+				}
+				$prompt .= "\n";
+			}
 		}
 
 		$prompt .= __( 'Please analyze the above information and create a comprehensive research report with the following structure:', 'mcp-ai-wpoos' ) . "\n\n";
@@ -770,9 +854,10 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param array  $analysis       Analysis result.
 	 * @param array  $search_results Search results.
 	 * @param bool   $include_sources Whether to include sources.
+	 * @param array  $site_content   Local site content matches used in research.
 	 * @return array Research report.
 	 */
-	protected function build_research_report( $topic, $analysis, $search_results, $include_sources ) {
+	protected function build_research_report( $topic, $analysis, $search_results, $include_sources, $site_content = array() ) {
 		$report = array(
 			'topic'      => $topic,
 			'report'     => $analysis['content'],
@@ -793,7 +878,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Add metadata.
-		$report['queries_used'] = ! empty( $search_results['queries'] ) ? $search_results['queries'] : array();
+		$report['queries_used']       = ! empty( $search_results['queries'] ) ? $search_results['queries'] : array();
+		$report['site_content_count'] = count( $site_content );
 
 		return $report;
 	}
@@ -834,6 +920,165 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	/**
+	 * Search local WordPress content and the assistant's Vector Store for topic-relevant material.
+	 *
+	 * Uses the `semantic_content_search` tool (when available) to pull in site-specific knowledge
+	 * alongside web search results. This improves research quality for topics that the site
+	 * has existing authoritative content about (e.g. product info, documentation, policies).
+	 *
+	 * @param string $topic       Research topic.
+	 * @param array  $focus_areas Focus areas.
+	 * @param array  $context     Execution context (may carry assistant_config with vector_store_id).
+	 * @return array Normalised site content items (each has 'title', 'excerpt'/'snippet', 'url').
+	 */
+	protected function gather_site_content( $topic, $focus_areas, $context ) {
+		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
+		$site_search_tool = $registry->get_tool( 'semantic_content_search' );
+
+		if ( ! $site_search_tool ) {
+			return array();
+		}
+
+		// Build a combined query from topic and first focus area.
+		$query = $topic;
+		if ( ! empty( $focus_areas ) ) {
+			$query .= ' ' . $focus_areas[0];
+		}
+
+		$result = $site_search_tool->execute(
+			array(
+				'query'           => $query,
+				'limit'           => 5,
+				'post_types'      => array( 'post', 'page' ),
+				'vector_store_id' => isset( $context['assistant_config']['vector_store_id'] )
+					? sanitize_text_field( $context['assistant_config']['vector_store_id'] )
+					: '',
+			),
+			$context
+		);
+
+		if ( is_wp_error( $result ) || empty( $result['results'] ) || ! is_array( $result['results'] ) ) {
+			return array();
+		}
+
+		// Normalise result shape.
+		$items = array();
+		foreach ( $result['results'] as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$items[] = array(
+				'title'   => isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '',
+				'excerpt' => isset( $item['excerpt'] ) ? wp_strip_all_tags( $item['excerpt'] ) : ( isset( $item['snippet'] ) ? wp_strip_all_tags( $item['snippet'] ) : '' ),
+				'url'     => isset( $item['permalink'] ) ? esc_url_raw( $item['permalink'] ) : ( isset( $item['url'] ) ? esc_url_raw( $item['url'] ) : '' ),
+				'source'  => isset( $item['source'] ) ? $item['source'] : 'site',
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Recall prior research from agent memory relevant to the current topic.
+	 *
+	 * Uses the `retrieve_agent_memory` tool to search stored contexts tagged
+	 * as research findings. This allows the research tool to build on previous
+	 * sessions rather than re-discovering the same information.
+	 *
+	 * @param string     $topic           Research topic.
+	 * @param int|string $memory_agent_id Agent ID to retrieve memory for.
+	 * @param array      $context         Execution context.
+	 * @return array Array of prior memory context items (may be empty).
+	 */
+	protected function recall_prior_research( $topic, $memory_agent_id, $context ) {
+		$registry    = WP_MCP_AI_Tool_Registry::get_instance();
+		$memory_tool = $registry->get_tool( 'retrieve_agent_memory' );
+
+		if ( ! $memory_tool ) {
+			return array();
+		}
+
+		$result = $memory_tool->execute(
+			array(
+				'agent_id'             => $memory_agent_id,
+				'query'                => $topic,
+				'limit'                => 3,
+				'include_vector_store' => false,
+				'filters'              => array(
+					'context_types' => array( 'result', 'insight', 'fact', 'learning' ),
+				),
+			),
+			$context
+		);
+
+		if ( is_wp_error( $result ) || empty( $result['contexts'] ) || ! is_array( $result['contexts'] ) ) {
+			return array();
+		}
+
+		return $result['contexts'];
+	}
+
+	/**
+	 * Persist completed research report to agent memory for future recall.
+	 *
+	 * Stores the research report summary via `store_agent_context` so that
+	 * subsequent research sessions on related topics can leverage this work
+	 * without duplicating effort.
+	 *
+	 * @param string     $topic           Research topic.
+	 * @param string     $depth           Research depth level.
+	 * @param array      $research_report Completed research report.
+	 * @param int|string $memory_agent_id Agent ID to store memory for.
+	 * @param array      $context         Execution context.
+	 * @return void
+	 */
+	protected function persist_research( $topic, $depth, $research_report, $memory_agent_id, $context ) {
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
+		$store_tool = $registry->get_tool( 'store_agent_context' );
+
+		if ( ! $store_tool ) {
+			return;
+		}
+
+		// Truncate report to a manageable excerpt for memory storage.
+		// 4 000 characters keeps the stored context within transient size limits
+		// while still retaining the executive summary and key findings of most
+		// research reports (which typically front-load the most important content).
+		$report_text = isset( $research_report['report'] ) ? $research_report['report'] : '';
+		if ( mb_strlen( $report_text ) > 4000 ) {
+			$report_text = mb_substr( $report_text, 0, 4000 ) . '…';
+		}
+
+		$store_tool->execute(
+			array(
+				'agent_id'     => $memory_agent_id,
+				'context_type' => 'result',
+				'context_data' => array(
+					'title'      => sprintf(
+						/* translators: 1: research topic, 2: depth level */
+						__( 'Deep Research: %1$s (%2$s)', 'mcp-ai-wpoos' ),
+						$topic,
+						$depth
+					),
+					'content'    => $report_text,
+					'importance' => 'comprehensive' === $depth ? 'high' : 'medium',
+					'tags'       => array( 'deep-research', sanitize_key( $depth ) ),
+					'metadata'   => array(
+						'topic'        => $topic,
+						'depth'        => $depth,
+						'word_count'   => isset( $research_report['word_count'] ) ? $research_report['word_count'] : 0,
+						'source_count' => isset( $research_report['source_count'] ) ? $research_report['source_count'] : 0,
+						'provider'     => isset( $research_report['provider'] ) ? $research_report['provider'] : '',
+						'model'        => isset( $research_report['model'] ) ? $research_report['model'] : '',
+					),
+				),
+				'ttl'          => WEEK_IN_SECONDS * 4, // Store for 4 weeks.
+			),
+			$context
+		);
+	}
+
+	/**
 	 * Deduplicate sources by URL.
 	 *
 	 * @param array $sources Array of sources.
@@ -864,14 +1109,17 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Schedule background research via WordPress cron.
 	 *
-	 * @param string $topic          Research topic.
-	 * @param string $depth          Research depth.
-	 * @param array  $focus_areas    Focus areas.
-	 * @param bool   $include_sources Whether to include sources.
-	 * @param int    $user_id        User ID.
+	 * @param string     $topic                Research topic.
+	 * @param string     $depth                Research depth.
+	 * @param array      $focus_areas          Focus areas.
+	 * @param bool       $include_sources      Whether to include sources.
+	 * @param int        $user_id              User ID.
+	 * @param bool       $include_site_content Whether to include local site content.
+	 * @param int|string $memory_agent_id      Agent ID for memory recall/storage.
+	 * @param bool       $store_to_memory      Whether to store results to memory.
 	 * @return array Status information.
 	 */
-	protected function schedule_background_research( $topic, $depth, $focus_areas, $include_sources, $user_id ) {
+	protected function schedule_background_research( $topic, $depth, $focus_areas, $include_sources, $user_id, $include_site_content = true, $memory_agent_id = '', $store_to_memory = false ) {
 		// Generate unique job ID.
 		$job_id = 'deep_research_' . md5( $topic . microtime( true ) );
 
@@ -880,12 +1128,15 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			time() + 10, // Run in 10 seconds.
 			'wp_mcp_ai_deep_research_background',
 			array(
-				'job_id'          => $job_id,
-				'topic'           => $topic,
-				'depth'           => $depth,
-				'focus_areas'     => $focus_areas,
-				'include_sources' => $include_sources,
-				'user_id'         => $user_id,
+				'job_id'               => $job_id,
+				'topic'                => $topic,
+				'depth'                => $depth,
+				'focus_areas'          => $focus_areas,
+				'include_sources'      => $include_sources,
+				'user_id'              => $user_id,
+				'include_site_content' => $include_site_content,
+				'memory_agent_id'      => $memory_agent_id,
+				'store_to_memory'      => $store_to_memory,
 			)
 		);
 
@@ -923,14 +1174,17 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * Execute background research job.
 	 * Called by WordPress cron.
 	 *
-	 * @param string $job_id          Job ID.
-	 * @param string $topic           Research topic.
-	 * @param string $depth           Research depth.
-	 * @param array  $focus_areas     Focus areas.
-	 * @param bool   $include_sources Whether to include sources.
-	 * @param int    $user_id         User ID.
+	 * @param string     $job_id               Job ID.
+	 * @param string     $topic                Research topic.
+	 * @param string     $depth                Research depth.
+	 * @param array      $focus_areas          Focus areas.
+	 * @param bool       $include_sources      Whether to include sources.
+	 * @param int        $user_id              User ID.
+	 * @param bool       $include_site_content Whether to search local site content.
+	 * @param int|string $memory_agent_id      Agent ID for memory recall/storage.
+	 * @param bool       $store_to_memory      Whether to store results to memory.
 	 */
-	public static function execute_background_research( $job_id, $topic, $depth, $focus_areas, $include_sources, $user_id ) {
+	public static function execute_background_research( $job_id, $topic, $depth, $focus_areas, $include_sources, $user_id, $include_site_content = true, $memory_agent_id = '', $store_to_memory = false ) {
 		// Update job status.
 		$job_status = array(
 			'job_id'     => $job_id,
@@ -945,11 +1199,14 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$tool   = new self();
 		$result = $tool->execute(
 			array(
-				'topic'           => $topic,
-				'depth'           => $depth,
-				'focus_areas'     => $focus_areas,
-				'include_sources' => $include_sources,
-				'run_mode'        => 'immediate', // Prevent recursive scheduling.
+				'topic'                => $topic,
+				'depth'                => $depth,
+				'focus_areas'          => $focus_areas,
+				'include_sources'      => $include_sources,
+				'run_mode'             => 'immediate', // Prevent recursive scheduling.
+				'include_site_content' => $include_site_content,
+				'memory_agent_id'      => $memory_agent_id,
+				'store_to_memory'      => $store_to_memory,
 			),
 			array(
 				'user_id' => $user_id,

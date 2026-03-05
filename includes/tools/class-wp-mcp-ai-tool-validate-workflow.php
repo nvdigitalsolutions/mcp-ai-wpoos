@@ -80,7 +80,11 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Result array.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$workflow_file = isset( $arguments['workflow_file'] ) ? $arguments['workflow_file'] : '';

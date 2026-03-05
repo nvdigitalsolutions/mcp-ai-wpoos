@@ -5,7 +5,7 @@ Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -255,11 +255,29 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 127+ base tools, 70 Pro tools (197 total) for content, media, research, and operations
+4. **Tool Registry** - 165+ base tools for content, media, research, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.3 - March 2026 =
+
+**WordPress.org Compliance — Final Audit**
+
+* Added `esc_attr()` escaping to 5 unescaped CSS class attribute echoes in admin pages (profession settings, team settings, slash commands dashboard, orchestration dashboard)
+* Added `phpcs:ignore` with documented justification for safe JSON/CSS/script buffer echoes
+* Added `ABSPATH` exit guard to 4 PHP files that were missing it (toolkit-metadata-mapping.php, filesystem-service.php, process-service.php, validator-service.php)
+* Removed last hardcoded admin menu position (85 → null) from Pro Dashboard `add_menu_page()` call
+* Reviewed and confirmed Telegram Mini App media tab changes (PR #4004) are fully compliant: `pathinfo()` cast to string, JS uses `escHtml()`, CSS changes only
+* WordPress.org submission compliance status: **100% — READY FOR SUBMISSION**
+
+**Telegram Mini App**
+
+* Media tab now shows file-type extension badge (`.TXT`, `.PDF`, `.DOCX`, etc.) overlaid on file-type icon for non-renderable files
+* Adds `ext` field (lowercase extension) to all `handle_media()` REST responses
+* New CSS classes: `.tma-media-icon-emoji`, `.tma-media-ext-badge` (monospace pill with WCAG-compliant contrast)
+* File icon layout updated to `flex-direction:column` for icon/badge stacking
 
 = 1.1.2 - February 2026 =
 

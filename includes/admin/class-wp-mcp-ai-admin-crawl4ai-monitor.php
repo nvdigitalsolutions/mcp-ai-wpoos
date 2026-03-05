@@ -86,6 +86,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 			. '.wp-mcp-ai-crawl4ai-monitor__status--failed{background:#fee;color:#a00;}'
 			. '.wp-mcp-ai-crawl4ai-monitor__status--pending{background:#fef7e0;color:#8b6c00;}';
 
+		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline style registered with no URL; version not applicable.
 		wp_register_style( 'wp-mcp-ai-crawl4ai-monitor-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-crawl4ai-monitor-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-crawl4ai-monitor-inline', $inline_css );

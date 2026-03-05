@@ -129,7 +129,7 @@ class WP_MCP_AI_Pro_Tool_Get_Outlook_Messages implements WP_MCP_AI_Tool_Interfac
 			$top = 50;
 		}
 
-		$endpoint = 'https://graph.microsoft.com/v1.0/me/mailFolders/' . $folder_id . '/messages?$top=' . $top;
+		$endpoint = 'https://graph.microsoft.com/v1.0/me/mailFolders/' . rawurlencode( $folder_id ) . '/messages?$top=' . $top;
 
 		$filter = isset( $arguments['filter'] ) ? sanitize_text_field( $arguments['filter'] ) : '';
 

@@ -158,7 +158,7 @@ class WP_MCP_AI_STDIO_Transport {
 
 		// Write response followed by newline.
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		fwrite( STDOUT, $json . "\n" );
+		fwrite( STDOUT, $json . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		// Flush output immediately.
 		if ( function_exists( 'fflush' ) ) {
@@ -589,7 +589,7 @@ class WP_MCP_AI_STDIO_Transport {
 	protected function log_debug( $message ) {
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			fwrite( STDERR, '[NV oOS STDIO] ' . $message . "\n" );
+			fwrite( STDERR, '[NV oOS STDIO] ' . $message . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
 	}
 

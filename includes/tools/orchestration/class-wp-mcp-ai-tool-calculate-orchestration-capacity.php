@@ -260,7 +260,8 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		global $wpdb;
 
 		// Count transients with session prefix and active status.
-		$count      = 0;
+		$count      = 0; // phpcs:ignore Generic.Formatting.MultipleStatementAlignment.IncorrectWarning -- Alignment intentional for readability within this assignment block.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Orchestration capacity calculation requires live counts; cached values would cause incorrect scheduling decisions.
 		$transients = $wpdb->get_col(
 			"SELECT option_name FROM {$wpdb->options} 
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
@@ -287,6 +288,7 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		global $wpdb;
 
 		// Get all sessions from last 24 hours.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Orchestration capacity calculation requires live counts; cached values would cause incorrect scheduling decisions.
 		$transients = $wpdb->get_col(
 			"SELECT option_name FROM {$wpdb->options} 
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'"

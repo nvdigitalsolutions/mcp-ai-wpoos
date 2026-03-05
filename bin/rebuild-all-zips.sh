@@ -10,8 +10,9 @@
 # - WordPress.org compliant package (with CDN exclusions and text domain transformation)
 #
 # Usage:
-#   ./bin/rebuild-all-zips.sh                # Rebuild all versions
-#   ./bin/rebuild-all-zips.sh --version 1.0.0  # Specify version
+#   ./bin/rebuild-all-zips.sh                          # Rebuild all versions
+#   ./bin/rebuild-all-zips.sh --version 1.0.0          # Specify version
+#   ./bin/rebuild-all-zips.sh --skip-npm-build         # Use pre-built assets
 #
 
 set -e
@@ -21,12 +22,28 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$ROOT_DIR"
 
-# Parse version argument if provided
+# Parse arguments
 VERSION_ARG=""
-if [ "$1" = "--version" ] && [ -n "$2" ]; then
-    VERSION_ARG="--version $2"
-    VERSION="$2"
-else
+SKIP_NPM_ARG=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --version)
+            VERSION_ARG="--version $2"
+            VERSION="$2"
+            shift 2
+            ;;
+        --skip-npm-build)
+            SKIP_NPM_ARG="--skip-npm-build"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$VERSION" ]; then
     # Get version from plugin file
     VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
     if [ -z "$VERSION" ]; then
@@ -41,7 +58,7 @@ echo ""
 
 # Build all versions using the build-plugin-zip.sh script
 # Use --all flag for base, pro, combined, and also add --core-only
-"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG
+"$SCRIPT_DIR/build-plugin-zip.sh" --all --core-only $VERSION_ARG $SKIP_NPM_ARG
 
 echo ""
 echo "=========================================="
