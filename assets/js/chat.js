@@ -8071,6 +8071,53 @@
     }
 
     /**
+     * Check if a result object has the structure of a deep_research tool response.
+     *
+     * deep_research returns {topic, report, provider, model, word_count, sources, source_count}.
+     *
+     * @param {*} result - Tool result to check
+     * @return {boolean} True if result appears to be a deep_research response
+     */
+    function isDeepResearchStructure(result) {
+        return result &&
+               typeof result === 'object' &&
+               typeof result.topic === 'string' &&
+               typeof result.report === 'string' &&
+               typeof result.word_count === 'number';
+    }
+
+    /**
+     * Extract a human-readable summary from a deep_research tool result.
+     *
+     * @param {Object} result - Tool result object
+     * @return {string|null} Summary text or null if invalid
+     */
+    function extractDeepResearchSummary(result) {
+        if (!isDeepResearchStructure(result)) {
+            return null;
+        }
+
+        const topic      = result.topic.trim();
+        const wordCount  = result.word_count || 0;
+        const srcCount   = typeof result.source_count === 'number' ? result.source_count : (Array.isArray(result.sources) ? result.sources.length : 0);
+        const provider   = result.provider ? result.provider : '';
+        const model      = result.model ? result.model : '';
+        const cached     = result.cached === true ? ' (cached)' : '';
+        const siteItems  = typeof result.site_content_count === 'number' && result.site_content_count > 0
+            ? ', ' + result.site_content_count + ' site content match' + (result.site_content_count !== 1 ? 'es' : '')
+            : '';
+
+        let text = 'Research: "' + topic + '" — ' + wordCount.toLocaleString() + ' words, ' + srcCount + ' source' + (srcCount !== 1 ? 's' : '') + siteItems + cached;
+
+        if (provider || model) {
+            const modelParts = [provider, model].filter(Boolean);
+            text += ' [' + modelParts.join('/') + ']';
+        }
+
+        return text;
+    }
+
+    /**
      * Check if a result object has the structure of a stored agent context response.
      *
      * store_agent_context returns {success, context_id, agent_id, stored_at, expires_at, ttl_human}.
@@ -8364,6 +8411,12 @@
                         });
                     });
                 }
+            }
+        } else if (isDeepResearchStructure(result)) {
+            // Handle deep_research tool result
+            const deepResearchText = extractDeepResearchSummary(result);
+            if (deepResearchText) {
+                text = deepResearchText;
             }
         } else if (isAgentMemoryStoredStructure(result)) {
             // Handle store_agent_context tool result
