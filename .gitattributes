@@ -72,3 +72,83 @@
 # to convert them causes spurious "unstaged changes" warnings during git
 # operations (pull --rebase, stash, etc.).
 addons/pro/assets/vendor/** -text
+
+# =============================================================================
+# export-ignore — files/directories excluded from `git archive` and from
+# GitHub's "Download ZIP" button.  Deployment tools that call `git archive`
+# (including some Cloudways integrations) will skip everything listed here,
+# producing a much smaller download.
+#
+# For direct `git clone` deployments the recommended approach is a shallow
+# clone (depth=1) which dramatically reduces .git/objects size:
+#   git clone --depth=1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+#
+# Alternatively, download the pre-built release ZIP from GitHub Releases —
+# it contains only production files and has no .git directory at all.
+# =============================================================================
+
+# Git metadata
+.gitattributes export-ignore
+.gitignore export-ignore
+.git-branch-info export-ignore
+
+# GitHub configuration
+.github export-ignore
+
+# WordPress.org assets (deployed separately via SVN)
+.wordpress-org export-ignore
+
+# Distribution / deployment helper files
+.distignore export-ignore
+
+# CI / code-quality configuration
+.codecov.yml export-ignore
+.editorconfig export-ignore
+.eslintignore export-ignore
+.eslintrc.json export-ignore
+.nvmrc export-ignore
+.browserslistrc export-ignore
+phpcs.xml.dist export-ignore
+CODEOWNERS export-ignore
+
+# Build tooling and configuration
+babel.config.js export-ignore
+esbuild.config.js export-ignore
+esbuild.config.pro.js export-ignore
+jest.config.js export-ignore
+tsconfig.json export-ignore
+webpack.config.js export-ignore
+docker-compose.yml export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+patches.lock.json export-ignore
+
+# PHPUnit
+phpunit.xml.dist export-ignore
+phpunit.xml export-ignore
+
+# Development-only source directories
+bin export-ignore
+core export-ignore
+patches export-ignore
+shared export-ignore
+src export-ignore
+tests export-ignore
+coverage export-ignore
+archive export-ignore
+examples export-ignore
+assets/examples export-ignore
+
+# Documentation (verbose; keep only readme.txt/CHANGELOG.md/LICENSE in production)
+docs export-ignore
+ARCHITECTURE.md export-ignore
+CONTRIBUTING.md export-ignore
+BUILD.md export-ignore
+RELEASE_CHECKLIST.md export-ignore
+SECURITY.md export-ignore
+
+# Development / debug scripts at root
+mcp-diagnostic-debug.php export-ignore
+test-storage-service.html export-ignore

@@ -1,0 +1,249 @@
+# WP Open Operator System - Slim Deployment Package Workflow
+#
+# Generates a production-ready, slim ZIP that can be uploaded directly to
+# Cloudways (or any host) without cloning the full repository.
+#
+# The resulting ZIP contains ONLY the files needed to run the plugin:
+#   - No .git directory            (saves ~140 MB)
+#   - No node_modules              (saves hundreds of MB)
+#   - No tests/, docs/, bin/, src/ (saves additional space)
+#   - No CI/build configuration files
+#
+# This is the recommended deployment method when git clone size is a
+# concern (e.g. Cloudways, shared hosting, disk-constrained environments).
+#
+# Instead of cloning the repo, download the latest ZIP from:
+#   GitHub Releases  →  "mcp-ai-wpoos-deploy-<version>.zip"
+# or trigger this workflow manually from the Actions tab.
+#
+# For shallow-clone deployments via Cloudways Git integration, use:
+#   git clone --depth=1 https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+# This limits .git/objects to a single commit snapshot, dramatically
+# reducing the initial clone size.
+#
+# Author: NV Digital Solutions (https://nvdigitalsolutions.com/)
+
+name: Deploy Package
+
+on:
+  # Trigger on every release tag so the slim ZIP is always attached to releases
+  push:
+    tags:
+      - 'v*.*.*'
+  # Allow manual runs from the Actions tab (useful for ad-hoc deploys)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label for the ZIP (e.g. 1.2.3 or "latest")'
+        required: false
+        default: 'latest'
+
+permissions:
+  contents: write
+
+env:
+  PLUGIN_SLUG: mcp-ai-wpoos
+
+jobs:
+  build-deploy-package:
+    name: Build Slim Deployment Package
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------------------------------------------------------
+      # 1. Checkout — shallow clone (depth=1) keeps the runner fast and lean
+      # -------------------------------------------------------------------------
+      - name: Checkout code (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1   # Only the latest commit — no history needed for packaging
+
+      # -------------------------------------------------------------------------
+      # 2. Determine version label
+      # -------------------------------------------------------------------------
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          elif [ -n "${{ github.event.inputs.version }}" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Fall back to short SHA so the asset name is always unique
+            VERSION="$(git rev-parse --short HEAD)"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "📦 Package version: ${VERSION}"
+
+      # -------------------------------------------------------------------------
+      # 3. Install production PHP dependencies only (no dev packages)
+      # -------------------------------------------------------------------------
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, mysqli, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: ${{ runner.os }}-composer-prod-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-prod-
+
+      - name: Install production Composer dependencies
+        run: |
+          composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
+          echo "✅ Production Composer dependencies installed"
+
+      # -------------------------------------------------------------------------
+      # 4. Build front-end assets
+      # -------------------------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies & build
+        run: |
+          npm ci
+          npm run build
+          echo "✅ Front-end assets built"
+
+      # -------------------------------------------------------------------------
+      # 5. Assemble the slim plugin directory using rsync
+      #    (mirrors the exclude list used in release.yml and .distignore)
+      # -------------------------------------------------------------------------
+      - name: Assemble slim plugin directory
+        run: |
+          DEST="build/${PLUGIN_SLUG}"
+          mkdir -p "$DEST"
+
+          rsync -a --delete . "$DEST/" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.wordpress-org' \
+            --exclude '.codex' \
+            --exclude '.codex-wordpress' \
+            --exclude '.devcontainer' \
+            --exclude '.vscode' \
+            --exclude '.idea' \
+            --exclude 'node_modules' \
+            --exclude 'addons/pro/node_modules' \
+            --exclude 'tests' \
+            --exclude 'bin' \
+            --exclude 'coverage' \
+            --exclude '.nyc_output' \
+            --exclude 'build' \
+            --exclude 'svn-*' \
+            --exclude 'archive' \
+            --exclude 'examples' \
+            --exclude 'assets/examples' \
+            --exclude 'docs' \
+            --exclude 'core' \
+            --exclude 'shared' \
+            --exclude 'src' \
+            --exclude 'patches' \
+            --exclude '.gitignore' \
+            --exclude '.gitattributes' \
+            --exclude '.git-branch-info' \
+            --exclude '.distignore' \
+            --exclude '.eslintrc.json' \
+            --exclude '.eslintignore' \
+            --exclude '.editorconfig' \
+            --exclude '.nvmrc' \
+            --exclude '.browserslistrc' \
+            --exclude '.codecov.yml' \
+            --exclude 'CODEOWNERS' \
+            --exclude 'phpunit.xml.dist' \
+            --exclude 'phpunit.xml' \
+            --exclude 'phpcs.xml.dist' \
+            --exclude 'composer.json' \
+            --exclude 'composer.lock' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'patches.lock.json' \
+            --exclude 'babel.config.js' \
+            --exclude 'jest.config.js' \
+            --exclude 'esbuild.config.js' \
+            --exclude 'esbuild.config.pro.js' \
+            --exclude 'webpack.config.js' \
+            --exclude 'tsconfig.json' \
+            --exclude 'docker-compose.yml' \
+            --exclude 'ARCHITECTURE.md' \
+            --exclude 'RELEASE_CHECKLIST.md' \
+            --exclude 'CONTRIBUTING.md' \
+            --exclude 'BUILD.md' \
+            --exclude 'SECURITY.md' \
+            --exclude 'test-*.php' \
+            --exclude 'verify-*.php' \
+            --exclude 'verify-*.sh' \
+            --exclude 'mcp-diagnostic-debug.php' \
+            --exclude 'test-storage-service.html' \
+            --exclude '*.zip' \
+            --exclude '*.tar.gz' \
+            --exclude '*.rar' \
+            --exclude '*.log' \
+            --exclude '.DS_Store' \
+            --exclude 'Thumbs.db'
+
+          echo "✅ Plugin directory assembled at $DEST"
+
+      # -------------------------------------------------------------------------
+      # 6. Report assembled size before zipping
+      # -------------------------------------------------------------------------
+      - name: Show assembled size
+        run: |
+          echo "📁 Assembled plugin size:"
+          du -sh "build/${PLUGIN_SLUG}/"
+          echo ""
+          echo "📁 Top-level contents:"
+          ls -lh "build/${PLUGIN_SLUG}/"
+
+      # -------------------------------------------------------------------------
+      # 7. Create the ZIP archive
+      # -------------------------------------------------------------------------
+      - name: Create deployment ZIP
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="${PLUGIN_SLUG}-deploy-${VERSION}.zip"
+
+          cd build
+          zip -r "../${ZIP_NAME}" "${PLUGIN_SLUG}/" \
+            -x "*.DS_Store" \
+            -x "*__MACOSX*"
+          cd ..
+
+          echo "✅ Created: ${ZIP_NAME}"
+          ls -lh "${ZIP_NAME}"
+          echo ""
+          echo "📦 ZIP entry count: $(unzip -l "${ZIP_NAME}" | tail -1)"
+
+          # Store path for later steps
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_ENV"
+
+      # -------------------------------------------------------------------------
+      # 8. Upload as workflow artifact (always available, even without a tag)
+      # -------------------------------------------------------------------------
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-deploy-${{ steps.version.outputs.version }}
+          path: ${{ env.zip_name }}
+          if-no-files-found: error
+          retention-days: 30
+
+      # -------------------------------------------------------------------------
+      # 9. Attach to the GitHub Release when triggered by a tag push
+      # -------------------------------------------------------------------------
+      - name: Attach ZIP to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.zip_name }}
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
