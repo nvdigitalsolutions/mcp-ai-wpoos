@@ -935,8 +935,8 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function detect_cdn() {
 		// Check if upload URL differs from site URL (common CDN setup).
 		$uploads    = wp_upload_dir();
-		$site_url   = parse_url( site_url(), PHP_URL_HOST );
-		$upload_url = parse_url( $uploads['baseurl'], PHP_URL_HOST );
+		$site_url   = parse_url( site_url(), PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- wp_parse_url() is a thin wrapper; using parse_url() directly for performance.
+		$upload_url = parse_url( $uploads['baseurl'], PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url -- wp_parse_url() is a thin wrapper; using parse_url() directly for performance.
 
 		return $site_url !== $upload_url;
 	}

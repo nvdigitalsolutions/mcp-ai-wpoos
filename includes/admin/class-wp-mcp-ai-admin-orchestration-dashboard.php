@@ -234,7 +234,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					'post_type'      => 'mcp_ai_profession',
 					'post_status'    => 'publish',
 					'posts_per_page' => -1,
-					'meta_query'     => array(
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 						array(
 							'key'   => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
 							'value' => $role,
@@ -252,7 +252,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 					array(
 						'key'     => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
 						'compare' => 'EXISTS',
@@ -269,7 +269,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
 				'posts_per_page' => -1,
-				'meta_query'     => array(
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter assistant CPT by orchestration role; no alternative index-based query available.
 					array(
 						'key'     => WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS,
 						'value'   => '{}',
@@ -1538,7 +1538,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 						<h4><?php esc_html_e( 'Memory Health Metrics', 'mcp-ai-wpoos' ); ?></h4>
 						
 						<div class="health-score-display">
-							<div class="health-score-circle <?php echo $health_metrics['health_score'] >= 70 ? 'good' : ( $health_metrics['health_score'] >= 40 ? 'fair' : 'poor' ); ?>">
+							<div class="health-score-circle <?php echo esc_attr( $health_metrics['health_score'] >= 70 ? 'good' : ( $health_metrics['health_score'] >= 40 ? 'fair' : 'poor' ) ); ?>">
 								<span class="score-value"><?php echo esc_html( $health_metrics['health_score'] ); ?></span>
 								<span class="score-label"><?php esc_html_e( 'Health Score', 'mcp-ai-wpoos' ); ?></span>
 							</div>
@@ -1559,7 +1559,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 									<span class="metric-label"><?php esc_html_e( 'Avg Accesses', 'mcp-ai-wpoos' ); ?></span>
 								</div>
 								
-								<div class="metric-item <?php echo $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : ''; ?>">
+								<div class="metric-item <?php echo esc_attr( $health_metrics['metrics']['expiring_soon'] > 0 ? 'warning' : '' ); ?>">
 									<span class="metric-value"><?php echo esc_html( number_format_i18n( $health_metrics['metrics']['expiring_soon'] ) ); ?></span>
 									<span class="metric-label"><?php esc_html_e( 'Expiring Soon', 'mcp-ai-wpoos' ); ?></span>
 								</div>

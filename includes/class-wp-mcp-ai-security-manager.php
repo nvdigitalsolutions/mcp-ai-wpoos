@@ -327,8 +327,8 @@ class WP_MCP_AI_Security_Manager {
 	 */
 	private function ipv6_in_cidr( $ip, $subnet, $mask ) {
 		// Convert to binary strings.
-		$ip_bin     = @inet_pton( $ip );
-		$subnet_bin = @inet_pton( $subnet );
+		$ip_bin     = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Error suppression required; function may fail on invalid input and we handle the boolean return.
+		$subnet_bin = @inet_pton( $subnet ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Error suppression required; function may fail on invalid input and we handle the boolean return.
 
 		if ( false === $ip_bin || false === $subnet_bin ) {
 			return false;

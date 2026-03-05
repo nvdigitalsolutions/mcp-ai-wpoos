@@ -279,7 +279,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Start and end timestamps.
 	 */
 	private function calculate_time_range( $period, $arguments ) {
-		$end_time = current_time( 'timestamp' );
+		$end_time = time();
 
 		if ( 'custom' === $period ) {
 			$start_time = isset( $arguments['start_date'] ) ? strtotime( $arguments['start_date'] ) : $end_time - DAY_IN_SECONDS;
@@ -353,8 +353,8 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 					'user_email' => $row->user_email,
 					'timestamp'  => time(),
 					'details'    => array(
-						'meta_key'   => $row->meta_key,
-						'meta_value' => maybe_unserialize( $row->meta_value ),
+						'meta_key'   => $row->meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to retrieve plugin-specific user activity meta; no alternative lookup method available.
+						'meta_value' => maybe_unserialize( $row->meta_value ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to retrieve plugin-specific user activity meta; no alternative lookup method available.
 					),
 					'severity'   => 'medium',
 				);

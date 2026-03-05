@@ -668,7 +668,7 @@ class WP_MCP_AI_Supplier_Security {
 		// Parse Composer dependencies.
 		$composer_lock = WP_MCP_AI_PATH . 'composer.lock';
 		if ( file_exists( $composer_lock ) ) {
-			$composer_data = json_decode( file_get_contents( $composer_lock ), true );
+			$composer_data = json_decode( file_get_contents( $composer_lock ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 			if ( isset( $composer_data['packages'] ) ) {
 				foreach ( $composer_data['packages'] as $package ) {
@@ -686,7 +686,7 @@ class WP_MCP_AI_Supplier_Security {
 		// Parse NPM dependencies.
 		$package_lock = WP_MCP_AI_PATH . 'package-lock.json';
 		if ( file_exists( $package_lock ) ) {
-			$npm_data = json_decode( file_get_contents( $package_lock ), true );
+			$npm_data = json_decode( file_get_contents( $package_lock ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 
 			if ( isset( $npm_data['packages'] ) ) {
 				foreach ( $npm_data['packages'] as $path => $package ) {

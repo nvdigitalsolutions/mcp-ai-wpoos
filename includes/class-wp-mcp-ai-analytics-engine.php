@@ -187,7 +187,7 @@ class WP_MCP_AI_Analytics_Engine {
 	 * @return float Z-score.
 	 */
 	public static function calculate_z_score( $value, $mean, $std_dev ) {
-		if ( 0 == $std_dev ) { // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
+		if ( 0 == $std_dev ) { // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison, Universal.Operators.StrictComparisons.LooseEqual -- Intentional loose float comparison with zero.
 			return 0;
 		}
 

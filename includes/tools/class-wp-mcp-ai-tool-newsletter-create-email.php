@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		// Handle scheduled send time.
 		if ( isset( $arguments['send_time'] ) && '' !== $arguments['send_time'] ) {
 			$send_timestamp = strtotime( $arguments['send_time'] );
-			if ( $send_timestamp && $send_timestamp > current_time( 'timestamp' ) ) {
+			if ( $send_timestamp && $send_timestamp > time() ) {
 				$email_data['send_on'] = gmdate( 'Y-m-d H:i:s', $send_timestamp );
 			}
 		}
@@ -219,6 +219,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			}
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 		$result = $wpdb->insert(
 			$table,
 			$email_data

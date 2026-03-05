@@ -183,7 +183,7 @@ class WP_MCP_AI_Admin_Profession_Settings {
 			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
 				<a
 					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'edit.php?post_type=' . $post_type . '&page=wp-mcp-ai-profession-settings' ) ) ); ?>"
-					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+					class="nav-tab <?php echo esc_attr( $active_tab === $tab_slug ? 'nav-tab-active' : '' ); ?>"
 				>
 					<?php echo esc_html( $tab_title ); ?>
 				</a>

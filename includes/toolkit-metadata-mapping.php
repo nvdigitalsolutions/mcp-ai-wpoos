@@ -9,6 +9,10 @@
  * @since 1.1.0
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Tool-to-Toolkit mapping based on proposal analysis.
  *

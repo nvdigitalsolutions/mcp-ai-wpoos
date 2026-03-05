@@ -135,7 +135,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 
 		// Check if subscriber already exists.
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$name    = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 		$surname = isset( $arguments['surname'] ) ? sanitize_text_field( $arguments['surname'] ) : '';
@@ -170,7 +170,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		if ( $existing ) {
 			// Update existing subscriber.
 			$subscriber_data['id'] = $existing->id;
-			$result                = $wpdb->update(
+			$result                = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 				$table,
 				$subscriber_data,
 				array( 'id' => $existing->id ),
@@ -194,6 +194,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 			// Insert new subscriber.
 			$subscriber_data['created'] = current_time( 'mysql' );
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Querying Newsletter plugin's custom tables which are not managed by WordPress object cache.
 			$result = $wpdb->insert(
 				$table,
 				$subscriber_data

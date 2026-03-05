@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( ! empty( $arguments['template_type'] ) && is_string( $arguments['template_type'] ) ) {
-			$query_args['meta_query'] = array(
+			$query_args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter Elementor templates by type meta; no alternative index-based query available.
 				array(
 					'key'     => '_elementor_template_type',
 					'value'   => sanitize_key( $arguments['template_type'] ),

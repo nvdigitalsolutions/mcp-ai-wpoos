@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
 				'dashicons-format-chat',
-				null // Let WordPress automatically position the menu
+				null // Let WordPress automatically position the menu.
 			);
 
 			// Remove the auto-generated submenu item (has same title as top-level menu).
@@ -221,11 +221,26 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Sanitize callback for register_setting().
 		 *
-		 * Provides a safety net for any direct update_option() calls.
-		 * Sanitizes all sections when called via the Settings API.
+		 * WordPress registers this as a `sanitize_option_{option_name}` filter via
+		 * register_setting(), which means it fires on EVERY update_option() call for
+		 * this option — including the one inside handle_save_settings() itself.
 		 *
-		 * @param mixed $input Raw settings input.
-		 * @return array Sanitized settings.
+		 * Re-running the full section-based sanitization here causes data loss:
+		 * subtab-aware sections (e.g. Providers) inspect $_POST to decide which subtab
+		 * is active. When the current request is NOT a providers-tab save (e.g. it is a
+		 * general-settings save, an OAuth callback, or an unrelated admin-post action),
+		 * those sections find no matching subtab in $_POST and return an empty array,
+		 * wiping stored API keys.
+		 *
+		 * The fix: return the input unchanged. All callers that reach update_option()
+		 * have already sanitized the data before calling it:
+		 *  - handle_save_settings() runs the full section-based sanitization with the
+		 *    correct $_POST context and then calls array_merge with existing settings.
+		 *  - OAuth/integration handlers (Gmail, QuickBooks, etc.) fetch the full
+		 *    existing settings, modify only their specific keys, and save the result.
+		 *
+		 * @param mixed $input Settings value passed to update_option().
+		 * @return array Settings array, preserved as-is.
 		 */
 		public function sanitize_settings_callback( $input ) {
 			if ( ! is_array( $input ) ) {
@@ -233,7 +248,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				return is_array( $existing ) ? $existing : array();
 			}
-			return $this->sanitize_settings( $input );
+			// Return the input unchanged. The full section-based sanitization already ran
+			// (with the correct $_POST context) before update_option() was called.
+			// Running it again here would cause subtab-aware sections to return empty arrays
+			// when $_POST does not match their tab/subtab, clearing stored provider keys.
+			return $input;
 		}
 
 		/**
@@ -1273,6 +1292,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			global $wpdb;
 
 			// Find all backup options.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query against wp_options for plugin backup option names; result caching would return a stale list of available backups.
 			$backup_options = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} 
@@ -1589,6 +1609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Check 6: Backup count.
 			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query against wp_options for plugin backup option names; result caching would return a stale list of available backups.
 			$backup_count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",

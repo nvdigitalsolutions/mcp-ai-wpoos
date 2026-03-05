@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			$endpoint = "/repos/{$owner}/{$repo}/contents/{$path}";
 
 			if ( $ref ) {
-				$endpoint .= '?ref=' . urlencode( $ref );
+				$endpoint .= '?ref=' . urlencode( $ref ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.urlencode_urlencode -- urlencode() required for URL parameter encoding in API request.
 			}
 
 			return $this->request( $endpoint );

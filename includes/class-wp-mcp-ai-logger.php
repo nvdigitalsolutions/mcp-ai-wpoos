@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return false;
 			}
 
-			return is_writable( $path );
+			return is_writable( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
 
 		/**
@@ -333,14 +333,14 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				);
 			}
 
-			if ( ! is_writable( $path ) ) {
+			if ( ! is_writable( $path ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 				return new WP_Error(
 					'wp_mcp_ai_log_unwritable',
 					__( 'The PHP error log is not writable. Update the file permissions and try again.', 'mcp-ai-wpoos' )
 				);
 			}
 
-			$handle = fopen( $path, 'w' );
+			$handle = fopen( $path, 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 			if ( false === $handle ) {
 				return new WP_Error(
@@ -349,7 +349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				);
 			}
 
-			fclose( $handle );
+			fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 			delete_option( self::RECENT_ERRORS_OPTION );
 			delete_option( self::RECENT_ACTIVITY_OPTION );
