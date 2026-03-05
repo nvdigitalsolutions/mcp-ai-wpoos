@@ -26,35 +26,41 @@
 *.webp binary
 
 # Fonts (binary)
-*.ttf binary
-*.otf binary
-*.woff binary
-*.woff2 binary
-*.eot binary
-*.z binary
+# delta=false: font files are already compressed/encoded; delta computation wastes CPU
+*.ttf binary delta=false
+*.otf binary delta=false
+*.woff binary delta=false
+*.woff2 binary delta=false
+*.eot binary delta=false
+# .z = TCPDF/font compressed font data files (not Unix compress; not Zstandard)
+*.z binary delta=false
 
 # Archives and packages (binary)
-*.zip binary
+# delta=false: archives are already compressed; attempting delta yields negligible savings
+# and inflates pack CPU time, which slows clones of large repositories.
+*.zip binary delta=false
 *.tar binary
-*.gz binary
-*.rar binary
-*.7z binary
+*.gz binary delta=false
+*.rar binary delta=false
+*.7z binary delta=false
 
 # Documents (binary)
-*.pdf binary
-*.doc binary
-*.docx binary
-*.xls binary
-*.xlsx binary
-*.ppt binary
-*.pptx binary
+*.pdf binary delta=false
+*.doc binary delta=false
+*.docx binary delta=false
+*.xls binary delta=false
+*.xlsx binary delta=false
+*.ppt binary delta=false
+*.pptx binary delta=false
 
 # Native libraries and executables (binary)
-*.so binary
-*.dylib binary
-*.dll binary
-*.node binary
-*.exe binary
+# delta=false: shared libraries and native modules are large pre-linked blobs;
+# delta compression achieves almost nothing and wastes significant pack time.
+*.so binary delta=false
+*.dylib binary delta=false
+*.dll binary delta=false
+*.node binary delta=false
+*.exe binary delta=false
 
 # Source maps - mark as binary to prevent inefficient text processing
 # These are large JSON files not meant for human editing or diff
@@ -72,3 +78,47 @@
 # to convert them causes spurious "unstaged changes" warnings during git
 # operations (pull --rebase, stash, etc.).
 addons/pro/assets/vendor/** -text
+
+# ---------------------------------------------------------------------------
+# export-ignore: exclude non-deployment paths from `git archive` tarballs.
+# Cloudways and other hosts that generate deployment packages via git archive
+# will produce significantly smaller archives when these directories are omitted.
+# ---------------------------------------------------------------------------
+.github export-ignore
+.codex export-ignore
+.devcontainer export-ignore
+.vscode export-ignore
+.wordpress-org export-ignore
+archive export-ignore
+bin export-ignore
+docs export-ignore
+tests export-ignore
+build export-ignore
+examples export-ignore
+patches export-ignore
+src export-ignore
+coverage export-ignore
+.codecov.yml export-ignore
+.editorconfig export-ignore
+.eslintignore export-ignore
+.eslintrc.json export-ignore
+.nvmrc export-ignore
+.npmrc export-ignore
+babel.config.js export-ignore
+jest.config.js export-ignore
+esbuild.config.js export-ignore
+esbuild.config.pro.js export-ignore
+webpack.config.js export-ignore
+tsconfig.json export-ignore
+phpcs.xml.dist export-ignore
+phpunit.xml.dist export-ignore
+docker-compose.yml export-ignore
+CODEOWNERS export-ignore
+CONTRIBUTING.md export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+patches.lock.json export-ignore
+.distignore export-ignore
+.git-branch-info export-ignore

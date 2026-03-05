@@ -34,9 +34,12 @@ composer.phar
 # Allow workflow-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/workflow-builder/
 
-# Ignore ZIP files everywhere except in build directory
+# Ignore ZIP files everywhere.
+# Build ZIPs are uploaded as GitHub Actions artifacts (see build-assets.yml)
+# and as GitHub Release assets (see release.yml) instead of being committed
+# to git, which prevents large binary blobs from accumulating in history on
+# every build cycle and causing oversized .git/objects directories in clones.
 *.zip
-!/build/*.zip
 !/build/optional-components/*.zip
 
 # Ignore all vendor by default
