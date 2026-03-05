@@ -15,26 +15,8 @@ composer.phar
 # Temporary files
 /tmp/
 
-# AI model files — these are large binaries downloaded at runtime and must never
-# be committed to git. Committing them bloats pack files (gigabytes per version).
-# Models are fetched on demand via Ollama, LM Studio, or the plugin's model loader.
-*.gguf
-*.ggml
-*.ggml.bin
-*.safetensors
-*.pt
-*.pth
-*.ckpt
-*.onnx
-*.tflite
-*.pb
-*.h5
-*.keras
-*.mlmodel
-
-# WordPress uploads directory — contains user-uploaded media and plugin-generated
-# files (including downloaded AI models). These are site-specific runtime data and
-# must never be committed to the plugin repository.
+# WordPress uploads directory — contains user-uploaded media and site-specific
+# runtime data that must never be committed to the plugin repository.
 wp-content/uploads/
 
 # Build output - ignore all build artifacts including ZIPs.
