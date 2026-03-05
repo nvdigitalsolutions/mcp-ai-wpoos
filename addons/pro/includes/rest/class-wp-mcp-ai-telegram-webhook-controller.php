@@ -56,6 +56,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	protected $rest_base = 'webhooks/telegram';
 
 	/**
+	 * Tracks the connection_id resolved from the incoming request URL so every
+	 * helper called during the request lifecycle targets the correct bot without
+	 * requiring connection_id to be threaded through every method signature.
+	 *
+	 * @var string|null
+	 */
+	protected $current_connection_id = null;
+
+	/**
 	 * Cron hook for dispatching AI replies to incoming Telegram messages.
 	 */
 	const REPLY_CRON_HOOK = 'wp_mcp_ai_telegram_send_ai_reply';
@@ -90,7 +99,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
-		// Webhook event receiver endpoint (POST).
+		// Global webhook endpoint (backward-compatible, single-bot setups).
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -100,29 +109,69 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'validate_webhook_secret' ),
 			)
 		);
+
+		// Per-connection webhook endpoint so multiple Telegram bots can each
+		// have a dedicated URL: /mcp-ai/v1/webhooks/telegram/{connection_id}.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_webhook' ),
+				'permission_callback' => array( $this, 'validate_webhook_secret' ),
+				'args'                => array(
+					'connection_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
 	 * Validate incoming webhook request using the optional secret token.
 	 *
-	 * Telegram sends the secret token set via setWebhook in the
-	 * X-Telegram-Bot-Api-Secret-Token header. When no secret token is
-	 * configured on the connection the webhook is allowed through with a
-	 * security warning so that incoming messages can still be processed.
+	 * Applies two independent security checks (both are filterable):
+	 *
+	 * 1. **IP range validation** – verifies the request originates from one of
+	 *    Telegram's published IP ranges (149.154.160.0/20, 91.108.4.0/22).
+	 *    Can be disabled via the `wp_mcp_ai_telegram_ip_validation_enabled`
+	 *    filter for sites behind a reverse proxy.
+	 *
+	 * 2. **Secret-token header verification** – when a secret_token is stored
+	 *    on the connection, checks that Telegram's
+	 *    X-Telegram-Bot-Api-Secret-Token header matches the stored value.
+	 *    When no token is configured, the request is logged and allowed
+	 *    through with a security warning.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the secret token is valid or not configured.
+	 * @return bool True if the request passes all configured security checks.
 	 */
 	public function validate_webhook_secret( $request ) {
-		$stored_secret = $this->get_secret_token();
+		// --- Layer 1: IP range validation -------------------------------------------
+		if ( ! $this->is_request_from_telegram( $request ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: request did not originate from a Telegram IP range.',
+				array(
+					'remote_addr' => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
+				)
+			);
+			return false;
+		}
+
+		// --- Layer 2: Secret-token header verification ------------------------------
+		$connection_id = $request->get_param( 'connection_id' );
+		$stored_secret = $this->get_secret_token( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'telegram_webhook_no_secret_token',
 				'Telegram webhook received without secret token configured. Header validation skipped. Configure a secret_token in the connection settings for enhanced security.',
-				array()
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return true;
 		}
@@ -155,6 +204,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response Response object (always 200 to prevent Telegram retries).
 	 */
 	public function handle_webhook( $request ) {
+		// Resolve the per-connection ID from the URL so all helper methods in
+		// this request lifecycle can target the correct Telegram bot.
+		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+
 		$payload = $request->get_json_params();
 
 		if ( empty( $payload ) || ! is_array( $payload ) ) {
@@ -860,14 +913,141 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve the secret_token from the first active Telegram connection.
+	 * Telegram IP CIDR ranges as published at https://core.telegram.org/bots/webhooks.
+	 *
+	 * These are the only IP addresses Telegram uses to deliver webhook updates.
+	 * The list is filterable via `wp_mcp_ai_telegram_allowed_ip_ranges` so site
+	 * operators can extend it if Telegram adds new ranges in future.
+	 */
+	const TELEGRAM_IP_RANGES = array(
+		'149.154.160.0/20',
+		'91.108.4.0/22',
+	);
+
+	/**
+	 * Check whether the request originates from a known Telegram IP range.
+	 *
+	 * Returns true when IP validation is disabled via the filter, or when the
+	 * remote address falls within one of Telegram's published CIDR blocks.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param WP_REST_Request $request Incoming request object.
+	 * @return bool True if the request IP is a Telegram IP (or validation is disabled).
+	 */
+	protected function is_request_from_telegram( $request ) {
+		/**
+		 * Filter: disable Telegram IP validation entirely.
+		 *
+		 * Set to false on sites behind a proxy that changes the apparent
+		 * source IP. When false, only the secret-token header is checked.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param bool            $enabled Whether IP range validation is enabled. Default true.
+		 * @param WP_REST_Request $request The incoming webhook request.
+		 */
+		$enabled = apply_filters( 'wp_mcp_ai_telegram_ip_validation_enabled', true, $request );
+
+		if ( ! $enabled ) {
+			return true;
+		}
+
+		// Retrieve remote address — fall back to empty string so the check
+		// below will reject the request rather than silently pass it.
+		$remote_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+		/**
+		 * Filter: override the remote IP used for Telegram IP range validation.
+		 *
+		 * Useful on sites behind a reverse proxy that stores the real client IP
+		 * in a header such as X-Forwarded-For.  The value MUST be sanitized and
+		 * trusted before use to avoid spoofing.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string          $remote_ip The IP address to validate.
+		 * @param WP_REST_Request $request   The incoming webhook request.
+		 */
+		$remote_ip = apply_filters( 'wp_mcp_ai_telegram_webhook_remote_ip', $remote_ip, $request );
+		$remote_ip = sanitize_text_field( (string) $remote_ip );
+
+		if ( '' === $remote_ip ) {
+			return false;
+		}
+
+		/**
+		 * Filter: allowed Telegram CIDR ranges.
+		 *
+		 * Extends or replaces the default list of Telegram IP ranges.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string[] $ranges Array of CIDR strings.
+		 */
+		$allowed_ranges = apply_filters( 'wp_mcp_ai_telegram_allowed_ip_ranges', self::TELEGRAM_IP_RANGES );
+
+		foreach ( $allowed_ranges as $cidr ) {
+			if ( $this->ip_in_cidr( $remote_ip, $cidr ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check whether an IP address falls within a CIDR range.
+	 *
+	 * Supports IPv4 only; IPv6 addresses are treated as non-matching since
+	 * Telegram currently uses IPv4 exclusively for webhook deliveries.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $ip   IP address to test (dotted-decimal notation).
+	 * @param string $cidr CIDR range string, e.g. "149.154.160.0/20".
+	 * @return bool True if the IP falls within the CIDR range.
+	 */
+	protected function ip_in_cidr( $ip, $cidr ) {
+		if ( false === strpos( $cidr, '/' ) ) {
+			return $ip === $cidr;
+		}
+
+		list( $subnet, $prefix ) = explode( '/', $cidr, 2 );
+
+		$prefix = (int) $prefix;
+
+		// Only handle IPv4.
+		if ( false !== strpos( $ip, ':' ) || false !== strpos( $subnet, ':' ) ) {
+			return false;
+		}
+
+		$ip_long     = ip2long( $ip );
+		$subnet_long = ip2long( $subnet );
+
+		if ( false === $ip_long || false === $subnet_long || $prefix < 0 || $prefix > 32 ) {
+			return false;
+		}
+
+		if ( 0 === $prefix ) {
+			return true;
+		}
+
+		$mask = ~( ( 1 << ( 32 - $prefix ) ) - 1 );
+
+		return ( $ip_long & $mask ) === ( $subnet_long & $mask );
+	}
+
+	/**
+	 * Retrieve the secret_token from the active Telegram connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string|null $connection_id Optional connection ID to target a specific bot.
 	 * @return string Secret token or empty string if not configured.
 	 */
-	protected function get_secret_token() {
-		$connection = $this->get_active_telegram_connection();
+	protected function get_secret_token( $connection_id = null ) {
+		$connection = $this->get_active_telegram_connection( $connection_id );
 
 		if ( ! $connection || empty( $connection['secret_token'] ) ) {
 			return '';
@@ -881,7 +1061,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Find the first active (enabled) Telegram connection.
+	 * Find the active (enabled) Telegram connection.
+	 *
+	 * When a connection_id is provided (either via param or the instance
+	 * property set at the top of handle_webhook()), the method resolves that
+	 * specific connection. Falls back to the first active Telegram connection
+	 * for backward compatibility with single-bot setups.
 	 *
 	 * Unlike the previous implementation, this no longer requires
 	 * assigned_assistant_ids to be set on the connection so that the global
@@ -890,12 +1075,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string|null $connection_id Optional connection ID. When null the instance
+	 *                                   property $this->current_connection_id is used,
+	 *                                   then falls back to the first active connection.
 	 * @return array|null Connection array or null if none found.
 	 */
-	protected function get_active_telegram_connection() {
+	protected function get_active_telegram_connection( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
+
+		// Resolve target connection ID: explicit param > instance property.
+		$target_id = $connection_id ?? $this->current_connection_id;
 
 		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 
@@ -903,6 +1094,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return null;
 		}
 
+		// When a specific connection is requested, look it up directly.
+		if ( $target_id ) {
+			foreach ( $connections as $connection ) {
+				if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
+					continue;
+				}
+
+				if ( empty( $connection['enabled'] ) ) {
+					continue;
+				}
+
+				if ( isset( $connection['id'] ) && $connection['id'] === $target_id ) {
+					return $connection;
+				}
+			}
+		}
+
+		// Fallback: return the first active Telegram connection (single-bot / legacy behaviour).
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'telegram' !== $connection['connection_type'] ) {
 				continue;

@@ -279,22 +279,20 @@ class WP_MCP_AI_Model_Config {
 			$name = $model_id;
 			if ( isset( $model_data['notes'] ) && ! empty( $model_data['notes'] ) ) {
 				// Extract a short display name from notes.
-				// Notes follow the format: "Model Name - Description." or "First sentence. More details."
+				// Notes follow the format: "Model Name - Description." or "First sentence. More details.".
 				if ( false !== strpos( $model_data['notes'], ' - ' ) ) {
 					// Preferred format: split on " - " separator.
 					$dash_parts = explode( ' - ', $model_data['notes'], 2 );
 					if ( ! empty( $dash_parts[0] ) ) {
 						$name = trim( $dash_parts[0] );
 					}
-				} else {
+				} elseif ( preg_match( '/^(.+?)\.\s+[^0-9]/', $model_data['notes'], $matches ) ) {
 					// Fallback: extract first sentence, splitting at a period followed
 					// by a space and a non-digit character to preserve version numbers
 					// like "GPT-5.2" while still splitting at sentence boundaries.
-					if ( preg_match( '/^(.+?)\.\s+[^0-9]/', $model_data['notes'], $matches ) ) {
-						$name = trim( $matches[1] );
-					} else {
-						$name = rtrim( trim( $model_data['notes'] ), '.' );
-					}
+					$name = trim( $matches[1] );
+				} else {
+					$name = rtrim( trim( $model_data['notes'] ), '.' );
 				}
 			}
 

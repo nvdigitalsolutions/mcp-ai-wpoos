@@ -653,7 +653,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			return array();
 		}
 
-		$theme_json_string = file_get_contents( $theme_json_path );
+		$theme_json_string = file_get_contents( $theme_json_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 		return json_decode( $theme_json_string, true );
 	}
 

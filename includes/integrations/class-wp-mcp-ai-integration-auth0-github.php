@@ -450,8 +450,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 
 			$user_ids = get_users(
 				array(
-					'meta_key'   => self::META_AUTH0_SUBJECT,
-					'meta_value' => $subject,
+					'meta_key'   => self::META_AUTH0_SUBJECT, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find Auth0-linked user accounts; no alternative lookup method available.
+					'meta_value' => $subject, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to match Auth0 user identifiers; no alternative lookup method available.
 					'fields'     => 'ids',
 					'number'     => 1,
 				)
@@ -468,8 +468,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 
 			$user_ids = get_users(
 				array(
-					'meta_key'   => self::META_GITHUB_ID,
-					'meta_value' => $identifier,
+					'meta_key'   => self::META_GITHUB_ID, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find Auth0-linked user accounts; no alternative lookup method available.
+					'meta_value' => $identifier, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to match Auth0 user identifiers; no alternative lookup method available.
 					'fields'     => 'ids',
 					'number'     => 1,
 				)

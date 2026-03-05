@@ -11094,6 +11094,13 @@
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
 
+            // Pre-load vector store metadata if the assistant has one configured.
+            // This ensures the vector store status and file counts are immediately
+            // available for the agentic workflow without waiting for the first tool call.
+            if (state.config.vectorStoreId && state.config.vectorStorePreloadEndpoint) {
+                preloadVectorStore(state);
+            }
+
             // Mark container as initialized to prevent double-initialization
             container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
@@ -11409,6 +11416,62 @@
         if (state.messagesEl) {
             scrollBatcher.scrollToBottom(state.messagesEl);
         }
+    }
+
+    /**
+     * Pre-loads vector store metadata for the assistant during chat initialization.
+     *
+     * Fetches vector store status, file counts, and name from the server so that
+     * this information is immediately available for the agentic workflow without
+     * waiting for the first tool call. Results are stored in state.vectorStoreCache.
+     *
+     * @param {Object} state - Chat instance state.
+     */
+    function preloadVectorStore(state) {
+        if (!state || !state.config || !state.config.vectorStoreId || !state.config.vectorStorePreloadEndpoint) {
+            return;
+        }
+
+        var vectorStoreId = state.config.vectorStoreId;
+        var assistantId = state.config.assistantId;
+        var url = state.config.vectorStorePreloadEndpoint + '?assistant_id=' + encodeURIComponent(assistantId);
+
+        console.log('[NV oOS] Pre-loading vector store for assistant:', {
+            assistantId: assistantId,
+            vectorStoreId: vectorStoreId
+        });
+
+        fetch(url, { headers: buildJsonHeaders(state) })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.has_vector_store) {
+                    state.vectorStoreCache = {
+                        id: data.vector_store_id || vectorStoreId,
+                        name: data.name || null,
+                        status: data.status || null,
+                        file_counts: data.file_counts || {},
+                        created_at: data.created_at || null,
+                        last_active_at: data.last_active_at || null,
+                        preloaded_at: Date.now()
+                    };
+                    console.log('[NV oOS] Vector store pre-loaded successfully:', {
+                        id: state.vectorStoreCache.id,
+                        name: state.vectorStoreCache.name,
+                        status: state.vectorStoreCache.status,
+                        file_counts: state.vectorStoreCache.file_counts
+                    });
+                } else {
+                    console.log('[NV oOS] No vector store configured for this assistant.');
+                }
+            })
+            .catch(function(err) {
+                console.warn('[NV oOS] Could not pre-load vector store (will be available on first tool call):', err.message);
+            });
     }
 
     function handleSubmit(event, state) {

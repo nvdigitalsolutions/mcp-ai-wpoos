@@ -425,7 +425,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				$type |= DNS_AAAA;
 			}
 
-			$records = @dns_get_record( $host, $type );
+			$records = @dns_get_record( $host, $type ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Error suppression required; function may fail on invalid input and we handle the boolean return.
 
 			if ( is_array( $records ) ) {
 				foreach ( $records as $record ) {
@@ -439,7 +439,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( function_exists( 'gethostbynamel' ) ) {
-			$ipv4 = @gethostbynamel( $host );
+			$ipv4 = @gethostbynamel( $host ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Error suppression required; function may fail on invalid input and we handle the boolean return.
 
 			if ( is_array( $ipv4 ) ) {
 				$ips = array_merge( $ips, $ipv4 );

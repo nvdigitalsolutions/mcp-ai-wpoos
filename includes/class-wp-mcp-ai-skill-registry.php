@@ -111,7 +111,7 @@ class WP_MCP_AI_Skill_Registry {
 			file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
 		}
 
-		return is_dir( $dir ) && is_writable( $dir );
+		return is_dir( $dir ) && is_writable( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 	}
 
 	/**
@@ -415,7 +415,7 @@ class WP_MCP_AI_Skill_Registry {
 			}
 		}
 
-		rmdir( $dir );
+		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 	}
 
 	/**

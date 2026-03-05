@@ -1142,7 +1142,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						// Store the result once to avoid redundant function calls.
 						$toolkit_memory_json = wp_json_encode( $this->get_toolkit_memory_requirements() );
 						?>
-						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; ?>;
+						var toolkitMemory = <?php echo $toolkit_memory_json ? $toolkit_memory_json : '{}'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() output is safe for inline script context. ?>;
 						
 						// Fallback to empty object if encoding failed.
 						if (!toolkitMemory || typeof toolkitMemory !== 'object') {

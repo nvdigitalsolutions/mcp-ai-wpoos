@@ -74,11 +74,11 @@ unzip -q -o vendor-dev.zip
 echo ""
 echo "Regenerating composer autoloader..."
 if command -v composer >/dev/null 2>&1; then
-  composer dump-autoload --no-interaction
+  composer install --no-interaction --prefer-dist
   echo "Autoloader regenerated successfully."
 else
   echo "Warning: composer not found. Autoloader may need manual regeneration."
-  echo "Run 'composer dump-autoload' when composer is available."
+  echo "Run 'composer install' when composer is available."
 fi
 
 echo ""

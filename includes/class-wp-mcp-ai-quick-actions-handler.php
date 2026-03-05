@@ -114,7 +114,7 @@ class WP_MCP_AI_Quick_Actions_Handler {
 
 		// Handle file upload.
 		if ( ! empty( $_FILES['file'] ) ) {
-			$file_data = $this->handle_file_upload( $_FILES['file'] );
+			$file_data = $this->handle_file_upload( $_FILES['file'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- file upload array passed to dedicated handler
 			if ( is_wp_error( $file_data ) ) {
 				wp_send_json_error( $file_data->get_error_message() );
 			}

@@ -271,6 +271,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		$current_time = time();
 
 		// Find all context transients.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Real-time context lookup requires direct query to ensure current conversation state; cached results would be stale.
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} 
@@ -297,6 +298,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		}
 
 		// Also clean up context indexes.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Real-time context lookup requires direct query to ensure current conversation state; cached results would be stale.
 		$indexes = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} 

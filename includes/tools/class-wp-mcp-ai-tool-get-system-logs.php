@@ -469,7 +469,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return array();
 		}
 
-		$handle = fopen( $path, 'rb' );
+		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( ! $handle ) {
 			return array();
@@ -487,9 +487,9 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		$buffer = '';
 		while ( ! feof( $handle ) ) {
-			$buffer .= fread( $handle, 4096 );
+			$buffer .= fread( $handle, 4096 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		if ( '' === $buffer ) {
 			return array();

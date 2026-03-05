@@ -51,10 +51,10 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties' => array(
 				'vector_store_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the vector store to retrieve.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The ID of the vector store to retrieve. When omitted, the assistant\'s configured vector store is used.', 'mcp-ai-wpoos' ),
 				),
 			),
-			'required'   => array( 'vector_store_id' ),
+			'required'   => array(),
 		);
 	}
 
@@ -66,14 +66,20 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		if ( empty( $arguments['vector_store_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The vector_store_id parameter is required.', 'mcp-ai-wpoos' ),
-			);
+		// Resolve vector store ID: explicit argument > assistant context configuration.
+		$vector_store_id = '';
+		if ( ! empty( $arguments['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $arguments['vector_store_id'] );
+		} elseif ( ! empty( $context['assistant_config']['vector_store_id'] ) ) {
+			$vector_store_id = sanitize_text_field( $context['assistant_config']['vector_store_id'] );
 		}
 
-		$vector_store_id = sanitize_text_field( $arguments['vector_store_id'] );
+		if ( empty( $vector_store_id ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'No vector store ID provided and none configured for this assistant.', 'mcp-ai-wpoos' ),
+			);
+		}
 
 		$client = new WP_MCP_AI_OpenAI_Client();
 		$result = $client->retrieve_vector_store( $vector_store_id );

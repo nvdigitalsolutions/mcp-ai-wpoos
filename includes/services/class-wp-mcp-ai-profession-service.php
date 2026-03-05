@@ -262,7 +262,7 @@ class WP_MCP_AI_Profession_Service {
 			'post_type'      => 'mcp_ai_profession',
 			'posts_per_page' => -1,
 			'post_status'    => 'publish',
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
 				array(
 					'key'   => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
 					'value' => sanitize_key( $agent_role ),

@@ -9,6 +9,10 @@
 
 namespace WP_MCP_AI\Validators;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;

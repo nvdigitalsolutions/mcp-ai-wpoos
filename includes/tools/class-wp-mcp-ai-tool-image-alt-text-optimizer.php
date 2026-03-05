@@ -583,7 +583,7 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 			'post_status'    => 'inherit',
 			'posts_per_page' => $limit,
 			'fields'         => 'ids',
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to find images missing alt text meta; no alternative index-based query available.
 				'relation' => 'OR',
 				array(
 					'key'     => '_wp_attachment_image_alt',

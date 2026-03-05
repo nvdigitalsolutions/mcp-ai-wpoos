@@ -168,7 +168,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 					'type'    => 'file',
 					'path'    => $file,
 					'title'   => basename( $file ),
-					'content' => file_get_contents( $file ),
+					'content' => file_get_contents( $file ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read; WP_Filesystem not available in this context.
 					'url'     => null,
 				);
 			}
@@ -293,7 +293,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 				)
 			);
 		} elseif ( ! empty( $fixed ) && $options['auto_fix'] && 'file' === $doc['type'] ) {
-			file_put_contents( $doc['path'], $doc['content'] );
+			file_put_contents( $doc['path'], $doc['content'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
 
 		return array(
@@ -335,7 +335,7 @@ class WP_MCP_AI_Slash_Command_Sync_Docs {
 
 		foreach ( $all_links as $url ) {
 			// Skip external links and anchors.
-			if ( strpos( $url, '#' ) === 0 || strpos( $url, 'http' ) === 0 && strpos( $url, $site_url ) !== 0 ) {
+			if ( 0 === strpos( $url, '#' ) || ( 0 === strpos( $url, 'http' ) && 0 !== strpos( $url, $site_url ) ) ) {
 				continue;
 			}
 

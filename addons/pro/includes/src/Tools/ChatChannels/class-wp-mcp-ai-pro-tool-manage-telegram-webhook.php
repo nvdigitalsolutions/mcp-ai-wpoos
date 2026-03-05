@@ -81,6 +81,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 					'maximum'     => 100,
 					'default'     => 40,
 				),
+				'secret_token'    => array(
+					'type'        => 'string',
+					'description' => __( 'Optional secret token (1–256 characters; A–Z, a–z, 0–9, _ and -). When set, Telegram will include this value in the X-Telegram-Bot-Api-Secret-Token header on every webhook update so the plugin can verify the request is genuinely from Telegram.', 'mcp-ai-wpoos-pro' ),
+					'minLength'   => 1,
+					'maxLength'   => 256,
+					'pattern'     => '^[A-Za-z0-9_-]+$',
+				),
 			),
 			'required'             => array( 'token', 'action' ),
 			'additionalProperties' => false,
@@ -151,6 +158,26 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			$max_connections = 100;
 		}
 
+		// Resolve the webhook secret token: use an explicitly provided value or
+		// fall back to the one stored on the matching connection so that
+		// Telegram will send the X-Telegram-Bot-Api-Secret-Token header on
+		// every update and the incoming request can be verified.
+		$secret_token = isset( $arguments['secret_token'] ) ? trim( (string) $arguments['secret_token'] ) : '';
+
+		if ( ! empty( $secret_token ) ) {
+			// Validate caller-supplied token (A–Z, a–z, 0–9, _ and - only; 1–256 chars).
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+
+			if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_secret_token( $secret_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_secret_token',
+					__( 'Webhook secret token may only contain A–Z, a–z, 0–9, underscores and hyphens (1–256 characters).', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		$endpoint = sprintf( 'https://api.telegram.org/bot%s/setWebhook', rawurlencode( $token ) );
 
 		$payload = array(
@@ -166,6 +193,10 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			),
 		);
 
+		if ( ! empty( $secret_token ) ) {
+			$payload['secret_token'] = $secret_token;
+		}
+
 		$body = wp_json_encode( $payload );
 
 		if ( false === $body ) {
@@ -176,9 +207,10 @@ class WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook implements WP_MCP_AI_Tool_Inter
 			'telegram_set_webhook_request',
 			'Setting Telegram webhook.',
 			array(
-				'endpoint'        => 'https://api.telegram.org/bot***/setWebhook',
-				'url'             => $url,
-				'max_connections' => $max_connections,
+				'endpoint'         => 'https://api.telegram.org/bot***/setWebhook',
+				'url'              => $url,
+				'max_connections'  => $max_connections,
+				'secret_token_set' => ! empty( $secret_token ),
 			)
 		);
 

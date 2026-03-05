@@ -382,7 +382,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 					'post_type'      => 'mcp_ai_assistant',
 					'posts_per_page' => -1,
 					'post_status'    => 'publish',
-					'meta_query'     => array(
+					'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter slash-command posts by plugin meta; no alternative index-based query available.
 						array(
 							'key'     => '_mcp_ai_credential_id',
 							'value'   => $credential_id,

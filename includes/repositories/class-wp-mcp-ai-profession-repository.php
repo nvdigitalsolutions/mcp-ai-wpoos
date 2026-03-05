@@ -79,7 +79,7 @@ class WP_MCP_AI_Profession_Repository {
 			'posts_per_page' => -1,
 			'orderby'        => 'title',
 			'order'          => 'ASC',
-			'meta_query'     => array(
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- meta_query required to filter profession CPT by configuration meta; no alternative index-based query available.
 				array(
 					'key'     => WP_MCP_AI_Profession_CPT::META_CATEGORY,
 					'value'   => sanitize_key( $category ),

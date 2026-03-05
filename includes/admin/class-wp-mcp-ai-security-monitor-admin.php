@@ -164,7 +164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 							'page'     => 'wp-mcp-ai-dashboard',
 							'tab'      => 'security',
 							'root_key' => 'invalid',
-							'error'    => urlencode( $result->get_error_message() ),
+							'error'    => urlencode( $result->get_error_message() ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.urlencode_urlencode -- urlencode() required for URL parameter encoding in API request.
 						),
 						admin_url( 'admin.php' )
 					)
