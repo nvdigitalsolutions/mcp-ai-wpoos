@@ -225,6 +225,27 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test raw HTML anchor tags are preserved as clickable links.
+	 */
+	public function test_telegram_markdown_to_html_raw_anchor_tags() {
+		$input  = 'Check out <a href="https://theparfumerie.lk/shop/perfumes/paco-rabanne/one-million/">Paco Rabanne 1 Million</a> today.';
+		$result = $this->invoke_markdown_to_telegram_html( $input );
+		$this->assertStringContainsString( '<a href="https://theparfumerie.lk/shop/perfumes/paco-rabanne/one-million/">Paco Rabanne 1 Million</a>', $result );
+		$this->assertStringNotContainsString( '&lt;a ', $result );
+	}
+
+	/**
+	 * Test raw HTML anchor tags with extra attributes are normalised.
+	 */
+	public function test_telegram_markdown_to_html_raw_anchor_with_extra_attrs() {
+		$input  = 'See <a class="link" href="https://example.com" target="_blank">Example</a> here.';
+		$result = $this->invoke_markdown_to_telegram_html( $input );
+		$this->assertStringContainsString( '<a href="https://example.com">Example</a>', $result );
+		$this->assertStringNotContainsString( 'class=', $result );
+		$this->assertStringNotContainsString( 'target=', $result );
+	}
+
+	/**
 	 * Test headings convert to bold text.
 	 */
 	public function test_telegram_markdown_to_html_headings() {
