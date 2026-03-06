@@ -310,8 +310,10 @@ class Test_Remote_Connection_Access_Controls extends WP_UnitTestCase {
 	}
 
 	/**
-	 * create_post returns missing title error before the access check when no config is set.
-	 * (When access controls are not configured, create is denied – not a missing title error.)
+	 * create_post returns access denied error when no access controls are configured.
+	 *
+	 * When post_type_access is empty, write operations are always denied regardless
+	 * of whether other arguments (like title) are valid.
 	 */
 	public function test_tool_create_post_denied_with_no_access_config() {
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(

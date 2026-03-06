@@ -1785,7 +1785,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( ! empty( $arguments['fields'] ) && is_array( $arguments['fields'] ) ) {
 			foreach ( $allowed_fields as $field ) {
 				if ( isset( $arguments['fields'][ $field ] ) ) {
-					$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+					// manage_stock must be boolean per WooCommerce REST API spec.
+					if ( 'manage_stock' === $field ) {
+						$body[ $field ] = (bool) $arguments['fields'][ $field ];
+					} else {
+						$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+					}
 				}
 			}
 		}
@@ -1861,7 +1866,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( ! empty( $arguments['fields'] ) && is_array( $arguments['fields'] ) ) {
 			foreach ( $allowed_fields as $field ) {
 				if ( isset( $arguments['fields'][ $field ] ) ) {
-					$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+					// manage_stock must be boolean per WooCommerce REST API spec.
+					if ( 'manage_stock' === $field ) {
+						$body[ $field ] = (bool) $arguments['fields'][ $field ];
+					} else {
+						$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+					}
 				}
 			}
 		}

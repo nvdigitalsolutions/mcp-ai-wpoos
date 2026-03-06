@@ -11559,6 +11559,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * the same treatment.  Only 'read', 'create', 'update', and 'delete' are
 	 * accepted as operation values.
 	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @return array Sanitized post_type_access map, e.g.
@@ -11617,6 +11620,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 *
 	 * Each WooCommerce resource has four checkbox fields:
 	 * wc_{resource}_read, wc_{resource}_create, wc_{resource}_update, wc_{resource}_delete.
+	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
 	 *
 	 * @since 1.0.0
 	 *
