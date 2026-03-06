@@ -1688,8 +1688,8 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'return \'<div class="tma-hw-goal-item">\'+' .
 					'\'<div class="tma-hw-goal-header">\'+' .
 						'\'<div class="tma-hw-goal-name">\'+g.icon+" "+escH(g.label)+\'</div>\'+' .
-						'\'<div class="tma-hw-goal-pct">\'+pct+"% </div>"+' .
-					'"</div>"+' .
+						'\'<div class="tma-hw-goal-pct">\'+pct+\'% </div>\'+' .
+					'\'</div>\'+' .
 					'\'<div class="tma-hw-progress-track"><div class="tma-hw-progress-fill" style="width:\'+pct+\'%"></div></div>\'+' .
 					'\'<div class="tma-hw-goal-detail">\'+escH(g.val)+" / "+escH(g.goal)+\'</div></div>\';' .
 			'}).join("");' .
