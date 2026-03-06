@@ -1944,4 +1944,301 @@ class Test_WhatsApp_Webhook_Controller extends WP_UnitTestCase {
 		$result = $controller->get_whatsapp_max_agentic_iterations( 1, $assistant_config );
 		$this->assertEquals( 3, $result, 'Per-assistant config should take highest priority' );
 	}
+
+	// =========================================================================
+	// resolve_content_to_string — multi-provider content format handling
+	// =========================================================================
+
+	/**
+	 * Helper: return a reflection-unlocked resolve_content_to_string method.
+	 *
+	 * @return array{0: WP_MCP_AI_WhatsApp_Webhook_Controller, 1: ReflectionMethod}|null
+	 */
+	private function get_whatsapp_resolve_content_method() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_content_to_string' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * resolve_content_to_string: plain string input (OpenAI/Anthropic format).
+	 */
+	public function test_whatsapp_resolve_content_plain_string() {
+		$pair = $this->get_whatsapp_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$this->assertEquals( 'Hello', $method->invoke( $controller, 'Hello' ) );
+		$this->assertEquals( 'trimmed', $method->invoke( $controller, '  trimmed  ' ) );
+		$this->assertEquals( '', $method->invoke( $controller, '' ) );
+	}
+
+	/**
+	 * resolve_content_to_string: Gemini/Ollama array segment format.
+	 */
+	public function test_whatsapp_resolve_content_array_segments() {
+		$pair = $this->get_whatsapp_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$segments = array( array( 'type' => 'text', 'text' => 'Hello from Gemini!' ) );
+		$this->assertEquals( 'Hello from Gemini!', $method->invoke( $controller, $segments ) );
+
+		// Multiple text segments are joined with newline.
+		$multi = array(
+			array( 'type' => 'text', 'text' => 'Part A.' ),
+			array( 'type' => 'text', 'text' => 'Part B.' ),
+		);
+		$this->assertEquals( "Part A.\nPart B.", $method->invoke( $controller, $multi ) );
+
+		// Non-text segments are silently skipped.
+		$mixed = array(
+			array( 'type' => 'image_url', 'image_url' => array( 'url' => 'https://example.com/img.png' ) ),
+			array( 'type' => 'text', 'text' => 'Only text.' ),
+		);
+		$this->assertEquals( 'Only text.', $method->invoke( $controller, $mixed ) );
+	}
+
+	/**
+	 * resolve_content_to_string: invalid inputs return empty string.
+	 */
+	public function test_whatsapp_resolve_content_invalid_inputs() {
+		$pair = $this->get_whatsapp_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$this->assertEquals( '', $method->invoke( $controller, null ) );
+		$this->assertEquals( '', $method->invoke( $controller, 42 ) );
+		$this->assertEquals( '', $method->invoke( $controller, array() ) );
+	}
+
+	// =========================================================================
+	// normalize_conversation_history_for_chat — multi-provider tests
+	// =========================================================================
+
+	/**
+	 * Helper: return a reflection-unlocked normalize_conversation_history_for_chat method.
+	 *
+	 * @return array{0: WP_MCP_AI_WhatsApp_Webhook_Controller, 1: ReflectionMethod}|null
+	 */
+	private function get_whatsapp_normalize_history_method() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_conversation_history_for_chat' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: plain string content passes through unchanged.
+	 */
+	public function test_whatsapp_normalize_history_string_content() {
+		$pair = $this->get_whatsapp_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$history = array(
+			array( 'role' => 'user', 'content' => 'Hello!' ),
+			array( 'role' => 'assistant', 'content' => 'Hi there!' ),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result );
+		$this->assertEquals( 'Hello!', $result[0]['content'] );
+		$this->assertEquals( 'Hi there!', $result[1]['content'] );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: Gemini/Ollama array content is flattened.
+	 *
+	 * Tool result messages (role: tool) from the agentic loop are stored as JSON
+	 * strings. Assistant messages may have Gemini/Ollama array-format content.
+	 * Both formats must survive normalization so the chat endpoint receives valid
+	 * messages on the next conversation turn.
+	 */
+	public function test_whatsapp_normalize_history_array_content() {
+		$pair = $this->get_whatsapp_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$history = array(
+			array( 'role' => 'user', 'content' => 'Search for flights.' ),
+			array(
+				'role'    => 'assistant',
+				'content' => array(
+					array( 'type' => 'text', 'text' => 'I found some flights.' ),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result );
+		$this->assertEquals( 'I found some flights.', $result[1]['content'], 'Gemini/Ollama array content should be flattened to string for chat endpoint' );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: entries with empty/null content are dropped.
+	 */
+	public function test_whatsapp_normalize_history_drops_empty_content() {
+		$pair = $this->get_whatsapp_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$history = array(
+			array( 'role' => 'user', 'content' => 'Hello.' ),
+			array( 'role' => 'assistant', 'content' => null ),
+			array( 'role' => 'assistant', 'content' => array() ),
+			array( 'role' => 'assistant', 'content' => 'Valid reply.' ),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result, 'Entries with null/empty/empty-array content should be dropped' );
+		$this->assertEquals( 'Hello.', $result[0]['content'] );
+		$this->assertEquals( 'Valid reply.', $result[1]['content'] );
+	}
+
+	/**
+	 * extract_content_from_chat_response: Gemini-style array content in choices.
+	 */
+	public function test_whatsapp_extract_content_gemini_array_format() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => array(
+								array( 'type' => 'text', 'text' => 'Hello from Gemini via WhatsApp!' ),
+							),
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Hello from Gemini via WhatsApp!',
+			$method->invoke( $controller, $response_data ),
+			'WhatsApp extract_content_from_chat_response should handle Gemini array content'
+		);
+	}
+
+	/**
+	 * extract_content_from_chat_response: Ollama-style array content with tool result fallback.
+	 */
+	public function test_whatsapp_extract_content_ollama_agentic_fallback() {
+		if ( ! class_exists( 'WP_MCP_AI_WhatsApp_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			} else {
+				$this->markTestSkipped( 'WhatsApp Webhook Controller not available' );
+				return;
+			}
+		}
+
+		$controller = new WP_MCP_AI_WhatsApp_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		// Choices exhausted (tool_calls finish); fallback to agentic_tool_messages with Ollama array content.
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices'               => array(
+					array(
+						'message'       => array( 'role' => 'assistant', 'content' => null ),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array(
+						'role'    => 'assistant',
+						'content' => array(
+							array( 'type' => 'text', 'text' => 'Tool result summary from Ollama.' ),
+						),
+					),
+				),
+				'provider'              => 'ollama',
+			),
+		);
+
+		$this->assertEquals(
+			'Tool result summary from Ollama.',
+			$method->invoke( $controller, $response_data ),
+			'WhatsApp should extract array-format content from Ollama agentic_tool_messages fallback'
+		);
+	}
 }
