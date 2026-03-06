@@ -1914,6 +1914,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<?php self::render_visual_workflow_builder_card(); ?>
 </div>
 
+<!-- Telegram Mini App Template Builder Card -->
+<div style="margin-top: 30px;">
+			<?php self::render_tma_template_builder_card(); ?>
+</div>
+
 <!-- Pro Toolkit Features Card -->
 <div style="margin-top: 30px;">
 			<?php self::render_pro_toolkit_features_card(); ?>
@@ -2827,6 +2832,152 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</p>
 			</div>
 		</div>
+	</div>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render Telegram Mini App Template Builder card.
+		 *
+		 * Displayed on the Pro Settings page alongside the Visual Workflow Builder card.
+		 * Documents the technology stack, npm packages, React Cosmos fixtures, build
+		 * information, and links to the Chat Channels settings page for live configuration.
+		 *
+		 * @since 1.1.3
+		 * @return void
+		 */
+		private static function render_tma_template_builder_card() {
+			$active_template  = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+			$mini_app_url     = rest_url( 'mcp-ai/v1/telegram-mini-app' );
+
+			$chat_channels_url    = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=mini_app_builder' );
+			$chat_channels_config = admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings&tab=configuration' );
+			?>
+<div class="wp-mcp-ai-settings-card">
+	<h2>
+		<span class="dashicons dashicons-smartphone" style="color: #2481cc;"></span>
+		<?php esc_html_e( 'Telegram Mini App Template Builder', 'mcp-ai-wpoos' ); ?>
+		<span class="pro-badge" style="background: linear-gradient(135deg, #2481cc 0%, #1565c0 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
+	</h2>
+
+	<div class="notice notice-info inline" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Per-Bot Mini App Theming with Live Preview', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Choose from 6 pre-built templates optimized for different Pro toolkits. Each bot connection can override the global default. Drag-to-reorder cards and live iframe preview — all bundled with the plugin, no additional setup required.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<!-- Status row -->
+	<table class="form-table" style="margin-bottom: 0;">
+		<tr>
+			<th scope="row" style="padding: 8px 10px 8px 0; width: 220px;"><?php esc_html_e( 'Active Global Template', 'mcp-ai-wpoos' ); ?></th>
+			<td style="padding: 8px 0;">
+				<code><?php echo esc_html( $active_template ); ?></code>
+				&nbsp;
+				<a href="<?php echo esc_url( $chat_channels_url ); ?>" class="button button-small">
+					<?php esc_html_e( 'Change Template →', 'mcp-ai-wpoos' ); ?>
+				</a>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row" style="padding: 8px 10px 8px 0;"><?php esc_html_e( 'Mini App URL', 'mcp-ai-wpoos' ); ?></th>
+			<td style="padding: 8px 0;">
+				<input type="text" readonly value="<?php echo esc_url( $mini_app_url ); ?>"
+					onclick="this.select();" class="large-text code"
+					style="max-width:500px; background:#f0f0f0;" />
+			</td>
+		</tr>
+	</table>
+
+	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+
+		<!-- Pre-built Templates -->
+		<div style="border: 1px solid #2481cc; padding: 15px; background: #f0f6fc; border-radius: 4px;">
+			<h3 style="margin: 0 0 12px 0; color: #2481cc;">
+				<span class="dashicons dashicons-layout"></span>
+				<?php esc_html_e( '6 Pre-Built Templates', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; font-size: 13px; line-height: 2;">
+				<li>📋 <strong><?php esc_html_e( 'Content Manager', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Default full-featured CMS', 'mcp-ai-wpoos' ); ?></li>
+				<li>💬 <strong><?php esc_html_e( 'AI Chat', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Clean conversational interface', 'mcp-ai-wpoos' ); ?></li>
+				<li>🛒 <strong><?php esc_html_e( 'E-Commerce', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'WooCommerce shop assistant', 'mcp-ai-wpoos' ); ?></li>
+				<li>👥 <strong><?php esc_html_e( 'CRM Assistant', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Contact &amp; pipeline management', 'mcp-ai-wpoos' ); ?></li>
+				<li>📊 <strong><?php esc_html_e( 'Analytics Dashboard', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Chart.js visualisations', 'mcp-ai-wpoos' ); ?></li>
+				<li>📅 <strong><?php esc_html_e( 'Calendar Booking', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Appointment scheduling', 'mcp-ai-wpoos' ); ?></li>
+			</ul>
+		</div>
+
+		<!-- Technology Stack -->
+		<div style="border: 1px solid #00a32a; padding: 15px; background: #f0f9f4; border-radius: 4px;">
+			<h3 style="margin: 0 0 12px 0; color: #00a32a;">
+				<span class="dashicons dashicons-admin-tools"></span>
+				<?php esc_html_e( 'Technology Stack', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<table style="width: 100%; font-size: 13px;">
+				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Framework:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/element</code></td></tr>
+				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'i18n:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/i18n</code></td></tr>
+				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Drag &amp; Drop:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@dnd-kit/sortable</code></td></tr>
+				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Bundler:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/scripts</code></td></tr>
+			</table>
+		</div>
+
+	</div>
+
+	<!-- npm packages table (informational) -->
+	<h3><?php esc_html_e( 'npm Packages Used', 'mcp-ai-wpoos' ); ?></h3>
+	<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+		<thead>
+			<tr>
+				<th style="width: 35%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+				<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+				<th style="width: 50%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>@wordpress/element</code></td>
+				<td><code>^5.0.0</code></td>
+				<td><?php esc_html_e( 'React abstraction layer (createRoot, hooks)', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+			<tr>
+				<td><code>@wordpress/i18n</code></td>
+				<td><code>^4.0.0</code></td>
+				<td><?php esc_html_e( 'Translations via __() — aligns with WordPress standards', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+			<tr>
+				<td><code>@dnd-kit/core</code></td>
+				<td><code>^6.1.0</code></td>
+				<td><?php esc_html_e( 'Drag-and-drop context, sensors (pointer + keyboard a11y)', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+			<tr>
+				<td><code>@dnd-kit/sortable</code></td>
+				<td><code>^8.0.0</code></td>
+				<td><?php esc_html_e( 'Drag-to-reorder template cards in the admin picker', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+			<tr>
+				<td><code>@dnd-kit/utilities</code></td>
+				<td><code>^3.2.2</code></td>
+				<td><?php esc_html_e( 'CSS.Transform helper for smooth card animations', 'mcp-ai-wpoos' ); ?></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<!-- CTA -->
+	<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1;">
+		<h3 style="margin: 0 0 10px 0;">
+			<span class="dashicons dashicons-admin-settings"></span>
+			<?php esc_html_e( 'Configure Templates', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<p style="margin: 0 0 12px 0; font-size: 13px;">
+			<?php esc_html_e( 'Set the global default template in the Mini App Builder tab, or override it per-connection in the Remote Site Manager.', 'mcp-ai-wpoos' ); ?>
+		</p>
+		<a href="<?php echo esc_url( $chat_channels_url ); ?>" class="button button-primary" style="margin-right: 8px;">
+			📱 <?php esc_html_e( 'Open Mini App Builder', 'mcp-ai-wpoos' ); ?>
+		</a>
+		<a href="<?php echo esc_url( $chat_channels_config ); ?>" class="button button-secondary">
+			⚙️ <?php esc_html_e( 'Telegram Configuration', 'mcp-ai-wpoos' ); ?>
+		</a>
 	</div>
 </div>
 			<?php

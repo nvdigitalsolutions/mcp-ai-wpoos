@@ -35,6 +35,8 @@ on:
       - 'composer.json'
       - 'package.json'
       - 'bin/build-plugin-zip.sh'
+      - 'src/tma-template-builder/**'
+      - 'webpack.config.tma-builder.js'
   pull_request:
     branches:
       - main
@@ -47,6 +49,8 @@ on:
       - '*.php'
       - 'composer.json'
       - 'package.json'
+      - 'src/tma-template-builder/**'
+      - 'webpack.config.tma-builder.js'
   workflow_dispatch:
 
 permissions:
@@ -97,6 +101,11 @@ jobs:
           echo "✅ Frontend assets built"
           
           echo ""
+          echo "📱 Building TMA Template Builder React assets..."
+          npm run build:tma-builder
+          echo "✅ TMA Template Builder assets built"
+          
+          echo ""
           echo "📊 Build output:"
           find assets -name "*.min.css" -o -name "*.min.js" | sort
 
@@ -117,6 +126,7 @@ jobs:
           git add -f assets/**/*.min.css assets/**/*.min.css.map 2>/dev/null || true
           git add -f assets/**/*.min.js assets/**/*.min.js.map 2>/dev/null || true
           git add -f build/*.zip
+          git add -f addons/pro/build/tma-template-builder/ 2>/dev/null || true
           
           # Check if anything changed
           if git diff --staged --quiet; then
