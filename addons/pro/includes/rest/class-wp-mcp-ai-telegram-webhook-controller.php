@@ -189,12 +189,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$provided_token = $request->get_header( 'x-telegram-bot-api-secret-token' );
 
 		if ( empty( $provided_token ) ) {
-			WP_MCP_AI_Logger::log_error( 'Telegram webhook rejected: missing secret token header.' );
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: missing secret token header.',
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
+			);
 			return false;
 		}
 
 		if ( ! hash_equals( $stored_secret, $provided_token ) ) {
-			WP_MCP_AI_Logger::log_error( 'Telegram webhook rejected: invalid secret token.' );
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: invalid secret token. Ensure the secret_token configured in your Telegram connection settings matches the token set in BotFather (setWebhook secret_token parameter).',
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
+			);
 			return false;
 		}
 
@@ -688,11 +694,13 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Telegram AI reply: empty content from assistant.',
 				array(
-					'assistant_id'  => $assistant_id,
-					'has_data'      => isset( $response_data['data'] ),
-					'has_choices'   => isset( $response_data['data']['choices'] ),
-					'choices_count' => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
-					'finish_reason' => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+					'assistant_id'            => $assistant_id,
+					'has_data'                => isset( $response_data['data'] ),
+					'has_choices'             => isset( $response_data['data']['choices'] ),
+					'choices_count'           => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
+					'finish_reason'           => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+					'agentic_messages_count'  => isset( $response_data['data']['agentic_tool_messages'] ) ? count( $response_data['data']['agentic_tool_messages'] ) : 0,
+					'likely_tool_call_loop'   => isset( $response_data['data']['choices'][0]['finish_reason'] ) && 'tool_calls' === $response_data['data']['choices'][0]['finish_reason'],
 				)
 			);
 
@@ -969,7 +977,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 
 			$role    = isset( $entry['role'] ) && is_string( $entry['role'] ) ? trim( $entry['role'] ) : '';
-			$content = isset( $entry['content'] ) && is_string( $entry['content'] ) ? trim( $entry['content'] ) : '';
+			$content = isset( $entry['content'] ) ? $this->resolve_content_to_string( $entry['content'] ) : '';
 
 			if ( '' === $role || '' === $content ) {
 				continue;
@@ -1277,14 +1285,65 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Resolve a message `content` field to a plain string.
+	 *
+	 * Providers normalise the content field differently:
+	 *  - OpenAI / Anthropic / LM Studio: plain string.
+	 *  - Gemini / Ollama: array of content segments, e.g.
+	 *      [{ "type": "text", "text": "Hello!" }]
+	 *
+	 * This helper handles both formats so that channel auto-replies work
+	 * regardless of which AI provider the assigned assistant uses.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $content Raw value of message['content'] from the chat response.
+	 * @return string Plain-text string, or empty string when no text can be extracted.
+	 */
+	protected function resolve_content_to_string( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		// Array of content segments (Gemini / Ollama normalised format).
+		// Each segment is expected to be an associative array with at minimum a
+		// 'type' key. Only segments of type 'text' carry displayable text.
+		$parts = array();
+		foreach ( $content as $segment ) {
+			if ( ! is_array( $segment ) ) {
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+			if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			}
+		}
+
+		return implode( "\n", $parts );
+	}
+
+	/**
 	 * Extract the plain-text reply from the internal /mcp-ai/v1/chat response.
 	 *
 	 * The /mcp-ai/v1/chat endpoint wraps the LLM response under a `data` key:
 	 *
 	 *   { assistant_id, data: { choices: [{ message: { content, role }, finish_reason }] } }
 	 *
-	 * When an agentic tool-calling workflow runs, OpenAI (and compatible providers)
-	 * set `message.content` to null on intermediate responses where
+	 * The `message.content` field can be a plain string (OpenAI/Anthropic) or an
+	 * array of typed segments (Gemini/Ollama). Both formats are handled via
+	 * {@see resolve_content_to_string()}.
+	 *
+	 * When an agentic tool-calling workflow runs, some providers set
+	 * `message.content` to null on intermediate responses where
 	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
 	 * all choices and falling back to `agentic_tool_messages` (intermediate
 	 * assistant messages attached to the response by the chat service) so that
@@ -1304,7 +1363,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
 		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		// --- Pass 1: scan every choice for a non-empty string content value.
+		// --- Pass 1: scan every choice for a non-empty content value.
 		// The final response from a completed agentic workflow will normally be
 		// found here with finish_reason = 'stop'. We prefer choices whose
 		// finish_reason is 'stop' over 'tool_calls' so that a partial tool-call
@@ -1312,7 +1371,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$best_content = '';
 		foreach ( $choices as $choice ) {
 			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 
 			if ( '' === $content ) {
 				continue;
@@ -1349,7 +1408,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			if ( ! is_array( $msg ) ) {
 				continue;
 			}
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 			if ( '' !== $content ) {
 				return $content;
 			}
@@ -1360,6 +1419,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 	/**
 	 * Extract normalized intermediate agentic tool messages from chat response data.
+	 *
+	 * Handles both plain string content (OpenAI/Anthropic) and array-segment content
+	 * (Gemini/Ollama) in each message. Tool result messages (role: tool) always have
+	 * JSON-encoded string content and are preserved as-is. Assistant messages that
+	 * used tool calls may have array-format content; these are flattened to a string
+	 * via {@see resolve_content_to_string()}.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1385,7 +1450,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 
 			$role    = isset( $message['role'] ) && is_string( $message['role'] ) ? trim( $message['role'] ) : '';
-			$content = isset( $message['content'] ) && is_string( $message['content'] ) ? trim( $message['content'] ) : '';
+			$content = isset( $message['content'] ) ? $this->resolve_content_to_string( $message['content'] ) : '';
 
 			if ( '' === $role || '' === $content ) {
 				continue;
@@ -1770,12 +1835,19 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Handle /tools – list available tools or run a tool by name.
+	 * Handle /tools – list the tools available to the assistant assigned to this
+	 * Telegram connection.
+	 *
+	 * The list is scoped to the assistant configured for this connection so that
+	 * users only see tools that are actually applicable (e.g. a customer-support
+	 * assistant should not advertise developer or admin tools). When no
+	 * assistant is configured, or the assistant has no tool restriction, the
+	 * full registry is displayed as a fallback.
 	 *
 	 * @since 1.1.3
 	 *
 	 * @param string $chat_id Chat ID.
-	 * @param string $args    Optional tool slug to run.
+	 * @param string $args    Optional tool slug (reserved for future use).
 	 * @param array  $message Telegram message.
 	 */
 	protected function cmd_tools( $chat_id, $args, array $message ) {
@@ -1790,20 +1862,82 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$all_tools = $registry->get_all_tools();
-		$count     = is_array( $all_tools ) ? count( $all_tools ) : 0;
+		// Scope the listing to the tools configured on the connection's assistant.
+		// Falls back to the full registry when no assistant or tool restriction exists.
+		$tool_slugs      = array(); // Empty = no restriction found yet.
+		$assistant_label = ''; // Human-readable name shown in the header.
+		$assistant_id    = 0;
 
-		$text  = "🔧 *Available Tools* ($count)\n\n";
+		$connection = $this->get_active_telegram_connection();
+		if ( $connection ) {
+			$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$assistant_ids    = $this->resolve_assistant_ids( $connection, $automation_rules );
+			$assistant_id     = ! empty( $assistant_ids ) ? (int) $assistant_ids[0] : 0;
+
+			if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+				if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
+					$tool_slugs = $config['tools'];
+				}
+				// Build a friendly label from the assistant's post title.
+				$post = get_post( $assistant_id );
+				if ( $post ) {
+					$assistant_label = $post->post_title;
+				}
+			}
+		}
+
+		// Build the display list.
+		if ( ! empty( $tool_slugs ) ) {
+			// Assistant has an explicit tool list — show only those tools.
+			// Slugs in the configuration are already stored as sanitize_key() values,
+			// so we only cast here to avoid double-sanitization altering them.
+			$display_tools = array();
+			foreach ( $tool_slugs as $slug ) {
+				$slug = (string) $slug;
+				$tool = $registry->get_tool( $slug );
+				if ( $tool ) {
+					$display_tools[ $slug ] = $tool;
+				} else {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'Telegram /tools: configured tool slug not found in registry — may be disabled or removed. Verify the assistant tool configuration.',
+						array(
+							'slug'         => $slug,
+							'assistant_id' => $assistant_id,
+						)
+					);
+				}
+			}
+		} else {
+			// No restriction configured — fall back to the full registry.
+			$display_tools = $registry->get_all_tools();
+		}
+
+		$count = count( $display_tools );
+
+		// Build header — sanitize the label so Markdown special chars don't break formatting.
+		$safe_label = $this->sanitize_for_telegram_markdown( $assistant_label );
+		if ( '' !== $safe_label ) {
+			/* translators: 1: assistant name, 2: number of tools */
+			$header = sprintf( '🔧 *%s – Available Tools* (%d)', $safe_label, $count );
+		} else {
+			/* translators: %d: number of tools */
+			$header = sprintf( '🔧 *Available Tools* (%d)', $count );
+		}
+
+		$text  = $header . "\n\n";
 		$text .= "Use the Mini App to browse and execute tools with full parameter forms.\n\n";
 
 		$i = 0;
-		foreach ( $all_tools as $slug => $tool ) {
+		foreach ( $display_tools as $slug => $tool ) {
 			if ( $i >= 20 ) {
 				$text .= "\n_… and " . ( $count - 20 ) . " more. Open the Mini App to see all._";
 				break;
 			}
-			$name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
-			$text .= "• `$slug` – $name\n";
+			$raw_name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
+			$name     = $this->sanitize_for_telegram_markdown( $raw_name );
+			$text    .= "• `$slug` – $name\n";
 			++$i;
 		}
 
@@ -2661,6 +2795,28 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Sanitize a plain-text string for safe embedding in a Telegram basic-Markdown
+	 * (parse_mode: Markdown) message.
+	 *
+	 * Telegram's legacy Markdown format does not support backslash-escaping of special
+	 * characters the way MarkdownV2 does. The only safe approach is to remove the four
+	 * characters that trigger unintended Markdown formatting when they appear in
+	 * user-supplied values (assistant names, tool names, etc.):
+	 *   * – bold delimiter
+	 *   ` – inline-code delimiter
+	 *   _ – italic delimiter
+	 *   [ – inline-link start
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $text Plain text to sanitize.
+	 * @return string Sanitized text safe for Telegram basic Markdown.
+	 */
+	protected function sanitize_for_telegram_markdown( $text ) {
+		return str_replace( array( '*', '`', '_', '[' ), '', (string) $text );
 	}
 
 	/**

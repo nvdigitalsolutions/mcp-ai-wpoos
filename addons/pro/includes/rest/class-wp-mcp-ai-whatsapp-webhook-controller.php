@@ -1106,9 +1106,16 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			$history = array_slice( $history, -( $max_history - 1 ) );
 		}
 
+		// Normalize history entries: providers like Gemini and Ollama store
+		// message.content as an array of typed segments rather than a plain
+		// string. Flatten each entry to a plain-text string so the chat
+		// endpoint receives well-formed messages regardless of which AI
+		// provider was used for prior turns in this conversation.
+		$history_for_chat = $this->normalize_conversation_history_for_chat( $history );
+
 		// Build the full messages array: prior conversation + current user turn.
 		$messages = array_merge(
-			$history,
+			$history_for_chat,
 			array(
 				array(
 					'role'    => 'user',
@@ -2563,14 +2570,106 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Resolve a message `content` field to a plain string.
+	 *
+	 * Providers normalise the content field differently:
+	 *  - OpenAI / Anthropic / LM Studio: plain string.
+	 *  - Gemini / Ollama: array of content segments, e.g.
+	 *      [{ "type": "text", "text": "Hello!" }]
+	 *
+	 * This helper handles both formats so that channel auto-replies work
+	 * regardless of which AI provider the assigned assistant uses.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $content Raw value of message['content'] from the chat response.
+	 * @return string Plain-text string, or empty string when no text can be extracted.
+	 */
+	protected function resolve_content_to_string( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		// Array of content segments (Gemini / Ollama normalised format).
+		// Each segment is expected to be an associative array with at minimum a
+		// 'type' key. Only segments of type 'text' carry displayable text.
+		$parts = array();
+		foreach ( $content as $segment ) {
+			if ( ! is_array( $segment ) ) {
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+			if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			}
+		}
+
+		return implode( "\n", $parts );
+	}
+
+	/**
+	 * Normalize stored conversation history entries into plain-text chat messages.
+	 *
+	 * History rows may contain `content` values in either provider format:
+	 *  - Plain string (OpenAI / Anthropic / LM Studio).
+	 *  - Array of typed segments (Gemini / Ollama), e.g.
+	 *      [{ "type": "text", "text": "Hello!" }]
+	 *
+	 * This method converts every entry to a {role, content} pair with a
+	 * guaranteed plain-text `content` field so the /mcp-ai/v1/chat endpoint
+	 * always receives well-formed messages regardless of which AI provider
+	 * generated the prior turns.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $history Raw history entries loaded from transient storage.
+	 * @return array[] Chat messages with only role/content pairs.
+	 */
+	protected function normalize_conversation_history_for_chat( array $history ) {
+		$messages = array();
+
+		foreach ( $history as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$role    = isset( $entry['role'] ) && is_string( $entry['role'] ) ? trim( $entry['role'] ) : '';
+			$content = isset( $entry['content'] ) ? $this->resolve_content_to_string( $entry['content'] ) : '';
+
+			if ( '' === $role || '' === $content ) {
+				continue;
+			}
+
+			$messages[] = array(
+				'role'    => $role,
+				'content' => $content,
+			);
+		}
+
+		return $messages;
+	}
+
+	/**
 	 * Extract the assistant reply text from a /mcp-ai/v1/chat REST response payload.
 	 *
-	 * The chat endpoint returns the raw OpenAI-format LLM response wrapped inside
-	 * a 'data' key:
+	 * The chat endpoint returns the LLM response wrapped inside a 'data' key:
 	 *   { assistant_id: ..., data: { choices: [{ message: { content: '...' } }] } }
 	 *
-	 * When an agentic tool-calling workflow runs, OpenAI (and compatible providers)
-	 * set `message.content` to null on intermediate responses where
+	 * The `message.content` field can be a plain string (OpenAI/Anthropic) or an
+	 * array of typed segments (Gemini/Ollama). Both formats are handled via
+	 * {@see resolve_content_to_string()}.
+	 *
+	 * When an agentic tool-calling workflow runs, some providers set
+	 * `message.content` to null on intermediate responses where
 	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
 	 * all choices and falling back to `agentic_tool_messages` (intermediate
 	 * assistant messages attached to the response by the chat service) so that
@@ -2590,13 +2689,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$llm_data = isset( $response_data['data'] ) && is_array( $response_data['data'] ) ? $response_data['data'] : $response_data;
 		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		// --- Pass 1: scan every choice for a non-empty string content value.
+		// --- Pass 1: scan every choice for a non-empty content value.
 		// Prefer choices whose finish_reason is 'stop' (the definitive final answer)
 		// over 'tool_calls' (an intermediate tool-calling step).
 		$best_content = '';
 		foreach ( $choices as $choice ) {
 			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 
 			if ( '' === $content ) {
 				continue;
@@ -2633,7 +2732,7 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			if ( ! is_array( $msg ) ) {
 				continue;
 			}
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 			if ( '' !== $content ) {
 				return $content;
 			}
