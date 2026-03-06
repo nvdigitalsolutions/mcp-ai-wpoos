@@ -43,6 +43,7 @@ const TOOLKIT_COLORS = {
 	crm:             '#e65100',
 	analytics:       '#00796b',
 	calendar_booking:'#1565c0',
+	health_wellness: '#2e7d32',
 };
 
 /* -------------------------------------------------------------------------- */
