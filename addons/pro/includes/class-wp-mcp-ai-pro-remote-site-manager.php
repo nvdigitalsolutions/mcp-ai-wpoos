@@ -193,6 +193,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['web_login_redirect_url'] = $existing_connection['web_login_redirect_url'];
 			}
 
+			// Preserve existing enable_mini_app (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['enable_mini_app'] ) && isset( $existing_connection['enable_mini_app'] ) ) {
+				$connection_data['enable_mini_app'] = $existing_connection['enable_mini_app'];
+			}
+
+			// Preserve existing mini_app_assistant_id (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_assistant_id'] ) && isset( $existing_connection['mini_app_assistant_id'] ) ) {
+				$connection_data['mini_app_assistant_id'] = $existing_connection['mini_app_assistant_id'];
+			}
+
+			// Preserve existing mini_app_template (Telegram Mini App) if not provided.
+			if ( ! isset( $connection_data['mini_app_template'] ) && isset( $existing_connection['mini_app_template'] ) ) {
+				$connection_data['mini_app_template'] = $existing_connection['mini_app_template'];
+			}
+
 			// Preserve existing auto_create_wp_user (Telegram) if not provided.
 			if ( ! isset( $connection_data['auto_create_wp_user'] ) && isset( $existing_connection['auto_create_wp_user'] ) ) {
 				$connection_data['auto_create_wp_user'] = $existing_connection['auto_create_wp_user'];
@@ -412,6 +427,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Telegram WordPress account creation for new Telegram users.
 			'auto_create_wp_user'    => ! empty( $connection_data['auto_create_wp_user'] ),
 			'new_user_role'          => isset( $connection_data['new_user_role'] ) ? sanitize_key( $connection_data['new_user_role'] ) : 'subscriber',
+			// Telegram Mini App settings.
+			'enable_mini_app'        => ! empty( $connection_data['enable_mini_app'] ),
+			'mini_app_assistant_id'  => isset( $connection_data['mini_app_assistant_id'] ) ? absint( $connection_data['mini_app_assistant_id'] ) : 0,
+			'mini_app_template'      => isset( $connection_data['mini_app_template'] ) ? sanitize_key( $connection_data['mini_app_template'] ) : '',
 			// WhatsApp-specific fields.
 			'phone_number_id'     => isset( $connection_data['phone_number_id'] ) ? sanitize_text_field( $connection_data['phone_number_id'] ) : '',
 			'display_phone_number' => isset( $connection_data['display_phone_number'] ) ? sanitize_text_field( $connection_data['display_phone_number'] ) : '',
