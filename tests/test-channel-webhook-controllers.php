@@ -131,6 +131,128 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertNotSame( $key_a, $key_b );
 	}
 
+	/**
+	 * Test extract_content_from_chat_response prefers final stop content.
+	 */
+	public function test_telegram_extract_content_prefers_stop_choice() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$response_data = array(
+			'data' => array(
+				'choices' => array(
+					array(
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'intermediate',
+						),
+						'finish_reason' => 'tool_calls',
+					),
+					array(
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => 'final answer',
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$this->assertSame( 'final answer', $method->invoke( $controller, $response_data ) );
+	}
+
+	/**
+	 * Test extract_agentic_tool_messages_from_chat_response normalizes output.
+	 */
+	public function test_telegram_extract_agentic_tool_messages_filters_invalid_entries() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_agentic_tool_messages_from_chat_response' );
+		$method->setAccessible( true );
+
+		$response_data = array(
+			'data' => array(
+				'agentic_tool_messages' => array(
+					array(
+						'role'         => 'assistant',
+						'content'      => 'Searching the web...',
+						'name'         => 'web_search',
+						'tool_call_id' => 'call_abc',
+					),
+					array(
+						'role'    => 'assistant',
+						'content' => '',
+					),
+					'not-an-array',
+				),
+			),
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'role'         => 'assistant',
+					'content'      => 'Searching the web...',
+					'name'         => 'web_search',
+					'tool_call_id' => 'call_abc',
+				),
+			),
+			$method->invoke( $controller, $response_data )
+		);
+	}
+
+	/**
+	 * Test normalize_conversation_history_for_chat strips metadata fields.
+	 */
+	public function test_telegram_normalize_conversation_history_for_chat() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_conversation_history_for_chat' );
+		$method->setAccessible( true );
+
+		$history = array(
+			array(
+				'role'                  => 'user',
+				'content'               => 'Hello',
+				'agentic_tool_messages' => array(
+					array( 'role' => 'assistant', 'content' => 'tool trace' ),
+				),
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Hi there',
+				'extra'   => 'ignore',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => '',
+			),
+		);
+
+		$this->assertSame(
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+				array(
+					'role'    => 'assistant',
+					'content' => 'Hi there',
+				),
+			),
+			$method->invoke( $controller, $history )
+		);
+	}
+
 	// =========================================================================
 	// Telegram markdown_to_telegram_html
 	// =========================================================================

@@ -108,6 +108,10 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 						'minimum' => 1,
 						'maximum' => 200,
 					),
+					'include_metadata' => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
 				),
 			)
 		);
@@ -358,6 +362,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 		$page       = max( 1, (int) $request->get_param( 'page' ) );
 		$per_page   = min( 200, max( 1, (int) $request->get_param( 'per_page' ) ) );
 		$offset     = ( $page - 1 ) * $per_page;
+		$include_metadata = rest_sanitize_boolean( $request->get_param( 'include_metadata' ) );
 
 		// Resolve channel + contact ID from the contacts table.
 		$contacts_table = WP_MCP_AI_Channel_Contacts_CCT::get_table_name();
@@ -397,7 +402,7 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 
 		$items = array();
 		foreach ( (array) $rows as $row ) {
-			$items[] = $this->format_message( $row );
+			$items[] = $this->format_message( $row, $include_metadata );
 		}
 
 		return rest_ensure_response(
@@ -807,11 +812,12 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Format a raw message DB row for the REST response.
 	 *
-	 * @param array $row Raw database row.
+	 * @param array $row              Raw database row.
+	 * @param bool  $include_metadata Whether to include decoded raw payload metadata.
 	 * @return array
 	 */
-	protected function format_message( $row ) {
-		return array(
+	protected function format_message( $row, $include_metadata = false ) {
+		$message = array(
 			'id'                 => isset( $row['_ID'] ) ? (int) $row['_ID'] : 0,
 			'channel'            => isset( $row['channel'] ) ? $row['channel'] : '',
 			'channel_contact_id' => isset( $row['channel_contact_id'] ) ? $row['channel_contact_id'] : '',
@@ -827,5 +833,18 @@ class WP_MCP_AI_Chat_Channels_REST_Controller extends WP_REST_Controller {
 			'reply_sent'         => ! empty( $row['reply_sent'] ),
 			'assigned_agent'     => isset( $row['assigned_agent'] ) ? $row['assigned_agent'] : '',
 		);
+
+		if ( $include_metadata ) {
+			$raw_payload = array();
+			if ( isset( $row['raw_payload'] ) && is_string( $row['raw_payload'] ) && '' !== $row['raw_payload'] ) {
+				$decoded = json_decode( $row['raw_payload'], true );
+				if ( is_array( $decoded ) ) {
+					$raw_payload = $decoded;
+				}
+			}
+			$message['raw_payload'] = $raw_payload;
+		}
+
+		return $message;
 	}
 }
