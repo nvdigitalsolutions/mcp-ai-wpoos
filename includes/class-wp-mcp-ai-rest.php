@@ -2475,6 +2475,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Track original tool results for frontend display.
 			$tool_result_messages = array();
 
+			// Track intermediate assistant messages with tool_calls so that
+			// server-side callers (e.g. the Telegram reply job) can fall back to
+			// them when the final choice has empty content after the agentic loop
+			// exhausts its iteration cap.
+			$agentic_tool_messages = array();
+
 			// If streaming is requested, use streaming-enabled agentic loop.
 			if ( $wants_streaming ) {
 				return $this->handle_chat_request_with_streaming(
@@ -2541,7 +2547,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// must be followed by tool response messages.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
-					$messages[] = $assistant_message;
+					$messages[]              = $assistant_message;
+					$agentic_tool_messages[] = $assistant_message;
 				}
 
 				// Execute each tool and collect results.
@@ -2831,6 +2838,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Attach intermediate agentic assistant messages (with tool_calls) to the
+			// response data so that server-side callers such as the Telegram reply job
+			// can fall back to partial content when the final choice has empty content.
+			if ( ! empty( $agentic_tool_messages ) ) {
+				$payload['data']['agentic_tool_messages'] = $agentic_tool_messages;
+			}
 
 			// Include usage data if available for frontend badge display.
 			if ( $usage_data ) {

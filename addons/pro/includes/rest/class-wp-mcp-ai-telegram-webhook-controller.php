@@ -189,12 +189,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$provided_token = $request->get_header( 'x-telegram-bot-api-secret-token' );
 
 		if ( empty( $provided_token ) ) {
-			WP_MCP_AI_Logger::log_error( 'Telegram webhook rejected: missing secret token header.' );
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: missing secret token header.',
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
+			);
 			return false;
 		}
 
 		if ( ! hash_equals( $stored_secret, $provided_token ) ) {
-			WP_MCP_AI_Logger::log_error( 'Telegram webhook rejected: invalid secret token.' );
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: invalid secret token. Ensure the secret_token configured in your Telegram connection settings matches the token set in BotFather (setWebhook secret_token parameter).',
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
+			);
 			return false;
 		}
 
@@ -688,11 +694,13 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Telegram AI reply: empty content from assistant.',
 				array(
-					'assistant_id'  => $assistant_id,
-					'has_data'      => isset( $response_data['data'] ),
-					'has_choices'   => isset( $response_data['data']['choices'] ),
-					'choices_count' => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
-					'finish_reason' => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+					'assistant_id'            => $assistant_id,
+					'has_data'                => isset( $response_data['data'] ),
+					'has_choices'             => isset( $response_data['data']['choices'] ),
+					'choices_count'           => isset( $response_data['data']['choices'] ) ? count( $response_data['data']['choices'] ) : 0,
+					'finish_reason'           => isset( $response_data['data']['choices'][0]['finish_reason'] ) ? $response_data['data']['choices'][0]['finish_reason'] : '',
+					'agentic_messages_count'  => isset( $response_data['data']['agentic_tool_messages'] ) ? count( $response_data['data']['agentic_tool_messages'] ) : 0,
+					'likely_tool_call_loop'   => isset( $response_data['data']['choices'][0]['finish_reason'] ) && 'tool_calls' === $response_data['data']['choices'][0]['finish_reason'],
 				)
 			);
 
