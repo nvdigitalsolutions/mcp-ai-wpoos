@@ -969,7 +969,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 
 			$role    = isset( $entry['role'] ) && is_string( $entry['role'] ) ? trim( $entry['role'] ) : '';
-			$content = isset( $entry['content'] ) && is_string( $entry['content'] ) ? trim( $entry['content'] ) : '';
+			$content = isset( $entry['content'] ) ? $this->resolve_content_to_string( $entry['content'] ) : '';
 
 			if ( '' === $role || '' === $content ) {
 				continue;
@@ -1277,14 +1277,65 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Resolve a message `content` field to a plain string.
+	 *
+	 * Providers normalise the content field differently:
+	 *  - OpenAI / Anthropic / LM Studio: plain string.
+	 *  - Gemini / Ollama: array of content segments, e.g.
+	 *      [{ "type": "text", "text": "Hello!" }]
+	 *
+	 * This helper handles both formats so that channel auto-replies work
+	 * regardless of which AI provider the assigned assistant uses.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $content Raw value of message['content'] from the chat response.
+	 * @return string Plain-text string, or empty string when no text can be extracted.
+	 */
+	protected function resolve_content_to_string( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		// Array of content segments (Gemini / Ollama normalised format).
+		// Each segment is expected to be an associative array with at minimum a
+		// 'type' key. Only segments of type 'text' carry displayable text.
+		$parts = array();
+		foreach ( $content as $segment ) {
+			if ( ! is_array( $segment ) ) {
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+			if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			}
+		}
+
+		return implode( "\n", $parts );
+	}
+
+	/**
 	 * Extract the plain-text reply from the internal /mcp-ai/v1/chat response.
 	 *
 	 * The /mcp-ai/v1/chat endpoint wraps the LLM response under a `data` key:
 	 *
 	 *   { assistant_id, data: { choices: [{ message: { content, role }, finish_reason }] } }
 	 *
-	 * When an agentic tool-calling workflow runs, OpenAI (and compatible providers)
-	 * set `message.content` to null on intermediate responses where
+	 * The `message.content` field can be a plain string (OpenAI/Anthropic) or an
+	 * array of typed segments (Gemini/Ollama). Both formats are handled via
+	 * {@see resolve_content_to_string()}.
+	 *
+	 * When an agentic tool-calling workflow runs, some providers set
+	 * `message.content` to null on intermediate responses where
 	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
 	 * all choices and falling back to `agentic_tool_messages` (intermediate
 	 * assistant messages attached to the response by the chat service) so that
@@ -1304,7 +1355,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
 		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		// --- Pass 1: scan every choice for a non-empty string content value.
+		// --- Pass 1: scan every choice for a non-empty content value.
 		// The final response from a completed agentic workflow will normally be
 		// found here with finish_reason = 'stop'. We prefer choices whose
 		// finish_reason is 'stop' over 'tool_calls' so that a partial tool-call
@@ -1312,7 +1363,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$best_content = '';
 		foreach ( $choices as $choice ) {
 			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 
 			if ( '' === $content ) {
 				continue;
@@ -1349,7 +1400,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			if ( ! is_array( $msg ) ) {
 				continue;
 			}
-			$content = isset( $msg['content'] ) && is_string( $msg['content'] ) ? trim( $msg['content'] ) : '';
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
 			if ( '' !== $content ) {
 				return $content;
 			}
@@ -1360,6 +1411,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 	/**
 	 * Extract normalized intermediate agentic tool messages from chat response data.
+	 *
+	 * Handles both plain string content (OpenAI/Anthropic) and array-segment content
+	 * (Gemini/Ollama) in each message. Tool result messages (role: tool) always have
+	 * JSON-encoded string content and are preserved as-is. Assistant messages that
+	 * used tool calls may have array-format content; these are flattened to a string
+	 * via {@see resolve_content_to_string()}.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1385,7 +1442,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 
 			$role    = isset( $message['role'] ) && is_string( $message['role'] ) ? trim( $message['role'] ) : '';
-			$content = isset( $message['content'] ) && is_string( $message['content'] ) ? trim( $message['content'] ) : '';
+			$content = isset( $message['content'] ) ? $this->resolve_content_to_string( $message['content'] ) : '';
 
 			if ( '' === $role || '' === $content ) {
 				continue;
