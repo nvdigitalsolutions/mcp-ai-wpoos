@@ -116,7 +116,7 @@ jobs:
           # Add all built files
           git add -f assets/**/*.min.css assets/**/*.min.css.map 2>/dev/null || true
           git add -f assets/**/*.min.js assets/**/*.min.js.map 2>/dev/null || true
-          git add build/*.zip
+          git add -f build/*.zip
           
           # Check if anything changed
           if git diff --staged --quiet; then
@@ -162,7 +162,7 @@ jobs:
             echo "⚠️ Rebase conflict detected. Attempting to resolve..."
             # For build artifacts, we can safely use ours strategy
             git checkout --ours build/*.zip
-            git add build/*.zip
+            git add -f build/*.zip
             git rebase --continue || {
               echo "❌ Failed to resolve rebase conflicts"
               git rebase --abort
