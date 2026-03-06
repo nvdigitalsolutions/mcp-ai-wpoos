@@ -3005,17 +3005,43 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		);
 
 		// Enumerate active pro toolkits so the UI can group tools.
-		$active_toolkits          = $this->get_active_toolkits();
-		$result['toolkits']       = array_values( $active_toolkits );
+		$active_toolkits    = $this->get_active_toolkits();
+		$result['toolkits'] = array_values( $active_toolkits );
+
+		// Scope the tool listing to the tools configured on the Mini App's assistant,
+		// mirroring the /tools slash-command behaviour. Falls back to the full registry
+		// when no assistant is resolved or the assistant has no explicit tool restriction.
+		$allowed_slugs = array(); // Empty = no restriction.
+		$connection    = $this->get_active_telegram_connection();
+		$assistant_id  = (int) $this->resolve_mini_app_assistant( $request, $connection );
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
+				$allowed_slugs = $config['tools'];
+			}
+		}
 
 		// Collect tools from the tool registry.
 		if ( function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
 			$registry = wp_mcp_ai_get_tool_registry();
 			if ( $registry ) {
-				$group_map  = method_exists( $registry, 'get_tool_group_map' ) ? $registry->get_tool_group_map() : array();
-				$all_tools  = $registry->get_all_tools();
+				$group_map = method_exists( $registry, 'get_tool_group_map' ) ? $registry->get_tool_group_map() : array();
 
-				foreach ( $all_tools as $slug => $tool ) {
+				if ( ! empty( $allowed_slugs ) ) {
+					// Assistant has an explicit tool list — show only those tools.
+					$display_tools = array();
+					foreach ( $allowed_slugs as $slug ) {
+						$slug = (string) $slug;
+						$tool = $registry->get_tool( $slug );
+						if ( $tool ) {
+							$display_tools[ $slug ] = $tool;
+						}
+					}
+				} else {
+					$display_tools = $registry->get_all_tools();
+				}
+
+				foreach ( $display_tools as $slug => $tool ) {
 					// Resolve which toolkit this tool belongs to (if any).
 					$toolkit_label = '';
 					foreach ( $active_toolkits as $tk ) {
@@ -3025,7 +3051,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						}
 					}
 
-				$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
+					$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
 
 					$result['tools'][] = array(
 						'slug'        => $slug,
@@ -3039,12 +3065,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			}
 		}
 
-		// Collect slash commands the current user can run.
+		// Collect slash commands the current user can run, respecting the
+		// connection's disabled_commands list so the Mini App commands tab
+		// stays in sync with which commands the bot actually handles.
+		$disabled_commands = ( $connection && isset( $connection['disabled_commands'] ) && is_array( $connection['disabled_commands'] ) )
+			? $connection['disabled_commands']
+			: array();
+
 		if ( function_exists( 'wp_mcp_ai_get_slash_command_handler' ) ) {
 			$handler = wp_mcp_ai_get_slash_command_handler();
 			if ( $handler && method_exists( $handler, 'get_commands' ) ) {
 				$commands = $handler->get_commands( true );
 				foreach ( $commands as $name => $config ) {
+					if ( in_array( $name, $disabled_commands, true ) ) {
+						continue; // Command disabled for this connection.
+					}
 					$result['slash_commands'][] = array(
 						'name'        => '/' . $name,
 						'description' => isset( $config['description'] ) ? $config['description'] : '',
