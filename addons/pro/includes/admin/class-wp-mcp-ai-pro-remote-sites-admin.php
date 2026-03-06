@@ -536,6 +536,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Mini App settings.
 				'enable_mini_app'         => ! empty( $_POST['telegram_enable_mini_app'] ),
 				'mini_app_assistant_id'   => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
+				'mini_app_template'       => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -2234,6 +2235,42 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endforeach; ?>
 						</select>
 						<p class="description"><?php esc_html_e( 'Choose a dedicated assistant for the Telegram Mini App. Leave as default to use the first assistant from the "Assigned Assistants" list above. This allows different AI personas for the in-app chat versus direct bot messages.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Mini App Template', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_ma_template = ( $is_edit && isset( $connection['mini_app_template'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) )
+							? sanitize_key( $connection['mini_app_template'] )
+							: '';
+
+						// Load template registry to populate the dropdown.
+						if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
+							$_tpl_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
+							if ( file_exists( $_tpl_file ) ) {
+								require_once $_tpl_file;
+							}
+						}
+
+						$all_templates = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+							? WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta()
+							: array();
+						?>
+						<select name="telegram_mini_app_template" id="telegram_mini_app_template">
+							<option value=""><?php esc_html_e( '— Use global default template —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $all_templates as $tpl ) : ?>
+								<option value="<?php echo esc_attr( $tpl['slug'] ); ?>" <?php selected( $tg_ma_template, $tpl['slug'] ); ?>>
+									<?php echo esc_html( $tpl['icon'] . ' ' . $tpl['name'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Choose a Mini App template for this specific bot connection. Overrides the global template set in Chat Channels settings. Leave blank to use the global default.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 

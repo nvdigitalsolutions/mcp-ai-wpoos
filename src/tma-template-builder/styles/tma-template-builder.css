@@ -1,0 +1,311 @@
+/**
+ * TMA Template Builder – Admin UI styles
+ *
+ * Aligned with the Pro Workflow Builder styling conventions:
+ *  - CSS custom properties for theming
+ *  - Flexbox / CSS Grid layout
+ *  - WordPress admin colour palette compatibility
+ *
+ * Cosmos renders these via `style-loader` in development.
+ * wp-scripts compiles them into `addons/pro/build/tma-template-builder/tma-template-builder.css`
+ * for production.
+ *
+ * @package WP_MCP_AI
+ * @since   1.1.3
+ */
+
+/* ── Variables ── */
+:root {
+	--tma-builder-bg:        #f6f7f7;
+	--tma-builder-card-bg:   #ffffff;
+	--tma-builder-border:    #dcdcde;
+	--tma-builder-text:      #1d2327;
+	--tma-builder-muted:     #787c82;
+	--tma-builder-primary:   #2271b1;
+	--tma-builder-radius:    8px;
+	--tma-builder-shadow:    0 1px 3px rgba( 0, 0, 0, 0.08 );
+	--tma-builder-gap:       16px;
+	--tma-builder-card-min:  260px;
+}
+
+/* ── Container ── */
+.tma-template-builder {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	color: var( --tma-builder-text );
+}
+
+.tma-template-builder--embedded {
+	border: 1px solid var( --tma-builder-border );
+	border-radius: var( --tma-builder-radius );
+	padding: 16px;
+	background: var( --tma-builder-bg );
+}
+
+/* ── Header ── */
+.tma-tpl-header {
+	margin-bottom: 16px;
+}
+
+.tma-tpl-header h3 {
+	font-size: 16px;
+	font-weight: 600;
+	color: var( --tma-builder-text );
+}
+
+/* ── Loading ── */
+.tma-tpl-loading {
+	padding: 24px;
+	color: var( --tma-builder-muted );
+	font-size: 14px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* ── Card grid ── */
+.tma-tpl-grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fill, minmax( var( --tma-builder-card-min ), 1fr ) );
+	gap: var( --tma-builder-gap );
+	margin-bottom: 20px;
+}
+
+/* ── Card ── */
+.tma-tpl-card {
+	background: var( --tma-builder-card-bg );
+	border: 2px solid var( --tma-builder-border );
+	border-radius: var( --tma-builder-radius );
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: var( --tma-builder-shadow );
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	position: relative;
+}
+
+.tma-tpl-card:hover {
+	border-color: var( --card-accent, var( --tma-builder-primary ) );
+	box-shadow: 0 2px 8px rgba( 0, 0, 0, 0.12 );
+}
+
+.tma-tpl-card--active {
+	border-color: var( --card-accent, var( --tma-builder-primary ) );
+	box-shadow: 0 0 0 3px color-mix( in srgb, var( --card-accent, var( --tma-builder-primary ) ) 20%, transparent );
+}
+
+.tma-tpl-card--dragging {
+	box-shadow: 0 8px 24px rgba( 0, 0, 0, 0.2 );
+	z-index: 10;
+}
+
+/* ── Drag handle ── */
+.tma-tpl-card__drag-handle {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	color: var( --tma-builder-border );
+	cursor: grab;
+	padding: 4px;
+	border-radius: 4px;
+	line-height: 0;
+	transition: color 0.15s ease;
+}
+
+.tma-tpl-card__drag-handle:hover {
+	color: var( --tma-builder-muted );
+	background: var( --tma-builder-bg );
+}
+
+.tma-tpl-card__drag-handle:active {
+	cursor: grabbing;
+}
+
+/* ── Icon ── */
+.tma-tpl-card__icon {
+	font-size: 32px;
+	line-height: 1;
+}
+
+/* ── Body ── */
+.tma-tpl-card__body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tma-tpl-card__name {
+	font-size: 14px;
+	font-weight: 600;
+	color: var( --tma-builder-text );
+	line-height: 1.3;
+}
+
+.tma-tpl-card__desc {
+	font-size: 12px;
+	color: var( --tma-builder-muted );
+	line-height: 1.5;
+}
+
+/* ── Toolkit badge ── */
+.tma-tpl-card__badge {
+	display: inline-block;
+	margin-top: 4px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #ffffff;
+	align-self: flex-start;
+}
+
+/* ── Action buttons ── */
+.tma-tpl-card__actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.tma-tpl-btn {
+	flex: 1;
+	min-width: 80px;
+	padding: 7px 12px;
+	border-radius: 6px;
+	border: 1px solid var( --tma-builder-border );
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	text-align: center;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+	white-space: nowrap;
+}
+
+.tma-tpl-btn--select {
+	background: #ffffff;
+	color: var( --tma-builder-primary );
+	border-color: var( --tma-builder-primary );
+}
+
+.tma-tpl-btn--select:hover {
+	background: var( --tma-builder-primary );
+	color: #ffffff;
+}
+
+.tma-tpl-btn--selected {
+	background: var( --card-accent, var( --tma-builder-primary ) );
+	color: #ffffff;
+	border-color: transparent;
+	cursor: default;
+}
+
+.tma-tpl-btn--preview {
+	background: var( --tma-builder-bg );
+	color: var( --tma-builder-muted );
+	border-color: var( --tma-builder-border );
+}
+
+.tma-tpl-btn--preview:hover,
+.tma-tpl-btn--preview-active {
+	background: #f0f6fc;
+	color: var( --tma-builder-primary );
+	border-color: var( --tma-builder-primary );
+}
+
+.tma-tpl-btn:disabled {
+	opacity: 0.75;
+	cursor: not-allowed;
+}
+
+/* ── Preview pane ── */
+.tma-tpl-preview {
+	border: 1px solid var( --tma-builder-border );
+	border-radius: var( --tma-builder-radius );
+	overflow: hidden;
+	margin-bottom: 20px;
+	background: #1d2327;
+}
+
+.tma-tpl-preview__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 16px;
+	background: #2c3338;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.tma-tpl-preview__label {
+	font-size: 13px;
+	font-weight: 600;
+	color: #ffffff;
+}
+
+.tma-tpl-preview__slug {
+	color: #72aee6;
+	font-weight: 400;
+}
+
+.tma-tpl-preview__hint {
+	font-size: 11px;
+	color: #8c9bab;
+}
+
+.tma-tpl-preview__frame-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 24px;
+	background: #1d2327;
+}
+
+.tma-tpl-preview__frame {
+	width: 390px;
+	height: 844px;
+	border: none;
+	border-radius: 12px;
+	box-shadow: 0 8px 32px rgba( 0, 0, 0, 0.5 );
+	background: #ffffff;
+}
+
+.tma-tpl-preview__no-url {
+	padding: 24px;
+	color: #8c9bab;
+	font-size: 13px;
+	text-align: center;
+}
+
+/* ── Footer ── */
+.tma-tpl-footer {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding-top: 4px;
+	flex-wrap: wrap;
+}
+
+.tma-tpl-save-msg {
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.tma-tpl-save-msg--ok  { color: #00a32a; }
+.tma-tpl-save-msg--err { color: #d63638; }
+
+/* ── Responsive ── */
+@media ( max-width: 782px ) {
+	.tma-tpl-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.tma-tpl-preview__frame-wrap {
+		padding: 12px;
+	}
+
+	.tma-tpl-preview__frame {
+		width: 100%;
+		max-width: 390px;
+	}
+}

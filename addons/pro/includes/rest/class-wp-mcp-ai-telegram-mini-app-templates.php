@@ -142,13 +142,13 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	 * Retrieve a registered template by slug. Falls back to "default".
 	 *
 	 * @param  string $slug Template slug.
-	 * @return WP_MCP_AI_Telegram_Mini_App_Template_Base
+	 * @return WP_MCP_AI_Telegram_Mini_App_Template_Base|null
 	 */
-	public function get( $slug ) {
+	public function find( $slug ) {
 		if ( isset( $this->templates[ $slug ] ) ) {
 			return $this->templates[ $slug ];
 		}
-		return $this->templates['default'];
+		return isset( $this->templates['default'] ) ? $this->templates['default'] : null;
 	}
 
 	/**
@@ -161,13 +161,77 @@ class WP_MCP_AI_Telegram_Mini_App_Template_Registry {
 	}
 
 	/**
+	 * Check whether a template slug is registered.
+	 *
+	 * @param  string $slug Template slug.
+	 * @return bool
+	 */
+	public function has( $slug ) {
+		return isset( $this->templates[ $slug ] );
+	}
+
+	// ── Static proxy helpers (for call-sites that don't hold the singleton) ──
+
+	/**
+	 * Static proxy: check whether a template slug is registered.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param  string $slug Template slug.
+	 * @return bool
+	 */
+	public static function exists( $slug ) {
+		return self::instance()->has( sanitize_key( (string) $slug ) );
+	}
+
+	/**
+	 * Static proxy: retrieve a registered template by slug.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param  string $slug Template slug.
+	 * @return WP_MCP_AI_Telegram_Mini_App_Template_Base|null Template or null if slug
+	 *                                                         is unknown and 'default' is
+	 *                                                         not registered.
+	 */
+	public static function get( $slug ) {
+		$inst = self::instance();
+		$slug = sanitize_key( (string) $slug );
+		return $inst->find( $slug );
+	}
+
+	/**
+	 * Static proxy: return metadata arrays for all registered templates.
+	 *
+	 * Each item contains: slug, name, description, icon, accent_color, toolkit.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @return array<int,array<string,string>>
+	 */
+	public static function get_all_meta() {
+		$meta = array();
+		foreach ( self::instance()->all() as $tpl ) {
+			$meta[] = array(
+				'slug'         => $tpl->get_slug(),
+				'name'         => $tpl->get_name(),
+				'description'  => $tpl->get_description(),
+				'icon'         => $tpl->get_icon(),
+				'accent_color' => $tpl->get_accent_color(),
+				'toolkit'      => $tpl->get_toolkit(),
+			);
+		}
+		return $meta;
+	}
+
+	/**
 	 * Get the currently active template (reads from options).
 	 *
 	 * @return WP_MCP_AI_Telegram_Mini_App_Template_Base
 	 */
 	public function get_active() {
 		$slug = get_option( self::OPTION_KEY, 'default' );
-		return $this->get( sanitize_key( (string) $slug ) );
+		return $this->find( sanitize_key( (string) $slug ) );
 	}
 
 	/**
@@ -1083,7 +1147,7 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 				'var ds=vy+"-"+(String(vm+1).padStart(2,"0"))+"-"+(String(d).padStart(2,"0"));' .
 				'var isPast=ds<tod;var isTod=ds===tod;var isSel=ds===selDate;' .
 				'var cls="tma-cal-day"+(isPast?" past":"")+(isTod?" today":"")+(isSel?" selected":"");' .
-				'var oc=isPast?"":\'onclick="tmaSelDate(\\\'\''+ds+\'\\\')"\'  ;' .
+				'var oc=isPast?"":"onclick=\"tmaSelDate(\\x27"+ds+"\\x27)\"";' .
 				'days+=\'<div class="\'+cls+\'" \'+oc+\'>\'+d+\'</div>\';' .
 			'}' .
 			'grid.innerHTML=dn+emp+days;' .
@@ -1102,10 +1166,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'.then(function(d){' .
 				'var slots=(d&&d.data&&d.data.slots)?d.data.slots:["09:00","10:00","11:00","14:00","15:00","16:00"];' .
 				'if(!slots.length){if(sg)sg.innerHTML=\'<div style="grid-column:span 3;text-align:center;color:var(--tma-hint)">' . esc_js( __( 'No availability on this date.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';return;}' .
-				'if(sg)sg.innerHTML=slots.map(function(s){return \'<button class="tma-slot" onclick="tmaSelSlot(\\\'\''+escH(s)+\'\\\'",this)\'>\'+escH(s)+\'</button>\';}).join("");' .
+				'if(sg)sg.innerHTML=slots.map(function(s){return \'<button class="tma-slot" onclick="tmaSelSlot(\\x27\'+escH(s)+\'\\x27,this)">\'+escH(s)+\'</button>\';}).join("");' .
 			'}).catch(function(){' .
 				'var def=["09:00","10:00","11:00","14:00","15:00","16:00"];' .
-				'if(sg)sg.innerHTML=def.map(function(s){return \'<button class="tma-slot" onclick="tmaSelSlot(\\\'\''+s+\'\\\'",this)\'>\'+s+\'</button>\';}).join("");' .
+				'if(sg)sg.innerHTML=def.map(function(s){return \'<button class="tma-slot" onclick="tmaSelSlot(\\x27\'+s+\'\\x27,this)">\'+s+\'</button>\';}).join("");' .
 			'});' .
 		'}' .
 		'window.tmaSelSlot=function(s,el){tmaHaptic("light");selSlot=s;document.querySelectorAll(".tma-slot").forEach(function(b){b.classList.remove("selected");});if(el)el.classList.add("selected");var nw=document.getElementById("tma-next-wrap");if(nw)nw.style.display="block";};' .

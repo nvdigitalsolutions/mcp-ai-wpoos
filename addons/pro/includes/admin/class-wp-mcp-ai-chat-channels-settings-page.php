@@ -31,6 +31,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		parent::__construct();
 
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_whatsapp_phone_numbers', array( $this, 'ajax_fetch_whatsapp_phone_numbers' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_tma_builder_assets' ) );
 	}
 
 	/**
@@ -102,6 +103,293 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		}
 
 		wp_send_json_success( array( 'phone_numbers' => $phone_numbers ) );
+	}
+
+	/**
+	 * Enqueue TMA Template Builder React assets when on the Mini App Builder tab.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public function enqueue_tma_builder_assets( $hook ) {
+		// Only enqueue on this settings page.
+		if ( ! str_contains( $hook, $this->page_slug ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+		if ( 'mini_app_builder' !== $active_tab ) {
+			return;
+		}
+
+		$asset_file = WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.asset.php';
+
+		if ( file_exists( $asset_file ) ) {
+			$asset = require $asset_file;
+			wp_enqueue_script(
+				'mcp-ai-tma-template-builder',
+				WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.js',
+				$asset['dependencies'],
+				$asset['version'],
+				true
+			);
+			wp_enqueue_style(
+				'mcp-ai-tma-template-builder',
+				WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.css',
+				array(),
+				$asset['version']
+			);
+		}
+
+		// Localize data for the React component.
+		wp_localize_script(
+			'mcp-ai-tma-template-builder',
+			'mcpAiTmaBuilder',
+			array(
+				'templatesUrl'   => rest_url( 'mcp-ai/v1/telegram-mini-app/templates' ),
+				'saveUrl'        => rest_url( 'mcp-ai/v1/telegram-mini-app/template' ),
+				'previewBaseUrl' => rest_url( 'mcp-ai/v1/telegram-mini-app' ),
+				'activeTemplate' => get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+			)
+		);
+	}
+
+	/**
+	 * Override tab navigation to add the Mini App Builder tab.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $active_tab Active tab slug.
+	 */
+	protected function render_tabs( $active_tab ) {
+		$tabs = array(
+			'overview'         => __( 'Overview', 'mcp-ai-wpoos-pro' ),
+			'configuration'    => __( 'Configuration', 'mcp-ai-wpoos-pro' ),
+			'mini_app_builder' => __( '📱 Mini App Builder', 'mcp-ai-wpoos-pro' ),
+			'tools'            => __( 'Tools Management', 'mcp-ai-wpoos-pro' ),
+			'help'             => __( 'Help & Documentation', 'mcp-ai-wpoos-pro' ),
+		);
+		?>
+		<nav class="toolkit-settings-nav nav-tab-wrapper">
+			<?php foreach ( $tabs as $tab_slug => $tab_title ) : ?>
+				<a
+					href="<?php echo esc_url( add_query_arg( 'tab', $tab_slug, admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"
+					class="nav-tab <?php echo $active_tab === $tab_slug ? 'nav-tab-active' : ''; ?>"
+				>
+					<?php echo esc_html( $tab_title ); ?>
+				</a>
+			<?php endforeach; ?>
+		</nav>
+		<?php
+	}
+
+	/**
+	 * Override render_settings_page to intercept the Mini App Builder tab.
+	 *
+	 * All other tabs delegate to the parent implementation so nothing changes
+	 * for the existing Overview / Configuration / Tools / Help tabs.
+	 *
+	 * @since 1.1.3
+	 */
+	public function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+
+		if ( 'mini_app_builder' !== $active_tab ) {
+			parent::render_settings_page();
+			return;
+		}
+
+		?>
+		<div class="wrap">
+			<h1>
+				<span class="dashicons <?php echo esc_attr( $this->icon ); ?>" style="font-size: 32px;"></span>
+				<?php echo esc_html( $this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+			</h1>
+
+			<?php $this->render_tabs( $active_tab ); ?>
+
+			<div class="toolkit-settings-content">
+				<?php $this->render_mini_app_builder_tab(); ?>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Mini App Builder tab content.
+	 *
+	 * Mounts the React TMATemplateBuilder component. Falls back to a static
+	 * select-based picker when the compiled assets are not yet present (e.g.
+	 * during development before `npm run build:tma-builder` has been run).
+	 *
+	 * @since 1.1.3
+	 */
+	protected function render_mini_app_builder_tab() {
+		$build_exists = file_exists( WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.js' );
+
+		// Load template registry for the static fallback.
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
+			$_tpl_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
+			if ( file_exists( $_tpl_file ) ) {
+				require_once $_tpl_file;
+			}
+		}
+
+		$all_templates  = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+			? WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta()
+			: array();
+		$active_slug    = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+		$templates_url  = rest_url( 'mcp-ai/v1/telegram-mini-app/templates' );
+		$save_url       = rest_url( 'mcp-ai/v1/telegram-mini-app/template' );
+		$preview_url    = rest_url( 'mcp-ai/v1/telegram-mini-app' );
+		$cosmos_url     = 'http://localhost:5001';
+		$pro_settings_url = admin_url( 'admin.php?page=nvoos-pro-settings' );
+		?>
+		<div class="toolkit-card" style="padding: 0; overflow: hidden;">
+
+			<!-- Tab header -->
+			<div style="background: linear-gradient(135deg, #1565c0 0%, #2481cc 100%); padding: 24px 28px; color: #fff;">
+				<h2 style="margin: 0 0 8px 0; color: #fff; font-size: 22px;">
+					📱 <?php esc_html_e( 'Mini App Template Builder', 'mcp-ai-wpoos-pro' ); ?>
+				</h2>
+				<p style="margin: 0; opacity: 0.88; font-size: 14px;">
+					<?php esc_html_e( 'Choose a pre-built template for your Telegram Mini App. Each template is optimised for a specific Pro toolkit. Individual bot connections can override this global default.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			</div>
+
+			<div style="padding: 24px 28px;">
+
+				<?php if ( $build_exists ) : ?>
+
+					<?php /* React mount point — TMATemplateBuilder renders here. */ ?>
+					<div
+						id="mcp-ai-tma-template-builder-root"
+						data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
+						data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>"
+						data-templates-url="<?php echo esc_url( $templates_url ); ?>"
+						data-save-url="<?php echo esc_url( $save_url ); ?>"
+						data-active-template="<?php echo esc_attr( $active_slug ); ?>"
+						data-preview-base-url="<?php echo esc_url( $preview_url ); ?>"
+					>
+						<?php /* Non-JS fallback rendered by the PHP block below. */ ?>
+					</div>
+
+				<?php else : ?>
+
+					<?php /* ── Static PHP fallback when React assets are not yet built ── */ ?>
+					<div class="notice notice-warning inline" style="margin: 0 0 20px 0;">
+						<p>
+							<strong><?php esc_html_e( 'React assets not built.', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php
+							printf(
+								/* translators: %s: npm command */
+								esc_html__( 'Run %s to enable the interactive template picker with live preview.', 'mcp-ai-wpoos-pro' ),
+								'<code>npm run build:tma-builder</code>'
+							);
+							?>
+						</p>
+					</div>
+
+				<?php endif; ?>
+
+				<?php /* Always render the static PHP fallback form (used by the React component fallback AND as a no-JS save path). */ ?>
+				<form method="post" action="options.php" id="tma-global-template-form">
+					<?php settings_fields( $this->option_name . '_group' ); ?>
+					<input type="hidden" name="<?php echo esc_attr( $this->option_name ); ?>[placeholder]" value="1" />
+
+					<h3><?php esc_html_e( 'Global Default Template', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<p class="description" style="margin-bottom: 16px;">
+						<?php esc_html_e( 'This template is used when a bot connection does not specify its own override.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+
+					<table class="form-table" style="margin-bottom: 0;">
+						<tr>
+							<th scope="row">
+								<label for="tma-global-template-select"><?php esc_html_e( 'Active Template', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select id="tma-global-template-select" name="wp_mcp_ai_telegram_mini_app_template">
+									<?php foreach ( $all_templates as $tpl ) : ?>
+										<option value="<?php echo esc_attr( $tpl['slug'] ); ?>" <?php selected( $active_slug, $tpl['slug'] ); ?>>
+											<?php echo esc_html( $tpl['icon'] . ' ' . $tpl['name'] ); ?>
+											<?php if ( $tpl['toolkit'] ) : ?>
+												(<?php echo esc_html( str_replace( '_', ' ', $tpl['toolkit'] ) ); ?>)
+											<?php endif; ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description">
+									<?php esc_html_e( 'Per-connection overrides are set in the Remote Site Manager → Telegram connection edit form.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							</td>
+						</tr>
+					</table>
+
+					<?php submit_button( __( 'Save Template', 'mcp-ai-wpoos-pro' ) ); ?>
+				</form>
+
+				<?php /* React Cosmos development section */ ?>
+				<hr style="margin: 28px 0;">
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+					<div style="padding: 16px; background: #fff8f0; border: 1px solid #e65100; border-radius: 6px;">
+						<h3 style="margin: 0 0 10px 0; color: #e65100;">
+							<span class="dashicons dashicons-visibility"></span>
+							<?php esc_html_e( 'React Cosmos Dev Playground', 'mcp-ai-wpoos-pro' ); ?>
+						</h3>
+						<p style="font-size: 13px; margin: 0 0 12px 0;">
+							<?php esc_html_e( 'Preview and iterate on each template in isolation — no live Telegram or WordPress session needed.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<code style="display:block; background:#1d2327; color:#72aee6; padding:10px; border-radius:4px; font-size:12px;">npm run cosmos:tma</code>
+						<p style="font-size: 12px; margin: 8px 0 0 0; color: #777;">
+							<?php
+							printf(
+								/* translators: %s: localhost URL */
+								esc_html__( 'Opens at %s — 6 fixtures including live-editable props.', 'mcp-ai-wpoos-pro' ),
+								'<a href="' . esc_url( $cosmos_url ) . '" target="_blank" rel="noopener noreferrer"><code>localhost:5001</code></a>'
+							);
+							?>
+						</p>
+					</div>
+
+					<div style="padding: 16px; background: #f0f6fc; border: 1px solid #2271b1; border-radius: 6px;">
+						<h3 style="margin: 0 0 10px 0; color: #2271b1;">
+							<span class="dashicons dashicons-info"></span>
+							<?php esc_html_e( 'Per-Connection Override', 'mcp-ai-wpoos-pro' ); ?>
+						</h3>
+						<p style="font-size: 13px; margin: 0 0 12px 0;">
+							<?php esc_html_e( 'Each Telegram bot connection can use a different template independent of the global default set above.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'Open Remote Site Manager →', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</div>
+
+					<div style="padding: 16px; background: #f0f9f4; border: 1px solid #00a32a; border-radius: 6px;">
+						<h3 style="margin: 0 0 10px 0; color: #00a32a;">
+							<span class="dashicons dashicons-admin-settings"></span>
+							<?php esc_html_e( 'Full System Info', 'mcp-ai-wpoos-pro' ); ?>
+						</h3>
+						<p style="font-size: 13px; margin: 0 0 12px 0;">
+							<?php esc_html_e( 'View npm packages, build status, and all template builder documentation on the Pro Settings page.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<a href="<?php echo esc_url( $pro_settings_url ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'Pro Settings →', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</div>
+
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
@@ -247,6 +535,11 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<li><?php esc_html_e( 'Real-Time Analytics: Track message delivery, engagement, and user activity across platforms', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Webhook Integration: Receive real-time events and updates from all platforms', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'AI-Powered Responses: Leverage AI assistants to provide automated, context-aware responses', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li>
+					<strong>📱 <?php esc_html_e( 'Mini App Template Builder:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php esc_html_e( '6 pre-built Telegram Mini App templates, drag-to-reorder card picker, live iframe preview, and per-connection overrides', 'mcp-ai-wpoos-pro' ); ?>
+					— <a href="<?php echo esc_url( add_query_arg( 'tab', 'mini_app_builder', admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>"><?php esc_html_e( 'Open Mini App Builder →', 'mcp-ai-wpoos-pro' ); ?></a>
+				</li>
 			</ul>
 
 			<h3><?php esc_html_e( 'Supported Platforms', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -427,6 +720,43 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 									'</a>'
 								);
 								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Mini App Template', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<?php
+							$_active_tpl = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+
+							if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
+								$_tpl_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
+								if ( file_exists( $_tpl_file ) ) {
+									require_once $_tpl_file;
+								}
+							}
+
+							$_all_templates = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+								? WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta()
+								: array();
+
+							$_active_name = __( 'Content Manager (Default)', 'mcp-ai-wpoos-pro' );
+							foreach ( $_all_templates as $_tpl ) {
+								if ( $_tpl['slug'] === $_active_tpl ) {
+									$_active_name = $_tpl['icon'] . ' ' . $_tpl['name'];
+									break;
+								}
+							}
+							?>
+							<p style="margin: 0 0 8px 0;">
+								<?php esc_html_e( 'Active global template:', 'mcp-ai-wpoos-pro' ); ?>
+								<strong><?php echo esc_html( $_active_name ); ?></strong>
+							</p>
+							<a href="<?php echo esc_url( add_query_arg( 'tab', 'mini_app_builder', admin_url( 'admin.php?page=' . $this->page_slug ) ) ); ?>" class="button button-secondary">
+								📱 <?php esc_html_e( 'Open Mini App Builder →', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+							<p class="description" style="margin-top: 6px;">
+								<?php esc_html_e( 'Use the Mini App Builder tab to choose from 6 pre-built templates with live preview. Individual bot connections can override the global default in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>

@@ -1,0 +1,17 @@
+{
+	"$schema": "https://reactcosmos.org/cosmos.config.schema.json",
+	"plugins": ["react-cosmos-plugin-webpack"],
+	"webpack": {
+		"configPath": "./cosmos.webpack.config.js"
+	},
+	"watchDirs": ["src/tma-template-builder"],
+	"fixturesDir": "__fixtures__",
+	"fixtureFileSuffix": "fixture",
+	"port": 5001,
+	"rendererUrl": null,
+	"publicUrl": "/",
+	"staticPath": null,
+	"hostname": "localhost",
+	"globalImports": [],
+	"rootDir": "src/tma-template-builder"
+}
