@@ -676,3 +676,125 @@ Ran `composer dump-autoload --no-dev --classmap-authoritative` to generate an op
 57. `vendor/symfony/validator/*` — Updated to v6.4.34
 58. `vendor/symfony/process/*` — Confirmed at v6.4.33 (ceiling; no v6.4.34 exists on Packagist)
 59. `vendor/symfony/var-exporter/*` — Confirmed at v6.4.26 (ceiling; transitive dep of symfony/cache, no higher 6.4.x exists)
+
+---
+
+## Code Review — March 6, 2026 (Pre-Submission Sweep)
+
+**Date:** March 6, 2026
+**Plugin Version:** 1.1.3
+**Scope:** Base plugin only (excludes `addons/pro`, `examples`, `bin`, `tests`)
+**Lint Tools:** `composer run lint:base` (WPCS, severity 8+), `composer run lint:base:compat` (PHPCompatibilityWP 7.4–8.3), `npm run lint:js`
+
+### Lint Results
+
+| Check | Result |
+|-------|--------|
+| `composer run lint:base` | ✅ **0 errors, 0 warnings** |
+| `composer run lint:base:compat` | ✅ **0 errors, 0 warnings** |
+| `npm run lint:js` | ✅ **0 errors** (1 expected vendor-ignore notice) |
+
+### Issues Identified and Fixed
+
+A full audit with `--warning-severity=1` surfaced the following categories requiring action:
+
+#### 1. Unguarded `error_log()` Calls (WordPress.org Guideline: No Debug Code in Production)
+
+Seven files contained bare `error_log()` calls outside any `WP_DEBUG` guard. These were replaced with the plugin's structured `WP_MCP_AI_Logger::log_event()` calls, which are gated by the admin logging setting.
+
+| File | Line | Action |
+|------|------|--------|
+| `includes/class-wp-mcp-ai-enhanced-token-tracking.php` | 225 | Replaced with `WP_MCP_AI_Logger::log_event('info', ...)` |
+| `includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php` | 61 | Replaced with `WP_MCP_AI_Logger::log_event('error', ...)` |
+| `includes/services/class-wp-mcp-ai-team-knowledge-base-loader.php` | 61 | Replaced with `WP_MCP_AI_Logger::log_event('error', ...)` |
+| `includes/teams/class-wp-mcp-ai-team-seeder.php` | 63 | Replaced with `WP_MCP_AI_Logger::log_event('warning', ...)` |
+| `includes/professions/class-wp-mcp-ai-profession-seeder.php` | 176 | Replaced with `WP_MCP_AI_Logger::log_event('warning', ...)` |
+| `includes/repositories/class-wp-mcp-ai-team-repository.php` | 172, 179 | Replaced with `WP_MCP_AI_Logger::log_event('warning', ...)` |
+
+#### 2. `error_log()` Already Guarded by `WP_DEBUG` — Added `phpcs:ignore`
+
+Five files had `error_log()` calls correctly guarded by `if ( defined('WP_DEBUG') && WP_DEBUG )` or `WP_MCP_AI_DEBUG`. Added inline `phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log` with justification comments to suppress the PHPCS warning.
+
+| File | Line | Note |
+|------|------|------|
+| `includes/services/class-wp-mcp-ai-profession-tool-recommender.php` | 275 | Guarded by `WP_DEBUG` |
+| `includes/services/class-wp-mcp-ai-orchestration-health-service.php` | 683 | Guarded by `WP_DEBUG` |
+| `includes/class-wp-mcp-ai-transformers-enqueue.php` | 88 | Guarded by `WP_DEBUG` |
+| `includes/class-wp-mcp-ai-default-assistants.php` | 1289 | Guarded by `WP_MCP_AI_DEBUG` |
+| `includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php` | 111 | Guarded by `WP_DEBUG` |
+
+#### 3. REST Controller Base — Intentional Production Logging
+
+`includes/rest/class-wp-mcp-ai-rest-controller-base.php` contains a `log()` method that calls `error_log()` only when the caller has already confirmed logging is enabled via `WP_MCP_AI_Error_Tracking_Service::is_logging_enabled()`. Added `phpcs:ignore` with a justification comment.
+
+#### 4. `print_r()` in WP-CLI Command — Added `phpcs:ignore`
+
+`includes/cli/class-wp-mcp-ai-cli-slash-command.php:273` uses `print_r($result, true)` to format non-string WP-CLI output as a string for `WP_CLI::line()`. This is a legitimate WP-CLI pattern (output goes to terminal, not browser). Added `phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r` with justification.
+
+#### 5. Commented-Out Pseudocode Block Removed
+
+`includes/class-wp-mcp-ai-cli-command.php` contained a multi-line pseudocode worker loop in comments (flagged as 49% valid code). The block was removed in favour of the existing plain-language TODO comment, which is sufficient for future implementation guidance.
+
+#### 6. False-Positive "Commented-Out Code" Warnings Suppressed
+
+Two locations contained inline documentation that PHPCS flagged as commented-out code but are not executable code:
+
+- `includes/services/class-wp-mcp-ai-context-compression-service.php` — Array key comment listing accepted string values (`'summarization'` or `'chunking'`). Added inline `phpcs:ignore Squiz.PHP.CommentedOutCode.Found` with explanation.
+- `includes/class-wp-mcp-ai-http-helper.php` — CIDR range notation comments (e.g., `10.0.0.0/8`) documenting IP ranges. Wrapped with scoped `phpcs:disable/enable Squiz.PHP.CommentedOutCode.Found` with explanation.
+
+### Build Tooling Note
+
+The base plugin ZIP is built using:
+
+```bash
+composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
+```
+
+**`--classmap-authoritative`** is used (not `dump-autoload`). This generates a fully optimised, PSR-4-fallback-disabled classmap, which:
+- Eliminates runtime filesystem scans for class discovery
+- Removes all dev-only packages (`phpunit`, `phpcs`, `wp-phpunit`, etc.) from the distribution
+- Produces a deterministic, reviewable `vendor/composer/autoload_classmap.php`
+
+The second-pass restore after ZIP packaging also uses:
+
+```bash
+composer install --no-dev --classmap-authoritative --no-interaction --quiet
+```
+
+Both commands are documented in `bin/build-plugin-zip.sh` (lines 169 and 818).
+
+### Remaining Informational Warnings (Not Blocking)
+
+After all fixes, `--warning-severity=1` still surfaces the following categories. These are informational and do not affect WordPress.org eligibility:
+
+| Category | Count | Justification |
+|----------|-------|---------------|
+| `Generic.CodeAnalysis.UnusedFunctionParameter` | ~90 | Interface-required parameters in tool `execute()` and hook callbacks |
+| `WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_*` | ~20 | Binary image data encoding and encryption key handling; not obfuscation |
+| `WordPress.WP.Capabilities.Unknown` | ~18 | Dynamic capability strings (WooCommerce, JetEngine) validated at runtime |
+| Reserved keyword parameter names (`$callable`, `$class`, `$default`, etc.) | ~15 | Inherited from third-party interface signatures |
+| `Couldn't determine capability` in `user_can()` | ~12 | Dynamic capability strings passed from callers; all validated upstream |
+
+### Files Changed in This Review Cycle
+
+1. `includes/class-wp-mcp-ai-enhanced-token-tracking.php` — Replace `error_log()` with `WP_MCP_AI_Logger::log_event()`
+2. `includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php` — Replace `error_log()` with `WP_MCP_AI_Logger::log_event()`
+3. `includes/services/class-wp-mcp-ai-team-knowledge-base-loader.php` — Replace `error_log()` with `WP_MCP_AI_Logger::log_event()`
+4. `includes/teams/class-wp-mcp-ai-team-seeder.php` — Replace `error_log()` with `WP_MCP_AI_Logger::log_event()`
+5. `includes/professions/class-wp-mcp-ai-profession-seeder.php` — Replace `error_log()` with `WP_MCP_AI_Logger::log_event()`
+6. `includes/repositories/class-wp-mcp-ai-team-repository.php` — Replace two `error_log()` calls with `WP_MCP_AI_Logger::log_event()`
+7. `includes/rest/class-wp-mcp-ai-rest-controller-base.php` — Added `phpcs:ignore` (intentional production logging, gated by `is_logging_enabled()`)
+8. `includes/services/class-wp-mcp-ai-profession-tool-recommender.php` — Added `phpcs:ignore` (guarded by `WP_DEBUG`)
+9. `includes/services/class-wp-mcp-ai-orchestration-health-service.php` — Added `phpcs:ignore` (guarded by `WP_DEBUG`)
+10. `includes/class-wp-mcp-ai-transformers-enqueue.php` — Added `phpcs:ignore` (guarded by `WP_DEBUG`)
+11. `includes/class-wp-mcp-ai-default-assistants.php` — Added `phpcs:ignore` (guarded by `WP_MCP_AI_DEBUG`)
+12. `includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php` — Added `phpcs:ignore` (guarded by `WP_DEBUG`)
+13. `includes/cli/class-wp-mcp-ai-cli-slash-command.php` — Added `phpcs:ignore` for `print_r()` (legitimate WP-CLI string formatting)
+14. `includes/class-wp-mcp-ai-cli-command.php` — Removed pseudocode worker loop comments
+15. `includes/services/class-wp-mcp-ai-context-compression-service.php` — Added `phpcs:ignore` for accepted-values comment
+16. `includes/class-wp-mcp-ai-http-helper.php` — Added scoped `phpcs:disable/enable` for CIDR notation comments
+17. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This update
+
+---
+
+*Last updated: March 6, 2026*

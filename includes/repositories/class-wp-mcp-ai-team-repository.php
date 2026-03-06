@@ -169,14 +169,20 @@ class WP_MCP_AI_Team_Repository {
 					} else {
 						// Log missing profession for debugging.
 						$missing_members[] = $member;
-						error_log( sprintf( 'WP_MCP_AI: Team %s references profession "%s" which does not exist in database.', $team_id, $member ) );
+						WP_MCP_AI_Logger::log_event(
+							'warning',
+							sprintf( 'Team %s references profession "%s" which does not exist in database.', $team_id, $member )
+						);
 					}
 				}
 			}
 
 			// Log warning if some members couldn't be resolved.
 			if ( ! empty( $missing_members ) ) {
-				error_log( sprintf( 'WP_MCP_AI: Team ID %d saved with %d/%d members. Missing professions: %s', $team_id, count( $member_ids ), count( $data['members'] ), implode( ', ', $missing_members ) ) );
+				WP_MCP_AI_Logger::log_event(
+					'warning',
+					sprintf( 'Team ID %d saved with %d/%d members. Missing professions: %s', $team_id, count( $member_ids ), count( $data['members'] ), implode( ', ', $missing_members ) )
+				);
 			}
 
 			update_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, $member_ids );

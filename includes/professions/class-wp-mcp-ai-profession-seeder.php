@@ -173,7 +173,10 @@ class WP_MCP_AI_Profession_Seeder {
 
 		// Fallback to hard-coded professions if JSON loading fails.
 		if ( is_wp_error( $professions ) || empty( $professions ) ) {
-			error_log( 'WP_MCP_AI: JSON loading failed, using hard-coded professions. Error: ' . ( is_wp_error( $professions ) ? $professions->get_error_message() : 'Empty result' ) );
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JSON loading failed, using hard-coded professions. Error: ' . ( is_wp_error( $professions ) ? $professions->get_error_message() : 'Empty result' )
+			);
 			$professions = self::get_default_professions();
 		}
 
