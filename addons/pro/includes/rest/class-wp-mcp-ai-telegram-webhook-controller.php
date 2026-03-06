@@ -718,7 +718,9 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$payload = array(
 			'chat_id'    => $chat_id,
 			'text'       => $content,
-			'parse_mode' => 'HTML',
+			'parse_mode' => ( isset( $connection['parse_mode'] ) && in_array( $connection['parse_mode'], array( 'HTML', 'Markdown', 'MarkdownV2' ), true ) )
+				? $connection['parse_mode']
+				: 'HTML',
 		);
 
 		// In group/supergroup chats, reply to the original message to keep the
@@ -1420,6 +1422,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$command = $parsed['command'];
 		$args    = $parsed['args'];
 
+		// Retrieve the active connection so we can check the disabled-commands list.
+		$connection        = $this->get_active_telegram_connection();
+		$disabled_commands = ( $connection && isset( $connection['disabled_commands'] ) && is_array( $connection['disabled_commands'] ) )
+			? $connection['disabled_commands']
+			: array();
+
 		/**
 		 * Filters the built-in bot command response before the default handler.
 		 *
@@ -1446,39 +1454,44 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return true;
 		}
 
-		// Built-in command handlers.
-		switch ( $command ) {
-			case 'start':
-				$this->cmd_start( $chat_id, $args, $message );
-				return true;
+		// Built-in command handlers – skip disabled commands so the AI pipeline
+		// can handle them instead (or they can just be ignored).
+		// If the command is in the disabled list, fall through to the unhandled
+		// command action below (returning false so the AI pipeline can take over).
+		if ( ! in_array( $command, $disabled_commands, true ) ) {
+			switch ( $command ) {
+				case 'start':
+					$this->cmd_start( $chat_id, $args, $message );
+					return true;
 
-			case 'help':
-				$this->cmd_help( $chat_id, $chat_type, $message );
-				return true;
+				case 'help':
+					$this->cmd_help( $chat_id, $chat_type, $message );
+					return true;
 
-			case 'settings':
-				$this->cmd_settings( $chat_id, $message );
-				return true;
+				case 'settings':
+					$this->cmd_settings( $chat_id, $message );
+					return true;
 
-			case 'status':
-				$this->cmd_status( $chat_id, $message );
-				return true;
+				case 'status':
+					$this->cmd_status( $chat_id, $message );
+					return true;
 
-			case 'cancel':
-				$this->cmd_cancel( $chat_id, $from_id, $message );
-				return true;
+				case 'cancel':
+					$this->cmd_cancel( $chat_id, $from_id, $message );
+					return true;
 
-			case 'tools':
-				$this->cmd_tools( $chat_id, $args, $message );
-				return true;
+				case 'tools':
+					$this->cmd_tools( $chat_id, $args, $message );
+					return true;
 
-			case 'balance':
-				$this->cmd_balance( $chat_id, $message );
-				return true;
+				case 'balance':
+					$this->cmd_balance( $chat_id, $message );
+					return true;
 
-			case 'app':
-				$this->cmd_app( $chat_id, $message );
-				return true;
+				case 'app':
+					$this->cmd_app( $chat_id, $message );
+					return true;
+			}
 		}
 
 		/**
@@ -1505,11 +1518,18 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * @param array  $message Telegram message.
 	 */
 	protected function cmd_start( $chat_id, $args, array $message ) {
-		$site_name = get_bloginfo( 'name' );
-		$text      = sprintf(
-			"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
-			$site_name
-		);
+		$site_name  = get_bloginfo( 'name' );
+		$connection = $this->get_active_telegram_connection();
+
+		// Use the custom welcome message saved on the connection when available.
+		if ( $connection && ! empty( $connection['welcome_message'] ) ) {
+			$text = $connection['welcome_message'];
+		} else {
+			$text = sprintf(
+				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
+				$site_name
+			);
+		}
 
 		/**
 		 * Fires when /start is received with a deep-link parameter.
@@ -1727,6 +1747,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	protected function cmd_app( $chat_id, array $message ) {
 		$connection = $this->get_active_telegram_connection();
 		if ( ! $connection || empty( $connection['api_key'] ) ) {
+			return;
+		}
+
+		// Respect the "Enable Mini App" connection setting (default: enabled for
+		// backwards compatibility with connections that pre-date this setting).
+		$mini_app_enabled = ! array_key_exists( 'enable_mini_app', $connection ) || ! empty( $connection['enable_mini_app'] );
+		if ( ! $mini_app_enabled ) {
+			$this->send_command_reply( $chat_id, '📱 The Mini App is not available for this bot.', $message );
 			return;
 		}
 
@@ -2605,6 +2633,30 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$text
 		);
 
+		// 2b. Extract existing HTML anchor tags so they survive the HTML-escaping
+		//     pass in step 3. AI responses sometimes emit raw <a href="…">…</a>
+		//     links (e.g. from tool output) instead of Markdown [text](url) syntax.
+		$html_links = array();
+		$hl_index   = 0;
+		$hl_ph      = "\x07TGHL:";
+
+		$text = preg_replace_callback(
+			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
+			function ( $m ) use ( &$html_links, &$hl_index, $hl_ph ) {
+				$url       = esc_url( $m[1] );
+				$link_text = htmlspecialchars( wp_strip_all_tags( $m[2] ), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				if ( '' === $url ) {
+					return $link_text;
+				}
+				$tag = '<a href="' . htmlspecialchars( $url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' ) . '">' . $link_text . '</a>';
+				$key = $hl_ph . $hl_index . "\x07";
+				$html_links[ $key ] = $tag;
+				++$hl_index;
+				return $key;
+			},
+			$text
+		);
+
 		// 3. Escape HTML special characters in the remaining text so that raw
 		//    `<`, `>`, and `&` do not break Telegram's HTML parser.
 		$text = htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
@@ -2653,12 +2705,17 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$text
 		);
 
-		// 10. Restore inline code placeholders.
+		// 10. Restore HTML anchor tag placeholders.
+		if ( ! empty( $html_links ) ) {
+			$text = str_replace( array_keys( $html_links ), array_values( $html_links ), $text );
+		}
+
+		// 11. Restore inline code placeholders.
 		if ( ! empty( $inline_codes ) ) {
 			$text = str_replace( array_keys( $inline_codes ), array_values( $inline_codes ), $text );
 		}
 
-		// 11. Restore fenced code block placeholders.
+		// 12. Restore fenced code block placeholders.
 		if ( ! empty( $code_blocks ) ) {
 			$text = str_replace( array_keys( $code_blocks ), array_values( $code_blocks ), $text );
 		}
