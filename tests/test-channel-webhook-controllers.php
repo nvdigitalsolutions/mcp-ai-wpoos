@@ -169,7 +169,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	/**
 	 * Test extract_agentic_tool_messages_from_chat_response normalizes output.
 	 */
-	public function test_telegram_extract_agentic_tool_messages_normalized() {
+	public function test_telegram_extract_agentic_tool_messages_filters_invalid_entries() {
 		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
 
 		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();

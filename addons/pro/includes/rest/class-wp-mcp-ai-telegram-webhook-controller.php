@@ -1397,11 +1397,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 
 			if ( isset( $message['name'] ) && is_string( $message['name'] ) && '' !== $message['name'] ) {
-				$entry['name'] = (string) $message['name'];
+				$entry['name'] = $message['name'];
 			}
 
 			if ( isset( $message['tool_call_id'] ) && is_string( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
-				$entry['tool_call_id'] = (string) $message['tool_call_id'];
+				$entry['tool_call_id'] = $message['tool_call_id'];
 			}
 
 			$normalized[] = $entry;
