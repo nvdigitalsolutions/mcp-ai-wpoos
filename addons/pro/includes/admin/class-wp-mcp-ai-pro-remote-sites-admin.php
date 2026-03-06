@@ -592,6 +592,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					: array(),
+				// WordPress/WooCommerce granular access controls.
+				'post_type_access'   => $this->resolve_post_type_access(),
+				'wc_resource_access' => $this->resolve_wc_resource_access(),
+				'custom_post_types'  => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -4220,6 +4224,125 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'This site has WooCommerce installed', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Enable to access WooCommerce products, orders, and other data.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="wordpress-only-field">
+					<th scope="row"><?php esc_html_e( 'Post Type Access Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$pt_access_enabled = $is_edit && ! empty( $connection['post_type_access'] );
+						$pt_access         = $is_edit && isset( $connection['post_type_access'] ) ? $connection['post_type_access'] : array();
+						$custom_pt_raw     = $is_edit && isset( $connection['custom_post_types'] ) ? $connection['custom_post_types'] : '';
+						?>
+						<label style="display:block; margin-bottom:8px;">
+							<input type="checkbox" name="enable_pt_access_controls" id="enable_pt_access_controls" value="1"
+								<?php checked( $pt_access_enabled ); ?>
+								onchange="document.getElementById('pt_access_controls_section').style.display=this.checked?'block':'none';">
+							<strong><?php esc_html_e( 'Restrict post type access (leave unchecked to allow all post types with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+						</label>
+						<div id="pt_access_controls_section" style="<?php echo $pt_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+							<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which post types can be accessed and which CRUD operations are permitted. Unchecked post types will be blocked.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<table class="widefat striped" style="max-width:560px;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Post Type', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$built_in_pt = array(
+										'post'       => __( 'Posts', 'mcp-ai-wpoos-pro' ),
+										'page'       => __( 'Pages', 'mcp-ai-wpoos-pro' ),
+										'attachment' => __( 'Media / Attachments', 'mcp-ai-wpoos-pro' ),
+									);
+
+									// Add saved custom post types.
+									if ( ! empty( $custom_pt_raw ) ) {
+										foreach ( explode( ',', $custom_pt_raw ) as $cpt_slug ) {
+											$cpt_slug = sanitize_key( trim( $cpt_slug ) );
+											if ( ! empty( $cpt_slug ) && ! isset( $built_in_pt[ $cpt_slug ] ) ) {
+												$built_in_pt[ $cpt_slug ] = $cpt_slug;
+											}
+										}
+									}
+
+									foreach ( $built_in_pt as $pt_slug => $pt_label ) :
+										$pt_ops = isset( $pt_access[ $pt_slug ] ) ? (array) $pt_access[ $pt_slug ] : array();
+										?>
+									<tr>
+										<td><strong><?php echo esc_html( $pt_label ); ?></strong> <code><?php echo esc_html( $pt_slug ); ?></code></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $pt_ops, true ) ); ?>></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+							<p class="description" style="margin-top:8px;">
+								<label for="custom_post_types"><strong><?php esc_html_e( 'Additional custom post types (comma-separated slugs):', 'mcp-ai-wpoos-pro' ); ?></strong></label><br>
+								<input type="text" name="custom_post_types" id="custom_post_types" class="regular-text"
+									value="<?php echo esc_attr( $custom_pt_raw ); ?>"
+									placeholder="<?php esc_attr_e( 'e.g. product,event,team', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="description"><?php esc_html_e( 'Save and re-open the connection to see custom types in the table above.', 'mcp-ai-wpoos-pro' ); ?></span>
+							</p>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="wordpress-only-field">
+					<th scope="row"><?php esc_html_e( 'WooCommerce Resource Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$wc_access_enabled = $is_edit && ! empty( $connection['wc_resource_access'] );
+						$wc_access         = $is_edit && isset( $connection['wc_resource_access'] ) ? $connection['wc_resource_access'] : array();
+						?>
+						<label style="display:block; margin-bottom:8px;">
+							<input type="checkbox" name="enable_wc_access_controls" id="enable_wc_access_controls" value="1"
+								<?php checked( $wc_access_enabled ); ?>
+								onchange="document.getElementById('wc_access_controls_section').style.display=this.checked?'block':'none';">
+							<strong><?php esc_html_e( 'Restrict WooCommerce resource access (leave unchecked to allow all resources with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+						</label>
+						<div id="wc_access_controls_section" style="<?php echo $wc_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+							<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which WooCommerce resources can be accessed and which CRUD operations are permitted. This requires WooCommerce to be enabled above.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<table class="widefat striped" style="max-width:560px;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Resource', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$wc_resources = array(
+										'products'   => __( 'Products', 'mcp-ai-wpoos-pro' ),
+										'orders'     => __( 'Orders', 'mcp-ai-wpoos-pro' ),
+										'customers'  => __( 'Customers', 'mcp-ai-wpoos-pro' ),
+										'categories' => __( 'Product Categories', 'mcp-ai-wpoos-pro' ),
+									);
+
+									foreach ( $wc_resources as $res_slug => $res_label ) :
+										$res_ops = isset( $wc_access[ $res_slug ] ) ? (array) $wc_access[ $res_slug ] : array();
+										?>
+									<tr>
+										<td><strong><?php echo esc_html( $res_label ); ?></strong></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $res_ops, true ) ); ?>></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
 					</td>
 				</tr>
 
@@ -11425,6 +11548,110 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$raw = array_map( 'sanitize_key', wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		return array_values( array_intersect( $raw, $allowed ) );
+	}
+
+	/**
+	 * Build the post_type_access map from the submitted form data.
+	 *
+	 * Each built-in post type has four checkbox fields in the form:
+	 * pt_{slug}_read, pt_{slug}_create, pt_{slug}_update, pt_{slug}_delete.
+	 * Custom post types listed in the `custom_post_types` text field receive
+	 * the same treatment.  Only 'read', 'create', 'update', and 'delete' are
+	 * accepted as operation values.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Sanitized post_type_access map, e.g.
+	 *               array( 'post' => array( 'read' ), 'page' => array( 'read', 'create' ) ).
+	 *               Returns an empty array when access controls are not configured
+	 *               (all post types allowed, read-only – backward compatible).
+	 */
+	private function resolve_post_type_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_pt_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+
+		$built_in_types = array( 'post', 'page', 'attachment' );
+
+		// Merge custom post types from the text field.
+		$custom_raw   = isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '';
+		$custom_types = array();
+
+		if ( ! empty( $custom_raw ) ) {
+			foreach ( explode( ',', $custom_raw ) as $cpt ) {
+				$slug = sanitize_key( trim( $cpt ) );
+				if ( ! empty( $slug ) ) {
+					$custom_types[] = $slug;
+				}
+			}
+		}
+
+		$all_types = array_unique( array_merge( $built_in_types, $custom_types ) );
+		$access    = array();
+
+		foreach ( $all_types as $post_type ) {
+			$ops = array();
+
+			foreach ( $valid_operations as $op ) {
+				$field = 'pt_' . $post_type . '_' . $op;
+				if ( ! empty( $_POST[ $field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			// Only include post types where at least one operation is enabled.
+			if ( ! empty( $ops ) ) {
+				$access[ $post_type ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
+	}
+
+	/**
+	 * Build the wc_resource_access map from the submitted form data.
+	 *
+	 * Each WooCommerce resource has four checkbox fields:
+	 * wc_{resource}_read, wc_{resource}_create, wc_{resource}_update, wc_{resource}_delete.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Sanitized wc_resource_access map, e.g.
+	 *               array( 'products' => array( 'read', 'create' ), 'orders' => array( 'read' ) ).
+	 *               Returns an empty array when WooCommerce access controls are not configured.
+	 */
+	private function resolve_wc_resource_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_wc_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$wc_resources     = array( 'products', 'orders', 'customers', 'categories' );
+		$access           = array();
+
+		foreach ( $wc_resources as $resource ) {
+			$ops = array();
+
+			foreach ( $valid_operations as $op ) {
+				$field = 'wc_' . $resource . '_' . $op;
+				if ( ! empty( $_POST[ $field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			// Only include resources where at least one operation is enabled.
+			if ( ! empty( $ops ) ) {
+				$access[ $resource ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
 	}
 }
 

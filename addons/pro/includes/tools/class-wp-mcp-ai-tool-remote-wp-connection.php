@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'mcp-ai-wpoos-pro' );
+		return __( 'Access and manage remote WordPress and WooCommerce sites. Supports reading posts, pages, media, products, orders, and other data, plus creating, updating, and deleting content when the connection allows it. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections. NOTE: Write operations (create/update/delete) require the connection to have those operations explicitly enabled by the site administrator.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'action'             => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action. Write actions (create_post, update_post, delete_post, create_wc_product, update_wc_product, delete_wc_product, update_wc_order) require the connection to have those operations enabled by the site administrator.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'list_connections',
 						'test_connection',
@@ -91,6 +91,13 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						'get_wc_order',
 						'get_wc_customers',
 						'get_wc_categories',
+						'create_post',
+						'update_post',
+						'delete_post',
+						'create_wc_product',
+						'update_wc_product',
+						'delete_wc_product',
+						'update_wc_order',
 					),
 					'default'     => 'list_connections',
 				),
@@ -151,7 +158,28 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'type'               => array(
 					'type'        => 'string',
-					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries. Also used as the product type when creating a WooCommerce product (create_wc_product).', 'mcp-ai-wpoos-pro' ),
+				),
+				'title'              => array(
+					'type'        => 'string',
+					'description' => __( 'Post title or WooCommerce product name. Required for create_post and create_wc_product actions; optional for update_post and update_wc_product.', 'mcp-ai-wpoos-pro' ),
+				),
+				'content'            => array(
+					'type'        => 'string',
+					'description' => __( 'Post body content (create_post, update_post) or WooCommerce product description (create_wc_product, update_wc_product). HTML is allowed.', 'mcp-ai-wpoos-pro' ),
+				),
+				'excerpt'            => array(
+					'type'        => 'string',
+					'description' => __( 'Post excerpt (create_post, update_post) or WooCommerce short description (create_wc_product, update_wc_product).', 'mcp-ai-wpoos-pro' ),
+				),
+				'fields'             => array(
+					'type'        => 'object',
+					'description' => __( 'Additional key-value fields for WooCommerce create/update operations. Supported keys for products: sku, regular_price, sale_price, stock_quantity, manage_stock (true/false), stock_status (instock/outofstock/onbackorder). Supported keys for orders: status, customer_note.', 'mcp-ai-wpoos-pro' ),
+				),
+				'force'              => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, permanently deletes the item instead of moving it to trash (delete_post, delete_wc_product). Default: false (moves to trash).', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'action' ),
@@ -313,6 +341,27 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			case 'get_wc_categories':
 				return $this->get_wc_categories( $connection, $arguments );
 
+			case 'create_post':
+				return $this->create_post( $connection, $arguments );
+
+			case 'update_post':
+				return $this->update_post( $connection, $arguments );
+
+			case 'delete_post':
+				return $this->delete_post( $connection, $arguments );
+
+			case 'create_wc_product':
+				return $this->create_wc_product( $connection, $arguments );
+
+			case 'update_wc_product':
+				return $this->update_wc_product( $connection, $arguments );
+
+			case 'delete_wc_product':
+				return $this->delete_wc_product( $connection, $arguments );
+
+			case 'update_wc_order':
+				return $this->update_wc_order( $connection, $arguments );
+
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_pro_invalid_action',
@@ -417,6 +466,18 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$page      = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
+		// Enforce post type access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Read access to post type "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
@@ -473,6 +534,18 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$post_id   = absint( $arguments['post_id'] );
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
+		// Enforce post type access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Read access to post type "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
 		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
 
 		$post = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
@@ -511,6 +584,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error Media data.
 	 */
 	protected function get_media( $connection, $arguments ) {
+		// Enforce attachment (media) access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, 'attachment', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to media (attachment) is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
 		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
@@ -557,6 +638,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
 				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Enforce WooCommerce products access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -745,6 +834,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Enforce WooCommerce products access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_product_id',
@@ -789,6 +886,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
 				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Enforce WooCommerce products access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1142,6 +1247,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Enforce WooCommerce orders access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'orders', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce orders is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
 		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
@@ -1195,6 +1308,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		// Enforce WooCommerce orders access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'orders', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce orders is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_order_id',
@@ -1231,6 +1352,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
 				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Enforce WooCommerce customers access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'customers', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce customers is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1280,6 +1409,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
 				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Enforce WooCommerce categories access controls.
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'categories', 'read' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Read access to WooCommerce product categories is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1398,16 +1535,475 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro feature.
-			'read-only',            // Only reads data, does not modify state.
 			'external-api',         // Makes external API calls.
 			'requires-capability',  // Requires 'edit_posts' capability.
-			'cacheable',            // Results can be cached.
+			'cacheable',            // GET results can be cached.
 			'network-dependent',    // Requires internet connectivity.
 			'may-timeout',          // External API calls may timeout.
 			'large-response',       // May return large data sets.
 			'paginated',            // Supports pagination.
 			'rate-limited',         // Subject to rate limiting (30 requests/min/user).
 			'supports-compression', // Supports gzip/deflate compression.
+			'write-capable',        // Can perform write operations when enabled by admin.
+		);
+	}
+
+	/**
+	 * Create a post on the remote WordPress site.
+	 *
+	 * Requires 'create' operation to be enabled for the post type in the connection's
+	 * post_type_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including title, content, status, post_type.
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function create_post( $connection, $arguments ) {
+		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'create' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Create access to post type "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
+		if ( empty( $arguments['title'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_title',
+				__( 'Post title is required for create_post.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$body = array(
+			'title'  => sanitize_text_field( $arguments['title'] ),
+			'status' => ! empty( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'draft',
+		);
+
+		if ( ! empty( $arguments['content'] ) ) {
+			$body['content'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( ! empty( $arguments['excerpt'] ) ) {
+			$body['excerpt'] = sanitize_textarea_field( $arguments['excerpt'] );
+		}
+
+		$endpoint = 'wp/v2/' . $post_type;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $body );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'Post created successfully', 'mcp-ai-wpoos-pro' ),
+			'post'    => $result,
+		);
+	}
+
+	/**
+	 * Update a post on the remote WordPress site.
+	 *
+	 * Requires 'update' operation to be enabled for the post type in the connection's
+	 * post_type_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including post_id, and at least one of: title, content, excerpt, status.
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function update_post( $connection, $arguments ) {
+		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'update' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Update access to post type "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
+		if ( empty( $arguments['post_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_post_id',
+				__( 'Post ID is required for update_post.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$post_id = absint( $arguments['post_id'] );
+		$body    = array();
+
+		if ( ! empty( $arguments['title'] ) ) {
+			$body['title'] = sanitize_text_field( $arguments['title'] );
+		}
+
+		if ( ! empty( $arguments['content'] ) ) {
+			$body['content'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( ! empty( $arguments['excerpt'] ) ) {
+			$body['excerpt'] = sanitize_textarea_field( $arguments['excerpt'] );
+		}
+
+		if ( ! empty( $arguments['status'] ) ) {
+			$body['status'] = sanitize_key( $arguments['status'] );
+		}
+
+		if ( empty( $body ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_fields',
+				__( 'At least one of title, content, excerpt, or status is required for update_post.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'POST', $body );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'Post updated successfully', 'mcp-ai-wpoos-pro' ),
+			'post'    => $result,
+		);
+	}
+
+	/**
+	 * Delete a post on the remote WordPress site.
+	 *
+	 * Requires 'delete' operation to be enabled for the post type in the connection's
+	 * post_type_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including post_id. Optional: force (bool), post_type.
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function delete_post( $connection, $arguments ) {
+		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_post_type_operation_allowed( $connection, $post_type, 'delete' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				sprintf(
+					/* translators: %s: post type slug */
+					__( 'Delete access to post type "%s" is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' ),
+					$post_type
+				)
+			);
+		}
+
+		if ( empty( $arguments['post_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_post_id',
+				__( 'Post ID is required for delete_post.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$post_id  = absint( $arguments['post_id'] );
+		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
+
+		if ( ! empty( $arguments['force'] ) ) {
+			$endpoint = add_query_arg( 'force', 'true', $endpoint );
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'DELETE' );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'Post deleted successfully', 'mcp-ai-wpoos-pro' ),
+			'result'  => $result,
+		);
+	}
+
+	/**
+	 * Create a WooCommerce product on the remote site.
+	 *
+	 * Requires 'create' operation to be enabled for the 'products' resource in the
+	 * connection's wc_resource_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including title. Optional: content, excerpt, status, type, fields.
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function create_wc_product( $connection, $arguments ) {
+		if ( empty( $connection['has_woocommerce'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_no_woocommerce',
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'create' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Create access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['title'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_title',
+				__( 'Product name (title) is required for create_wc_product.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$body = array(
+			'name'   => sanitize_text_field( $arguments['title'] ),
+			'status' => ! empty( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'draft',
+			'type'   => ! empty( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : 'simple',
+		);
+
+		if ( ! empty( $arguments['content'] ) ) {
+			$body['description'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( ! empty( $arguments['excerpt'] ) ) {
+			$body['short_description'] = wp_kses_post( $arguments['excerpt'] );
+		}
+
+		// Merge in optional structured fields (sku, prices, stock, etc.).
+		$allowed_fields = array( 'sku', 'regular_price', 'sale_price', 'stock_quantity', 'manage_stock', 'stock_status' );
+
+		if ( ! empty( $arguments['fields'] ) && is_array( $arguments['fields'] ) ) {
+			foreach ( $allowed_fields as $field ) {
+				if ( isset( $arguments['fields'][ $field ] ) ) {
+					$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+				}
+			}
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, 'wc/v3/products', 'POST', $body );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'WooCommerce product created successfully', 'mcp-ai-wpoos-pro' ),
+			'product' => $result,
+		);
+	}
+
+	/**
+	 * Update a WooCommerce product on the remote site.
+	 *
+	 * Requires 'update' operation to be enabled for the 'products' resource in the
+	 * connection's wc_resource_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including post_id. Optional: title, content, excerpt, status, fields.
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function update_wc_product( $connection, $arguments ) {
+		if ( empty( $connection['has_woocommerce'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_no_woocommerce',
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'update' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Update access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['post_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_product_id',
+				__( 'Product ID is required for update_wc_product.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$product_id = absint( $arguments['post_id'] );
+		$body       = array();
+
+		if ( ! empty( $arguments['title'] ) ) {
+			$body['name'] = sanitize_text_field( $arguments['title'] );
+		}
+
+		if ( ! empty( $arguments['content'] ) ) {
+			$body['description'] = wp_kses_post( $arguments['content'] );
+		}
+
+		if ( ! empty( $arguments['excerpt'] ) ) {
+			$body['short_description'] = wp_kses_post( $arguments['excerpt'] );
+		}
+
+		if ( ! empty( $arguments['status'] ) ) {
+			$body['status'] = sanitize_key( $arguments['status'] );
+		}
+
+		// Merge in optional structured fields (sku, prices, stock, etc.).
+		$allowed_fields = array( 'sku', 'regular_price', 'sale_price', 'stock_quantity', 'manage_stock', 'stock_status' );
+
+		if ( ! empty( $arguments['fields'] ) && is_array( $arguments['fields'] ) ) {
+			foreach ( $allowed_fields as $field ) {
+				if ( isset( $arguments['fields'][ $field ] ) ) {
+					$body[ $field ] = sanitize_text_field( (string) $arguments['fields'][ $field ] );
+				}
+			}
+		}
+
+		if ( empty( $body ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_fields',
+				__( 'At least one field must be provided for update_wc_product.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$endpoint = 'wc/v3/products/' . $product_id;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'PUT', $body );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'WooCommerce product updated successfully', 'mcp-ai-wpoos-pro' ),
+			'product' => $result,
+		);
+	}
+
+	/**
+	 * Delete a WooCommerce product on the remote site.
+	 *
+	 * Requires 'delete' operation to be enabled for the 'products' resource in the
+	 * connection's wc_resource_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including post_id. Optional: force (bool).
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function delete_wc_product( $connection, $arguments ) {
+		if ( empty( $connection['has_woocommerce'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_no_woocommerce',
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'products', 'delete' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Delete access to WooCommerce products is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['post_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_product_id',
+				__( 'Product ID is required for delete_wc_product.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$product_id = absint( $arguments['post_id'] );
+		$endpoint   = 'wc/v3/products/' . $product_id;
+
+		if ( ! empty( $arguments['force'] ) ) {
+			$endpoint = add_query_arg( 'force', 'true', $endpoint );
+		}
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'DELETE' );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'WooCommerce product deleted successfully', 'mcp-ai-wpoos-pro' ),
+			'result'  => $result,
+		);
+	}
+
+	/**
+	 * Update a WooCommerce order on the remote site.
+	 *
+	 * Requires 'update' operation to be enabled for the 'orders' resource in the
+	 * connection's wc_resource_access configuration.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Tool arguments including order_id. Optional: status, fields (customer_note).
+	 * @return array|WP_Error Result array or WP_Error on failure.
+	 */
+	protected function update_wc_order( $connection, $arguments ) {
+		if ( empty( $connection['has_woocommerce'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_no_woocommerce',
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_wc_resource_operation_allowed( $connection, 'orders', 'update' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_access_denied',
+				__( 'Update access to WooCommerce orders is not permitted for this connection. The site administrator must enable it under Remote Sites → Access Controls.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( empty( $arguments['order_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_order_id',
+				__( 'Order ID is required for update_wc_order.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$order_id = absint( $arguments['order_id'] );
+		$body     = array();
+
+		if ( ! empty( $arguments['status'] ) ) {
+			$body['status'] = sanitize_key( $arguments['status'] );
+		}
+
+		// Allow updating customer_note via fields.
+		if ( ! empty( $arguments['fields'] ) && is_array( $arguments['fields'] ) ) {
+			if ( isset( $arguments['fields']['customer_note'] ) ) {
+				$body['customer_note'] = sanitize_textarea_field( $arguments['fields']['customer_note'] );
+			}
+		}
+
+		if ( empty( $body ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_fields',
+				__( 'At least one field (status or customer_note) is required for update_wc_order.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$endpoint = 'wc/v3/orders/' . $order_id;
+		$result   = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint, 'PUT', $body );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'summary' => __( 'WooCommerce order updated successfully', 'mcp-ai-wpoos-pro' ),
+			'order'   => $result,
 		);
 	}
 }

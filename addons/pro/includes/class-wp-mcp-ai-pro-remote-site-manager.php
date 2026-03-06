@@ -346,6 +346,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
 			}
 
+			// Preserve existing post_type_access if not provided.
+			if ( ! isset( $connection_data['post_type_access'] ) && isset( $existing_connection['post_type_access'] ) ) {
+				$connection_data['post_type_access'] = $existing_connection['post_type_access'];
+			}
+
+			// Preserve existing wc_resource_access if not provided.
+			if ( ! isset( $connection_data['wc_resource_access'] ) && isset( $existing_connection['wc_resource_access'] ) ) {
+				$connection_data['wc_resource_access'] = $existing_connection['wc_resource_access'];
+			}
+
+			// Preserve existing custom_post_types if not provided.
+			if ( ! isset( $connection_data['custom_post_types'] ) && isset( $existing_connection['custom_post_types'] ) ) {
+				$connection_data['custom_post_types'] = $existing_connection['custom_post_types'];
+			}
+
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
 				$connection_data['created'] = $existing_connection['created'];
@@ -455,6 +470,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'test_endpoint'   => isset( $connection_data['test_endpoint'] ) ? sanitize_text_field( $connection_data['test_endpoint'] ) : '',
 			// Cache TTL.
 			'cache_ttl'       => isset( $connection_data['cache_ttl'] ) ? max( 0, min( 3600, absint( $connection_data['cache_ttl'] ) ) ) : 300,
+			// WordPress/WooCommerce granular access controls.
+			'post_type_access'   => self::sanitize_access_controls( isset( $connection_data['post_type_access'] ) ? $connection_data['post_type_access'] : array() ),
+			'wc_resource_access' => self::sanitize_access_controls( isset( $connection_data['wc_resource_access'] ) ? $connection_data['wc_resource_access'] : array() ),
+			'custom_post_types'  => isset( $connection_data['custom_post_types'] ) ? sanitize_text_field( $connection_data['custom_post_types'] ) : '',
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -2337,5 +2356,118 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'last_failure'  => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
 			'status'        => $status,
 		);
+	}
+
+	/**
+	 * Sanitize an access-control map (post_type_access or wc_resource_access).
+	 *
+	 * Each entry must be an array of allowed CRUD operations. Only the values
+	 * 'read', 'create', 'update', and 'delete' are accepted; any other value is
+	 * stripped out. Slug keys are sanitized with sanitize_key().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $access Raw access-control array from connection data.
+	 * @return array Sanitized access-control map.
+	 */
+	protected static function sanitize_access_controls( $access ) {
+		if ( ! is_array( $access ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$sanitized        = array();
+
+		foreach ( $access as $key => $ops ) {
+			$clean_key = sanitize_key( $key );
+
+			if ( empty( $clean_key ) ) {
+				continue;
+			}
+
+			$clean_ops = array();
+
+			if ( is_array( $ops ) ) {
+				foreach ( $ops as $op ) {
+					$op = sanitize_key( (string) $op );
+					if ( in_array( $op, $valid_operations, true ) ) {
+						$clean_ops[] = $op;
+					}
+				}
+			}
+
+			$sanitized[ $clean_key ] = array_values( array_unique( $clean_ops ) );
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a post type on a connection.
+	 *
+	 * When post_type_access is not configured on the connection (empty array or
+	 * missing key), backward-compatible behaviour applies: only read operations are
+	 * allowed for all post types; write operations are denied unless explicitly
+	 * enabled.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $post_type  Post type slug (e.g. 'post', 'page', 'product').
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_post_type_operation_allowed( $connection, $post_type, $operation = 'read' ) {
+		$post_type = sanitize_key( $post_type );
+		$operation = sanitize_key( $operation );
+
+		// When no access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['post_type_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['post_type_access'];
+
+		if ( ! isset( $access[ $post_type ] ) ) {
+			return false; // Post type not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $post_type ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
+	}
+
+	/**
+	 * Check whether a CRUD operation is permitted for a WooCommerce resource on a connection.
+	 *
+	 * When wc_resource_access is not configured (empty array or missing key),
+	 * backward-compatible behaviour applies: only read operations are allowed for
+	 * all WooCommerce resources; write operations are denied unless explicitly enabled.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array  $connection Connection data array.
+	 * @param string $resource   WooCommerce resource key: 'products', 'orders', 'customers', or 'categories'.
+	 * @param string $operation  CRUD operation: 'read', 'create', 'update', or 'delete'.
+	 * @return bool True if the operation is allowed; false otherwise.
+	 */
+	public static function is_wc_resource_operation_allowed( $connection, $resource, $operation = 'read' ) {
+		$resource  = sanitize_key( $resource );
+		$operation = sanitize_key( $operation );
+
+		// When no access controls are configured, only permit reads (backward compatible).
+		if ( empty( $connection['wc_resource_access'] ) ) {
+			return 'read' === $operation;
+		}
+
+		$access = $connection['wc_resource_access'];
+
+		if ( ! isset( $access[ $resource ] ) ) {
+			return false; // Resource not in the allowlist.
+		}
+
+		$allowed_ops = $access[ $resource ];
+
+		return is_array( $allowed_ops ) && in_array( $operation, $allowed_ops, true );
 	}
 }

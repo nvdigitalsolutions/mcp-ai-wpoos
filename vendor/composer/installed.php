@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-telegram-channel-errors',
-        'version' => 'dev-copilot/fix-telegram-channel-errors',
-        'reference' => '672c23baef5ba1db4402dbf36a5dc235f70216a0',
+        'pretty_version' => 'dev-copilot/enhance-woo-wordpress-connection',
+        'version' => 'dev-copilot/enhance-woo-wordpress-connection',
+        'reference' => 'ad05694b544900c72850656ec6a00f3a51f4ac56',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-telegram-channel-errors',
-            'version' => 'dev-copilot/fix-telegram-channel-errors',
-            'reference' => '672c23baef5ba1db4402dbf36a5dc235f70216a0',
+            'pretty_version' => 'dev-copilot/enhance-woo-wordpress-connection',
+            'version' => 'dev-copilot/enhance-woo-wordpress-connection',
+            'reference' => 'ad05694b544900c72850656ec6a00f3a51f4ac56',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
