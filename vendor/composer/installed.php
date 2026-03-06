@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/check-wp-plugin-compliance',
+        'version' => 'dev-copilot/check-wp-plugin-compliance',
+        'reference' => '5823f518f4a69cbc418b3dd7088fb42f87b7a033',
         'pretty_version' => 'dev-copilot/update-telegram-auto-response',
         'version' => 'dev-copilot/update-telegram-auto-response',
         'reference' => '68e7d31ca4228fa40459591702ede585600d45f2',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/check-wp-plugin-compliance',
+            'version' => 'dev-copilot/check-wp-plugin-compliance',
+            'reference' => '5823f518f4a69cbc418b3dd7088fb42f87b7a033',
             'pretty_version' => 'dev-copilot/update-telegram-auto-response',
             'version' => 'dev-copilot/update-telegram-auto-response',
             'reference' => '68e7d31ca4228fa40459591702ede585600d45f2',
