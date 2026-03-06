@@ -2848,9 +2848,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return void
 		 */
 		private static function render_tma_template_builder_card() {
-			$tma_build_path   = WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.js';
-			$tma_build_exists = file_exists( $tma_build_path );
-
 			$active_template  = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
 			$mini_app_url     = rest_url( 'mcp-ai/v1/telegram-mini-app' );
 
@@ -2867,24 +2864,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 	<div class="notice notice-info inline" style="margin: 15px 0;">
 		<p>
 			<strong><?php esc_html_e( 'Per-Bot Mini App Theming with Live Preview', 'mcp-ai-wpoos' ); ?></strong><br>
-			<?php esc_html_e( 'Choose from 6 pre-built templates optimised for different Pro toolkits. Each bot connection can override the global default. Drag-to-reorder cards, live iframe preview, and a React Cosmos playground for template development.', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Choose from 6 pre-built templates optimized for different Pro toolkits. Each bot connection can override the global default. Drag-to-reorder cards and live iframe preview — all bundled with the plugin, no additional setup required.', 'mcp-ai-wpoos' ); ?>
 		</p>
 	</div>
 
 	<!-- Status row -->
 	<table class="form-table" style="margin-bottom: 0;">
 		<tr>
-			<th scope="row" style="padding: 8px 10px 8px 0; width: 220px;"><?php esc_html_e( 'Build Status', 'mcp-ai-wpoos' ); ?></th>
-			<td style="padding: 8px 0;">
-				<?php if ( $tma_build_exists ) : ?>
-					<span style="color: #00a32a; font-weight: 600;">✓ <?php esc_html_e( 'Built — production assets present', 'mcp-ai-wpoos' ); ?></span>
-				<?php else : ?>
-					<span style="color: #d63638; font-weight: 600;">✕ <?php esc_html_e( 'Not built — run', 'mcp-ai-wpoos' ); ?> <code>npm run build:tma-builder</code></span>
-				<?php endif; ?>
-			</td>
-		</tr>
-		<tr>
-			<th scope="row" style="padding: 8px 10px 8px 0;"><?php esc_html_e( 'Active Global Template', 'mcp-ai-wpoos' ); ?></th>
+			<th scope="row" style="padding: 8px 10px 8px 0; width: 220px;"><?php esc_html_e( 'Active Global Template', 'mcp-ai-wpoos' ); ?></th>
 			<td style="padding: 8px 0;">
 				<code><?php echo esc_html( $active_template ); ?></code>
 				&nbsp;
@@ -2915,7 +2902,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				<li>📋 <strong><?php esc_html_e( 'Content Manager', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Default full-featured CMS', 'mcp-ai-wpoos' ); ?></li>
 				<li>💬 <strong><?php esc_html_e( 'AI Chat', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Clean conversational interface', 'mcp-ai-wpoos' ); ?></li>
 				<li>🛒 <strong><?php esc_html_e( 'E-Commerce', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'WooCommerce shop assistant', 'mcp-ai-wpoos' ); ?></li>
-				<li>👥 <strong><?php esc_html_e( 'CRM Assistant', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Contact & pipeline management', 'mcp-ai-wpoos' ); ?></li>
+				<li>👥 <strong><?php esc_html_e( 'CRM Assistant', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Contact &amp; pipeline management', 'mcp-ai-wpoos' ); ?></li>
 				<li>📊 <strong><?php esc_html_e( 'Analytics Dashboard', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Chart.js visualisations', 'mcp-ai-wpoos' ); ?></li>
 				<li>📅 <strong><?php esc_html_e( 'Calendar Booking', 'mcp-ai-wpoos' ); ?></strong> — <?php esc_html_e( 'Appointment scheduling', 'mcp-ai-wpoos' ); ?></li>
 			</ul>
@@ -2930,36 +2917,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<table style="width: 100%; font-size: 13px;">
 				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Framework:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/element</code></td></tr>
 				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'i18n:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/i18n</code></td></tr>
-				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Drag & Drop:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@dnd-kit/sortable</code></td></tr>
-				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Dev Playground:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>react-cosmos 7.2</code></td></tr>
+				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Drag &amp; Drop:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@dnd-kit/sortable</code></td></tr>
 				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Bundler:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>@wordpress/scripts</code></td></tr>
-				<tr><td style="padding:4px 0;"><strong><?php esc_html_e( 'Cosmos Bundler:', 'mcp-ai-wpoos' ); ?></strong></td><td><code>react-cosmos-plugin-webpack</code></td></tr>
 			</table>
-		</div>
-
-		<!-- React Cosmos -->
-		<div style="border: 1px solid #e65100; padding: 15px; background: #fff8f0; border-radius: 4px;">
-			<h3 style="margin: 0 0 12px 0; color: #e65100;">
-				<span class="dashicons dashicons-visibility"></span>
-				<?php esc_html_e( 'React Cosmos Fixtures', 'mcp-ai-wpoos' ); ?>
-			</h3>
-			<p style="font-size:13px; margin: 0 0 10px 0;"><?php esc_html_e( 'Isolated component development playground. No live WordPress needed during template design.', 'mcp-ai-wpoos' ); ?></p>
-			<ul style="margin: 0; font-size: 13px; line-height: 1.9;">
-				<li><?php esc_html_e( 'GlobalPicker — all 6 cards, select &amp; reorder', 'mcp-ai-wpoos' ); ?></li>
-				<li><?php esc_html_e( 'EmbeddedConnectionMode — per-bot compact picker', 'mcp-ai-wpoos' ); ?></li>
-				<li><?php esc_html_e( 'LoadingState — spinner preview', 'mcp-ai-wpoos' ); ?></li>
-				<li><?php esc_html_e( 'ErrorState — live-editable error message', 'mcp-ai-wpoos' ); ?></li>
-				<li><?php esc_html_e( 'WithPreviewPane — iframe preview flow', 'mcp-ai-wpoos' ); ?></li>
-				<li><?php esc_html_e( 'CustomTemplateCard — design a new card live', 'mcp-ai-wpoos' ); ?></li>
-			</ul>
-			<p style="margin: 10px 0 0 0; font-size: 12px; color: #777;">
-				<code>npm run cosmos:tma</code> → <code>http://localhost:5001</code>
-			</p>
 		</div>
 
 	</div>
 
-	<!-- npm packages table -->
+	<!-- npm packages table (informational) -->
 	<h3><?php esc_html_e( 'npm Packages Used', 'mcp-ai-wpoos' ); ?></h3>
 	<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
 		<thead>
@@ -2995,66 +2960,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				<td><code>^3.2.2</code></td>
 				<td><?php esc_html_e( 'CSS.Transform helper for smooth card animations', 'mcp-ai-wpoos' ); ?></td>
 			</tr>
-			<tr>
-				<td><code>react-cosmos</code> <span style="font-size:10px;color:#777;">(dev)</span></td>
-				<td><code>^7.2.0</code></td>
-				<td><?php esc_html_e( 'Isolated component playground — 6 fixtures, live props editor', 'mcp-ai-wpoos' ); ?></td>
-			</tr>
-			<tr>
-				<td><code>react-cosmos-plugin-webpack</code> <span style="font-size:10px;color:#777;">(dev)</span></td>
-				<td><code>^7.2.0</code></td>
-				<td><?php esc_html_e( 'Webpack integration for Cosmos — reuses project Babel config', 'mcp-ai-wpoos' ); ?></td>
-			</tr>
-			<tr>
-				<td><code>babel-loader</code> <span style="font-size:10px;color:#777;">(dev)</span></td>
-				<td><code>^9.2.1</code></td>
-				<td><?php esc_html_e( 'JSX transpilation for the Cosmos webpack config', 'mcp-ai-wpoos' ); ?></td>
-			</tr>
-			<tr>
-				<td><code>css-loader / style-loader</code> <span style="font-size:10px;color:#777;">(dev)</span></td>
-				<td><code>^7/^4</code></td>
-				<td><?php esc_html_e( 'CSS import support in Cosmos dev server', 'mcp-ai-wpoos' ); ?></td>
-			</tr>
 		</tbody>
 	</table>
-
-	<!-- Build information -->
-	<div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #f0b849;">
-		<h3 style="margin: 0 0 10px 0;">
-			<span class="dashicons dashicons-info"></span>
-			<?php esc_html_e( 'Build &amp; Development Commands', 'mcp-ai-wpoos' ); ?>
-		</h3>
-		<table style="width: 100%; font-size: 13px;">
-			<tr>
-				<td style="padding: 5px 0; width: 35%;"><strong><?php esc_html_e( 'Production build:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>npm run build:tma-builder</code></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Development watch:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>npm run start:tma-builder</code></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Cosmos playground:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>npm run cosmos:tma</code> → <a href="http://localhost:5001" target="_blank" rel="noopener noreferrer">localhost:5001</a></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Cosmos export:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>npm run cosmos:tma:export</code></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Output:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>addons/pro/build/tma-template-builder/</code></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Source:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>src/tma-template-builder/</code></td>
-			</tr>
-			<tr>
-				<td style="padding: 5px 0;"><strong><?php esc_html_e( 'Cosmos fixtures:', 'mcp-ai-wpoos' ); ?></strong></td>
-				<td style="padding: 5px 0;"><code>src/tma-template-builder/__fixtures__/</code></td>
-			</tr>
-		</table>
-	</div>
 
 	<!-- CTA -->
 	<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1;">

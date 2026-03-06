@@ -34,6 +34,9 @@ composer.phar
 # Allow workflow-builder compiled assets in Pro addon (needed for plugin to work)
 !/addons/pro/build/workflow-builder/
 
+# Allow tma-template-builder compiled assets in Pro addon (needed for plugin to work)
+!/addons/pro/build/tma-template-builder/
+
 # Ignore ZIP files everywhere (build artifacts should not be committed)
 *.zip
 

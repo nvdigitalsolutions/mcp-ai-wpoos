@@ -108,6 +108,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	/**
 	 * Enqueue TMA Template Builder React assets when on the Mini App Builder tab.
 	 *
+	 * The compiled assets (JS + CSS) are bundled with the plugin under
+	 * addons/pro/build/tma-template-builder/ so no npm build step is needed
+	 * after installation.
+	 *
 	 * @since 1.1.3
 	 *
 	 * @param string $hook Current admin page hook.
@@ -126,22 +130,28 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 		$asset_file = WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.asset.php';
 
-		if ( file_exists( $asset_file ) ) {
-			$asset = require $asset_file;
-			wp_enqueue_script(
-				'mcp-ai-tma-template-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.js',
-				$asset['dependencies'],
-				$asset['version'],
-				true
-			);
-			wp_enqueue_style(
-				'mcp-ai-tma-template-builder',
-				WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.css',
-				array(),
-				$asset['version']
-			);
+		if ( ! file_exists( $asset_file ) ) {
+			// Assets should always be present; log for debugging if missing.
+			error_log( 'WP_MCP_AI: TMA Template Builder compiled assets not found. Re-activate the plugin or contact support.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return;
 		}
+
+		$asset = require $asset_file;
+
+		wp_enqueue_script(
+			'mcp-ai-tma-template-builder',
+			WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.js',
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+
+		wp_enqueue_style(
+			'mcp-ai-tma-template-builder',
+			WP_MCP_AI_URL . 'addons/pro/build/tma-template-builder/tma-template-builder.css',
+			array(),
+			$asset['version']
+		);
 
 		// Localize data for the React component.
 		wp_localize_script(
@@ -156,7 +166,6 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			)
 		);
 	}
-
 	/**
 	 * Override tab navigation to add the Mini App Builder tab.
 	 *
@@ -226,16 +235,17 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	/**
 	 * Render the Mini App Builder tab content.
 	 *
-	 * Mounts the React TMATemplateBuilder component. Falls back to a static
-	 * select-based picker when the compiled assets are not yet present (e.g.
-	 * during development before `npm run build:tma-builder` has been run).
+	 * Mounts the pre-built React TMATemplateBuilder component. The compiled
+	 * assets are bundled with the plugin (addons/pro/build/tma-template-builder/)
+	 * so no additional build steps are needed after installation.
+	 *
+	 * A static <noscript> form is always rendered below the React mount point so
+	 * that the global template can be saved even without JavaScript.
 	 *
 	 * @since 1.1.3
 	 */
 	protected function render_mini_app_builder_tab() {
-		$build_exists = file_exists( WP_MCP_AI_PRO_PATH . 'build/tma-template-builder/tma-template-builder.js' );
-
-		// Load template registry for the static fallback.
+		// Load template registry for the static no-JS form.
 		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
 			$_tpl_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
 			if ( file_exists( $_tpl_file ) ) {
@@ -243,14 +253,13 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 			}
 		}
 
-		$all_templates  = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+		$all_templates    = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
 			? WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta()
 			: array();
-		$active_slug    = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
-		$templates_url  = rest_url( 'mcp-ai/v1/telegram-mini-app/templates' );
-		$save_url       = rest_url( 'mcp-ai/v1/telegram-mini-app/template' );
-		$preview_url    = rest_url( 'mcp-ai/v1/telegram-mini-app' );
-		$cosmos_url     = 'http://localhost:5001';
+		$active_slug      = get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' );
+		$templates_url    = rest_url( 'mcp-ai/v1/telegram-mini-app/templates' );
+		$save_url         = rest_url( 'mcp-ai/v1/telegram-mini-app/template' );
+		$preview_url      = rest_url( 'mcp-ai/v1/telegram-mini-app' );
 		$pro_settings_url = admin_url( 'admin.php?page=nvoos-pro-settings' );
 		?>
 		<div class="toolkit-card" style="padding: 0; overflow: hidden;">
@@ -261,46 +270,25 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					📱 <?php esc_html_e( 'Mini App Template Builder', 'mcp-ai-wpoos-pro' ); ?>
 				</h2>
 				<p style="margin: 0; opacity: 0.88; font-size: 14px;">
-					<?php esc_html_e( 'Choose a pre-built template for your Telegram Mini App. Each template is optimised for a specific Pro toolkit. Individual bot connections can override this global default.', 'mcp-ai-wpoos-pro' ); ?>
+					<?php esc_html_e( 'Choose a pre-built template for your Telegram Mini App. Each template is optimized for a specific Pro toolkit. Individual bot connections can override this global default.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 
 			<div style="padding: 24px 28px;">
 
-				<?php if ( $build_exists ) : ?>
+				<?php /* React mount point — TMATemplateBuilder renders here (assets are bundled with the plugin). */ ?>
+				<div
+					id="mcp-ai-tma-template-builder-root"
+					data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
+					data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>"
+					data-templates-url="<?php echo esc_url( $templates_url ); ?>"
+					data-save-url="<?php echo esc_url( $save_url ); ?>"
+					data-active-template="<?php echo esc_attr( $active_slug ); ?>"
+					data-preview-base-url="<?php echo esc_url( $preview_url ); ?>"
+				></div>
 
-					<?php /* React mount point — TMATemplateBuilder renders here. */ ?>
-					<div
-						id="mcp-ai-tma-template-builder-root"
-						data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
-						data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>"
-						data-templates-url="<?php echo esc_url( $templates_url ); ?>"
-						data-save-url="<?php echo esc_url( $save_url ); ?>"
-						data-active-template="<?php echo esc_attr( $active_slug ); ?>"
-						data-preview-base-url="<?php echo esc_url( $preview_url ); ?>"
-					>
-						<?php /* Non-JS fallback rendered by the PHP block below. */ ?>
-					</div>
-
-				<?php else : ?>
-
-					<?php /* ── Static PHP fallback when React assets are not yet built ── */ ?>
-					<div class="notice notice-warning inline" style="margin: 0 0 20px 0;">
-						<p>
-							<strong><?php esc_html_e( 'React assets not built.', 'mcp-ai-wpoos-pro' ); ?></strong>
-							<?php
-							printf(
-								/* translators: %s: npm command */
-								esc_html__( 'Run %s to enable the interactive template picker with live preview.', 'mcp-ai-wpoos-pro' ),
-								'<code>npm run build:tma-builder</code>'
-							);
-							?>
-						</p>
-					</div>
-
-				<?php endif; ?>
-
-				<?php /* Always render the static PHP fallback form (used by the React component fallback AND as a no-JS save path). */ ?>
+				<?php /* Static no-JS fallback: hidden when React renders, used for non-JS saves. */ ?>
+				<noscript>
 				<form method="post" action="options.php" id="tma-global-template-form">
 					<?php settings_fields( $this->option_name . '_group' ); ?>
 					<input type="hidden" name="<?php echo esc_attr( $this->option_name ); ?>[placeholder]" value="1" />
@@ -335,30 +323,10 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 					<?php submit_button( __( 'Save Template', 'mcp-ai-wpoos-pro' ) ); ?>
 				</form>
+				</noscript>
 
-				<?php /* React Cosmos development section */ ?>
 				<hr style="margin: 28px 0;">
 				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-
-					<div style="padding: 16px; background: #fff8f0; border: 1px solid #e65100; border-radius: 6px;">
-						<h3 style="margin: 0 0 10px 0; color: #e65100;">
-							<span class="dashicons dashicons-visibility"></span>
-							<?php esc_html_e( 'React Cosmos Dev Playground', 'mcp-ai-wpoos-pro' ); ?>
-						</h3>
-						<p style="font-size: 13px; margin: 0 0 12px 0;">
-							<?php esc_html_e( 'Preview and iterate on each template in isolation — no live Telegram or WordPress session needed.', 'mcp-ai-wpoos-pro' ); ?>
-						</p>
-						<code style="display:block; background:#1d2327; color:#72aee6; padding:10px; border-radius:4px; font-size:12px;">npm run cosmos:tma</code>
-						<p style="font-size: 12px; margin: 8px 0 0 0; color: #777;">
-							<?php
-							printf(
-								/* translators: %s: localhost URL */
-								esc_html__( 'Opens at %s — 6 fixtures including live-editable props.', 'mcp-ai-wpoos-pro' ),
-								'<a href="' . esc_url( $cosmos_url ) . '" target="_blank" rel="noopener noreferrer"><code>localhost:5001</code></a>'
-							);
-							?>
-						</p>
-					</div>
 
 					<div style="padding: 16px; background: #f0f6fc; border: 1px solid #2271b1; border-radius: 6px;">
 						<h3 style="margin: 0 0 10px 0; color: #2271b1;">
@@ -379,7 +347,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 							<?php esc_html_e( 'Full System Info', 'mcp-ai-wpoos-pro' ); ?>
 						</h3>
 						<p style="font-size: 13px; margin: 0 0 12px 0;">
-							<?php esc_html_e( 'View npm packages, build status, and all template builder documentation on the Pro Settings page.', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'View all template details and package information on the Pro Settings page.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 						<a href="<?php echo esc_url( $pro_settings_url ); ?>" class="button button-secondary">
 							<?php esc_html_e( 'Pro Settings →', 'mcp-ai-wpoos-pro' ); ?>
