@@ -222,7 +222,10 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$deleted = WP_MCP_AI_Token_Tracking_Database::cleanup_old_records( $retention_days );
 
 		if ( $deleted > 0 ) {
-			error_log( sprintf( 'WP MCP AI: Cleaned up %d old token tracking records (older than %d days)', $deleted, $retention_days ) );
+			WP_MCP_AI_Logger::log_event(
+				'info',
+				sprintf( 'Cleaned up %d old token tracking records (older than %d days)', $deleted, $retention_days )
+			);
 		}
 	}
 

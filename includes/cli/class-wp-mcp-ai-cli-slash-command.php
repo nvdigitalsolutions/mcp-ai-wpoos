@@ -270,7 +270,7 @@ class WP_MCP_AI_CLI_Slash_Command extends WP_MCP_AI_CLI_Base_Command {
 				if ( is_string( $result ) ) {
 					WP_CLI::line( $result );
 				} else {
-					WP_CLI::line( print_r( $result, true ) );
+					WP_CLI::line( print_r( $result, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r -- WP-CLI command; print_r output is captured as string for CLI display.
 				}
 				break;
 		}

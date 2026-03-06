@@ -108,7 +108,7 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 		if ( empty( $content ) ) {
 			// No document file found, skip (don't overwrite existing content with empty).
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'WP_MCP_AI: No profession-documents file found for ' . $slug );
+				error_log( 'WP_MCP_AI: No profession-documents file found for ' . $slug ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_DEBUG.
 			}
 			return;
 		}

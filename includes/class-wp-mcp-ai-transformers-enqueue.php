@@ -85,7 +85,7 @@ class WP_MCP_AI_Transformers_Enqueue {
 
 		// Log for debugging.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[NV oOS Transformers] Browser-native AI tasks scripts enqueued' );
+			error_log( '[NV oOS Transformers] Browser-native AI tasks scripts enqueued' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_DEBUG.
 		}
 	}
 

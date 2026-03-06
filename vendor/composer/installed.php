@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/code-review-before-submission',
+        'version' => 'dev-copilot/code-review-before-submission',
+        'reference' => 'fa9c3fc274b52eac2d193d050197b6d4f794cab8',
         'pretty_version' => 'dev-copilot/fix-telegram-connection-errors',
         'version' => 'dev-copilot/fix-telegram-connection-errors',
         'reference' => '0dfbd6cf5d5a454957b1401b23e750e454486899',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/code-review-before-submission',
+            'version' => 'dev-copilot/code-review-before-submission',
+            'reference' => 'fa9c3fc274b52eac2d193d050197b6d4f794cab8',
             'pretty_version' => 'dev-copilot/fix-telegram-connection-errors',
             'version' => 'dev-copilot/fix-telegram-connection-errors',
             'reference' => '0dfbd6cf5d5a454957b1401b23e750e454486899',
