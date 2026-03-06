@@ -511,6 +511,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 						'message_id'         => $tg_message_id,
 						'message_type'       => 'text',
 						'content'            => $text,
+						'raw_payload'        => $message,
 						'status'             => 'received',
 						'connection_id'      => $connection_id,
 						'phone_number_id'    => $chat_id,
@@ -594,9 +595,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// --- Per-user conversation history (mirrors PR #3844 for WhatsApp) ---
-		$history_key = $this->get_conversation_history_key( $from_id, $connection_id );
-		$history     = get_transient( $history_key );
-		$history     = is_array( $history ) ? $history : array();
+		$history_key      = $this->get_conversation_history_key( $from_id, $connection_id );
+		$history          = get_transient( $history_key );
+		$history          = is_array( $history ) ? $history : array();
+		$history_for_chat = $this->normalize_conversation_history_for_chat( $history );
 
 		$max_history = 8;
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -615,12 +617,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$max_history = (int) apply_filters( 'wp_mcp_ai_telegram_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
 
-		if ( count( $history ) >= $max_history ) {
-			$history = array_slice( $history, -( $max_history - 1 ) );
+		if ( count( $history_for_chat ) >= $max_history ) {
+			$history_for_chat = array_slice( $history_for_chat, -( $max_history - 1 ) );
 		}
 
 		$messages = array_merge(
-			$history,
+			$history_for_chat,
 			array(
 				array(
 					'role'    => 'user',
@@ -679,7 +681,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$response_data = $response->get_data();
-		$content       = $this->extract_content_from_chat_response( $response_data );
+		$content            = $this->extract_content_from_chat_response( $response_data );
+		$agentic_messages   = $this->extract_agentic_tool_messages_from_chat_response( $response_data );
 
 		if ( '' === $content ) {
 			WP_MCP_AI_Logger::log_error(
@@ -872,10 +875,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'role'    => 'user',
 			'content' => $message_text,
 		);
-		$history[] = array(
+		$assistant_history_entry = array(
 			'role'    => 'assistant',
-			'content' => $content,
+			'content' => $raw_content,
 		);
+		if ( ! empty( $agentic_messages ) ) {
+			$assistant_history_entry['agentic_tool_messages'] = $agentic_messages;
+		}
+		$history[] = $assistant_history_entry;
+
 		if ( count( $history ) > $max_history ) {
 			$history = array_slice( $history, -$max_history );
 		}
@@ -899,6 +907,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'direction'          => 'outbound',
 					'message_type'       => 'text',
 					'content'            => $content,
+					'raw_payload'        => array(
+						'chat_response'         => $response_data,
+						'agentic_tool_messages' => $agentic_messages,
+						'telegram_response'     => $response_body,
+					),
 					'status'             => 'sent',
 					'connection_id'      => $connection_id,
 					'phone_number_id'    => $chat_id,
@@ -933,6 +946,42 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 */
 	protected function get_conversation_history_key( $from_id, $connection_id ) {
 		return 'wp_mcp_ai_tg_conv_' . md5( $from_id . '_' . $connection_id );
+	}
+
+	/**
+	 * Normalize stored conversation history entries into OpenAI-style chat messages.
+	 *
+	 * Stored history rows may include channel-specific metadata that should not be
+	 * sent back to the /mcp-ai/v1/chat endpoint. This method keeps only the fields
+	 * required for chat completion context.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $history Raw history entries loaded from transient storage.
+	 * @return array[] Chat messages with only role/content pairs.
+	 */
+	protected function normalize_conversation_history_for_chat( array $history ) {
+		$messages = array();
+
+		foreach ( $history as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$role    = isset( $entry['role'] ) && is_string( $entry['role'] ) ? trim( $entry['role'] ) : '';
+			$content = isset( $entry['content'] ) && is_string( $entry['content'] ) ? trim( $entry['content'] ) : '';
+
+			if ( '' === $role || '' === $content ) {
+				continue;
+			}
+
+			$messages[] = array(
+				'role'    => $role,
+				'content' => $content,
+			);
+		}
+
+		return $messages;
 	}
 
 	/**
@@ -1307,6 +1356,58 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Extract normalized intermediate agentic tool messages from chat response data.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $data Response data from the chat endpoint.
+	 * @return array[] Normalized agentic messages.
+	 */
+	protected function extract_agentic_tool_messages_from_chat_response( $data ) {
+		if ( ! is_array( $data ) ) {
+			return array();
+		}
+
+		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+
+		if ( ! isset( $llm_data['agentic_tool_messages'] ) || ! is_array( $llm_data['agentic_tool_messages'] ) ) {
+			return array();
+		}
+
+		$normalized = array();
+
+		foreach ( $llm_data['agentic_tool_messages'] as $message ) {
+			if ( ! is_array( $message ) ) {
+				continue;
+			}
+
+			$role    = isset( $message['role'] ) && is_string( $message['role'] ) ? trim( $message['role'] ) : '';
+			$content = isset( $message['content'] ) && is_string( $message['content'] ) ? trim( $message['content'] ) : '';
+
+			if ( '' === $role || '' === $content ) {
+				continue;
+			}
+
+			$entry = array(
+				'role'    => $role,
+				'content' => $content,
+			);
+
+			if ( isset( $message['name'] ) && is_string( $message['name'] ) && '' !== $message['name'] ) {
+				$entry['name'] = (string) $message['name'];
+			}
+
+			if ( isset( $message['tool_call_id'] ) && is_string( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
+				$entry['tool_call_id'] = (string) $message['tool_call_id'];
+			}
+
+			$normalized[] = $entry;
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -2420,6 +2521,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'message_id'         => $message_id,
 					'message_type'       => 'channel_post',
 					'content'            => $text,
+					'raw_payload'        => $post,
 					'status'             => 'received',
 					'connection_id'      => $connection_id,
 					'phone_number_id'    => $chat_id,
