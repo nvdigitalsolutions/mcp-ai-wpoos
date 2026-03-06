@@ -4525,7 +4525,15 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			return (string) $assistant;
 		}
 
-		// 2. Use the first assistant assigned to the active Telegram connection.
+		// 2. Use the dedicated Mini App assistant when configured on the connection.
+		if ( $connection && ! empty( $connection['mini_app_assistant_id'] ) ) {
+			$mini_app_id = absint( $connection['mini_app_assistant_id'] );
+			if ( $mini_app_id ) {
+				return (string) $mini_app_id;
+			}
+		}
+
+		// 3. Use the first assistant assigned to the active Telegram connection.
 		if ( $connection && ! empty( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) ) {
 			$ids      = array_values( $connection['assigned_assistant_ids'] );
 			$first_id = absint( $ids[0] );
@@ -4534,13 +4542,13 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			}
 		}
 
-		// 3. Fall back to the global default from the automation rules option.
+		// 4. Fall back to the global default from the automation rules option.
 		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
 		if ( ! empty( $automation_rules['default_assistant_id'] ) ) {
 			return (string) absint( $automation_rules['default_assistant_id'] );
 		}
 
-		// 4. Fall back to the default assistant saved in the Chat Channels Toolkit settings page.
+		// 5. Fall back to the default assistant saved in the Chat Channels Toolkit settings page.
 		$toolkit_settings = get_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array() );
 		if ( ! empty( $toolkit_settings['default_assistant'] ) ) {
 			return (string) absint( $toolkit_settings['default_assistant'] );
