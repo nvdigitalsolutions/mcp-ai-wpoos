@@ -1835,12 +1835,19 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Handle /tools – list available tools or run a tool by name.
+	 * Handle /tools – list the tools available to the assistant assigned to this
+	 * Telegram connection.
+	 *
+	 * The list is scoped to the assistant configured for this connection so that
+	 * users only see tools that are actually applicable (e.g. a customer-support
+	 * assistant should not advertise developer or admin tools). When no
+	 * assistant is configured, or the assistant has no tool restriction, the
+	 * full registry is displayed as a fallback.
 	 *
 	 * @since 1.1.3
 	 *
 	 * @param string $chat_id Chat ID.
-	 * @param string $args    Optional tool slug to run.
+	 * @param string $args    Optional tool slug (reserved for future use).
 	 * @param array  $message Telegram message.
 	 */
 	protected function cmd_tools( $chat_id, $args, array $message ) {
@@ -1855,20 +1862,82 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$all_tools = $registry->get_all_tools();
-		$count     = is_array( $all_tools ) ? count( $all_tools ) : 0;
+		// Scope the listing to the tools configured on the connection's assistant.
+		// Falls back to the full registry when no assistant or tool restriction exists.
+		$tool_slugs      = array(); // Empty = no restriction found yet.
+		$assistant_label = ''; // Human-readable name shown in the header.
+		$assistant_id    = 0;
 
-		$text  = "🔧 *Available Tools* ($count)\n\n";
+		$connection = $this->get_active_telegram_connection();
+		if ( $connection ) {
+			$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$assistant_ids    = $this->resolve_assistant_ids( $connection, $automation_rules );
+			$assistant_id     = ! empty( $assistant_ids ) ? (int) $assistant_ids[0] : 0;
+
+			if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+				if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
+					$tool_slugs = $config['tools'];
+				}
+				// Build a friendly label from the assistant's post title.
+				$post = get_post( $assistant_id );
+				if ( $post ) {
+					$assistant_label = $post->post_title;
+				}
+			}
+		}
+
+		// Build the display list.
+		if ( ! empty( $tool_slugs ) ) {
+			// Assistant has an explicit tool list — show only those tools.
+			// Slugs in the configuration are already stored as sanitize_key() values,
+			// so we only cast here to avoid double-sanitization altering them.
+			$display_tools = array();
+			foreach ( $tool_slugs as $slug ) {
+				$slug = (string) $slug;
+				$tool = $registry->get_tool( $slug );
+				if ( $tool ) {
+					$display_tools[ $slug ] = $tool;
+				} else {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'Telegram /tools: configured tool slug not found in registry — may be disabled or removed. Verify the assistant tool configuration.',
+						array(
+							'slug'         => $slug,
+							'assistant_id' => $assistant_id,
+						)
+					);
+				}
+			}
+		} else {
+			// No restriction configured — fall back to the full registry.
+			$display_tools = $registry->get_all_tools();
+		}
+
+		$count = count( $display_tools );
+
+		// Build header — sanitize the label so Markdown special chars don't break formatting.
+		$safe_label = $this->sanitize_for_telegram_markdown( $assistant_label );
+		if ( '' !== $safe_label ) {
+			/* translators: 1: assistant name, 2: number of tools */
+			$header = sprintf( '🔧 *%s – Available Tools* (%d)', $safe_label, $count );
+		} else {
+			/* translators: %d: number of tools */
+			$header = sprintf( '🔧 *Available Tools* (%d)', $count );
+		}
+
+		$text  = $header . "\n\n";
 		$text .= "Use the Mini App to browse and execute tools with full parameter forms.\n\n";
 
 		$i = 0;
-		foreach ( $all_tools as $slug => $tool ) {
+		foreach ( $display_tools as $slug => $tool ) {
 			if ( $i >= 20 ) {
 				$text .= "\n_… and " . ( $count - 20 ) . " more. Open the Mini App to see all._";
 				break;
 			}
-			$name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
-			$text .= "• `$slug` – $name\n";
+			$raw_name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug;
+			$name     = $this->sanitize_for_telegram_markdown( $raw_name );
+			$text    .= "• `$slug` – $name\n";
 			++$i;
 		}
 
@@ -2726,6 +2795,28 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Sanitize a plain-text string for safe embedding in a Telegram basic-Markdown
+	 * (parse_mode: Markdown) message.
+	 *
+	 * Telegram's legacy Markdown format does not support backslash-escaping of special
+	 * characters the way MarkdownV2 does. The only safe approach is to remove the four
+	 * characters that trigger unintended Markdown formatting when they appear in
+	 * user-supplied values (assistant names, tool names, etc.):
+	 *   * – bold delimiter
+	 *   ` – inline-code delimiter
+	 *   _ – italic delimiter
+	 *   [ – inline-link start
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param string $text Plain text to sanitize.
+	 * @return string Sanitized text safe for Telegram basic Markdown.
+	 */
+	protected function sanitize_for_telegram_markdown( $text ) {
+		return str_replace( array( '*', '`', '_', '[' ), '', (string) $text );
 	}
 
 	/**
