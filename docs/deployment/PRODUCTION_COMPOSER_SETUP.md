@@ -10,6 +10,7 @@ This repository is configured as a production-ready WordPress plugin that can be
 
 ```bash
 composer install --no-dev --classmap-authoritative
+composer dump-autoload --classmap-authoritative --no-dev
 ```
 
 ### What This Does
@@ -134,8 +135,8 @@ When deploying to WordPress.org, the vendor directory is included in the plugin 
 If you get class not found errors:
 
 ```bash
-# Reinstall and regenerate autoloader
-composer install --no-dev --classmap-authoritative
+# Regenerate autoloader
+composer dump-autoload --classmap-authoritative --no-dev
 ```
 
 ### Dev dependencies needed

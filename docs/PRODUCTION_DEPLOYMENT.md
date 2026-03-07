@@ -181,9 +181,11 @@ composer update
 If you modify class files or add new classes:
 
 ```bash
-# Reinstall and regenerate optimized autoloader
-composer install --no-dev --classmap-authoritative
+# Regenerate optimized autoloader
+composer dump-autoload --classmap-authoritative
 ```
+
+## Compatibility
 
 - **PHP**: 7.4+ (tested up to 8.3)
 - **WordPress**: 6.0+ (tested up to 6.7)
@@ -209,8 +211,8 @@ composer install --no-dev --classmap-authoritative
 ### Issue: Classes Not Found
 
 ```bash
-# Reinstall and regenerate autoloader
-composer install --no-dev --classmap-authoritative
+# Regenerate autoloader
+composer dump-autoload --classmap-authoritative
 ```
 
 ### Issue: Dev Dependencies Installed

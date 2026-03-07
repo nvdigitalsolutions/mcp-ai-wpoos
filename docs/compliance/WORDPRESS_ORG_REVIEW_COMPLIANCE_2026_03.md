@@ -575,7 +575,7 @@ Added justified `phpcs:ignore` comments for:
 
 ### Fix H: Production Composer Autoload
 
-Ran `composer install --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
+Ran `composer dump-autoload --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
 - **676 classes** in authoritative classmap
 - Dev dependencies excluded
 - PSR-4 fallback disabled (classmap-authoritative mode)

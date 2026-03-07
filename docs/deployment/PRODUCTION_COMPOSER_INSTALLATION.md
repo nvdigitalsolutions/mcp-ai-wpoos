@@ -334,8 +334,8 @@ git commit -m "Add new dependency: vendor/package"
 ### If Autoloader Doesn't Work
 
 ```bash
-# Reinstall and regenerate autoloader
-composer install --no-dev --classmap-authoritative
+# Regenerate autoloader
+composer dump-autoload --no-dev --classmap-authoritative
 ```
 
 ### If Classes Aren't Found
