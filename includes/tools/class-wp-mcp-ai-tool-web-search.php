@@ -139,7 +139,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'country'     => array(
 					'type'        => 'string',
-					'description' => __( 'ISO 3166-1 alpha-2 country code to geo-target results (e.g. "US", "GB", "DE"). Supported by Brave and Tavily.', 'mcp-ai-wpoos' ),
+					'description' => __( 'ISO 3166-1 alpha-2 country code to geo-target results (e.g. "US", "GB", "DE"). Supported by Brave. DuckDuckGo uses this with the language field for region targeting. Not forwarded to Tavily.', 'mcp-ai-wpoos' ),
 				),
 				'language'    => array(
 					'type'        => 'string',

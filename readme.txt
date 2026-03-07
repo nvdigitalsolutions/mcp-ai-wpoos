@@ -398,18 +398,18 @@ Initial release. Welcome to Open Operator System!
 = AI Provider Services (Required - At Least One Must Be Configured) =
 
 **1. OpenAI API**
-* **Purpose:** Core AI functionality (chat, image generation, text-to-speech, embeddings)
-* **Data Sent:** Chat messages, system prompts, file attachments, tool results
-* **When:** Every time an AI assistant is used with OpenAI as the provider
+* **Purpose:** Core AI functionality (chat, image generation, text-to-speech, embeddings); optional vector store status retrieval for RAG-enabled assistants
+* **Data Sent:** Chat messages, system prompts, file attachments, tool results; when a Vector Store ID is configured on an assistant, the vector store ID is sent to the OpenAI Vector Stores API to retrieve status information
+* **When:** Every time an AI assistant is used with OpenAI as the provider; vector store status checks occur automatically (with a 5-minute transient cache) when a Vector Store ID is configured on the assistant
 * **Service URL:** https://api.openai.com
 * **Terms of Service:** https://openai.com/policies/terms-of-use
 * **Privacy Policy:** https://openai.com/privacy
 * **Data Retention:** 30 days for abuse monitoring, then deleted (as of March 2023)
 
 **2. Google Gemini API**
-* **Purpose:** Core AI functionality (chat, image generation, embeddings, geospatial queries)
-* **Data Sent:** Chat messages, system prompts, file attachments, tool results
-* **When:** Every time an AI assistant is used with Gemini as the provider
+* **Purpose:** Core AI functionality (chat, image generation, embeddings, geospatial queries, corpus-grounded generation via Semantic Retrieval API)
+* **Data Sent:** Chat messages, system prompts, file attachments, tool results; when a Gemini corpus is configured on an assistant, the last user message is also sent as a retrieval query to the Gemini Semantic Retrieval API for RAG grounding
+* **When:** Every time an AI assistant is used with Gemini as the provider; corpus retrieval queries are sent only when a Gemini Corpus Name is configured on the assistant
 * **Service URL:** https://generativelanguage.googleapis.com
 * **Terms of Service:** https://ai.google.dev/terms
 * **Privacy Policy:** https://ai.google.dev/privacy

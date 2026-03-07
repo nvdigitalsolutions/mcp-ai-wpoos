@@ -799,4 +799,70 @@ After all fixes, `--warning-severity=1` still surfaces the following categories.
 
 ---
 
-*Last updated: March 6, 2026*
+## Post-Merge Compliance Review — March 7, 2026 (PRs #4055–#4062)
+
+This section documents the compliance review performed after the 10 most recent merged PRs. All identified issues have been resolved.
+
+### Changes Reviewed
+
+| PR | Title | Base Plugin Files Changed |
+|----|-------|--------------------------|
+| #4055 | Fix non-default TMA templates rendering as JSON | `addons/pro` only |
+| #4056 | Prevent fatal errors in Site Health auto-update tests | `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` |
+| #4057 | Medical Vitals Tracking TMA template | `addons/pro` only; `includes/admin/class-wp-mcp-ai-pro-settings.php` |
+| #4058 | Resolve high/critical npm dependency vulnerabilities | `package-lock.json`, `addons/pro/package*.json` only |
+| #4059 | Add Gemini Corpus native RAG + wire vector store | Multiple base plugin files (reverted by #4061) |
+| #4060 | Web search: Tavily provider, geo/freshness params | Not merged (dirty, superseded by #4062) |
+| #4061 | Revert PR #4059 | Multiple base plugin files |
+| #4062 | Regenerate vendor autoloader + Tavily disclosure | `readme.txt`, `includes/tools/class-wp-mcp-ai-tool-web-search.php`, admin settings files |
+| #4063 | Remove OpenAI file_search auto-injection | `includes/class-wp-mcp-ai-openai-client.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/assistants/` |
+| #4064 | Correct dump-autoload docs | Documentation only |
+
+### Issues Identified and Fixed
+
+#### Fix I-1: Gemini Semantic Retrieval Not Disclosed (Guideline 6)
+
+**File:** `readme.txt`
+
+PR #4059 added Gemini Corpus Semantic Retrieval RAG, and PR #4063 re-introduced it. The feature sends the user's last message as a retrieval query to the Gemini Semantic Retrieval API (`generativelanguage.googleapis.com`) whenever a Gemini Corpus Name is configured on an assistant. This was not disclosed in the Privacy Policy section.
+
+**Fix:** Updated the **Google Gemini API** entry in the `== Privacy Policy ==` section to:
+- Expand **Purpose** to mention corpus-grounded generation via Semantic Retrieval API
+- Expand **Data Sent** to include corpus retrieval queries (user's last message used as query)
+- Expand **When** to clarify corpus retrieval only occurs when a Gemini Corpus Name is configured
+
+#### Fix I-2: OpenAI Vector Store API Calls Not Disclosed (Guideline 6)
+
+**File:** `readme.txt`
+
+PR #4063 introduced automatic vector store status retrieval via `api.openai.com/v1/vector_stores/{id}` on every chat request when a Vector Store ID is configured on an OpenAI assistant. This was not reflected in the OpenAI API entry's **Data Sent** / **When** fields.
+
+**Fix:** Updated the **OpenAI API** entry to:
+- Expand **Purpose** to mention optional vector store status retrieval
+- Expand **Data Sent** to include the vector store ID (sent for status checks)
+- Expand **When** to note vector store checks occur automatically (with 5-minute cache) when a Vector Store ID is configured
+
+#### Fix I-3: Inaccurate Tool Schema Description (Accuracy)
+
+**File:** `includes/tools/class-wp-mcp-ai-tool-web-search.php`
+
+The `country` parameter schema description said "Supported by Brave and Tavily", but the Tavily implementation explicitly does not forward the country parameter (Tavily's public REST API does not expose geo-targeting). This created a misleading user-facing description.
+
+**Fix:** Updated the `country` parameter description to accurately state: "Supported by Brave. DuckDuckGo uses this with the language field for region targeting. Not forwarded to Tavily."
+
+#### Fix I-4: Indentation Error in Admin Settings (Guideline 1 — Coding Standards)
+
+**File:** `includes/admin/class-wp-mcp-ai-pro-settings.php`
+
+PR #4057 (Medical Vitals TMA template) introduced a closing HTML `<div>` in the Telegram Mini App Template Builder section with incorrect tab indentation (2 tabs instead of 3). Auto-fixed by `phpcbf`.
+
+### Lint Results (Post-Fix)
+
+| Check | Command | Result |
+|-------|---------|--------|
+| WordPress Coding Standards | `composer run lint:base` | ✅ 0 errors, 0 warnings (721 files) |
+| PHP 7.4–8.3 Compatibility | `composer run lint:base:compat` | ✅ 0 issues (721 files) |
+
+---
+
+*Last updated: March 7, 2026*
