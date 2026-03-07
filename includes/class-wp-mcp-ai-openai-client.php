@@ -2997,14 +2997,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
-			// Attach the OpenAI file_search tool when the assistant has a vector store
-			// configured. This enables retrieval-augmented generation (RAG) directly from
-			// the chat completion payload so neither the user nor a manual tool call is
-			// required to make vector store data available to the model. The entry is
-			// appended after normalise_tools_for_payload() because that method filters out
-			// entries without a 'name' field (which function tools require) whereas
-			// file_search is a built-in type that uses 'type' instead of 'name'.
-			if ( ! empty( $options['vector_store_id'] ) ) {
+			// Attach the OpenAI file_search built-in tool when the assistant has a vector
+			// store configured AND we are using the Responses API. The file_search tool
+			// type is only valid for the Responses API — Chat Completions only accepts
+			// 'function' and 'custom' tool types, so injecting it there produces the
+			// "Invalid value: 'file_search'" error. The entry is appended after
+			// normalise_tools_for_payload() because that method filters out entries without
+			// a 'name' field (which function tools require) whereas file_search is a
+			// built-in type that uses 'type' instead of 'name'.
+			if ( $should_use_responses_api && ! empty( $options['vector_store_id'] ) ) {
 				// Only add a file_search entry when one is not already present in the
 				// normalised tools list (e.g. if caller supplied it explicitly).
 				$has_file_search = isset( $payload['tools'] ) && is_array( $payload['tools'] ) && count(
@@ -3773,6 +3774,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// The Responses API doesn't support the tool_calls/tool_call_id mechanism used by Chat Completions.
 			if ( $this->has_tool_calls_in_messages( $messages ) ) {
 				return false;
+			}
+
+			// Vector store RAG requires the Responses API because file_search is a built-in
+			// tool type that Chat Completions does not support. When the assistant has a
+			// vector store configured and the conversation is clean (no tool calls above),
+			// switch to the Responses API so the file_search tool can be injected.
+			if ( ! empty( $options['vector_store_id'] ) ) {
+				return true;
 			}
 
 			// Check if attachments are present in options.
@@ -4865,7 +4874,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
@@ -4961,7 +4969,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5029,7 +5036,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5097,7 +5103,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
@@ -5184,7 +5189,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
@@ -5275,7 +5279,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5346,7 +5349,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
@@ -5449,7 +5451,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'body'    => wp_json_encode( $body ),
 				'timeout' => $timeout,
