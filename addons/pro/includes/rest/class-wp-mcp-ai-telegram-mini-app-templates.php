@@ -86,7 +86,9 @@ abstract class WP_MCP_AI_Telegram_Mini_App_Template_Base {
 	 * @param  array $ctx Context variables injected by the controller:
 	 *                    bot_username, validate_url, content_url, tools_url,
 	 *                    media_url, settings_url, analytics_url, shop_url,
-	 *                    login_url, chart_js_url, site_name, nonce, page_title.
+	 *                    login_url, chart_js_url, site_name, nonce, page_title,
+	 *                    assistant_id (resolved Mini App assistant ID string),
+	 *                    chat_url (absolute URL to /mcp-ai/v1/chat-client).
 	 * @return string
 	 */
 	abstract public function render_html( array $ctx );
@@ -457,7 +459,8 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
-		$chat_api_url = rest_url( 'mcp-ai/v1/chat' );
+		$chat_url     = $ctx['chat_url'];
+		$assistant_id = $ctx['assistant_id'];
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- standalone HTML document; all values escaped inline.
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ai-chat-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
@@ -502,9 +505,17 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 		'</div>' .
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
-		'var chatUrl=' . wp_json_encode( $chat_api_url ) . ';' .
+		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
 		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
 		'var sk="wp_mcp_ai_tma_ai_chat";var hist=[];var busy=false;' .
+		'function tmaExtractReply(d){' .
+			'if(!d||!d.data)return"";' .
+			'var data=d.data;' .
+			'if(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)return data.choices[0].message.content;' .
+			'if(data.content)return data.content;' .
+			'if(data.response)return data.response;' .
+			'return"";}' .
 		'try{var s=localStorage.getItem(sk);if(s)hist=JSON.parse(s)||[];}catch(e){}' .
 		'if(hist.length){var m=document.getElementById("tma-messages");if(m){m.innerHTML="";hist.forEach(function(h){appendMsg(h.role,h.content);});}}' .
 		'function save(){try{localStorage.setItem(sk,JSON.stringify(hist.slice(-50)));}catch(e){}}' .
@@ -518,16 +529,19 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'var inp=document.getElementById("tma-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;' .
 			'inp.value="";inp.style.height="";tmaHaptic("light");' .
-			'appendMsg("user",txt);hist.push({role:"user",content:txt});save();' .
+			'hist.push({role:"user",content:txt});appendMsg("user",txt);save();' .
 			'busy=true;var el=appendMsg("bot","");el.classList.add("loading");' .
 			'var st=document.getElementById("tma-status-text");if(st)st.textContent="Thinking\u2026";' .
+			'var body={messages:hist.slice(-20)};' .
+			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({message:txt,history:hist.slice(-10)})})' .
+				'body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
-			'.then(function(d){var rep=(d&&d.response)?d.response:"Sorry, I could not process that.";' .
+			'.then(function(d){' .
+				'var rep=tmaExtractReply(d)||"' . esc_js( __( 'Sorry, I could not process that.', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'el.classList.remove("loading");el.textContent=rep;hist.push({role:"assistant",content:rep});save();})' .
-			'.catch(function(){el.classList.remove("loading");el.textContent="Connection error. Please try again.";})' .
-			'.finally(function(){busy=false;if(st)st.textContent="AI Assistant";' .
+			'.catch(function(){el.classList.remove("loading");el.textContent="' . esc_js( __( 'Connection error. Please try again.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
+			'.finally(function(){busy=false;if(st)st.textContent="' . esc_js( __( 'AI Assistant', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'var m=document.getElementById("tma-messages");if(m)m.scrollTop=m.scrollHeight;});' .
 		'};' .
 		'window.tmaClearChat=function(){hist=[];save();tmaHaptic("medium");' .
@@ -580,7 +594,8 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
 		$tools_exec   = $ctx['tools_url'] . '/execute';
-		$chat_api_url = rest_url( 'mcp-ai/v1/chat' );
+		$chat_url     = $ctx['chat_url'];
+		$assistant_id = $ctx['assistant_id'];
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-ecommerce-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
@@ -674,8 +689,9 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'<script>(function(){"use strict";' .
 		wp_mcp_ai_tma_base_js() .
 		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
-		'var chatUrl=' . wp_json_encode( $chat_api_url ) . ';' .
+		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
 		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
 		'var activeTab="shop";var chatHist=[];' .
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'window.tmaSwitch=function(tab){' .
@@ -720,13 +736,18 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'window.tmaDrawerSend=function(){' .
 			'var inp=document.getElementById("tma-drawer-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
-			'appendDrawer("user",txt);chatHist.push({role:"user",content:txt});' .
+			'chatHist.push({role:"user",content:txt});appendDrawer("user",txt);' .
 			'var el=document.createElement("div");el.className="tma-msg bot";el.textContent="\u2026";' .
 			'var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			'var body={messages:chatHist.slice(-10)};' .
+			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({message:txt,history:chatHist.slice(-6)})})' .
+				'body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
-			'.then(function(d){var rep=(d&&d.response)?d.response:"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Sorry, please try again.', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'el.textContent=rep;chatHist.push({role:"assistant",content:rep});})' .
 			'.catch(function(){el.textContent="' . esc_js( __( 'Connection error.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
@@ -773,9 +794,10 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 
 	/** @inheritdoc */
 	public function render_html( array $ctx ) {
-		$site_name  = esc_html( $ctx['site_name'] );
-		$tools_exec = $ctx['tools_url'] . '/execute';
-		$chat_url   = rest_url( 'mcp-ai/v1/chat' );
+		$site_name    = esc_html( $ctx['site_name'] );
+		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$assistant_id = $ctx['assistant_id'];
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		return '<body class="wp-mcp-ai-telegram-mini-app tma-crm-template">' .
 		'<style>' . wp_mcp_ai_tma_base_css() .
@@ -844,6 +866,7 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 		'var toolsExec=' . wp_json_encode( $tools_exec ) . ';' .
 		'var chatUrl=' . wp_json_encode( $chat_url ) . ';' .
 		'var nonce=' . wp_json_encode( $ctx['nonce'] ) . ';' .
+		'var assistantId=' . wp_json_encode( $assistant_id ) . ';' .
 		'var activeTab="contacts";' .
 		'function escH(s){var d=document.createElement("div");d.appendChild(document.createTextNode(String(s)));return d.innerHTML;}' .
 		'window.tmaSwitch=function(tab){' .
@@ -888,10 +911,16 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'var draft=document.getElementById("tma-compose-draft");' .
 			'if(!ctx.trim()){if(draft)draft.value="' . esc_js( __( 'Please describe the customer or situation first.', 'mcp-ai-wpoos-pro' ) ) . '";return;}' .
 			'if(draft)draft.value="' . esc_js( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'var body={messages:[{role:"user",content:"' . esc_js( __( 'Write a professional follow-up message for: ', 'mcp-ai-wpoos-pro' ) ) . '"+ctx}]};' .
+			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
-				'body:JSON.stringify({message:"Write a professional follow-up message for: "+ctx})})' .
+				'body:JSON.stringify(body)})' .
 			'.then(function(r){return r.json();})' .
-			'.then(function(d){if(draft)draft.value=(d&&d.response)?d.response:"' . esc_js( __( 'Could not generate draft.', 'mcp-ai-wpoos-pro' ) ) . '";})' .
+			'.then(function(d){' .
+				'var data=d&&d.data;' .
+				'var rep=(data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)||' .
+					'(data&&data.content)||(data&&data.response)||"' . esc_js( __( 'Could not generate draft.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'if(draft)draft.value=rep;})' .
 			'.catch(function(){if(draft)draft.value="' . esc_js( __( 'Error generating draft.', 'mcp-ai-wpoos-pro' ) ) . '";});' .
 		'};' .
 		'loadContacts();' .
