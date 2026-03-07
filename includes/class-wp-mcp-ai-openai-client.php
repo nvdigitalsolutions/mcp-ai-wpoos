@@ -2997,6 +2997,37 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				}
 			}
 
+			// Attach the OpenAI file_search tool when the assistant has a vector store
+			// configured. This enables retrieval-augmented generation (RAG) directly from
+			// the chat completion payload so neither the user nor a manual tool call is
+			// required to make vector store data available to the model. The entry is
+			// appended after normalise_tools_for_payload() because that method filters out
+			// entries without a 'name' field (which function tools require) whereas
+			// file_search is a built-in type that uses 'type' instead of 'name'.
+			if ( ! empty( $options['vector_store_id'] ) ) {
+				// Only add a file_search entry when one is not already present in the
+				// normalised tools list (e.g. if caller supplied it explicitly).
+				$has_file_search = isset( $payload['tools'] ) && is_array( $payload['tools'] ) && count(
+					array_filter(
+						$payload['tools'],
+						function ( $t ) {
+							return isset( $t['type'] ) && 'file_search' === $t['type'];
+						}
+					)
+				) > 0;
+				if ( ! $has_file_search ) {
+					$file_search_tool = array(
+						'type'             => 'file_search',
+						'vector_store_ids' => array( sanitize_text_field( $options['vector_store_id'] ) ),
+					);
+					if ( isset( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
+						$payload['tools'][] = $file_search_tool;
+					} else {
+						$payload['tools'] = array( $file_search_tool );
+					}
+				}
+			}
+
 			if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
 			}

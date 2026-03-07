@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-site-health-test-errors',
-        'version' => 'dev-copilot/fix-site-health-test-errors',
-        'reference' => '8869280dd3ef6955cdd82b765ab971359977c669',
+        'pretty_version' => 'dev-copilot/add-vector-storage-on-init',
+        'version' => 'dev-copilot/add-vector-storage-on-init',
+        'reference' => '14622cdd9b7f681d235bec929eadcf5ff6e0f657',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-site-health-test-errors',
-            'version' => 'dev-copilot/fix-site-health-test-errors',
-            'reference' => '8869280dd3ef6955cdd82b765ab971359977c669',
+            'pretty_version' => 'dev-copilot/add-vector-storage-on-init',
+            'version' => 'dev-copilot/add-vector-storage-on-init',
+            'reference' => '14622cdd9b7f681d235bec929eadcf5ff6e0f657',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
