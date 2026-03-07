@@ -2405,6 +2405,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
 			}
 
+			// Auto-run get_vector_store for OpenAI provider when a vector store is configured.
+			// This ensures the AI has immediate context about the vector store on every chat request,
+			// covering both chat-client initialization and channel auto-reply workflows.
+			if ( 'openai' === ( $options['provider'] ?? '' ) && ! empty( $assistant_config['vector_store_id'] ) ) {
+				$assistant_config = $this->ensure_tool_in_config( $assistant_config, 'get_vector_store' );
+				$vs_context       = $this->build_vector_store_context( $assistant_config );
+				if ( ! empty( $vs_context ) ) {
+					$options['system_prompt'] = ! empty( $options['system_prompt'] )
+						? $options['system_prompt'] . "\n\n" . $vs_context
+						: $vs_context;
+				}
+			}
+
 			$tools = $this->build_tools_payload( $assistant_config );
 			if ( is_wp_error( $tools ) ) {
 				return $tools;
@@ -6669,6 +6682,65 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return ! empty( $value );
+		}
+
+		/**
+		 * Fetch and format vector store context for the system prompt.
+		 *
+		 * Executes the get_vector_store tool server-side and returns a human-readable
+		 * summary suitable for appending to the system prompt. Results are cached per
+		 * vector store ID for five minutes to avoid repeated API round-trips.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param array $assistant_config Assistant configuration including vector_store_id.
+		 * @return string Formatted vector store context, or empty string on failure.
+		 */
+		protected function build_vector_store_context( array $assistant_config ) {
+			$vector_store_id = isset( $assistant_config['vector_store_id'] ) ? $assistant_config['vector_store_id'] : '';
+			if ( empty( $vector_store_id ) ) {
+				return '';
+			}
+
+			$cache_key = 'wp_mcp_ai_vs_ctx_' . md5( $vector_store_id );
+			$cached    = get_transient( $cache_key );
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Vector_Store' ) ) {
+				return '';
+			}
+
+			$tool   = new WP_MCP_AI_Tool_Get_Vector_Store();
+			$result = '';
+			try {
+				$result = $tool->execute( array(), array( 'assistant_config' => $assistant_config ) );
+			} catch ( \Exception $e ) {
+				WP_MCP_AI_Logger::log_event( 'error', 'build_vector_store_context: exception during tool execution', array( 'message' => $e->getMessage() ) );
+				return '';
+			}
+
+			if ( empty( $result['success'] ) || empty( $result['data'] ) ) {
+				return '';
+			}
+
+			$data        = $result['data'];
+			$file_counts = isset( $data['file_counts'] ) ? $data['file_counts'] : array();
+
+			$context = sprintf(
+				/* translators: 1: vector store ID 2: name 3: status 4: total file count 5: completed file count */
+				__( "Vector Store:\n- ID: %1\$s\n- Name: %2\$s\n- Status: %3\$s\n- Total files: %4\$d\n- Completed: %5\$d", 'mcp-ai-wpoos' ),
+				! empty( $data['id'] ) ? $data['id'] : $vector_store_id,
+				! empty( $data['name'] ) ? $data['name'] : __( 'Unnamed', 'mcp-ai-wpoos' ),
+				! empty( $data['status'] ) ? $data['status'] : __( 'unknown', 'mcp-ai-wpoos' ),
+				isset( $file_counts['total'] ) ? (int) $file_counts['total'] : 0,
+				isset( $file_counts['completed'] ) ? (int) $file_counts['completed'] : 0
+			);
+
+			set_transient( $cache_key, $context, 5 * MINUTE_IN_SECONDS );
+
+			return $context;
 		}
 
 		/**
