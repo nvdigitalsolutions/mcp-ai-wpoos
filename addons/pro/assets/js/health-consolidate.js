@@ -492,3 +492,279 @@
 		initHealthConsolidate();
 	} );
 } )( jQuery );
+
+/**
+ * Vital Signs workflow for health-consolidate.js
+ *
+ * Handles the "Vital Signs" tab: loading existing CCT readings, previewing
+ * a new entry, and importing it to the JetEngine CCT via AJAX.
+ *
+ * @package WP_MCP_AI_Pro
+ */
+( function( $ ) {
+'use strict';
+
+/**
+ * Collect non-empty vitals inputs from the form into a plain object.
+ *
+ * @return {Object} Field-to-value map.
+ */
+function collectVitalsFormData() {
+const fields = {
+measurement_date:   $( '#vitals-measurement-date' ).val(),
+measurement_time:   $( '#vitals-measurement-time' ).val(),
+source:             $( '#vitals-source' ).val(),
+bp_systolic:        $( '#vitals-bp-systolic' ).val(),
+bp_diastolic:       $( '#vitals-bp-diastolic' ).val(),
+heart_rate:         $( '#vitals-heart-rate' ).val(),
+temperature:        $( '#vitals-temperature' ).val(),
+temperature_unit:   $( '#vitals-temperature-unit' ).val(),
+weight:             $( '#vitals-weight' ).val(),
+weight_unit:        $( '#vitals-weight-unit' ).val(),
+bmi:                $( '#vitals-bmi' ).val(),
+blood_glucose:      $( '#vitals-blood-glucose' ).val(),
+oxygen_saturation:  $( '#vitals-oxygen-saturation' ).val(),
+respiratory_rate:   $( '#vitals-respiratory-rate' ).val(),
+egfr:               $( '#vitals-egfr' ).val(),
+creatinine:         $( '#vitals-creatinine' ).val(),
+bun:                $( '#vitals-bun' ).val(),
+potassium:          $( '#vitals-potassium' ).val(),
+sodium:             $( '#vitals-sodium' ).val(),
+phosphorus:         $( '#vitals-phosphorus' ).val(),
+albumin:            $( '#vitals-albumin' ).val(),
+notes:              $( '#vitals-notes' ).val(),
+};
+
+// Return only non-empty values.
+const clean = {};
+$.each( fields, function( key, val ) {
+if ( '' !== val && null !== val && undefined !== val ) {
+clean[ key ] = val;
+}
+} );
+
+return clean;
+}
+
+/**
+ * Human-readable labels for vitals fields.
+ */
+const VITALS_LABELS = {
+measurement_date:  'Date',
+measurement_time:  'Time',
+source:            'Source',
+bp_systolic:       'BP Systolic (mmHg)',
+bp_diastolic:      'BP Diastolic (mmHg)',
+heart_rate:        'Heart Rate (bpm)',
+temperature:       'Temperature',
+temperature_unit:  'Temp Unit',
+weight:            'Weight',
+weight_unit:       'Weight Unit',
+bmi:               'BMI',
+blood_glucose:     'Blood Glucose (mg/dL)',
+oxygen_saturation: 'SpO2 (%)',
+respiratory_rate:  'Respiratory Rate (breaths/min)',
+egfr:              'eGFR (mL/min/1.73m\u00b2)',
+creatinine:        'Creatinine (mg/dL)',
+bun:               'BUN (mg/dL)',
+potassium:         'K\u207a (mEq/L)',
+sodium:            'Na\u207a (mg/day)',
+phosphorus:        'Phosphorus (mg/dL)',
+albumin:           'Albumin (g/dL)',
+notes:             'Notes',
+};
+
+/** Fields that count as "numeric" data (not meta/text). */
+const META_FIELDS = new Set( [ 'source', 'measurement_date', 'measurement_time', 'temperature_unit', 'weight_unit', 'notes' ] );
+
+/**
+ * Return true when the data object contains at least one non-meta value.
+ *
+ * @param {Object} data Collected form data.
+ * @return {boolean}
+ */
+function hasNumericData( data ) {
+return Object.keys( data ).some( ( k ) => ! META_FIELDS.has( k ) );
+}
+
+/**
+ * Build a two-column preview table from a vitals data object.
+ *
+ * @param {Object} data Field-to-value pairs.
+ * @return {string} HTML string.
+ */
+function buildVitalsPreviewTable( data ) {
+let rows = '';
+$.each( data, function( key, val ) {
+if ( META_FIELDS.has( key ) && key !== 'notes' ) {
+return; // shown in the meta line
+}
+const label = VITALS_LABELS[ key ] || key;
+rows += '<tr><th>' + $( '<span>' ).text( label ).html() + '</th><td>' + $( '<span>' ).text( val ).html() + '</td></tr>';
+} );
+
+const metaParts = [];
+if ( data.measurement_date ) { metaParts.push( data.measurement_date ); }
+if ( data.measurement_time ) { metaParts.push( data.measurement_time ); }
+if ( data.source )           { metaParts.push( 'Source: ' + data.source ); }
+const meta = metaParts.length ? '<p style="color:#646970;font-size:12px;margin:0 0 8px;">' + $( '<span>' ).text( metaParts.join( ' \u00b7 ' ) ).html() + '</p>' : '';
+
+return meta + '<table class="vitals-preview-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+/**
+ * Initialise the Vital Signs workflow tab.
+ */
+function initVitalsWorkflow() {
+const memberSelect    = $( '#wp-mcp-ai-member-select' );
+const loadVitalsBtn   = $( '#wp-mcp-ai-load-vitals-btn' );
+const vitalsContainer = $( '#wp-mcp-ai-vitals-cct-container' );
+const previewBtn      = $( '#wp-mcp-ai-vitals-preview-btn' );
+const importBtn       = $( '#wp-mcp-ai-vitals-import-btn' );
+const clearBtn        = $( '#wp-mcp-ai-vitals-clear-btn' );
+const previewCard     = $( '#wp-mcp-ai-vitals-preview-card' );
+const previewContent  = $( '#wp-mcp-ai-vitals-preview-content' );
+const resultDiv       = $( '#wp-mcp-ai-vitals-result' );
+const noCctNotice     = $( '#wp-mcp-ai-vitals-no-cct' );
+const cfg             = window.wpMcpAiHealthConsolidate || {};
+const s               = cfg.strings || {};
+
+if ( ! loadVitalsBtn.length ) {
+return;
+}
+
+// Show CCT unavailability notice when JetEngine is not active.
+if ( cfg.hasCct === false ) {
+noCctNotice.show();
+}
+
+/* ---- Load existing CCT vitals ---- */
+loadVitalsBtn.on( 'click', function() {
+const memberId = memberSelect.val();
+if ( ! memberId ) {
+// eslint-disable-next-line no-alert
+window.alert( s.selectMember || 'Please select a member first.' );
+return;
+}
+
+loadVitalsBtn.prop( 'disabled', true );
+vitalsContainer.html( '<p>' + ( s.loadingVitals || 'Loading vitals\u2026' ) + '</p>' );
+
+$.ajax( {
+url:  cfg.ajaxUrl,
+type: 'POST',
+data: {
+action:    'wp_mcp_ai_get_member_vitals_preview',
+nonce:     cfg.nonce,
+member_id: memberId,
+},
+success( response ) {
+if ( response.success ) {
+vitalsContainer.html( response.data.html );
+} else {
+const msg = ( response.data && response.data.message ) ? response.data.message : ( s.error || 'Error.' );
+vitalsContainer.html( '<div class="notice notice-error inline"><p>' + msg + '</p></div>' );
+}
+},
+error() {
+vitalsContainer.html( '<div class="notice notice-error inline"><p>' + ( s.error || 'Error.' ) + '</p></div>' );
+},
+complete() {
+loadVitalsBtn.prop( 'disabled', false );
+},
+} );
+} );
+
+/* ---- Preview form data ---- */
+previewBtn.on( 'click', function() {
+const data = collectVitalsFormData();
+
+if ( ! hasNumericData( data ) ) {
+// eslint-disable-next-line no-alert
+window.alert( s.noVitalsData || 'Please enter at least one vital sign measurement.' );
+return;
+}
+
+previewContent.html( buildVitalsPreviewTable( data ) );
+previewCard.slideDown( 200 );
+} );
+
+/* ---- Import to CCT ---- */
+importBtn.on( 'click', function() {
+const memberId = memberSelect.val();
+if ( ! memberId ) {
+// eslint-disable-next-line no-alert
+window.alert( s.selectMember || 'Please select a member first.' );
+return;
+}
+
+if ( ! cfg.hasCct ) {
+// eslint-disable-next-line no-alert
+window.alert( s.noCctAvailable || 'JetEngine CCT is not active.' );
+return;
+}
+
+const data = collectVitalsFormData();
+if ( ! hasNumericData( data ) ) {
+// eslint-disable-next-line no-alert
+window.alert( s.noVitalsData || 'Please enter at least one vital sign measurement.' );
+return;
+}
+
+importBtn.prop( 'disabled', true );
+resultDiv.html( '<div class="notice notice-info inline"><p>' + ( s.importingVitals || 'Importing\u2026' ) + '</p></div>' ).show();
+
+$.ajax( {
+url:  cfg.ajaxUrl,
+type: 'POST',
+data: $.extend(
+{
+action:    'wp_mcp_ai_import_vitals_to_cct',
+nonce:     cfg.nonce,
+member_id: memberId,
+},
+data
+),
+success( response ) {
+if ( response.success ) {
+resultDiv.html( '<div class="notice notice-success inline"><p><span class="dashicons dashicons-yes-alt"></span> ' + response.data.message + '</p></div>' ).show();
+// Reload the CCT table.
+loadVitalsBtn.trigger( 'click' );
+} else {
+const msg = ( response.data && response.data.message ) ? response.data.message : ( s.error || 'Error.' );
+resultDiv.html( '<div class="notice notice-error inline"><p>' + msg + '</p></div>' ).show();
+}
+},
+error() {
+resultDiv.html( '<div class="notice notice-error inline"><p>' + ( s.error || 'Error.' ) + '</p></div>' ).show();
+},
+complete() {
+importBtn.prop( 'disabled', false );
+},
+} );
+} );
+
+/* ---- Clear form ---- */
+clearBtn.on( 'click', function() {
+$( '.vitals-input' ).val( '' );
+$( '.vitals-notes-input' ).val( '' );
+$( '#vitals-source' ).val( 'manual' );
+$( '#vitals-temperature-unit' ).val( 'F' );
+$( '#vitals-weight-unit' ).val( 'lbs' );
+previewCard.hide();
+previewContent.html( '' );
+resultDiv.hide().html( '' );
+} );
+
+/* ---- Auto-load vitals when member selected and vitals tab is active ---- */
+$( document ).on( 'wpMcpAiMemberRecordsLoaded', function() {
+if ( $( '#workflow-vitals' ).hasClass( 'active' ) ) {
+loadVitalsBtn.trigger( 'click' );
+}
+} );
+}
+
+$( document ).ready( function() {
+initVitalsWorkflow();
+} );
+} )( jQuery );

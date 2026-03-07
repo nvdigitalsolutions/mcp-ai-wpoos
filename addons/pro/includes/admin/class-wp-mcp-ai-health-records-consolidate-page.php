@@ -64,6 +64,8 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		'list_allergies',
 		'update_allergy',
 		'delete_allergy',
+		// Vital signs (CCT storage + trend analysis).
+		'log_vital_signs',
 		// Health tools.
 		'generate_health_chart',
 		'guide_health_record_creation',
@@ -98,6 +100,8 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_check_record_completeness', array( __CLASS__, 'handle_check_completeness' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_bulk_import_health_info', array( __CLASS__, 'handle_bulk_import' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_upload_health_document', array( __CLASS__, 'handle_document_upload' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_member_vitals_preview', array( __CLASS__, 'handle_get_member_vitals_preview' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_vitals_to_cct', array( __CLASS__, 'handle_import_vitals_to_cct' ) );
 	}
 
 	/**
@@ -164,15 +168,22 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'addPrescUrl'   => admin_url( 'post-new.php?post_type=mcp_ai_prescription' ),
 				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
 				'addPolicyUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
+				'hasCct'        => class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists(),
 				'strings'       => array(
-					'loading'         => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
-					'loadMember'      => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
-					'error'           => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'selectMember'    => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
-					'noRecords'       => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
-					'analyzing'       => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
-					'aiAssisting'     => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
-					'enterHealthInfo' => __( 'Please enter health information to import.', 'mcp-ai-wpoos-pro' ),
+					'loading'             => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
+					'loadMember'          => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
+					'error'               => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'selectMember'        => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
+					'noRecords'           => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
+					'analyzing'           => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
+					'aiAssisting'         => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
+					'enterHealthInfo'     => __( 'Please enter health information to import.', 'mcp-ai-wpoos-pro' ),
+					'loadingVitals'       => __( 'Loading vitals from CCT...', 'mcp-ai-wpoos-pro' ),
+					'importingVitals'     => __( 'Importing vitals to CCT...', 'mcp-ai-wpoos-pro' ),
+					'vitalsImported'      => __( 'Vital signs successfully saved to CCT.', 'mcp-ai-wpoos-pro' ),
+					'noVitalsData'        => __( 'Please enter at least one vital sign measurement.', 'mcp-ai-wpoos-pro' ),
+					'confirmVitalsImport' => __( 'Import these vitals to the CCT?', 'mcp-ai-wpoos-pro' ),
+					'noCctAvailable'      => __( 'JetEngine CCT is not active. Activate JetEngine to enable structured vitals storage.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -334,6 +345,11 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 								<strong><?php esc_html_e( 'Review & Consolidate', 'mcp-ai-wpoos-pro' ); ?></strong>
 								<p><?php esc_html_e( 'View and manage existing records', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
+							<button type="button" class="workflow-option" data-workflow="vitals">
+								<span class="dashicons dashicons-heart"></span>
+								<strong><?php esc_html_e( 'Vital Signs', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Track &amp; import vitals to CCT', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
 						</div>
 					</div>
 
@@ -466,6 +482,254 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 							<p><?php esc_html_e( 'Select a member from the sidebar to view their consolidated health records.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</div>
 					</div>
+
+
+					<!-- Vital Signs Mode -->
+					<div id="workflow-vitals" class="workflow-content" style="display: none;">
+						<div class="wp-mcp-ai-vitals-section">
+							<h2><?php esc_html_e( 'Vital Signs — Consolidate &amp; Import to CCT', 'mcp-ai-wpoos-pro' ); ?></h2>
+							<p class="description">
+								<?php esc_html_e( 'View, preview, and import vital sign measurements for the selected member into the JetEngine CCT. Use the AI assistant below to extract vitals from uploaded documents or your knowledge base, then save them directly to structured CCT storage.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+
+							<!-- CCT availability notice (shown by JS when CCT absent) -->
+							<div id="wp-mcp-ai-vitals-no-cct" class="notice notice-warning inline" style="display: none;">
+								<p>
+									<span class="dashicons dashicons-warning"></span>
+									<?php esc_html_e( 'JetEngine is not active. Install and activate JetEngine to enable structured CCT vital sign storage.', 'mcp-ai-wpoos-pro' ); ?>
+								</p>
+							</div>
+
+							<!-- Existing CCT vitals preview -->
+							<div class="vitals-cct-header">
+								<h3>
+									<span class="dashicons dashicons-chart-line"></span>
+									<?php esc_html_e( 'Existing Vital Sign Readings (CCT)', 'mcp-ai-wpoos-pro' ); ?>
+								</h3>
+								<button type="button" id="wp-mcp-ai-load-vitals-btn" class="button button-secondary">
+									<span class="dashicons dashicons-update"></span>
+									<?php esc_html_e( 'Load Existing Vitals', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</div>
+							<div id="wp-mcp-ai-vitals-cct-container">
+								<p class="description"><?php esc_html_e( 'Select a member and click "Load Existing Vitals" to view stored CCT readings.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+
+							<hr class="vitals-section-divider">
+
+							<!-- Manual entry form -->
+							<div class="vitals-entry-form">
+								<h3>
+									<span class="dashicons dashicons-plus-alt"></span>
+									<?php esc_html_e( 'Add New Vital Reading', 'mcp-ai-wpoos-pro' ); ?>
+								</h3>
+								<p class="description"><?php esc_html_e( 'Enter vital sign measurements below. All fields are optional — only fill in what is available. Click Preview to review before importing.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+								<div class="vitals-form-grid">
+
+									<!-- Date / Time / Source -->
+									<div class="vitals-field-group vitals-meta-group">
+										<h4><?php esc_html_e( 'Measurement Info', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="date" id="vitals-measurement-date" class="regular-text vitals-input" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Time', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="time" id="vitals-measurement-time" class="regular-text vitals-input" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?>
+												<select id="vitals-source" class="vitals-input">
+													<option value="manual"><?php esc_html_e( 'Manual', 'mcp-ai-wpoos-pro' ); ?></option>
+													<option value="import"><?php esc_html_e( 'Import', 'mcp-ai-wpoos-pro' ); ?></option>
+													<option value="tma"><?php esc_html_e( 'TMA', 'mcp-ai-wpoos-pro' ); ?></option>
+													<option value="api"><?php esc_html_e( 'API', 'mcp-ai-wpoos-pro' ); ?></option>
+												</select>
+											</label>
+										</div>
+									</div>
+
+									<!-- Blood Pressure -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🩸 Blood Pressure', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Systolic (mmHg)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-bp-systolic" class="small-text vitals-input" min="50" max="300" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Diastolic (mmHg)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-bp-diastolic" class="small-text vitals-input" min="30" max="200" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Heart Rate -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '💗 Heart Rate', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Heart Rate (bpm)', 'mcp-ai-wpoos-pro' ); ?>
+											<input type="number" id="vitals-heart-rate" class="small-text vitals-input" min="30" max="250" />
+										</label>
+									</div>
+
+									<!-- Temperature -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🌡️ Temperature', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Temperature', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-temperature" class="small-text vitals-input" step="0.1" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Unit', 'mcp-ai-wpoos-pro' ); ?>
+												<select id="vitals-temperature-unit" class="vitals-input">
+													<option value="F"><?php esc_html_e( '°F', 'mcp-ai-wpoos-pro' ); ?></option>
+													<option value="C"><?php esc_html_e( '°C', 'mcp-ai-wpoos-pro' ); ?></option>
+												</select>
+											</label>
+										</div>
+									</div>
+
+									<!-- Weight & BMI -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '⚖️ Weight &amp; BMI', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'Weight', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-weight" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Unit', 'mcp-ai-wpoos-pro' ); ?>
+												<select id="vitals-weight-unit" class="vitals-input">
+													<option value="lbs"><?php esc_html_e( 'lbs', 'mcp-ai-wpoos-pro' ); ?></option>
+													<option value="kg"><?php esc_html_e( 'kg', 'mcp-ai-wpoos-pro' ); ?></option>
+												</select>
+											</label>
+											<label>
+												<?php esc_html_e( 'BMI', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-bmi" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Blood Glucose -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🩸 Blood Glucose', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ); ?>
+											<input type="number" id="vitals-blood-glucose" class="small-text vitals-input" min="20" max="600" />
+										</label>
+									</div>
+
+									<!-- Oxygen Saturation -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '💨 Oxygen Saturation (SpO2)', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'SpO2 (%)', 'mcp-ai-wpoos-pro' ); ?>
+											<input type="number" id="vitals-oxygen-saturation" class="small-text vitals-input" min="80" max="100" />
+										</label>
+									</div>
+
+									<!-- Respiratory Rate -->
+									<div class="vitals-field-group">
+										<h4><?php esc_html_e( '🫁 Respiratory Rate', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<label>
+											<?php esc_html_e( 'Respiratory Rate (breaths/min)', 'mcp-ai-wpoos-pro' ); ?>
+											<input type="number" id="vitals-respiratory-rate" class="small-text vitals-input" min="8" max="50" />
+										</label>
+									</div>
+
+									<!-- Kidney Health Indicators -->
+									<div class="vitals-field-group vitals-kidney-group">
+										<h4><?php esc_html_e( '🔬 Kidney Health Indicators', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'eGFR (mL/min/1.73m²)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-egfr" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-creatinine" class="small-text vitals-input" step="0.01" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'BUN (mg/dL)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-bun" class="small-text vitals-input" min="0" />
+											</label>
+										</div>
+										<div class="vitals-form-row">
+											<label>
+												<?php esc_html_e( 'K⁺ (mEq/L)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-potassium" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Na⁺ — dietary target (mg/day)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-sodium" class="small-text vitals-input" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-phosphorus" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+											<label>
+												<?php esc_html_e( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ); ?>
+												<input type="number" id="vitals-albumin" class="small-text vitals-input" step="0.1" min="0" />
+											</label>
+										</div>
+									</div>
+
+									<!-- Notes -->
+									<div class="vitals-field-group vitals-notes-group">
+										<h4><?php esc_html_e( '📝 Notes', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<textarea id="vitals-notes" class="widefat vitals-notes-input" rows="3" placeholder="<?php esc_attr_e( 'Optional notes about this measurement (e.g., fasting, post-meal, activity level)...', 'mcp-ai-wpoos-pro' ); ?>"></textarea>
+									</div>
+
+								</div><!-- .vitals-form-grid -->
+
+								<!-- Preview card (populated by JS) -->
+								<div id="wp-mcp-ai-vitals-preview-card" class="vitals-preview-card" style="display: none;">
+									<h4>
+										<span class="dashicons dashicons-clipboard"></span>
+										<?php esc_html_e( 'Vitals Preview — Review Before Importing', 'mcp-ai-wpoos-pro' ); ?>
+									</h4>
+									<div id="wp-mcp-ai-vitals-preview-content"></div>
+								</div>
+
+								<div class="vitals-actions">
+									<button type="button" id="wp-mcp-ai-vitals-preview-btn" class="button button-secondary">
+										<span class="dashicons dashicons-visibility"></span>
+										<?php esc_html_e( 'Preview', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-vitals-import-btn" class="button button-primary">
+										<span class="dashicons dashicons-database-import"></span>
+										<?php esc_html_e( 'Import to CCT', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<button type="button" id="wp-mcp-ai-vitals-clear-btn" class="button button-link-delete">
+										<?php esc_html_e( 'Clear Form', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+								</div>
+								<div id="wp-mcp-ai-vitals-result" style="display: none; margin-top: 12px;"></div>
+							</div><!-- .vitals-entry-form -->
+
+							<!-- AI assistant tip -->
+							<div class="vitals-ai-tip">
+								<h3>
+									<span class="dashicons dashicons-lightbulb"></span>
+									<?php esc_html_e( 'AI-Assisted Vitals via Vector Storage', 'mcp-ai-wpoos-pro' ); ?>
+								</h3>
+								<p><?php esc_html_e( 'Use the AI assistant below to extract and log vitals from documents or your knowledge base:', 'mcp-ai-wpoos-pro' ); ?></p>
+								<ul>
+									<li><em>"<?php esc_html_e( 'Search knowledge base for blood pressure readings for [member name]', 'mcp-ai-wpoos-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Extract vital signs from the uploaded lab report and log them for member ID [X]', 'mcp-ai-wpoos-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Log today\'s vitals for [member]: BP 120/80, HR 72, Temp 98.6\xb0F, SpO2 98%', 'mcp-ai-wpoos-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Show vital sign history for [member] for the last 30 days', 'mcp-ai-wpoos-pro' ); ?>"</em></li>
+									<li><em>"<?php esc_html_e( 'Analyze kidney health trends (eGFR, creatinine) for [member]', 'mcp-ai-wpoos-pro' ); ?>"</em></li>
+								</ul>
+							</div>
+
+						</div><!-- .wp-mcp-ai-vitals-section -->
+					</div><!-- #workflow-vitals -->
 
 					<hr class="wp-mcp-ai-section-divider">
 
@@ -1277,6 +1541,271 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'file_type'     => $file_type,
 			)
 		);
+	}
+
+	/**
+	 * Handle AJAX: load existing vitals from the JetEngine CCT for a member.
+	 */
+	public static function handle_get_member_vitals_preview() {
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to view vitals.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$has_cct = class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists();
+		$vitals  = $has_cct ? WP_MCP_AI_JetEngine_Vitals_CCT::get_for_member( $member_id, '', 30 ) : array();
+
+		ob_start();
+		self::render_vitals_cct_preview( $vitals, $has_cct );
+		$html = ob_get_clean();
+
+		wp_send_json_success(
+			array(
+				'html'    => $html,
+				'count'   => count( $vitals ),
+				'has_cct' => $has_cct,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX: import a set of vitals into the JetEngine CCT.
+	 */
+	public static function handle_import_vitals_to_cct() {
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import vitals.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
+			wp_send_json_error( array( 'message' => __( 'JetEngine Vitals CCT is not available. Please ensure JetEngine is installed and active.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized inside helper.
+		$data = self::sanitize_vitals_post_data( $_POST );
+
+		if ( empty( array_filter( $data ) ) ) {
+			wp_send_json_error( array( 'message' => __( 'No vital sign data provided. Please fill in at least one measurement.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$data['logged_by'] = get_current_user_id();
+		$data['source']    = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
+
+		$item_id = WP_MCP_AI_JetEngine_Vitals_CCT::insert( $member_id, $data );
+
+		if ( ! $item_id ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => sprintf(
+					/* translators: %d: CCT item ID */
+					__( 'Vital signs successfully saved to CCT (ID: %d).', 'mcp-ai-wpoos-pro' ),
+					$item_id
+				),
+				'item_id' => $item_id,
+			)
+		);
+	}
+
+	/**
+	 * Sanitize vitals data from a POST payload.
+	 *
+	 * @param array $post Raw POST data.
+	 * @return array      Sanitized key/value pairs matching the CCT schema.
+	 */
+	private static function sanitize_vitals_post_data( array $post ) {
+		$numeric_fields = array(
+			'bp_systolic',
+			'bp_diastolic',
+			'heart_rate',
+			'temperature',
+			'weight',
+			'bmi',
+			'blood_glucose',
+			'oxygen_saturation',
+			'respiratory_rate',
+			'egfr',
+			'creatinine',
+			'bun',
+			'potassium',
+			'sodium',
+			'phosphorus',
+			'albumin',
+		);
+
+		$data = array();
+
+		foreach ( $numeric_fields as $field ) {
+			if ( isset( $post[ $field ] ) && '' !== $post[ $field ] ) {
+				$data[ $field ] = floatval( $post[ $field ] );
+			}
+		}
+
+		if ( isset( $post['measurement_date'] ) && '' !== $post['measurement_date'] ) {
+			$data['measurement_date'] = sanitize_text_field( wp_unslash( $post['measurement_date'] ) );
+		}
+
+		if ( isset( $post['measurement_time'] ) && '' !== $post['measurement_time'] ) {
+			$data['measurement_time'] = sanitize_text_field( wp_unslash( $post['measurement_time'] ) );
+		}
+
+		if ( isset( $post['temperature_unit'] ) && in_array( $post['temperature_unit'], array( 'F', 'C' ), true ) ) {
+			$data['temperature_unit'] = $post['temperature_unit'];
+		}
+
+		if ( isset( $post['weight_unit'] ) && in_array( $post['weight_unit'], array( 'lbs', 'kg' ), true ) ) {
+			$data['weight_unit'] = $post['weight_unit'];
+		}
+
+		if ( isset( $post['notes'] ) && '' !== $post['notes'] ) {
+			$data['notes'] = sanitize_textarea_field( wp_unslash( $post['notes'] ) );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Render a status-badged preview table of vitals from the CCT.
+	 *
+	 * @param array $vitals  Array of CCT row objects (newest first).
+	 * @param bool  $has_cct Whether the CCT table is available.
+	 */
+	private static function render_vitals_cct_preview( array $vitals, $has_cct ) {
+		if ( ! $has_cct ) {
+			?>
+			<div class="notice notice-warning inline">
+				<p><?php esc_html_e( 'JetEngine Custom Content Type (CCT) is not available. Install and activate JetEngine to enable structured vital sign storage.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		if ( empty( $vitals ) ) {
+			?>
+			<div class="notice notice-info inline">
+				<p><?php esc_html_e( 'No vital sign readings found for this member in the CCT.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		?>
+		<div class="vitals-cct-table-wrap">
+			<table class="wp-list-table widefat fixed striped vitals-cct-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'BP (mmHg)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'HR (bpm)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Temp', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'SpO2', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Glucose', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'eGFR', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Source', 'mcp-ai-wpoos-pro' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $vitals as $row ) : ?>
+						<tr>
+							<td><?php echo esc_html( $row->measurement_date ?? '' ); ?></td>
+							<td>
+								<?php
+								if ( ! empty( $row->bp_systolic ) && ! empty( $row->bp_diastolic ) ) {
+									$bp_status = ! empty( $row->bp_status ) ? $row->bp_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s/%s</span>',
+										esc_attr( $bp_status ),
+										esc_html( $row->bp_systolic ),
+										esc_html( $row->bp_diastolic )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->heart_rate ) ) {
+									$hr_status = ! empty( $row->heart_rate_status ) ? $row->heart_rate_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s</span>',
+										esc_attr( $hr_status ),
+										esc_html( $row->heart_rate )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php echo ! empty( $row->temperature ) ? esc_html( $row->temperature ) . '°' . esc_html( $row->temperature_unit ?? 'F' ) : '—'; ?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->oxygen_saturation ) ) {
+									$spo2_status = ! empty( $row->oxygen_saturation_status ) ? $row->oxygen_saturation_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s%%</span>',
+										esc_attr( $spo2_status ),
+										esc_html( $row->oxygen_saturation )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td>
+								<?php
+								if ( ! empty( $row->blood_glucose ) ) {
+									$glucose_status = ! empty( $row->blood_glucose_status ) ? $row->blood_glucose_status : 'normal';
+									printf(
+										'<span class="vitals-badge vitals-badge-%s">%s</span>',
+										esc_attr( $glucose_status ),
+										esc_html( $row->blood_glucose )
+									);
+								} else {
+									echo '—';
+								}
+								?>
+							</td>
+							<td><?php echo ! empty( $row->egfr ) ? esc_html( $row->egfr ) : '—'; ?></td>
+							<td><?php echo esc_html( ucfirst( $row->source ?? 'manual' ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description">
+				<?php
+				printf(
+					esc_html(
+						/* translators: %d: number of vital readings */
+						_n(
+							'Showing %d vital reading (most recent first).',
+							'Showing %d vital readings (most recent first).',
+							count( $vitals ),
+							'mcp-ai-wpoos-pro'
+						)
+					),
+					count( $vitals )
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	}
 }
 
