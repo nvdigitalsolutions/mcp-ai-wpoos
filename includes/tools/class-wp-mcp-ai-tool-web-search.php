@@ -893,8 +893,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'include_answer' => false,
 		);
 
-		// Tavily supports country-specific domain targeting via include_domains.
-		// We pass country as a hint only (no official param); future API versions may add it.
+		// Tavily does not have an official country/language query param as of their current API.
+		// The country value from $options is accepted in the schema for future compatibility
+		// but is not forwarded in the request body. Future API versions may add geo-targeting.
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- accepted for future use
 		$encoded_body = wp_json_encode( $body );
 		if ( false === $encoded_body ) {
 			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Tavily search payload.', 'mcp-ai-wpoos' ) );
