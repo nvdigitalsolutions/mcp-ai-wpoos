@@ -514,6 +514,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'brave_search':
 					$this->render_brave_search_footer();
 					break;
+				case 'tavily':
+					$this->render_tavily_footer();
+					break;
 				case 'mubert':
 					$this->render_mubert_footer();
 					break;
@@ -917,6 +920,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Enter your Brave Search API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
 					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Tavily footer content.
+		 */
+		private function render_tavily_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Tavily Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-tavily-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-tavily-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Tavily API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'About Tavily Integration', 'mcp-ai-wpoos' ); ?></h4>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><?php esc_html_e( 'Purpose-built for AI agents — returns rich, structured search results', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Supports freshness filtering, country/language targeting, and snippet grounding', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Get your API key from tavily.com', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Select "Tavily" as the web search provider in Tools → Configuration to activate', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+					</div>
 				</td>
 			</tr>
 			<?php

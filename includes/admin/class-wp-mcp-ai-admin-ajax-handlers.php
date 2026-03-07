@@ -58,6 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
+				'wp_ajax_wp_mcp_ai_test_tavily_connection'       => 'handle_test_tavily_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
 				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
@@ -818,6 +819,95 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => __( 'Successfully connected to Brave Search API!', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Tavily API connection.
+		 */
+		public function handle_test_tavily_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Tavily API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Test the Tavily connection by making a minimal search request.
+			$api_url = 'https://api.tavily.com/search';
+
+			$response = wp_remote_post(
+				$api_url,
+				array(
+					'headers' => array(
+						'Content-Type'  => 'application/json',
+						'Authorization' => 'Bearer ' . $api_key,
+					),
+					'body'    => wp_json_encode(
+						array(
+							'query'       => 'test',
+							'max_results' => 1,
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 401 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Tavily API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 429 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your API key is valid but you have exceeded your rate limit.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Invalid API key or connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $data['message'] ) ) {
+					$error_message = sanitize_text_field( $data['message'] );
+				} elseif ( isset( $data['detail'] ) ) {
+					$error_message = sanitize_text_field( $data['detail'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Successfully connected to Tavily API!', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
