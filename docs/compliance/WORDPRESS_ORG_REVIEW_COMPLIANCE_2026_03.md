@@ -932,4 +932,154 @@ The corpus meta is saved via `save_post` with the existing nonce and `edit_post`
 
 ---
 
+## Post-Merge Compliance Review — March 7, 2026 (PR #4060)
+
+**Date:** March 7, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Changes introduced by PR #4060 — Web Search: Tavily provider, geo/freshness params, snippet grounding, extra_snippets
+**Trigger:** Implementation of PR #4060 as part of base plugin compliance cycle
+
+---
+
+### Change Set: PR #4060 — Web Search Enhancements
+
+#### Summary
+
+PR #4060 enhances the `web_search` tool with:
+1. A new **Tavily** search provider (AI-first, returns structured excerpts)
+2. Three new **schema parameters** (`country`, `language`, `freshness`) for all providers
+3. **Brave Search** improvements: `extra_snippets=1` forwarded; extra snippets appended
+4. **DuckDuckGo** `kl` region parameter built from `country` + `language`
+5. **LLM snippet grounding** — `sanitize_for_llm()` now includes a 40-word `snippet`
+
+| File | Change Type |
+|------|------------|
+| `includes/tools/class-wp-mcp-ai-tool-web-search.php` | Added `country`/`language`/`freshness` schema params; `perform_tavily_search()` method; `kl` param for DDG; `extra_snippets` append for Brave; snippet in `sanitize_for_llm()` |
+| `includes/admin/class-wp-mcp-ai-admin-settings-base.php` | Added `tavily_api_key` default |
+| `includes/admin/class-wp-mcp-ai-simple-settings-saver.php` | Added `tavily_api_key => password` |
+| `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | Added `tavily_api_key` to sensitive-keys masking list |
+| `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | Tavily option in provider dropdown; `tavily_api_key` field; added to fields list |
+| `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` | `tavily_api_key` field + Tavily connector card |
+| `includes/admin/sections/class-wp-mcp-ai-section-overview.php` | `tavily` added to connector count |
+| `tests/test-web-search-tool.php` | 6 new unit tests; updated sanitize_for_llm assertion |
+
+---
+
+#### Issue II: Undocumented External Service — Tavily Search API
+
+##### Problem
+
+`perform_tavily_search()` makes HTTP POST calls to `https://api.tavily.com/search`. This is a new external service not previously documented in `readme.txt`.
+
+##### Fix Applied
+
+**File:** `readme.txt`
+
+Added new entry **#32 (Tavily Search API)**:
+- Purpose: AI-first web search for LLM agent/RAG workflows; structured results with page excerpts and publication dates
+- Data Sent: Search query string; only when Tavily is selected as the provider
+- When: Only when administrator selects "Tavily" as web search provider (opt-in, off by default)
+- Service URL: `https://api.tavily.com/search`
+- Terms of Service: https://tavily.com/terms-of-use
+- Privacy Policy: https://tavily.com/privacy-policy
+
+##### Compliance Statement
+
+Tavily is entirely opt-in: no calls are made unless an administrator explicitly sets `web_search_provider = tavily` and enters a `tavily_api_key`. The service is now fully documented per WordPress.org Guideline 6.
+
+---
+
+#### Compliance Audit of New Code
+
+##### Sanitization
+
+| Input | Where | Sanitization Applied |
+|-------|-------|---------------------|
+| `arguments['country']` | `execute()` | `sanitize_text_field()` + `strtoupper()` + `preg_match('/^[A-Z]{2}$/')` validation |
+| `arguments['language']` | `execute()` | `sanitize_text_field()` + `strtolower()` |
+| `arguments['freshness']` | `execute()` | `in_array()` whitelist: `['pd','pw','pm','py']` |
+| `options['country']` (Brave) | `perform_brave_search()` | `strtoupper()` |
+| `options['language']` (Brave) | `perform_brave_search()` | `strtolower()` |
+| `options['freshness']` (Brave) | `perform_brave_search()` | Passed from validated whitelist |
+| `options['country']`/`language` (DDG) | `perform_duckduckgo_search()` | `strtolower()` |
+| `$api_key` (Tavily) | `perform_tavily_search()` | Retrieved via `WP_MCP_AI_Settings_Registry::get_setting()` (already sanitized at save) |
+| `$query` (Tavily body) | `perform_tavily_search()` | `wp_json_encode()` — query passed through validated `sanitize_text_field()` in `execute()` |
+| Tavily `item['title']` | `perform_tavily_search()` | `sanitize_text_field()` + `sanitize_utf8()` |
+| Tavily `item['content']` (snippet) | `perform_tavily_search()` | `sanitize_text_field()` + `sanitize_utf8()` |
+| Tavily `item['url']` | `perform_tavily_search()` | `esc_url_raw()` |
+| Tavily `item['published_date']` | `perform_tavily_search()` | `sanitize_text_field()` |
+| Tavily error messages from API | `perform_tavily_search()` | `sanitize_text_field()` |
+
+**Status: ✅ All new inputs sanitized.**
+
+##### API Key Storage
+
+`tavily_api_key` is classified as `'password'` type in `WP_MCP_AI_Simple_Settings_Saver` and masked in `WP_MCP_AI_Settings_Dashboard`. When blank on save, existing key is preserved (same pattern as `brave_search_api_key`).
+
+**Status: ✅ API key handled securely.**
+
+##### Output Escaping
+
+- Provider dropdown uses the settings renderer which calls `esc_attr()` on option values and `esc_html()` on labels ✅
+- `tavily_api_key` field uses the password input renderer (no output to HTML) ✅
+- `perform_tavily_search()` produces no HTML output — returns a PHP array ✅
+
+**Status: ✅ No unescaped output.**
+
+##### External Library Dependencies
+
+No new third-party libraries introduced. Tavily uses WordPress HTTP API (`wp_remote_get`/`wp_remote_request` via `perform_search_with_retry()`).
+
+**Status: ✅ No new dependencies.**
+
+##### Prefixing
+
+- WP_Error codes: `wp_mcp_ai_search_missing_api_key`, `wp_mcp_ai_encoding_error`, `wp_mcp_ai_search_failed`, etc. — all use `wp_mcp_ai_` prefix ✅
+- No new global functions, classes, or constants introduced ✅
+
+**Status: ✅ All identifiers properly prefixed/scoped.**
+
+---
+
+#### Files Changed in This Review Cycle
+
+**Code:**
+1. `includes/tools/class-wp-mcp-ai-tool-web-search.php` — Tavily provider, geo/freshness params, extra_snippets, snippet grounding
+2. `includes/admin/class-wp-mcp-ai-admin-settings-base.php` — `tavily_api_key` default
+3. `includes/admin/class-wp-mcp-ai-simple-settings-saver.php` — `tavily_api_key` password type
+4. `includes/admin/class-wp-mcp-ai-settings-dashboard.php` — `tavily_api_key` sensitive key
+5. `includes/admin/sections/class-wp-mcp-ai-section-tools.php` — Tavily dropdown + field
+6. `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` — Tavily connector card
+7. `includes/admin/sections/class-wp-mcp-ai-section-overview.php` — Tavily connector count
+
+**Tests:**
+8. `tests/test-web-search-tool.php` — 6 new tests; updated sanitize_for_llm assertion
+
+**Documentation:**
+9. `readme.txt` — External Service #32 (Tavily Search API)
+10. `CHANGELOG.md` — PR #4060 entry in [Unreleased] section
+11. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+#### Post-Merge Compliance Status (March 7, 2026 — PR #4060)
+
+| Category | Status |
+|----------|--------|
+| External service documentation (`wp_remote_*` calls) | ✅ All documented — Tavily added as service #32 |
+| Input sanitization in new Tavily method | ✅ All inputs sanitized |
+| Input sanitization for geo/freshness params | ✅ Country validated with regex, freshness whitelisted, language lowercased |
+| API key storage and masking | ✅ `tavily_api_key` classified as password, masked in dashboard |
+| Output escaping for new admin UI | ✅ Settings renderer uses `esc_attr()`/`esc_html()` |
+| ABSPATH guards in modified files | ✅ Present in all modified files |
+| Prefixing of new identifiers | ✅ All WP_Error codes use `wp_mcp_ai_` prefix |
+| No new trialware or license gating | ✅ Tavily is opt-in; DuckDuckGo remains free default |
+| No new third-party libraries | ✅ Uses WordPress HTTP API only |
+| CHANGELOG updated | ✅ Entry added to [Unreleased] |
+| Unit test coverage | ✅ 6 new tests covering Brave geo, DDG kl, country validation, Tavily mapping, missing key, POST body |
+
+**Base plugin compliance status after PR #4060: ✅ Fully compliant**
+
+---
+
 *Last updated: March 7, 2026*
