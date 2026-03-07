@@ -90,7 +90,8 @@ The REST handler:
 1. Validates assistant access
 2. Loads assistant configuration
 3. Merges professional_prompt if provided in request
-4. Passes configuration to validator
+4. **Auto-injects vector store context for OpenAI** (see below)
+5. Passes configuration to validator
 
 ```php
 // Load assistant config
@@ -109,6 +110,47 @@ $options = $this->validator->sanitize_options(
     $assistant_config 
 );
 ```
+
+### Vector Store Context Auto-Injection (OpenAI)
+
+When the provider is `openai` and the assistant has a `vector_store_id` configured, the REST handler automatically:
+
+1. Ensures the `get_vector_store` tool is available in the assistant's tool list
+2. Executes `get_vector_store` server-side to fetch current store metadata
+3. Appends a structured summary to the system prompt so the LLM has immediate awareness of the vector store's state
+
+This injection happens on **every chat request**, covering:
+- Chat-client initialization (first message or page load)
+- Channel auto-reply workflows (Telegram, WhatsApp, Messenger, Google Chat, etc.)
+
+**Method:** `build_vector_store_context( array $assistant_config )`
+
+```php
+// Auto-inject vector store context for OpenAI provider
+if ( 'openai' === $options['provider'] && ! empty( $assistant_config['vector_store_id'] ) ) {
+    $assistant_config = $this->ensure_tool_in_config( $assistant_config, 'get_vector_store' );
+    $vs_context       = $this->build_vector_store_context( $assistant_config );
+    if ( ! empty( $vs_context ) ) {
+        $options['system_prompt'] = ! empty( $options['system_prompt'] )
+            ? $options['system_prompt'] . "\n\n" . $vs_context
+            : $vs_context;
+    }
+}
+```
+
+**Example system prompt addition:**
+```
+Vector Store:
+- ID: vs_abc123
+- Name: Product Knowledge Base
+- Status: completed
+- Total files: 42
+- Completed: 42
+```
+
+**Caching:** Results are cached with `set_transient()` for **5 minutes** per vector store ID to avoid repeated OpenAI API round-trips on high-traffic sites.
+
+**Availability condition:** The injection only fires if `WP_MCP_AI_Tool_Get_Vector_Store` class is loaded. On the base plugin this class is always available; it is silently skipped if the class is absent (e.g. before the tool registry initialises).
 
 ### Logging
 ```
@@ -515,7 +557,12 @@ Check logs to verify system_prompt from assistant config is used.
 
 ## Changelog
 
-### Version 1.0.0 (Current)
+### Version 1.1.5
+- Auto-inject vector store context into the system prompt for OpenAI assistants with a configured `vector_store_id`
+- Context is fetched server-side via `get_vector_store` tool and cached for 5 minutes
+- Applies to all request paths: chat-client requests and channel auto-reply workflows
+
+### Version 1.0.0
 - Enhanced logging across all providers
 - Added system_prompt_source tracking
 - Improved validation and error reporting

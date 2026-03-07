@@ -280,6 +280,26 @@ knowledge-base/
 - `get_vector_store` - Retrieve vector store details
 - `list_vector_stores` - List all available stores
 
+### Automatic Vector Store Context Injection (v1.1.5+)
+
+When an OpenAI assistant has a `vector_store_id` configured, the plugin **automatically** calls `get_vector_store` on every chat request and appends a structured summary to the system prompt. This means the LLM has immediate awareness of the vector store's current state (name, status, file counts) without the user or developer needing to call the tool explicitly.
+
+**Applies to:**
+- Chat-client requests (web chat widget)
+- Channel auto-reply workflows (Telegram, WhatsApp, Messenger, Google Chat, etc.)
+
+**Example injected context:**
+```
+Vector Store:
+- ID: vs_abc123
+- Name: Product Knowledge Base
+- Status: completed
+- Total files: 42
+- Completed: 42
+```
+
+Results are cached for 5 minutes per vector store ID to minimise API calls. See `docs/system-prompt-propagation.md` for technical details.
+
 ### File Upload
 
 - `get_openai_file_details` - Verify upload success

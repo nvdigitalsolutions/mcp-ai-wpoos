@@ -55,6 +55,8 @@ get_vector_store
 └─ vector_store_id: Store ID
 ```
 
+> **Auto-injected (v1.1.5+):** For OpenAI assistants with a `vector_store_id` set, `get_vector_store` is called automatically on every chat request. The result is appended to the system prompt so the LLM has immediate vector store awareness. Cached for 5 minutes per store ID.
+
 ```
 list_vector_stores
 └─ Returns all available stores
