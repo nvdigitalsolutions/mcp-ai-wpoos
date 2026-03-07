@@ -598,6 +598,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
 				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
 
+				// Resolve the assistant configured for this Mini App connection so that
+				// templates can pass it as assistant_id to the chat-client endpoint.
+				$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
+				$chat_url     = rest_url( 'mcp-ai/v1/chat-client' );
+
 				// Build the context array that non-default templates expect.
 				$ctx = array(
 					'request'       => $request,
@@ -605,6 +610,8 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					'namespace'     => $this->namespace,
 					'rest_base'     => $this->rest_base,
 					'assistant'     => $request->get_param( 'assistant' ),
+					'assistant_id'  => $assistant_id,
+					'chat_url'      => $chat_url,
 					'site_name'     => $page_title,
 					'nonce'         => wp_create_nonce( 'wp_rest' ),
 					'tools_url'     => $tools_url,
