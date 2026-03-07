@@ -715,6 +715,14 @@ class WP_MCP_AI_REST_Validator {
 			$options['vector_store_id'] = '';
 		}
 
+		if ( isset( $options['corpus_name'] ) ) {
+			$options['corpus_name'] = sanitize_text_field( $options['corpus_name'] );
+		} elseif ( isset( $assistant_config['corpus_name'] ) && '' !== $assistant_config['corpus_name'] ) {
+			$options['corpus_name'] = sanitize_text_field( $assistant_config['corpus_name'] );
+		} else {
+			$options['corpus_name'] = '';
+		}
+
 		if ( isset( $options['max_tokens'] ) ) {
 			$options['max_tokens'] = absint( $options['max_tokens'] );
 
