@@ -195,8 +195,8 @@ For production deployments:
 If you encounter class not found errors after pulling changes:
 
 ```bash
-# Reinstall and regenerate the autoloader
-composer install --no-dev --classmap-authoritative
+# Regenerate the autoloader
+composer dump-autoload --classmap-authoritative
 ```
 
 ### Mixing Dev and Production

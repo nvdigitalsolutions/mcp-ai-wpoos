@@ -295,7 +295,7 @@ If you encounter class not found errors:
 
 2. Regenerate the classmap:
    ```bash
-   composer install --no-dev --classmap-authoritative
+   composer dump-autoload --classmap-authoritative
    ```
 
 3. Verify the class exists in the classmap:

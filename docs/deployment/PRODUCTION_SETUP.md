@@ -130,7 +130,7 @@ The plugin should work immediately without any additional setup steps.
 If you encounter class not found errors:
 1. Ensure all vendor files are present
 2. Verify `.gitignore` allows vendor files to be tracked
-3. Try reinstalling: `composer install --no-dev --classmap-authoritative`
+3. Try regenerating the autoloader: `composer dump-autoload --classmap-authoritative`
 
 ### Need development tools
 If you need to run tests or linting:
