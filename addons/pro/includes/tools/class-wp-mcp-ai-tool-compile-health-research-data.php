@@ -717,7 +717,7 @@ class WP_MCP_AI_Tool_Compile_Health_Research_Data implements WP_MCP_AI_Tool_Inte
 			'creatinine'        => array( 'code' => '2160-0', 'display' => 'Creatinine [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
 			'bun'               => array( 'code' => '3094-0', 'display' => 'BUN [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
 			'potassium'         => array( 'code' => '2823-3', 'display' => 'Potassium [Moles/volume] in Serum', 'unit' => 'mEq/L' ),
-			'sodium'            => array( 'code' => '2951-2', 'display' => 'Sodium [Moles/volume] in Serum', 'unit' => 'mg/day' ),
+			// sodium is stored as dietary intake (mg/day), not serum level — omitted from FHIR serum observations.
 			'phosphorus'        => array( 'code' => '2777-1', 'display' => 'Phosphate [Mass/volume] in Serum', 'unit' => 'mg/dL' ),
 			'albumin'           => array( 'code' => '1751-7', 'display' => 'Albumin [Mass/volume] in Serum', 'unit' => 'g/dL' ),
 		);
