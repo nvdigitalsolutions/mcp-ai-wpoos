@@ -157,7 +157,7 @@ The review identified 23+ instances of external service calls not documented in 
 ### Fix Applied (Phase 1 — March 2, 2026)
 **File:** `readme.txt` — External Services section
 
-Added comprehensive documentation for 11 previously undocumented services (items 13–21 and 22–23 in the updated External Services section).
+Added comprehensive documentation for 11 previously undocumented services. These were initially added as items 13–21 and 22–23 in the External Services section. **After Phase 2 inserted Mubert (#22), GDACS (#23), Google Maps (#24), and Meta (#25) before the NV Digital entries, the activation tracking and license server were renumbered to #26 and #27** (see Phase 2 below).
 
 ### Fix Applied (Phase 2 — Complete Audit)
 
@@ -172,16 +172,16 @@ A full audit of every `wp_remote_post`, `wp_remote_get`, and `wp_remote_request`
 
 Updated the Hugging Face entry (item 7) to include inference API usage in addition to the previously documented dataset access.
 
-Renumbered all services — the readme now documents **31 total external services** with full Terms/Privacy links.
+Renumbered all services — the readme now documents **31 total external services** with full Terms/Privacy links. *(Note: Services #2a and #32 were added in the March 7, 2026 reviews, bringing the final total to 33 entries — see Post-Merge Compliance Reviews below.)*
 
-### Activation Tracking Disclosure (Item 22)
+### Activation Tracking Disclosure (Item #26)
 The NV Digital Solutions activation tracking service now includes:
 - Explicit description of all data collected (hashed site URL, versions, locale)
 - Confirmation that no PII is collected
 - Opt-out instructions (settings toggle and filter hook)
 - Note that local/development environments are automatically excluded
 
-### License Server Disclosure (Item 23)
+### License Server Disclosure (Item #27)
 The NV Digital Solutions license server is now documented as:
 - Optional — only contacted when a user manually enters a license key
 - Data sent: license key, site URL, product identifier
@@ -320,7 +320,7 @@ These calls use `file_put_contents` rather than `WP_Filesystem` because they ope
 
 | Category | Status |
 |----------|--------|
-| External service documentation | ✅ 31 services fully documented with Terms/Privacy links |
+| External service documentation | ✅ 33 services/entries fully documented with Terms/Privacy links (31 numbered services added March 2–4, plus #2a Gemini Corpus and #32 Tavily added March 7) |
 | License/feature gating | ✅ 0 gated features — all built-in features fully available |
 | Activation tracking disclosure | ✅ Fully documented with opt-out instructions |
 
@@ -573,7 +573,7 @@ Added justified `phpcs:ignore` comments for:
 
 ### Fix H: Production Composer Autoload
 
-Ran `composer dump-autoload --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
+Ran `composer install --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
 - **676 classes** in authoritative classmap
 - Dev dependencies excluded
 - PSR-4 fallback disabled (classmap-authoritative mode)
