@@ -486,10 +486,27 @@
 		/**
 		 * Generate a unique session key for the chat instance.
 		 *
+		 * Uses a cryptographically secure random source when available.
+		 *
 		 * @return {string} Session key.
 		 */
 		generateSessionKey: function() {
-			return 'build-' + Math.random().toString( 36 ).substring( 2, 15 ) + Math.random().toString( 36 ).substring( 2, 15 );
+			// Prefer cryptographically secure randomness when available.
+			if ( window.crypto && typeof window.crypto.getRandomValues === 'function' ) {
+				// Generate 16 random bytes (128 bits) and convert to hex.
+				const bytes = new Uint8Array( 16 );
+				window.crypto.getRandomValues( bytes );
+				let hex = '';
+				for ( let i = 0; i < bytes.length; i++ ) {
+					hex += bytes[ i ].toString( 16 ).padStart( 2, '0' );
+				}
+				return 'build-' + hex;
+			}
+
+			// Fallback for environments without window.crypto.
+			return 'build-' +
+				Math.random().toString( 36 ).substring( 2, 15 ) +
+				Math.random().toString( 36 ).substring( 2, 15 );
 		},
 
 		/**
