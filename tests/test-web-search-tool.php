@@ -1345,6 +1345,40 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * DuckDuckGo should append the kl region parameter when only language is provided (no country).
+	 */
+	public function test_duckduckgo_passes_kl_language_only_param() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$captured_url = '';
+		$http_stub    = static function ( $preempt, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array() ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$tool->execute(
+			array(
+				'query'    => 'news',
+				'language' => 'fr',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertStringContainsString( 'api.duckduckgo.com', $captured_url );
+		$this->assertStringContainsString( 'kl=fr', $captured_url );
+	}
+
+	/**
 	 * Invalid country codes should be silently ignored rather than forwarded to the API.
 	 */
 	public function test_invalid_country_code_is_rejected() {
