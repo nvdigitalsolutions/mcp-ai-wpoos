@@ -238,11 +238,31 @@ npm run lint:js:fix
 
 ### Research
 ```
-- web_search - Search DuckDuckGo/Brave
+- web_search - Search DuckDuckGo / Brave / Tavily
 - run_crawl4ai_job - Crawl websites
 - get_open_meteo_forecast - Weather data
 - reliefweb_reports - Humanitarian alerts
 ```
+
+### Web Search Tool — Providers & Parameters
+
+| Parameter | Type | Description | Provider support |
+|---|---|---|---|
+| `query` | string | Search query (**required**) | All |
+| `max_results` | integer | Results to return (1–10, default 5) | All |
+| `country` | string | ISO 3166-1 alpha-2 geo-target (`US`, `GB`, `DE` …) | Brave, Tavily |
+| `language` | string | ISO 639-1 language code (`en`, `de`, `fr` …) | Brave, DuckDuckGo |
+| `freshness` | enum | Recency filter: `pd` day · `pw` week · `pm` month · `py` year | Brave |
+
+**Providers**
+
+| Provider | Setting value | API key required | Notes |
+|---|---|---|---|
+| DuckDuckGo | `duckduckgo` | No | Default; free, no registration |
+| Brave Search | `brave` | Yes — `brave_search_api_key` | Extra snippets included automatically |
+| Tavily | `tavily` | Yes — `tavily_api_key` | AI-first, recommended for agents |
+
+Configure at **Settings → NV oOS → Tools → Web Search Provider**.
 
 ### Operations
 ```

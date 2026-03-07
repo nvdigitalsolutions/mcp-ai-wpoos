@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-web-search-enhancements',
+        'version' => 'dev-copilot/add-web-search-enhancements',
+        'reference' => '54a7245d3a9c0adfdc37a0359b8e9967055b6098',
         'pretty_version' => 'dev-copilot/add-get-vector-store-on-load',
         'version' => 'dev-copilot/add-get-vector-store-on-load',
         'reference' => '4bc1906ce4df2230a946eda93dd67037f502eaa9',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-web-search-enhancements',
+            'version' => 'dev-copilot/add-web-search-enhancements',
+            'reference' => '54a7245d3a9c0adfdc37a0359b8e9967055b6098',
             'pretty_version' => 'dev-copilot/add-get-vector-store-on-load',
             'version' => 'dev-copilot/add-get-vector-store-on-load',
             'reference' => '4bc1906ce4df2230a946eda93dd67037f502eaa9',

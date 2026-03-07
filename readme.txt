@@ -458,12 +458,20 @@ These services are only contacted when specific tools/features are used:
 * **Privacy Policy:** https://huggingface.co/privacy
 
 **8. Brave Search API**
-* **Purpose:** Web search functionality for AI assistants
-* **Data Sent:** Search queries provided by users or AI
-* **When:** When the web search tool is called by an assistant
+* **Purpose:** Web search functionality for AI assistants (optional provider)
+* **Data Sent:** Search queries, result count, optional country (ISO 3166-1 alpha-2), language (ISO 639-1), freshness filter (`pd`/`pw`/`pm`/`py`); `extra_snippets=1` flag to retrieve richer context
+* **When:** When the web search tool is called and `web_search_provider` is set to `brave`
 * **Service URL:** https://api.search.brave.com/res/v1/web/search
 * **Terms of Service:** https://brave.com/terms-of-use/
 * **Privacy Policy:** https://brave.com/privacy/browser/
+
+**8b. Tavily Search API**
+* **Purpose:** AI-first web search optimised for LLM agents and RAG pipelines (optional provider)
+* **Data Sent:** Search query, result count (`max_results`), search depth (`basic`); no geo or language parameters are forwarded
+* **When:** When the web search tool is called and `web_search_provider` is set to `tavily`
+* **Service URL:** https://api.tavily.com/search
+* **Terms of Service:** https://tavily.com/terms
+* **Privacy Policy:** https://tavily.com/privacy
 
 **9. Open-Meteo Weather API**
 * **Purpose:** Weather forecasts and historical weather data
@@ -498,9 +506,9 @@ These services are only contacted when specific tools/features are used:
 * **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
 
 **13. DuckDuckGo Instant Answer API**
-* **Purpose:** Fallback web search and instant answers
-* **Data Sent:** Search queries
-* **When:** When the web search tool uses DuckDuckGo as a search provider
+* **Purpose:** Default web search provider (no API key required)
+* **Data Sent:** Search queries; optional region (`kl`) parameter built from `language` and `country` inputs
+* **When:** When the web search tool is called and `web_search_provider` is set to `duckduckgo` (the default)
 * **Service URL:** https://api.duckduckgo.com/
 * **Terms of Service:** https://duckduckgo.com/terms
 * **Privacy Policy:** https://duckduckgo.com/privacy
@@ -811,7 +819,7 @@ This plugin may connect to the following external services based on your configu
 * Cloudflare Workers AI - [Privacy](https://www.cloudflare.com/privacypolicy/) | [Terms](https://www.cloudflare.com/terms/)
 * Hugging Face - [Privacy](https://huggingface.co/privacy) | [Terms](https://huggingface.co/terms-of-service)
 * Weather data - Open-Meteo API
-* Web search - Brave Search API
+* Web search - DuckDuckGo (default), Brave Search API, or Tavily Search API
 * Image generation - OpenAI, Gemini, or Cloudflare
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
