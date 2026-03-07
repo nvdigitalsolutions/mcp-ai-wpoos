@@ -123,6 +123,20 @@ class SimpleCache:
         """Generate cache file path."""
         safe_key = key.replace('/', '_').replace('\\', '_')
         return os.path.join(self.cache_dir, f"{safe_key}.json")
+        """Generate a safe cache file path under the cache directory."""
+        # Allow only a restricted set of characters in the cache file name
+        safe_key = ''.join(
+            c if c.isalnum() or c in ('-', '_', '.') else '_'
+            for c in str(key)
+        )
+        filename = f"{safe_key}.json"
+        raw_path = os.path.join(self.cache_dir, filename)
+        # Normalize and ensure the path stays within the cache directory
+        cache_dir_abs = os.path.abspath(self.cache_dir)
+        full_path = os.path.abspath(raw_path)
+        if os.path.commonpath([cache_dir_abs, full_path]) != cache_dir_abs:
+            raise ValueError("Resolved cache path escapes cache directory")
+        return full_path
     
     def get(self, key: str) -> Optional[Any]:
         """Get cached value if not expired."""
