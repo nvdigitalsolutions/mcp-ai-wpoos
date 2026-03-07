@@ -1018,16 +1018,45 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// Generate AI response via internal chat endpoint.
+		$chat_messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $message_text,
+			),
+		);
+
+		// Run the get_vector_store tool when the assistant uses OpenAI with a vector store.
+		// Prepend a system message so the AI is aware of the available knowledge store.
+		if ( function_exists( 'wp_mcp_ai_run_get_vector_store_for_channel' ) ) {
+			$vs_result = wp_mcp_ai_run_get_vector_store_for_channel( $assistant_id );
+			if ( is_array( $vs_result ) && ! empty( $vs_result['data'] ) ) {
+				$vs_data       = $vs_result['data'];
+				$file_count    = isset( $vs_data['file_counts']['completed'] ) ? (int) $vs_data['file_counts']['completed'] : 0;
+				$vs_name       = ( isset( $vs_data['name'] ) && '' !== $vs_data['name'] ) ? $vs_data['name'] : 'Knowledge Base';
+				$vs_status     = isset( $vs_data['status'] ) ? $vs_data['status'] : 'unknown';
+				$chat_messages = array_merge(
+					array(
+						array(
+							'role'    => 'system',
+							/* translators: 1: vector store name, 2: status, 3: indexed file count */
+							'content' => sprintf(
+								__( 'Vector store available: "%1$s" (Status: %2$s, Indexed files: %3$d). You may reference this knowledge base when answering questions.', 'mcp-ai-wpoos' ),
+								$vs_name,
+								$vs_status,
+								$file_count
+							),
+						),
+					),
+					$chat_messages
+				);
+			}
+		}
+
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_body_params(
 			array(
 				'assistant_id' => $assistant_id,
-				'messages'     => array(
-					array(
-						'role'    => 'user',
-						'content' => $message_text,
-					),
-				),
+				'messages'     => $chat_messages,
 				'stream'       => false,
 			)
 		);
