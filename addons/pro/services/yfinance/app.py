@@ -27,6 +27,8 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
+import re
+import hashlib
 
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
@@ -109,9 +111,20 @@ class SimpleCache:
         self.ttl = timedelta(minutes=ttl_minutes)
     
     def _get_cache_path(self, key: str) -> str:
-        """Generate cache file path."""
-        safe_key = key.replace('/', '_').replace('\\', '_')
-        return os.path.join(self.cache_dir, f"{safe_key}.json")
+        """Generate a safe cache file path under the cache directory."""
+        # Allow only a restricted set of characters in the filename
+        safe_key = re.sub(r'[^A-Za-z0-9_.-]', '_', key)
+        # Avoid empty or extremely long filenames by falling back to a hash
+        if not safe_key or len(safe_key) > 150:
+            digest = hashlib.sha256(key.encode('utf-8', errors='ignore')).hexdigest()
+            safe_key = digest[:32]
+        filename = f"{safe_key}.json"
+        # Build absolute path and ensure it stays within the cache directory
+        cache_root = os.path.abspath(self.cache_dir)
+        full_path = os.path.abspath(os.path.join(cache_root, filename))
+        if os.path.commonpath([cache_root, full_path]) != cache_root:
+            raise ValueError("Computed cache path escapes cache directory")
+        return full_path
     
     def get(self, key: str) -> Optional[Any]:
         """Get cached value if not expired."""
