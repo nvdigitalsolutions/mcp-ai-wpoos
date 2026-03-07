@@ -20,6 +20,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		const API_COUNT_TOKENS        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
 		const API_EMBED_CONTENT       = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
 		const API_BATCH_EMBED_CONTENT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
+		const API_CORPORA_ENDPOINT    = 'https://generativelanguage.googleapis.com/v1beta/corpora';
+		const API_BASE_URL            = 'https://generativelanguage.googleapis.com/v1beta/';
 
 		/**
 		 * Retrieve the configured API key.
@@ -2187,6 +2189,60 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
+			// Gemini Corpus semantic retrieval (native RAG).
+			// When a corpus_name is configured, inject a semanticRetriever tool so the model
+			// can ground its responses against the user-provided corpus documents.
+			if ( ! empty( $options['corpus_name'] ) ) {
+				$corpus_source = sanitize_text_field( $options['corpus_name'] );
+
+				// Ensure the source uses the full "corpora/{id}" resource name format.
+				if ( 0 !== strpos( $corpus_source, 'corpora/' ) ) {
+					$corpus_source = 'corpora/' . $corpus_source;
+				}
+
+				// Extract the last user message to use as the retrieval query.
+				$query_text = '';
+				for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+					if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+						$raw_content = isset( $messages[ $i ]['content'] ) ? $messages[ $i ]['content'] : '';
+						if ( is_string( $raw_content ) ) {
+							$query_text = $raw_content;
+						} elseif ( is_array( $raw_content ) ) {
+							foreach ( $raw_content as $part ) {
+								if ( is_string( $part ) ) {
+									$query_text = $part;
+									break;
+								}
+								if ( is_array( $part ) && isset( $part['text'] ) ) {
+									$query_text = (string) $part['text'];
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+
+				$retrieval_tool = array(
+					'retrieval' => array(
+						'semanticRetriever' => array(
+							'source' => $corpus_source,
+							'query'  => array(
+								'parts' => array(
+									array( 'text' => sanitize_text_field( $query_text ) ),
+								),
+							),
+						),
+					),
+				);
+
+				if ( isset( $payload['tools'] ) && is_array( $payload['tools'] ) ) {
+					$payload['tools'][] = $retrieval_tool;
+				} else {
+					$payload['tools'] = array( $retrieval_tool );
+				}
+			}
+
 			// Tool config: controls function calling behaviour (function_calling_mode: AUTO, ANY, NONE).
 			// Optionally restrict to specific function names via allowed_function_names.
 			if ( isset( $options['tool_config'] ) && is_array( $options['tool_config'] ) ) {
@@ -4265,6 +4321,343 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return $trimmed_tools;
+		}
+
+		/**
+		 * Build a common set of request args for Gemini Corpus API calls.
+		 *
+		 * @param string $method  HTTP method ('GET', 'POST', 'DELETE').
+		 * @param int    $timeout Request timeout in seconds.
+		 * @param mixed  $body    Payload to JSON-encode (omit for GET/DELETE).
+		 * @return array|WP_Error
+		 */
+		protected function build_corpus_request_args( $method, $timeout, $body = null ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$args = array(
+				'method'  => $method,
+				'headers' => array(
+					'Content-Type'   => 'application/json',
+					'X-Goog-Api-Key' => $api_key,
+				),
+				'timeout' => max( 5, $timeout ),
+			);
+
+			if ( null !== $body ) {
+				$encoded = wp_json_encode( $body );
+				if ( false === $encoded ) {
+					return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
+				}
+				$args['body'] = $encoded;
+			}
+
+			return $args;
+		}
+
+		/**
+		 * Create a new Gemini corpus.
+		 *
+		 * @param string $display_name Human-readable display name for the corpus.
+		 * @param array  $options      Optional parameters (timeout).
+		 * @return array|WP_Error Created corpus object or error.
+		 */
+		public function create_corpus( $display_name, array $options = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+
+			$display_name = sanitize_text_field( $display_name );
+			if ( empty( $display_name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_display_name',
+					__( 'A display name is required to create a Gemini corpus.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$request_args = $this->build_corpus_request_args( 'POST', $timeout, array( 'display_name' => $display_name ) );
+			if ( is_wp_error( $request_args ) ) {
+				return $request_args;
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_corpus_create', 'Creating Gemini corpus.', array( 'display_name' => $display_name ) );
+
+			$response = wp_remote_post( self::API_CORPORA_ENDPOINT, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'gemini_corpus_create_error', 'Gemini corpus creation failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'Gemini corpus creation failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+				WP_MCP_AI_Logger::log_event( 'gemini_corpus_create_error', 'Gemini corpus creation failed with HTTP code ' . $http_code, array( 'response' => $decoded ) );
+				return new WP_Error( 'wp_mcp_ai_gemini_corpus_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_corpus_create_success', 'Gemini corpus created successfully.' );
+			return $decoded;
+		}
+
+		/**
+		 * List Gemini corpora.
+		 *
+		 * @param array $options Optional parameters (page_size, page_token, timeout).
+		 * @return array|WP_Error List of corpora or error.
+		 */
+		public function list_corpora( array $options = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+
+			$request_args = $this->build_corpus_request_args( 'GET', $timeout );
+			if ( is_wp_error( $request_args ) ) {
+				return $request_args;
+			}
+
+			$query_args = array();
+			if ( ! empty( $options['page_size'] ) ) {
+				$query_args['pageSize'] = absint( $options['page_size'] );
+			}
+			if ( ! empty( $options['page_token'] ) ) {
+				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
+			}
+
+			$endpoint = self::API_CORPORA_ENDPOINT;
+			if ( ! empty( $query_args ) ) {
+				$endpoint = add_query_arg( $query_args, $endpoint );
+			}
+
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'Failed to retrieve Gemini corpora list.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+				return new WP_Error( 'wp_mcp_ai_gemini_corpus_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Retrieve a single Gemini corpus by name.
+		 *
+		 * @param string $corpus_name Resource name of the corpus (e.g. "corpora/my-corpus").
+		 * @param array  $options     Optional parameters (timeout).
+		 * @return array|WP_Error Corpus object or error.
+		 */
+		public function get_corpus( $corpus_name, array $options = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+
+			$corpus_name = sanitize_text_field( $corpus_name );
+			if ( empty( $corpus_name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_corpus_name',
+					__( 'A corpus name is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Accept bare IDs as well as full resource names.
+			if ( 0 !== strpos( $corpus_name, 'corpora/' ) ) {
+				$corpus_name = 'corpora/' . $corpus_name;
+			}
+
+			$request_args = $this->build_corpus_request_args( 'GET', $timeout );
+			if ( is_wp_error( $request_args ) ) {
+				return $request_args;
+			}
+
+			$endpoint = self::API_BASE_URL . $corpus_name;
+			$response = wp_remote_get( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'Failed to retrieve Gemini corpus.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+				return new WP_Error( 'wp_mcp_ai_gemini_corpus_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
+		}
+
+		/**
+		 * Delete a Gemini corpus.
+		 *
+		 * @param string $corpus_name Resource name of the corpus (e.g. "corpora/my-corpus").
+		 * @param array  $options     Optional parameters (timeout, force — delete non-empty corpus).
+		 * @return true|WP_Error True on success or error.
+		 */
+		public function delete_corpus( $corpus_name, array $options = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+
+			$corpus_name = sanitize_text_field( $corpus_name );
+			if ( empty( $corpus_name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_corpus_name',
+					__( 'A corpus name is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( 0 !== strpos( $corpus_name, 'corpora/' ) ) {
+				$corpus_name = 'corpora/' . $corpus_name;
+			}
+
+			$request_args = $this->build_corpus_request_args( 'DELETE', $timeout );
+			if ( is_wp_error( $request_args ) ) {
+				return $request_args;
+			}
+
+			$endpoint = self::API_BASE_URL . $corpus_name;
+			if ( ! empty( $options['force'] ) ) {
+				$endpoint = add_query_arg( 'force', 'true', $endpoint );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_corpus_delete', 'Deleting Gemini corpus.', array( 'corpus_name' => $corpus_name ) );
+
+			$response = wp_remote_request( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_event( 'gemini_corpus_delete_error', 'Gemini corpus deletion failed.', array( 'error' => $response->get_error_message() ) );
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+
+			if ( 200 !== $http_code ) {
+				$decoded       = json_decode( $response_body, true );
+				$error_message = __( 'Failed to delete Gemini corpus.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+				WP_MCP_AI_Logger::log_event( 'gemini_corpus_delete_error', 'Gemini corpus deletion failed with HTTP code ' . $http_code );
+				return new WP_Error( 'wp_mcp_ai_gemini_corpus_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_corpus_delete_success', 'Gemini corpus deleted successfully.' );
+			return true;
+		}
+
+		/**
+		 * Query a Gemini corpus directly using the Semantic Retrieval API.
+		 *
+		 * This method performs a direct relevance-based query against a corpus without
+		 * going through a full generateContent request.  Useful for testing retrieval
+		 * or pre-fetching context chunks.
+		 *
+		 * @param string $corpus_name Resource name of the corpus (e.g. "corpora/my-corpus").
+		 * @param string $query       Natural-language query string.
+		 * @param array  $options     Optional parameters (results_count, metadata_filters, timeout).
+		 * @return array|WP_Error Query results or error.
+		 */
+		public function query_corpus( $corpus_name, $query, array $options = array() ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$timeout  = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+
+			$corpus_name = sanitize_text_field( $corpus_name );
+			if ( empty( $corpus_name ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_corpus_name',
+					__( 'A corpus name is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$query = sanitize_text_field( $query );
+			if ( empty( $query ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_query',
+					__( 'A query string is required.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( 0 !== strpos( $corpus_name, 'corpora/' ) ) {
+				$corpus_name = 'corpora/' . $corpus_name;
+			}
+
+			$body = array(
+				'query' => array(
+					'parts' => array(
+						array( 'text' => $query ),
+					),
+				),
+			);
+
+			if ( ! empty( $options['results_count'] ) ) {
+				$body['resultsCount'] = absint( $options['results_count'] );
+			}
+
+			if ( ! empty( $options['metadata_filters'] ) && is_array( $options['metadata_filters'] ) ) {
+				$body['metadataFilters'] = $options['metadata_filters'];
+			}
+
+			$request_args = $this->build_corpus_request_args( 'POST', $timeout, $body );
+			if ( is_wp_error( $request_args ) ) {
+				return $request_args;
+			}
+
+			$endpoint = self::API_BASE_URL . $corpus_name . ':query';
+			$response = wp_remote_post( $endpoint, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$http_code     = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$decoded       = json_decode( $response_body, true );
+
+			if ( 200 !== $http_code ) {
+				$error_message = __( 'Gemini corpus query failed.', 'mcp-ai-wpoos' );
+				if ( isset( $decoded['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $decoded['error']['message'] );
+				}
+				return new WP_Error( 'wp_mcp_ai_gemini_corpus_error', $error_message, array( 'status' => $http_code ) );
+			}
+
+			return $decoded;
 		}
 	}
 }
