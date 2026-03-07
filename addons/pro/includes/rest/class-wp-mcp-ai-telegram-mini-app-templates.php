@@ -529,9 +529,11 @@ class WP_MCP_AI_TMA_Template_AI_Chat extends WP_MCP_AI_Telegram_Mini_App_Templat
 			'var inp=document.getElementById("tma-chat-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;' .
 			'inp.value="";inp.style.height="";tmaHaptic("light");' .
+			/* Push to history before building the payload so the current turn is included in messages. */
 			'hist.push({role:"user",content:txt});appendMsg("user",txt);save();' .
 			'busy=true;var el=appendMsg("bot","");el.classList.add("loading");' .
 			'var st=document.getElementById("tma-status-text");if(st)st.textContent="Thinking\u2026";' .
+			/* Dedicated chat UI: send up to 20 messages of context for rich multi-turn conversations. */
 			'var body={messages:hist.slice(-20)};' .
 			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
@@ -736,9 +738,11 @@ class WP_MCP_AI_TMA_Template_Ecommerce extends WP_MCP_AI_Telegram_Mini_App_Templ
 		'window.tmaDrawerSend=function(){' .
 			'var inp=document.getElementById("tma-drawer-input");if(!inp)return;' .
 			'var txt=(inp.value||"").trim();if(!txt)return;inp.value="";tmaHaptic("light");' .
+			/* Push before payload so the current turn is included in messages. */
 			'chatHist.push({role:"user",content:txt});appendDrawer("user",txt);' .
 			'var el=document.createElement("div");el.className="tma-msg bot";el.textContent="\u2026";' .
 			'var m=document.getElementById("tma-drawer-msgs");if(m){m.appendChild(el);m.scrollTop=m.scrollHeight;}' .
+			/* Floating drawer: 10 messages gives enough context for a shopping assistant without bloating the request. */
 			'var body={messages:chatHist.slice(-10)};' .
 			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
@@ -911,6 +915,7 @@ class WP_MCP_AI_TMA_Template_CRM extends WP_MCP_AI_Telegram_Mini_App_Template_Ba
 			'var draft=document.getElementById("tma-compose-draft");' .
 			'if(!ctx.trim()){if(draft)draft.value="' . esc_js( __( 'Please describe the customer or situation first.', 'mcp-ai-wpoos-pro' ) ) . '";return;}' .
 			'if(draft)draft.value="' . esc_js( __( 'Generating…', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			/* Draft generation is a single-shot prompt — no conversation history needed. */
 			'var body={messages:[{role:"user",content:"' . esc_js( __( 'Write a professional follow-up message for: ', 'mcp-ai-wpoos-pro' ) ) . '"+ctx}]};' .
 			'if(assistantId)body.assistant_id=assistantId;' .
 			'fetch(chatUrl,{method:"POST",headers:{"Content-Type":"application/json","X-WP-Nonce":nonce},' .
