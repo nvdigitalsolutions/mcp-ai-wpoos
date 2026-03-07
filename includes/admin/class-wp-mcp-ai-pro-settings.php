@@ -2857,7 +2857,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <div class="wp-mcp-ai-settings-card">
 	<h2>
 		<span class="dashicons dashicons-smartphone" style="color: #2481cc;"></span>
-			<?php esc_html_e( 'Telegram Mini App Template Builder', 'mcp-ai-wpoos' ); ?>
+		<?php esc_html_e( 'Telegram Mini App Template Builder', 'mcp-ai-wpoos' ); ?>
 		<span class="pro-badge" style="background: linear-gradient(135deg, #2481cc 0%, #1565c0 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 10px; text-transform: uppercase; letter-spacing: 0.5px;">PRO</span>
 	</h2>
 
