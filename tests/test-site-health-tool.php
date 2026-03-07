@@ -496,4 +496,56 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'is_acceptable', $result, 'Result should have is_acceptable' );
 		}
 	}
+
+	/**
+	 * Test that ensure_site_health_dependencies() loads update.php functions even
+	 * when WP_Site_Health is already loaded.
+	 *
+	 * Regression test: the method previously returned early when WP_Site_Health
+	 * existed, bypassing the loading of update.php and the polyfills. This caused
+	 * fatal "Call to undefined function" errors for get_plugin_updates(),
+	 * get_theme_updates(), get_core_updates(), wp_check_php_version(), and
+	 * wp_is_auto_update_forced_for_item() when those tests ran.
+	 */
+	public function test_ensure_dependencies_loads_update_functions_when_site_health_already_loaded() {
+		// WP_Site_Health is expected to be available in the test environment.
+		// If it is not, skip: this test specifically covers the early-return bug.
+		if ( ! class_exists( 'WP_Site_Health', false ) ) {
+			$this->markTestSkipped( 'WP_Site_Health not loaded; cannot test the pre-loaded code path.' );
+		}
+
+		$tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'ensure_site_health_dependencies' );
+		$method->setAccessible( true );
+
+		// Call when WP_Site_Health is already loaded — must still return true and
+		// must not skip loading update.php-provided functions.
+		$result = $method->invoke( $tool );
+
+		$this->assertTrue( $result, 'Should return true even when WP_Site_Health is already loaded' );
+
+		// All five functions named in the bug report must be defined after the call.
+		$this->assertTrue(
+			function_exists( 'get_plugin_updates' ),
+			'get_plugin_updates() must be defined after ensure_site_health_dependencies()'
+		);
+		$this->assertTrue(
+			function_exists( 'get_theme_updates' ),
+			'get_theme_updates() must be defined after ensure_site_health_dependencies()'
+		);
+		$this->assertTrue(
+			function_exists( 'get_core_updates' ),
+			'get_core_updates() must be defined after ensure_site_health_dependencies()'
+		);
+		$this->assertTrue(
+			function_exists( 'wp_check_php_version' ),
+			'wp_check_php_version() must be defined after ensure_site_health_dependencies()'
+		);
+		$this->assertTrue(
+			function_exists( 'wp_is_auto_update_forced_for_item' ),
+			'wp_is_auto_update_forced_for_item() must be defined after ensure_site_health_dependencies()'
+		);
+	}
 }

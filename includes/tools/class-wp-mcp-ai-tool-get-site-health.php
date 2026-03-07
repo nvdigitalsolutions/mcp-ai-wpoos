@@ -216,10 +216,6 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return bool
 	 */
 	protected function ensure_site_health_dependencies() {
-		if ( class_exists( 'WP_Site_Health', false ) ) {
-			return true;
-		}
-
 		if ( ! defined( 'ABSPATH' ) ) {
 			return false;
 		}
@@ -230,8 +226,14 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		};
 
-		// Load WordPress admin includes in the order WordPress core loads them.
-		// This ensures all function dependencies are available for Site Health tests.
+		// Always load WordPress admin includes to ensure all Site Health dependency
+		// functions are available. Do NOT return early even when WP_Site_Health is
+		// already loaded: the class may have been loaded in a context where
+		// update.php was not included (e.g. admin-ajax.php, REST API, cron). In that
+		// case functions like get_plugin_updates(), get_theme_updates(),
+		// get_core_updates(), wp_check_php_version(), and
+		// wp_is_auto_update_forced_for_item() would be undefined, causing fatal
+		// errors inside the auto-update Site Health tests.
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
@@ -418,10 +420,15 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		}
 
-		// Now load the Site Health classes after polyfills are in place.
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
-		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
+		// Load the Site Health class files only if they have not been loaded yet.
+		// Polyfills above must be defined first so they are available when the
+		// auto-update tests run, even if the class was previously loaded without
+		// update.php having been required.
+		if ( ! class_exists( 'WP_Site_Health', false ) ) {
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
+			$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
+		}
 
 		return class_exists( 'WP_Site_Health', false );
 	}
