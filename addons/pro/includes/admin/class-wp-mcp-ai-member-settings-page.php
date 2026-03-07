@@ -116,7 +116,7 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			<h2><?php esc_html_e( 'Member Management Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'AI-powered health and wellness member management for families and pets. Track health records, medications, allergies, checkups, and prescriptions with comprehensive AI assistance.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'AI-powered health and wellness member management for families and pets. Track health records, medications, allergies, checkups, prescriptions, and structured vital sign measurements with comprehensive AI assistance.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -127,7 +127,9 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 				<li><?php esc_html_e( 'Medications: Track prescriptions and medication schedules', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Allergies: Monitor allergies and adverse reactions', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Checkups: Schedule and track routine health checkups', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Vital Signs CCT: Log and trend blood pressure, heart rate, SpO2, temperature, glucose, and kidney indicators (eGFR, creatinine, BUN, K⁺, Na⁺, phosphorus, albumin) in the JetEngine CCT', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><?php esc_html_e( 'Research & Add: AI-assisted member profile creation', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Consolidate & Add: Unified view with Vital Signs import tab', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ul>
 		</div>
 		<?php
@@ -151,6 +153,8 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			'update_allergy'        => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
 			'create_checkup'        => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
 			'update_checkup'        => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
+			// Vital signs CCT tools.
+			'log_vital_signs'       => __( 'Log Vital Signs (CCT)', 'mcp-ai-wpoos-pro' ),
 			// Document processing tools.
 			'extract_pdf_text'      => __( 'Extract PDF Text', 'mcp-ai-wpoos-pro' ),
 			'pro_pdf_document'      => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),

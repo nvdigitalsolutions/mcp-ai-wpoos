@@ -67,6 +67,10 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 			__( 'Generate a health summary for existing family members', 'mcp-ai-wpoos-pro' ),
 			__( 'Create vaccination schedules for children and pets', 'mcp-ai-wpoos-pro' ),
 			__( 'Set up medication reminders for family members', 'mcp-ai-wpoos-pro' ),
+			__( 'Log today\'s vital signs (BP, HR, temperature, SpO2) for a member', 'mcp-ai-wpoos-pro' ),
+			__( 'Retrieve the latest vital sign readings for a member from the CCT', 'mcp-ai-wpoos-pro' ),
+			__( 'Analyze blood pressure and kidney health trends over the last 30 days', 'mcp-ai-wpoos-pro' ),
+			__( 'Extract vital signs from an uploaded lab report and save them to the CCT', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -90,6 +94,8 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 			'guide_health_record_creation',
 			'parse_health_information',
 			'analyze_loop_health',
+			// Vital signs (logs directly to JetEngine CCT when available).
+			'log_vital_signs',
 			// General research tools.
 			'web_search',
 			'search_content',
@@ -101,6 +107,8 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 * Render additional page content.
 	 */
 	protected function render_additional_content() {
+		$has_cct     = class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists();
+		$consolidate = admin_url( 'edit.php?post_type=mcp_ai_member&page=health-records-consolidate' );
 		?>
 		<div class="member-research-tips" style="background: #f0f6fc; border-left: 4px solid #0073aa; padding: 12px 16px; margin: 20px 0;">
 			<h4 style="margin-top: 0;"><?php esc_html_e( 'Health & Wellness Tips', 'mcp-ai-wpoos-pro' ); ?></h4>
@@ -115,6 +123,40 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 				<strong><?php esc_html_e( 'Privacy Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				<?php esc_html_e( 'All health data is stored securely and privately. Ensure proper access controls are configured.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
+		</div>
+
+		<div class="member-vitals-tip" style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin: 20px 0;">
+			<h4 style="margin-top: 0; color: #15803d;">
+				<span class="dashicons dashicons-heart" style="vertical-align: middle; margin-right: 4px;"></span>
+				<?php esc_html_e( 'Vital Signs — CCT Integration', 'mcp-ai-wpoos-pro' ); ?>
+			</h4>
+			<?php if ( $has_cct ) : ?>
+				<p style="margin: 0 0 8px;">
+					<?php esc_html_e( 'JetEngine CCT is active. You can log, retrieve, and analyse vital sign measurements (BP, HR, SpO2, temperature, glucose, kidney indicators) directly from the AI assistant.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<ul style="margin: 8px 0;">
+					<li><em><?php esc_html_e( '"Log today\'s vitals for member ID 42: BP 118/76, HR 68, SpO2 99%, Temp 98.4°F"', 'mcp-ai-wpoos-pro' ); ?></em></li>
+					<li><em><?php esc_html_e( '"Show the last 10 vital readings for Jane Doe"', 'mcp-ai-wpoos-pro' ); ?></em></li>
+					<li><em><?php esc_html_e( '"Analyse eGFR and creatinine trends for member 17 over 90 days"', 'mcp-ai-wpoos-pro' ); ?></em></li>
+				</ul>
+				<p style="margin: 8px 0 0;">
+					<a href="<?php echo esc_url( $consolidate ); ?>" class="button button-small">
+						<?php esc_html_e( 'Open Consolidate & Add (Vital Signs tab)', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			<?php else : ?>
+				<p style="margin: 0;">
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: JetEngine URL */
+							__( 'Install <a href="%s" target="_blank">JetEngine</a> to enable structured CCT storage for vital sign measurements. Without JetEngine, vitals are stored in WordPress options as a lightweight fallback.', 'mcp-ai-wpoos-pro' ),
+							'https://crocoblock.com/plugins/jetengine/'
+						)
+					);
+					?>
+				</p>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
