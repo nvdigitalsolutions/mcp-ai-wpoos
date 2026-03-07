@@ -1209,10 +1209,10 @@ class WP_MCP_AI_TMA_Template_Booking extends WP_MCP_AI_Telegram_Mini_App_Templat
  * Health & Wellness template – personal health dashboard.
  *
  * Features (industry-standard 2025):
- *  - Daily metric tracking: steps, calories, hydration, sleep, mood.
+ *  - Daily metric tracking: steps, calories, hydration, sleep, sodium (kidney health), mood.
  *  - Chart.js doughnut (calorie macro breakdown) and line chart (7-day steps).
- *  - Streak counter and achievement badges (gamification layer).
- *  - Weekly goal progress bars.
+ *  - Streak counter and achievement badges (gamification layer), including Kidney Friendly badge.
+ *  - Weekly goal progress bars with sodium/kidney health goal (≤2300 mg/day).
  *  - AI Wellness Coach powered by the MCP tool execution endpoint.
  *  - Persistent offline-first data via localStorage with optional server sync.
  *
@@ -1232,7 +1232,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 	/** @inheritdoc */
 	public function get_description() {
-		return __( 'Personal wellness dashboard with daily metric tracking, Chart.js activity charts, streak gamification, weekly goal progress, and an AI coaching tab.', 'mcp-ai-wpoos-pro' );
+		return __( 'Personal wellness dashboard with daily metric tracking (steps, sleep, hydration, sodium/kidney health), Chart.js activity charts, streak gamification, weekly goal progress with kidney-friendly targets, and an AI coaching tab.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/** @inheritdoc */
@@ -1441,6 +1441,17 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 					'</div>' .
 				'</div>' .
 
+				/* Sodium – kidney health indicator */
+				'<div class="tma-hw-log-section">' .
+					'<label class="tma-hw-log-label">&#9889; ' . esc_html__( 'Sodium (mg) — kidney health', 'mcp-ai-wpoos-pro' ) . '</label>' .
+					'<div class="tma-hw-counter">' .
+						'<button class="tma-hw-counter-btn" onclick="hwCount(\'sodium\',-100)">&#8722;</button>' .
+						'<div class="tma-hw-counter-val" id="hw-sodium-val">0</div>' .
+						'<button class="tma-hw-counter-btn" onclick="hwCount(\'sodium\',100)">+</button>' .
+						'<input type="number" id="hw-sodium-input" class="tma-input" style="flex:1;font-size:14px;padding:8px 10px" min="0" placeholder="' . esc_attr__( 'or type', 'mcp-ai-wpoos-pro' ) . '" oninput="hwFromInput(\'sodium\',this.value)" />' .
+					'</div>' .
+				'</div>' .
+
 				/* Mood */
 				'<div class="tma-hw-log-section">' .
 					'<label class="tma-hw-log-label">&#128578; ' . esc_html__( 'Mood', 'mcp-ai-wpoos-pro' ) . '</label>' .
@@ -1516,7 +1527,9 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		/* ── Storage helpers ── */
 		'var SK_PREFIX="hw_";' .
 		'function hwTodayKey(){return new Date().toISOString().slice(0,10);}' .
-		'function hwLoadLog(){try{var v=localStorage.getItem(SK_PREFIX+hwTodayKey());return v?JSON.parse(v):{steps:0,water:0,sleep:0,calories:0,mood:0};}catch(e){return{steps:0,water:0,sleep:0,calories:0,mood:0};}}' .
+		/* Central factory for the daily log object — add new fields here only */
+		'function hwDefaultLog(){return{steps:0,water:0,sleep:0,calories:0,sodium:0,mood:0};}' .
+		'function hwLoadLog(){try{var v=localStorage.getItem(SK_PREFIX+hwTodayKey());return v?JSON.parse(v):hwDefaultLog();}catch(e){return hwDefaultLog();}}' .
 		'function hwStoreLog(l){try{localStorage.setItem(SK_PREFIX+hwTodayKey(),JSON.stringify(l));}catch(e){}}' .
 		'function hwLoadHistory(){' .
 			'var hist=[];var base=new Date();' .
@@ -1524,7 +1537,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'var dd=new Date(base);dd.setDate(dd.getDate()-i);' .
 				'var dk=dd.toISOString().slice(0,10);' .
 				'var raw=null;try{raw=localStorage.getItem(SK_PREFIX+dk);}catch(e){}' .
-				'var entry=raw?JSON.parse(raw):{steps:0,water:0,sleep:0,calories:0,mood:0};' .
+				'var entry=raw?JSON.parse(raw):hwDefaultLog();' .
 				'entry.date=dk;hist.push(entry);' .
 			'}return hist;' .
 		'}' .
@@ -1568,11 +1581,15 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 
 		'function hwRenderKPIs(){' .
 			'var log=hwLoadLog();' .
+			'var sodium=log.sodium||0;' .
+			/* Sodium status: kidney-safe goal <2300mg/day; alert >3000mg */
+			'var sodiumColor=sodium>3000?"#c62828":sodium>2300?"#e65100":"#0277bd";' .
 			'var kpis=[' .
 				'{icon:"&#128099;",label:"' . esc_js( __( 'Steps', 'mcp-ai-wpoos-pro' ) ) . '",val:log.steps,goal:10000,unit:"",color:"#2e7d32"},' .
 				'{icon:"&#128293;",label:"' . esc_js( __( 'Calories', 'mcp-ai-wpoos-pro' ) ) . '",val:log.calories,goal:2000,unit:"kcal",color:"#e65100"},' .
 				'{icon:"&#128167;",label:"' . esc_js( __( 'Water', 'mcp-ai-wpoos-pro' ) ) . '",val:log.water,goal:8,unit:"gl",color:"#0277bd"},' .
-				'{icon:"&#128164;",label:"' . esc_js( __( 'Sleep', 'mcp-ai-wpoos-pro' ) ) . '",val:log.sleep,goal:8,unit:"h",color:"#6a1b9a"}' .
+				'{icon:"&#128164;",label:"' . esc_js( __( 'Sleep', 'mcp-ai-wpoos-pro' ) ) . '",val:log.sleep,goal:8,unit:"h",color:"#6a1b9a"},' .
+				'{icon:"&#9889;",label:"' . esc_js( __( 'Sodium', 'mcp-ai-wpoos-pro' ) ) . '",val:sodium,goal:2300,unit:"mg",color:sodiumColor}' .
 			'];' .
 			'var g=document.getElementById("tma-hw-kpi-grid");if(!g)return;' .
 			'g.innerHTML=kpis.map(function(k){' .
@@ -1641,6 +1658,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var wv=document.getElementById("hw-water-val");if(wv)wv.textContent=LOG.water;' .
 			'var slv=document.getElementById("hw-sleep-val");if(slv)slv.textContent=LOG.sleep;' .
 			'var cv=document.getElementById("hw-calories-val");if(cv)cv.textContent=LOG.calories;' .
+			'var snv=document.getElementById("hw-sodium-val");if(snv)snv.textContent=LOG.sodium||0;' .
 		'}' .
 
 		'window.hwCount=function(key,delta){' .
@@ -1665,7 +1683,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
 				'body:JSON.stringify({tool:"log_health_metrics",arguments:{date:hwTodayKey(),' .
-					'steps:LOG.steps,water:LOG.water,sleep:LOG.sleep,calories:LOG.calories,mood:LOG.mood}})' .
+					'steps:LOG.steps,water:LOG.water,sleep:LOG.sleep,calories:LOG.calories,sodium:LOG.sodium||0,mood:LOG.mood}})' .
 			'}).catch(function(){});' .
 			'var msg=document.getElementById("tma-hw-log-saved");' .
 			'if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
@@ -1674,25 +1692,29 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		/* ── Goals tab ── */
 		'window.hwRenderGoals=function(){' .
 			'var hist=hwLoadHistory();' .
-			'var tot={steps:0,water:0,sleep:0,calories:0};' .
-			'hist.forEach(function(h){tot.steps+=h.steps||0;tot.water+=h.water||0;tot.sleep+=h.sleep||0;tot.calories+=h.calories||0;});' .
+			'var tot={steps:0,water:0,sleep:0,calories:0,sodium:0};' .
+			'hist.forEach(function(h){tot.steps+=h.steps||0;tot.water+=h.water||0;tot.sleep+=h.sleep||0;tot.calories+=h.calories||0;tot.sodium+=h.sodium||0;});' .
 			'var goals=[' .
 				'{icon:"&#128099;",label:"' . esc_js( __( 'Steps this week', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.steps,goal:70000},' .
 				'{icon:"&#128167;",label:"' . esc_js( __( 'Water (glasses)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.water,goal:56},' .
 				'{icon:"&#128164;",label:"' . esc_js( __( 'Sleep total (hrs)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.sleep,goal:56},' .
-				'{icon:"&#128293;",label:"' . esc_js( __( 'Calories (kcal)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.calories,goal:14000}' .
+				'{icon:"&#128293;",label:"' . esc_js( __( 'Calories (kcal)', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.calories,goal:14000},' .
+				/* Sodium goal: ≤2300 mg/day × 7 = 16100 mg/week — inverse goal (lower is better) */
+				'{icon:"&#9889;",label:"' . esc_js( __( 'Sodium (mg) — kidney goal <2300/day', 'mcp-ai-wpoos-pro' ) ) . '",val:tot.sodium,goal:16100,inverse:true}' .
 			'];' .
 			'var streak=hwCalcStreak();' .
 			'var gl=document.getElementById("tma-hw-goals-list");' .
 			'if(gl)gl.innerHTML=goals.map(function(g){' .
 				'var pct=g.goal?Math.min(100,Math.round((g.val/g.goal)*100)):0;' .
+				/* For inverse goals (lower = better), green means low usage */
+				'var fillColor=g.inverse?(pct<=100?"#2e7d32":"#c62828"):"var(--tma-btn)";' .
 				'return \'<div class="tma-hw-goal-item">\'+' .
 					'\'<div class="tma-hw-goal-header">\'+' .
 						'\'<div class="tma-hw-goal-name">\'+g.icon+" "+escH(g.label)+\'</div>\'+' .
-						'\'<div class="tma-hw-goal-pct">\'+pct+\'% </div>\'+' .
+						'\'<div class="tma-hw-goal-pct">\'+pct+\'%</div>\'+' .
 					'\'</div>\'+' .
-					'\'<div class="tma-hw-progress-track"><div class="tma-hw-progress-fill" style="width:\'+pct+\'%"></div></div>\'+' .
-					'\'<div class="tma-hw-goal-detail">\'+escH(g.val)+" / "+escH(g.goal)+\'</div></div>\';' .
+					'\'<div class="tma-hw-progress-track"><div class="tma-hw-progress-fill" style="width:\'+pct+\'%;background:\'+fillColor+\'"></div></div>\'+' .
+					'\'<div class="tma-hw-goal-detail">\'+escH(g.val)+" / "+escH(g.goal)+(g.inverse?\' ' . esc_js( __( '(stay under goal)', 'mcp-ai-wpoos-pro' ) ) . '\':"") +\'</div></div>\';' .
 			'}).join("");' .
 			'var log=hwLoadLog();' .
 			'var badges=[' .
@@ -1701,6 +1723,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 				'{icon:"&#128640;",label:"' . esc_js( __( '10k Steps', 'mcp-ai-wpoos-pro' ) ) . '",earned:log.steps>=10000},' .
 				'{icon:"&#128167;",label:"' . esc_js( __( 'Hydration Hero', 'mcp-ai-wpoos-pro' ) ) . '",earned:log.water>=8},' .
 				'{icon:"&#128164;",label:"' . esc_js( __( 'Sleep Champion', 'mcp-ai-wpoos-pro' ) ) . '",earned:log.sleep>=8},' .
+				'{icon:"&#129506;",label:"' . esc_js( __( 'Kidney Friendly', 'mcp-ai-wpoos-pro' ) ) . '",earned:(log.sodium||0)>0&&(log.sodium||0)<=2300&&log.water>=8},' .
 				'{icon:"&#127775;",label:"' . esc_js( __( 'Perfect Day', 'mcp-ai-wpoos-pro' ) ) . '",earned:log.steps>=10000&&log.water>=8&&log.sleep>=8}' .
 			'];' .
 			'var br=document.getElementById("tma-hw-badges");' .
@@ -1721,7 +1744,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'var log=hwLoadLog();' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
-				'body:JSON.stringify({tool:"ai_health_coach",arguments:{message:msg,steps:log.steps,water:log.water,sleep:log.sleep,calories:log.calories,mood:log.mood}})' .
+				'body:JSON.stringify({tool:"ai_health_coach",arguments:{message:msg,steps:log.steps,water:log.water,sleep:log.sleep,calories:log.calories,sodium:log.sodium||0,mood:log.mood}})' .
 			'})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
@@ -1747,11 +1770,12 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
  *
  * Features:
  *  - Dashboard: latest vital readings (BP, HR, SpO2, temperature, glucose)
- *    with colour-coded status indicators (normal / warning / alert).
- *  - Log tab: record new vital measurements with optional notes.
- *  - Trends tab: Chart.js 7-day line charts with reference-range bands.
+ *    and kidney health indicators (eGFR/CKD stage, creatinine, BUN, K+, Na+,
+ *    phosphorus, albumin) with colour-coded status indicators.
+ *  - Log tab: record vital measurements and kidney lab values with optional notes.
+ *  - Trends tab: Chart.js 7-day line charts for vitals and kidney markers with reference bands.
  *  - Dosage tab: medication tracker with dose scheduling and adherence logging.
- *  - Doctor tab: AI assistant powered by the MCP tool execution endpoint.
+ *  - Doctor tab: AI assistant with full vitals + kidney context via MCP tools endpoint.
  *  - Persistent offline-first data via localStorage with optional server sync.
  *
  * @since 1.1.5
@@ -1770,7 +1794,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 
 	/** @inheritdoc */
 	public function get_description() {
-		return __( 'Treatment plan monitoring with vital-sign tracking (BP, HR, SpO2, temperature, glucose), 7-day trend charts, medication dosage scheduling, and an AI doctor assistant.', 'mcp-ai-wpoos-pro' );
+		return __( 'Treatment plan monitoring with vital-sign tracking (BP, HR, SpO2, temperature, glucose), kidney health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus), 7-day trend charts, medication dosage scheduling, and an AI doctor assistant.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/** @inheritdoc */
@@ -1819,7 +1843,14 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'.mv-kpi-status{font-size:10px;font-weight:600;margin-top:4px;padding:2px 6px;border-radius:20px;border:1px solid;display:inline-block}' .
 		'.mv-kpi-time{font-size:10px;color:var(--tma-hint);margin-top:3px}' .
 
-		/* Latest reading banner */
+		/* Kidney section */
+		'.mv-lab-divider{display:flex;align-items:center;gap:8px;margin:12px 0 10px;' .
+			'font-size:11px;font-weight:700;color:var(--tma-hint);text-transform:uppercase;letter-spacing:.6px}' .
+		'.mv-lab-divider::before,.mv-lab-divider::after{content:"";flex:1;height:1px;background:var(--tma-border)}' .
+		'.mv-ckd-stage{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;' .
+			'border-radius:var(--tma-radius);border:1px solid;font-size:12px;font-weight:600;margin-top:4px}' .
+		'.mv-kidney-section-title{font-size:12px;font-weight:700;color:var(--tma-hint);' .
+			'text-transform:uppercase;letter-spacing:.5px;padding:8px 12px 0;display:flex;align-items:center;gap:6px}' .
 		'.mv-banner{margin:8px 12px;background:linear-gradient(135deg,#1565c0,#42a5f5);' .
 			'color:#fff;padding:10px 14px;border-radius:var(--tma-radius);' .
 			'display:flex;justify-content:space-between;align-items:center}' .
@@ -1913,6 +1944,11 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'<div class="mv-kpi-grid" id="mv-kpi-grid">' .
 					'<div class="tma-empty" style="grid-column:span 2">' . esc_html__( 'Loading…', 'mcp-ai-wpoos-pro' ) . '</div>' .
 				'</div>' .
+				/* Kidney health section */
+				'<div class="mv-kidney-section-title">&#129506; ' . esc_html__( 'Kidney Health', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'<div class="mv-kpi-grid" id="mv-kidney-kpi-grid" style="padding-top:6px">' .
+					'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_html__( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) . '</div>' .
+				'</div>' .
 				'<div id="mv-dash-chart" style="padding-bottom:12px"></div>' .
 			'</div>' .
 		'</div>' .
@@ -1956,6 +1992,48 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'<div class="mv-log-section">' .
 						'<label class="mv-log-label">&#128137; ' . esc_html__( 'Blood Glucose (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
 						'<input type="number" id="mv-glucose" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 95', 'mcp-ai-wpoos-pro' ) . '" min="20" max="600" />' .
+					'</div>' .
+
+					/* ── Kidney Lab Values ── */
+					'<div class="mv-lab-divider">&#129506; ' . esc_html__( 'Kidney Lab Values', 'mcp-ai-wpoos-pro' ) . '</div>' .
+
+					/* eGFR */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">eGFR (mL/min/1.73m²)</label>' .
+						'<input type="number" id="mv-egfr" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 72', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" step="1" />' .
+					'</div>' .
+
+					/* Creatinine */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Creatinine (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<input type="number" id="mv-creatinine" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 0.9', 'mcp-ai-wpoos-pro' ) . '" min="0.1" max="20" step="0.1" />' .
+					'</div>' .
+
+					/* BUN */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#129514; ' . esc_html__( 'BUN – Blood Urea Nitrogen (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<input type="number" id="mv-bun" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 14', 'mcp-ai-wpoos-pro' ) . '" min="1" max="200" />' .
+					'</div>' .
+
+					/* Two-column row: Potassium + Sodium */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#9889; ' . esc_html__( 'Electrolytes (mEq/L)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<div style="display:flex;gap:8px">' .
+							'<div style="flex:1"><input type="number" id="mv-potassium" class="tma-input" placeholder="K\u207a ' . esc_attr__( 'Potassium', 'mcp-ai-wpoos-pro' ) . '" min="1" max="10" step="0.1" /></div>' .
+							'<div style="flex:1"><input type="number" id="mv-sodium" class="tma-input" placeholder="Na\u207a ' . esc_attr__( 'Sodium', 'mcp-ai-wpoos-pro' ) . '" min="100" max="180" step="1" /></div>' .
+						'</div>' .
+					'</div>' .
+
+					/* Phosphorus */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Phosphorus (mg/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<input type="number" id="mv-phosphorus" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 3.5', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="15" step="0.1" />' .
+					'</div>' .
+
+					/* Albumin */
+					'<div class="mv-log-section">' .
+						'<label class="mv-log-label">&#129514; ' . esc_html__( 'Albumin (g/dL)', 'mcp-ai-wpoos-pro' ) . '</label>' .
+						'<input type="number" id="mv-albumin" class="tma-input" style="width:100%" placeholder="' . esc_attr__( 'e.g. 4.0', 'mcp-ai-wpoos-pro' ) . '" min="0.5" max="7" step="0.1" />' .
 					'</div>' .
 
 					/* Notes */
@@ -2144,6 +2222,63 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'return"normal";' .
 		'}' .
 
+		/* ── Kidney status helpers ── */
+		/* eGFR → CKD stage label and severity */
+		'function mvEgfrStatus(v){' .
+			'if(!v)return"";' .
+			'if(v<15)return"alert";' .  /* CKD Stage 5 */
+			'if(v<30)return"alert";' .  /* CKD Stage 4 */
+			'if(v<45)return"warning";' . /* CKD Stage 3b */
+			'if(v<60)return"warning";' . /* CKD Stage 3a */
+			'return"normal";' .         /* Stage 1-2 */
+		'}' .
+		'function mvEgfrStageLabel(v){' .
+			'if(!v)return"";' .
+			'if(v<15)return"' . esc_js( __( 'CKD Stage 5', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(v<30)return"' . esc_js( __( 'CKD Stage 4', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(v<45)return"' . esc_js( __( 'CKD Stage 3b', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(v<60)return"' . esc_js( __( 'CKD Stage 3a', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'if(v<90)return"' . esc_js( __( 'CKD Stage 2', 'mcp-ai-wpoos-pro' ) ) . '";' .
+			'return"' . esc_js( __( 'CKD Stage 1', 'mcp-ai-wpoos-pro' ) ) . '";' .
+		'}' .
+		'function mvCreatinineStatus(v){' .
+			'if(!v)return"";' .
+			'if(v>4)return"alert";' .
+			'if(v>1.3)return"warning";' .
+			'return"normal";' .
+		'}' .
+		'function mvBunStatus(v){' .
+			'if(!v)return"";' .
+			'if(v>50)return"alert";' .
+			'if(v>30)return"warning";' .
+			'return"normal";' .
+		'}' .
+		'function mvPotassiumStatus(v){' .
+			'if(!v)return"";' .
+			/* Hyperkalemia or severe hypokalemia */
+			'if(v>=6.0||v<3.0)return"alert";' .
+			'if(v>=5.0||v<3.5)return"warning";' .
+			'return"normal";' .
+		'}' .
+		'function mvSodiumStatus(v){' .
+			'if(!v)return"";' .
+			'if(v<125||v>155)return"alert";' .
+			'if(v<130||v>150)return"warning";' .
+			'return"normal";' .
+		'}' .
+		'function mvPhosphorusStatus(v){' .
+			'if(!v)return"";' .
+			'if(v>6.5||v<1.5)return"alert";' .
+			'if(v>4.5||v<2.5)return"warning";' .
+			'return"normal";' .
+		'}' .
+		'function mvAlbuminStatus(v){' .
+			'if(!v)return"";' .
+			'if(v<2.5)return"alert";' .
+			'if(v<3.5)return"warning";' .
+			'return"normal";' .
+		'}' .
+
 		'function mvStatusLabel(s){' .
 			'if(s==="alert")return"' . esc_js( __( 'Alert', 'mcp-ai-wpoos-pro' ) ) . '";' .
 			'if(s==="warning")return"' . esc_js( __( 'Monitor', 'mcp-ai-wpoos-pro' ) ) . '";' .
@@ -2202,6 +2337,37 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'kpiCard(spo2Color,"&#128164;","SpO\u2082",spo2||"--","%",spo2St)+' .
 				'kpiCard(tempColor,"&#127777;","' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",temp||"--","\u00b0F",tempSt)+' .
 				'kpiCard(glucoseColor,"&#128137;","' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",glucose||"--","mg/dL",glucoseSt);' .
+
+			/* Kidney KPI section */
+			'var kg=document.getElementById("mv-kidney-kpi-grid");' .
+			'if(kg){' .
+				'var egfr=latest.egfr||0;var creat=latest.creatinine||0;var bun=latest.bun||0;' .
+				'var kpot=latest.potassium||0;var kna=latest.sodium||0;var phos=latest.phosphorus||0;var alb=latest.albumin||0;' .
+				'var hasKidney=egfr||creat||bun||kpot||kna||phos||alb;' .
+				'if(!hasKidney){' .
+					'kg.innerHTML=\'<div class="tma-empty" style="grid-column:span 2;padding:10px 0">' . esc_js( __( 'No lab values logged yet.', 'mcp-ai-wpoos-pro' ) ) . '</div>\';' .
+				'}else{' .
+					'var egfrSt=mvEgfrStatus(egfr);var creatSt=mvCreatinineStatus(creat);' .
+					'var bunSt=mvBunStatus(bun);var potSt=mvPotassiumStatus(kpot);' .
+					'var naSt=mvSodiumStatus(kna);var phosSt=mvPhosphorusStatus(phos);var albSt=mvAlbuminStatus(alb);' .
+					'var egfrColor=egfrSt==="alert"?"#c62828":egfrSt==="warning"?"#e65100":"#1565c0";' .
+					'var creatColor=creatSt==="alert"?"#c62828":creatSt==="warning"?"#e65100":"#00796b";' .
+					'var bunColor=bunSt==="alert"?"#c62828":bunSt==="warning"?"#e65100":"#00796b";' .
+					'var potColor=potSt==="alert"?"#c62828":potSt==="warning"?"#e65100":"#5e35b1";' .
+					'var naColor=naSt==="alert"?"#c62828":naSt==="warning"?"#e65100":"#0277bd";' .
+					'var phosColor=phosSt==="alert"?"#c62828":phosSt==="warning"?"#e65100":"#558b2f";' .
+					'var albColor=albSt==="alert"?"#c62828":albSt==="warning"?"#e65100":"#4527a0";' .
+					'var egfrLabel=egfr?mvEgfrStageLabel(egfr):"--";' .
+					'kg.innerHTML=' .
+						'(egfr?kpiCard(egfrColor,"&#129506;","eGFR",egfr,"mL/min",egfrSt)+\'<div style="grid-column:span 2;margin:-8px 0 4px;font-size:11px;color:\'+egfrColor+\';font-weight:600;padding-left:4px">&#9679; \'+escH(egfrLabel)+\'</div>\':"")  +' .
+						'(creat?kpiCard(creatColor,"&#129514;","' . esc_js( __( 'Creatinine', 'mcp-ai-wpoos-pro' ) ) . '",creat,"mg/dL",creatSt):"")  +' .
+						'(bun?kpiCard(bunColor,"&#129514;","BUN",bun,"mg/dL",bunSt):"")  +' .
+						'(kpot?kpiCard(potColor,"&#9889;","K\u207a ' . esc_js( __( 'Potassium', 'mcp-ai-wpoos-pro' ) ) . '",kpot,"mEq/L",potSt):"")  +' .
+						'(kna?kpiCard(naColor,"&#9889;","Na\u207a ' . esc_js( __( 'Sodium', 'mcp-ai-wpoos-pro' ) ) . '",kna,"mEq/L",naSt):"")  +' .
+						'(phos?kpiCard(phosColor,"&#129514;","' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",phos,"mg/dL",phosSt):"")  +' .
+						'(alb?kpiCard(albColor,"&#129514;","' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",alb,"g/dL",albSt):"")  ;' .
+				'}' .
+			'}' .
 			/* Mini sparkline chart */
 			'mvLoadDashChart();' .
 		'};' .
@@ -2241,14 +2407,24 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'var spo2=parseInt((document.getElementById("mv-spo2")||{}).value||"",10)||0;' .
 			'var temp=parseFloat((document.getElementById("mv-temp")||{}).value||"")||0;' .
 			'var glucose=parseInt((document.getElementById("mv-glucose")||{}).value||"",10)||0;' .
+			/* Kidney fields */
+			'var egfr=parseFloat((document.getElementById("mv-egfr")||{}).value||"")||0;' .
+			'var creatinine=parseFloat((document.getElementById("mv-creatinine")||{}).value||"")||0;' .
+			'var bun=parseFloat((document.getElementById("mv-bun")||{}).value||"")||0;' .
+			'var potassium=parseFloat((document.getElementById("mv-potassium")||{}).value||"")||0;' .
+			'var sodium=parseFloat((document.getElementById("mv-sodium")||{}).value||"")||0;' .
+			'var phosphorus=parseFloat((document.getElementById("mv-phosphorus")||{}).value||"")||0;' .
+			'var albumin=parseFloat((document.getElementById("mv-albumin")||{}).value||"")||0;' .
 			'var notes=((document.getElementById("mv-notes")||{}).value||"").trim();' .
 			/* Require at least one field */
-			'if(!sys&&!hr&&!spo2&&!temp&&!glucose)return;' .
-			'var reading={ts:new Date().toISOString(),bp_sys:sys,bp_dia:dia,hr:hr,spo2:spo2,temp:temp,glucose:glucose,notes:notes};' .
+			'if(!sys&&!hr&&!spo2&&!temp&&!glucose&&!egfr&&!creatinine&&!bun&&!potassium&&!sodium&&!phosphorus&&!albumin)return;' .
+			'var reading={ts:new Date().toISOString(),bp_sys:sys,bp_dia:dia,hr:hr,spo2:spo2,temp:temp,glucose:glucose,' .
+				'egfr:egfr,creatinine:creatinine,bun:bun,potassium:potassium,sodium:sodium,phosphorus:phosphorus,albumin:albumin,' .
+				'notes:notes};' .
 			'var arr=mvLoadReadings();arr.unshift(reading);if(arr.length>200)arr=arr.slice(0,200);' .
 			'mvStoreReadings(arr);tmaHaptic("success");' .
 			/* Clear fields */
-			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
+			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
 			/* Show saved message */
 			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
 			/* Optional server sync */
@@ -2286,7 +2462,23 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 				'{id:"mv-tc-temp",icon:"&#127777;",title:"' . esc_js( __( 'Temperature', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( '97–99 °F', 'mcp-ai-wpoos-pro' ) ) . '",' .
 					'datasets:[{label:"\u00b0F",data:hist.map(function(h){return h.temp||null;}),color:"#00796b"}]},' .
 				'{id:"mv-tc-glucose",icon:"&#128137;",title:"' . esc_js( __( 'Glucose', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Fasting 70–99 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
-					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.glucose||null;}),color:"#6a1b9a"}]}' .
+					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.glucose||null;}),color:"#6a1b9a"}]},' .
+				/* ── Kidney charts ── */
+				'{id:"mv-tc-egfr",icon:"&#129506;",title:"eGFR",range:"' . esc_js( __( 'Normal ≥60 mL/min', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"mL/min",data:hist.map(function(h){return h.egfr||null;}),color:"#1565c0"}]},' .
+				'{id:"mv-tc-creat",icon:"&#129514;",title:"' . esc_js( __( 'Creatinine', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 0.6–1.2 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.creatinine||null;}),color:"#00796b"}]},' .
+				'{id:"mv-tc-bun",icon:"&#129514;",title:"BUN",range:"' . esc_js( __( 'Normal 7–20 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.bun||null;}),color:"#558b2f"}]},' .
+				'{id:"mv-tc-electrolytes",icon:"&#9889;",title:"' . esc_js( __( 'Electrolytes', 'mcp-ai-wpoos-pro' ) ) . '",range:"K\u207a 3.5\u20135.0 | Na\u207a 136\u2013145",' .
+					'datasets:[' .
+						'{label:"K\u207a (mEq/L)",data:hist.map(function(h){return h.potassium||null;}),color:"#5e35b1"},' .
+						'{label:"Na\u207a \xf710 (mEq/L)",data:hist.map(function(h){return h.sodium?h.sodium/10:null;}),color:"#0288d1"}' .
+					']},' .
+				'{id:"mv-tc-phos",icon:"&#129514;",title:"' . esc_js( __( 'Phosphorus', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 2.5–4.5 mg/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"mg/dL",data:hist.map(function(h){return h.phosphorus||null;}),color:"#ef6c00"}]},' .
+				'{id:"mv-tc-alb",icon:"&#129514;",title:"' . esc_js( __( 'Albumin', 'mcp-ai-wpoos-pro' ) ) . '",range:"' . esc_js( __( 'Normal 3.5–5.0 g/dL', 'mcp-ai-wpoos-pro' ) ) . '",' .
+					'datasets:[{label:"g/dL",data:hist.map(function(h){return h.albumin||null;}),color:"#4527a0"}]}' .
 			'];' .
 
 			'cw.innerHTML=charts.map(function(ch){' .
@@ -2389,6 +2581,10 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 					'bp_sys:latest.bp_sys||0,bp_dia:latest.bp_dia||0,' .
 					'hr:latest.hr||0,spo2:latest.spo2||0,' .
 					'temp:latest.temp||0,glucose:latest.glucose||0,' .
+					'egfr:latest.egfr||0,creatinine:latest.creatinine||0,' .
+					'bun:latest.bun||0,potassium:latest.potassium||0,' .
+					'sodium:latest.sodium||0,phosphorus:latest.phosphorus||0,' .
+					'albumin:latest.albumin||0,' .
 					'notes:latest.notes||""' .
 				'}})' .
 			'})' .
