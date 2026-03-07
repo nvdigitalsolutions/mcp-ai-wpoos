@@ -586,15 +586,58 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		) {
 			$template = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get( $active_template_slug );
 			if ( $template && is_callable( array( $template, 'render_html' ) ) ) {
+				/**
+				 * Filters the Mini App page title for non-default templates.
+				 *
+				 * @since 1.1.3
+				 *
+				 * @param string $title Default page title.
+				 */
+				$page_title    = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'    => $request,
-					'connection' => $connection,
-					'namespace'  => $this->namespace,
-					'rest_base'  => $this->rest_base,
-					'assistant'  => $request->get_param( 'assistant' ),
+					'request'       => $request,
+					'connection'    => $connection,
+					'namespace'     => $this->namespace,
+					'rest_base'     => $this->rest_base,
+					'assistant'     => $request->get_param( 'assistant' ),
+					'site_name'     => $page_title,
+					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'tools_url'     => $tools_url,
+					'analytics_url' => $analytics_url,
+					'chart_js_url'  => $chart_js_url,
 				);
-				return $template->render_html( $ctx );
+
+				// render_html() returns a <body>…</body> fragment.  All
+				// dynamic values inside are escaped by the template class.
+				$body_html = $template->render_html( $ctx );
+
+				// Mirror the same header + echo + exit pattern used by the
+				// built-in default template below so the REST API router does
+				// not JSON-encode the standalone HTML page.
+				header( 'Content-Type: text/html; charset=utf-8' );
+				header( 'X-Robots-Tag: noindex, nofollow' );
+				header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+				header( 'Pragma: no-cache' );
+
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Standalone HTML page; static structure + values escaped individually.
+				echo '<!DOCTYPE html>';
+				echo '<html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '">';
+				echo '<head>';
+				echo '<meta charset="utf-8">';
+				echo '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">';
+				echo '<meta name="robots" content="noindex, nofollow">';
+				echo '<title>' . esc_html( $page_title ) . '</title>';
+				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>';
+				echo '</head>';
+				echo $body_html;
+				echo '</html>';
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+				exit;
 			}
 		}
 
