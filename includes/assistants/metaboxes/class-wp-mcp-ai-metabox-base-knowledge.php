@@ -184,7 +184,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 	<p>
 		<label for="wp-mcp-ai-vector-store-id"><strong><?php esc_html_e( 'Vector Store ID', 'mcp-ai-wpoos' ); ?></strong></label>
 		<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
-		<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
+		<span class="description"><?php esc_html_e( 'Optional OpenAI Vector Store ID. Stored with the assistant and available in the assistant config, but the file_search built-in tool is not added to payloads automatically — include file_search explicitly in the tool list if you need it.', 'mcp-ai-wpoos' ); ?></span>
 	</p>
 	<p>
 		<label for="wp-mcp-ai-corpus-name"><strong><?php esc_html_e( 'Gemini Corpus Name', 'mcp-ai-wpoos' ); ?></strong></label>
