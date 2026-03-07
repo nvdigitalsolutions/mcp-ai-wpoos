@@ -27,6 +27,7 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
+import hashlib
 
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
@@ -109,6 +110,16 @@ class SimpleCache:
         self.ttl = timedelta(minutes=ttl_minutes)
     
     def _get_cache_path(self, key: str) -> str:
+        """
+        Return a filesystem-safe cache file path for the given logical key.
+
+        The key may contain user-controlled data, so we derive the filename
+        from a SHA-256 hash of the key instead of using it directly. This
+        prevents path traversal and other unsafe characters from influencing
+        the cache path while preserving a stable mapping from key to file.
+        """
+        safe_key = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        return os.path.join(self.cache_dir, f"{safe_key}.json")
         """Generate cache file path."""
         safe_key = key.replace('/', '_').replace('\\', '_')
         return os.path.join(self.cache_dir, f"{safe_key}.json")
