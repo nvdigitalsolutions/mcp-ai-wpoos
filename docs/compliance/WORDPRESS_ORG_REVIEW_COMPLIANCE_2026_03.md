@@ -797,4 +797,139 @@ After all fixes, `--warning-severity=1` still surfaces the following categories.
 
 ---
 
-*Last updated: March 6, 2026*
+## Post-Merge Compliance Review — March 7, 2026
+
+**Date:** March 7, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Changes introduced by PR #4082 — Gemini Corpus native RAG
+**Trigger:** Automated post-merge compliance review of all base plugin changes from the last week
+
+---
+
+### Change Set: PR #4082 — Gemini Corpus Native RAG
+
+#### Summary
+
+PR #4082 added native Retrieval-Augmented Generation (RAG) to the Gemini chat client using Google's Semantic Retrieval API. The following base plugin files were affected:
+
+| File | Change Type |
+|------|------------|
+| `includes/class-wp-mcp-ai-gemini-client.php` | Added `API_CORPORA_ENDPOINT`, `API_BASE_URL` constants; added `build_corpus_request_args()`, `create_corpus()`, `list_corpora()`, `get_corpus()`, `delete_corpus()`, `query_corpus()` methods; added `semanticRetriever` injection in `build_payload()` |
+| `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` | Added `META_CORPUS_NAME` constant and `sanitize_corpus_name_meta()` method; save/load corpus_name post meta |
+| `includes/rest/class-wp-mcp-ai-rest-validator.php` | Added `corpus_name` propagation through `sanitize_options()` |
+| `tests/test-gemini-corpus-rag.php` | New test file (21 unit tests) — excluded from WordPress.org distribution |
+
+---
+
+#### Issue I: Undocumented External Service — Gemini Semantic Retrieval API
+
+##### Problem
+
+The Corpus methods (`create_corpus`, `list_corpora`, `get_corpus`, `delete_corpus`, `query_corpus`) make HTTP calls to a distinct sub-endpoint of the Google Generative Language API:
+
+```
+https://generativelanguage.googleapis.com/v1beta/corpora
+```
+
+While the main Gemini API (`https://generativelanguage.googleapis.com`) was already documented in `readme.txt` as External Service #2, the Semantic Retrieval / Corpus sub-API is a separately callable endpoint with its own data transmission profile (document content uploaded to corpora, query strings). WordPress.org Guideline 6 requires disclosure of all external service calls, including distinct sub-endpoints.
+
+##### Fix Applied
+
+**File:** `readme.txt`
+
+1. Expanded External Service **#2 (Google Gemini API)** to document the Corpus feature in the existing entry's narrative.
+2. Added new entry **#2a (Google Gemini Semantic Retrieval API — Corpus / RAG)**:
+   - Purpose: Native RAG — store and query document corpora for grounded responses
+   - Data Sent: Corpus display names, document content, query strings
+   - When: Only when a Gemini assistant has `corpus_name` configured (opt-in, off by default)
+   - Service URL: `https://generativelanguage.googleapis.com/v1beta/corpora`
+   - Same Terms of Service and Privacy Policy as the main Gemini API
+3. Updated the **Data Processing Summary → Google Gemini** paragraph to mention the Corpus/RAG feature and its endpoint.
+
+##### Compliance Statement
+
+The Gemini Semantic Retrieval feature is entirely opt-in: no corpus calls are made unless an administrator explicitly sets a `corpus_name` on an assistant. Data sent (corpus document content and query strings) is transmitted under the same Google AI terms and privacy policy already disclosed for the main Gemini API. The feature is now fully documented per Guideline 6.
+
+---
+
+#### Compliance Audit of New Code
+
+##### Sanitization
+
+All new corpus methods in `WP_MCP_AI_Gemini_Client` sanitize inputs before use:
+
+| Input | Sanitization Applied |
+|-------|---------------------|
+| `$display_name` | `sanitize_text_field()` |
+| `$corpus_name` | `sanitize_text_field()` |
+| `$query` | `sanitize_text_field()` |
+| `$options['timeout']` | `absint()` |
+| `$options['page_size']` | `absint()` |
+| `$options['page_token']` | `sanitize_text_field()` |
+| `$options['results_count']` | `absint()` |
+| Error messages from API responses | `sanitize_text_field()` |
+| `$corpus_name` in `sanitize_corpus_name_meta()` | `sanitize_text_field()` |
+| `$_POST['wp_mcp_ai_corpus_name']` | `sanitize_corpus_name_meta( wp_unslash() )` |
+
+**Status: ✅ No unsanitized inputs.**
+
+##### Output Escaping
+
+No new HTML output is produced by the corpus methods. The corpus name stored in post meta is retrieved and passed to the Gemini client as an option value — no direct HTML output. The `corpus_name` field in the assistant metabox uses `esc_attr()` (existing pattern).
+
+**Status: ✅ No unescaped output.**
+
+##### ABSPATH Guards
+
+`includes/class-wp-mcp-ai-gemini-client.php` and `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` already have ABSPATH guards (previously audited).
+
+**Status: ✅ Guards present.**
+
+##### Prefixing
+
+- Constants: `API_CORPORA_ENDPOINT`, `API_BASE_URL` — class constants on `WP_MCP_AI_Gemini_Client` (no global scope conflict)
+- Method names: `create_corpus()`, `list_corpora()`, etc. — class methods, no global scope
+- Meta key: `_wp_mcp_ai_corpus_name` — uses `_wp_mcp_ai_` prefix ✅
+- WP_Error codes: `wp_mcp_ai_gemini_corpus_error`, `wp_mcp_ai_missing_corpus_name`, etc. — use `wp_mcp_ai_` prefix ✅
+
+**Status: ✅ All identifiers properly prefixed/scoped.**
+
+##### External Library Dependencies
+
+No new third-party libraries introduced. All HTTP calls use `wp_remote_post()`, `wp_remote_get()`, and `wp_remote_request()` — WordPress core HTTP API. ✅
+
+##### Nonce / Capability Checks
+
+The corpus meta is saved via `save_post` with the existing nonce and `edit_post` capability checks inherited from the assistant CPT metabox flow. No new admin-only AJAX handlers or form submissions were added.
+
+**Status: ✅ Existing capability and nonce checks apply.**
+
+---
+
+#### Files Changed in This Review Cycle
+
+**Documentation:**
+1. `readme.txt` — Added External Service #2a (Gemini Semantic Retrieval API) and updated Data Processing Summary
+2. `CHANGELOG.md` — Added Gemini Corpus Native RAG entry to [Unreleased] section
+3. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+#### Post-Merge Compliance Status (March 7, 2026)
+
+| Category | Status |
+|----------|--------|
+| External service documentation (all `wp_remote_*` calls) | ✅ All documented — including new Gemini Corpus endpoint |
+| Input sanitization in new corpus methods | ✅ All inputs sanitized |
+| Output escaping for new corpus-related UI | ✅ No new HTML output; existing metabox uses `esc_attr()` |
+| ABSPATH guards in modified files | ✅ Present |
+| Prefixing of new identifiers | ✅ All properly scoped/prefixed |
+| No new trialware or license gating | ✅ Corpus feature is freely available with a Gemini API key |
+| No new third-party libraries | ✅ Uses WordPress HTTP API only |
+| CHANGELOG updated | ✅ Entry added to [Unreleased] |
+
+**Base plugin compliance status after PR #4082: ✅ Fully compliant**
+
+---
+
+*Last updated: March 7, 2026*

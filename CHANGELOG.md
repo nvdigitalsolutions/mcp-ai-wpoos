@@ -4,6 +4,15 @@
 ## [Unreleased]
 
 ### Added - March 2026
+- **Gemini Corpus Native RAG (March 7, 2026)**: Added native Retrieval-Augmented Generation (RAG) to the Gemini chat client using the Google Semantic Retrieval API (PR #4082)
+  - Injecting a `semanticRetriever` grounding tool into `generateContent` requests when `corpus_name` is set on an assistant
+  - New `WP_MCP_AI_Gemini_Client` methods: `create_corpus()`, `list_corpora()`, `get_corpus()`, `delete_corpus()`, `query_corpus()`
+  - New `build_corpus_request_args()` shared helper for all corpus HTTP requests
+  - New constants: `API_CORPORA_ENDPOINT` and `API_BASE_URL` on `WP_MCP_AI_Gemini_Client`
+  - New `sanitize_corpus_name_meta()` static method on `WP_MCP_AI_Assistant_CPT`; `META_CORPUS_NAME` stored in post meta key `_wp_mcp_ai_corpus_name`
+  - REST validator (`class-wp-mcp-ai-rest-validator.php`) propagates `corpus_name` through sanitize_options()
+  - New test suite: `tests/test-gemini-corpus-rag.php` (21 unit tests)
+  - readme.txt updated: new External Services entry **2a** for the Gemini Semantic Retrieval API endpoint (`/v1beta/corpora`) per WordPress.org Guideline 6
 - **Office 365 and iCloud Drive Connection Types (March 2026)**: Added new chat channel connection types for Office 365 and iCloud Drive (PR #3971)
   - **Office 365 – Outlook (2 tools)**:
     - `send_outlook_mail` - Send email via Microsoft Outlook using the Microsoft Graph API; supports plain text and HTML body, CC recipients
