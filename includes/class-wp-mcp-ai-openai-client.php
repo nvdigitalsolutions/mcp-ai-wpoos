@@ -3744,6 +3744,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return false;
 			}
 
+			// Vector store RAG requires the Responses API because file_search is a built-in
+			// tool type that Chat Completions does not support. When the assistant has a
+			// vector store configured and the conversation is clean (no tool calls above),
+			// switch to the Responses API so the file_search tool can be injected.
+			if ( ! empty( $options['vector_store_id'] ) ) {
+				return true;
+			}
+
 			// Check if attachments are present in options.
 
 			if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
@@ -4834,7 +4842,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
@@ -4930,7 +4937,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -4998,7 +5004,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5066,7 +5071,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
@@ -5153,7 +5157,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'body'    => $encoded_payload,
@@ -5244,7 +5247,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 			);
@@ -5315,7 +5317,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'timeout' => $timeout,
 				'method'  => 'DELETE',
@@ -5418,7 +5419,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $api_key,
 					'Content-Type'  => 'application/json',
-					'OpenAI-Beta'   => 'assistants=v2',
 				),
 				'body'    => wp_json_encode( $body ),
 				'timeout' => $timeout,

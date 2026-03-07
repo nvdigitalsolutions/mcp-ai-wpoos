@@ -239,6 +239,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
 				),
+				'tavily'           => array(
+					'label'            => __( 'Tavily Search', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'tavily_api_key' ),
+					'fields'           => array(
+						'tavily_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'AI-first web search purpose-built for LLM agents. Returns rich, structured results with content snippets optimised for retrieval-augmented generation.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Tavily.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://tavily.com/',
+					'active_when'      => array(
+						'web_search_provider' => array( 'tavily' ),
+					),
+					'inactive_message' => __( 'Set the web search provider to Tavily to activate this connector.', 'mcp-ai-wpoos' ),
+				),
 				'mubert'           => array(
 					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'mubert_api_key' ),
@@ -1842,6 +1856,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'tavily_api_key',
+				__( 'Tavily API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_tavily_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
 				'ita_tariff_api_key',
 				__( 'ITA Tariff Rates API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ita_tariff_api_key_field' ),
@@ -2305,7 +2327,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['web_search_provider'] ) ) {
 				$provider = sanitize_key( $settings['web_search_provider'] );
-				$allowed  = array( 'duckduckgo', 'brave' );
+				$allowed  = array( 'duckduckgo', 'brave', 'tavily' );
 
 				if ( in_array( $provider, $allowed, true ) ) {
 					$clean['web_search_provider'] = $provider;
@@ -2314,6 +2336,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['tavily_api_key'] ) ) {
+				$clean['tavily_api_key'] = trim( sanitize_text_field( $settings['tavily_api_key'] ) );
 			}
 
 			if ( isset( $settings['mubert_api_key'] ) ) {
@@ -3804,6 +3830,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$providers = array(
 				'duckduckgo' => __( 'DuckDuckGo Instant Answer API', 'mcp-ai-wpoos' ),
 				'brave'      => __( 'Brave Search API', 'mcp-ai-wpoos' ),
+				'tavily'     => __( 'Tavily (AI-first, recommended for agents)', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
@@ -3823,6 +3850,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Tavily API key field.
+		 */
+		public function render_tavily_api_key_field() {
+			$settings   = self::get_settings();
+			$tavily_key = isset( $settings['tavily_api_key'] ) ? $settings['tavily_api_key'] : '';
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[tavily_api_key]" value="<?php echo esc_attr( $tavily_key ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Required when Tavily is selected as the web search provider. Get your API key at tavily.com.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
