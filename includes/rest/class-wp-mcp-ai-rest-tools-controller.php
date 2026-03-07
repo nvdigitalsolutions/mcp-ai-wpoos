@@ -589,18 +589,6 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$allowed_tools[] = $tool_slug;
 		}
 
-		// Auto-enable get_vector_store when the assistant uses OpenAI and has a vector store
-		// configured. This allows the chat client to call this tool on initialization without
-		// requiring it to be explicitly listed in the assistant's tool configuration, mirroring
-		// how utility tools are made available for core chat-client features.
-		if ( 'get_vector_store' === $tool_slug
-			&& ! empty( $assistant_config['vector_store_id'] )
-			&& isset( $assistant_config['provider'] ) && 'openai' === $assistant_config['provider']
-			&& ! in_array( $tool_slug, $allowed_tools, true )
-		) {
-			$allowed_tools[] = $tool_slug;
-		}
-
 		// Check if tool is allowed for this assistant.
 		if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
 			return $this->error(
