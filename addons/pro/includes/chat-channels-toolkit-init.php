@@ -17,63 +17,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! function_exists( 'wp_mcp_ai_run_get_vector_store_for_channel' ) ) {
-	/**
-	 * Execute the get_vector_store tool for an OpenAI-provider assistant that has a
-	 * vector store configured.  Called by channel auto-reply jobs before dispatching
-	 * the chat request so that execution is tracked through the standard tool pipeline.
-	 *
-	 * @since 1.1.6
-	 *
-	 * @param int $assistant_id  The assistant post ID.
-	 * @return array|null        Tool result array on success, null otherwise.
-	 */
-	function wp_mcp_ai_run_get_vector_store_for_channel( $assistant_id ) {
-		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
-			return null;
-		}
-
-		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-		$provider         = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
-		$vector_store_id  = isset( $assistant_config['vector_store_id'] ) ? sanitize_text_field( $assistant_config['vector_store_id'] ) : '';
-
-		if ( 'openai' !== $provider || empty( $vector_store_id ) ) {
-			return null;
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Get_Vector_Store' ) ) {
-			return null;
-		}
-
-		$tool    = new WP_MCP_AI_Tool_Get_Vector_Store();
-		$context = array(
-			'assistant_id'     => $assistant_id,
-			'assistant_config' => $assistant_config,
-		);
-
-		$result = $tool->execute( array(), $context );
-
-		if ( ! is_array( $result ) || empty( $result['success'] ) ) {
-			return null;
-		}
-
-		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'channel_vector_store_fetched',
-				'Vector store retrieved during channel auto-reply initialization',
-				array(
-					'assistant_id'    => $assistant_id,
-					'vector_store_id' => $vector_store_id,
-					'name'            => isset( $result['data']['name'] ) ? $result['data']['name'] : null,
-					'status'          => isset( $result['data']['status'] ) ? $result['data']['status'] : null,
-				)
-			);
-		}
-
-		return $result;
-	}
-}
-
 // Check if Chat Channels toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_chat_channels_toolkit'] );

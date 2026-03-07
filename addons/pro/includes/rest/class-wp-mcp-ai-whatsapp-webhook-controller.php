@@ -1124,33 +1124,6 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			)
 		);
 
-		// Run the get_vector_store tool when the assistant uses OpenAI with a vector store.
-		// Prepend a system message so the AI is aware of the available knowledge store.
-		if ( function_exists( 'wp_mcp_ai_run_get_vector_store_for_channel' ) ) {
-			$vs_result = wp_mcp_ai_run_get_vector_store_for_channel( $assistant_id );
-			if ( is_array( $vs_result ) && ! empty( $vs_result['data'] ) ) {
-				$vs_data    = $vs_result['data'];
-				$file_count = isset( $vs_data['file_counts']['completed'] ) ? (int) $vs_data['file_counts']['completed'] : 0;
-				$vs_name    = ( isset( $vs_data['name'] ) && '' !== $vs_data['name'] ) ? $vs_data['name'] : 'Knowledge Base';
-				$vs_status  = isset( $vs_data['status'] ) ? $vs_data['status'] : 'unknown';
-				$messages   = array_merge(
-					array(
-						array(
-							'role'    => 'system',
-							/* translators: 1: vector store name, 2: status, 3: indexed file count */
-							'content' => sprintf(
-								__( 'Vector store available: "%1$s" (Status: %2$s, Indexed files: %3$d). You may reference this knowledge base when answering questions.', 'mcp-ai-wpoos' ),
-								$vs_name,
-								$vs_status,
-								$file_count
-							),
-						),
-					),
-					$messages
-				);
-			}
-		}
-
 		// Call the internal chat REST endpoint to generate the AI response.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_body_params(
