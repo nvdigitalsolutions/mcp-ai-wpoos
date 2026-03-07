@@ -184,13 +184,14 @@ These services provide real-world data for AI assistants (weather, news, search,
 ### 7. Brave Search API
 
 **Service URL:** `https://api.search.brave.com/res/v1/web/search`  
-**Purpose:** Web search functionality for AI assistants  
+**Purpose:** Web search functionality for AI assistants (one of three available providers)  
 **Data Sent:**
 - Search queries provided by users or AI
-- Search parameters (count, offset)
-- Optional: User location for local results
+- Search parameters (`count`, `safesearch`, `extra_snippets=1`)
+- Optional geo-targeting: `country` (ISO 3166-1 alpha-2), `search_lang` (ISO 639-1)
+- Optional recency filter: `freshness` (`pd`/`pw`/`pm`/`py`)
 
-**When Used:** When the web search tool is called by an assistant
+**When Used:** When the web search tool is called by an assistant and `web_search_provider` is set to `brave`
 
 **Legal & Privacy:**
 - **Terms of Service:** https://brave.com/terms-of-use/
@@ -200,7 +201,35 @@ These services provide real-world data for AI assistants (weather, news, search,
 
 **Related Files:**
 - `includes/tools/class-wp-mcp-ai-tool-web-search.php`
-- `includes/tools/class-wp-mcp-ai-tool-web-search-validated.php`
+
+---
+
+### 7b. Tavily Search API
+
+**Service URL:** `https://api.tavily.com/search`  
+**Purpose:** AI-first web search optimised for LLM agents and RAG pipelines (one of three available providers)  
+**Data Sent:**
+- `query` — the search query string
+- `max_results` (1–10)
+- `search_depth: basic`
+- `include_answer: false`
+
+**When Used:** When the web search tool is called by an assistant and `web_search_provider` is set to `tavily`
+
+**Authentication:** Bearer token (`tavily_api_key` setting)
+
+**Notes:**
+- Tavily returns page-excerpt (`content`) rather than short descriptions, giving the LLM richer grounding.
+- Country/language geo-targeting is not supported by Tavily's public REST API; those parameters are silently ignored.
+- Results include `published_date` when available.
+
+**Legal & Privacy:**
+- **Website / Docs:** https://tavily.com/
+- **API Reference:** https://docs.tavily.com/docs/rest-api/api-reference
+- **Privacy Policy:** https://tavily.com/privacy
+
+**Related Files:**
+- `includes/tools/class-wp-mcp-ai-tool-web-search.php`
 
 ---
 

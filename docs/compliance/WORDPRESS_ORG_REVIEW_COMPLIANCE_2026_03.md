@@ -148,7 +148,9 @@ The review identified 23+ instances of external service calls not documented in 
 - Plaid API (financial data)
 - remove.bg API (background removal)
 - NHC / NOAA API (hurricane data)
-- DuckDuckGo API (web search)
+- DuckDuckGo API (web search, default provider)
+- Brave Search API (web search, optional)
+- Tavily Search API (web search, optional — AI-first)
 - PayHere API (payments)
 - Auth0 API (authentication)
 - NV Digital Solutions activation tracking endpoint
