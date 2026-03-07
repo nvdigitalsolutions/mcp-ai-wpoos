@@ -40,6 +40,12 @@ add_action(
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
+// Load JetEngine Vital Signs CCT if JetEngine is active and health management enabled.
+if ( function_exists( 'jet_engine' ) ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-cct.php';
+	WP_MCP_AI_JetEngine_Vitals_CCT::bootstrap();
+}
+
 // Load Policy Research & Add page.
 if ( is_admin() ) {
 	// Check if health and wellness management is enabled and not in base version (unless Pro addon is active).
