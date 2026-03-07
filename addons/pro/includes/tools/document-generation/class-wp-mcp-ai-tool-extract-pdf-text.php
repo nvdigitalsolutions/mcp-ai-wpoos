@@ -13,8 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load the chat response trait from base plugin.
+// Load required traits from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Extract text from PDF documents.
@@ -26,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  */
 class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
 	 * {@inheritdoc}
@@ -59,9 +61,12 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the PDF file to extract text from.', 'mcp-ai-wpoos-pro' ),
 				),
+				'file_id'       => $this->get_file_id_parameter_schema(
+					__( 'AI provider file identifier (e.g., an OpenAI file ID such as "file-Nfe1VozHi3BxjiLwWzRKRC"). Used when the PDF lives inside a provider storage (vector store, Files API) rather than the WordPress media library.', 'mcp-ai-wpoos-pro' )
+				),
 				'url'           => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the PDF file to extract text from (alternative to attachment_id).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'URL of the PDF file to extract text from (alternative to attachment_id or file_id).', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_pages'     => array(
 					'type'        => 'integer',
@@ -110,6 +115,7 @@ You do not have permission to access files.', 'mcp-ai-wpoos-pro' ),
 
 		// Get PDF file path.
 		$file_path = null;
+		$temp_file = null;
 
 		if ( ! empty( $arguments['attachment_id'] ) ) {
 			$attachment_id = absint( $arguments['attachment_id'] );
@@ -127,6 +133,28 @@ The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
 						$attachment_id
 					),
 				);
+			}
+		} elseif ( ! empty( $arguments['file_id'] ) ) {
+			// Resolve provider file ID (e.g., OpenAI "file-xxx") to a local path.
+			$resolved = $this->resolve_file_id_to_temp_path( sanitize_text_field( $arguments['file_id'] ) );
+
+			if ( is_wp_error( $resolved ) ) {
+				return array(
+					'success' => false,
+					'error'   => $resolved->get_error_code(),
+					'report'  => sprintf(
+						/* translators: %s: error message */
+						__( '❌ **Provider File Not Found**
+
+%s', 'mcp-ai-wpoos-pro' ),
+						$resolved->get_error_message()
+					),
+				);
+			}
+
+			$file_path = $resolved['path'];
+			if ( $resolved['is_temp'] ) {
+				$temp_file = $file_path;
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
 			// Download URL to temp file.
@@ -156,15 +184,15 @@ Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
 				'error'   => 'missing_input',
 				'report'  => __( '❌ **Missing Input**
 
-Either `attachment_id` or `url` parameter is required.', 'mcp-ai-wpoos-pro' ),
+Either `attachment_id`, `file_id`, or `url` parameter is required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Validate it's a PDF.
 		$mime_type = mime_content_type( $file_path );
 		if ( 'application/pdf' !== $mime_type ) {
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 			return array(
 				'success' => false,
@@ -227,8 +255,8 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 			}
 
 			// Clean up temp file if we downloaded one.
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 
 			if ( is_wp_error( $text ) ) {
@@ -293,8 +321,8 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 
 		} catch ( Exception $e ) {
 			// Clean up temp file if we downloaded one.
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 
 			return array(

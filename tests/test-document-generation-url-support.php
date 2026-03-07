@@ -54,8 +54,10 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 		$this->assertIsArray( $schema );
 		$this->assertArrayHasKey( 'properties', $schema );
 		$this->assertArrayHasKey( 'attachment_id', $schema['properties'] );
+		$this->assertArrayHasKey( 'file_id', $schema['properties'] );
 		$this->assertArrayHasKey( 'url', $schema['properties'] );
 		$this->assertEquals( 'integer', $schema['properties']['attachment_id']['type'] );
+		$this->assertEquals( 'string', $schema['properties']['file_id']['type'] );
 		$this->assertEquals( 'string', $schema['properties']['url']['type'] );
 
 		// Neither should be strictly required (one or the other).
@@ -77,7 +79,7 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test extract_pdf_text requires either attachment_id or url.
+	 * Test extract_pdf_text requires either attachment_id, file_id, or url.
 	 */
 	public function test_extract_pdf_text_requires_id_or_url() {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php';
@@ -87,7 +89,31 @@ class WP_MCP_AI_Document_Generation_URL_Support_Tests extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'error', $result );
-		$this->assertStringContainsString( 'attachment_id or url', $result['error'] );
+		$this->assertEquals( 'missing_input', $result['error'] );
+		// Error report must mention all three accepted parameters.
+		$this->assertStringContainsString( 'attachment_id', $result['report'] );
+		$this->assertStringContainsString( 'file_id', $result['report'] );
+		$this->assertStringContainsString( 'url', $result['report'] );
+	}
+
+	/**
+	 * Test extract_pdf_text returns an error for an unknown provider file ID.
+	 */
+	public function test_extract_pdf_text_with_unknown_provider_file_id() {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-extract-pdf-text.php';
+		require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+
+		$tool   = new WP_MCP_AI_Tool_Extract_PDF_Text();
+		// A file ID with an unrecognised prefix should return an error rather than crashing.
+		$result = $tool->execute(
+			array( 'file_id' => 'unknown-format-id-12345' ),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertFalse( $result['success'] );
+		$this->assertArrayHasKey( 'error', $result );
+		$this->assertNotEmpty( $result['report'] );
 	}
 
 	/**

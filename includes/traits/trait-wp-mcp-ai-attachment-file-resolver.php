@@ -228,4 +228,170 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 			'description' => $description,
 		);
 	}
+
+	/**
+	 * Resolve a provider file ID to a local file path.
+	 *
+	 * Attempts to find the file locally via a linked WordPress attachment first.
+	 * When no attachment is found, downloads the file content from the AI provider
+	 * (currently supports OpenAI file IDs starting with "file-") and writes it to
+	 * a temporary file.
+	 *
+	 * Callers are responsible for deleting the temporary file when `is_temp` is true.
+	 *
+	 * @param string $file_id Provider file identifier (e.g., 'file-Nfe1VozHi3BxjiLwWzRKRC').
+	 * @return array|WP_Error {
+	 *     Resolved path information on success, WP_Error on failure.
+	 *
+	 *     @type string $path    Absolute path to the local file.
+	 *     @type bool   $is_temp True when the file is a temporary download that should be deleted after use.
+	 * }
+	 */
+	protected function resolve_file_id_to_temp_path( $file_id ) {
+		$file_id = sanitize_text_field( $file_id );
+
+		if ( '' === $file_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_file_id',
+				__( 'File ID cannot be empty.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Step 1: Try to find a linked WordPress attachment.
+		if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+		}
+
+		$attachments_helper = new WP_MCP_AI_Message_Attachments();
+		$attachment_id      = $attachments_helper->get_attachment_id_for_openai_file( $file_id );
+
+		if ( $attachment_id && 'attachment' === get_post_type( $attachment_id ) ) {
+			$file_path = get_attached_file( $attachment_id );
+			if ( $file_path && file_exists( $file_path ) ) {
+				return array(
+					'path'    => $file_path,
+					'is_temp' => false,
+				);
+			}
+		}
+
+		// Step 2: Download from the AI provider's Files API.
+		// OpenAI file IDs start with "file-".
+		if ( 0 === strpos( $file_id, 'file-' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
+			}
+
+			$client   = new WP_MCP_AI_OpenAI_Client();
+			$download = $client->download_file( $file_id );
+
+			if ( is_wp_error( $download ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_provider_file_download_failed',
+					sprintf(
+						/* translators: 1: file ID, 2: error message */
+						__( 'Could not retrieve file "%1$s" from OpenAI: %2$s', 'mcp-ai-wpoos' ),
+						$file_id,
+						$download->get_error_message()
+					),
+					array( 'status' => 502 )
+				);
+			}
+
+			// Write the file body to a temporary path.
+			$body = $download['body'];
+
+			// Guard against excessively large downloads that could exhaust disk space.
+			$max_bytes = apply_filters( 'wp_mcp_ai_provider_file_max_bytes', wp_max_upload_size() );
+			if ( strlen( $body ) > $max_bytes ) {
+				return new WP_Error(
+					'wp_mcp_ai_provider_file_too_large',
+					sprintf(
+						/* translators: 1: file ID, 2: human-readable size limit */
+						__( 'Provider file "%1$s" exceeds the maximum allowed download size (%2$s).', 'mcp-ai-wpoos' ),
+						$file_id,
+						size_format( $max_bytes )
+					),
+					array( 'status' => 413 )
+				);
+			}
+
+			$ext      = $this->guess_extension_from_content_type( $download['content_type'] ?? '' );
+			$tmp_base = tempnam( sys_get_temp_dir(), 'wp_mcp_ai_pf_' );
+
+			if ( false === $tmp_base ) {
+				return new WP_Error(
+					'wp_mcp_ai_temp_file_error',
+					__( 'Could not create a temporary file for the provider download.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$tmp_path = '' !== $ext ? $tmp_base . $ext : $tmp_base;
+
+			if ( '' !== $ext && false === rename( $tmp_base, $tmp_path ) ) {
+				// If rename fails, keep the original name.
+				$tmp_path = $tmp_base;
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			if ( false === file_put_contents( $tmp_path, $body ) ) {
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return new WP_Error(
+					'wp_mcp_ai_temp_file_write_error',
+					__( 'Could not write provider file content to a temporary file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			return array(
+				'path'    => $tmp_path,
+				'is_temp' => true,
+			);
+		}
+
+		// Unknown provider or unsupported file ID format.
+		return new WP_Error(
+			'wp_mcp_ai_unsupported_file_id',
+			sprintf(
+				/* translators: %s: file ID */
+				__( 'No local attachment found for file ID "%s" and automatic download is not supported for this provider format.', 'mcp-ai-wpoos' ),
+				$file_id
+			),
+			array( 'status' => 404 )
+		);
+	}
+
+	/**
+	 * Guess a file extension from a MIME / Content-Type string.
+	 *
+	 * @param string $content_type HTTP Content-Type header value.
+	 * @return string File extension including the leading dot, or empty string when unknown.
+	 */
+	protected function guess_extension_from_content_type( $content_type ) {
+		$map = array(
+			'application/pdf'                                                          => '.pdf',
+			'text/plain'                                                               => '.txt',
+			'text/html'                                                                => '.html',
+			'text/csv'                                                                 => '.csv',
+			'application/json'                                                         => '.json',
+			'application/msword'                                                       => '.doc',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => '.docx',
+			'application/vnd.ms-excel'                                                 => '.xls',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'       => '.xlsx',
+			'image/jpeg'                                                               => '.jpg',
+			'image/png'                                                                => '.png',
+			'image/gif'                                                                => '.gif',
+			'image/webp'                                                               => '.webp',
+		);
+
+		foreach ( $map as $mime => $ext ) {
+			if ( false !== strpos( $content_type, $mime ) ) {
+				return $ext;
+			}
+		}
+
+		return '';
+	}
 }
