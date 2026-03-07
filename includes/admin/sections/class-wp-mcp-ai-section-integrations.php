@@ -142,6 +142,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Tavily Search.
+				'tavily_api_key'                => array(
+					'type'         => 'password',
+					'label'        => __( 'Tavily API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Tavily */
+						__( 'API key for Tavily AI-first search. Get your API key from %s.', 'mcp-ai-wpoos' ),
+						'<a href="https://tavily.com/" target="_blank">tavily.com</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
 				// Mubert Music API.
 				'mubert_api_key'                => array(
 					'type'         => 'password',
@@ -362,6 +375,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'Brave Search', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
+				),
+				'tavily'       => array(
+					'id'     => 'tavily',
+					'label'  => __( 'Tavily Search', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-search',
+					'fields' => array( 'tavily_api_key' ),
 				),
 				'mubert'       => array(
 					'id'     => 'mubert',

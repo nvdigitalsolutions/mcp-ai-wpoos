@@ -538,6 +538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'cloudflare_account_id',
 					'cloudflare_api_token',
 					'brave_search_api_key',
+					'tavily_api_key',
 					'mubert_api_key',
 					'removebg_api_key',
 					// Add more sensitive keys from integrations.

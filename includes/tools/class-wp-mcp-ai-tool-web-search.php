@@ -137,6 +137,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'maximum'     => 10,
 					'default'     => 5,
 				),
+				'country'     => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 3166-1 alpha-2 country code to geo-target results (e.g. "US", "GB", "DE"). Supported by Brave and Tavily.', 'mcp-ai-wpoos' ),
+				),
+				'language'    => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 639-1 language code to localise results (e.g. "en", "de", "fr"). Combined with country for DuckDuckGo region targeting.', 'mcp-ai-wpoos' ),
+				),
+				'freshness'   => array(
+					'type'        => 'string',
+					'description' => __( 'Filter results by recency: "pd" = past day, "pw" = past week, "pm" = past month, "py" = past year. Supported by Brave.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'pd', 'pw', 'pm', 'py' ),
+				),
 			),
 			'required'             => array( 'query' ),
 			'additionalProperties' => false,
@@ -172,6 +185,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		$max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
 
+		// Extract optional localisation / freshness parameters (industry-standard fields).
+		$search_options = array();
+
+		if ( ! empty( $arguments['country'] ) ) {
+			$country = strtoupper( sanitize_text_field( $arguments['country'] ) );
+			if ( preg_match( '/^[A-Z]{2}$/', $country ) ) {
+				$search_options['country'] = $country;
+			}
+		}
+
+		if ( ! empty( $arguments['language'] ) ) {
+			$search_options['language'] = strtolower( sanitize_text_field( $arguments['language'] ) );
+		}
+
+		$allowed_freshness = array( 'pd', 'pw', 'pm', 'py' );
+		if ( ! empty( $arguments['freshness'] ) && in_array( $arguments['freshness'], $allowed_freshness, true ) ) {
+			$search_options['freshness'] = $arguments['freshness'];
+		}
+
 		$provider = WP_MCP_AI_Settings_Registry::get_setting( 'web_search_provider', 'duckduckgo' );
 
 		// Check cache first to avoid unnecessary API calls.
@@ -193,9 +225,11 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Perform the search.
 		if ( 'brave' === $provider ) {
-			$result = $this->perform_brave_search( $query, $max_results );
+			$result = $this->perform_brave_search( $query, $max_results, $search_options );
+		} elseif ( 'tavily' === $provider ) {
+			$result = $this->perform_tavily_search( $query, $max_results, $search_options );
 		} else {
-			$result = $this->perform_duckduckgo_search( $query, $max_results );
+			$result = $this->perform_duckduckgo_search( $query, $max_results, $search_options );
 		}
 
 		// Validate and normalize the result before caching and returning.
@@ -418,19 +452,27 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $options     Optional: country, language.
 	 *
 	 * @return array|WP_Error Search response payload or WP_Error on failure.
 	 */
-	protected function perform_duckduckgo_search( $query, $max_results ) {
-		$request_url = add_query_arg(
-			array(
-				'q'             => $query,
-				'format'        => 'json',
-				'no_html'       => 1,
-				'skip_disambig' => 1,
-			),
-			'https://api.duckduckgo.com/'
+	protected function perform_duckduckgo_search( $query, $max_results, array $options = array() ) {
+		$query_args = array(
+			'q'             => $query,
+			'format'        => 'json',
+			'no_html'       => 1,
+			'skip_disambig' => 1,
 		);
+
+		// Build DuckDuckGo region (kl) from country + language when provided.
+		// Format: "{country_lower}-{language}" e.g. "us-en", "de-de".
+		if ( ! empty( $options['country'] ) && ! empty( $options['language'] ) ) {
+			$query_args['kl'] = strtolower( $options['country'] ) . '-' . strtolower( $options['language'] );
+		} elseif ( ! empty( $options['language'] ) ) {
+			$query_args['kl'] = strtolower( $options['language'] );
+		}
+
+		$request_url = add_query_arg( $query_args, 'https://api.duckduckgo.com/' );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -589,24 +631,40 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $options     Optional: country, language, freshness.
 	 *
 	 * @return array|WP_Error Search response payload or WP_Error on failure.
 	 */
-	protected function perform_brave_search( $query, $max_results ) {
+	protected function perform_brave_search( $query, $max_results, array $options = array() ) {
 		$api_key = WP_MCP_AI_Settings_Registry::get_setting( 'brave_search_api_key', '' );
 
 		if ( '' === $api_key ) {
 			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Brave Search API key is required to perform searches.', 'mcp-ai-wpoos' ) );
 		}
 
-		$request_url = add_query_arg(
-			array(
-				'q'          => $query,
-				'count'      => max( 1, $max_results ),
-				'safesearch' => 'moderate',
-			),
-			'https://api.search.brave.com/res/v1/web/search'
+		$query_args = array(
+			'q'              => $query,
+			'count'          => max( 1, $max_results ),
+			'safesearch'     => 'moderate',
+			'extra_snippets' => 1, // Return additional context snippets per result.
 		);
+
+		// Country targeting (ISO 3166-1 alpha-2).
+		if ( ! empty( $options['country'] ) ) {
+			$query_args['country'] = strtoupper( $options['country'] );
+		}
+
+		// Content language (ISO 639-1).
+		if ( ! empty( $options['language'] ) ) {
+			$query_args['search_lang'] = strtolower( $options['language'] );
+		}
+
+		// Freshness filter: pd=day, pw=week, pm=month, py=year.
+		if ( ! empty( $options['freshness'] ) ) {
+			$query_args['freshness'] = $options['freshness'];
+		}
+
+		$request_url = add_query_arg( $query_args, 'https://api.search.brave.com/res/v1/web/search' );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -671,8 +729,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 				if ( ! empty( $item['description'] ) ) {
 					$snippet = $this->sanitize_utf8( sanitize_text_field( $item['description'] ) );
-				} elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
-					$snippet = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
+				}
+
+				// Append extra_snippets (returned when extra_snippets=1 is set) for richer context.
+				if ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
+					$extra = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
+					$snippet = $snippet ? $snippet . ' ' . $extra : $extra;
 				}
 
 				$results[] = array(
@@ -750,6 +812,193 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'provider'       => 'brave',
 				'timestamp'      => time(),
 				'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
+			),
+			sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d results', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
+		);
+	}
+
+	/**
+	 * Perform a Tavily search.
+	 *
+	 * Tavily is an AI-first search API purpose-built for LLM agents and RAG pipelines.
+	 * It aggregates and parses real-time web content, returning structured results and
+	 * optionally an AI-generated answer — all optimised for LLM consumption.
+	 *
+	 * @link https://docs.tavily.com/docs/rest-api/api-reference
+	 *
+	 * @param string $query       The sanitized search query.
+	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $options     Optional: country.
+	 *
+	 * @return array|WP_Error Search response payload or WP_Error on failure.
+	 */
+	protected function perform_tavily_search( $query, $max_results, array $options = array() ) {
+		$api_key = WP_MCP_AI_Settings_Registry::get_setting( 'tavily_api_key', '' );
+
+		if ( '' === $api_key ) {
+			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Tavily API key is required to perform searches.', 'mcp-ai-wpoos' ) );
+		}
+
+		$body = array(
+			'query'          => $query,
+			'max_results'    => max( 1, min( $max_results, 10 ) ),
+			'search_depth'   => 'basic',
+			'include_answer' => false,
+		);
+
+		// Tavily supports country-specific domain targeting via include_domains.
+		// We pass country as a hint only (no official param); future API versions may add it.
+		$encoded_body = wp_json_encode( $body );
+		if ( false === $encoded_body ) {
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Tavily search payload.', 'mcp-ai-wpoos' ) );
+		}
+
+		$response = $this->perform_search_with_retry(
+			'https://api.tavily.com/search',
+			array(
+				'method'  => 'POST',
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'Accept'        => 'application/json',
+				),
+				'body'    => $encoded_body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
+				return $response;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'mcp-ai-wpoos' ),
+				$response->get_error_message()
+			);
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 202 === $status_code ) {
+			return $this->handle_pending_response( $response );
+		}
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_http_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'The web search service returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
+					$status_code
+				)
+			);
+		}
+
+		$raw_body = wp_remote_retrieve_body( $response );
+		$data     = json_decode( $raw_body, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'mcp-ai-wpoos' ) );
+		}
+
+		$results = array();
+
+		if ( isset( $data['results'] ) && is_array( $data['results'] ) ) {
+			foreach ( $data['results'] as $item ) {
+				if ( empty( $item['url'] ) ) {
+					continue;
+				}
+
+				$title   = isset( $item['title'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['title'] ) ) : '';
+				// Tavily returns content (page excerpt) rather than a short description.
+				$snippet = isset( $item['content'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['content'] ) ) : '';
+
+				$result_item = array(
+					'title'   => $title ? $title : esc_url_raw( $item['url'] ),
+					'url'     => esc_url_raw( $item['url'] ),
+					'snippet' => $snippet,
+					'source'  => 'tavily',
+					'type'    => 'result',
+				);
+
+				if ( ! empty( $item['published_date'] ) ) {
+					$result_item['published_date'] = sanitize_text_field( $item['published_date'] );
+				}
+
+				$results[] = $result_item;
+
+				if ( count( $results ) >= $max_results ) {
+					break;
+				}
+			}
+		}
+
+		// Deduplicate results by URL.
+		$results = $this->deduplicate_results( $results );
+
+		if ( empty( $results ) ) {
+			$task_id = $this->generate_task_id( $query, 'tavily' );
+			return $this->ensure_response_message(
+				array(
+					'task_id'        => $task_id,
+					'query'          => $query,
+					'results'        => array(),
+					'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
+					'cached'         => false,
+					'provider'       => 'tavily',
+					'system_message' => sprintf(
+						/* translators: %s: search query */
+						__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+						$query
+					),
+				),
+				sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+					$query
+				)
+			);
+		}
+
+		// Build descriptive text for the LLM and chat UI.
+		$text_parts   = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'mcp-ai-wpoos'
+			),
+			count( $results ),
+			$query
+		);
+
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'mcp-ai-wpoos' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
+			);
+		}
+
+		$task_id = $this->generate_task_id( $query, 'tavily' );
+		return $this->ensure_response_message(
+			array(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => $results,
+				'result_count'   => count( $results ),
+				'cached'         => false,
+				'provider'       => 'tavily',
+				'timestamp'      => time(),
+				'system_message' => implode( ' ', $text_parts ),
 			),
 			sprintf(
 				/* translators: %d: number of results */
@@ -994,10 +1243,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					break;
 				}
 
-				// Only include title and URL, skip snippets to save tokens.
+				// Include title, URL, and a trimmed snippet so the LLM has enough context
+				// to ground its answer without consuming excessive tokens.
 				$condensed_results[] = array(
-					'title' => isset( $item['title'] ) ? $item['title'] : '',
-					'url'   => isset( $item['url'] ) ? $item['url'] : '',
+					'title'   => isset( $item['title'] ) ? $item['title'] : '',
+					'url'     => isset( $item['url'] ) ? $item['url'] : '',
+					'snippet' => isset( $item['snippet'] ) ? wp_trim_words( $item['snippet'], 40, '...' ) : '',
 				);
 
 				++$count;
