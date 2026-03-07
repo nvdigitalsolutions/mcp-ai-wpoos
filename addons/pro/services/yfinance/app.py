@@ -27,7 +27,7 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Dict, List, Optional, Any
-
+import re
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import yfinance as yf
@@ -109,8 +109,18 @@ class SimpleCache:
         self.ttl = timedelta(minutes=ttl_minutes)
     
     def _get_cache_path(self, key: str) -> str:
-        """Generate cache file path."""
-        safe_key = key.replace('/', '_').replace('\\', '_')
+        """Generate cache file path from an arbitrary cache key.
+
+        The key may be derived from user input, so we must ensure that it
+        cannot influence the directory structure. We therefore map it to a
+        flat, filesystem-safe filename using a conservative allow-list.
+        """
+        # Ensure we are working with a string representation
+        key_str = str(key)
+        # Replace path separators with underscore
+        key_str = key_str.replace('/', '_').replace('\\', '_')
+        # Allow only alphanumeric characters, dot, dash and underscore; replace others
+        safe_key = re.sub(r'[^A-Za-z0-9_.-]', '_', key_str)
         return os.path.join(self.cache_dir, f"{safe_key}.json")
     
     def get(self, key: str) -> Optional[Any]:
