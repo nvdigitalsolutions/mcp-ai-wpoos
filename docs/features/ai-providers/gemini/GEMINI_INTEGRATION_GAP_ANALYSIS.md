@@ -23,16 +23,21 @@ The plugin has a **solid foundation** for Gemini integration with:
 - ✅ Music generation (Lyria)
 - ✅ **Safety settings configuration** (implemented December 2024)
 - ✅ **Thinking mode support** (streaming and non-streaming, implemented December 2024)
+- ✅ **Semantic Retrieval (corpus grounding)** (implemented March 2026)
 
-### Recent Implementations (December 2024)
-Three major gaps have been **successfully implemented**:
+### Recent Implementations (March 2026)
+One additional gap has been **successfully implemented**:
+- ✅ **Semantic Retrieval API** — `semanticRetriever` block in generation requests when a corpus is configured on the assistant
+
+### Earlier Implementations (December 2024)
+Three major gaps were **successfully implemented**:
 1. ✅ **Batch Embeddings API** - `batch_embed_content()` method added to client
 2. ✅ **Safety Settings** - Full harm category and threshold configuration
 3. ✅ **Thinking Mode Fix** - Non-streaming thinking mode now captures thought content
 
 ### Key Findings
-We originally identified **14 enhancement opportunities** across 5 categories. With 3 now implemented, **11 gaps remain**:
-1. **Missing API Endpoints** (4 remaining, 1 implemented)
+We originally identified **14 enhancement opportunities** across 5 categories. With 4 now implemented, **10 gaps remain**:
+1. **Missing API Endpoints** (3 remaining, 2 implemented)
 2. **Incomplete Feature Support** (1 remaining, 3 implemented)
 3. **Tool Enhancements** (3 gaps - unchanged)
 4. **Developer Experience** (2 gaps - unchanged)
@@ -303,7 +308,37 @@ public function list_tuned_models( array $options = array() ) {
 
 ---
 
-### 1.4 Grounding with Google Search 🔶 MEDIUM PRIORITY
+### 1.4 Semantic Retrieval (Corpus Grounding) ✅ IMPLEMENTED
+
+**Status:** ✅ **IMPLEMENTED March 2026** (PR #4059)  
+**Official API:** `semanticRetriever` block in generation requests  
+
+**Description:**  
+Gemini's Semantic Retrieval API lets the model perform similarity search over a user-managed corpus during generation, enabling retrieval-augmented generation (RAG) without additional tool calls. This is the Gemini-native equivalent of OpenAI's `file_search` built-in tool.
+
+**Implementation Details:**  
+- `build_payload()` in `class-wp-mcp-ai-gemini-client.php` now appends a `semanticRetriever` block whenever `options['corpus_name']` is set.  
+- The `corpora/` prefix is added automatically if the caller omits it.  
+- The last user message is used as the retrieval query text.  
+- `META_CORPUS_NAME` constant (`_wp_mcp_ai_corpus_name`) and `sanitize_corpus_name_meta()` added to `WP_MCP_AI_Assistant_CPT`.  
+- **Gemini Corpus Name** input field added to the **Base Knowledge** metabox on the Assistant edit screen.
+
+**Configuration:**  
+Set the corpus identifier (e.g. `your-corpus-id` or `corpora/your-corpus-id`) in the **Gemini Corpus Name** field of the assistant's Base Knowledge metabox.
+
+```php
+// Effective payload addition when corpus_name is set:
+$payload['semanticRetriever'] = array(
+    'source' => 'corpora/your-corpus-id',
+    'query'  => array(
+        'parts' => array( array( 'text' => $last_user_message ) ),
+    ),
+);
+```
+
+---
+
+### 1.5 Grounding with Google Search 🔶 MEDIUM PRIORITY
 
 **Status:** Not Implemented  
 **Feature:** `groundingConfig` parameter in generation requests
@@ -877,7 +912,7 @@ class WP_MCP_AI_Tool_Analyze_Video_Gemini implements WP_MCP_AI_Tool_Interface {
 ### 3.3 Gemini Search Tool (with Grounding) 🔶 MEDIUM PRIORITY
 
 **Status:** Not Implemented  
-**Dependency:** Requires grounding API support (gap 1.4)
+**Dependency:** Requires grounding API support (gap 1.5)
 
 **Proposed Tool:**
 

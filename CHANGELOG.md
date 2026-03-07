@@ -4,6 +4,14 @@
 ## [Unreleased]
 
 ### Added - March 2026
+- **Gemini Semantic Retrieval API — corpus grounding (March 2026)**: Assistants that use the Gemini provider can now be grounded against a Gemini corpus for retrieval-augmented generation (RAG) (PR #4059)
+  - Added **Gemini Corpus Name** field to the **Base Knowledge** metabox (Assistant edit screen). Enter a corpus identifier (e.g. `your-corpus-id` or `corpora/your-corpus-id`); the `corpora/` prefix is added automatically if omitted.
+  - When a corpus name is saved, `build_payload()` in `class-wp-mcp-ai-gemini-client.php` appends a `semanticRetriever` block to every generation request, using the last user message as the query. This is the Gemini-native equivalent of OpenAI's `file_search` built-in tool.
+  - New `META_CORPUS_NAME` constant and `sanitize_corpus_name_meta()` helper added to `WP_MCP_AI_Assistant_CPT`.
+
+### Changed - March 2026
+- **Removed OpenAI `file_search` auto-injection (March 2026)**: The block that automatically appended a `file_search` built-in tool (with `vector_store_ids`) to OpenAI Chat Completions payloads when `vector_store_id` was set on the assistant has been removed (PR #4059). The **Vector Store ID** field on the assistant edit screen is still saved and remains available in the assistant config; callers that need `file_search` should include it explicitly in the assistant's tool list.
+
 - **Office 365 and iCloud Drive Connection Types (March 2026)**: Added new chat channel connection types for Office 365 and iCloud Drive (PR #3971)
   - **Office 365 – Outlook (2 tools)**:
     - `send_outlook_mail` - Send email via Microsoft Outlook using the Microsoft Graph API; supports plain text and HTML body, CC recipients
