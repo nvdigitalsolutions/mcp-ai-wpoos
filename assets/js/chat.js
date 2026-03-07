@@ -11386,10 +11386,15 @@
             restoreConversationFromStorage(state);
 
             // Pre-load vector store metadata if the assistant has one configured.
-            // This ensures the vector store status and file counts are immediately
-            // available for the agentic workflow without waiting for the first tool call.
-            if (state.config.vectorStoreId && state.config.vectorStorePreloadEndpoint) {
-                preloadVectorStore(state);
+            // For OpenAI provider: run the get_vector_store tool via the tools endpoint
+            // so execution is tracked through the standard tool pipeline.
+            // For other providers: use the preload endpoint to fetch metadata directly.
+            if (state.config.vectorStoreId) {
+                if ((state.config.provider || '').toLowerCase() === 'openai' && state.config.toolsEndpoint) {
+                    runGetVectorStoreOnLoad(state);
+                } else if (state.config.vectorStorePreloadEndpoint) {
+                    preloadVectorStore(state);
+                }
             }
 
             // Mark container as initialized to prevent double-initialization
@@ -11763,6 +11768,74 @@
             .catch(function(err) {
                 console.warn('[NV oOS] Could not pre-load vector store (will be available on first tool call):', err.message);
             });
+    }
+
+    /**
+     * Run the get_vector_store tool via the tools endpoint when the chat client
+     * initializes with an OpenAI provider and the assistant has a vector store.
+     *
+     * Unlike preloadVectorStore (which calls the preload REST endpoint directly),
+     * this function calls the standard tools endpoint so execution is tracked
+     * through the full tool pipeline.
+     *
+     * @param {Object} state - Chat instance state.
+     */
+    function runGetVectorStoreOnLoad(state) {
+        if (!state || !state.config || (state.config.provider || '').toLowerCase() !== 'openai') {
+            return;
+        }
+
+        if (!state.config.vectorStoreId || !state.config.toolsEndpoint) {
+            return;
+        }
+
+        var assistantId   = state.config.assistantId;
+        var vectorStoreId = state.config.vectorStoreId;
+
+        console.log('[NV oOS] Running get_vector_store tool on load for OpenAI provider:', {
+            assistantId:   assistantId,
+            vectorStoreId: vectorStoreId
+        });
+
+        var payload = {
+            assistant_id: assistantId,
+            tool:         'get_vector_store',
+            arguments:    {}
+        };
+
+        postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data && data.success !== false && data.data) {
+                state.vectorStoreCache = {
+                    id:             data.data.id             || vectorStoreId,
+                    name:           data.data.name           || null,
+                    status:         data.data.status         || null,
+                    file_counts:    data.data.file_counts    || {},
+                    created_at:     data.data.created_at     || null,
+                    last_active_at: data.data.last_active_at || null,
+                    preloaded_at:   Date.now()
+                };
+                console.log('[NV oOS] get_vector_store tool executed on load:', {
+                    id:          state.vectorStoreCache.id,
+                    name:        state.vectorStoreCache.name,
+                    status:      state.vectorStoreCache.status,
+                    file_counts: state.vectorStoreCache.file_counts
+                });
+            } else {
+                console.log('[NV oOS] get_vector_store tool returned no data on load.');
+            }
+        })
+        .catch(function(err) {
+            console.warn('[NV oOS] Could not run get_vector_store tool on load (will be available on first tool call):', err.message);
+        });
     }
 
     function handleSubmit(event, state) {
