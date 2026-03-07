@@ -96,7 +96,6 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 
 		$memory_files    = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES, true );
 		$vector_store_id = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID, true );
-		$corpus_name     = get_post_meta( $post->ID, WP_MCP_AI_Assistant_CPT::META_CORPUS_NAME, true );
 
 		if ( ! is_array( $memory_files ) ) {
 			$memory_files = array();
@@ -104,10 +103,6 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 
 		if ( ! is_string( $vector_store_id ) ) {
 			$vector_store_id = '';
-		}
-
-		if ( ! is_string( $corpus_name ) ) {
-			$corpus_name = '';
 		}
 
 		$memory_entries    = array();
@@ -184,12 +179,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 	<p>
 		<label for="wp-mcp-ai-vector-store-id"><strong><?php esc_html_e( 'Vector Store ID', 'mcp-ai-wpoos' ); ?></strong></label>
 		<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
-		<span class="description"><?php esc_html_e( 'Optional OpenAI Vector Store ID. Stored with the assistant and available in the assistant config, but the file_search built-in tool is not added to payloads automatically — include file_search explicitly in the tool list if you need it.', 'mcp-ai-wpoos' ); ?></span>
-	</p>
-	<p>
-		<label for="wp-mcp-ai-corpus-name"><strong><?php esc_html_e( 'Gemini Corpus Name', 'mcp-ai-wpoos' ); ?></strong></label>
-		<input type="text" id="wp-mcp-ai-corpus-name" name="wp_mcp_ai_corpus_name" value="<?php echo esc_attr( $corpus_name ); ?>" class="widefat" placeholder="your-corpus-id" />
-		<span class="description"><?php esc_html_e( 'Gemini Semantic Retrieval corpus identifier (e.g. your-corpus-id or corpora/your-corpus-id). When set, the assistant will use this corpus for grounded generation with the Gemini provider. The corpora/ prefix is added automatically if omitted.', 'mcp-ai-wpoos' ); ?></span>
+		<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
 	</p>
 	<style type="text/css">
 		.wp-mcp-ai-memory-file-size {
