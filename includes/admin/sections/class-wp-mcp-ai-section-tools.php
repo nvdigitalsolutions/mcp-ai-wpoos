@@ -953,37 +953,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				return;
 			}
 
-			// The 'connections' subtab is handled by the Integrations section itself,.
-			// which will render when the subtab is active. No special rendering needed here.
-			// Show a helper message for this subtab.
+			// The 'connections' subtab content is handled by the Integrations section,
+			// which renders the full connection settings UI when subtab=connections is active.
 			if ( 'connections' === $active_subtab ) {
-				?>
-				<tr>
-					<td colspan="2" style="padding: 20px;">
-						<div class="notice notice-info inline" style="margin: 0;">
-							<p>
-								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to integrations tab */
-										__( 'Connection settings are managed in the <a href="%s">Integrations</a> tab. Use that tab to configure OAuth connections for external services like Google Drive, Gmail, GitHub, and more.', 'mcp-ai-wpoos' ),
-										esc_url(
-											add_query_arg(
-												array(
-													'page' => 'wp-mcp-ai-dashboard',
-													'tab'  => 'integrations',
-												),
-												admin_url( 'admin.php' )
-											)
-										)
-									)
-								);
-								?>
-							</p>
-						</div>
-					</td>
-				</tr>
-				<?php
 				return;
 			}
 
