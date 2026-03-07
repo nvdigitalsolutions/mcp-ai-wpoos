@@ -1371,6 +1371,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'tool_count'          => count( $tools ),
 				'memory_file_count'   => $memory_files,
 				'has_vector_store'    => ( isset( $config['vector_store_id'] ) && '' !== $config['vector_store_id'] ),
+				'has_corpus'          => ( isset( $config['corpus_name'] ) && '' !== $config['corpus_name'] ),
 				'has_external_action' => ( ! empty( $config['external_action_identifier'] ) ),
 				'description'         => $this->get_assistant_directory_description( $assistant_post ),
 				'updated_at'          => get_post_modified_time( 'c', true, $assistant_post ),
