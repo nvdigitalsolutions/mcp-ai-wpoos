@@ -2461,6 +2461,55 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
+			// Pre-load the vector store when the assistant has one configured and the
+			// provider is OpenAI. For channel auto-replies (Telegram, WhatsApp, etc.)
+			// this server-side warm-up mirrors the browser chat client's init-time
+			// preloadVectorStore() call. A short-lived transient prevents a redundant
+			// OpenAI API call on every message when the same vector store is used across
+			// consecutive turns or multiple users of the same assistant.
+			if ( ! empty( $options['vector_store_id'] ) && isset( $options['provider'] ) && 'openai' === $options['provider'] ) {
+				$vs_id        = sanitize_text_field( $options['vector_store_id'] );
+				$vs_cache_key = 'wp_mcp_ai_vs_ready_' . sanitize_key( $vs_id );
+				if ( false === get_transient( $vs_cache_key ) ) {
+					$openai_client = $this->get_openai_client();
+					$vs_info       = $openai_client->retrieve_vector_store( $vs_id );
+					if ( ! is_wp_error( $vs_info ) ) {
+						$vs_status = isset( $vs_info['status'] ) ? sanitize_text_field( $vs_info['status'] ) : '';
+						set_transient( $vs_cache_key, 1, 5 * MINUTE_IN_SECONDS );
+						if ( '' !== $vs_status && 'completed' !== $vs_status ) {
+							WP_MCP_AI_Logger::log_error(
+								'chat: vector store is not in completed state; file search results may be incomplete.',
+								array(
+									'vector_store_id' => $vs_id,
+									'status'          => $vs_status,
+								)
+							);
+						}
+					} else {
+						WP_MCP_AI_Logger::log_error(
+							'chat: vector store pre-load failed.',
+							array(
+								'vector_store_id' => $vs_id,
+								'error'           => $vs_info->get_error_message(),
+							)
+						);
+					}
+				}
+			}
+
+			// Log Gemini corpus name when set, so channel auto-reply paths (Telegram,
+			// WhatsApp, etc.) record the corpus used for grounded generation. Gemini corpora
+			// do not have a processing status like OpenAI vector stores, so no readiness
+			// check is needed here — the semanticRetriever is injected into the payload by
+			// the Gemini client's build_payload() method.
+			if ( ! empty( $options['corpus_name'] ) && isset( $options['provider'] ) && 'gemini' === $options['provider'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_gemini_corpus',
+					'chat: Gemini Semantic Retrieval corpus is configured for this assistant.',
+					array( 'corpus_name' => sanitize_text_field( $options['corpus_name'] ) )
+				);
+			}
+
 			// Check if streaming is requested for agentic loop support.
 			$wants_streaming = $this->request_wants_event_stream( $request );
 
