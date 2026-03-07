@@ -2497,6 +2497,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Log Gemini corpus name when set, so channel auto-reply paths (Telegram,
+			// WhatsApp, etc.) record the corpus used for grounded generation. Gemini corpora
+			// do not have a processing status like OpenAI vector stores, so no readiness
+			// check is needed here — the semanticRetriever is injected into the payload by
+			// the Gemini client's build_payload() method.
+			if ( ! empty( $options['corpus_name'] ) && isset( $options['provider'] ) && 'gemini' === $options['provider'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_gemini_corpus',
+					'chat: Gemini Semantic Retrieval corpus is configured for this assistant.',
+					array( 'corpus_name' => sanitize_text_field( $options['corpus_name'] ) )
+				);
+			}
+
 			// Check if streaming is requested for agentic loop support.
 			$wants_streaming = $this->request_wants_event_stream( $request );
 

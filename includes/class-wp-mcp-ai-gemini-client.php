@@ -2208,6 +2208,46 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
+			// Gemini Semantic Retrieval (Corpus) grounding: when the assistant has a Gemini
+			// corpus configured, attach a semanticRetriever block so the model can perform
+			// similarity search over the corpus during generation. This is the Gemini-native
+			// equivalent of OpenAI's file_search tool + vector_store_id.
+			if ( ! empty( $options['corpus_name'] ) ) {
+				$corpus_source = sanitize_text_field( $options['corpus_name'] );
+
+				// Ensure the source is prefixed with "corpora/" as required by the API.
+				if ( 0 !== strpos( $corpus_source, 'corpora/' ) ) {
+					$corpus_source = 'corpora/' . $corpus_source;
+				}
+
+				// Use the last user message as the retrieval query text.
+				$query_text = '';
+				foreach ( array_reverse( $messages ) as $msg ) {
+					if ( ! is_array( $msg ) ) {
+						continue;
+					}
+
+					$msg_role = isset( $msg['role'] ) ? $msg['role'] : '';
+					if ( 'user' === $msg_role ) {
+						$msg_content = isset( $msg['content'] ) ? $msg['content'] : '';
+						$text_parts  = $this->normalize_segments_to_text( $msg_content );
+						$query_text  = ! empty( $text_parts ) ? implode( ' ', $text_parts ) : '';
+						break;
+					}
+				}
+
+				if ( '' !== $query_text ) {
+					$payload['semanticRetriever'] = array(
+						'source' => $corpus_source,
+						'query'  => array(
+							'parts' => array(
+								array( 'text' => $query_text ),
+							),
+						),
+					);
+				}
+			}
+
 			return $payload;
 		}
 
