@@ -414,6 +414,14 @@ Initial release. Welcome to Open Operator System!
 * **Terms of Service:** https://ai.google.dev/terms
 * **Privacy Policy:** https://ai.google.dev/privacy
 
+**2a. Google Gemini Semantic Retrieval API (Corpus / RAG)**
+* **Purpose:** Native Retrieval-Augmented Generation (RAG) — store and query document corpora for grounded AI responses
+* **Data Sent:** Corpus display names, document content uploaded to corpora, natural-language query strings; only transmitted when a corpus is configured for the assistant and the user sends a message
+* **When:** Only when a Gemini assistant has a corpus name configured (optional feature, off by default)
+* **Service URL:** https://generativelanguage.googleapis.com/v1beta/corpora
+* **Terms of Service:** https://ai.google.dev/terms
+* **Privacy Policy:** https://ai.google.dev/privacy
+
 **3. Anthropic API (Claude)**
 * **Purpose:** Core AI functionality (chat, vision, document analysis)
 * **Data Sent:** Chat messages, system prompts, file attachments, tool results
@@ -656,6 +664,14 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
+**32. Tavily Search API**
+* **Purpose:** AI-first web search purpose-built for LLM agents and RAG pipelines; returns structured results including page excerpts and publication dates
+* **Data Sent:** Search query string; sent only when Tavily is selected as the web search provider
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Tavily"
+* **Service URL:** https://api.tavily.com/search
+* **Terms of Service:** https://tavily.com/terms-of-use
+* **Privacy Policy:** https://tavily.com/privacy-policy
+
 = Data Processing Summary =
 
 **What is sent to external services:**
@@ -735,6 +751,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Terms of Service: [Google Gemini Terms](https://ai.google.dev/terms)
 * Data Usage: Google uses API data as described in their privacy policy
 * Review Google's data retention policies before use
+* Corpus/RAG feature: When a Gemini assistant has a corpus configured, document content and queries are also sent to https://generativelanguage.googleapis.com/v1beta/corpora (Semantic Retrieval API)
 
 **Anthropic (when configured):**
 * Data sent to: https://api.anthropic.com/v1/messages

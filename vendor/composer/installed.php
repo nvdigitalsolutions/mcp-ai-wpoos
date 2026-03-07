@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-telegram-mini-app-template',
-        'version' => 'dev-copilot/create-telegram-mini-app-template',
-        'reference' => 'fe52f2107e0a29dec9935dbd3c3ebdfae067403a',
+        'pretty_version' => 'dev-copilot/review-base-plugin-compliance',
+        'version' => 'dev-copilot/review-base-plugin-compliance',
+        'reference' => '5a6ff9883c14e6cc11d0d3bafe2d800420ebe953',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-telegram-mini-app-template',
-            'version' => 'dev-copilot/create-telegram-mini-app-template',
-            'reference' => 'fe52f2107e0a29dec9935dbd3c3ebdfae067403a',
+            'pretty_version' => 'dev-copilot/review-base-plugin-compliance',
+            'version' => 'dev-copilot/review-base-plugin-compliance',
+            'reference' => '5a6ff9883c14e6cc11d0d3bafe2d800420ebe953',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

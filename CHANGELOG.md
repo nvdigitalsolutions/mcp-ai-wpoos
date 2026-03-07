@@ -4,6 +4,24 @@
 ## [Unreleased]
 
 ### Added - March 2026
+- **Web Search: Tavily provider, geo/freshness params, snippet grounding (March 7, 2026)** (PR #4060): Enhanced the `web_search` tool with a new provider and richer result grounding
+  - **Tavily Search provider**: AI-first search API purpose-built for LLM agent/RAG workflows; returns full page excerpts (`content`) and `published_date` per result; uses POST with `Authorization: Bearer`
+  - **3 new tool schema parameters** (supported across all providers): `country` (ISO 3166-1 alpha-2), `language` (ISO 639-1), `freshness` (`pd`/`pw`/`pm`/`py`)
+  - **Brave Search**: forwards `country` → `country`, `language` → `search_lang`, `freshness` → `freshness`; adds `extra_snippets=1` on every request; extra snippets now appended to primary description for richer context
+  - **DuckDuckGo**: builds `kl` region param from `country` + `language` (e.g. `GB`+`en` → `kl=gb-en`)
+  - **LLM grounding**: `sanitize_for_llm()` now includes a 40-word trimmed `snippet` alongside title+URL in the condensed payload
+  - Admin: `tavily_api_key` wired into provider dropdown, settings defaults, field registration, simple-settings-saver password list, integrations section, tools configuration subtab, settings dashboard sensitive-keys masking, and overview connector count
+  - 6 new unit tests in `tests/test-web-search-tool.php`; updated `test_sanitize_for_llm_condenses_results` to assert snippet presence
+  - readme.txt: added External Service **#32 (Tavily Search API)** per WordPress.org Guideline 6
+- **Gemini Corpus Native RAG (March 7, 2026)**: Added native Retrieval-Augmented Generation (RAG) to the Gemini chat client using the Google Semantic Retrieval API (PR #4082)
+  - Injecting a `semanticRetriever` grounding tool into `generateContent` requests when `corpus_name` is set on an assistant
+  - New `WP_MCP_AI_Gemini_Client` methods: `create_corpus()`, `list_corpora()`, `get_corpus()`, `delete_corpus()`, `query_corpus()`
+  - New `build_corpus_request_args()` shared helper for all corpus HTTP requests
+  - New constants: `API_CORPORA_ENDPOINT` and `API_BASE_URL` on `WP_MCP_AI_Gemini_Client`
+  - New `sanitize_corpus_name_meta()` static method on `WP_MCP_AI_Assistant_CPT`; `META_CORPUS_NAME` stored in post meta key `_wp_mcp_ai_corpus_name`
+  - REST validator (`class-wp-mcp-ai-rest-validator.php`) propagates `corpus_name` through sanitize_options()
+  - New test suite: `tests/test-gemini-corpus-rag.php` (21 unit tests)
+  - readme.txt updated: new External Services entry **2a** for the Gemini Semantic Retrieval API endpoint (`/v1beta/corpora`) per WordPress.org Guideline 6
 - **Office 365 and iCloud Drive Connection Types (March 2026)**: Added new chat channel connection types for Office 365 and iCloud Drive (PR #3971)
   - **Office 365 – Outlook (2 tools)**:
     - `send_outlook_mail` - Send email via Microsoft Outlook using the Microsoft Graph API; supports plain text and HTML body, CC recipients

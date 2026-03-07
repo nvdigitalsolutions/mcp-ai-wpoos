@@ -157,7 +157,7 @@ The review identified 23+ instances of external service calls not documented in 
 ### Fix Applied (Phase 1 — March 2, 2026)
 **File:** `readme.txt` — External Services section
 
-Added comprehensive documentation for 11 previously undocumented services (items 13–21 and 22–23 in the updated External Services section).
+Added comprehensive documentation for 11 previously undocumented services. These were initially added as items 13–21 and 22–23 in the External Services section. **After Phase 2 inserted Mubert (#22), GDACS (#23), Google Maps (#24), and Meta (#25) before the NV Digital entries, the activation tracking and license server were renumbered to #26 and #27** (see Phase 2 below).
 
 ### Fix Applied (Phase 2 — Complete Audit)
 
@@ -172,16 +172,16 @@ A full audit of every `wp_remote_post`, `wp_remote_get`, and `wp_remote_request`
 
 Updated the Hugging Face entry (item 7) to include inference API usage in addition to the previously documented dataset access.
 
-Renumbered all services — the readme now documents **31 total external services** with full Terms/Privacy links.
+Renumbered all services — the readme now documents **31 total external services** with full Terms/Privacy links. *(Note: Services #2a and #32 were added in the March 7, 2026 reviews, bringing the final total to 33 entries — see Post-Merge Compliance Reviews below.)*
 
-### Activation Tracking Disclosure (Item 22)
+### Activation Tracking Disclosure (Item #26)
 The NV Digital Solutions activation tracking service now includes:
 - Explicit description of all data collected (hashed site URL, versions, locale)
 - Confirmation that no PII is collected
 - Opt-out instructions (settings toggle and filter hook)
 - Note that local/development environments are automatically excluded
 
-### License Server Disclosure (Item 23)
+### License Server Disclosure (Item #27)
 The NV Digital Solutions license server is now documented as:
 - Optional — only contacted when a user manually enters a license key
 - Data sent: license key, site URL, product identifier
@@ -320,7 +320,7 @@ These calls use `file_put_contents` rather than `WP_Filesystem` because they ope
 
 | Category | Status |
 |----------|--------|
-| External service documentation | ✅ 31 services fully documented with Terms/Privacy links |
+| External service documentation | ✅ 33 services/entries fully documented with Terms/Privacy links (31 numbered services added March 2–4, plus #2a Gemini Corpus and #32 Tavily added March 7) |
 | License/feature gating | ✅ 0 gated features — all built-in features fully available |
 | Activation tracking disclosure | ✅ Fully documented with opt-out instructions |
 
@@ -573,7 +573,7 @@ Added justified `phpcs:ignore` comments for:
 
 ### Fix H: Production Composer Autoload
 
-Ran `composer dump-autoload --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
+Ran `composer install --no-dev --classmap-authoritative` to generate an optimized, production-ready autoloader:
 - **676 classes** in authoritative classmap
 - Dev dependencies excluded
 - PSR-4 fallback disabled (classmap-authoritative mode)
@@ -797,4 +797,289 @@ After all fixes, `--warning-severity=1` still surfaces the following categories.
 
 ---
 
-*Last updated: March 6, 2026*
+## Post-Merge Compliance Review — March 7, 2026
+
+**Date:** March 7, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Changes introduced by PR #4082 — Gemini Corpus native RAG
+**Trigger:** Automated post-merge compliance review of all base plugin changes from the last week
+
+---
+
+### Change Set: PR #4082 — Gemini Corpus Native RAG
+
+#### Summary
+
+PR #4082 added native Retrieval-Augmented Generation (RAG) to the Gemini chat client using Google's Semantic Retrieval API. The following base plugin files were affected:
+
+| File | Change Type |
+|------|------------|
+| `includes/class-wp-mcp-ai-gemini-client.php` | Added `API_CORPORA_ENDPOINT`, `API_BASE_URL` constants; added `build_corpus_request_args()`, `create_corpus()`, `list_corpora()`, `get_corpus()`, `delete_corpus()`, `query_corpus()` methods; added `semanticRetriever` injection in `build_payload()` |
+| `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` | Added `META_CORPUS_NAME` constant and `sanitize_corpus_name_meta()` method; save/load corpus_name post meta |
+| `includes/rest/class-wp-mcp-ai-rest-validator.php` | Added `corpus_name` propagation through `sanitize_options()` |
+| `tests/test-gemini-corpus-rag.php` | New test file (21 unit tests) — excluded from WordPress.org distribution |
+
+---
+
+#### Issue I: Undocumented External Service — Gemini Semantic Retrieval API
+
+##### Problem
+
+The Corpus methods (`create_corpus`, `list_corpora`, `get_corpus`, `delete_corpus`, `query_corpus`) make HTTP calls to a distinct sub-endpoint of the Google Generative Language API:
+
+```
+https://generativelanguage.googleapis.com/v1beta/corpora
+```
+
+While the main Gemini API (`https://generativelanguage.googleapis.com`) was already documented in `readme.txt` as External Service #2, the Semantic Retrieval / Corpus sub-API is a separately callable endpoint with its own data transmission profile (document content uploaded to corpora, query strings). WordPress.org Guideline 6 requires disclosure of all external service calls, including distinct sub-endpoints.
+
+##### Fix Applied
+
+**File:** `readme.txt`
+
+1. Expanded External Service **#2 (Google Gemini API)** to document the Corpus feature in the existing entry's narrative.
+2. Added new entry **#2a (Google Gemini Semantic Retrieval API — Corpus / RAG)**:
+   - Purpose: Native RAG — store and query document corpora for grounded responses
+   - Data Sent: Corpus display names, document content, query strings
+   - When: Only when a Gemini assistant has `corpus_name` configured (opt-in, off by default)
+   - Service URL: `https://generativelanguage.googleapis.com/v1beta/corpora`
+   - Same Terms of Service and Privacy Policy as the main Gemini API
+3. Updated the **Data Processing Summary → Google Gemini** paragraph to mention the Corpus/RAG feature and its endpoint.
+
+##### Compliance Statement
+
+The Gemini Semantic Retrieval feature is entirely opt-in: no corpus calls are made unless an administrator explicitly sets a `corpus_name` on an assistant. Data sent (corpus document content and query strings) is transmitted under the same Google AI terms and privacy policy already disclosed for the main Gemini API. The feature is now fully documented per Guideline 6.
+
+---
+
+#### Compliance Audit of New Code
+
+##### Sanitization
+
+All new corpus methods in `WP_MCP_AI_Gemini_Client` sanitize inputs before use:
+
+| Input | Sanitization Applied |
+|-------|---------------------|
+| `$display_name` | `sanitize_text_field()` |
+| `$corpus_name` | `sanitize_text_field()` |
+| `$query` | `sanitize_text_field()` |
+| `$options['timeout']` | `absint()` |
+| `$options['page_size']` | `absint()` |
+| `$options['page_token']` | `sanitize_text_field()` |
+| `$options['results_count']` | `absint()` |
+| Error messages from API responses | `sanitize_text_field()` |
+| `$corpus_name` in `sanitize_corpus_name_meta()` | `sanitize_text_field()` |
+| `$_POST['wp_mcp_ai_corpus_name']` | `sanitize_corpus_name_meta( wp_unslash() )` |
+
+**Status: ✅ No unsanitized inputs.**
+
+##### Output Escaping
+
+No new HTML output is produced by the corpus methods. The corpus name stored in post meta is retrieved and passed to the Gemini client as an option value — no direct HTML output. The `corpus_name` field in the assistant metabox uses `esc_attr()` (existing pattern).
+
+**Status: ✅ No unescaped output.**
+
+##### ABSPATH Guards
+
+`includes/class-wp-mcp-ai-gemini-client.php` and `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` already have ABSPATH guards (previously audited).
+
+**Status: ✅ Guards present.**
+
+##### Prefixing
+
+- Constants: `API_CORPORA_ENDPOINT`, `API_BASE_URL` — class constants on `WP_MCP_AI_Gemini_Client` (no global scope conflict)
+- Method names: `create_corpus()`, `list_corpora()`, etc. — class methods, no global scope
+- Meta key: `_wp_mcp_ai_corpus_name` — uses `_wp_mcp_ai_` prefix ✅
+- WP_Error codes: `wp_mcp_ai_gemini_corpus_error`, `wp_mcp_ai_missing_corpus_name`, etc. — use `wp_mcp_ai_` prefix ✅
+
+**Status: ✅ All identifiers properly prefixed/scoped.**
+
+##### External Library Dependencies
+
+No new third-party libraries introduced. All HTTP calls use `wp_remote_post()`, `wp_remote_get()`, and `wp_remote_request()` — WordPress core HTTP API. ✅
+
+##### Nonce / Capability Checks
+
+The corpus meta is saved via `save_post` with the existing nonce and `edit_post` capability checks inherited from the assistant CPT metabox flow. No new admin-only AJAX handlers or form submissions were added.
+
+**Status: ✅ Existing capability and nonce checks apply.**
+
+---
+
+#### Files Changed in This Review Cycle
+
+**Documentation:**
+1. `readme.txt` — Added External Service #2a (Gemini Semantic Retrieval API) and updated Data Processing Summary
+2. `CHANGELOG.md` — Added Gemini Corpus Native RAG entry to [Unreleased] section
+3. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+#### Post-Merge Compliance Status (March 7, 2026)
+
+| Category | Status |
+|----------|--------|
+| External service documentation (all `wp_remote_*` calls) | ✅ All documented — including new Gemini Corpus endpoint |
+| Input sanitization in new corpus methods | ✅ All inputs sanitized |
+| Output escaping for new corpus-related UI | ✅ No new HTML output; existing metabox uses `esc_attr()` |
+| ABSPATH guards in modified files | ✅ Present |
+| Prefixing of new identifiers | ✅ All properly scoped/prefixed |
+| No new trialware or license gating | ✅ Corpus feature is freely available with a Gemini API key |
+| No new third-party libraries | ✅ Uses WordPress HTTP API only |
+| CHANGELOG updated | ✅ Entry added to [Unreleased] |
+
+**Base plugin compliance status after PR #4082: ✅ Fully compliant**
+
+---
+
+## Post-Merge Compliance Review — March 7, 2026 (PR #4060)
+
+**Date:** March 7, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Changes introduced by PR #4060 — Web Search: Tavily provider, geo/freshness params, snippet grounding, extra_snippets
+**Trigger:** Implementation of PR #4060 as part of base plugin compliance cycle
+
+---
+
+### Change Set: PR #4060 — Web Search Enhancements
+
+#### Summary
+
+PR #4060 enhances the `web_search` tool with:
+1. A new **Tavily** search provider (AI-first, returns structured excerpts)
+2. Three new **schema parameters** (`country`, `language`, `freshness`) for all providers
+3. **Brave Search** improvements: `extra_snippets=1` forwarded; extra snippets appended
+4. **DuckDuckGo** `kl` region parameter built from `country` + `language`
+5. **LLM snippet grounding** — `sanitize_for_llm()` now includes a 40-word `snippet`
+
+| File | Change Type |
+|------|------------|
+| `includes/tools/class-wp-mcp-ai-tool-web-search.php` | Added `country`/`language`/`freshness` schema params; `perform_tavily_search()` method; `kl` param for DDG; `extra_snippets` append for Brave; snippet in `sanitize_for_llm()` |
+| `includes/admin/class-wp-mcp-ai-admin-settings-base.php` | Added `tavily_api_key` default |
+| `includes/admin/class-wp-mcp-ai-simple-settings-saver.php` | Added `tavily_api_key => password` |
+| `includes/admin/class-wp-mcp-ai-settings-dashboard.php` | Added `tavily_api_key` to sensitive-keys masking list |
+| `includes/admin/sections/class-wp-mcp-ai-section-tools.php` | Tavily option in provider dropdown; `tavily_api_key` field; added to fields list |
+| `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` | `tavily_api_key` field + Tavily connector card |
+| `includes/admin/sections/class-wp-mcp-ai-section-overview.php` | `tavily` added to connector count |
+| `tests/test-web-search-tool.php` | 6 new unit tests; updated sanitize_for_llm assertion |
+
+---
+
+#### Issue II: Undocumented External Service — Tavily Search API
+
+##### Problem
+
+`perform_tavily_search()` makes HTTP POST calls to `https://api.tavily.com/search`. This is a new external service not previously documented in `readme.txt`.
+
+##### Fix Applied
+
+**File:** `readme.txt`
+
+Added new entry **#32 (Tavily Search API)**:
+- Purpose: AI-first web search for LLM agent/RAG workflows; structured results with page excerpts and publication dates
+- Data Sent: Search query string; only when Tavily is selected as the provider
+- When: Only when administrator selects "Tavily" as web search provider (opt-in, off by default)
+- Service URL: `https://api.tavily.com/search`
+- Terms of Service: https://tavily.com/terms-of-use
+- Privacy Policy: https://tavily.com/privacy-policy
+
+##### Compliance Statement
+
+Tavily is entirely opt-in: no calls are made unless an administrator explicitly sets `web_search_provider = tavily` and enters a `tavily_api_key`. The service is now fully documented per WordPress.org Guideline 6.
+
+---
+
+#### Compliance Audit of New Code
+
+##### Sanitization
+
+| Input | Where | Sanitization Applied |
+|-------|-------|---------------------|
+| `arguments['country']` | `execute()` | `sanitize_text_field()` + `strtoupper()` + `preg_match('/^[A-Z]{2}$/')` validation |
+| `arguments['language']` | `execute()` | `sanitize_text_field()` + `strtolower()` |
+| `arguments['freshness']` | `execute()` | `in_array()` whitelist: `['pd','pw','pm','py']` |
+| `options['country']` (Brave) | `perform_brave_search()` | `strtoupper()` |
+| `options['language']` (Brave) | `perform_brave_search()` | `strtolower()` |
+| `options['freshness']` (Brave) | `perform_brave_search()` | Passed from validated whitelist |
+| `options['country']`/`language` (DDG) | `perform_duckduckgo_search()` | `strtolower()` |
+| `$api_key` (Tavily) | `perform_tavily_search()` | Retrieved via `WP_MCP_AI_Settings_Registry::get_setting()` (already sanitized at save) |
+| `$query` (Tavily body) | `perform_tavily_search()` | `wp_json_encode()` — query passed through validated `sanitize_text_field()` in `execute()` |
+| Tavily `item['title']` | `perform_tavily_search()` | `sanitize_text_field()` + `sanitize_utf8()` |
+| Tavily `item['content']` (snippet) | `perform_tavily_search()` | `sanitize_text_field()` + `sanitize_utf8()` |
+| Tavily `item['url']` | `perform_tavily_search()` | `esc_url_raw()` |
+| Tavily `item['published_date']` | `perform_tavily_search()` | `sanitize_text_field()` |
+| Tavily error messages from API | `perform_tavily_search()` | `sanitize_text_field()` |
+
+**Status: ✅ All new inputs sanitized.**
+
+##### API Key Storage
+
+`tavily_api_key` is classified as `'password'` type in `WP_MCP_AI_Simple_Settings_Saver` and masked in `WP_MCP_AI_Settings_Dashboard`. When blank on save, existing key is preserved (same pattern as `brave_search_api_key`).
+
+**Status: ✅ API key handled securely.**
+
+##### Output Escaping
+
+- Provider dropdown uses the settings renderer which calls `esc_attr()` on option values and `esc_html()` on labels ✅
+- `tavily_api_key` field uses the password input renderer (no output to HTML) ✅
+- `perform_tavily_search()` produces no HTML output — returns a PHP array ✅
+
+**Status: ✅ No unescaped output.**
+
+##### External Library Dependencies
+
+No new third-party libraries introduced. Tavily uses WordPress HTTP API (`wp_remote_get`/`wp_remote_request` via `perform_search_with_retry()`).
+
+**Status: ✅ No new dependencies.**
+
+##### Prefixing
+
+- WP_Error codes: `wp_mcp_ai_search_missing_api_key`, `wp_mcp_ai_encoding_error`, `wp_mcp_ai_search_failed`, etc. — all use `wp_mcp_ai_` prefix ✅
+- No new global functions, classes, or constants introduced ✅
+
+**Status: ✅ All identifiers properly prefixed/scoped.**
+
+---
+
+#### Files Changed in This Review Cycle
+
+**Code:**
+1. `includes/tools/class-wp-mcp-ai-tool-web-search.php` — Tavily provider, geo/freshness params, extra_snippets, snippet grounding
+2. `includes/admin/class-wp-mcp-ai-admin-settings-base.php` — `tavily_api_key` default
+3. `includes/admin/class-wp-mcp-ai-simple-settings-saver.php` — `tavily_api_key` password type
+4. `includes/admin/class-wp-mcp-ai-settings-dashboard.php` — `tavily_api_key` sensitive key
+5. `includes/admin/sections/class-wp-mcp-ai-section-tools.php` — Tavily dropdown + field
+6. `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` — Tavily connector card
+7. `includes/admin/sections/class-wp-mcp-ai-section-overview.php` — Tavily connector count
+
+**Tests:**
+8. `tests/test-web-search-tool.php` — 6 new tests; updated sanitize_for_llm assertion
+
+**Documentation:**
+9. `readme.txt` — External Service #32 (Tavily Search API)
+10. `CHANGELOG.md` — PR #4060 entry in [Unreleased] section
+11. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+#### Post-Merge Compliance Status (March 7, 2026 — PR #4060)
+
+| Category | Status |
+|----------|--------|
+| External service documentation (`wp_remote_*` calls) | ✅ All documented — Tavily added as service #32 |
+| Input sanitization in new Tavily method | ✅ All inputs sanitized |
+| Input sanitization for geo/freshness params | ✅ Country validated with regex, freshness whitelisted, language lowercased |
+| API key storage and masking | ✅ `tavily_api_key` classified as password, masked in dashboard |
+| Output escaping for new admin UI | ✅ Settings renderer uses `esc_attr()`/`esc_html()` |
+| ABSPATH guards in modified files | ✅ Present in all modified files |
+| Prefixing of new identifiers | ✅ All WP_Error codes use `wp_mcp_ai_` prefix |
+| No new trialware or license gating | ✅ Tavily is opt-in; DuckDuckGo remains free default |
+| No new third-party libraries | ✅ Uses WordPress HTTP API only |
+| CHANGELOG updated | ✅ Entry added to [Unreleased] |
+| Unit test coverage | ✅ 6 new tests covering Brave geo, DDG kl, country validation, Tavily mapping, missing key, POST body |
+
+**Base plugin compliance status after PR #4060: ✅ Fully compliant**
+
+---
+
+*Last updated: March 7, 2026*
