@@ -2,14 +2,14 @@
 /**
  * Tool Presets Helper - Updated 2026
  *
- * Comprehensive tool selection presets including all 310+ tools organized by
+ * Comprehensive tool selection presets covering 500+ tools organized by
  * use case and profession type. Includes DeepSeek V4 agent coordination tools,
- * quiz management, media templates, music production, and more.
- * Clear All/Select All functionality included.
+ * quiz management, media templates, music production, fantasy sports, webchat,
+ * health vitals management, and more. Clear All/Select All functionality included.
  *
  * @package WP_MCP_AI
  * @since 1.9.0
- * @updated 2026-01-22 - Added quiz tools, media templates, music production, research tools, math/science, project management, legal/policy, location services, and developer advanced presets
+ * @updated 2026-03-08 - Added fantasy sports preset, webchat tools, Mailjet tools, health vitals tools (log_vital_signs, track_vaccinations, manage_care_plan, compile_health_research_data, parse_health_information, guide_health_record_creation, export_fhir_data, create_health_reminder), woo_coupons/woo_customers in ecommerce, Site Kit slug corrections
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -267,6 +267,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_woo_product_validated',
 					'woo_orders',
 					'woo_products',
+					'woo_coupons',
+					'woo_customers',
 					// Product operations.
 					'product_actualization',
 					'scrape_product',
@@ -392,11 +394,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'newsletter_get_subscriber_stats',
 					'newsletter_get_subscribers',
 					'newsletter_unsubscribe',
-					// Google Site Kit integration (NEW).
-					'sitekit_adsense',
-					'sitekit_analytics',
-					'sitekit_pagespeed',
-					'sitekit_search_console',
+					// Google Site Kit integration.
+					'sitekit_get_adsense',
+					'sitekit_get_analytics',
+					'sitekit_get_pagespeed',
+					'sitekit_get_search_console',
 				),
 			),
 
@@ -663,7 +665,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'communication_messaging'   => array(
 				'name'        => __( '💬 Communication & Messaging', 'mcp-ai-wpoos' ),
-				'description' => __( 'Email, SMS, messaging, and communication tools', 'mcp-ai-wpoos' ),
+				'description' => __( 'Email, SMS, messaging, webchat, and communication tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Email.
 					'send_group_email',
@@ -681,6 +683,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'send_telegram_message',
 					'send_whatsapp_message',
 					'schedule_notify_sms',
+					// Webchat (Pro).
+					'create_webchat_room',
+					'list_webchat_rooms',
+					'get_webchat_room',
+					'get_webchat_status',
+					'get_webchat_messages',
+					'save_webchat_message',
+					// Mailjet contacts & stats (Pro).
+					'manage_mailjet_contacts',
+					'get_mailjet_statistics',
 				),
 			),
 
@@ -751,6 +763,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_checkup',
 					'list_checkups',
 					'get_upcoming_checkups',
+					// Vital Signs & Care Management (Pro).
+					'log_vital_signs',
+					'track_vaccinations',
+					'create_health_reminder',
+					'manage_care_plan',
+					// Health Research & Data (Pro).
+					'compile_health_research_data',
+					'parse_health_information',
+					'guide_health_record_creation',
+					// FHIR Export (Pro).
+					'export_fhir_data',
 					// Research & information.
 					'web_search',
 					'deep_research',
@@ -2622,6 +2645,46 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_email_template',
 					// Architecture (Pro).
 					'generate_architectural_drawing',
+				),
+			),
+
+			// =================================================================.
+			// SPORTS & ENTERTAINMENT PRESETS
+			// =================================================================.
+
+			'fantasy_sports'            => array(
+				'name'        => __( '🏆 Fantasy Sports & Analytics', 'mcp-ai-wpoos' ),
+				'description' => __( 'Fantasy sports management, player research, league analytics, and trade analysis for ESPN, Yahoo, and more', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// ESPN Fantasy Sports (Pro).
+					'espn_fantasy_get_league',
+					'espn_fantasy_get_teams',
+					'espn_fantasy_get_roster',
+					'espn_fantasy_get_standings',
+					'espn_fantasy_analyze_lineup',
+					'espn_fantasy_sync_league',
+					// Yahoo Fantasy Football (Pro).
+					'yahoo_ff_auth',
+					'yahoo_ff_get_leagues',
+					'yahoo_ff_get_roster',
+					'yahoo_ff_get_player_stats',
+					'yahoo_ff_league_standings',
+					'yahoo_ff_trade_analyzer',
+					// Fantasy Football Tools (Pro).
+					'ff_player_research',
+					'ff_create_league_report',
+					'ff_generate_team_logo',
+					// Research & analysis.
+					'web_search',
+					'deep_research',
+					'search_content',
+					// Content creation.
+					'save_post',
+					'create_post',
+					'generate_openai_image',
+					// Charts & analytics.
+					'create_chart',
+					'create_chart_validated',
 				),
 			),
 		);
