@@ -107,22 +107,44 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		// Get code from argument or file.
-		$code      = '';
-		$file_path = '';
+		$code          = '';
+		$file_path     = '';
 
 		if ( ! empty( $arguments['code'] ) ) {
 			$code = $arguments['code'];
 		} elseif ( ! empty( $arguments['file_path'] ) ) {
 			$file_path = sanitize_text_field( $arguments['file_path'] );
 
-			if ( ! file_exists( $file_path ) ) {
+			// Security: Validate PHP file extension.
+			$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+			if ( 'php' !== $extension ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'File not found.', 'mcp-ai-wpoos-pro' ),
+					'error'   => __( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 
+			// Security: Resolve canonical path to prevent directory traversal attacks.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'File not found or not accessible.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Use the resolved path for all subsequent file operations.
+			$file_path = $resolved;
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local PHP file reading.
 			$code = file_get_contents( $file_path );
 		}
 
