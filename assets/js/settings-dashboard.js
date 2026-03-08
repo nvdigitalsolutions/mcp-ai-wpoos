@@ -7,6 +7,18 @@
 (function($) {
 	'use strict';
 
+	/**
+	 * Escape HTML special characters to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
 	// eslint-disable-next-line camelcase
 	const WP_MCP_AI_Dashboard = {
 		/**
@@ -1070,13 +1082,13 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');
@@ -1118,17 +1130,17 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						let message = '✓ ' + response.data.message;
+						let message = '✓ ' + escapeHtml(response.data.message);
 						if (response.data.note) {
-							message += '<br><small>' + response.data.note + '</small>';
+							message += '<br><small>' + escapeHtml(response.data.note) + '</small>';
 						}
 						$result.html('<span style="color: #00a32a;">' + message + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection test failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection test failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');
@@ -1168,13 +1180,13 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');
@@ -1216,31 +1228,31 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 						if (response.data.zone_info) {
 							const zoneData = response.data.zone_info;
 							let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
 							html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
 							html += '<ul style="margin: 0; padding-left: 20px;">';
 							if (zoneData.name) {
-								html += '<li><strong>Domain:</strong> ' + zoneData.name + '</li>';
+								html += '<li><strong>Domain:</strong> ' + escapeHtml(String(zoneData.name)) + '</li>';
 							}
 							if (zoneData.status) {
-								html += '<li><strong>Status:</strong> ' + zoneData.status + '</li>';
+								html += '<li><strong>Status:</strong> ' + escapeHtml(String(zoneData.status)) + '</li>';
 							}
 							if (zoneData.plan) {
-								html += '<li><strong>Plan:</strong> ' + zoneData.plan + '</li>';
+								html += '<li><strong>Plan:</strong> ' + escapeHtml(String(zoneData.plan)) + '</li>';
 							}
 							html += '</ul></div>';
 							$zoneInfo.html(html);
 						}
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 						$zoneInfo.html('');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 					$zoneInfo.html('');
 				},
 				complete: function () {
@@ -1284,28 +1296,28 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 						if (response.data.account_info) {
 							const accountData = response.data.account_info;
 							let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
 							html += '<p style="margin: 0 0 5px 0;"><strong>Account Information:</strong></p>';
 							html += '<ul style="margin: 0; padding-left: 20px;">';
 							if (accountData.email) {
-								html += '<li><strong>Email:</strong> ' + accountData.email + '</li>';
+								html += '<li><strong>Email:</strong> ' + escapeHtml(String(accountData.email)) + '</li>';
 							}
 							if (accountData.server_count !== undefined) {
-								html += '<li><strong>Servers:</strong> ' + accountData.server_count + '</li>';
+								html += '<li><strong>Servers:</strong> ' + escapeHtml(String(accountData.server_count)) + '</li>';
 							}
 							html += '</ul></div>';
 							$accountInfo.html(html);
 						}
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 						$accountInfo.html('');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 					$accountInfo.html('');
 				},
 				complete: function () {
@@ -1383,11 +1395,11 @@
 							$list.append($title).append($ul);
 						}
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Failed to connect to Cloudways') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Failed to connect to Cloudways') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Fetch Cloudways Data');
@@ -1453,13 +1465,13 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');
@@ -1499,13 +1511,13 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');
@@ -1551,13 +1563,13 @@
 			}, {
 				success: function (response) {
 					if (response.success) {
-						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #00a32a;">✓ ' + escapeHtml(response.data.message) + '</span>');
 					} else {
-						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(response.data.message) + '</span>');
 					}
 				},
 				error: function (error) {
-					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$result.html('<span style="color: #d63638;">✗ ' + escapeHtml(error.userMessage || 'Connection failed') + '</span>');
 				},
 				complete: function () {
 					$button.prop('disabled', false).text('Test Connection');

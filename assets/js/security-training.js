@@ -95,7 +95,8 @@
 		showError: function(message) {
 			$('.wp-mcp-ai-training-notice')
 				.addClass('notice notice-error')
-				.html('<p>' + message + '</p>')
+				.empty()
+				.append($('<p>').text(message))
 				.show();
 		}
 	};

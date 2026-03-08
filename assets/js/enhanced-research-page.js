@@ -443,11 +443,11 @@
 				if (response.success && response.data) {
 					displayExcelPreview(response.data);
 				} else {
-					$loading.html('<div class="notice notice-error"><p>' + (response.data?.message || 'Failed to preview file.') + '</p></div>');
+					$loading.html('<div class="notice notice-error"><p>' + escapeHtml(response.data?.message || 'Failed to preview file.') + '</p></div>');
 				}
 			},
 			error: function(xhr, status, error) {
-				$loading.html('<div class="notice notice-error"><p>Error loading preview: ' + error + '</p></div>');
+				$loading.html('<div class="notice notice-error"><p>Error loading preview: ' + escapeHtml(String(error)) + '</p></div>');
 			}
 		});
 	}
