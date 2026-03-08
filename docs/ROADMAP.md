@@ -1,7 +1,7 @@
 # NV oOS Roadmap
 
-**Last Updated:** January 28, 2026  
-**Version:** 1.1.0
+**Last Updated:** March 8, 2026  
+**Version:** 1.1.3
 
 ---
 
@@ -19,7 +19,69 @@
 
 ---
 
-## Current Release (v1.1.0) - January 2026 ✅
+## Current Release (v1.1.3) - March 2026 ✅
+
+**Release Date:** March 3, 2026  
+**Focus:** WordPress.org compliance final audit, Telegram Mini App media tab, Office 365 & iCloud Drive, Gemini Corpus RAG, Tavily web search
+
+### What's Included in v1.1.3
+
+**Core Features:**
+- ✅ 165 built-in tools (base version) - up from 127 in v1.1.0
+- ✅ 354 Pro tools (full version) = 519 total tools - up from 197 in v1.1.0
+- ✅ WordPress.org compliance 100% complete (output escaping, ABSPATH guards, menu positions)
+- ✅ **Gemini Corpus Native RAG** – Semantic Retrieval API integration for grounded Gemini responses
+- ✅ **Web Search: Tavily provider** – AI-first search with geo/freshness parameters and snippet grounding
+- ✅ **Office 365 & iCloud Drive** – 8 new Chat Channels Toolkit tools (Outlook, OneDrive, iCloud Drive)
+- ✅ **Telegram Mini App Media Badges** – File-type extension badges with WCAG-compliant styling
+- ✅ **Chat Channels Toolkit** – Now 47 tools across 11 platforms (was 39 at v1.1.1 launch)
+
+**See** [CHANGELOG.md](../CHANGELOG.md) for the complete v1.1.3 change log.
+
+---
+
+## Released: v1.1.2 - February 2026 ✅
+
+**Release Date:** February 16, 2026  
+**Focus:** WordPress.org compliance, Pro integration settings architecture
+
+### What Was Delivered
+
+- ✅ **Hardcoded Menu Position Fix** – Removed hardcoded positions from 5 CPT/menu registrations
+- ✅ **Pro Settings Architecture** – Moved Mailjet, Google Analytics, Yahoo Fantasy, ESPN Fantasy settings to pro addon; base plugin now only contains settings for base tools
+- ✅ **JetEngine CPT/Taxonomy AI Integration** – AI assistant metaboxes and Research & Add pages for all JetEngine CPTs (Feb 12)
+- ✅ **Package Pre-Bundling** – pdf-lib, pdfkit, docx, exceljs, qrcode, cheerio pre-bundled in vendor; no `npm install` required in production
+- ✅ **TMA CMS Overhaul** – Telegram Mini App transformed into a full WordPress CMS interface (CPTs, tools, media)
+- ✅ **Discord/Telegram Reactions** – `add_discord_message_reaction`, `add_telegram_message_reaction`, `get_discord_voice_channel_members`
+- ✅ **WhatsApp & Messenger Fixes** – Group routing, auto-reply error #133010, webhook processing, Messenger test connection
+- ✅ **Google Chat Fixes** – HTTP 404 fix, OAuth UX, thread routing, OAuth welcome message
+- ✅ **OAuth Improvements** – Google OAuth approval prompt, Yahoo redirect URL, Mailjet credential handling
+- ✅ **Pro Workflow Builder Stability** – React asset loading, double instantiation, initialization timing, empty page display
+
+---
+
+## Released: v1.1.1 - February 2026 ✅
+
+**Release Date:** February 6, 2026  
+**Focus:** Security fixes, Chat Channels Toolkit, Slash Commands, WebChat Rooms
+
+### What Was Delivered
+
+**Security (all critical/high resolved):**
+- ✅ **SSRF Protection** – Webhook registration blocks private IPs and internal networks
+- ✅ **CSRF Protection** – Cron job deletion secured with nonce after AJAX refresh
+- ✅ **XSS Prevention** – Error messages double-escaped (input + output) for defense in depth
+- ✅ **Authorization System** – Comprehensive multi-entity job access control
+
+**New Features:**
+- ✅ **Chat Channels Toolkit** – 21 tools across 6 platforms (Telegram, WhatsApp, Slack, Discord, Teams, Messenger) + Unified Hub broadcast
+- ✅ **Slash Commands System** – Phase 1 (8 core commands) + Phase 2 (21 Pro toolkit commands); 7 automated workflow templates; REST API + WP-CLI integration
+- ✅ **WebChat Rooms** – Real-time collaborative rooms (`mcp_ai_webchat` CPT), JetEngine CCT message persistence, WebRTC support
+- ✅ **E-commerce Toolkit** – Now enabled by default for new installations
+
+---
+
+## Released: v1.1.0 - January 2026 ✅
 
 **Release Date:** January 28, 2026  
 **Focus:** Multi-agent orchestration, social media analytics expansion, stability improvements
@@ -96,54 +158,6 @@
 
 ---
 
-## Next Patch (v1.1.1) - February 2026 🔧
-
-**Release Date:** February 15, 2026  
-**Focus:** Security fixes, stability, bug fixes, and community feedback
-
-### Completed Security Improvements ✅
-
-**Critical Security Fixes (Completed February 6, 2026):**
-- ✅ **SSRF Protection** - Webhook registration now blocks private IPs and internal networks
-- ✅ **CSRF Protection** - Cron job deletion properly secured with nonce after AJAX refresh
-- ✅ **XSS Prevention** - Error messages now double-escaped (input + output) for defense in depth
-- ✅ **Authorization System** - Comprehensive multi-entity job access control implemented
-
-**Security Score Improvement:** 100/100 → 95/100 (comprehensive assessment methodology)
-**Status:** All critical and high-severity vulnerabilities resolved
-
-**Details:** See `docs/implementation-history/2026/CODE_REVIEW_2026-02-06.md`
-
-### Planned Improvements
-
-**Bug Fixes:**
-- [ ] Community-reported bugs from v1.1.0 release
-- [ ] Multi-agent orchestration edge cases
-- [ ] Social media analytics tool refinements
-- [ ] Chat UI loading issues (if reported)
-
-**Security:**
-- [ ] Automated security testing suite (4-6 hours)
-- [ ] Dependency updates from Dependabot
-
-**Documentation:**
-- [ ] Corrections to existing documentation
-- [ ] FAQ additions based on support questions
-- [ ] Missing code examples for new features
-- [ ] Multi-agent orchestration usage guide expansions
-
-**Performance:**
-- [ ] Safe performance optimizations
-- [ ] Query optimization for analytics tools
-- [ ] Memory usage improvements for toolkit tracking
-
-**Timeline:**
-- Beta: February 5, 2026
-- Release: February 15, 2026
-- Testing Period: 1 week
-
----
-
 ## Next Minor (v1.2.0) - Q2 2026 ⚡
 
 **Release Date:** May 31, 2026  
@@ -153,6 +167,17 @@
 ### Major Features
 
 #### 1. Security Enhancements (NEW)
+
+**Federation Directory Rate Limiting:**
+- [ ] Add per-IP rate limiting to `/ai-dir/v1/peers` endpoint (60 req/min)
+- [ ] Add per-IP rate limiting to `/ai-dir/v1/peers/{id}` endpoint
+- [ ] Add per-IP rate limiting to `/ai-dir/v1/search` endpoint
+- [ ] Use WordPress transients for rate limit counters
+- [ ] Return HTTP 429 with human-readable message when limit exceeded
+
+**Estimated Effort:** 4-6 hours  
+**Priority:** High  
+**Rationale:** Public peer discovery endpoints currently have no rate limiting, allowing unlimited enumeration attacks
 
 **SSE Rate Limiting:**
 - [ ] Implement per-user connection limits (3-5 concurrent)
@@ -249,7 +274,7 @@
 - [ ] Team collaboration patterns
 
 **AI Provider Enhancements:**
-- [ ] Anthropic Claude integration (if demand exists)
+- [ ] Anthropic Claude integration (Claude 3 Haiku/Sonnet, Claude 4 Sonnet — community demand confirmed)
 - [ ] Gemini context caching (68% cost savings)
 - [ ] Gemini thinking mode support
 - [ ] OpenAI batch embeddings
@@ -276,7 +301,7 @@
 
 ## Pro Toolkits Roadmap 🎨
 
-### Active Toolkits (13) ✅ **ALL IMPLEMENTED**
+### Active Toolkits (17) ✅ **ALL IMPLEMENTED**
 
 **Core Business Toolkits (7):**
 1. ✅ E-commerce (20 tools) - Phase 1 Complete
@@ -305,10 +330,22 @@
 13. ✅ **CRM** (1 tool) - Phase 2.4 Complete
     - Contact management integration
 
+**Added Since v1.1.0 (4 new toolkits):**
+14. ✅ **Chat Channels** (47 tools, 11 platforms) - Added February 2026 ⭐
+    - Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger, Google Chat, Instagram, YouTube, Office 365 / OneDrive, iCloud Drive
+    - WebChat Rooms with JetEngine CCT persistence
+15. ✅ **Regulatory Registration** (59 tools) - Added early 2026 ⭐
+    - Multi-country product registration management, MOHAP & NMRA sync, compliance certificates, dossier generation, workflow automation
+16. ✅ **Site Creator** (27 tools) - Added early 2026 ⭐
+    - Landing pages, hero/CTA/testimonial/footer sections, blog layouts, theme scaffolding, template kit export
+17. ✅ **Vector Storage** - Added early 2026
+    - Prepare files for OpenAI vector stores; supports file_search RAG workflows
+
 ### Total Tool Count by Category
 - **Core Business:** 100 tools (7 toolkits)
 - **Advanced Professional:** 75 tools (6 toolkits)
-- **Grand Total:** 175 Pro toolkit tools across 13 specialized domains
+- **New (v1.1.1+):** ~134 tools (Chat Channels 47 + Regulatory 59 + Site Creator 27 + Vector Storage 1)
+- **Grand Total:** ~354 Pro toolkit tools across 17+ specialized domains (519 total including 165 base tools)
 
 ### Planned Toolkits (0) ⏳
 **Status:** All previously planned toolkits have been implemented! 
@@ -522,8 +559,8 @@ These features are being considered but not yet scheduled:
 
 Based on GitHub issues and community feedback (as of December 2025):
 
-1. **Task Dependencies** - 15 votes → Planned for v1.1.0 ✅
-2. **Notification System** - 12 votes → Planned for v1.1.0 ✅
+1. **Task Dependencies** - 15 votes → Planned for v1.2.0
+2. **Notification System** - 12 votes → Planned for v1.2.0
 3. **Time Tracking** - 10 votes → Planned for v2.0.0 ✅
 4. **Gantt Charts** - 8 votes → Planned for v2.0.0 ✅
 5. **Claude Integration** - 7 votes → Planned for v2.0.0 ✅
