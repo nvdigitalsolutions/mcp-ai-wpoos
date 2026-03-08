@@ -286,4 +286,48 @@ class Test_Search_Drive_Query_Formatting extends WP_UnitTestCase {
 		// Empty query should just get trash filter.
 		$this->assertEquals( "fullText contains '' and trashed = false", $result );
 	}
+
+	/**
+	 * Test query with backslash is fully escaped (backslash before single quote).
+	 */
+	public function test_query_with_backslash() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'format_drive_query' );
+		$method->setAccessible( true );
+
+		// Input: "path\" (path + one backslash).
+		// Expected in Drive query: fullText contains 'path\\' (backslash escaped to \\).
+		// Using chr() to keep the expected string unambiguous regardless of PHP quoting rules.
+		// chr(92)=\, chr(39)='.
+		$input    = 'path' . chr( 92 );
+		$result   = $method->invoke( $this->tool, $input );
+		$expected = 'fullText contains ' . chr( 39 ) . 'path' . chr( 92 ) . chr( 92 ) . chr( 39 );
+		$this->assertStringContainsString( $expected, $result );
+	}
+
+	/**
+	 * Test query with backslash followed by single quote (escape bypass attempt).
+	 */
+	public function test_query_with_backslash_and_single_quote() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'format_drive_query' );
+		$method->setAccessible( true );
+
+		// Input: "test\'injection" (backslash + single-quote in the middle).
+		// Expected in Drive query: fullText contains 'test\\\'injection'
+		//   - \\ = escaped backslash (Drive API literal: \)
+		//   - \' = escaped single-quote (Drive API literal: ')
+		// Using chr() to keep the expected string unambiguous regardless of PHP quoting rules.
+		// chr(92)=\, chr(39)='.
+		$input            = 'test' . chr( 92 ) . chr( 39 ) . 'injection';
+		$result           = $method->invoke( $this->tool, $input );
+		$expected_segment = 'fullText contains '
+			. chr( 39 )           // opening single-quote
+			. 'test'
+			. chr( 92 ) . chr( 92 ) // escaped backslash: \\
+			. chr( 92 ) . chr( 39 ) // escaped single-quote: \'
+			. 'injection'
+			. chr( 39 );            // closing single-quote
+		$this->assertStringContainsString( $expected_segment, $result );
+	}
 }
