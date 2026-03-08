@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Performs semantic search across WordPress content using vector embeddings. Use this to find similar posts/pages, provide content recommendations, answer questions from a knowledge base, or detect duplicate content.', 'mcp-ai-wpoos' );
+		return __( 'Performs semantic search across WordPress content and health records using vector embeddings. Automatically uses the embedding service that matches the assistant\'s AI provider (OpenAI or Gemini). Use this to find similar posts/pages, vital signs records, or content from a knowledge base.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -140,14 +140,17 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		// Ensure threshold is within bounds.
 		$threshold = max( 0.0, min( 1.0, $threshold ) );
 
-		$client          = new WP_MCP_AI_OpenAI_Client();
-		$results         = array();
-		$vector_results  = array();
-		$embedding_model = '';
+		// Determine which AI provider the assistant uses so embeddings are generated
+		// by a configured provider rather than always requiring OpenAI.
+		$provider       = isset( $context['assistant_config']['provider'] ) ? strtolower( $context['assistant_config']['provider'] ) : 'openai';
+		$results        = array();
+		$vector_results = array();
 
 		// Search the OpenAI vector store when one is configured.
+		// Vector store search is always OpenAI-specific; a configured OpenAI client is used regardless of the chat provider.
 		if ( ! empty( $vector_store_id ) ) {
-			$vs_response = $client->search_vector_store(
+			$openai_client = new WP_MCP_AI_OpenAI_Client();
+			$vs_response   = $openai_client->search_vector_store(
 				$vector_store_id,
 				$query,
 				array( 'max_num_results' => $limit )
@@ -177,10 +180,12 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			}
 		}
 
-		// Generate embedding for the search query (used for local WordPress content search).
-		$embedding_result = $client->create_embeddings( $query );
+		// Generate embedding for the search query using the configured provider.
+		// This supports both OpenAI and Gemini so that assistants using either
+		// provider can perform local WordPress content semantic search.
+		$embedding_data = $this->generate_query_embedding( $query, $provider );
 
-		if ( is_wp_error( $embedding_result ) ) {
+		if ( is_wp_error( $embedding_data ) ) {
 			// If embedding fails but we have vector store results, return those.
 			if ( ! empty( $vector_results ) ) {
 				$summary_text = sprintf(
@@ -204,14 +209,14 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			}
 
 			return new WP_Error(
-				$embedding_result->get_error_code(),
-				$embedding_result->get_error_message(),
-				$embedding_result->get_error_data()
+				$embedding_data->get_error_code(),
+				$embedding_data->get_error_message(),
+				$embedding_data->get_error_data()
 			);
 		}
 
-		// Extract the query embedding vector.
-		$query_embedding = isset( $embedding_result['data'][0]['embedding'] ) ? $embedding_result['data'][0]['embedding'] : array();
+		$query_embedding = $embedding_data['embedding'];
+		$embedding_model = $embedding_data['model'];
 
 		if ( empty( $query_embedding ) ) {
 			return new WP_Error(
@@ -219,8 +224,6 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 				__( 'Failed to generate query embedding.', 'mcp-ai-wpoos' )
 			);
 		}
-
-		$embedding_model = isset( $embedding_result['model'] ) ? $embedding_result['model'] : 'text-embedding-3-small';
 
 		// Query posts with stored embeddings.
 		$args = array(
@@ -288,6 +291,12 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		// Merge vector store and local WordPress results.
 		$all_results = array_merge( $vector_results, $results );
 
+		// Also search the vitals embedding index so that queries about vital signs
+		// and kidney health metrics return relevant records even though they are not
+		// stored as WordPress posts.
+		$vitals_results = $this->search_vitals_embeddings( $query_embedding, $threshold, $limit );
+		$all_results    = array_merge( $all_results, $vitals_results );
+
 		// Sort combined results by similarity score (descending).
 		usort(
 			$all_results,
@@ -316,6 +325,110 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'vector_store_id'       => $vector_store_id,
 			'message'               => $summary_text,
 			'summary'               => $summary_text,
+		);
+	}
+
+	/**
+	 * Search the vitals embedding index for entries semantically similar to the
+	 * given query vector.
+	 *
+	 * This is the counterpart of {@see WP_MCP_AI_Tool_Log_Vital_Signs::store_vitals_embedding()}.
+	 * It reads the shared `wp_mcp_ai_vitals_embed_index` option and returns the
+	 * entries whose embedding is closest to $query_embedding.
+	 *
+	 * @param array $query_embedding Query embedding vector.
+	 * @param float $threshold       Minimum cosine similarity (0–1).
+	 * @param int   $limit           Maximum results to return.
+	 * @return array Array of result items (source = 'vitals').
+	 */
+	private function search_vitals_embeddings( array $query_embedding, $threshold, $limit ) {
+		$index = get_option( 'wp_mcp_ai_vitals_embed_index', array() );
+
+		if ( empty( $index ) ) {
+			return array();
+		}
+
+		$results = array();
+
+		foreach ( $index as $entry_id => $entry ) {
+			if ( empty( $entry['embedding'] ) || ! is_array( $entry['embedding'] ) ) {
+				continue;
+			}
+
+			$similarity = $this->calculate_cosine_similarity( $query_embedding, $entry['embedding'] );
+
+			if ( $similarity < $threshold ) {
+				continue;
+			}
+
+			$results[] = array(
+				'source'           => 'vitals',
+				'entry_id'         => sanitize_text_field( $entry_id ),
+				'member_id'        => isset( $entry['member_id'] ) ? absint( $entry['member_id'] ) : 0,
+				'date'             => isset( $entry['date'] ) ? sanitize_text_field( $entry['date'] ) : '',
+				'excerpt'          => isset( $entry['text'] ) ? wp_trim_words( $entry['text'], 30 ) : '',
+				'similarity_score' => round( $similarity, 4 ),
+			);
+		}
+
+		// Sort by similarity (descending) and limit.
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return $b['similarity_score'] <=> $a['similarity_score'];
+			}
+		);
+
+		return array_slice( $results, 0, $limit );
+	}
+
+	/**
+	 * Generate a query embedding using the provider that matches the assistant context.
+	 *
+	 * When the assistant uses Gemini as its chat provider, embeddings are generated via
+	 * the Gemini Embeddings API so that no OpenAI API key is required. For all other
+	 * providers (OpenAI, Ollama, Cloudflare, etc.) OpenAI embeddings are used, falling
+	 * back gracefully when neither service is available.
+	 *
+	 * @param string $query    Search query text.
+	 * @param string $provider Lowercase AI provider name from assistant context (e.g. 'openai', 'gemini').
+	 * @return array|WP_Error Array with 'embedding' (float[]) and 'model' (string), or WP_Error on failure.
+	 */
+	private function generate_query_embedding( $query, $provider ) {
+		// Use Gemini embeddings when the assistant is backed by Google Gemini.
+		if ( in_array( $provider, array( 'gemini', 'google' ), true ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+			$gemini_client   = new WP_MCP_AI_Gemini_Client();
+			$gemini_response = $gemini_client->create_embedding( $query, array( 'task_type' => 'RETRIEVAL_QUERY' ) );
+
+			if ( ! is_wp_error( $gemini_response ) && isset( $gemini_response['embedding']['values'] ) ) {
+				return array(
+					'embedding' => $gemini_response['embedding']['values'],
+					'model'     => 'text-embedding-004',
+				);
+			}
+
+			// If Gemini embedding fails, fall through to OpenAI as a last resort.
+		}
+
+		// Default: use OpenAI embeddings (also acts as fallback for providers without
+		// native embedding APIs such as Ollama, Cloudflare, and Hugging Face).
+		$openai_client   = new WP_MCP_AI_OpenAI_Client();
+		$openai_response = $openai_client->create_embeddings( $query );
+
+		if ( is_wp_error( $openai_response ) ) {
+			return $openai_response;
+		}
+
+		if ( ! isset( $openai_response['data'][0]['embedding'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_embedding_failed',
+				__( 'Failed to generate query embedding.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return array(
+			'embedding' => $openai_response['data'][0]['embedding'],
+			'model'     => isset( $openai_response['model'] ) ? $openai_response['model'] : 'text-embedding-3-small',
 		);
 	}
 
@@ -387,7 +500,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'external-api',         // Makes external API calls to OpenAI for query embedding.
+			'external-api',         // Makes external API calls (OpenAI or Gemini) for query embedding.
 			'requires-capability',  // Requires 'read' capability.
 		);
 	}
