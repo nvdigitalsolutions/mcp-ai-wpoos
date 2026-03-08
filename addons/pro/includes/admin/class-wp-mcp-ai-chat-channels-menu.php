@@ -47,6 +47,14 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	protected $registered_hooks = array();
 
 	/**
+	 * Cached dashboard stats to avoid double DB queries between enqueue_assets()
+	 * and render_dashboard_page().
+	 *
+	 * @var array|null
+	 */
+	protected $dashboard_stats = null;
+
+	/**
 	 * Constructor – hooks into WordPress admin.
 	 */
 	public function __construct() {
@@ -163,14 +171,35 @@ class WP_MCP_AI_Chat_Channels_Menu {
 		}
 
 		// Chart.js – loaded only on the Dashboard page.
+		// Use the base-plugin's local vendor file (via WP_MCP_AI_Chart_JS_Helper) to
+		// avoid an external CDN dependency and to share the already-registered handle.
 		if ( 'toplevel_page_' . self::MENU_SLUG === $hook ) {
-			wp_enqueue_script(
+			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
+			} else {
+				// Fallback: register from base-plugin vendor path directly.
+				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+				$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
+				if ( file_exists( $chart_js_path ) ) {
+					wp_register_script( 'chartjs', $chart_js_url, array(), (string) filemtime( $chart_js_path ), true );
+				}
+			}
+			wp_enqueue_script( 'chartjs' );
+
+			// Pre-compute stats once here so render_dashboard_page() can reuse them
+			// without an extra set of DB queries, and so we can embed the data as an
+			// inline script that is guaranteed to run before the chart-init code.
+			$this->dashboard_stats = $this->get_dashboard_stats();
+
+			// Inline data block – runs *before* chart.js (position 'before').
+			wp_add_inline_script(
 				'chartjs',
-				'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
-				array(),
-				'4.4.0',
-				true
+				'var wpMcpAiDashStats = ' . wp_json_encode( $this->dashboard_stats ) . ';',
+				'before'
 			);
+
+			// Chart initialisation – runs *after* chart.js has loaded (default position).
+			wp_add_inline_script( 'chartjs', $this->build_chart_init_script() );
 		}
 
 		// Inbox JS (also powers the dashboard stats fetch).
@@ -255,8 +284,10 @@ class WP_MCP_AI_Chat_Channels_Menu {
 
 		$this->render_page_header( __( 'Chat Channels Dashboard', 'mcp-ai-wpoos-pro' ), 'dashboard' );
 
-		// Fetch summary stats directly from DB.
-		$stats = $this->get_dashboard_stats();
+		// Use pre-computed stats when available (avoids a redundant DB round-trip
+		// because enqueue_assets() already ran get_dashboard_stats() for the
+		// inline chart-data script).
+		$stats = null !== $this->dashboard_stats ? $this->dashboard_stats : $this->get_dashboard_stats();
 		?>
 		<div class="wp-mcp-ai-chat-channels-wrap">
 
@@ -318,61 +349,6 @@ class WP_MCP_AI_Chat_Channels_Menu {
 
 		</div>
 
-		<script>
-		(function() {
-			if ( typeof Chart === 'undefined' ) { return; }
-
-			// --- 7-day volume bar chart ---
-			var volumeData = <?php echo wp_json_encode( $stats['volume_by_day'] ); ?>;
-			new Chart( document.getElementById('cc-volume-chart'), {
-				type: 'bar',
-				data: {
-					labels: volumeData.labels,
-					datasets: [{
-						label: '<?php echo esc_js( __( 'Messages', 'mcp-ai-wpoos-pro' ) ); ?>',
-						data: volumeData.counts,
-						backgroundColor: '#4f46e5',
-						borderRadius: 4,
-					}]
-				},
-				options: {
-					responsive: true,
-					plugins: { legend: { display: false } },
-					scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-				}
-			});
-
-			// --- Channel doughnut chart ---
-			var channelData = <?php echo wp_json_encode( $stats['by_channel'] ); ?>;
-			if ( channelData.labels.length ) {
-				new Chart( document.getElementById('cc-channel-chart'), {
-					type: 'doughnut',
-					data: {
-						labels: channelData.labels,
-						datasets: [{
-							data: channelData.counts,
-							backgroundColor: ['#4f46e5','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899','#14b8a6','#f97316'],
-						}]
-					},
-					options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-				});
-			}
-
-			// --- Inbound / Outbound doughnut ---
-			var dirData = <?php echo wp_json_encode( $stats['by_direction'] ); ?>;
-			new Chart( document.getElementById('cc-direction-chart'), {
-				type: 'doughnut',
-				data: {
-					labels: ['<?php echo esc_js( __( 'Inbound', 'mcp-ai-wpoos-pro' ) ); ?>','<?php echo esc_js( __( 'Outbound', 'mcp-ai-wpoos-pro' ) ); ?>'],
-					datasets: [{
-						data: [ dirData.inbound, dirData.outbound ],
-						backgroundColor: ['#22c55e', '#4f46e5'],
-					}]
-				},
-				options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-			});
-		})();
-		</script>
 		</div><!-- .wrap -->
 		<?php
 	}
@@ -596,6 +572,81 @@ class WP_MCP_AI_Chat_Channels_Menu {
 	// =========================================================================
 	// Dashboard statistics
 	// =========================================================================
+
+	/**
+	 * Build the JavaScript chart-initialisation snippet for the Dashboard.
+	 *
+	 * The snippet reads data from the global `wpMcpAiDashStats` variable that is
+	 * injected as an inline-before block on the `chartjs` script handle, so by
+	 * the time this code executes (in the footer, after Chart.js) the variable
+	 * and the `Chart` constructor are both available.
+	 *
+	 * @return string Inline JavaScript (no <script> tags).
+	 */
+	protected function build_chart_init_script() {
+		$lbl_messages = esc_js( __( 'Messages', 'mcp-ai-wpoos-pro' ) );
+		$lbl_inbound  = esc_js( __( 'Inbound', 'mcp-ai-wpoos-pro' ) );
+		$lbl_outbound = esc_js( __( 'Outbound', 'mcp-ai-wpoos-pro' ) );
+
+		// phpcs:disable WordPress.WP.EnqueuedResources -- inline script content, not a URL.
+		return <<<JS
+(function() {
+	if ( typeof Chart === 'undefined' || typeof wpMcpAiDashStats === 'undefined' ) { return; }
+	var stats       = wpMcpAiDashStats;
+	var volumeData  = stats.volume_by_day;
+	var channelData = stats.by_channel;
+	var dirData     = stats.by_direction;
+
+	// 7-day volume bar chart.
+	new Chart( document.getElementById( 'cc-volume-chart' ), {
+		type: 'bar',
+		data: {
+			labels: volumeData.labels,
+			datasets: [ {
+				label: '{$lbl_messages}',
+				data: volumeData.counts,
+				backgroundColor: '#4f46e5',
+				borderRadius: 4,
+			} ]
+		},
+		options: {
+			responsive: true,
+			plugins: { legend: { display: false } },
+			scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+		}
+	} );
+
+	// Channel distribution doughnut.
+	if ( channelData.labels.length ) {
+		new Chart( document.getElementById( 'cc-channel-chart' ), {
+			type: 'doughnut',
+			data: {
+				labels: channelData.labels,
+				datasets: [ {
+					data: channelData.counts,
+					backgroundColor: [ '#4f46e5', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316' ],
+				} ]
+			},
+			options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+		} );
+	}
+
+	// Inbound vs Outbound doughnut.
+	new Chart( document.getElementById( 'cc-direction-chart' ), {
+		type: 'doughnut',
+		data: {
+			labels: [ '{$lbl_inbound}', '{$lbl_outbound}' ],
+			datasets: [ {
+				data: [ dirData.inbound, dirData.outbound ],
+				backgroundColor: [ '#22c55e', '#4f46e5' ],
+			} ]
+		},
+		options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+	} );
+})();
+JS;
+		// phpcs:enable
+	}
 
 	/**
 	 * Collect summary statistics from the CCT tables for the Dashboard.
