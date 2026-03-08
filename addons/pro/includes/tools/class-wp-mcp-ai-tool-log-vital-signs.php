@@ -6,9 +6,10 @@
  * temperature, weight, BMI, glucose, oxygen saturation, respiratory rate, and
  * kidney-health indicators (eGFR, creatinine, BUN, K+, Na+, phosphorus, albumin).
  *
- * When JetEngine is available measurements are stored in the vital_signs CCT for
- * structured, queryable data management. Options-based storage is always written
- * as a lightweight fallback so tools that pre-date CCT availability keep working.
+ * When JetEngine is available measurements are stored in the vitals_log CCT
+ * (primary store for compiled log data).  Options-based storage is always
+ * written as a lightweight fallback so tools that pre-date CCT availability
+ * keep working.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -58,7 +59,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Log and track vital signs including blood pressure, heart rate, temperature, weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vital_signs CCT for advanced querying; options-based storage is always maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+		return __( 'Log and track vital signs including blood pressure, heart rate, temperature, weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -495,59 +496,64 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		update_option( $vital_signs_key, $vital_signs );
 
 		// ── JetEngine CCT storage (when available) ────────────────────────
-		$cct_id = null;
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			$cct_data = array(
-				'measurement_date'      => $measurement_date,
-				'measurement_time'      => $measurement_time,
-				'source'                => $source,
-				'notes'                 => isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '',
-				'logged_by'             => $current_user_id,
-				'entry_id'              => $entry_id,
-			);
+		$log_cct_id = null;
 
-			if ( isset( $measurements['blood_pressure'] ) ) {
-				$cct_data['bp_systolic']  = $measurements['blood_pressure']['systolic'];
-				$cct_data['bp_diastolic'] = $measurements['blood_pressure']['diastolic'];
-				$cct_data['bp_status']    = $measurements['blood_pressure']['status'];
-			}
-			if ( isset( $measurements['heart_rate'] ) ) {
-				$cct_data['heart_rate']        = $measurements['heart_rate']['value'];
-				$cct_data['heart_rate_status'] = $measurements['heart_rate']['status'];
-			}
-			if ( isset( $measurements['temperature'] ) ) {
-				$cct_data['temperature']        = $measurements['temperature']['value'];
-				$cct_data['temperature_unit']   = $measurements['temperature']['unit'];
-				$cct_data['temperature_status'] = $measurements['temperature']['status'];
-			}
-			if ( isset( $measurements['weight'] ) ) {
-				$cct_data['weight']      = $measurements['weight']['value'];
-				$cct_data['weight_unit'] = $measurements['weight']['unit'];
-			}
-			if ( isset( $measurements['bmi'] ) ) {
-				$cct_data['bmi']        = $measurements['bmi']['value'];
-				$cct_data['bmi_status'] = $measurements['bmi']['status'];
-			}
-			if ( isset( $measurements['blood_glucose'] ) ) {
-				$cct_data['blood_glucose']        = $measurements['blood_glucose']['value'];
-				$cct_data['blood_glucose_status'] = $measurements['blood_glucose']['status'];
-			}
-			if ( isset( $measurements['oxygen_saturation'] ) ) {
-				$cct_data['oxygen_saturation']        = $measurements['oxygen_saturation']['value'];
-				$cct_data['oxygen_saturation_status'] = $measurements['oxygen_saturation']['status'];
-			}
-			if ( isset( $measurements['respiratory_rate'] ) ) {
-				$cct_data['respiratory_rate']        = $measurements['respiratory_rate']['value'];
-				$cct_data['respiratory_rate_status'] = $measurements['respiratory_rate']['status'];
-			}
-			// Kidney indicators.
-			foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin' ) as $ki ) {
-				if ( isset( $measurements[ $ki ] ) ) {
-					$cct_data[ $ki ] = $measurements[ $ki ]['value'];
-				}
-			}
+		// Build the CCT data array for the vitals_log CCT.
+		$cct_data = array(
+			'measurement_date' => $measurement_date,
+			'measurement_time' => $measurement_time,
+			'source'           => $source,
+			'notes'            => isset( $arguments['notes'] ) ? wp_kses_post( $arguments['notes'] ) : '',
+			'logged_by'        => $current_user_id,
+			'entry_id'         => $entry_id,
+		);
 
-			$cct_id = WP_MCP_AI_JetEngine_Vitals_CCT::insert( $member_id, $cct_data );
+		if ( isset( $measurements['blood_pressure'] ) ) {
+			$cct_data['bp_systolic']  = $measurements['blood_pressure']['systolic'];
+			$cct_data['bp_diastolic'] = $measurements['blood_pressure']['diastolic'];
+			$cct_data['bp_status']    = $measurements['blood_pressure']['status'];
+		}
+		if ( isset( $measurements['heart_rate'] ) ) {
+			$cct_data['heart_rate']        = $measurements['heart_rate']['value'];
+			$cct_data['heart_rate_status'] = $measurements['heart_rate']['status'];
+		}
+		if ( isset( $measurements['temperature'] ) ) {
+			$cct_data['temperature']        = $measurements['temperature']['value'];
+			$cct_data['temperature_unit']   = $measurements['temperature']['unit'];
+			$cct_data['temperature_status'] = $measurements['temperature']['status'];
+		}
+		if ( isset( $measurements['weight'] ) ) {
+			$cct_data['weight']      = $measurements['weight']['value'];
+			$cct_data['weight_unit'] = $measurements['weight']['unit'];
+		}
+		if ( isset( $measurements['bmi'] ) ) {
+			$cct_data['bmi']        = $measurements['bmi']['value'];
+			$cct_data['bmi_status'] = $measurements['bmi']['status'];
+		}
+		if ( isset( $measurements['blood_glucose'] ) ) {
+			$cct_data['blood_glucose']        = $measurements['blood_glucose']['value'];
+			$cct_data['blood_glucose_status'] = $measurements['blood_glucose']['status'];
+		}
+		if ( isset( $measurements['oxygen_saturation'] ) ) {
+			$cct_data['oxygen_saturation']        = $measurements['oxygen_saturation']['value'];
+			$cct_data['oxygen_saturation_status'] = $measurements['oxygen_saturation']['status'];
+		}
+		if ( isset( $measurements['respiratory_rate'] ) ) {
+			$cct_data['respiratory_rate']        = $measurements['respiratory_rate']['value'];
+			$cct_data['respiratory_rate_status'] = $measurements['respiratory_rate']['status'];
+		}
+		// Kidney indicators.
+		foreach ( array( 'egfr', 'creatinine', 'bun', 'potassium', 'sodium', 'phosphorus', 'albumin' ) as $ki ) {
+			if ( isset( $measurements[ $ki ] ) ) {
+				$cct_data[ $ki ] = $measurements[ $ki ]['value'];
+			}
+		}
+
+		// Write to the vitals_log CCT (includes logged_at timestamp).
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			$log_cct_data              = $cct_data;
+			$log_cct_data['logged_at'] = current_time( 'mysql' );
+			$log_cct_id                = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $log_cct_data );
 		}
 
 		// Generate a semantic embedding for the vital signs entry so it can be
@@ -561,42 +567,43 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$alerts = $this->generate_alerts( $measurements );
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'Vital signs logged successfully.', 'mcp-ai-wpoos-pro' ),
-			'entry_id'     => $entry_id,
-			'cct_id'       => $cct_id,
-			'stored_in_cct' => null !== $cct_id,
-			'member_id'    => $member_id,
-			'date'         => $measurement_date,
-			'time'         => $measurement_time,
-			'source'       => $source,
-			'measurements' => $measurements,
-			'alerts'       => $alerts,
+			'success'           => true,
+			'message'           => __( 'Vital signs logged successfully.', 'mcp-ai-wpoos-pro' ),
+			'entry_id'          => $entry_id,
+			'log_cct_id'        => $log_cct_id,
+			'stored_in_log_cct' => null !== $log_cct_id,
+			'member_id'         => $member_id,
+			'date'              => $measurement_date,
+			'time'              => $measurement_time,
+			'source'            => $source,
+			'measurements'      => $measurements,
+			'alerts'            => $alerts,
 		);
 	}
 
 	/**
 	 * Get latest vital signs.
 	 *
-	 * Prefers JetEngine CCT when available; falls back to options storage.
+	 * Prefers vitals_log CCT when available; falls back to options storage.
 	 *
 	 * @param int $member_id Member ID.
 	 * @return array Latest vital signs.
 	 */
 	private function get_latest_vital_signs( $member_id ) {
-		// Prefer CCT when available.
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			$row = WP_MCP_AI_JetEngine_Vitals_CCT::get_latest( $member_id );
+		// Prefer vitals_log CCT (primary log store) when available.
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			$row = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_latest( $member_id );
 			if ( $row ) {
 				return array(
-					'success'    => true,
-					'member_id'  => $member_id,
-					'source'     => 'cct',
-					'latest'     => (array) $row,
+					'success'   => true,
+					'member_id' => $member_id,
+					'source'    => 'vitals_log_cct',
+					'latest'    => (array) $row,
 				);
 			}
 		}
 
+		// Fall back to options-based storage.
 		$vital_signs_key = 'wp_mcp_ai_vital_signs_' . $member_id;
 		$vital_signs     = get_option( $vital_signs_key, array() );
 
@@ -623,27 +630,28 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Get vital signs history.
 	 *
-	 * Prefers JetEngine CCT when available; falls back to options storage.
+	 * Prefers vitals_log CCT when available; falls back to options storage.
 	 *
 	 * @param int $member_id  Member ID.
 	 * @param int $days_back  Days of history.
 	 * @return array History.
 	 */
 	private function get_vital_signs_history( $member_id, $days_back ) {
-		// Prefer CCT when available.
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
+		// Prefer vitals_log CCT (primary log store) when available.
+		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
 			$after_date = gmdate( 'Y-m-d', time() - ( $days_back * DAY_IN_SECONDS ) );
-			$rows       = WP_MCP_AI_JetEngine_Vitals_CCT::get_for_member( $member_id, $after_date );
+			$rows       = WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, $after_date );
 			return array(
 				'success'   => true,
 				'member_id' => $member_id,
 				'days_back' => $days_back,
-				'source'    => 'cct',
+				'source'    => 'vitals_log_cct',
 				'count'     => count( $rows ),
 				'history'   => array_map( 'get_object_vars', $rows ),
 			);
 		}
 
+		// Fall back to options-based storage.
 		$vital_signs_key  = 'wp_mcp_ai_vital_signs_' . $member_id;
 		$vital_signs      = get_option( $vital_signs_key, array() );
 		$cutoff_timestamp = time() - ( $days_back * DAY_IN_SECONDS );

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-wordpress-plugin-compliance',
-        'version' => 'dev-copilot/review-wordpress-plugin-compliance',
-        'reference' => 'e39cfd16447946974367b07c5d344b04f8363616',
+        'pretty_version' => 'dev-copilot/create-new-cct-for-vital-logs',
+        'version' => 'dev-copilot/create-new-cct-for-vital-logs',
+        'reference' => '7c99d5618551e44221e348c3237e8775c6c36ea4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-wordpress-plugin-compliance',
-            'version' => 'dev-copilot/review-wordpress-plugin-compliance',
-            'reference' => 'e39cfd16447946974367b07c5d344b04f8363616',
+            'pretty_version' => 'dev-copilot/create-new-cct-for-vital-logs',
+            'version' => 'dev-copilot/create-new-cct-for-vital-logs',
+            'reference' => '7c99d5618551e44221e348c3237e8775c6c36ea4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

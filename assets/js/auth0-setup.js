@@ -29,8 +29,9 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						// Show a brief success message
-						const $notice = $('<div class="notice notice-success is-dismissible"><p>' + response.data.message + '</p></div>');
+						// Show a brief success message using safe DOM manipulation.
+						const $notice = $('<div class="notice notice-success is-dismissible"><p></p></div>');
+						$notice.find('p').text(response.data.message);
 						$('.wp-mcp-ai-setup-wizard').prepend($notice);
 						setTimeout(function() {
 							$notice.fadeOut(function() {
@@ -112,10 +113,12 @@
 
 		// Helper function to show result message
 		function showResult(type, message) {
+			const label = type === 'success' ? 'Success!' : 'Error:';
 			$resultDiv
 				.removeClass('success error')
 				.addClass(type)
-				.html('<strong>' + (type === 'success' ? 'Success!' : 'Error:') + '</strong> ' + message)
+				.empty()
+				.append($('<strong>').text(label), document.createTextNode(' ' + message))
 				.slideDown();
 		}
 

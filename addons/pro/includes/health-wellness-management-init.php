@@ -44,6 +44,10 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.
 if ( function_exists( 'jet_engine' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-cct.php';
 	WP_MCP_AI_JetEngine_Vitals_CCT::bootstrap();
+
+	// Load the dedicated Vitals Log CCT — primary storage for compiled log entries.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+	WP_MCP_AI_JetEngine_Vitals_Log_CCT::bootstrap();
 }
 
 // Load Policy Research & Add page.
@@ -98,3 +102,32 @@ function wp_mcp_ai_enqueue_health_wellness_management_admin_styles( $hook ) {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_health_wellness_management_admin_styles' );
+
+/**
+ * Resolve the mcp_ai_member CPT post ID for a given WordPress user.
+ *
+ * Returns the ID of the first published mcp_ai_member post whose author
+ * matches the supplied user ID, or 0 when no match is found.
+ *
+ * @param int $user_id WordPress user ID.
+ * @return int Member post ID or 0.
+ */
+function wp_mcp_ai_get_member_id_by_user_id( $user_id ) {
+	$user_id = absint( $user_id );
+	if ( ! $user_id ) {
+		return 0;
+	}
+
+	$posts = get_posts(
+		array(
+			'post_type'      => 'mcp_ai_member',
+			'author'         => $user_id,
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+		)
+	);
+
+	return ! empty( $posts ) ? (int) $posts[0] : 0;
+}

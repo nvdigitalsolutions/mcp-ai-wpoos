@@ -445,16 +445,13 @@
 			contentDiv.className = 'wp-mcp-ai-chat__message-content';
 
 			// Format content (support markdown if available)
-			if (type === 'assistant') {
-				if (window.wpMcpAiChatMarkdown && window.wpMcpAiChatMarkdown.renderMarkdown) {
-					// Use the shared markdown service which sanitizes via DOMPurify
-					contentDiv.innerHTML = window.wpMcpAiChatMarkdown.renderMarkdown(content);
-				} else if (typeof marked !== 'undefined' && window.DOMPurify) {
-					// Sanitize parsed markdown with DOMPurify to prevent XSS
-					contentDiv.innerHTML = window.DOMPurify.sanitize(marked.parse(content));
+			if (typeof marked !== 'undefined' && type === 'assistant') {
+				const rawHtml = marked.parse(content);
+				// Sanitize with DOMPurify if available to prevent XSS; fall back to textContent otherwise.
+				if (typeof DOMPurify !== 'undefined') {
+					contentDiv.innerHTML = DOMPurify.sanitize(rawHtml);
 				} else {
-					// Plain text fallback: build DOM nodes to avoid any innerHTML XSS risk
-					this.appendTextWithLineBreaks(contentDiv, content);
+					contentDiv.textContent = content;
 				}
 			} else {
 				// Simple formatting: build DOM nodes to avoid any innerHTML XSS risk

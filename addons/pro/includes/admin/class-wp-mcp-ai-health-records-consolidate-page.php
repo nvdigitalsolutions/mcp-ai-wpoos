@@ -168,7 +168,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'addPrescUrl'   => admin_url( 'post-new.php?post_type=mcp_ai_prescription' ),
 				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
 				'addPolicyUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
-				'hasCct'        => class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists(),
+				'hasCct'        => class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists(),
 				'strings'       => array(
 					'loading'             => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
 					'loadMember'          => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
@@ -1558,8 +1558,8 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$has_cct = class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists();
-		$vitals  = $has_cct ? WP_MCP_AI_JetEngine_Vitals_CCT::get_for_member( $member_id, '', 30 ) : array();
+		$has_cct = class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists();
+		$vitals  = $has_cct ? WP_MCP_AI_JetEngine_Vitals_Log_CCT::get_for_member( $member_id, '', 30 ) : array();
 
 		ob_start();
 		self::render_vitals_cct_preview( $vitals, $has_cct );
@@ -1589,8 +1589,8 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			wp_send_json_error( array( 'message' => __( 'Invalid member ID.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			wp_send_json_error( array( 'message' => __( 'JetEngine Vitals CCT is not available. Please ensure JetEngine is installed and active.', 'mcp-ai-wpoos-pro' ) ) );
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) || ! WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
+			wp_send_json_error( array( 'message' => __( 'JetEngine Vitals Log CCT is not available. Please ensure JetEngine is installed and active.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized inside helper.
@@ -1603,7 +1603,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$data['logged_by'] = get_current_user_id();
 		$data['source']    = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'manual';
 
-		$item_id = WP_MCP_AI_JetEngine_Vitals_CCT::insert( $member_id, $data );
+		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $data );
 
 		if ( ! $item_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'mcp-ai-wpoos-pro' ) ) );
