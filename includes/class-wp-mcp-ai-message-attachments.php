@@ -1637,7 +1637,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return '';
 			}
 
-			$hash = md5_file( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file
+			$hash = md5_file( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file -- md5_file used for file deduplication (content fingerprint), not in a password or security context.
 
 			if ( false === $hash ) {
 				return '';

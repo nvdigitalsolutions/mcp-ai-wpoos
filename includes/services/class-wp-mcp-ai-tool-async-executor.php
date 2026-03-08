@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for long-running tools.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings when safe_mode is on or the function is disabled; failure is non-critical as this is a best-effort timeout extension.
 			}
 
 			$start_time = microtime( true );

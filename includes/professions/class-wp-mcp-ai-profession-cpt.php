@@ -971,7 +971,7 @@ class WP_MCP_AI_Profession_CPT {
 				$method->invoke( null, $post_id );
 			} catch ( ReflectionException $e ) {
 				// Silently fail if method doesn't exist - backwards compatibility.
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records a backwards-compatibility failure inside a try/catch; used only as a diagnostic fallback.
 				error_log( 'WP_MCP_AI: Failed to deduplicate playbooks on save: ' . $e->getMessage() );
 			}
 		}

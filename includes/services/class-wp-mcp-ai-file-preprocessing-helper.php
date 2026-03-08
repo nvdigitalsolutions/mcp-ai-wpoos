@@ -165,7 +165,7 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 			);
 		}
 
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: mb_check_encoding() may emit a warning for binary or truncated samples; return value is always validated and the error is non-critical.
 		$is_utf8 = @mb_check_encoding( $sample, 'UTF-8' );
 
 		return array(
