@@ -12,7 +12,7 @@
 		"@turf/turf": "^7.3.2",
 		"@types/pdfkit": "^0.17.4",
 		"@woocommerce/woocommerce-rest-api": "^1.0.1",
-		"axios": "^1.6.5",
+		"axios": "^1.13.5",
 		"canvas": "^2.11.2",
 		"chart.js": "^4.4.7",
 		"cheerio": "^1.0.0",
