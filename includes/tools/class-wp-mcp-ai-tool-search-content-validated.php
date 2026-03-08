@@ -46,6 +46,8 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -62,7 +64,7 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
-					'maximum'     => 50,
+					'maximum'     => $max_limit,
 					'default'     => 10,
 				),
 				'taxonomy_filters'  => array(
@@ -172,9 +174,11 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		$settings    = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit   = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		$search_term = sanitize_text_field( $validated_args->search_term );
 		$post_type   = sanitize_key( $validated_args->post_type );
-		$limit       = absint( $validated_args->limit );
+		$limit       = min( absint( $validated_args->limit ), $max_limit );
 
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $validated_args );
 		$meta_filters     = $this->prepare_meta_filters( $validated_args );
