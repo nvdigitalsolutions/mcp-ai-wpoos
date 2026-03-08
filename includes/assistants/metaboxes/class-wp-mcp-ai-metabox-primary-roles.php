@@ -144,7 +144,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 							$category    = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_category', true );
 							$is_selected = in_array( $profession->ID, $primary_roles, true );
 							?>
-							<tr class="wp-mcp-ai-profession-row" <?php echo WP_MCP_AI_Profession_Search_Helper::get_profession_data_attributes( $profession ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+							<tr class="wp-mcp-ai-profession-row" <?php echo WP_MCP_AI_Profession_Search_Helper::get_profession_data_attributes( $profession ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_profession_data_attributes() returns pre-escaped HTML attribute string using esc_attr() on all dynamic values. ?>>
 								<td>
 									<input
 										type="checkbox"

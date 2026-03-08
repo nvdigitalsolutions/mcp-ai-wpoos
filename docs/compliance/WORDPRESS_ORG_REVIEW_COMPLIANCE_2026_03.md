@@ -1339,4 +1339,95 @@ foreach ( $json_fields as $field_name => $meta_key ) {
 
 ---
 
+## Post-Merge Compliance Review — March 8, 2026 (phpcs:ignore Justification Sweep)
+
+**Date:** March 8, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Comprehensive audit of all `phpcs:ignore` comments across `includes/` PHP files that were missing justification text. Specifically: all `WordPress.Security.EscapeOutput.OutputNotEscaped` and `WordPress.Security.ValidatedSanitizedInput.InputNotSanitized` suppression comments that lacked an explanatory `--` annotation.
+**Trigger:** Systematic review to ensure all suppression comments are self-documenting and accurately claim the reason for suppression, consistent with the approach taken in Issue V (March 8, initial sweep).
+
+---
+
+### Issues Found and Fixed
+
+#### Issue VI: 15 `phpcs:ignore EscapeOutput.OutputNotEscaped` Comments Without Justification Text
+
+**Problem:** PHPCS suppression comments require a `--` annotation explaining why the rule is being suppressed. Bare `// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped` comments without justification are flagged by WordPress.org reviewers as they make it impossible to verify that the suppression is warranted.
+
+**Files and fixes:**
+
+| File | Line | Output Variable | Justification Added |
+|------|------|-----------------|---------------------|
+| `includes/class-wp-mcp-ai-cli-command.php` | 1254 | `fwrite(STDERR, ...)` | Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output. |
+| `includes/class-wp-mcp-ai-cli-command.php` | 1258 | `fwrite(STDERR, ...)` | Writing to STDERR stream; HTML escaping does not apply; integer assistant_id is safe. |
+| `includes/class-wp-mcp-ai-cli-command.php` | 1268 | `fwrite(STDERR, ...)` | Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output. |
+| `includes/class-wp-mcp-ai-cli-command.php` | 1279 | `fwrite(STDERR, ...)` | Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output. |
+| `includes/elementor/class-wp-mcp-ai-elementor-widget.php` | 1201 | `do_shortcode()` | `do_shortcode()` output is controlled by the shortcode callback and is not raw user input. |
+| `includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php` | 212 | `$context_markup` | Produced by `format_context()` which applies `esc_html()` to all dynamic values inside a `<pre>` element. |
+| `includes/blocks/professional-selector/render.php` | 77 | `$wrapper_attributes` | Sanitized by `get_block_wrapper_attributes()` (WP core) or via `esc_attr()` in the non-block fallback. |
+| `includes/blocks/chat/render.php` | 67 | `$wrapper_attributes` | Sanitized by `get_block_wrapper_attributes()` (WP core) or via `esc_attr()` in the non-block fallback. |
+| `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` | 1775 | `$csv` | Raw CSV file-download content sent with `text/csv` headers; HTML escaping would corrupt the file. |
+| `includes/admin/sections/class-wp-mcp-ai-section-token-manager.php` | 1076 | `$provider_badge` | Literal HTML string constructed with `esc_html()` applied to all dynamic values. |
+| `includes/class-wp-mcp-ai-rest.php` | 4724 | `$body` | Raw HTTP proxy response sent directly to the client; HTML escaping would corrupt binary/JSON content. |
+| `includes/class-wp-mcp-ai-stdio-transport.php` | 160 | `fwrite(STDOUT, ...)` | Writing JSON-RPC response to STDOUT stream; HTML escaping does not apply to STDIO protocol output. |
+| `includes/class-wp-mcp-ai-stdio-transport.php` | 591 | `fwrite(STDERR, ...)` | Writing debug message to STDERR stream; HTML escaping does not apply to CLI/STDIO output. |
+| `includes/class-wp-mcp-ai-shortcode.php` | 1239 | `render_editor_notice()` | Returns a static HTML string with all dynamic values escaped via `esc_html_e()`. |
+| `includes/rest/class-wp-mcp-ai-sse-handler.php` | 291 | `$frames` | SSE protocol data sent with `text/event-stream` headers; HTML escaping would corrupt the SSE stream. |
+
+#### Issue VII: `phpcs:ignore InputNotSanitized` Comments Without Justification
+
+**Problem:** Several `phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized` comments lacked justification, making it impossible to verify the claim that the input is actually sanitized.
+
+**Files and fixes:**
+
+| File | Fix |
+|------|-----|
+| `includes/admin/class-wp-mcp-ai-auth0-setup.php` | **Real gap fixed:** `$_POST['token']` was only `trim()`-ed (not sanitized). Replaced with `sanitize_text_field( wp_unslash( ... ) )` and updated phpcs:ignore justification. |
+| `includes/admin/class-wp-mcp-ai-workflow-editor-page.php` (2 instances) | Added justification: JSON string decoded from raw POST; all values are sanitized recursively by `wp_mcp_ai_sanitize_recursive()`. |
+| `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` | Added justification: Array cast; sanitized recursively by `wp_mcp_ai_sanitize_recursive()`. |
+| `includes/admin/class-wp-mcp-ai-model-manager-ajax.php` | Added justification: JSON string decoded from raw POST; all values are sanitized recursively by `wp_mcp_ai_sanitize_recursive()`. |
+| `includes/class-wp-mcp-ai-simple-jwt-login-integration.php` | Added justification: Validated via `rest_is_ip_address()` or sanitized via `sanitize_text_field()` in the block below. |
+| `includes/class-wp-mcp-ai-proxy-utils.php` (4 instances) | Added justifications: Existence check only / sanitized by `sanitize_text_field()` immediately after `wp_unslash()`. |
+
+---
+
+### Files Changed in This Review Cycle
+
+**Code:**
+1. `includes/class-wp-mcp-ai-cli-command.php` — Justification text added to 4 `phpcs:ignore` comments (Issue VI)
+2. `includes/elementor/class-wp-mcp-ai-elementor-widget.php` — Justification text added (Issue VI)
+3. `includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php` — Justification text added (Issue VI)
+4. `includes/blocks/professional-selector/render.php` — Justification text added (Issue VI)
+5. `includes/blocks/chat/render.php` — Justification text added (Issue VI)
+6. `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` — Justification text added to 2 `phpcs:ignore` comments (Issues VI & VII)
+7. `includes/admin/sections/class-wp-mcp-ai-section-token-manager.php` — Justification text added (Issue VI)
+8. `includes/class-wp-mcp-ai-rest.php` — Justification text added (Issue VI)
+9. `includes/class-wp-mcp-ai-stdio-transport.php` — Justification text added to 2 `phpcs:ignore` comments (Issue VI)
+10. `includes/class-wp-mcp-ai-shortcode.php` — Justification text added (Issue VI)
+11. `includes/rest/class-wp-mcp-ai-sse-handler.php` — Justification text added (Issue VI)
+12. `includes/admin/class-wp-mcp-ai-auth0-setup.php` — Real sanitization gap fixed; `trim()` replaced with `sanitize_text_field()` (Issue VII)
+13. `includes/admin/class-wp-mcp-ai-workflow-editor-page.php` — Justification text added to 2 `phpcs:ignore` comments (Issue VII)
+14. `includes/admin/class-wp-mcp-ai-model-manager-ajax.php` — Justification text added (Issue VII)
+15. `includes/class-wp-mcp-ai-simple-jwt-login-integration.php` — Justification text added (Issue VII)
+16. `includes/class-wp-mcp-ai-proxy-utils.php` — Justification text added to 4 `phpcs:ignore` comments (Issue VII)
+
+**Documentation:**
+17. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+### Post-Audit Compliance Status (March 8, 2026 — phpcs:ignore Sweep)
+
+| Category | Status |
+|----------|--------|
+| All `phpcs:ignore EscapeOutput.OutputNotEscaped` comments | ✅ All have accurate justification text — 15 missing justifications added |
+| All `phpcs:ignore InputNotSanitized` comments | ✅ All have accurate justification text — 7 missing justifications added; 1 real gap fixed |
+| Input sanitization (`$_POST['token']` in Auth0 setup) | ✅ Real sanitization gap fixed: `trim()` → `sanitize_text_field()` |
+| PHPCS `lint:base` | ✅ 0 errors, 0 warnings |
+| All 20 guideline categories | ✅ Pass |
+
+**Base plugin compliance status: ✅ Fully compliant**
+
+---
+
 *Last updated: March 8, 2026*

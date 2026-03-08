@@ -194,8 +194,8 @@ class WP_MCP_AI_Proxy_Utils {
 	protected static function is_trusted_proxy_request() {
 		$remote_addr = '';
 
-		if ( isset( $_SERVER['REMOTE_ADDR'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$remote_addr = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_SERVER['REMOTE_ADDR'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Existence check only; value is sanitized via sanitize_text_field() on the next line.
+			$remote_addr = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_text_field() immediately after wp_unslash().
 		}
 
 		$remote_addr = trim( $remote_addr );
@@ -240,8 +240,8 @@ class WP_MCP_AI_Proxy_Utils {
 
 		$allowed = array();
 
-		if ( isset( $_SERVER['HTTP_HOST'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$request_host = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_SERVER['HTTP_HOST'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Existence check only; value is sanitized via sanitize_text_field() on the next line.
+			$request_host = sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_text_field() immediately after wp_unslash().
 			$request_host = self::normalise_host( explode( ':', $request_host, 2 )[0] );
 
 			if ( '' !== $request_host ) {

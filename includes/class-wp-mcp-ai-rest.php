@@ -4721,7 +4721,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$server->send_header( $key, $value );
 					}
 
-					echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $body is a raw HTTP proxy response sent directly to the client; HTML escaping would corrupt binary/JSON/text content.
 
 					return true;
 				},

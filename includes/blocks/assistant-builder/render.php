@@ -79,7 +79,7 @@ $config = array(
 	'createNonce'           => wp_create_nonce( 'wp_mcp_ai_create_assistant' ),
 );
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $wrapper_attributes is sanitized by get_block_wrapper_attributes() (WP core) or via esc_attr() in the non-block fallback. ?>>
 	<?php if ( $show_assistant_selector ) : ?>
 		<?php
 		// Render assistant selector inline.

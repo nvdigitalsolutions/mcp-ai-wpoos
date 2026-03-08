@@ -64,7 +64,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	);
 }
 ?>
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $wrapper_attributes is sanitized by get_block_wrapper_attributes() (WP core) or via esc_attr() in the non-block fallback. ?>>
 
 	<?php if ( $block_title ) : ?>
 		<h3 class="wp-block-mcp-ai-wpoos-knowledge-base__title"><?php echo esc_html( $block_title ); ?></h3>

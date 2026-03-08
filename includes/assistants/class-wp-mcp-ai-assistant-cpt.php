@@ -3107,14 +3107,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								name="wp_mcp_ai_external_action_identifier"
 								value="<?php echo esc_attr( $external_action_id ); ?>"
 								class="widefat"
-								data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe literal attribute string: either ' disabled="disabled"' or ''. ?>
 							/>
 						</p>
 						<p>
 							<label for="<?php echo esc_attr( $type_field_id ); ?>">
 								<strong><?php esc_html_e( 'Default action type', 'mcp-ai-wpoos' ); ?></strong>
 							</label>
-							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe literal attribute string: either ' disabled="disabled"' or ''. ?>>
 								<option value="">
 									<?php esc_html_e( 'Use runtime choice', 'mcp-ai-wpoos' ); ?>
 								</option>
