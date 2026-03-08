@@ -44,6 +44,10 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.
 if ( function_exists( 'jet_engine' ) ) {
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-cct.php';
 	WP_MCP_AI_JetEngine_Vitals_CCT::bootstrap();
+
+	// Load the dedicated Vitals Log CCT — primary storage for compiled log entries.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+	WP_MCP_AI_JetEngine_Vitals_Log_CCT::bootstrap();
 }
 
 // Load Policy Research & Add page.
