@@ -94,10 +94,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
 			);
 
-			$action         = current_action();
-			$handler_method = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
+			$action          = current_action();
+			$allowed_methods = array_values( $action_map );
+			$handler_method  = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
 
-			if ( ! $handler_method || ! method_exists( $this, $handler_method ) ) {
+			if ( ! $handler_method || ! in_array( $handler_method, $allowed_methods, true ) || ! method_exists( $this, $handler_method ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
