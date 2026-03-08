@@ -1288,6 +1288,8 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
 		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$assistant_id = $ctx['assistant_id'];
 		$chart_js_url = $ctx['chart_js_url'];
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -1557,6 +1559,9 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var coachHist=[];' .
 
 		/* ── Storage helpers ── */
 		'var SK_PREFIX="hw_";' .
@@ -1775,15 +1780,34 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
 			'if(msgs){var um=document.createElement("div");um.className="tma-hw-coach-msg user";um.textContent=msg;msgs.appendChild(um);msgs.scrollTop=msgs.scrollHeight;}' .
 			'var loadEl=null;' .
 			'if(msgs){loadEl=document.createElement("div");loadEl.className="tma-hw-coach-msg bot";loadEl.textContent="' . esc_js( __( '…', 'mcp-ai-wpoos-pro' ) ) . '";msgs.appendChild(loadEl);msgs.scrollTop=msgs.scrollHeight;}' .
+			/* Prepend today's wellness data as context on the first message. */
 			'var log=hwLoadLog();' .
-			'fetch(TOOLS_EXEC,{method:"POST",' .
+			'if(!coachHist.length){' .
+				'var moodLabels=["","' . esc_js( __( 'Very Poor', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Poor', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Neutral', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Good', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Excellent', 'mcp-ai-wpoos-pro' ) ) . '"];' .
+				'var wellnessCtx="[Today\'s wellness data]"' .
+					'+" Steps: "+(log.steps||0)' .
+					'+", Water: "+(log.water||0)+" glasses"' .
+					'+", Sleep: "+(log.sleep||0)+" hrs"' .
+					'+", Calories: "+(log.calories||0)' .
+					'+", Sodium: "+(log.sodium||0)+" mg"' .
+					'+(log.mood?", Mood: "+(moodLabels[log.mood]||log.mood):"")+".";"' .
+				'coachHist.push({role:"user",content:wellnessCtx});' .
+				'coachHist.push({role:"assistant",content:"' . esc_js( __( 'I can see your wellness data for today. How can I help you reach your goals?', 'mcp-ai-wpoos-pro' ) ) . '"});' .
+			'}' .
+			'coachHist.push({role:"user",content:msg});' .
+			'var body={messages:coachHist.slice(-20)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'fetch(CHAT_URL,{method:"POST",' .
 				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
-				'body:JSON.stringify({tool:"ai_health_coach",arguments:{message:msg,steps:log.steps,water:log.water,sleep:log.sleep,calories:log.calories,sodium:log.sodium||0,mood:log.mood}})' .
+				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var reply=(d&&d.data&&d.data.reply)?d.data.reply:"' . esc_js( __( 'Keep up the great work! Stay consistent with your goals, hydrate well, and aim for 7-9 hours of sleep. 💪', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'var data=d&&d.data?d.data:{};' .
+				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
+					'||(data.content)||(data.response)||"' . esc_js( __( 'Keep up the great work! Stay consistent with your goals, hydrate well, and aim for 7-9 hours of sleep. 💪', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'if(loadEl)loadEl.textContent=reply;' .
+				'coachHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Stay hydrated! Aim for 8 glasses of water today. 💧', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'A 20-minute walk can boost your mood and energy. 🚶', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Quality sleep is foundational to health. Aim for 7-9 hours tonight. 😴', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Consistency is the key to long-term wellness. 🌟', 'mcp-ai-wpoos-pro' ) ) . '"];' .
 				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
