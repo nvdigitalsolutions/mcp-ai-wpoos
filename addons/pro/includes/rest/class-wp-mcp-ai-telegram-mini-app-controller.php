@@ -617,6 +617,9 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 					'tools_url'     => $tools_url,
 					'analytics_url' => $analytics_url,
 					'chart_js_url'  => $chart_js_url,
+					'member_id'     => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
+						: 0,
 				);
 
 				// render_html() returns a <body>…</body> fragment.  All

@@ -446,7 +446,13 @@
 
 			// Format content (support markdown if available)
 			if (typeof marked !== 'undefined' && type === 'assistant') {
-				contentDiv.innerHTML = marked.parse(content);
+				const rawHtml = marked.parse(content);
+				// Sanitize with DOMPurify if available to prevent XSS; fall back to textContent otherwise.
+				if (typeof DOMPurify !== 'undefined') {
+					contentDiv.innerHTML = DOMPurify.sanitize(rawHtml);
+				} else {
+					contentDiv.textContent = content;
+				}
 			} else {
 				// Simple formatting
 				contentDiv.textContent = content;
