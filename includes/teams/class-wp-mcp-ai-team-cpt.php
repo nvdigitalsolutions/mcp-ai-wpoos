@@ -822,10 +822,13 @@ class WP_MCP_AI_Team_CPT {
 				update_post_meta( $post_id, self::META_ORCHESTRATION_MODE, $orchestration_mode );
 			}
 
-			// Workflow template (JSON).
+			// Workflow template (JSON) — decode to validate structure, then re-encode cleanly.
 			if ( isset( $_POST['wp_mcp_ai_workflow_template'] ) ) {
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_json_field callback.
-				$workflow_template = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON re-encoding below serves as sanitization.
+				$raw_template     = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+				$decoded_template = json_decode( $raw_template, true );
+				// json_decode( $raw, true ) converts JSON objects and arrays to PHP arrays; primitives and invalid JSON yield non-array results.
+				$workflow_template = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_template ) ) ? wp_json_encode( $decoded_template ) : '{}';
 				update_post_meta( $post_id, self::META_WORKFLOW_TEMPLATE, $workflow_template );
 			}
 
