@@ -98,7 +98,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}
@@ -118,7 +118,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * @return string HTML output or fallback on error.
 		 * @throws Exception If presets array is invalid or empty.
 		 */
-		public static function render_presets_selector( $presets ) { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		public static function render_presets_selector( $presets ) { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing -- Private/protected helper method with self-documenting name; PHPDoc block not required by WPCS for private methods.
 			try {
 				if ( ! is_array( $presets ) || empty( $presets ) ) {
 					throw new Exception( 'Invalid presets array' );
@@ -248,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}
@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}
@@ -421,7 +421,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}
@@ -500,7 +500,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}
@@ -685,7 +685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								'exception'  => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}

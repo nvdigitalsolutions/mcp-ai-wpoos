@@ -393,7 +393,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 				$blog_id = absint( get_current_blog_id() );
 				$pattern = $wpdb->esc_like( sprintf( '%s%s_', $prefix, $blog_id ) ) . '%';
 
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 				$results = $wpdb->get_results(
 					$wpdb->prepare(
 						"SELECT meta_key, meta_value FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s ORDER BY meta_id DESC LIMIT %d",
@@ -417,7 +417,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 				$transient_pattern = $wpdb->esc_like( '_transient_' . $prefix ) . '%';
 				$timeout_pattern   = $wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%';
 
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 				$results = $wpdb->get_results(
 					$wpdb->prepare(
 						"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name NOT LIKE %s ORDER BY option_id DESC LIMIT %d",

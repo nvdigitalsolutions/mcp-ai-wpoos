@@ -415,7 +415,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 
 		// Create directory.
 		if ( ! file_exists( $export_dir ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_mkdir -- mkdir() used to create a plugin-managed directory; WP_Filesystem is not available in this CLI/cron context.
 			wp_mkdir_p( $export_dir );
 		}
 
@@ -439,7 +439,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		// Save file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $export_file, $yaml_content );
 
 		if ( false === $result ) {
@@ -505,7 +505,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		// Read file content.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$file_content = file_get_contents( $file_path );
 
 		if ( false === $file_content ) {
@@ -570,7 +570,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$custom_file  = str_replace( '.yml', '.json', $custom_file );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $custom_file, $save_content );
 
 		if ( false === $result ) {

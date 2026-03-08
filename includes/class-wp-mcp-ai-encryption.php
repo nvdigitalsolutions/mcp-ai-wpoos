@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				self::ENCRYPTED_SECRET_META_KEY
 			);
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 			$results = $wpdb->get_results( $query );
 
 			if ( empty( $results ) ) {
@@ -250,7 +250,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 
 			// Phase 2: Update all secrets with new encrypted values.
 			foreach ( $re_encrypted as $meta_id => $new_encrypted ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 				$updated = $wpdb->update(
 					$wpdb->postmeta,
 					array( 'meta_value' => $new_encrypted ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to find users by encrypted plugin token; no alternative lookup method available.
@@ -309,7 +309,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 			// Restore all updated secrets to their original values.
 			foreach ( $re_encrypted as $meta_id => $new_encrypted ) {
 				if ( isset( $original_values[ $meta_id ] ) ) {
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 					$result = $wpdb->update(
 						$wpdb->postmeta,
 						array( 'meta_value' => $original_values[ $meta_id ] ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- meta_value lookup required to find users by encrypted plugin token; no alternative lookup method available.

@@ -1522,7 +1522,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
 
 			// Get all user IDs with usage data before deleting.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$user_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -1531,7 +1531,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			// Delete all usage data.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 			$deleted = $wpdb->delete(
 				$wpdb->usermeta,
 				array( 'meta_key' => $meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
@@ -1550,7 +1550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Also delete tool-specific token usage data.
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 			$wpdb->delete(
 				$wpdb->usermeta,
 				array( 'meta_key' => $tool_meta_key ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- meta_key lookup required to find plugin-specific user meta; no alternative lookup method available.
@@ -3241,7 +3241,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			global $wpdb;
 
 			// Find all playbook attachments that are NOT associated with any profession.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$orphaned_attachments = $wpdb->get_col(
 				"SELECT p.ID
 				FROM {$wpdb->posts} p

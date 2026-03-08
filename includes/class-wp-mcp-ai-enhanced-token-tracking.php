@@ -327,7 +327,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			// Get all users who have usage data.
 			global $wpdb;
 			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$user_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -456,7 +456,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$count_prepare_args   = $gemini_tools;
-		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$total_gemini_records            = $wpdb->get_var( $count_prepared_query );
@@ -477,7 +477,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		";
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$misattributed_count_prepared = $wpdb->prepare( $misattributed_count_query, $gemini_tools ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$misattributed_count_prepared = $wpdb->prepare( $misattributed_count_query, $gemini_tools ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$total_misattributed = $wpdb->get_var( $misattributed_count_prepared );
@@ -500,7 +500,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$prepare_args   = array_merge( $gemini_tools, array( $limit ) );
-		$prepared_query = $wpdb->prepare( $query, $prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$prepared_query = $wpdb->prepare( $query, $prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Query uses $wpdb->prepare() with proper placeholders. Table name is escaped with esc_sql().
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
@@ -545,7 +545,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 			// Apply update if not dry run.
 			if ( ! $dry_run ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 				$updated = $wpdb->update(
 					$table_name,
 					array(

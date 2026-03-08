@@ -230,8 +230,8 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'post_type'      => $post_types,
 			'post_status'    => 'publish',
 			'posts_per_page' => self::MAX_POSTS_TO_QUERY,
-			'meta_key'       => '_wp_mcp_ai_embeddings', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			'meta_key'       => '_wp_mcp_ai_embeddings', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Meta key lookup required for embedding index retrieval; performance trade-off accepted.
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Meta query required for embedding/semantic search functionality; performance trade-off accepted.
 				array(
 					'key'     => '_wp_mcp_ai_embeddings',
 					'compare' => 'EXISTS',

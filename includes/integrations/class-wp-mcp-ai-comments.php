@@ -181,7 +181,7 @@ class WP_MCP_AI_Comments {
 
 		$log_entry = '[WP_MCP_AI_Comments] ' . $message;
 
-		error_log( $log_entry ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( $log_entry ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 
 		// Also store in plugin's error log if available.
 		$recent_errors = get_option( 'wp_mcp_ai_recent_errors', array() );

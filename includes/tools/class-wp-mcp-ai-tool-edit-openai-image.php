@@ -266,7 +266,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Get image content.
 		$image_content = '';
 		if ( isset( $image_data['b64_json'] ) ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- base64_decode used to decode binary image/file data received from the API, not for code obfuscation.
 			$image_content = base64_decode( $image_data['b64_json'] );
 		} elseif ( isset( $image_data['url'] ) ) {
 			$response = wp_remote_get( $image_data['url'], array( 'timeout' => 30 ) );
@@ -292,7 +292,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['path'] . '/' . $filename;
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		if ( false === file_put_contents( $file_path, $image_content ) ) {
 			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'mcp-ai-wpoos' ) );
 		}

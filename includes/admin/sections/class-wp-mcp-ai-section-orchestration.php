@@ -573,11 +573,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						);
 					} catch ( Exception $log_error ) {
 						// Fallback to PHP error log if WP logger fails.
-						error_log( 'WP_MCP_AI: Failed to log health status error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'WP_MCP_AI: Failed to log health status error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 					}
 				} else {
 					// Logger not available, use PHP error log directly.
-					error_log( 'WP_MCP_AI: Health status rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP_MCP_AI: Health status rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 				}
 
 				// Return safe fallback.
@@ -972,11 +972,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						);
 					} catch ( Exception $log_error ) {
 						// Fallback to PHP error log if WP logger fails.
-						error_log( 'WP_MCP_AI: Failed to log presets error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'WP_MCP_AI: Failed to log presets error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 					}
 				} else {
 					// Logger not available, use PHP error log directly.
-					error_log( 'WP_MCP_AI: Presets rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP_MCP_AI: Presets rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 				}
 
 				// Return safe fallback.
@@ -990,7 +990,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return string
 		 * @throws Exception If Resource Manager is not available or stats cannot be generated.
 		 */
-		private function get_stats_content() { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
+		private function get_stats_content() { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing -- Private/protected helper method with self-documenting name; PHPDoc block not required by WPCS for private methods.
 			try {
 				// Check if Resource Manager is available.
 				if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
@@ -1128,11 +1128,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						);
 					} catch ( Exception $log_error ) {
 						// Fallback to PHP error log if WP logger fails.
-						error_log( 'WP_MCP_AI: Failed to log stats error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+						error_log( 'WP_MCP_AI: Failed to log stats error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 					}
 				} else {
 					// Logger not available, use PHP error log directly.
-					error_log( 'WP_MCP_AI: Orchestration stats rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'WP_MCP_AI: Orchestration stats rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 				}
 
 				// Return a safe fallback that doesn't break the page.

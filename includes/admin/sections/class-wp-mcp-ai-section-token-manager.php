@@ -180,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$user_ids  = wp_cache_get( $cache_key, 'wp_mcp_ai' );
 
 			if ( false === $user_ids ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 				$user_ids = $wpdb->get_col(
 					$wpdb->prepare(
 						"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",

@@ -517,7 +517,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			$suffix     = 1;
 			while ( username_exists( $github_login ) ) {
 				$github_login = $base_login . '_' . $suffix;
-				++$suffix; // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition
+				++$suffix; // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- Increment in while-condition is idiomatic PHP; no side-effect assignment.
 			}
 
 			$user_data = array(

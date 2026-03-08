@@ -354,7 +354,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			$endpoint = "/repos/{$owner}/{$repo}/contents/{$path}";
 			$body     = array(
 				'message' => $message,
-				'content' => base64_encode( $content ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+				'content' => base64_encode( $content ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode file content for GitHub API (required by API spec), not for obfuscation.
 				'branch'  => $branch,
 			);
 

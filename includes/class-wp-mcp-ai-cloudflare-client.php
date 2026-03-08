@@ -2143,7 +2143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			);
 
 			// Read file content.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 			$file_data = file_get_contents( $file_path );
 
 			if ( false === $file_data ) {
@@ -2378,7 +2378,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			);
 
 			// Read file content.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 			$file_data = file_get_contents( $file_path );
 
 			if ( false === $file_data ) {

@@ -539,7 +539,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$memberships = array();
 
 		foreach ( $blogs as $blog ) {
-			$name = isset( $blog->blogname ) ? $blog->blogname : ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
+			$name = isset( $blog->blogname ) ? $blog->blogname : ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase -- Property name matches the external WP/API object property (camelCase); renaming would break deserialization.
 
 			if ( '' === $name && '' === $url ) {
 				continue;

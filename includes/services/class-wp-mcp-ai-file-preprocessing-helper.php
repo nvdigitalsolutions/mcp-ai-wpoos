@@ -97,7 +97,7 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 	 * @param string $purpose  Upload purpose (not currently used, reserved for future).
 	 * @return array Result with 'suitable', 'warnings', 'recommendations'.
 	 */
-	private static function check_format_suitability( $file_ext, $purpose ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	private static function check_format_suitability( $file_ext, $purpose ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter required by hook or interface signature but not used in this implementation.
 		$reliable_formats   = array( 'pdf', 'txt', 'md', 'json', 'docx', 'html' );
 		$unreliable_formats = array( 'csv', 'xlsx', 'xls', 'pptx', 'ppt' );
 
@@ -144,7 +144,7 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 	 */
 	public static function check_file_encoding( $file_path ) {
 		$sample_size = min( 8192, filesize( $file_path ) );
-		$handle      = fopen( $file_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle      = fopen( $file_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Binary file read using native fopen/fread/fclose; WP_Filesystem does not support binary reads in this context.
 
 		if ( ! $handle ) {
 			return array(
@@ -154,8 +154,8 @@ class WP_MCP_AI_File_Preprocessing_Helper {
 			);
 		}
 
-		$sample = fread( $handle, $sample_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		$sample = fread( $handle, $sample_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Binary file read using native fread; WP_Filesystem does not support binary reads in this context.
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing native fopen handle; WP_Filesystem does not support binary reads in this context.
 
 		if ( false === $sample ) {
 			return array(

@@ -348,7 +348,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		global $wpdb;
 
 		// Find attachments with playbook hash but no profession association (orphaned).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$orphaned_attachments = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT p.ID, pm_hash.meta_value as hash
@@ -439,7 +439,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$target_file = trailingslashit( $target_dir ) . $filename;
 
 		// Write content to file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $target_file, $content );
 
 		if ( false === $result ) {
@@ -495,7 +495,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		// Update file content.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		file_put_contents( $file_path, $content );
 
 		// Update hash meta.

@@ -116,7 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 								'exception' => $e->getMessage(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Empty catch block intentional; exception is non-critical in this rendering context and silently ignored by design.
 						// Ignore logging errors to prevent cascading failures.
 					}
 				}

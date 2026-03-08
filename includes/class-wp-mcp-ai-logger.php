@@ -150,7 +150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			$line = self::truncate_string( $line, self::MAX_LOG_LINE_LENGTH );
 
-			error_log( $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 		}
 
 		/**

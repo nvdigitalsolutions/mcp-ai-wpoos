@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Skip if class doesn't exist.
 			if ( ! class_exists( $class_name ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 					error_log(
 						sprintf(
 							'[WP_MCP_AI] Pro Dashboard delegate class not found: %s (key: %s)',
@@ -4071,21 +4071,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					$table = esc_sql( $repository->get_table_name() );
 
 					// Get total conversations (unique session keys).
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 					$total                            = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
 					$chat_data['total_conversations'] = absint( $total );
 
 					// Get active users (unique user IDs).
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 					$active_users              = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
 					$chat_data['active_users'] = absint( $active_users );
 
 					// Get today's conversations.
 					$today_start = gmdate( 'Y-m-d 00:00:00' );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 					$today_count = $wpdb->get_var(
 						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
 							$today_start
 						)
@@ -4094,10 +4094,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 					// Get this week's conversations.
 					$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 					$week_count = $wpdb->get_var(
 						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
 							$week_start
 						)

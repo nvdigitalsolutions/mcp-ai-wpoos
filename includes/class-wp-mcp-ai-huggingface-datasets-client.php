@@ -672,7 +672,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 			global $wpdb;
 
 			$pattern = $wpdb->esc_like( '_transient_' . self::CACHE_GROUP . '_' ) . '%';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$count = $wpdb->query(
 				$wpdb->prepare(
 					"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",

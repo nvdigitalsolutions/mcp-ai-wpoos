@@ -1047,7 +1047,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for SSE streaming.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical (best-effort timeout extension).
 			}
 
 			while ( $poll_count < $max_polls ) {
@@ -4754,7 +4754,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$meta_key = WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY;
 			$like     = '%' . $wpdb->esc_like( $file_id ) . '%';
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$post_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
@@ -7695,7 +7695,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return false;
 			}
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 
 			return $result === $table;
@@ -9307,7 +9307,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					// Only set if we can (some hosting environments don't allow this).
 					if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
-						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical (best-effort timeout extension).
 					}
 				}
 

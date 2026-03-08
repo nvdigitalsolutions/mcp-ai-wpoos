@@ -376,7 +376,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 			);
 
 			// Query assistants for matching credential.
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Meta query required for embedding/semantic search functionality; performance trade-off accepted.
 			$assistants = get_posts(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
@@ -533,7 +533,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 */
 	private function log_request( $action, $data = array() ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 			error_log(
 				sprintf(
 					'[SlashCommands:REST] %s | %s',
@@ -552,7 +552,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 */
 	private function log_success( $message, $data = array() ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 			error_log(
 				sprintf(
 					'[SlashCommands:REST] ✅ %s | %s',
@@ -571,7 +571,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 * @param array  $data    Additional data to log.
 	 */
 	private function log_error( $code, $message, $data = array() ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 		error_log(
 			sprintf(
 				'[SlashCommands:REST] ❌ %s: %s | %s',
@@ -624,7 +624,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 		$table_name = $wpdb->prefix . 'mcp_ai_slash_command_audit';
 
 		// Try to insert into table (will silently fail if table doesn't exist).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 		$wpdb->insert(
 			$table_name,
 			$log_data,
@@ -639,7 +639,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 
 		// Log to debug log if WP_DEBUG enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 			error_log(
 				sprintf(
 					'[SlashCommands:AUDIT] %s | User: %d | Status: %s | Duration: %sms | ID: %s',

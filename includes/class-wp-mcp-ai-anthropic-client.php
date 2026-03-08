@@ -882,7 +882,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 
 				// Convert to base64.
-				$image_data = base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+				$image_data = base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 
 				return array(
 					'type'   => 'image',

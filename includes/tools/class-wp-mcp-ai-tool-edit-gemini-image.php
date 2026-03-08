@@ -205,7 +205,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Ensure image data is base64-encoded for Gemini API.
 		// All sources return raw binary data, so we need to encode it.
 		if ( isset( $source_image['data'] ) && ! empty( $source_image['data'] ) ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 			$source_image['data'] = base64_encode( $source_image['data'] );
 		}
 

@@ -1813,7 +1813,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$upload_dir = wp_upload_dir();
 			$temp_file  = wp_tempnam( $filename, $upload_dir['path'] );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 			if ( false === file_put_contents( $temp_file, $content ) ) {
 				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to write document file.', 'mcp-ai-wpoos' ) );
 			}
@@ -1828,7 +1828,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			// Clean up temp file.
 			if ( file_exists( $temp_file ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Deleting a temp/processed file; WP_Filesystem is not available in this REST/cron/tool execution context.
 				unlink( $temp_file );
 			}
 
