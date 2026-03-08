@@ -447,7 +447,7 @@
 				}
 			},
 			error: function(xhr, status, error) {
-				$loading.html('<div class="notice notice-error"><p>Error loading preview: ' + escapeHtml(String(error)) + '</p></div>');
+				$loading.html('<div class="notice notice-error"><p>Error loading preview: ' + escapeHtml(error) + '</p></div>');
 			}
 		});
 	}

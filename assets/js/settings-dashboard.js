@@ -1235,13 +1235,13 @@
 							html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
 							html += '<ul style="margin: 0; padding-left: 20px;">';
 							if (zoneData.name) {
-								html += '<li><strong>Domain:</strong> ' + escapeHtml(String(zoneData.name)) + '</li>';
+								html += '<li><strong>Domain:</strong> ' + escapeHtml(zoneData.name) + '</li>';
 							}
 							if (zoneData.status) {
-								html += '<li><strong>Status:</strong> ' + escapeHtml(String(zoneData.status)) + '</li>';
+								html += '<li><strong>Status:</strong> ' + escapeHtml(zoneData.status) + '</li>';
 							}
 							if (zoneData.plan) {
-								html += '<li><strong>Plan:</strong> ' + escapeHtml(String(zoneData.plan)) + '</li>';
+								html += '<li><strong>Plan:</strong> ' + escapeHtml(zoneData.plan) + '</li>';
 							}
 							html += '</ul></div>';
 							$zoneInfo.html(html);
@@ -1303,10 +1303,10 @@
 							html += '<p style="margin: 0 0 5px 0;"><strong>Account Information:</strong></p>';
 							html += '<ul style="margin: 0; padding-left: 20px;">';
 							if (accountData.email) {
-								html += '<li><strong>Email:</strong> ' + escapeHtml(String(accountData.email)) + '</li>';
+								html += '<li><strong>Email:</strong> ' + escapeHtml(accountData.email) + '</li>';
 							}
 							if (accountData.server_count !== undefined) {
-								html += '<li><strong>Servers:</strong> ' + escapeHtml(String(accountData.server_count)) + '</li>';
+								html += '<li><strong>Servers:</strong> ' + escapeHtml(accountData.server_count) + '</li>';
 							}
 							html += '</ul></div>';
 							$accountInfo.html(html);
