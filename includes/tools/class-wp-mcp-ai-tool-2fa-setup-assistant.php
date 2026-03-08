@@ -484,7 +484,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		$secret = '';
 
 		for ( $i = 0; $i < 16; $i++ ) {
-			$secret .= $chars[ wp_rand( 0, strlen( $chars ) - 1 ) ];
+			$secret .= $chars[ random_int( 0, strlen( $chars ) - 1 ) ];
 		}
 
 		return $secret;
@@ -503,9 +503,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		for ( $i = 0; $i < 10; $i++ ) {
 			$codes[] = sprintf(
 				'%04d-%04d-%04d',
-				wp_rand( 1000, 9999 ),
-				wp_rand( 1000, 9999 ),
-				wp_rand( 1000, 9999 )
+				random_int( 1000, 9999 ),
+				random_int( 1000, 9999 ),
+				random_int( 1000, 9999 )
 			);
 		}
 
