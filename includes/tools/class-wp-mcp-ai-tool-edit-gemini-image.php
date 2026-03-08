@@ -792,13 +792,29 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			// Extract the relative path after the base URL.
 			$relative_path = substr( $normalized_url, strlen( $normalized_base_url ) );
 
+			// Security: Decode URL-encoding before checking for traversal sequences so
+			// that encoded variants like %2e%2e cannot bypass the check.
+			$decoded_relative = urldecode( $relative_path );
+			if ( false !== strpos( $decoded_relative, '..' ) ) {
+				return false;
+			}
+
 			// Build the file path.
 			$file_path = $base_dir . $relative_path;
 
 			// Normalize path separators.
 			$file_path = wp_normalize_path( $file_path );
 
-			return $file_path;
+			// Security: Verify the resolved path stays within the uploads directory.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
+				return false;
+			}
+			$uploads_base = wp_normalize_path( trailingslashit( $base_dir ) );
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), $uploads_base ) ) {
+				return false;
+			}
+			return $resolved;
 		}
 
 		// Try using WordPress built-in function as fallback.
