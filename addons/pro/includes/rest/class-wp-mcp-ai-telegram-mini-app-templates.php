@@ -1809,7 +1809,7 @@ class WP_MCP_AI_TMA_Template_Health_Wellness extends WP_MCP_AI_Telegram_Mini_App
  *  - Log tab: record vital measurements and kidney lab values with optional notes.
  *  - Trends tab: Chart.js 7-day line charts for vitals and kidney markers with reference bands.
  *  - Dosage tab: medication tracker with dose scheduling and adherence logging.
- *  - Doctor tab: AI assistant with full vitals + kidney context via MCP tools endpoint.
+ *  - Doctor tab: AI assistant connected to the configured assistant via standard chat endpoint.
  *  - Persistent offline-first data via localStorage with optional server sync.
  *
  * @since 1.1.5
@@ -1850,6 +1850,8 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 	public function render_html( array $ctx ) {
 		$site_name    = esc_html( $ctx['site_name'] );
 		$tools_exec   = $ctx['tools_url'] . '/execute';
+		$chat_url     = $ctx['chat_url'];
+		$assistant_id = $ctx['assistant_id'];
 		$chart_js_url = $ctx['chart_js_url'];
 
 		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -2174,6 +2176,9 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var TOOLS_EXEC=' . wp_json_encode( $tools_exec ) . ';' .
 		'var NONCE=' . wp_json_encode( $ctx['nonce'] ) . ';' .
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
+		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
+		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var doctorHist=[];' .
 
 		/* ── Storage helpers ── */
 		'var SK_READINGS="mv_readings";' .
@@ -2606,26 +2611,40 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'if(msgs){var um=document.createElement("div");um.className="mv-doctor-msg user";um.textContent=msg;msgs.appendChild(um);msgs.scrollTop=msgs.scrollHeight;}' .
 			'var loadEl=null;' .
 			'if(msgs){loadEl=document.createElement("div");loadEl.className="mv-doctor-msg bot";loadEl.textContent="' . esc_js( __( '…', 'mcp-ai-wpoos-pro' ) ) . '";msgs.appendChild(loadEl);msgs.scrollTop=msgs.scrollHeight;}' .
-			/* Build context from latest reading */
+			/* Prepend patient vitals context as first turn when history is empty. */
 			'var readings=mvLoadReadings();var latest=readings.length?readings[0]:{};' .
-			'fetch(TOOLS_EXEC,{method:"POST",' .
+			'if(!doctorHist.length&&latest&&Object.keys(latest).length){' .
+				'var vitCtx="[Patient vitals context]"' .
+				'+" BP: "+(latest.bp_sys||"?")+"/"+(latest.bp_dia||"?")+" mmHg"' .
+				'+", HR: "+(latest.hr||"?")+" bpm"' .
+				'+", SpO2: "+(latest.spo2||"?")+"%"' .
+				'+", Temp: "+(latest.temp||"?")+"\u00b0"' .
+				'+", Glucose: "+(latest.glucose||"?")+" mg/dL"' .
+				'+", eGFR: "+(latest.egfr||"?")+" mL/min"' .
+				'+", Creatinine: "+(latest.creatinine||"?")+" mg/dL"' .
+				'+", BUN: "+(latest.bun||"?")+" mg/dL"' .
+				'+", K+: "+(latest.potassium||"?")+" mEq/L"' .
+				'+", Na+: "+(latest.sodium||"?")+" mEq/L"' .
+				'+", Phosphorus: "+(latest.phosphorus||"?")+" mg/dL"' .
+				'+", Albumin: "+(latest.albumin||"?")+" g/dL"' .
+				'+(latest.notes?". Notes: "+latest.notes:"")+".";' .
+				'doctorHist.push({role:"user",content:vitCtx});' .
+				'doctorHist.push({role:"assistant",content:"' . esc_js( __( 'I have your latest vitals on file. How can I help you today?', 'mcp-ai-wpoos-pro' ) ) . '"});' .
+			'}' .
+			'doctorHist.push({role:"user",content:msg});' .
+			'var body={messages:doctorHist.slice(-20)};' .
+			'if(ASSISTANT_ID)body.assistant_id=ASSISTANT_ID;' .
+			'fetch(CHAT_URL,{method:"POST",' .
 				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
-				'body:JSON.stringify({tool:"ai_medical_advisor",arguments:{' .
-					'message:msg,' .
-					'bp_sys:latest.bp_sys||0,bp_dia:latest.bp_dia||0,' .
-					'hr:latest.hr||0,spo2:latest.spo2||0,' .
-					'temp:latest.temp||0,glucose:latest.glucose||0,' .
-					'egfr:latest.egfr||0,creatinine:latest.creatinine||0,' .
-					'bun:latest.bun||0,potassium:latest.potassium||0,' .
-					'sodium:latest.sodium||0,phosphorus:latest.phosphorus||0,' .
-					'albumin:latest.albumin||0,' .
-					'notes:latest.notes||""' .
-				'}})' .
+				'body:JSON.stringify(body)' .
 			'})' .
 			'.then(function(r){return r.json();})' .
 			'.then(function(d){' .
-				'var reply=(d&&d.data&&d.data.reply)?d.data.reply:"' . esc_js( __( 'I\'m unable to retrieve a response right now. Please consult your healthcare provider for medical advice.', 'mcp-ai-wpoos-pro' ) ) . '";' .
+				'var data=d&&d.data?d.data:{};' .
+				'var reply=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content)' .
+					'||(data.content)||(data.response)||"' . esc_js( __( 'I\'m unable to retrieve a response right now. Please consult your healthcare provider for medical advice.', 'mcp-ai-wpoos-pro' ) ) . '";' .
 				'if(loadEl)loadEl.textContent=reply;' .
+				'doctorHist.push({role:"assistant",content:reply});' .
 			'}).catch(function(){' .
 				'var tips=["' . esc_js( __( 'Monitor your blood pressure regularly and note any significant changes. 📊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Stay consistent with your medication schedule for best treatment outcomes. 💊', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Track your vitals at the same time each day for more accurate trends. ⏰', 'mcp-ai-wpoos-pro' ) ) . '","' . esc_js( __( 'Always consult your doctor before adjusting any treatment plan. 🩺', 'mcp-ai-wpoos-pro' ) ) . '"];' .
 				'if(loadEl)loadEl.textContent=tips[Math.floor(Math.random()*tips.length)];' .
