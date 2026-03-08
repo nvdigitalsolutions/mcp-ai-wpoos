@@ -1236,7 +1236,7 @@ Ran `composer install --no-dev --classmap-authoritative` to regenerate the produ
 
 ---
 
-### Post-Audit Compliance Status (March 8, 2026)
+### Post-Audit Compliance Status (March 8, 2026 — Initial Sweep)
 
 | Category | Status |
 |----------|--------|
@@ -1246,7 +1246,96 @@ Ran `composer install --no-dev --classmap-authoritative` to regenerate the produ
 | Production autoloader | ✅ Regenerated with `--classmap-authoritative --no-dev` |
 | All 20 guideline categories | ✅ Pass (2 issues identified and fixed in this cycle) |
 
-**Base plugin compliance status: ✅ Fully compliant — ready for re-submission**
+---
+
+## Post-Merge Compliance Review — March 8, 2026 (Comprehensive Sweep)
+
+**Date:** March 8, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Comprehensive review of all `phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized` suppression comments across all `includes/` PHP files; full re-audit of JSON field saves in CPT metaboxes
+**Trigger:** Follow-on sweep after initial March 8 audit; validation that all phpcs:ignore claims are accurate
+
+---
+
+### Issue V: Incorrect `phpcs:ignore` Claim in Agent Orchestration Metabox
+
+#### Problem
+
+`includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-agent-orchestration.php` saved six JSON fields from `$_POST` using only `wp_unslash()`. The existing `phpcs:ignore` comment claimed "Sanitized by update_post_meta callback" — but `update_post_meta()` does **not** invoke any sanitize callback. The `sanitize_json_field` method registered via `register_setting()` in `WP_MCP_AI_Profession_CPT` applies only to the WordPress Options API; it is never called by `update_post_meta()`.
+
+**File:** `includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-agent-orchestration.php` — `save()` method (~line 348)
+
+**Fields affected:**
+
+| `$_POST` key | Meta constant |
+|---|---|
+| `wp_mcp_ai_task_patterns` | `META_TASK_PATTERNS` |
+| `wp_mcp_ai_decision_criteria` | `META_DECISION_CRITERIA` |
+| `wp_mcp_ai_orchestration_rules` | `META_ORCHESTRATION_RULES` |
+| `wp_mcp_ai_quality_metrics` | `META_QUALITY_METRICS` |
+| `wp_mcp_ai_tool_execution_order` | `META_TOOL_EXECUTION_ORDER` |
+| `wp_mcp_ai_confidence_thresholds` | `META_CONFIDENCE_THRESHOLDS` |
+
+**Before:**
+```php
+// Save JSON fields (they will be validated by the sanitize_json_field callback).
+$json_fields = array( /* ... */ );
+
+foreach ( $json_fields as $field_name => $meta_key ) {
+    if ( isset( $_POST[ $field_name ] ) ) {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by update_post_meta callback.
+        $value = wp_unslash( $_POST[ $field_name ] );
+        update_post_meta( $post_id, $meta_key, $value );
+    }
+}
+```
+
+#### Fix Applied
+
+Apply the same decode-and-re-encode pattern used in `class-wp-mcp-ai-team-cpt.php` (Issue III above): `json_decode()` validates the JSON structure; `wp_json_encode()` produces a clean, canonical JSON string. Invalid JSON or non-array results fall back to `'{}'`.
+
+**After:**
+```php
+// Save JSON fields — decode to validate structure, then re-encode cleanly.
+$json_fields = array( /* ... */ );
+
+foreach ( $json_fields as $field_name => $meta_key ) {
+    if ( isset( $_POST[ $field_name ] ) ) {
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON re-encoding below serves as sanitization.
+        $raw_value     = wp_unslash( $_POST[ $field_name ] );
+        $decoded_value = json_decode( $raw_value, true );
+        // json_decode( $raw, true ) converts JSON objects and arrays to PHP arrays; primitives and invalid JSON yield non-array results.
+        $value = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_value ) ) ? wp_json_encode( $decoded_value ) : '{}';
+        update_post_meta( $post_id, $meta_key, $value );
+    }
+}
+```
+
+**PHPCS result:** ✅ `lint:base` passes on modified file — 0 errors, 0 warnings.
+
+---
+
+### Files Changed in This Review Cycle
+
+**Code:**
+1. `includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-agent-orchestration.php` — JSON decode/re-encode sanitization for six profession agent-orchestration JSON fields (Issue V)
+
+**Documentation:**
+2. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+### Post-Audit Compliance Status (March 8, 2026 — Final)
+
+| Category | Status |
+|----------|--------|
+| Input sanitization (all `$_POST`/`$_GET`/`$_SERVER`) | ✅ All superglobals sanitized — agent-orchestration JSON fields fixed (Issue V) |
+| Output escaping (all `echo` with dynamic values) | ✅ All escaped |
+| `phpcs:ignore` accuracy | ✅ All suppression comments verified accurate — incorrect claim removed |
+| PHPCS `lint:base` | ✅ 0 errors, 0 warnings |
+| All 20 guideline categories | ✅ Pass |
+
+**Base plugin compliance status: ✅ Fully compliant**
 
 ---
 
