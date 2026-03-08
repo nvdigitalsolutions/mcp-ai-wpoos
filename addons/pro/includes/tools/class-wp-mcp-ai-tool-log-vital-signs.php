@@ -7,9 +7,9 @@
  * kidney-health indicators (eGFR, creatinine, BUN, K+, Na+, phosphorus, albumin).
  *
  * When JetEngine is available measurements are stored in the vitals_log CCT
- * (primary store for compiled log data) and in the legacy vital_signs CCT for
- * backward compatibility.  Options-based storage is always written as a
- * lightweight fallback so tools that pre-date CCT availability keep working.
+ * (primary store for compiled log data).  Options-based storage is always
+ * written as a lightweight fallback so tools that pre-date CCT availability
+ * keep working.
  *
  * @package WP_MCP_AI_Pro
  */
@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Log and track vital signs including blood pressure, heart rate, temperature, weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT (primary) and the legacy vital_signs CCT; options-based storage is always maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
+		return __( 'Log and track vital signs including blood pressure, heart rate, temperature, weight, BMI, blood glucose, oxygen saturation (SpO2), respiratory rate, and kidney-health indicators (eGFR, creatinine, BUN, potassium, sodium, phosphorus, albumin). When JetEngine is active measurements are stored in the structured vitals_log CCT with options-based storage maintained as a fallback. Supports trend analysis, normal range validation, and alerts for abnormal readings. HIPAA-compliant with audit trails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -496,10 +496,9 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		update_option( $vital_signs_key, $vital_signs );
 
 		// ── JetEngine CCT storage (when available) ────────────────────────
-		$cct_id     = null;
 		$log_cct_id = null;
 
-		// Build the shared CCT data array used by both legacy and log CCTs.
+		// Build the CCT data array for the vitals_log CCT.
 		$cct_data = array(
 			'measurement_date' => $measurement_date,
 			'measurement_time' => $measurement_time,
@@ -550,16 +549,11 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		}
 
-		// Write to the primary vitals_log CCT (includes logged_at timestamp).
+		// Write to the vitals_log CCT (includes logged_at timestamp).
 		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) && WP_MCP_AI_JetEngine_Vitals_Log_CCT::table_exists() ) {
-			$log_cct_data             = $cct_data;
+			$log_cct_data              = $cct_data;
 			$log_cct_data['logged_at'] = current_time( 'mysql' );
-			$log_cct_id               = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $log_cct_data );
-		}
-
-		// Also write to the legacy vital_signs CCT for backward compatibility.
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			$cct_id = WP_MCP_AI_JetEngine_Vitals_CCT::insert( $member_id, $cct_data );
+			$log_cct_id                = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $log_cct_data );
 		}
 
 		// Generate a semantic embedding for the vital signs entry so it can be
@@ -577,9 +571,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'message'           => __( 'Vital signs logged successfully.', 'mcp-ai-wpoos-pro' ),
 			'entry_id'          => $entry_id,
 			'log_cct_id'        => $log_cct_id,
-			'cct_id'            => $cct_id,
 			'stored_in_log_cct' => null !== $log_cct_id,
-			'stored_in_cct'     => null !== $cct_id,
 			'member_id'         => $member_id,
 			'date'              => $measurement_date,
 			'time'              => $measurement_time,
@@ -592,7 +584,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Get latest vital signs.
 	 *
-	 * Prefers vitals_log CCT when available; falls back to vital_signs CCT, then options storage.
+	 * Prefers vitals_log CCT when available; falls back to options storage.
 	 *
 	 * @param int $member_id Member ID.
 	 * @return array Latest vital signs.
@@ -611,19 +603,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		}
 
-		// Fall back to legacy vital_signs CCT when available.
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			$row = WP_MCP_AI_JetEngine_Vitals_CCT::get_latest( $member_id );
-			if ( $row ) {
-				return array(
-					'success'    => true,
-					'member_id'  => $member_id,
-					'source'     => 'cct',
-					'latest'     => (array) $row,
-				);
-			}
-		}
-
+		// Fall back to options-based storage.
 		$vital_signs_key = 'wp_mcp_ai_vital_signs_' . $member_id;
 		$vital_signs     = get_option( $vital_signs_key, array() );
 
@@ -650,7 +630,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * Get vital signs history.
 	 *
-	 * Prefers vitals_log CCT when available; falls back to vital_signs CCT, then options storage.
+	 * Prefers vitals_log CCT when available; falls back to options storage.
 	 *
 	 * @param int $member_id  Member ID.
 	 * @param int $days_back  Days of history.
@@ -671,20 +651,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 		}
 
-		// Fall back to legacy vital_signs CCT when available.
-		if ( class_exists( 'WP_MCP_AI_JetEngine_Vitals_CCT' ) && WP_MCP_AI_JetEngine_Vitals_CCT::table_exists() ) {
-			$after_date = gmdate( 'Y-m-d', time() - ( $days_back * DAY_IN_SECONDS ) );
-			$rows       = WP_MCP_AI_JetEngine_Vitals_CCT::get_for_member( $member_id, $after_date );
-			return array(
-				'success'   => true,
-				'member_id' => $member_id,
-				'days_back' => $days_back,
-				'source'    => 'cct',
-				'count'     => count( $rows ),
-				'history'   => array_map( 'get_object_vars', $rows ),
-			);
-		}
-
+		// Fall back to options-based storage.
 		$vital_signs_key  = 'wp_mcp_ai_vital_signs_' . $member_id;
 		$vital_signs      = get_option( $vital_signs_key, array() );
 		$cutoff_timestamp = time() - ( $days_back * DAY_IN_SECONDS );

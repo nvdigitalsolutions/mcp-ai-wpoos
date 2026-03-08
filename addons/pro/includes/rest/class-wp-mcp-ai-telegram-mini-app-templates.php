@@ -2202,6 +2202,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'var CHART_JS_URL=' . wp_json_encode( $chart_js_url ) . ';' .
 		'var CHAT_URL=' . wp_json_encode( $chat_url ) . ';' .
 		'var ASSISTANT_ID=' . wp_json_encode( $assistant_id ) . ';' .
+		'var MEMBER_ID=' . (int) ( $ctx['member_id'] ?? 0 ) . ';' .
 		'var doctorHist=[];' .
 
 		/* ── Storage helpers ── */
@@ -2490,12 +2491,69 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 			'["mv-bp-sys","mv-bp-dia","mv-hr","mv-spo2","mv-temp","mv-glucose","mv-egfr","mv-creatinine","mv-bun","mv-potassium","mv-sodium","mv-phosphorus","mv-albumin","mv-notes"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});' .
 			/* Show saved message */
 			'var msg=document.getElementById("mv-log-saved");if(msg){msg.style.display="block";setTimeout(function(){msg.style.display="none";},2500);}' .
-			/* Optional server sync */
+			/* Server sync via log_vital_signs tool when a member is resolved */
+			'if(TOOLS_EXEC&&MEMBER_ID>0){' .
+				'var sArgs={action:"log",member_id:MEMBER_ID,source:"tma",' .
+					'measurement_date:reading.ts?reading.ts.slice(0,10):"",' .
+					'measurement_time:reading.ts?reading.ts.slice(11,16):""};' .
+				'if(reading.bp_sys&&reading.bp_dia){sArgs.blood_pressure_systolic=reading.bp_sys;sArgs.blood_pressure_diastolic=reading.bp_dia;}' .
+				'if(reading.hr)sArgs.heart_rate=reading.hr;' .
+				'if(reading.spo2)sArgs.oxygen_saturation=reading.spo2;' .
+				'if(reading.temp)sArgs.temperature=reading.temp;' .
+				'if(reading.glucose)sArgs.blood_glucose=reading.glucose;' .
+				'if(reading.egfr)sArgs.egfr=reading.egfr;' .
+				'if(reading.creatinine)sArgs.creatinine=reading.creatinine;' .
+				'if(reading.bun)sArgs.bun=reading.bun;' .
+				'if(reading.potassium)sArgs.potassium=reading.potassium;' .
+				'if(reading.sodium)sArgs.sodium=reading.sodium;' .
+				'if(reading.phosphorus)sArgs.phosphorus=reading.phosphorus;' .
+				'if(reading.albumin)sArgs.albumin=reading.albumin;' .
+				'if(reading.notes)sArgs.notes=reading.notes;' .
+				'fetch(TOOLS_EXEC,{method:"POST",' .
+					'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
+					'body:JSON.stringify({slug:"log_vital_signs",arguments:sArgs})' .
+				'}).catch(function(){});' .
+			'}' .
+		'};' .
+
+		/* ── Pull server history into localStorage on first load ── */
+		'function mvSyncFromServer(){' .
+			'if(!TOOLS_EXEC||!MEMBER_ID)return;' .
 			'fetch(TOOLS_EXEC,{method:"POST",' .
 				'headers:{"Content-Type":"application/json","X-WP-Nonce":NONCE},' .
-				'body:JSON.stringify({tool:"log_vital_reading",arguments:reading})' .
-			'}).catch(function(){});' .
-		'};' .
+				'body:JSON.stringify({slug:"log_vital_signs",arguments:{action:"get_history",member_id:MEMBER_ID,days_back:90}})' .
+			'})' .
+			'.then(function(r){return r.ok?r.json():null;})' .
+			'.then(function(d){' .
+				'if(!d||!d.result||!d.result.history||!d.result.history.length)return;' .
+				'var serverRows=d.result.history.map(function(row){' .
+					'return{ts:(row.measurement_date||"")+"T"+(row.measurement_time||"00:00")+":00.000Z",' .
+						'bp_sys:row.bp_systolic?parseFloat(row.bp_systolic):0,' .
+						'bp_dia:row.bp_diastolic?parseFloat(row.bp_diastolic):0,' .
+						'hr:row.heart_rate?parseFloat(row.heart_rate):0,' .
+						'spo2:row.oxygen_saturation?parseFloat(row.oxygen_saturation):0,' .
+						'temp:row.temperature?parseFloat(row.temperature):0,' .
+						'glucose:row.blood_glucose?parseFloat(row.blood_glucose):0,' .
+						'egfr:row.egfr?parseFloat(row.egfr):0,' .
+						'creatinine:row.creatinine?parseFloat(row.creatinine):0,' .
+						'bun:row.bun?parseFloat(row.bun):0,' .
+						'potassium:row.potassium?parseFloat(row.potassium):0,' .
+						'sodium:row.sodium?parseFloat(row.sodium):0,' .
+						'phosphorus:row.phosphorus?parseFloat(row.phosphorus):0,' .
+						'albumin:row.albumin?parseFloat(row.albumin):0,' .
+						'notes:row.notes||""};' .
+				'});' .
+				/* Merge: server rows keyed by day, local-only days preserved */
+				'var local=mvLoadReadings();' .
+				'var byDay={};' .
+				'serverRows.forEach(function(r){var k=r.ts?r.ts.slice(0,10):"";if(k)byDay[k]=r;});' .
+				'local.forEach(function(r){var k=r.ts?r.ts.slice(0,10):"";if(k&&!byDay[k])byDay[k]=r;});' .
+				'var merged=Object.keys(byDay).sort().reverse().map(function(k){return byDay[k];});' .
+				'mvStoreReadings(merged);' .
+				'mvRenderDashboard();' .
+			'})' .
+			'.catch(function(){});' .
+		'}' .
 
 		/* ── Trends tab ── */
 		'var trendsChartInsts=[];' .
@@ -2676,7 +2734,7 @@ class WP_MCP_AI_TMA_Template_Medical_Vitals extends WP_MCP_AI_Telegram_Mini_App_
 		'};' .
 
 		/* ── Init ── */
-		'mvRefresh();mvRenderMeds();' .
+		'mvRefresh();mvRenderMeds();mvSyncFromServer();' .
 		'})();</script></body>';
 		// phpcs:enable
 	}
