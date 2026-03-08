@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-base-plugin-compliance',
-        'version' => 'dev-copilot/review-base-plugin-compliance',
-        'reference' => '5a6ff9883c14e6cc11d0d3bafe2d800420ebe953',
+        'pretty_version' => 'dev-copilot/fix-search-provider-visibility',
+        'version' => 'dev-copilot/fix-search-provider-visibility',
+        'reference' => '41a506f62c0ab8baef88a384add60a1d21911c29',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-base-plugin-compliance',
-            'version' => 'dev-copilot/review-base-plugin-compliance',
-            'reference' => '5a6ff9883c14e6cc11d0d3bafe2d800420ebe953',
+            'pretty_version' => 'dev-copilot/fix-search-provider-visibility',
+            'version' => 'dev-copilot/fix-search-provider-visibility',
+            'reference' => '41a506f62c0ab8baef88a384add60a1d21911c29',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

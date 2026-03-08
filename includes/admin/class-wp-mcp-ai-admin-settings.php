@@ -122,6 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudways_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_tavily_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_yahoo_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_removebg_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -238,6 +239,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						'web_search_provider' => array( 'brave' ),
 					),
 					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
+				),
+				'tavily'           => array(
+					'label'            => __( 'Tavily', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'tavily_api_key' ),
+					'fields'           => array(
+						'tavily_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables AI-optimised web search results. Tavily is purpose-built for AI agents and returns richer structured results.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Tavily.', 'mcp-ai-wpoos' ),
+					'active_when'      => array(
+						'web_search_provider' => array( 'tavily' ),
+					),
+					'inactive_message' => __( 'Set the web search provider to Tavily to activate this connector.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://tavily.com/',
 				),
 				'mubert'           => array(
 					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
@@ -2305,7 +2320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['web_search_provider'] ) ) {
 				$provider = sanitize_key( $settings['web_search_provider'] );
-				$allowed  = array( 'duckduckgo', 'brave' );
+				$allowed  = array( 'duckduckgo', 'brave', 'tavily' );
 
 				if ( in_array( $provider, $allowed, true ) ) {
 					$clean['web_search_provider'] = $provider;
@@ -2314,6 +2329,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['tavily_api_key'] ) ) {
+				$clean['tavily_api_key'] = trim( sanitize_text_field( $settings['tavily_api_key'] ) );
 			}
 
 			if ( isset( $settings['mubert_api_key'] ) ) {
