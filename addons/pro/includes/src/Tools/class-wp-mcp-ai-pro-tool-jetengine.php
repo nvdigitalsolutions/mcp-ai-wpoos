@@ -197,7 +197,11 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return array( 'types' => array() );
 		}
 
-		$types  = $module->instance->manager->get_types();
+		if ( ! method_exists( $module->instance->manager, 'get_content_types' ) ) {
+			return array( 'types' => array() );
+		}
+
+		$types  = $module->instance->manager->get_content_types();
 		$result = array();
 
 		foreach ( $types as $type ) {
@@ -235,7 +239,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
 			return new WP_Error(
@@ -288,7 +292,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
 			return new WP_Error(
@@ -342,7 +346,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
 			return new WP_Error(
@@ -398,7 +402,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
 			return new WP_Error(
@@ -455,7 +459,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+		$type = $this->get_cct_type( $module->instance, $arguments['cct_slug'] );
 
 		if ( ! $type ) {
 			return new WP_Error(
@@ -495,5 +499,29 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$item_id
 			),
 		);
+	}
+
+	/**
+	 * Resolve a CCT type object by slug using the correct JetEngine API.
+	 *
+	 * JetEngine exposes content types through `manager->get_content_types()`.
+	 * Older code incorrectly called `get_type()` / `get_types()` which do not
+	 * exist on the Manager class and produce a fatal error.  This helper always
+	 * uses `get_content_types()` and guards against future API changes with a
+	 * `method_exists()` check.
+	 *
+	 * @param object $module CCT module instance (i.e. `$module_wrapper->instance`), which
+	 *                       exposes a `manager` property with a `get_content_types()` method.
+	 * @param string $slug   CCT slug to look up.
+	 * @return object|null   CCT type object, or null when not found or API unavailable.
+	 */
+	protected function get_cct_type( $module, $slug ) {
+		if ( empty( $module->manager ) ||
+			! method_exists( $module->manager, 'get_content_types' ) ) {
+			return null;
+		}
+
+		$type = $module->manager->get_content_types( sanitize_key( $slug ) );
+		return is_object( $type ) ? $type : null;
 	}
 }
