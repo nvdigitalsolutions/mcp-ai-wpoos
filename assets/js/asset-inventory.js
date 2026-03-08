@@ -13,6 +13,18 @@
 	 */
 	const AssetInventoryManager = {
 		/**
+		 * Escape HTML special characters to prevent XSS.
+		 *
+		 * @param {string} text Text to escape.
+		 * @return {string} Escaped text.
+		 */
+		escapeHtml: function(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
+		},
+
+		/**
 		 * Initialize
 		 */
 		init: function() {
@@ -52,7 +64,7 @@
 					if (response.success) {
 						$notice
 							.addClass('notice notice-success')
-							.html('<p>' + wpMcpAiAssetInventory.strings.discoverySuccess + ' (' + response.count + ' assets)</p>')
+							.html('<p>' + wpMcpAiAssetInventory.strings.discoverySuccess + ' (' + parseInt(response.count, 10) + ' assets)</p>')
 							.show();
 
 						// Reload page to show updated inventory
@@ -80,7 +92,8 @@
 		showError: function(message) {
 			$('.wp-mcp-ai-inventory-notice')
 				.addClass('notice notice-error')
-				.html('<p>' + message + '</p>')
+				.empty()
+				.append($('<p>').text(message))
 				.show();
 		},
 
