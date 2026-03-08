@@ -41,6 +41,9 @@
 			// Show corresponding content.
 			$( '.workflow-content' ).removeClass( 'active' ).hide();
 			$( '#workflow-' + workflow ).addClass( 'active' ).fadeIn( 200 );
+
+			// Notify other components that a workflow tab has been activated.
+			$( document ).trigger( 'wpMcpAiWorkflowActivated', [ workflow ] );
 		} );
 	}
 
@@ -745,6 +748,35 @@
 		/* ---- Auto-load vitals when member selected and vitals tab is active ---- */
 		$( document ).on( 'wpMcpAiMemberRecordsLoaded', function() {
 			if ( $( '#workflow-vitals' ).hasClass( 'active' ) ) {
+				loadVitalsBtn.trigger( 'click' );
+			}
+		} );
+
+		/* ---- Auto-load vitals and populate date/time when the vitals tab is activated ---- */
+		$( document ).on( 'wpMcpAiWorkflowActivated', function( event, workflow ) {
+			if ( 'vitals' !== workflow ) {
+				return;
+			}
+
+			const now = new Date();
+
+			// Auto-populate current date if the field is empty.
+			if ( ! $( '#vitals-measurement-date' ).val() ) {
+				const dateStr = now.getFullYear() + '-' +
+					String( now.getMonth() + 1 ).padStart( 2, '0' ) + '-' +
+					String( now.getDate() ).padStart( 2, '0' );
+				$( '#vitals-measurement-date' ).val( dateStr );
+			}
+
+			// Auto-populate current time if the field is empty.
+			if ( ! $( '#vitals-measurement-time' ).val() ) {
+				const timeStr = String( now.getHours() ).padStart( 2, '0' ) + ':' +
+					String( now.getMinutes() ).padStart( 2, '0' );
+				$( '#vitals-measurement-time' ).val( timeStr );
+			}
+
+			// Auto-load existing CCT vitals for the selected member.
+			if ( memberSelect.val() ) {
 				loadVitalsBtn.trigger( 'click' );
 			}
 		} );
