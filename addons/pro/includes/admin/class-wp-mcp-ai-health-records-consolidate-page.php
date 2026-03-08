@@ -149,7 +149,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		wp_enqueue_script(
 			'wp-mcp-ai-health-consolidate',
 			WP_MCP_AI_PRO_URL . 'assets/js/health-consolidate.js',
-			array( 'jquery', 'wp-api' ),
+			array( 'jquery' ),
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
