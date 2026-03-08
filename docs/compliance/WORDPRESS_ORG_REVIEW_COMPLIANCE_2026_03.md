@@ -1082,4 +1082,172 @@ No new third-party libraries introduced. Tavily uses WordPress HTTP API (`wp_rem
 
 ---
 
-*Last updated: March 7, 2026*
+---
+
+## Post-Merge Compliance Review — March 8, 2026
+
+**Date:** March 8, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Comprehensive base plugin compliance audit — 20-category WordPress.org plugin directory guidelines review
+**Trigger:** Pre-re-submission sweep; full manual audit of all `includes/` PHP files
+
+---
+
+### Audit Methodology
+
+A comprehensive manual review was performed across all `includes/` PHP files against the 20 WordPress.org plugin directory guideline categories, supplemented by a PHPCS `lint:base` run (0 errors, 0 warnings confirmed). The review also inspected `mcp-ai-wpoos.php`, `readme.txt`, and the `LICENSE` file.
+
+**Excluded:** `addons/pro/`, `vendor/`, `node_modules/`, `tests/`
+
+---
+
+### 20-Category Compliance Results
+
+| # | Category | Status | Notes |
+|---|----------|--------|-------|
+| 1 | `eval()` usage | ✅ **PASS** | Only reference is inside security detection code |
+| 2 | `unserialize()` on untrusted data | ✅ **PASS** | Only `maybe_unserialize()` on WordPress DB data |
+| 3 | `base64_decode`/`encode` suspicious use | ✅ **PASS** | All legitimate (APIs, encryption, OAuth); inline justification comments present |
+| 4 | `ini_set()` calls | ✅ **PASS** | Zero found |
+| 5 | HEREDOC / NOWDOC | ✅ **PASS** | Zero found |
+| 6 | External CDN script/style loading | ✅ **PASS** | No external URLs in `wp_enqueue_script()`/`wp_enqueue_style()` calls |
+| 7 | `curl_init` / `file_get_contents` external | ✅ **PASS** | Uses WordPress HTTP API exclusively |
+| 8 | `register_setting` `sanitize_callback` | ✅ **PASS** | All calls include callbacks |
+| 9 | ABSPATH guards | ✅ **PASS** | All 710+ PHP files have the guard |
+| 10 | Input sanitization | ⚠️ → ✅ **FIXED** | Unsanitized `$_POST` JSON in team CPT — see Issue III below |
+| 11 | Output escaping | ⚠️ → ✅ **FIXED** | `echo $missing_list` with suppressed PHPCS warning — see Issue IV below |
+| 12 | Nonce verification | ✅ **PASS** | All AJAX/admin handlers verified |
+| 13 | `wp_die()` vs `die()`/`exit()` | ✅ **PASS** | Only `exit` in file-download AJAX handler (correct pattern) |
+| 14 | Plugin header | ✅ **PASS** | All required fields present and correct |
+| 15 | Text domain consistency | ✅ **PASS** | `'mcp-ai-wpoos'` used in all translation calls |
+| 16 | `readme.txt` format | ✅ **PASS** | All required sections, valid stable tag, 5 tags |
+| 17 | License | ✅ **PASS** | GPLv3, `LICENSE` file present |
+| 18 | Hardcoded admin menu positions | ✅ **PASS** | Both `add_menu_page()` calls use `null` |
+| 19 | Core file loading pattern | ✅ **PASS** | Only standard `wp-admin/includes/` helper loads |
+| 20 | HTTP API usage | ✅ **PASS** | WordPress HTTP API exclusively; zero `curl_init()` |
+
+---
+
+### Issue III: Unsanitized `$_POST` JSON Saved to Database
+
+#### Problem
+
+`includes/teams/class-wp-mcp-ai-team-cpt.php` saved `$_POST['wp_mcp_ai_workflow_template']` to `update_post_meta()` after only `wp_unslash()`. The existing `phpcs:ignore` comment incorrectly claimed a `sanitize_json_field` callback was applied — no such call existed. `wp_unslash()` is not a sanitization function.
+
+**File:** `includes/teams/class-wp-mcp-ai-team-cpt.php` — `save_meta()` method (~line 826)
+
+**Before:**
+```php
+// Workflow template (JSON).
+if ( isset( $_POST['wp_mcp_ai_workflow_template'] ) ) {
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_json_field callback.
+    $workflow_template = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+    update_post_meta( $post_id, self::META_WORKFLOW_TEMPLATE, $workflow_template );
+}
+```
+
+#### Fix Applied
+
+Decode the raw input with `json_decode()` to validate the JSON structure, then re-encode with `wp_json_encode()` as sanitization. Falls back to `'{}'` if the input is invalid JSON or not an array/object.
+
+**After:**
+```php
+// Workflow template (JSON) — decode to validate structure, then re-encode cleanly.
+if ( isset( $_POST['wp_mcp_ai_workflow_template'] ) ) {
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON re-encoding below serves as sanitization.
+    $raw_template     = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+    $decoded_template = json_decode( $raw_template, true );
+    // json_decode( $raw, true ) converts JSON objects and arrays to PHP arrays; primitives and invalid JSON yield non-array results.
+    $workflow_template = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_template ) ) ? wp_json_encode( $decoded_template ) : '{}';
+    update_post_meta( $post_id, self::META_WORKFLOW_TEMPLATE, $workflow_template );
+}
+```
+
+**Why `is_array()` is correct:** `json_decode( $raw, true )` decodes all JSON objects `{}` and arrays `[]` as PHP arrays. Non-array primitives (strings, numbers, `null`) and parse errors yield non-array results, which the `is_array()` check correctly rejects.
+
+**PHPCS result:** ✅ `lint:base` passes on modified file — 0 errors, 0 warnings.
+
+---
+
+### Issue IV: `phpcs:ignore`-Suppressed Unescaped Output
+
+#### Problem
+
+`includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php` used `echo $missing_list` with a `phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped` comment, claiming that each item was pre-escaped via `array_map('esc_html')`. While technically safe, suppressing an escaping warning rather than applying explicit escaping at the point of output is a pattern WordPress.org reviewers consistently flag.
+
+**File:** `includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php` — `render()` method (~line 231)
+
+**Before:**
+```php
+$missing_escaped = array_map( 'esc_html', $missing );
+$missing_list    = implode( ', ', $missing_escaped );
+
+if ( '' !== $missing_list ) {
+    echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
+    echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'mcp-ai-wpoos' ) . ' ';
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item already escaped via array_map('esc_html').
+    echo $missing_list;
+    echo '</p>';
+}
+```
+
+#### Fix Applied
+
+Removed the intermediate pre-escaped variable and the `phpcs:ignore` comment. Applied `esc_html()` directly at the point of output — the standard pattern PHPCS and reviewers expect.
+
+**After:**
+```php
+$missing_list = implode( ', ', $missing );
+
+if ( '' !== $missing_list ) {
+    echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
+    echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'mcp-ai-wpoos' ) . ' ';
+    echo esc_html( $missing_list );
+    echo '</p>';
+}
+```
+
+**PHPCS result:** ✅ `lint:base` passes on modified file — 0 errors, 0 warnings.
+
+---
+
+### Production Autoloader Regeneration
+
+Ran `composer install --no-dev --classmap-authoritative` to regenerate the production-optimised autoloader after the code changes above:
+
+- **Mode:** `--classmap-authoritative` (PSR-4 fallback disabled; classmap is authoritative)
+- **Dev dependencies excluded:** `phpunit`, `phpcs`, `wp-phpunit`, `yoast/phpunit-polyfills`, etc.
+- **Output:** Updated `vendor/composer/autoload_classmap.php` and `vendor/composer/autoload_static.php`
+
+---
+
+### Files Changed in This Review Cycle
+
+**Code:**
+1. `includes/teams/class-wp-mcp-ai-team-cpt.php` — JSON decode/re-encode sanitization for `wp_mcp_ai_workflow_template` (Issue III)
+2. `includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php` — Explicit `esc_html()` at output point; removed `phpcs:ignore` (Issue IV)
+
+**Build:**
+3. `vendor/composer/autoload_classmap.php` — Regenerated (production classmap, `--classmap-authoritative`)
+4. `vendor/composer/autoload_static.php` — Regenerated (production static autoloader)
+
+**Documentation:**
+5. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+### Post-Audit Compliance Status (March 8, 2026)
+
+| Category | Status |
+|----------|--------|
+| Input sanitization (all `$_POST`/`$_GET`/`$_SERVER`) | ✅ No unsanitized superglobals — workflow_template fixed |
+| Output escaping (all `echo` with dynamic values) | ✅ All escaped; phpcs:ignore suppression removed |
+| PHPCS `lint:base` | ✅ 0 errors, 0 warnings |
+| Production autoloader | ✅ Regenerated with `--classmap-authoritative --no-dev` |
+| All 20 guideline categories | ✅ Pass (2 issues identified and fixed in this cycle) |
+
+**Base plugin compliance status: ✅ Fully compliant — ready for re-submission**
+
+---
+
+*Last updated: March 8, 2026*
