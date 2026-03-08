@@ -21,6 +21,25 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Logs and tracks vital signs for health monitoring.
  */
 class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	/**
+	 * WordPress option key used to persist the vitals embedding index.
+	 *
+	 * @var string
+	 */
+	const VITALS_EMBED_INDEX_KEY = 'wp_mcp_ai_vitals_embed_index';
+
+	/**
+	 * Maximum number of entries kept in the vitals embedding index.
+	 *
+	 * Older entries are evicted first (FIFO) to prevent the option from growing
+	 * without bound.  500 entries × ~6 KB per embedding ≈ 3 MB, which is
+	 * well within WordPress option limits.
+	 *
+	 * @var int
+	 */
+	const VITALS_EMBED_INDEX_MAX = 500;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -259,7 +278,7 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Execute based on action.
 		switch ( $action ) {
 			case 'log':
-				return $this->log_vital_signs( $arguments, $member_id, $current_user_id );
+				return $this->log_vital_signs( $arguments, $member_id, $current_user_id, $context );
 
 			case 'get_latest':
 				return $this->get_latest_vital_signs( $member_id );
@@ -283,9 +302,10 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @param array $arguments      Tool arguments.
 	 * @param int   $member_id      Member ID.
 	 * @param int   $current_user_id Current user ID.
+	 * @param array $context        Execution context (used for provider-aware embedding).
 	 * @return array|WP_Error Result or error.
 	 */
-	private function log_vital_signs( $arguments, $member_id, $current_user_id ) {
+	private function log_vital_signs( $arguments, $member_id, $current_user_id, $context = array() ) {
 		if ( ! user_can( $current_user_id, 'edit_posts' ) ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to log vital signs.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -529,6 +549,13 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 			$cct_id = WP_MCP_AI_JetEngine_Vitals_CCT::insert( $member_id, $cct_data );
 		}
+
+		// Generate a semantic embedding for the vital signs entry so it can be
+		// discovered by semantic_content_search queries (e.g. "vital signs",
+		// "kidney health metrics").  The call is non-blocking: if it fails the
+		// vital signs are still stored successfully.
+		$vitals_text = $this->format_vitals_for_embedding( $measurements, $member_id, $measurement_date );
+		$this->store_vitals_embedding( $entry_id, $member_id, $measurement_date, $vitals_text, $context );
 
 		// Check for abnormal values and generate alerts.
 		$alerts = $this->generate_alerts( $measurements );
@@ -827,6 +854,179 @@ class WP_MCP_AI_Tool_Log_Vital_Signs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		} else {
 			return 'high';
 		}
+	}
+
+	/**
+	 * Format vital signs measurements as a natural-language text for embedding.
+	 *
+	 * The resulting sentence is used as the document text when generating an
+	 * embedding vector so that semantic queries like "vital signs", "blood
+	 * pressure reading", "kidney health metrics", or "eGFR creatinine" will
+	 * produce a high cosine similarity against the stored vector.
+	 *
+	 * @param array  $measurements    Measurements array from log_vital_signs().
+	 * @param int    $member_id       Member post ID.
+	 * @param string $measurement_date Date string (Y-m-d).
+	 * @return string Plain-text summary suitable for embedding.
+	 */
+	private function format_vitals_for_embedding( $measurements, $member_id, $measurement_date ) {
+		$parts = array(
+			sprintf(
+				/* translators: 1: member ID, 2: measurement date */
+				__( 'Vital signs health record for member ID %1$d on %2$s.', 'mcp-ai-wpoos-pro' ),
+				$member_id,
+				$measurement_date
+			),
+		);
+
+		if ( isset( $measurements['blood_pressure'] ) ) {
+			$bp = $measurements['blood_pressure'];
+			/* translators: 1: systolic, 2: diastolic, 3: status */
+			$parts[] = sprintf( __( 'Blood pressure %1$d/%2$d mmHg (%3$s).', 'mcp-ai-wpoos-pro' ), $bp['systolic'], $bp['diastolic'], $bp['status'] );
+		}
+
+		if ( isset( $measurements['heart_rate'] ) ) {
+			/* translators: 1: heart rate value, 2: status */
+			$parts[] = sprintf( __( 'Heart rate %1$d bpm (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['heart_rate']['value'], $measurements['heart_rate']['status'] );
+		}
+
+		if ( isset( $measurements['temperature'] ) ) {
+			/* translators: 1: temperature value, 2: unit, 3: status */
+			$parts[] = sprintf( __( 'Body temperature %1$s%2$s (%3$s).', 'mcp-ai-wpoos-pro' ), $measurements['temperature']['value'], $measurements['temperature']['unit'], $measurements['temperature']['status'] );
+		}
+
+		if ( isset( $measurements['weight'] ) ) {
+			/* translators: 1: weight value, 2: unit */
+			$parts[] = sprintf( __( 'Weight %1$s %2$s.', 'mcp-ai-wpoos-pro' ), $measurements['weight']['value'], $measurements['weight']['unit'] );
+		}
+
+		if ( isset( $measurements['bmi'] ) ) {
+			/* translators: 1: BMI value, 2: status */
+			$parts[] = sprintf( __( 'BMI %1$s (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['bmi']['value'], $measurements['bmi']['status'] );
+		}
+
+		if ( isset( $measurements['blood_glucose'] ) ) {
+			/* translators: 1: glucose value, 2: status */
+			$parts[] = sprintf( __( 'Blood glucose %1$d mg/dL (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['blood_glucose']['value'], $measurements['blood_glucose']['status'] );
+		}
+
+		if ( isset( $measurements['oxygen_saturation'] ) ) {
+			/* translators: 1: SpO2 value, 2: status */
+			$parts[] = sprintf( __( 'Oxygen saturation (SpO2) %1$d%% (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['oxygen_saturation']['value'], $measurements['oxygen_saturation']['status'] );
+		}
+
+		if ( isset( $measurements['respiratory_rate'] ) ) {
+			/* translators: 1: respiratory rate value, 2: status */
+			$parts[] = sprintf( __( 'Respiratory rate %1$d breaths/min (%2$s).', 'mcp-ai-wpoos-pro' ), $measurements['respiratory_rate']['value'], $measurements['respiratory_rate']['status'] );
+		}
+
+		// Kidney health indicators — using full clinical names so that semantic
+		// search for "kidney health metrics", "renal function", or "eGFR" surfaces
+		// this entry.
+		if ( isset( $measurements['egfr'] ) ) {
+			/* translators: %s: eGFR value */
+			$parts[] = sprintf( __( 'eGFR (estimated glomerular filtration rate, kidney function) %s mL/min/1.73m².', 'mcp-ai-wpoos-pro' ), $measurements['egfr']['value'] );
+		}
+
+		if ( isset( $measurements['creatinine'] ) ) {
+			/* translators: %s: creatinine value */
+			$parts[] = sprintf( __( 'Creatinine (kidney health marker) %s mg/dL.', 'mcp-ai-wpoos-pro' ), $measurements['creatinine']['value'] );
+		}
+
+		if ( isset( $measurements['bun'] ) ) {
+			/* translators: %s: BUN value */
+			$parts[] = sprintf( __( 'BUN (blood urea nitrogen, kidney indicator) %s mg/dL.', 'mcp-ai-wpoos-pro' ), $measurements['bun']['value'] );
+		}
+
+		if ( isset( $measurements['potassium'] ) ) {
+			/* translators: %s: potassium value */
+			$parts[] = sprintf( __( 'Potassium (K+) %s mEq/L.', 'mcp-ai-wpoos-pro' ), $measurements['potassium']['value'] );
+		}
+
+		if ( isset( $measurements['sodium'] ) ) {
+			/* translators: %s: sodium value */
+			$parts[] = sprintf( __( 'Sodium (Na+) %s mg/day.', 'mcp-ai-wpoos-pro' ), $measurements['sodium']['value'] );
+		}
+
+		if ( isset( $measurements['phosphorus'] ) ) {
+			/* translators: %s: phosphorus value */
+			$parts[] = sprintf( __( 'Phosphorus %s mg/dL.', 'mcp-ai-wpoos-pro' ), $measurements['phosphorus']['value'] );
+		}
+
+		if ( isset( $measurements['albumin'] ) ) {
+			/* translators: %s: albumin value */
+			$parts[] = sprintf( __( 'Albumin (serum protein, nutritional marker) %s g/dL.', 'mcp-ai-wpoos-pro' ), $measurements['albumin']['value'] );
+		}
+
+		return implode( ' ', $parts );
+	}
+
+	/**
+	 * Generate an embedding vector for a vital signs entry and persist it in the
+	 * vitals embedding index so that semantic_content_search can discover it.
+	 *
+	 * Uses the assistant's configured AI provider (Gemini or OpenAI).  The call
+	 * is intentionally best-effort: if embedding generation fails the vital signs
+	 * are already stored and the failure is silently ignored so the log action
+	 * always succeeds.
+	 *
+	 * @param string $entry_id         Unique entry identifier.
+	 * @param int    $member_id        Member post ID.
+	 * @param string $measurement_date Measurement date (Y-m-d).
+	 * @param string $vitals_text      Plain-text vitals summary for embedding.
+	 * @param array  $context          Execution context (may contain assistant_config).
+	 * @return void
+	 */
+	private function store_vitals_embedding( $entry_id, $member_id, $measurement_date, $vitals_text, $context ) {
+		$provider = isset( $context['assistant_config']['provider'] ) ? strtolower( $context['assistant_config']['provider'] ) : 'openai';
+		$embedding = null;
+		$model     = '';
+
+		// Try Gemini first when the assistant uses a Gemini-family provider.
+		if ( in_array( $provider, array( 'gemini', 'google' ), true ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+			$gemini_client   = new WP_MCP_AI_Gemini_Client();
+			$gemini_response = $gemini_client->create_embedding( $vitals_text, array( 'task_type' => 'RETRIEVAL_DOCUMENT' ) );
+
+			if ( ! is_wp_error( $gemini_response ) && isset( $gemini_response['embedding']['values'] ) ) {
+				$embedding = $gemini_response['embedding']['values'];
+				$model     = 'text-embedding-004';
+			}
+		}
+
+		// Fall back to OpenAI when Gemini is unavailable or fails.
+		if ( null === $embedding && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			$openai_client   = new WP_MCP_AI_OpenAI_Client();
+			$openai_response = $openai_client->create_embeddings( $vitals_text );
+
+			if ( ! is_wp_error( $openai_response ) && isset( $openai_response['data'][0]['embedding'] ) ) {
+				$embedding = $openai_response['data'][0]['embedding'];
+				$model     = isset( $openai_response['model'] ) ? $openai_response['model'] : 'text-embedding-3-small';
+			}
+		}
+
+		// If no embedding could be generated, skip silently.
+		if ( null === $embedding ) {
+			return;
+		}
+
+		// Persist the embedding in the shared vitals index.
+		$index = get_option( self::VITALS_EMBED_INDEX_KEY, array() );
+
+		$index[ $entry_id ] = array(
+			'member_id'  => $member_id,
+			'date'       => $measurement_date,
+			'text'       => $vitals_text,
+			'embedding'  => $embedding,
+			'model'      => $model,
+			'stored_at'  => current_time( 'mysql' ),
+		);
+
+		// Evict oldest entries when the index exceeds the maximum size.
+		if ( count( $index ) > self::VITALS_EMBED_INDEX_MAX ) {
+			$index = array_slice( $index, -self::VITALS_EMBED_INDEX_MAX, null, true );
+		}
+
+		update_option( self::VITALS_EMBED_INDEX_KEY, $index, false );
 	}
 
 	/**

@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Performs semantic search across WordPress content using vector embeddings. Supports OpenAI and Gemini embedding providers — automatically uses the embedding service that matches the assistant\'s configured AI provider. Use this to find similar posts/pages, provide content recommendations, answer questions from a knowledge base, or detect duplicate content.', 'mcp-ai-wpoos' );
+		return __( 'Performs semantic search across WordPress content and health records using vector embeddings. Automatically uses the embedding service that matches the assistant\'s AI provider (OpenAI or Gemini). Use this to find similar posts/pages, vital signs records, or content from a knowledge base.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -291,6 +291,12 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		// Merge vector store and local WordPress results.
 		$all_results = array_merge( $vector_results, $results );
 
+		// Also search the vitals embedding index so that queries about vital signs
+		// and kidney health metrics return relevant records even though they are not
+		// stored as WordPress posts.
+		$vitals_results = $this->search_vitals_embeddings( $query_embedding, $threshold, $limit );
+		$all_results    = array_merge( $all_results, $vitals_results );
+
 		// Sort combined results by similarity score (descending).
 		usort(
 			$all_results,
@@ -320,6 +326,60 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'message'               => $summary_text,
 			'summary'               => $summary_text,
 		);
+	}
+
+	/**
+	 * Search the vitals embedding index for entries semantically similar to the
+	 * given query vector.
+	 *
+	 * This is the counterpart of {@see WP_MCP_AI_Tool_Log_Vital_Signs::store_vitals_embedding()}.
+	 * It reads the shared `wp_mcp_ai_vitals_embed_index` option and returns the
+	 * entries whose embedding is closest to $query_embedding.
+	 *
+	 * @param array $query_embedding Query embedding vector.
+	 * @param float $threshold       Minimum cosine similarity (0–1).
+	 * @param int   $limit           Maximum results to return.
+	 * @return array Array of result items (source = 'vitals').
+	 */
+	private function search_vitals_embeddings( array $query_embedding, $threshold, $limit ) {
+		$index = get_option( 'wp_mcp_ai_vitals_embed_index', array() );
+
+		if ( empty( $index ) ) {
+			return array();
+		}
+
+		$results = array();
+
+		foreach ( $index as $entry_id => $entry ) {
+			if ( empty( $entry['embedding'] ) || ! is_array( $entry['embedding'] ) ) {
+				continue;
+			}
+
+			$similarity = $this->calculate_cosine_similarity( $query_embedding, $entry['embedding'] );
+
+			if ( $similarity < $threshold ) {
+				continue;
+			}
+
+			$results[] = array(
+				'source'           => 'vitals',
+				'entry_id'         => sanitize_text_field( $entry_id ),
+				'member_id'        => isset( $entry['member_id'] ) ? absint( $entry['member_id'] ) : 0,
+				'date'             => isset( $entry['date'] ) ? sanitize_text_field( $entry['date'] ) : '',
+				'excerpt'          => isset( $entry['text'] ) ? wp_trim_words( $entry['text'], 30 ) : '',
+				'similarity_score' => round( $similarity, 4 ),
+			);
+		}
+
+		// Sort by similarity (descending) and limit.
+		usort(
+			$results,
+			function ( $a, $b ) {
+				return $b['similarity_score'] <=> $a['similarity_score'];
+			}
+		);
+
+		return array_slice( $results, 0, $limit );
 	}
 
 	/**
