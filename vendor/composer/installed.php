@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/conduct-code-review-wordpress-plugin',
+        'version' => 'dev-copilot/conduct-code-review-wordpress-plugin',
+        'reference' => 'cac15a4cf1be20ca5d21d1309549cea92e0731e9',
         'pretty_version' => 'dev-copilot/create-new-cct-for-vital-logs',
         'version' => 'dev-copilot/create-new-cct-for-vital-logs',
         'reference' => '7c99d5618551e44221e348c3237e8775c6c36ea4',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/conduct-code-review-wordpress-plugin',
+            'version' => 'dev-copilot/conduct-code-review-wordpress-plugin',
+            'reference' => 'cac15a4cf1be20ca5d21d1309549cea92e0731e9',
             'pretty_version' => 'dev-copilot/create-new-cct-for-vital-logs',
             'version' => 'dev-copilot/create-new-cct-for-vital-logs',
             'reference' => '7c99d5618551e44221e348c3237e8775c6c36ea4',

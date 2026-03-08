@@ -1430,4 +1430,86 @@ foreach ( $json_fields as $field_name => $meta_key ) {
 
 ---
 
+## Post-Merge Compliance Review — March 8, 2026 (phpcs:ignore DiscouragedFunctions / NoSilencedErrors / DevelopmentFunctions Sweep)
+
+**Date:** March 8, 2026
+**Plugin Version:** 1.1.3 (unchanged)
+**Scope:** Comprehensive sweep of all remaining `phpcs:ignore` comments without `-- justification` annotation covering `WordPress.PHP.DiscouragedPHPFunctions`, `WordPress.PHP.NoSilencedErrors.Discouraged`, `WordPress.PHP.DevelopmentFunctions.error_log_error_log`, `WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents`, and `WordPress.WP.EnqueuedResources.NonEnqueuedScript` suppressions.
+**Trigger:** Follow-on sweep after Issues VI & VII (phpcs:ignore EscapeOutput and InputNotSanitized justification sweeps); this sweep covers the remaining three security-adjacent PHPCS sniff categories where bare `phpcs:ignore` comments could concern WordPress.org reviewers.
+
+---
+
+### Issues Found and Fixed
+
+#### Issue VIII: `phpcs:ignore` Comments Without Justification — 15 Instances (3 Sniff Categories)
+
+**Problem:** The previous sweeps (Issues VI & VII) addressed all `EscapeOutput.OutputNotEscaped` and `ValidatedSanitizedInput.InputNotSanitized` suppression comments. This sweep targeted the remaining three categories of suppression comments that WordPress.org reviewers flag when they lack a `-- justification` annotation:
+
+1. **`WordPress.PHP.DiscouragedPHPFunctions`** (`base64_encode`, `md5_file`) — these look suspicious without explanation
+2. **`WordPress.PHP.NoSilencedErrors.Discouraged`** (`@unlink`, `@set_time_limit`, `@mb_check_encoding`) — `@`-silenced errors require explanation
+3. **`WordPress.PHP.DevelopmentFunctions.error_log_error_log`** — `error_log()` calls need justification confirming they are debug-gated
+4. **`WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents`** — temp-dir writes need justification
+5. **`WordPress.WP.EnqueuedResources.NonEnqueuedScript`** — non-enqueued script need context explanation
+
+**Files and fixes:**
+
+| File | Line | Sniff | Justification Added |
+|------|------|-------|---------------------|
+| `includes/class-wp-mcp-ai-agentic-workflow-optimizer.php` | 230 | `DiscouragedPHPFunctions.obfuscation_base64_encode` | `base64_encode` used for binary data transport (compressed workflow state), not for code obfuscation. |
+| `includes/class-wp-mcp-ai-payhere-client.php` | 168 | `DiscouragedPHPFunctions.obfuscation_base64_encode` | `base64_encode` used to construct an HTTP Basic Auth header (RFC 7617), not for obfuscation. |
+| `includes/class-wp-mcp-ai-message-attachments.php` | 1640 | `DiscouragedPHPFunctions.obfuscation_md5_file` | `md5_file` used for file deduplication (content fingerprint), not in a password or security context. |
+| `includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php` | 338 | `AlternativeFunctions.file_system_operations_file_put_contents` | Writing to system temp dir during HTTP file download; `WP_Filesystem` is not available in this non-admin context. |
+| `includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php` | 340 | `NoSilencedErrors.Discouraged` (`@unlink`) | Silenced intentionally: temp file may not exist if the write failed; the error is non-critical and handled by the `WP_Error` return below. |
+| `includes/services/class-wp-mcp-ai-tool-async-executor.php` | 370 | `NoSilencedErrors.Discouraged` (`@set_time_limit`) | Silenced intentionally: `set_time_limit()` may emit warnings when `safe_mode` is on or the function is disabled; failure is non-critical as this is a best-effort timeout extension. |
+| `includes/services/class-wp-mcp-ai-chat-service.php` | 717 | `NoSilencedErrors.Discouraged` + `DiscouragedPHPFunctions.system_calls_set_time_limit` | Extending execution time is required for long-running streaming responses; silenced because `set_time_limit()` may emit warnings on restricted hosts and the failure is non-critical. |
+| `includes/services/class-wp-mcp-ai-chat-service.php` | 237, 263, 302, 359 | `DevelopmentFunctions.error_log_error_log` (×4) | `error_log` used for agentic loop diagnostic tracing; only active when `WP_DEBUG` is enabled. |
+| `includes/services/class-wp-mcp-ai-error-tracking-service.php` | 168 | `DevelopmentFunctions.error_log_error_log` | `error_log` used as a `WP_DEBUG`-gated diagnostic logger; only executes when `WP_DEBUG` is explicitly enabled. |
+| `includes/professions/class-wp-mcp-ai-profession-cpt.php` | 974 | `DevelopmentFunctions.error_log_error_log` | `error_log` records a backwards-compatibility failure inside a `try/catch`; used only as a diagnostic fallback. |
+| `includes/cache/class-wp-mcp-ai-cache-service.php` | 99 | `DevelopmentFunctions.error_log_error_log` | `error_log` used as a diagnostic fallback when the Redis adapter fails; no alternative logging mechanism is available during the adapter selection phase. |
+| `includes/cache/class-wp-mcp-ai-cache-service.php` | 113 | `DevelopmentFunctions.error_log_error_log` | `error_log` used as a diagnostic fallback when the APCu adapter fails; no alternative logging mechanism is available during the adapter selection phase. |
+| `includes/services/class-wp-mcp-ai-file-preprocessing-helper.php` | 168 | `NoSilencedErrors.Discouraged` (`@mb_check_encoding`) | Silenced intentionally: `mb_check_encoding()` may emit a warning for binary or truncated samples; return value is always validated and the error is non-critical. |
+| `includes/services/class-wp-mcp-ai-video-analysis-service.php` | 480 | `AlternativeFunctions.file_system_operations_file_put_contents` | Writing to a WordPress-managed temp path (`wp_tempnam`); `WP_Filesystem` is not available in this REST/cron execution context. |
+| `includes/tools/class-wp-mcp-ai-tool-create-chart.php` | 525 | `EnqueuedResources.NonEnqueuedScript` | Script rendered inside an iframe-sandboxed standalone HTML page (`ob_start` output); this is not a WordPress page and the WP enqueue system does not apply. |
+
+**PHPCS result:** ✅ `lint:base` passes on all modified files — 0 errors, 0 warnings.
+
+---
+
+### Files Changed in This Review Cycle
+
+**Code (phpcs:ignore justification additions):**
+1. `includes/class-wp-mcp-ai-agentic-workflow-optimizer.php`
+2. `includes/class-wp-mcp-ai-payhere-client.php`
+3. `includes/class-wp-mcp-ai-message-attachments.php`
+4. `includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php`
+5. `includes/services/class-wp-mcp-ai-tool-async-executor.php`
+6. `includes/services/class-wp-mcp-ai-chat-service.php`
+7. `includes/services/class-wp-mcp-ai-error-tracking-service.php`
+8. `includes/professions/class-wp-mcp-ai-profession-cpt.php`
+9. `includes/cache/class-wp-mcp-ai-cache-service.php`
+10. `includes/services/class-wp-mcp-ai-file-preprocessing-helper.php`
+11. `includes/services/class-wp-mcp-ai-video-analysis-service.php`
+12. `includes/tools/class-wp-mcp-ai-tool-create-chart.php`
+
+**Documentation:**
+13. `docs/compliance/WORDPRESS_ORG_REVIEW_COMPLIANCE_2026_03.md` — This section
+
+---
+
+### Post-Audit Compliance Status (March 8, 2026 — DiscouragedFunctions / NoSilencedErrors / DevelopmentFunctions Sweep)
+
+| Category | Status |
+|----------|--------|
+| All `phpcs:ignore DiscouragedPHPFunctions` comments | ✅ All have accurate justification text — 3 missing justifications added |
+| All `phpcs:ignore NoSilencedErrors.Discouraged` comments | ✅ All have accurate justification text — 4 missing justifications added (`@unlink`, `@set_time_limit` ×2, `@mb_check_encoding`) |
+| All `phpcs:ignore DevelopmentFunctions.error_log_error_log` comments | ✅ All have accurate justification text — 7 missing justifications added across 4 files |
+| `phpcs:ignore AlternativeFunctions.file_put_contents` temp-dir writes | ✅ All have accurate justification text — 2 missing justifications added |
+| `phpcs:ignore EnqueuedResources.NonEnqueuedScript` | ✅ Justification added for iframe-sandboxed chart renderer |
+| PHPCS `lint:base` | ✅ 0 errors, 0 warnings |
+| All 20 guideline categories | ✅ Pass |
+
+**Base plugin compliance status: ✅ Fully compliant**
+
+---
+
 *Last updated: March 8, 2026*

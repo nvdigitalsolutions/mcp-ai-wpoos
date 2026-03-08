@@ -165,7 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 
 			// Create Base64-encoded authorization header.
 			$auth_string = $app_id . ':' . $app_secret;
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to construct an HTTP Basic Auth header (RFC 7617), not for obfuscation.
 			$auth_base64 = base64_encode( $auth_string );
 
 			$url = $this->get_token_endpoint();

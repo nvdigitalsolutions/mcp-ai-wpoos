@@ -335,9 +335,9 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 				$tmp_path = $tmp_base;
 			}
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to system temp dir during HTTP file download; WP_Filesystem is not available in this non-admin context.
 			if ( false === file_put_contents( $tmp_path, $body ) ) {
-				@unlink( $tmp_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@unlink( $tmp_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: temp file may not exist if the write failed; the error is non-critical and handled by the WP_Error return below.
 				return new WP_Error(
 					'wp_mcp_ai_temp_file_write_error',
 					__( 'Could not write provider file content to a temporary file.', 'mcp-ai-wpoos' ),

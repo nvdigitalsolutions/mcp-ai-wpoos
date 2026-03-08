@@ -96,7 +96,7 @@ class WP_MCP_AI_Cache_Service {
 				}
 			} catch ( \Exception $e ) {
 				// Fall through to next adapter.
-				error_log( 'WP MCP AI: Redis connection failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WP MCP AI: Redis connection failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback when the Redis adapter fails; no alternative logging mechanism is available during the adapter selection phase.
 			}
 		}
 
@@ -110,7 +110,7 @@ class WP_MCP_AI_Cache_Service {
 				return new \Symfony\Component\Cache\Adapter\TagAwareAdapter( $apcu );
 			} catch ( \Exception $e ) {
 				// Fall through to filesystem.
-				error_log( 'WP MCP AI: APCu initialization failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'WP MCP AI: APCu initialization failed: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback when the APCu adapter fails; no alternative logging mechanism is available during the adapter selection phase.
 			}
 		}
 
