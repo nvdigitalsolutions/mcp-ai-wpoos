@@ -89,7 +89,7 @@ class WP_MCP_AI_Admin_Team_Settings {
 		}
 
 		// Get active tab.
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; not a state-changing operation.
 
 		// Get post type for links.
 		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
@@ -253,7 +253,7 @@ class WP_MCP_AI_Admin_Team_Settings {
 				<?php esc_html_e( 'Configure global default settings for all AI Teams. These settings provide baseline values that cascade to all team members, but can be overridden at the individual team level via metaboxes.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
-			<?php if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+			<?php if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query param set by WordPress after options save; no state change occurs here. ?>
 				<div class="notice notice-success inline">
 					<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
 				</div>

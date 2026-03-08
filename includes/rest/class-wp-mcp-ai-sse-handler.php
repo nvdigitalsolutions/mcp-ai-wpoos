@@ -288,7 +288,7 @@ class WP_MCP_AI_SSE_Handler {
 				$server->send_header( $name, $value );
 			}
 
-			echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $frames contains Server-Sent Event protocol data sent with text/event-stream headers; HTML escaping would corrupt the SSE stream.
 
 			if ( function_exists( 'ob_get_level' ) && function_exists( 'ob_end_flush' ) ) {
 				while ( ob_get_level() > 0 ) {

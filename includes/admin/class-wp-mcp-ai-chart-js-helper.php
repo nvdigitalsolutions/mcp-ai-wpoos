@@ -79,7 +79,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		}
 
 		// Check if we're on the token manager or orchestration tab.
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter used to control asset enqueuing; not a state-changing operation.
 
 		// Enqueue on token_manager and orchestration tabs.
 		if ( 'token_manager' === $active_tab || 'orchestration' === $active_tab ) {

@@ -1236,7 +1236,7 @@ class WP_MCP_AI_Shortcode {
 		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>">
 			<?php
 			if ( $is_elementor_editor ) {
-				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_editor_notice() returns a static HTML string with all dynamic values escaped via esc_html_e().
 			}
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
@@ -1253,7 +1253,7 @@ class WP_MCP_AI_Shortcode {
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $assistant_content is processed by apply_filters('the_content', ...) which applies standard WordPress content filters and escaping. ?>
 					</div>
 				<?php endif; ?>
 			</div>

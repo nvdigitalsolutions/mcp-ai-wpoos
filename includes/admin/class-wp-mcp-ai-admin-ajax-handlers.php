@@ -1772,7 +1772,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			header( 'Expires: 0' );
 
 			// Output CSV content.
-			echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $csv is raw CSV file-download content sent with text/csv headers; HTML escaping would corrupt the file.
 
 			wp_die(); // Stop execution after sending file.
 		}
@@ -2984,7 +2984,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get config data.
-			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array cast; sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
 			$config = wp_mcp_ai_sanitize_recursive( $config );
 
 			if ( empty( $config ) ) {
