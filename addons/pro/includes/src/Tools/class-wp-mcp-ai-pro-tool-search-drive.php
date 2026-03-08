@@ -450,8 +450,8 @@ class WP_MCP_AI_Pro_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// If query doesn't have operators, wrap as fullText search.
 		if ( ! $has_operators ) {
-			// Escape single quotes in the search term per Drive API requirements.
-			$escaped_query = str_replace( "'", "\\'", $query );
+			// Escape backslashes first, then single quotes per Drive API query string requirements.
+			$escaped_query = str_replace( array( '\\', "'" ), array( '\\\\', "\\'" ), $query );
 			$query         = sprintf( "fullText contains '%s'", $escaped_query );
 		}
 
