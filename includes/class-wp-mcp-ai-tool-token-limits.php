@@ -78,26 +78,70 @@ class WP_MCP_AI_Tool_Token_Limits {
 	/**
 	 * Tool-specific limit multipliers.
 	 *
+	 * Multipliers are applied to the user's tier base limit.
+	 * Industry standards for external API costs (Tavily, Brave Search, Crawl4AI)
+	 * and compute-intensive operations (image/video/music generation) drive higher values.
+	 *
 	 * @var array
 	 */
 	protected static $tool_multipliers = array(
-		'run_crawl4ai_job'           => 2.0,
-		'search_content'             => 1.5,
-		'web_search'                 => 1.5,
-		'submit_document_prompt'     => 2.0,
+		// Web crawling & scraping - external service costs.
+		'run_crawl4ai_job'                => 2.0,
+		'run_crawl4ai_job_validated'      => 2.0,
+		'scrape_product'                  => 2.0,
+		'scrape_product_validated'        => 2.0,
+		// Web search - external API costs (Tavily, Brave Search; approximate costs as of 2026-03).
+		'web_search'                      => 2.0,
+		'web_search_validated'            => 2.0,
+		// Web browser - loads and processes full web pages.
+		'web_browser'                     => 2.5,
+		// Deep research - multi-step, multi-source research with several external lookups.
+		'deep_research'                   => 3.0,
+		// Document processing.
+		'submit_document_prompt'          => 2.0,
+		// Embeddings & semantic search.
+		'create_text_embeddings'          => 1.5,
+		'batch_embed_content'             => 2.0,
+		'semantic_content_search'         => 1.5,
+		'search_content'                  => 1.5,
+		// Content search.
+		'search_content_validated'        => 1.5,
 		// Design Professional tools - higher multipliers for resource-intensive operations.
-		'generate_openai_image'      => 3.0,
-		'generate_gemini_image'      => 3.0,
-		'edit_gemini_image'          => 2.5,
-		'generate_veo_video'         => 5.0,
-		'check_video_status'         => 1.0,
-		'analyze_video'              => 2.5,
-		'extract_video_frames'       => 2.0,
-		'generate_music'             => 3.5,
-		'vision_object_localization' => 2.0,
-		'vision_product_search'      => 2.0,
-		'generate_image_alt_text'    => 1.5,
-		'generate_image_caption'     => 1.5,
+		'generate_openai_image'           => 3.0,
+		'generate_openai_image_validated' => 3.0,
+		'generate_gemini_image'           => 3.0,
+		'generate_gemini_image_validated' => 3.0,
+		'cloudflareai_text_to_image'      => 2.5,
+		'edit_gemini_image'               => 2.5,
+		'edit_gemini_image_validated'     => 2.5,
+		'edit_openai_image'               => 2.5,
+		'create_image_variation'          => 2.0,
+		// Video generation (most compute-intensive).
+		'generate_veo_video'              => 5.0,
+		'generate_veo_video_validated'    => 5.0,
+		'generate_sora_video'             => 5.0,
+		'generate_sora_video_validated'   => 5.0,
+		// Video processing.
+		'check_video_status'              => 1.0,
+		'analyze_video'                   => 2.5,
+		'extract_video_frames'            => 2.0,
+		'transcode_video'                 => 3.0,
+		// Music generation.
+		'generate_music'                  => 3.5,
+		'generate_music_validated'        => 3.5,
+		'generate_jukebox_music'          => 3.5,
+		// Image analysis.
+		'vision_object_localization'      => 2.0,
+		'vision_product_search'           => 2.0,
+		'analyze_image'                   => 2.0,
+		'extract_image_text'              => 1.5,
+		'generate_image_alt_text'         => 1.5,
+		'generate_image_alt_text_validated' => 1.5,
+		'generate_image_caption'          => 1.5,
+		'generate_image_caption_validated' => 1.5,
+		// External API calls.
+		'run_openai_external_action'      => 2.0,
+		'generic_rest_api'                => 1.5,
 	);
 
 	/**
