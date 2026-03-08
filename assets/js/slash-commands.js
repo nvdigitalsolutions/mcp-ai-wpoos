@@ -454,13 +454,28 @@
 					contentDiv.textContent = content;
 				}
 			} else {
-				// Simple formatting
-				contentDiv.textContent = content;
-				contentDiv.innerHTML = contentDiv.innerHTML.replace(/\n/g, '<br>');
+				// Simple formatting: build DOM nodes to avoid any innerHTML XSS risk
+				this.appendTextWithLineBreaks(contentDiv, content);
 			}
 
 			messageDiv.appendChild(contentDiv);
 			return messageDiv;
+		}
+
+		/**
+		 * Append text content with line breaks as DOM nodes (XSS-safe alternative to innerHTML).
+		 *
+		 * @param {HTMLElement} el      Target element.
+		 * @param {string}      text    Text content to append.
+		 */
+		appendTextWithLineBreaks(el, text) {
+			const lines = String(text).split('\n');
+			for (let i = 0; i < lines.length; i++) {
+				if (i > 0) {
+					el.appendChild(document.createElement('br'));
+				}
+				el.appendChild(document.createTextNode(lines[i]));
+			}
 		}
 
 		/**
