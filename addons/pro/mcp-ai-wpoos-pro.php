@@ -848,6 +848,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-compile-health-research-data.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
+
+			// Auto-include JetEngine CCT tool when health management is enabled and JetEngine is active.
+			// This allows the AI to create/update/delete vital_signs CCT items directly without using create_post.
+			if ( function_exists( 'jet_engine' ) && ! isset( $pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] ) ) {
+				$pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php';
+			}
 		}
 
 		// Add WooCommerce tools if enabled.

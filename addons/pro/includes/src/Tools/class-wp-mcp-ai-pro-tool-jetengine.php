@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage JetEngine Custom Content Type items. Supports CRUD operations on CCT data.', 'mcp-ai-wpoos-pro' );
+		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD: list_types, list_items, get_item, create_item, update_item, delete_item.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -83,8 +83,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'action'   => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list_types, list_items, get_item, create_item, update_item.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'list_types', 'list_items', 'get_item', 'create_item', 'update_item' ),
+					'description' => __( 'The action to perform: list_types, list_items, get_item, create_item, update_item, delete_item.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'list_types', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item' ),
 					'default'     => 'list_types',
 				),
 				'cct_slug' => array(
@@ -124,9 +124,25 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'pro',              // Pro tier tool.
 			'read-only',        // list/get operations.
-			'write',            // create/update operations.
+			'write',            // create/update/delete operations.
 			'requires-plugin',  // Requires JetEngine.
 			'local-only',       // No external API calls.
+		);
+	}
+
+	/**
+	 * Get the extended tool definition for orchestration.
+	 *
+	 * @return array
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'jetengine_cct',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'developer', 'content_manager', 'health_advisor', 'data_manager' ),
+			'risk_level'            => 'standard',
 		);
 	}
 
@@ -159,6 +175,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return $this->create_item( $arguments, $context );
 			case 'update_item':
 				return $this->update_item( $arguments, $context );
+			case 'delete_item':
+				return $this->delete_item( $arguments, $context );
 			default:
 				return new WP_Error(
 					'invalid_action',
@@ -402,5 +420,80 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return $type->db->get_item( $item_id );
+	}
+
+	/**
+	 * Delete a CCT item permanently.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	protected function delete_item( $arguments, $context ) {
+		if ( empty( $arguments['cct_slug'] ) || empty( $arguments['item_id'] ) ) {
+			return new WP_Error(
+				'missing_params',
+				__( 'CCT slug and item ID are required for delete_item action.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! user_can( $user_id, 'edit_posts' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__( 'You do not have permission to delete CCT items.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$module = jet_engine()->modules->get_module( 'custom-content-types' );
+
+		if ( ! $module || ! $module->instance ) {
+			return new WP_Error(
+				'cct_not_available',
+				__( 'Custom Content Types module is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$type = $module->instance->manager->get_type( sanitize_key( $arguments['cct_slug'] ) );
+
+		if ( ! $type ) {
+			return new WP_Error(
+				'cct_not_found',
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$item_id = absint( $arguments['item_id'] );
+
+		// Verify item exists before deleting.
+		$item = $type->db->get_item( $item_id );
+		if ( ! $item ) {
+			return new WP_Error(
+				'item_not_found',
+				__( 'CCT item not found.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$result = $type->db->delete( array( '_ID' => $item_id ) );
+
+		if ( ! $result ) {
+			return new WP_Error(
+				'delete_failed',
+				__( 'Failed to delete CCT item.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array(
+			'success' => true,
+			'deleted' => true,
+			'item_id' => $item_id,
+			'message' => sprintf(
+				/* translators: 1: CCT slug, 2: item ID */
+				__( 'CCT item %1$s #%2$d deleted successfully.', 'mcp-ai-wpoos-pro' ),
+				sanitize_key( $arguments['cct_slug'] ),
+				$item_id
+			),
+		);
 	}
 }
