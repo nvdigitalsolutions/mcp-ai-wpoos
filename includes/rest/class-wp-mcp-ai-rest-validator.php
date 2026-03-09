@@ -735,6 +735,24 @@ class WP_MCP_AI_REST_Validator {
 			$options['enable_web_search'] = (bool) $options['enable_web_search'];
 		}
 
+		// Gemini extended thinking / reasoning budget.
+		// When set, Gemini 2.5+ models will use thinkingConfig with the specified token budget.
+		if ( isset( $options['thinking_budget_tokens'] ) ) {
+			$budget = absint( $options['thinking_budget_tokens'] );
+			if ( $budget > 0 ) {
+				$options['thinking_budget_tokens'] = min( 24576, $budget );
+			} else {
+				unset( $options['thinking_budget_tokens'] );
+			}
+		} elseif ( 'gemini' === $provider ) {
+			// Propagate the global Gemini thinking budget from settings when not overridden per-request.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$budget   = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 0;
+			if ( $budget > 0 ) {
+				$options['thinking_budget_tokens'] = $budget;
+			}
+		}
+
 		// Remove 'stream' parameter if present - it's only used by SSE handler to determine.
 		// response format (SSE vs JSON), not for AI provider clients which manage their own.
 		// streaming behavior. This prevents the frontend's stream flag from being passed to

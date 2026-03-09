@@ -1226,6 +1226,165 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 
 		/**
+		 * Create a batch embeddings job using the OpenAI Batch API (async, 50% cost reduction).
+		 *
+		 * Takes an array of texts, builds a JSONL input, uploads it via the Files API, then
+		 * submits a batch job targeting `/v1/embeddings`. The batch runs asynchronously;
+		 * call `retrieve_batch()` with the returned batch ID to poll the status, then
+		 * `download_file()` with `output_file_id` to retrieve results.
+		 *
+		 * @param array  $texts   Non-empty array of text strings to embed.
+		 * @param array  $options Optional parameters:
+		 *                        - model (string): Embedding model. Default 'text-embedding-3-small'.
+		 *                        - dimensions (int): Output vector dimensions (text-embedding-3 only).
+		 *                        - encoding_format (string): 'float' (default) or 'base64'.
+		 *                        - completion_window (string): '24h' (only supported value). Default '24h'.
+		 *                        - metadata (array): Up to 16 key-value pairs attached to the batch.
+		 *                        - timeout (int): HTTP timeout for the file-upload step.
+		 * @return array|WP_Error Batch job details array (id, status, input_file_id, …) or WP_Error.
+		 */
+		public function create_batch_embeddings( array $texts, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_api_key',
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			// Validate and filter texts.
+			$clean_texts = array();
+			foreach ( $texts as $text ) {
+				if ( is_string( $text ) && '' !== trim( $text ) ) {
+					$clean_texts[] = $text;
+				}
+			}
+
+			if ( empty( $clean_texts ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_batch_texts',
+					__( 'At least one non-empty text must be provided for batch embeddings.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$model           = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-3-small';
+			$encoding_format = isset( $options['encoding_format'] ) && '' !== $options['encoding_format'] ? sanitize_text_field( $options['encoding_format'] ) : 'float';
+
+			// Build JSONL content — one embedding request per line.
+			$lines = array();
+			foreach ( $clean_texts as $index => $text ) {
+				$body = array(
+					'model' => $model,
+					'input' => $text,
+				);
+
+				if ( 'float' !== $encoding_format ) {
+					$body['encoding_format'] = $encoding_format;
+				}
+
+				if ( isset( $options['dimensions'] ) && is_numeric( $options['dimensions'] ) ) {
+					$body['dimensions'] = absint( $options['dimensions'] );
+				}
+
+				$lines[] = wp_json_encode(
+					array(
+						'custom_id' => 'embed-' . $index,
+						'method'    => 'POST',
+						'url'       => '/v1/embeddings',
+						'body'      => $body,
+					)
+				);
+			}
+
+			$jsonl_content = implode( "\n", $lines );
+
+			// Write JSONL to a temporary file for upload.
+			$tmp_file = wp_tempnam( 'wp-mcp-ai-batch-embed' );
+			if ( ! $tmp_file ) {
+				return new WP_Error(
+					'wp_mcp_ai_batch_embeddings_tmpfile',
+					__( 'Could not create a temporary file for batch embeddings upload.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- writing to a temp file, not a user-accessible path.
+			file_put_contents( $tmp_file, $jsonl_content );
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_embeddings_upload',
+				'Uploading JSONL file for OpenAI batch embeddings.',
+				array(
+					'text_count' => count( $clean_texts ),
+					'model'      => $model,
+				)
+			);
+
+			// Upload the JSONL file.
+			$upload_result = $this->upload_file(
+				$tmp_file,
+				array(
+					'purpose'   => 'batch',
+					'filename'  => 'batch-embeddings.jsonl',
+					'mime_type' => 'application/jsonl',
+					'timeout'   => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 60,
+				)
+			);
+
+			// Clean up temp file regardless of upload success.
+			@unlink( $tmp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- best-effort cleanup of temp file.
+
+			if ( is_wp_error( $upload_result ) ) {
+				return $upload_result;
+			}
+
+			if ( ! isset( $upload_result['id'] ) || '' === $upload_result['id'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_batch_embeddings_upload_missing_id',
+					__( 'OpenAI file upload response did not include a file ID.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$file_id = sanitize_text_field( $upload_result['id'] );
+
+			// Create the batch job targeting /v1/embeddings.
+			$batch_options = array(
+				'completion_window' => isset( $options['completion_window'] ) && '' !== $options['completion_window'] ? sanitize_text_field( $options['completion_window'] ) : '24h',
+			);
+
+			if ( isset( $options['metadata'] ) && is_array( $options['metadata'] ) ) {
+				$batch_options['metadata'] = $options['metadata'];
+			}
+
+			$batch_result = $this->create_batch( $file_id, '/v1/embeddings', $batch_options );
+
+			if ( is_wp_error( $batch_result ) ) {
+				return $batch_result;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'openai_batch_embeddings_created',
+				'OpenAI batch embeddings job created.',
+				array(
+					'batch_id'      => isset( $batch_result['id'] ) ? $batch_result['id'] : '',
+					'status'        => isset( $batch_result['status'] ) ? $batch_result['status'] : '',
+					'text_count'    => count( $clean_texts ),
+				)
+			);
+
+			return $batch_result;
+		}
+
+		/**
 		 * Moderate content using OpenAI's Moderation API.
 		 *
 		 * Analyzes text and/or image inputs for potentially harmful content across multiple

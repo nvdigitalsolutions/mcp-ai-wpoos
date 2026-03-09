@@ -59,6 +59,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_tavily_connection'       => 'handle_test_tavily_connection',
+				'wp_ajax_wp_mcp_ai_test_anthropic_connection'    => 'handle_test_anthropic_connection',
+				'wp_ajax_wp_mcp_ai_test_exa_connection'          => 'handle_test_exa_connection',
+				'wp_ajax_wp_mcp_ai_test_perplexity_connection'   => 'handle_test_perplexity_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_plaid_connection'  => 'handle_test_plaid_connection',
 				'wp_ajax_wp_mcp_ai_test_yahoo_connection'  => 'handle_test_yahoo_connection',
@@ -911,6 +914,253 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => __( 'Successfully connected to Tavily API!', 'mcp-ai-wpoos' ),
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to test Anthropic (Claude) API connection.
+		 */
+		public function handle_test_anthropic_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+			$model   = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'claude-3-haiku-20240307';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide an Anthropic API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr         = WP_MCP_AI_Resource_Manager::instance();
+			$timeout              = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout              = max( 10, min( 30, $timeout ) );
+
+			// Send a minimal chat completion to validate the key.
+			$response = wp_remote_post(
+				'https://api.anthropic.com/v1/messages',
+				array(
+					'headers' => array(
+						'x-api-key'         => $api_key,
+						'anthropic-version' => '2023-06-01',
+						'content-type'      => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'model'      => $model,
+							'max_tokens' => 5,
+							'messages'   => array(
+								array(
+									'role'    => 'user',
+									'content' => 'Hi',
+								),
+							),
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 401 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Anthropic API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 429 === $response_code ) {
+				wp_send_json_success( array( 'message' => __( 'API key valid (rate limit reached — key is active).', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				$error_message = __( 'Invalid API key or connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $data['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $data['error']['message'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Successfully connected to Anthropic API!', 'mcp-ai-wpoos' ) ) );
+		}
+
+		/**
+		 * Handle AJAX request to test Exa AI search connection.
+		 */
+		public function handle_test_exa_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide an Exa AI API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, min( 30, $timeout ) );
+
+			$response = wp_remote_post(
+				'https://api.exa.ai/search',
+				array(
+					'headers' => array(
+						'x-api-key'    => $api_key,
+						'Content-Type' => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'query'      => 'test',
+							'numResults' => 1,
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 401 === $response_code || 403 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Exa AI API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Exa AI connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $data['error'] ) && is_string( $data['error'] ) ) {
+					$error_message = sanitize_text_field( $data['error'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Successfully connected to Exa AI!', 'mcp-ai-wpoos' ) ) );
+		}
+
+		/**
+		 * Handle AJAX request to test Perplexity Sonar API connection.
+		 */
+		public function handle_test_perplexity_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Perplexity API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, min( 30, $timeout ) );
+
+			$response = wp_remote_post(
+				'https://api.perplexity.ai/chat/completions',
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $api_key,
+						'Content-Type'  => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'model'       => 'sonar',
+							'max_tokens'  => 5,
+							'messages'    => array(
+								array(
+									'role'    => 'user',
+									'content' => 'Hi',
+								),
+							),
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$data          = json_decode( $response_body, true );
+
+			if ( 401 === $response_code || 403 === $response_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Perplexity API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 429 === $response_code ) {
+				wp_send_json_success( array( 'message' => __( 'API key valid (rate limit reached — key is active).', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( $response_code < 200 || $response_code >= 300 ) {
+				$error_message = __( 'Perplexity connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $data['error']['message'] ) ) {
+					$error_message = sanitize_text_field( $data['error']['message'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			wp_send_json_success( array( 'message' => __( 'Successfully connected to Perplexity Sonar API!', 'mcp-ai-wpoos' ) ) );
 		}
 
 		/**
