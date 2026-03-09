@@ -296,3 +296,25 @@ function wp_mcp_ai_register_project_management_taxonomies() {
 	}
 }
 add_action( 'init', 'wp_mcp_ai_register_project_management_taxonomies' );
+
+/**
+ * Initialize the PM Notification Manager when project management is enabled.
+ *
+ * This registers assignment/status-change email hooks and schedules the
+ * daily due-date digest cron event.
+ */
+function wp_mcp_ai_init_pm_notifications() {
+	// Only load when project management is enabled and the Pro addon is active.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
+		return;
+	}
+
+	if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+		return;
+	}
+
+	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pm-notification-manager.php';
+	WP_MCP_AI_PM_Notification_Manager::init();
+}
+add_action( 'init', 'wp_mcp_ai_init_pm_notifications', 20 );

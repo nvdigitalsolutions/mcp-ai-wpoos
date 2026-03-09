@@ -2484,6 +2484,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// If streaming is requested, use streaming-enabled agentic loop.
 			if ( $wants_streaming ) {
+				// Enforce SSE rate limits before opening a streaming connection.
+				if ( class_exists( 'WP_MCP_AI_SSE_Rate_Limiter' ) ) {
+					$sse_limiter       = new WP_MCP_AI_SSE_Rate_Limiter();
+					$rate_limit_result = $sse_limiter->check_connection_allowed();
+
+					if ( is_wp_error( $rate_limit_result ) ) {
+						$error_data  = $rate_limit_result->get_error_data();
+						$retry_after = isset( $error_data['retry_after'] ) ? (int) $error_data['retry_after'] : 30;
+						$response    = rest_ensure_response(
+							array(
+								'code'    => $rate_limit_result->get_error_code(),
+								'message' => $rate_limit_result->get_error_message(),
+								'data'    => $error_data,
+							)
+						);
+						$response->set_status( 429 );
+						$response->header( 'Retry-After', (string) $retry_after );
+						return $response;
+					}
+				}
+
 				return $this->handle_chat_request_with_streaming(
 					$assistant_id,
 					$messages,

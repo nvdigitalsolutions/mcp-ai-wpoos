@@ -1,14 +1,14 @@
 # Proposals Completion Status
 
-**Last Updated:** January 30, 2026  
+**Last Updated:** March 9, 2026  
 **Total Proposals:** 64 files  
-**Completed:** 18 proposals  
-**In Progress:** 6 proposals  
-**Pending:** 40 proposals
+**Completed:** 26 proposals  
+**In Progress:** 4 proposals  
+**Pending:** 34 proposals
 
 ---
 
-## ✅ Completed Proposals (18)
+## ✅ Completed Proposals (26)
 
 ### DeepSeek V4 Multi-Agent Orchestration
 - **Status:** ✅ 100% Complete (All Phases 1-5)
@@ -62,7 +62,80 @@
 
 ---
 
-## 🚧 In Progress Proposals (6)
+### Chat Channels Toolkit (47 tools)
+- **Status:** ✅ Implemented & Complete
+- **Description:** Multi-platform messaging toolkit supporting 11 platforms (Discord, Telegram,
+  WhatsApp, Slack, Google Chat, Teams, iMessage, Signal, SMS, Email, Webchat).
+- **Implementation:** v1.1.1–v1.1.3 (January–March 2026)
+
+### Slash Commands (29 commands)
+- **Status:** ✅ Implemented & Complete
+- **Description:** 29 built-in slash commands with 7 workflow templates for rapid AI interactions.
+- **Implementation:** v1.1.1 (February 2026)
+
+### Regulatory Registration Toolkit (59 tools)
+- **Status:** ✅ Implemented & Complete
+- **Description:** End-to-end pharmaceutical/cosmetics product registration management, including
+  MOHAP/NMRA sync, multi-country tracking, compliance workflows, and automated reporting.
+- **Location:** `addons/pro/includes/tools/regulatory-registration/`
+- **Documentation:** `docs/regulatory-registration-tool-reference.md`
+- **Implementation:** Early 2026
+
+### Site Creator Toolkit (27 tools)
+- **Status:** ✅ Implemented & Complete
+- **Description:** AI-powered WordPress site building toolkit with page/section generators,
+  navigation builders, template management, competitor analysis, and architect integration.
+- **Location:** `addons/pro/includes/tools/site-creator-toolkit/`
+- **Documentation:** `docs/site-creator-theme-json-guide.md`
+- **Implementation:** Early 2026
+
+### Telegram Mini App (TMA) CMS Interface
+- **Status:** ✅ Implemented & Complete
+- **Description:** Full CMS interface inside Telegram Mini App with AI Chat, eCommerce, and CRM
+  templates. Includes session token fallback for Telegram WebView cookie restrictions.
+- **Implementation:** v1.1.2–v1.1.3 (February 2026)
+
+### Anthropic Claude Provider
+- **Status:** ✅ Implemented & Complete
+- **Description:** Full Anthropic Claude integration (Claude 3 Haiku/Sonnet/Opus, Claude 4 Sonnet/Opus)
+  with streaming, tool calling, vision, token counting, and admin test connection.
+- **Files:** `includes/class-wp-mcp-ai-anthropic-client.php`
+- **Implementation:** v1.1.3 (March 2026)
+
+### Federation Directory Rate Limiting
+- **Status:** ✅ Implemented & Complete
+- **Description:** IP-based rate limiting (60 req/min) on all public federation peer-discovery
+  endpoints. `manage_options` bypass. Standard `X-RateLimit-*` response headers.
+- **Files:** `includes/class-wp-mcp-ai-federation-rate-limiter.php`
+- **Implementation:** v1.1.1 (February 2026)
+
+### SSE Connection Rate Limiting
+- **Status:** ✅ Implemented & Complete (v1.2.0)
+- **Description:** Per-user (5 connections, filter: `wp_mcp_ai_sse_per_user_limit`) and global
+  (100 connections, filter: `wp_mcp_ai_sse_global_limit`) SSE connection limits using WordPress
+  transients. `manage_options` bypass. HTTP 429 + `Retry-After` header on exceeded limit.
+- **Files:** `includes/class-wp-mcp-ai-sse-rate-limiter.php`
+- **Implementation:** v1.2.0 (March 2026)
+
+### PM Task Dependencies
+- **Status:** ✅ Implemented & Complete (v1.2.0)
+- **Description:** Three new Pro PM tools — `add_task_dependency`, `remove_task_dependency`,
+  `get_task_dependencies` — with cycle detection and enriched dependency graph output.
+  Meta keys: `_task_depends_on`, `_task_blocks`.
+- **Files:** `addons/pro/includes/tools/class-wp-mcp-ai-tool-{add,remove,get}-task-dependency.php`
+- **Implementation:** v1.2.0 (March 2026)
+
+### PM Task Notifications
+- **Status:** ✅ Implemented & Complete (v1.2.0)
+- **Description:** Email notifications for task assignment, status changes, and due-date reminders
+  (daily cron digest). Configurable via `wp_mcp_ai_settings` (`pm_disable_assignment_emails`,
+  `pm_disable_status_emails`, `pm_disable_due_date_emails`, `pm_reminder_days`).
+- **Files:** `addons/pro/includes/class-wp-mcp-ai-pm-notification-manager.php`
+- **Implementation:** v1.2.0 (March 2026)
+
+---
+
+## 🚧 In Progress Proposals (4)
 
 ### WordPress Integration Enhancement
 - **Status:** ⚠️ 42-82% Complete (varies by component)
@@ -226,6 +299,20 @@
   - Phase 5
   - Multiple bug fixes and enhancements
 
+- **February–March 2026 Completions (v1.1.1–v1.1.3):**
+  - Chat Channels Toolkit (47 tools, 11 platforms)
+  - Slash Commands (29 commands)
+  - Regulatory Registration Toolkit (59 tools)
+  - Site Creator Toolkit (27 tools)
+  - Telegram Mini App full CMS interface
+  - Anthropic Claude provider
+  - Federation Directory Rate Limiting
+
+- **March 2026 (v1.2.0):**
+  - SSE Connection Rate Limiting
+  - PM Task Dependencies (3 new tools)
+  - PM Task Notifications (email + cron)
+
 ### Next Priority Actions
 1. **Reconcile DeepSeek V4 completion status** - Documents show 60%, 85-90%, and 100% complete
 2. **Complete WordPress Integration Enhancement** - Currently 42-82% depending on component
@@ -255,4 +342,4 @@ This status document should be updated:
 - **Monthly:** During maintenance periods
 - **Immediately:** When proposal status changes (approved, completed, rejected)
 
-Last comprehensive review: January 30, 2026
+Last comprehensive review: March 9, 2026
