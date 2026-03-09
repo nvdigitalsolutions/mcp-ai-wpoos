@@ -623,6 +623,21 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$max_history = (int) apply_filters( 'wp_mcp_ai_telegram_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
 
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		// Only attempt when max_history > 1; a limit of 1 leaves no room for prior
+		// turns (the current message occupies the sole slot).
+		if ( empty( $history_for_chat ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history_for_chat = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'telegram',
+				$from_id,
+				$connection_id,
+				$max_history - 1
+			);
+		}
+
 		if ( count( $history_for_chat ) >= $max_history ) {
 			$history_for_chat = array_slice( $history_for_chat, -( $max_history - 1 ) );
 		}
@@ -907,6 +922,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		);
 
 		// Persist the outbound AI reply to the Channel Messages CCT.
+		// Store the raw (pre-Telegram-HTML) content so that when this CCT row is
+		// later read back as conversation history the AI receives clean plain text
+		// rather than HTML tags. The Telegram-formatted version is preserved in
+		// raw_payload alongside the full API response.
 		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
 			WP_MCP_AI_Channel_Messages_CCT::insert(
 				array(
@@ -914,11 +933,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'channel_contact_id' => $from_id,
 					'direction'          => 'outbound',
 					'message_type'       => 'text',
-					'content'            => $content,
+					'content'            => $raw_content,
 					'raw_payload'        => array(
 						'chat_response'         => $response_data,
 						'agentic_tool_messages' => $agentic_messages,
 						'telegram_response'     => $response_body,
+						'formatted_content'     => $content,
 					),
 					'status'             => 'sent',
 					'connection_id'      => $connection_id,
