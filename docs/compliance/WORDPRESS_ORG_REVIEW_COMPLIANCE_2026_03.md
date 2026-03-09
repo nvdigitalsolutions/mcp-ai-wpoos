@@ -1827,3 +1827,89 @@ All `phpcs:ignore` justification additions across the following files in `includ
 ---
 
 *Last updated: March 9, 2026*
+
+---
+
+## Post-Merge Compliance Review — March 9, 2026 (Pass 4 — Yahoo OAuth Gap)
+
+**Trigger:** Continued full-plugin audit of all `wp_remote_*` call sites to confirm all external services are documented in `readme.txt == External Services`.
+
+**Tool:** Manual audit — `grep -rn "wp_remote_post|wp_remote_get|wp_remote_request|wp_safe_remote_"` across `includes/`, extracting unique domains; cross-referenced against existing `readme.txt` entries.
+
+**Files scanned:** All PHP files under `includes/` (722 total including new files since Pass 3).
+
+### Issue Found and Fixed
+
+| # | File | Issue | Fix Applied |
+|---|------|-------|-------------|
+| 1 | `integrations/class-wp-mcp-ai-oauth-manager.php:840` | `wp_remote_post( 'https://api.login.yahoo.com/oauth2/get_token', ... )` — Yahoo OAuth2 token endpoint contacted during Yahoo Fantasy Sports OAuth flow; **absent from `readme.txt`** | Added entry **#38 (Yahoo OAuth2 API)** with Purpose, Data Sent, When, Service URL, Terms, Privacy; updated **Third-Party Services** quick-reference list; added **Yahoo OAuth2** sub-section in Privacy Policy |
+
+### Complete External-Service Domain Cross-Check (722 files)
+
+All unique domains extracted from `wp_remote_*` calls cross-checked against `readme.txt`:
+
+| Domain | Entry |
+|--------|-------|
+| `api.anthropic.com` | #3 ✅ |
+| `api.cloudflare.com` | #6, #15 ✅ |
+| `api.cloudways.com` | #29 ✅ |
+| `api.duckduckgo.com` | #13 ✅ |
+| `api.exa.ai` | #33 ✅ |
+| `api.flowhub.co` | #18 ✅ |
+| `api.github.com` | #28 ✅ |
+| `api.login.yahoo.com` | #38 ✅ (added this pass) |
+| `api.login.yahoo.com` (auth redirect) | #38 ✅ |
+| `api.open-meteo.com` | #9 ✅ |
+| `api.openai.com` | #1 ✅ |
+| `api.perplexity.ai` | #34 ✅ |
+| `api.remove.bg` | #17 ✅ |
+| `api.search.brave.com` | #8 ✅ |
+| `api.tavily.com` | #32 ✅ |
+| `api.wordpress.org` | #11 ✅ |
+| `generativelanguage.googleapis.com` | #2, #2a ✅ |
+| `gmail.googleapis.com` | #16 ✅ |
+| `graph.facebook.com` | #25 ✅ |
+| `maps.googleapis.com` | #24 ✅ |
+| `music-api.mubert.com` | #22 ✅ |
+| `nvdigitalsolutions.com` | #26, #27 ✅ |
+| `oauth2.googleapis.com` | Google OAuth infra for #16, #36 ✅ |
+| `public-api.wordpress.com` | #37 ✅ |
+| `sandbox.payhere.lk` / `www.payhere.lk` | #20 ✅ |
+| `sandbox.plaid.com` / `production.plaid.com` | #19 ✅ |
+| `vision.googleapis.com` | #35 ✅ |
+| `www.gdacs.org` | #23 ✅ |
+| `www.googleapis.com` | #36 ✅ |
+| `www.nhc.noaa.gov` | #14 ✅ |
+| Self-hosted (Varnish, Crawl4AI, Ollama, LM Studio) | N/A — user-configured URLs only ✅ |
+
+### Files Changed
+
+- **`readme.txt`** — External Services section:
+  - Added entry **#38 (Yahoo OAuth2 API)** with full documentation
+  - Updated **Third-Party Services** quick-reference list to add Yahoo OAuth2 (Fantasy Sports)
+  - Added **Yahoo OAuth2** data-processing sub-section in Privacy Policy section
+
+### Verification of All 10+ WordPress.org Guideline Categories
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ `is_pro_active()` returns `true` by default; all features free |
+| 2 | readme.txt URLs valid | ✅ All documented service URLs active; 38 entries + 2a |
+| 3 | Out-of-date libraries | ✅ Vendor updated; Symfony ≥ 6.4; 0 advisories |
+| 4 | External services documented | ✅ All `wp_remote_*` call sites cross-checked; **38 services** now fully documented |
+| 5 | No saving data to plugin folder | ✅ All `file_put_contents` target uploads dir or system temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites have `sanitize_callback` |
+| 7 | Input sanitization / output escaping | ✅ PHPCS `lint:base` 0 errors/warnings |
+| 8 | Prefixing (functions, classes, hooks) | ✅ All use `wp_mcp_ai_` prefix |
+| 9 | Privacy Policy | ✅ Comprehensive section updated to cover all 38 services |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions remain |
+| 11 | `error_log()` gating | ✅ All instances are WP_DEBUG-gated or `$enable_logging`-gated |
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (722 files scanned)**
+
+**Base plugin compliance status: ✅ Fully compliant — March 9, 2026 (Pass 4)**
+
+---
+
+*Last updated: March 9, 2026*
+

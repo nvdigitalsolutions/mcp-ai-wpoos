@@ -720,6 +720,14 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://wordpress.com/tos/
 * **Privacy Policy:** https://automattic.com/privacy/
 
+**38. Yahoo OAuth2 API**
+* **Purpose:** OAuth2 authorisation flow for Yahoo Fantasy Sports integration — exchanges an authorisation code for access/refresh tokens
+* **Data Sent:** Client ID, client secret (base64-encoded in Authorization header), authorisation code, redirect URI
+* **When:** Only when a user completes the Yahoo Fantasy Sports OAuth authorisation flow (optional integration, off by default)
+* **Service URL:** https://api.login.yahoo.com/oauth2/get_token
+* **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
+* **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
+
 = Data Processing Summary =
 
 **What is sent to external services:**
@@ -859,6 +867,12 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Terms of Service: [WordPress.com Terms](https://wordpress.com/tos/)
 * Used for: Validating WordPress.com / Gravatar bearer tokens for user authentication
 
+**Yahoo OAuth2 (when Yahoo Fantasy Sports integration is used):**
+* Data sent to: https://api.login.yahoo.com/oauth2/get_token
+* Processed according to: [Yahoo Privacy Policy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html)
+* Terms of Service: [Yahoo Terms of Service](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
+* Used for: Exchanging an authorisation code for Yahoo OAuth2 access/refresh tokens (Fantasy Sports integration only)
+
 = GDPR Compliance =
 
 **Your Rights:**
@@ -906,6 +920,7 @@ This plugin may connect to the following external services based on your configu
 * Google Cloud Vision API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
 * Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
 * WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
+* Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 
