@@ -1774,3 +1774,56 @@ All `phpcs:ignore` justification additions across the following files in `includ
 ---
 
 *Last updated: March 9, 2026*
+
+---
+
+## Post-Merge Compliance Review — March 9, 2026 (External Services Audit)
+
+**Trigger:** Continued review of gaps identified in the March 2026 compliance cycle.  Re-audit of **Guideline 6 (External Services)** following the addition of Exa AI and Perplexity search providers (PR merged after Pass 2 sweep), plus a full external-services re-audit across all `wp_remote_*` call sites in the base plugin.
+
+**Tool:** Manual audit of all `wp_remote_post`, `wp_remote_get`, `wp_remote_request` call sites in `includes/` plus comparison against `readme.txt == External Services` section.
+
+**Scope:** `readme.txt` external service documentation.
+
+### Issues Found and Fixed
+
+| # | Service | API Endpoint | Status before fix | Fix Applied |
+|---|---------|--------------|-------------------|-------------|
+| 1 | **Exa AI** | `https://api.exa.ai/search` | ❌ Absent from readme.txt | Added as entry **#33** with Purpose, Data Sent, When, Service URL, Terms, Privacy |
+| 2 | **Perplexity AI** | `https://api.perplexity.ai/chat/completions` | ❌ Absent from readme.txt | Added as entry **#34** with Purpose, Data Sent, When, Service URL, Terms, Privacy |
+| 3 | **Google Cloud Vision API** | `https://vision.googleapis.com/v1/images:annotate` | ❌ Absent from readme.txt | Added as entry **#35** (used in `vision_product_search` + `vision_object_localization` tools) |
+| 4 | **Google Drive API** | `https://www.googleapis.com/drive/v3` | ❌ Absent from readme.txt | Added as entry **#36** (used in `search_drive` tool) |
+| 5 | **WordPress.com OAuth2 API** | `https://public-api.wordpress.com/oauth2/userinfo` | ❌ Absent from readme.txt | Added as entry **#37** (used in Gravatar / WordPress.com authentication integration) |
+| 6 | **Hugging Face** | `https://router.huggingface.co/v1` / `https://datasets-server.huggingface.co` | ⚠️ readme listed deprecated `api-inference.huggingface.co/models/` endpoint only | Updated Service URL to include all three current endpoints |
+
+### Files Changed
+
+- **`readme.txt`** — External Services section:
+  - Updated entry **#7 (Hugging Face)** — `Service URL` field now lists `https://router.huggingface.co/v1` (Inference Router, the default endpoint), `https://datasets-server.huggingface.co` (Datasets Server), and the legacy `api-inference.huggingface.co/models/` (if user has configured a custom endpoint)
+  - Added entries **#33–#37** (Exa AI, Perplexity AI, Google Cloud Vision API, Google Drive API, WordPress.com OAuth2)
+  - Updated **Third-Party Services** quick-reference list to add Google Cloud Vision, Google Drive, and WordPress.com OAuth2
+  - Updated **Privacy Policy** section — new data-processing sub-sections for web-search providers, Google Cloud Vision, Google Drive, and WordPress.com OAuth2; updated Hugging Face data-sent URLs
+
+### Verification of All 10+ WordPress.org Guideline Categories
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ `is_pro_active()` returns `true` by default; all features free |
+| 2 | readme.txt URLs valid | ✅ All documented service URLs active; 37 entries + 2a |
+| 3 | Out-of-date libraries | ✅ Vendor updated; Symfony ≥ 6.4; 0 advisories |
+| 4 | External services documented | ✅ All `wp_remote_*` call sites cross-checked; **37 services** now fully documented |
+| 5 | No saving data to plugin folder | ✅ All `file_put_contents` target uploads dir or system temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All 6 call sites have `sanitize_callback` |
+| 7 | Input sanitization / output escaping | ✅ PHPCS `lint:base` 0 errors/warnings |
+| 8 | Prefixing (functions, classes, hooks) | ✅ All use `wp_mcp_ai_` prefix |
+| 9 | Privacy Policy | ✅ Comprehensive section updated to cover all 37 services |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions remain |
+| 11 | `error_log()` gating | ✅ All instances are WP_DEBUG-gated or `$enable_logging`-gated |
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (721 files scanned)**
+
+**Base plugin compliance status: ✅ Fully compliant — March 9, 2026 (Pass 3)**
+
+---
+
+*Last updated: March 9, 2026*
