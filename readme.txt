@@ -469,7 +469,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Access to public machine learning datasets and AI model inference (text-to-speech, chat)
 * **Data Sent:** Dataset queries and filters; text or chat prompts for model inference
 * **When:** When dataset exploration tools or Hugging Face AI inference tools are used
-* **Service URL:** https://huggingface.co/api/datasets and https://api-inference.huggingface.co/models/
+* **Service URL:** https://router.huggingface.co/v1 (Inference Router / chat completions), https://datasets-server.huggingface.co (Datasets Server), https://api-inference.huggingface.co/models/ (legacy inference, if configured)
 * **Terms of Service:** https://huggingface.co/terms-of-service
 * **Privacy Policy:** https://huggingface.co/privacy
 
@@ -680,6 +680,46 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://tavily.com/terms-of-use
 * **Privacy Policy:** https://tavily.com/privacy-policy
 
+**33. Exa AI Search API**
+* **Purpose:** Neural/semantic web search purpose-built for AI agents; returns full-text page content and metadata
+* **Data Sent:** Search query string and search parameters (number of results, content type)
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Exa"
+* **Service URL:** https://api.exa.ai/search
+* **Terms of Service:** https://exa.ai/terms
+* **Privacy Policy:** https://exa.ai/privacy
+
+**34. Perplexity AI API**
+* **Purpose:** AI-powered web search that returns synthesised answers with inline citations
+* **Data Sent:** Search query string, model identifier
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Perplexity"
+* **Service URL:** https://api.perplexity.ai/chat/completions
+* **Terms of Service:** https://www.perplexity.ai/hub/legal/terms-of-service
+* **Privacy Policy:** https://www.perplexity.ai/hub/legal/privacy-policy
+
+**35. Google Cloud Vision API**
+* **Purpose:** Image annotation, product visual search, and object localisation using Google's pre-trained Vision models
+* **Data Sent:** Base64-encoded image data and API key
+* **When:** When the `vision_product_search` or `vision_object_localization` tools are used
+* **Service URL:** https://vision.googleapis.com/v1/images:annotate
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**36. Google Drive API**
+* **Purpose:** Search and list files stored in a user's Google Drive
+* **Data Sent:** OAuth access token and search query parameters
+* **When:** When the `search_drive` tool is used after Google OAuth integration is configured
+* **Service URL:** https://www.googleapis.com/drive/v3
+* **Terms of Service:** https://policies.google.com/terms
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**37. WordPress.com OAuth2 API (Gravatar)**
+* **Purpose:** Validate WordPress.com / Gravatar bearer tokens to authenticate users against their WordPress.com or Gravatar profile
+* **Data Sent:** OAuth bearer token (no user content)
+* **When:** When the WordPress.com / Gravatar authentication integration is enabled and a bearer token is presented
+* **Service URL:** https://public-api.wordpress.com/oauth2/userinfo
+* **Terms of Service:** https://wordpress.com/tos/
+* **Privacy Policy:** https://automattic.com/privacy/
+
 = Data Processing Summary =
 
 **What is sent to external services:**
@@ -776,10 +816,10 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Review Cloudflare's data handling policies before use
 
 **Hugging Face (when configured):**
-* Data sent to: https://huggingface.co/api/datasets
+* Data sent to: https://router.huggingface.co/v1 (Inference Router), https://datasets-server.huggingface.co (Datasets Server)
 * Processed according to: [Hugging Face Privacy](https://huggingface.co/privacy)
 * Terms of Service: [Hugging Face Terms](https://huggingface.co/terms-of-service)
-* Used for: Dataset access and exploration
+* Used for: Dataset access, exploration, and AI model inference (chat, text-to-speech)
 * Review Hugging Face's data policies before use
 
 **Ollama (when configured):**
@@ -793,6 +833,31 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * No external data transmission
 * Complete data privacy and control
 * Recommended for sensitive data
+
+**Web Search Providers (when configured):**
+* Brave Search: data sent to https://api.search.brave.com — [Privacy](https://brave.com/privacy/browser/) | [Terms](https://brave.com/terms-of-use/)
+* Tavily: data sent to https://api.tavily.com — [Privacy](https://tavily.com/privacy-policy) | [Terms](https://tavily.com/terms-of-use)
+* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy) | [Terms](https://exa.ai/terms)
+* Perplexity: data sent to https://api.perplexity.ai — [Privacy](https://www.perplexity.ai/hub/legal/privacy-policy) | [Terms](https://www.perplexity.ai/hub/legal/terms-of-service)
+* DuckDuckGo: data sent to https://api.duckduckgo.com — [Privacy](https://duckduckgo.com/privacy) | [Terms](https://duckduckgo.com/terms)
+
+**Google Cloud Vision API (when vision tools are used):**
+* Data sent to: https://vision.googleapis.com
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Cloud Terms](https://cloud.google.com/terms/)
+* Used for: Image annotation, product visual search, and object localisation
+
+**Google Drive API (when search_drive tool is used):**
+* Data sent to: https://www.googleapis.com/drive/v3
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Terms](https://policies.google.com/terms)
+* Used for: Search and listing of files in a user's Google Drive (requires OAuth setup)
+
+**WordPress.com OAuth2 / Gravatar (when configured):**
+* Data sent to: https://public-api.wordpress.com/oauth2/userinfo
+* Processed according to: [Automattic Privacy Policy](https://automattic.com/privacy/)
+* Terms of Service: [WordPress.com Terms](https://wordpress.com/tos/)
+* Used for: Validating WordPress.com / Gravatar bearer tokens for user authentication
 
 = GDPR Compliance =
 
@@ -836,8 +901,11 @@ This plugin may connect to the following external services based on your configu
 * Cloudflare Workers AI - [Privacy](https://www.cloudflare.com/privacypolicy/) | [Terms](https://www.cloudflare.com/terms/)
 * Hugging Face - [Privacy](https://huggingface.co/privacy) | [Terms](https://huggingface.co/terms-of-service)
 * Weather data - Open-Meteo API
-* Web search - Brave Search API
+* Web search - Brave Search, DuckDuckGo, Tavily, Exa AI, or Perplexity (provider must be configured)
 * Image generation - OpenAI, Gemini, or Cloudflare
+* Google Cloud Vision API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
+* WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 
