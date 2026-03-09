@@ -9,13 +9,21 @@ Stable tag: 1.1.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework for WordPress supporting OpenAI, Gemini, Anthropic, and Ollama (Local). Works standalone with optional third-party plugin integrations.
+AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin.
 
 == Description ==
 
 **NV Digital Open Operator System (oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
 The plugin works standalone with vanilla WordPress and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
+
+= Versions =
+
+**Base Version (default — 165 core tools):** Active out of the box. Covers content management, media generation, research, site operations, analytics, MCP server, and more.
+
+**Full Version (519 tools):** Unlocks all Pro add-ons. Install the separate **NV oOS Pro add-on** plugin alongside this plugin to enable the Full Version automatically.
+
+Pro add-ons include WooCommerce e-commerce tools, JetEngine CPT/Taxonomy AI integration, social media publishing and analytics, GitHub integration, Google services, FFmpeg media processing, WP-CLI automation, and multi-agent orchestration.
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
