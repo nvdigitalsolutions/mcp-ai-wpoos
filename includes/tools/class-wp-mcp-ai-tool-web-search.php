@@ -1058,19 +1058,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 		/**
-	 * Perform a web search using Exa AI's neural search API.
-	 *
-	 * Exa provides semantic / neural web search purpose-built for AI applications.
-	 * Unlike keyword-based search, Exa understands query intent and returns highly
-	 * relevant results using embedding-based retrieval.
-	 *
-	 * API reference: https://docs.exa.ai/reference/search
-	 *
-	 * @param string $query       Search query string.
-	 * @param int    $max_results Maximum number of results to return.
-	 * @param array  $options     Optional: 'country', 'language', 'freshness' parameters.
-	 * @return array|WP_Error Normalized result array or WP_Error on failure.
-	 */
+		 * Perform a web search using Exa AI's neural search API.
+		 *
+		 * Exa provides semantic / neural web search purpose-built for AI applications.
+		 * Unlike keyword-based search, Exa understands query intent and returns highly
+		 * relevant results using embedding-based retrieval.
+		 *
+		 * API reference: https://docs.exa.ai/reference/search
+		 *
+		 * @param string $query       Search query string.
+		 * @param int    $max_results Maximum number of results to return.
+		 * @param array  $options     Optional: 'country', 'language', 'freshness' parameters.
+		 * @return array|WP_Error Normalized result array or WP_Error on failure.
+		 */
 	protected function perform_exa_search( $query, $max_results, array $options = array() ) {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$api_key  = isset( $settings['exa_api_key'] ) ? trim( $settings['exa_api_key'] ) : '';

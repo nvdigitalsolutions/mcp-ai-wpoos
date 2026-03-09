@@ -3927,10 +3927,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<p class="description">
 			<?php
 				printf(
-					/* translators: %s: Exa AI website URL */
 					wp_kses(
+						/* translators: %s: Exa AI website URL */
 						__( 'Required when Exa AI is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">exa.ai</a>.', 'mcp-ai-wpoos' ),
-						array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) )
+						array(
+							'a' => array(
+								'href' => array(),
+								'target' => array(),
+								'rel' => array(),
+							),
+						)
 					),
 					'https://exa.ai'
 				);
@@ -3950,10 +3956,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<p class="description">
 			<?php
 				printf(
-					/* translators: %s: Perplexity AI website URL */
 					wp_kses(
+						/* translators: %s: Perplexity AI website URL */
 						__( 'Required when Perplexity Sonar is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">perplexity.ai</a>.', 'mcp-ai-wpoos' ),
-						array( 'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() ) )
+						array(
+							'a' => array(
+								'href' => array(),
+								'target' => array(),
+								'rel' => array(),
+							),
+						)
 					),
 					'https://www.perplexity.ai/settings/api'
 				);
