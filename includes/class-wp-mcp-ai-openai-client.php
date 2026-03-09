@@ -1233,14 +1233,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * call `retrieve_batch()` with the returned batch ID to poll the status, then
 		 * `download_file()` with `output_file_id` to retrieve results.
 		 *
-		 * @param array  $texts   Non-empty array of text strings to embed.
-		 * @param array  $options Optional parameters:
-		 *                        - model (string): Embedding model. Default 'text-embedding-3-small'.
-		 *                        - dimensions (int): Output vector dimensions (text-embedding-3 only).
-		 *                        - encoding_format (string): 'float' (default) or 'base64'.
-		 *                        - completion_window (string): '24h' (only supported value). Default '24h'.
-		 *                        - metadata (array): Up to 16 key-value pairs attached to the batch.
-		 *                        - timeout (int): HTTP timeout for the file-upload step.
+		 * @param array $texts   Non-empty array of text strings to embed.
+		 * @param array $options Optional parameters:
+		 *                       - model (string): Embedding model. Default 'text-embedding-3-small'.
+		 *                       - dimensions (int): Output vector dimensions (text-embedding-3 only).
+		 *                       - encoding_format (string): 'float' (default) or 'base64'.
+		 *                       - completion_window (string): '24h' (only supported value). Default '24h'.
+		 *                       - metadata (array): Up to 16 key-value pairs attached to the batch.
+		 *                       - timeout (int): HTTP timeout for the file-upload step.
 		 * @return array|WP_Error Batch job details array (id, status, input_file_id, …) or WP_Error.
 		 */
 		public function create_batch_embeddings( array $texts, array $options = array() ) {
