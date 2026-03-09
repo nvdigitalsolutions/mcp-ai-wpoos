@@ -1752,4 +1752,25 @@ All `phpcs:ignore` justification additions across the following files in `includ
 
 ---
 
+## Sweep — March 9, 2026 (Pass 2)
+
+**Trigger:** Routine compliance re-scan on new code paths (Exa AI and Perplexity web-search provider fields).
+
+**Tool:** `vendor/bin/phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,...`
+
+**Files scanned:** 721
+
+| # | File | Issue | Fix |
+|---|------|-------|-----|
+| 1 | `admin/class-wp-mcp-ai-admin-settings.php` (×2) | `translators:` comment placed between `printf(` and `wp_kses(` — PHPCS requires it on the line directly above `__()` | Moved both comments inside `wp_kses()`, one line above each `__()` call |
+| 2 | `admin/class-wp-mcp-ai-admin-settings.php` (×2) | Multi-item associative array values not starting on new lines (auto-fixable) | Fixed by `phpcbf` |
+| 3 | `class-wp-mcp-ai-openai-client.php` (×2) | Extra space after parameter type in PHPDoc (auto-fixable) | Fixed by `phpcbf` |
+| 4 | `tools/class-wp-mcp-ai-tool-web-search.php` (×13) | Incorrect asterisk indentation in nested PHPDoc block (auto-fixable) | Fixed by `phpcbf` |
+
+**Total fixed:** 19 errors across 3 files
+
+**PHPCS `lint:base` result after sweep: ✅ 0 errors, 0 warnings (721 files scanned)**
+
+---
+
 *Last updated: March 9, 2026*
