@@ -14,9 +14,10 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	 * Provides a wrapper around Anthropic's Messages API endpoint.
 	 */
 	class WP_MCP_AI_Anthropic_Client {
-		const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
-		const API_VERSION  = '2023-06-01';
-		const USER_AGENT   = 'WP-MCP-AI-Anthropic-Client/1.0';
+		const API_ENDPOINT     = 'https://api.anthropic.com/v1/messages';
+		const API_COUNT_TOKENS = 'https://api.anthropic.com/v1/messages/count_tokens';
+		const API_VERSION      = '2023-06-01';
+		const USER_AGENT       = 'WP-MCP-AI-Anthropic-Client/1.0';
 
 		/**
 		 * Maximum image size in bytes (10MB).
@@ -225,6 +226,193 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				'success' => true,
 				'message' => __( 'Successfully connected to Anthropic.', 'mcp-ai-wpoos' ),
 			);
+		}
+
+		/**
+		 * Return the static list of supported Claude models.
+		 *
+		 * Anthropic does not expose a public REST endpoint to enumerate models, so a
+		 * curated static list is returned instead. The list mirrors the models named
+		 * in the Anthropic proposal (Claude 3 Haiku / Sonnet / Opus; Claude 4 Sonnet
+		 * / Opus) plus the latest Sonnet snapshot used as the default.
+		 *
+		 * @param array $options Unused; reserved for future API-based enumeration.
+		 * @return array Array of model objects with 'id', 'name', and 'context_window' keys.
+		 */
+		public function list_models( array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- $options reserved for future API-based enumeration.
+			return array(
+				array(
+					'id'             => 'claude-3-haiku-20240307',
+					'name'           => __( 'Claude 3 Haiku (fastest)', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-3-5-sonnet-20241022',
+					'name'           => __( 'Claude 3.5 Sonnet (recommended)', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-3-opus-20240229',
+					'name'           => __( 'Claude 3 Opus (most capable)', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-sonnet-4-5',
+					'name'           => __( 'Claude 4 Sonnet', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+				array(
+					'id'             => 'claude-opus-4-5',
+					'name'           => __( 'Claude 4 Opus', 'mcp-ai-wpoos' ),
+					'context_window' => 200000,
+				),
+			);
+		}
+
+		/**
+		 * Count input tokens for a given message list via Anthropic's token-counting endpoint.
+		 *
+		 * Uses `POST /v1/messages/count_tokens` which returns the number of input tokens
+		 * without actually running inference, making it useful for cost estimation and
+		 * context-window management.
+		 *
+		 * @param array $messages Chat messages in OpenAI-compatible format.
+		 * @param array $options  Optional parameters:
+		 *                        - model (string): Override the model used for counting.
+		 *                        - system_prompt (string): System instruction included in count.
+		 *                        - tools (array): Tool definitions to include in the count.
+		 *                        - timeout (int): HTTP timeout in seconds.
+		 * @return int|WP_Error Input token count or WP_Error on failure.
+		 */
+		public function count_tokens( array $messages, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_anthropic_api_key',
+					__( 'No Anthropic API key has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			// Build the payload — same structure as /v1/messages but without max_tokens.
+			$payload = array(
+				'model'    => $model,
+				'messages' => array(),
+			);
+
+			// Add system prompt if provided.
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$payload['system'] = wp_kses_post( (string) $options['system_prompt'] );
+			}
+
+			// Add tool definitions if provided.
+			if ( ! empty( $options['tools'] ) ) {
+				$payload['tools'] = $this->translate_tools_for_anthropic( (array) $options['tools'] );
+			}
+
+			// Format messages using the same helper as create_chat_completion.
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+				$content = isset( $message['content'] ) ? $message['content'] : '';
+
+				if ( 'system' === $role ) {
+					if ( empty( $payload['system'] ) ) {
+						$payload['system'] = wp_kses_post( (string) $content );
+					}
+					continue;
+				}
+
+				if ( ! in_array( $role, array( 'user', 'assistant' ), true ) ) {
+					continue;
+				}
+
+				$normalized = $this->normalize_content_for_anthropic( $content );
+
+				if ( ! empty( $normalized ) ) {
+					$payload['messages'][] = array(
+						'role'    => $role,
+						'content' => $normalized,
+					);
+				}
+			}
+
+			if ( empty( $payload['messages'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_messages',
+					__( 'At least one user or assistant message is required for token counting.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$timeout = $this->resolve_timeout( $options );
+
+			$request_args = array(
+				'method'  => 'POST',
+				'headers' => array(
+					'x-api-key'         => $api_key,
+					'anthropic-version' => self::API_VERSION,
+					'content-type'      => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'anthropic_count_tokens',
+				'Counting tokens with Anthropic.',
+				array(
+					'model'         => $model,
+					'message_count' => count( $payload['messages'] ),
+				)
+			);
+
+			$response = wp_remote_post( self::API_COUNT_TOKENS, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Anthropic count_tokens request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return $response;
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_anthropic_count_tokens_invalid_response',
+					__( 'Anthropic returned malformed JSON for token counting.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Anthropic token counting request failed.', 'mcp-ai-wpoos' );
+
+				return new WP_Error(
+					'wp_mcp_ai_anthropic_count_tokens_error',
+					$message,
+					array( 'status' => $code )
+				);
+			}
+
+			if ( ! isset( $decoded['input_tokens'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_anthropic_count_tokens_missing',
+					__( 'Anthropic count_tokens response did not include input_tokens.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			return absint( $decoded['input_tokens'] );
 		}
 
 		/**

@@ -81,6 +81,8 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				'cloudflare_api_token'               => 'password',
 				'brave_search_api_key'               => 'password',
 				'tavily_api_key'                     => 'password',
+				'exa_api_key'                        => 'password',
+				'perplexity_api_key'                 => 'password',
 				'mubert_api_key'                     => 'password',
 				'crawl4ai_api_key'                   => 'password',
 				'cloudways_api_key'                  => 'password',
