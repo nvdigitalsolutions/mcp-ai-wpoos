@@ -162,7 +162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 			$content .= '<li><strong>woo_get_analytics</strong> - ' . esc_html__( 'Retrieve sales metrics and revenue reports', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '<li><strong>woo_manage_inventory</strong> - ' . esc_html__( 'Track and update product stock levels', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '</ul>';
-			$content .= '<p style="margin-top: 1rem;"><em>' . esc_html__( 'Note: WooCommerce tools are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'mcp-ai-wpoos' ) . '</em></p>';
+			$content .= '<p style="margin-top: 1rem;"><em>' . esc_html__( 'Note: WooCommerce tools are available only in Full Version mode. Install the NV oOS Pro add-on plugin to enable.', 'mcp-ai-wpoos' ) . '</em></p>';
 			$content .= '</div>';
 
 			return $content;

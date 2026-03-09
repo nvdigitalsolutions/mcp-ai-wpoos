@@ -195,7 +195,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_WooCommerce_Integration' ) ) {
 						</table>
 
 						<div style="background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem; margin-top: 1.5rem;">
-							<p style="margin: 0;"><strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'WooCommerce tools are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'mcp-ai-wpoos' ); ?></p>
+							<p style="margin: 0;"><strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'WooCommerce tools are available only in Full Version mode. Install the NV oOS Pro add-on plugin to enable.', 'mcp-ai-wpoos' ); ?></p>
 						</div>
 
 						<?php submit_button( __( 'Save WooCommerce Settings', 'mcp-ai-wpoos' ) ); ?>
