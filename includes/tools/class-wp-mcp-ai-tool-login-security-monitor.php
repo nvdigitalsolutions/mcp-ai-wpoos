@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 
 		$table_name = $wpdb->prefix . 'wfLogins';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 		if ( ! $table_exists ) {
 			return $data;
@@ -417,7 +417,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are in dynamic $where_sql built from hardcoded strings; spread operator used for values.
 			$wpdb->prepare( 'SELECT ctime, fail, username, IP, blocked FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY ctime DESC LIMIT 500", ...$query_params ),
@@ -530,7 +530,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		// Fallback: query the iThemes Security logs table directly.
 		$table_name = $wpdb->prefix . 'itsec_logs';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 		if ( ! $table_exists ) {
 			return $data;
@@ -554,7 +554,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$rows = $wpdb->get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are in dynamic $where_sql built from hardcoded strings; spread operator used for values.
 			$wpdb->prepare( 'SELECT timestamp, type, username, remote_ip, module FROM `' . esc_sql( $table_name ) . "` WHERE {$where_sql} ORDER BY timestamp DESC LIMIT 500", ...$query_params ),

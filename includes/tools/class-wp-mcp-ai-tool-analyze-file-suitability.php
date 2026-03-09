@@ -374,20 +374,20 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	private function check_file_encoding( $file_path, $file_ext, &$warnings, &$recommendations ) {
 		// Read a sample of the file to check encoding.
 		$sample_size = min( 8192, filesize( $file_path ) );
-		$handle      = fopen( $file_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle      = fopen( $file_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Binary file read using native fopen/fread/fclose; WP_Filesystem does not support binary reads in this context.
 		if ( ! $handle ) {
 			return;
 		}
 
-		$sample = fread( $handle, $sample_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		$sample = fread( $handle, $sample_size ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread -- Binary file read using native fread; WP_Filesystem does not support binary reads in this context.
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing native fopen handle; WP_Filesystem does not support binary reads in this context.
 
 		if ( false === $sample ) {
 			return;
 		}
 
 		// Check if content is valid UTF-8.
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: function may emit a warning for invalid input data; return value is always validated before use.
 		$is_utf8 = @mb_check_encoding( $sample, 'UTF-8' );
 
 		if ( ! $is_utf8 ) {
@@ -406,7 +406,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * @param array  &$recommendations Recommendations array.
 	 */
 	private function check_jsonl_format( $file_path, &$warnings, &$recommendations ) {
-		$handle = fopen( $file_path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = fopen( $file_path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Binary file read using native fopen/fread/fclose; WP_Filesystem does not support binary reads in this context.
 		if ( ! $handle ) {
 			$warnings[] = __( 'Unable to read JSONL file.', 'mcp-ai-wpoos' );
 			return;
@@ -428,7 +428,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing native fopen handle; WP_Filesystem does not support binary reads in this context.
 
 		if ( $line_count > 0 && 0 === $valid_json ) {
 			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'mcp-ai-wpoos' );

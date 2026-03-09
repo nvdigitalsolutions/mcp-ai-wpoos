@@ -3527,7 +3527,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			// Read and base64 encode the file.
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 			$file_data = file_get_contents( $file_path );
 
 			if ( false === $file_data ) {
@@ -3538,7 +3538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				);
 			}
 
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 			$audio_content = base64_encode( $file_data );
 
 			// Get language code (default to auto-detect).
@@ -3822,7 +3822,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				);
 			}
 
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- base64_decode used to decode binary image/file data received from the API, not for code obfuscation.
 			$audio_data = base64_decode( $decoded['audioContent'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding binary image data from API response.
 
 			if ( false === $audio_data ) {

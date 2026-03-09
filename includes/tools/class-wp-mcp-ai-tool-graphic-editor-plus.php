@@ -421,7 +421,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $save_result;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$image_data = file_get_contents( $temp_file );
 		wp_delete_file( $temp_file );
 
@@ -433,7 +433,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_read_failed', __( 'Failed to read image data.', 'mcp-ai-wpoos' ) );
 		}
 
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		return array(
 			'data'      => base64_encode( $image_data ),
 			'mime_type' => $image_editor->get_mime_type(),
@@ -451,7 +451,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * @return array|WP_Error Storage result or error.
 	 */
 	protected function store_ai_image_result( $image, $file_name, $prompt, $user_id, $operation ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- base64_decode used to decode binary image/file data received from the API, not for code obfuscation.
 		$image_data = base64_decode( $image['image'] );
 
 		if ( false === $image_data ) {
@@ -471,7 +471,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['path'] . '/' . wp_unique_filename( $upload_dir['path'], $file_name );
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$saved = file_put_contents( $file_path, $image_data );
 
 		if ( false === $saved ) {

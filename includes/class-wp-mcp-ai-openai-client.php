@@ -2095,7 +2095,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( function_exists( 'getimagesizefromstring' ) ) {
-				$details = @getimagesizefromstring( $image_data ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				$details = @getimagesizefromstring( $image_data ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: getimagesizefromstring() may emit a warning for invalid binary data; return value is always validated.
 
 				if ( is_array( $details ) && ! empty( $details['mime'] ) ) {
 					$format = $this->detect_format_from_mime_type( $details['mime'] );
@@ -2199,7 +2199,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Add image file.
 			$image_filename  = basename( $image_path );
 			$image_mime_type = mime_content_type( $image_path );
-			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 
 			$body .= "--{$boundary}\r\n";
 			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";
@@ -2210,7 +2210,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( isset( $options['mask_path'] ) && '' !== $options['mask_path'] && file_exists( $options['mask_path'] ) ) {
 				$mask_filename  = basename( $options['mask_path'] );
 				$mask_mime_type = mime_content_type( $options['mask_path'] );
-				$mask_data      = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$mask_data      = file_get_contents( $options['mask_path'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 
 				$body .= "--{$boundary}\r\n";
 				$body .= "Content-Disposition: form-data; name=\"mask\"; filename=\"{$mask_filename}\"\r\n";
@@ -2352,7 +2352,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// Add image file.
 			$image_filename  = basename( $image_path );
 			$image_mime_type = mime_content_type( $image_path );
-			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$image_data      = file_get_contents( $image_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 
 			$body .= "--{$boundary}\r\n";
 			$body .= "Content-Disposition: form-data; name=\"image\"; filename=\"{$image_filename}\"\r\n";

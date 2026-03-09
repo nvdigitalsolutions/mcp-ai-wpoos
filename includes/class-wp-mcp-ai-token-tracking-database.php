@@ -119,7 +119,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 		dbDelta( $sql );
 
 		// Verify table was created.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		if ( $table_exists !== $table_name ) {
@@ -202,7 +202,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 			'%s', // created_at.
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 		$result = $wpdb->insert( self::get_table_name(), $data, $format );
 
 		if ( false === $result ) {

@@ -1351,7 +1351,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 
 		// Get all users with tool usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -1826,7 +1826,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$meta_key = self::USAGE_META_KEY;
 
 		// Get all users with usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -1884,7 +1884,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Get all users with tool usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2018,7 +2018,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Get all users with usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$users = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2164,7 +2164,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$meta_key = self::USAGE_META_KEY;
 
 		// Start with all users who have usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -2403,7 +2403,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		global $wpdb;
 
 		// Check if indexes already exist to avoid errors.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$tier_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
@@ -2420,7 +2420,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			);
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$usage_index_exists = $wpdb->get_var(
 			$wpdb->prepare(
 				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",

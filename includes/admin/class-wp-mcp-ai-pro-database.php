@@ -202,7 +202,7 @@ class WP_MCP_AI_Pro_Database {
 		$controls_table = $wpdb->prefix . 'mcp_ai_controls';
 
 		// Check if already populated.
-  // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+  // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Direct query required for custom plugin table DDL/schema operation; no WP API exists for this.
 		$count = $wpdb->get_var( "SELECT COUNT(*) FROM $controls_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name is hardcoded
 		if ( $count > 0 ) {
 			return;

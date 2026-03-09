@@ -371,7 +371,7 @@ class WP_MCP_AI_Tool_Visualize_Workflow_Metrics implements WP_MCP_AI_Tool_Interf
 		$file_path  = $upload_dir['path'] . '/' . $filename . '-' . time() . '.html';
 
 		// Save file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
 		if ( false === file_put_contents( $file_path, $html ) ) {
 			return false;
 		}

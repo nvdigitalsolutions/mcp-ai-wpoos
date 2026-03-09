@@ -275,7 +275,7 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		$prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$transient_keys = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT REPLACE(option_name, '_transient_', '') as transient_key
@@ -348,7 +348,7 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		$prefix = 'wp_mcp_ai_veo_async_';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$transient_keys = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT REPLACE(option_name, '_transient_', '') as transient_key

@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 
 		// Exclude posts with existing embeddings if not updating.
 		if ( ! $update_existing ) {
-			$query_args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			$query_args['meta_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Meta query required for embedding/semantic search functionality; performance trade-off accepted.
 				'relation' => 'OR',
 				array(
 					'key'     => '_wp_mcp_ai_embeddings',
