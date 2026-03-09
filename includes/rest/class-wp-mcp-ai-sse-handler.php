@@ -56,7 +56,25 @@ class WP_MCP_AI_SSE_Handler {
 			header( 'Pragma: no-cache' );
 			header( 'Connection: keep-alive' );
 			header( 'X-Accel-Buffering: no' );
-			header( 'Access-Control-Allow-Origin: *' );
+
+			/**
+			 * Filter the Access-Control-Allow-Origin value for SSE streaming responses.
+			 *
+			 * Use this filter to restrict SSE connections to specific origins in production.
+			 * Defaults to '*' (all origins) for maximum compatibility.
+			 *
+			 * Example — restrict to a single origin:
+			 *   add_filter( 'wp_mcp_ai_cors_allow_origin', fn() => 'https://app.example.com' );
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param string $origin Allowed origin. Default '*'.
+			 */
+			$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+			// Sanitize to prevent HTTP header injection: strip tags, newlines and
+			// carriage returns that could split the response into multiple headers.
+			$allow_origin = sanitize_text_field( str_replace( array( "\r", "\n" ), '', $allow_origin ) );
+			header( 'Access-Control-Allow-Origin: ' . $allow_origin );
 			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
 
@@ -251,13 +269,18 @@ class WP_MCP_AI_SSE_Handler {
 		$frames .= $this->build_event_stream_chunk( $event_name, $encoded_payload, (string) time() );
 		$frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
+		/** This filter is documented in includes/rest/class-wp-mcp-ai-sse-handler.php */
+		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+		// Sanitize to prevent HTTP header injection.
+		$allow_origin = sanitize_text_field( str_replace( array( "\r", "\n" ), '', $allow_origin ) );
+
 		$headers = array(
 			'Content-Type'                 => 'text/event-stream; charset=UTF-8',
 			'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
 			'Pragma'                       => 'no-cache',
 			'Connection'                   => 'keep-alive',
 			'Vary'                         => 'Accept, Authorization',
-			'Access-Control-Allow-Origin'  => '*',
+			'Access-Control-Allow-Origin'  => $allow_origin,
 			'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
 			'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
 			'X-Accel-Buffering'            => 'no',

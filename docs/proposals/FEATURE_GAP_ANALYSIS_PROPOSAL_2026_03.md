@@ -354,17 +354,20 @@ if ( ! current_user_can( 'manage_options' ) ) {
 - [x] Updated `docs/ROADMAP.md` — header, version, v1.1.1/v1.1.2/v1.1.3 releases, toolkit counts
 - [x] Created this proposal document `docs/proposals/FEATURE_GAP_ANALYSIS_PROPOSAL_2026_03.md`
 
-### Open Recommended Actions
-- [ ] **Update `docs/proposals/PROPOSALS_COMPLETION_STATUS.md`** — mark Chat Channels, Slash Commands, Regulatory Registration, Site Creator, TMA as complete
-- [ ] **Implement Federation Directory Rate Limiting** — HIGH security gap (4-6h)
-- [ ] **Implement SSE Rate Limiting** — prevents resource exhaustion (4-6h)
-- [ ] **Add Automated Security Tests to CI** — SSRF/CSRF/XSS/auth (6-8h)
-- [ ] **Implement Anthropic Claude Provider** — expands provider coverage (16-24h)
-- [ ] **Implement PM Task Notifications** — high-value PM feature (20-24h)
-- [ ] **Implement Task Dependencies** — PM completeness (12-16h)
-- [ ] **Add Threat Model to `docs/SECURITY.md`** — formal attack surface documentation (2-4h)
-- [ ] **Update `docs/QUICK_REFERENCE.md`** — add Chat Channels Toolkit platform list update
-- [ ] **Tag v1.2.0 roadmap GitHub Milestone** — use label strategy from `docs/LABEL_STRATEGY.md`
+### Completed Follow-up Actions (v1.2.0)
+- [x] **Update `docs/proposals/PROPOSALS_COMPLETION_STATUS.md`** — Chat Channels, Slash Commands, Regulatory Registration, Site Creator, TMA, Anthropic, SSE rate limiting, Federation rate limiting, PM task dependencies, PM notifications all marked complete
+- [x] **Implement Federation Directory Rate Limiting** — IP-based (60 req/min), `manage_options` bypass, `X-RateLimit-*` headers; `includes/class-wp-mcp-ai-federation-rate-limiter.php` (v1.1.1)
+- [x] **Implement SSE Rate Limiting** — per-user (5) + global (100) limits via transients, `wp_mcp_ai_sse_per_user_limit` / `wp_mcp_ai_sse_global_limit` filters, HTTP 429 + `Retry-After`; `includes/class-wp-mcp-ai-sse-rate-limiter.php` (v1.2.0)
+- [x] **Add Automated Security Tests to CI** — `tests/security/` suite: SSRF protection (`test-ssrf-protection.php`), SSE rate limiting (`test-sse-rate-limiting.php`), SSE auth/CORS (`test-sse-auth-cors.php`), tool scope sanity, break-glass, auth split-brain (v1.2.0)
+- [x] **Implement Anthropic Claude Provider** — full Claude 3/4 streaming + tool calling + vision; `includes/class-wp-mcp-ai-anthropic-client.php` (v1.1.3)
+- [x] **Implement PM Task Notifications** — email (assignment, status change, due-date reminder) + daily cron digest; `addons/pro/includes/class-wp-mcp-ai-pm-notification-manager.php` (v1.2.0)
+- [x] **Implement Task Dependencies** — `add_task_dependency`, `remove_task_dependency`, `get_task_dependencies` tools with cycle detection; `addons/pro/includes/tools/class-wp-mcp-ai-tool-{add,remove,get}-task-dependency.php` (v1.2.0)
+- [x] **Add Threat Model to `docs/SECURITY.md`** — 8 attack vectors (API enumeration, rate-limit bypass, credential theft, SSE exhaustion, tool abuse, XSS, SQL injection, prompt injection) with mitigations and data classification table
+- [x] **Update `docs/QUICK_REFERENCE.md`** — Chat Channels Toolkit updated to 47 tools across 11 platforms including Office 365 and iCloud Drive
+- [x] **Apply CORS filter to SSE handler** — `send_sse_headers()` and fallback headers now use `wp_mcp_ai_cors_allow_origin` filter (default `*`) instead of hardcoded wildcard, consistent with REST and MCP controllers (v1.2.0)
+
+### Remaining Open Actions
+- [ ] **Tag v1.2.0 roadmap GitHub Milestone** — use label strategy from `docs/LABEL_STRATEGY.md` (requires GitHub UI)
 
 ---
 
