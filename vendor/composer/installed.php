@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-wordpress-plugin-compliance-again',
-        'version' => 'dev-copilot/review-wordpress-plugin-compliance-again',
-        'reference' => '898c05ef191d1794d72f67ad6cc90a96ab030840',
+        'pretty_version' => 'dev-copilot/continue-gaps-implementations',
+        'version' => 'dev-copilot/continue-gaps-implementations',
+        'reference' => '5e5bfeecf7b946496b037f59ea49984bc4b8f091',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-wordpress-plugin-compliance-again',
-            'version' => 'dev-copilot/review-wordpress-plugin-compliance-again',
-            'reference' => '898c05ef191d1794d72f67ad6cc90a96ab030840',
+            'pretty_version' => 'dev-copilot/continue-gaps-implementations',
+            'version' => 'dev-copilot/continue-gaps-implementations',
+            'reference' => '5e5bfeecf7b946496b037f59ea49984bc4b8f091',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
