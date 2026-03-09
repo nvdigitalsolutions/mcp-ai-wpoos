@@ -177,6 +177,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		if ( is_wp_error( $attachment_id ) ) {
 			// Log error but don't fail the entire seeding.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger; records attachment creation failure during seeding.
 				error_log( 'WP_MCP_AI: Failed to create playbook attachment for profession ' . $slug . ': ' . $attachment_id->get_error_message() );
 			}
 			return;

@@ -200,6 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						$post_subtab_fields[ $key ] = $value;
 					}
 				}
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 				error_log(
 					sprintf(
 						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s, POST subtab fields: %s',
@@ -219,6 +220,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
 				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
 						sprintf(
 							'[NV oOS Subtab Sanitize] NOT processing section %s - not a form submit for this subtab',
@@ -241,6 +243,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					}
 				}
 				if ( ! empty( $result_checkboxes ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
 						sprintf(
 							'[NV oOS Subtab Sanitize] Section %s returning checkboxes: %s',
@@ -251,9 +254,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				}
 			}
 
-			// CRITICAL: Always log federation checkbox sanitization for debugging.
-			// This helps diagnose the persistent issue where enable_federation_directory doesn't save.
-			if ( 'advanced' === $this->get_id() && ! empty( $result ) ) {
+			// Log federation checkbox sanitization for debugging (only if logging enabled or WP_DEBUG).
+			$settings_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_fed_logging   = ! empty( $settings_for_logging['enable_logging'] ) || ! empty( $settings_for_logging['enable_extended_logging'] ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG );
+			if ( $enable_fed_logging && 'advanced' === $this->get_id() && ! empty( $result ) ) {
 				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 				$has_fed_keys = false;
 				$fed_values   = array();
@@ -264,6 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					}
 				}
 				if ( $has_fed_keys ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
 						sprintf(
 							'[NV oOS FEDERATION DEBUG] Section: %s, Subtab: %s, Is Form Submit: %s, Checkboxes: %s',
@@ -311,6 +316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					}
 				}
 				if ( ! empty( $checkbox_fields ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
 						sprintf(
 							'[NV oOS Checkbox Debug] Section: %s, Is Form Submit: %s, Checkbox values in input: %s',
@@ -388,6 +394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						$enable_logging         = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 						$is_federation_checkbox = in_array( $key, self::FEDERATION_CHECKBOXES, true );
 						if ( ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) && $is_federation_checkbox ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 							error_log(
 								sprintf(
 									'[NV oOS Checkbox Save] Key: %s, In Input: %s, Raw Value: %s, Final Value: %s (boolean %s)',
@@ -473,6 +480,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 										$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 										$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 										if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+											// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 											error_log(
 												sprintf(
 													'[NV oOS Settings] Invalid JSON in mesh_peer_sites field. Value: %s, JSON Error: %s',
@@ -585,6 +593,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 					error_log(
 						sprintf(
 							'[NV oOS Checkbox Render] Key: %s, Raw Value: %s (type: %s), Default: %s',
@@ -683,6 +692,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 								$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 								if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+									// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled or WP_DEBUG-gated diagnostic logging; active only when logging is explicitly enabled.
 									error_log(
 										sprintf(
 											'[NV oOS Federation Mesh] Checkbox Render: %s, $is_checked: %s, Will render checked attr: %s',
