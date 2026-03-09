@@ -239,11 +239,13 @@ The plugin defines the following trust boundaries:
 **Likelihood:** Medium  
 **Impact:** High (denial of service)  
 **Mitigation:**
-- Rate limiting on SSE endpoint
-- 5-minute maximum connection duration
-- Authentication required for SSE connections
-- Per-user connection limits (planned v1.2.0)
-- Server resource monitoring
+- Per-user connection limit: 5 (configurable via `wp_mcp_ai_sse_per_user_limit` filter) — **Implemented v1.2.0**
+- Global connection limit: 100 (configurable via `wp_mcp_ai_sse_global_limit` filter) — **Implemented v1.2.0**
+- `manage_options` users bypass limits for administrative purposes
+- HTTP 429 + `Retry-After` header returned on exceeded limit
+- Authentication required for all SSE chat connections
+- Connection tokens tracked with WordPress transients (1-hour TTL)
+- Server resource monitoring recommended at infrastructure level
 
 #### 5. Tool Execution Abuse
 
@@ -403,6 +405,9 @@ Expected response times:
 | Date | Version | Auditor | Findings | Status |
 |------|---------|---------|----------|--------|
 | 2024-11-02 | 1.0.0 | Internal | Code review completed | Ongoing |
+| 2026-02-06 | 1.1.1 | GitHub Copilot Agent | SSRF/CSRF/XSS/authorization fixes | Fixed |
+| 2026-03-08 | 1.1.3 | GitHub Copilot Agent | WordPress.org compliance (37 ext. services, output escaping) | Fixed |
+| 2026-03-09 | 1.2.0 | GitHub Copilot Agent | SSE connection exhaustion — per-user + global limits added | Fixed |
 
 ## Additional Resources
 

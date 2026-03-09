@@ -627,6 +627,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-tester.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-test-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-rate-limiter.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sse-rate-limiter.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 

@@ -592,6 +592,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Update_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
 			'WP_MCP_AI_Tool_Delete_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
 			'WP_MCP_AI_Tool_List_Tasks'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-tasks.php',
+			// Task Dependency tools (Pro feature - v1.2.0).
+			'WP_MCP_AI_Tool_Add_Task_Dependency'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-task-dependency.php',
+			'WP_MCP_AI_Tool_Remove_Task_Dependency'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-task-dependency.php',
+			'WP_MCP_AI_Tool_Get_Task_Dependencies'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-task-dependencies.php',
 			'WP_MCP_AI_Tool_Create_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-event.php',
 			'WP_MCP_AI_Tool_Update_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-event.php',
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
