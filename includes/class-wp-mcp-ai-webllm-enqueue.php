@@ -119,6 +119,7 @@ class WP_MCP_AI_WebLLM_Enqueue {
 
 			// Log for debugging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic trace confirming WebLLM tool-calling script enqueue.
 				error_log( '[NV oOS WebLLM] Tool calling scripts enqueued' );
 			}
 		}

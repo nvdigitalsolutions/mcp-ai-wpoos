@@ -4676,6 +4676,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} catch ( Exception $e ) {
 				// Log error but don't block the save process.
 				if ( function_exists( 'error_log' ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records CCT sync failure as a last-resort catch-block diagnostic; does not block save process.
 					error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
 				}
 			} finally {

@@ -2684,6 +2684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					count( $warnings )
 				);
 				// Log the warnings for debugging.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records non-fatal team-reseed warnings as a diagnostic fallback; informational only.
 				error_log( 'WP_MCP_AI Team Reseed Warnings: ' . implode( '; ', $warnings ) );
 			}
 

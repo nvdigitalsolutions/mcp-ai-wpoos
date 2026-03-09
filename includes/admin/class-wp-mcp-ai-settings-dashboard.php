@@ -325,6 +325,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						$posted_checkboxes[ $key ] = 'NOT_IN_POST';
 					}
 				}
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 				error_log(
 					sprintf(
 						'[NV oOS Posted Data] Tab: %s, Checkbox values in $_POST[wp_mcp_ai_settings]: %s',
@@ -373,6 +374,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Log save attempt for debugging (only if logging enabled).
 			if ( $enable_logging ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 				error_log(
 					sprintf(
 						'[NV oOS Settings] Save attempt - Tab: %s, Subtab: %s, Save all tabs: %s, Posted fields: %d, Posted keys: %s',
@@ -401,6 +403,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				// Log that we used the simplified saver.
 				if ( $enable_logging ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 					error_log(
 						sprintf(
 							'[NV oOS Settings] Using Simple Settings Saver - Sanitized fields: %d, Keys: %s',
@@ -443,6 +446,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 							( $sanitized_new[ $key ] ? 'true' : 'false' ) :
 							'NOT_IN_SANITIZED';
 					}
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 					error_log(
 						sprintf(
 							'[NV oOS After Sanitize] Tab: %s, Subtab: %s, Checkbox values in sanitized_new: %s',
@@ -455,6 +459,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				// Log sanitization results.
 				if ( $enable_logging ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 					error_log(
 						sprintf(
 							'[NV oOS Settings] After section-based sanitization - Sanitized fields: %d, Sanitized keys: %s',
@@ -513,6 +518,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						}
 					}
 					if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 						error_log(
 							sprintf(
 								'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
@@ -561,6 +567,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// remove it to prevent overwriting existing values during merge.
 					if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
 						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 							error_log(
 								sprintf(
 									'[NV oOS Settings] PROTECTION: Removing empty %s from sanitized data to prevent data loss (tab=%s, save_all=%s)',
@@ -590,6 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 							$sanitized_checkboxes[ $key ] = $sanitized_new[ $key ] ? 'true' : 'false';
 						}
 					}
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 					error_log(
 						sprintf(
 							'[NV oOS Checkbox Merge] Existing: %s, Sanitized: %s',
@@ -601,28 +609,31 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
-				// CRITICAL: Always log federation checkbox merge for debugging.
-				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
-				$has_fed      = false;
-				$before_merge = array();
-				$after_merge  = array();
-				foreach ( $fed_keys as $key ) {
-					if ( isset( $existing_settings[ $key ] ) || isset( $sanitized_new[ $key ] ) || isset( $merged_settings[ $key ] ) ) {
-						$has_fed                = true;
-						$before_merge[ $key ]   = isset( $existing_settings[ $key ] ) ? var_export( $existing_settings[ $key ], true ) : 'NOT_SET';
-						$from_sanitized[ $key ] = isset( $sanitized_new[ $key ] ) ? var_export( $sanitized_new[ $key ], true ) : 'NOT_SET';
-						$after_merge[ $key ]    = isset( $merged_settings[ $key ] ) ? var_export( $merged_settings[ $key ], true ) : 'NOT_SET';
+				// Log federation checkbox merge for debugging (only if logging enabled).
+				if ( $enable_logging ) {
+					$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$has_fed      = false;
+					$before_merge = array();
+					$after_merge  = array();
+					foreach ( $fed_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) || isset( $sanitized_new[ $key ] ) || isset( $merged_settings[ $key ] ) ) {
+							$has_fed                = true;
+							$before_merge[ $key ]   = isset( $existing_settings[ $key ] ) ? var_export( $existing_settings[ $key ], true ) : 'NOT_SET';
+							$from_sanitized[ $key ] = isset( $sanitized_new[ $key ] ) ? var_export( $sanitized_new[ $key ], true ) : 'NOT_SET';
+							$after_merge[ $key ]    = isset( $merged_settings[ $key ] ) ? var_export( $merged_settings[ $key ], true ) : 'NOT_SET';
+						}
 					}
-				}
-				if ( $has_fed ) {
-					error_log(
-						sprintf(
-							'[NV oOS FEDERATION DEBUG] MERGE: Before=%s, From Sanitized=%s, After=%s',
-							wp_json_encode( $before_merge ),
-							wp_json_encode( $from_sanitized ),
-							wp_json_encode( $after_merge )
-						)
-					);
+					if ( $has_fed ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+						error_log(
+							sprintf(
+								'[NV oOS FEDERATION DEBUG] MERGE: Before=%s, From Sanitized=%s, After=%s',
+								wp_json_encode( $before_merge ),
+								wp_json_encode( $from_sanitized ),
+								wp_json_encode( $after_merge )
+							)
+						);
+					}
 				}
 
 				// ========================================================================
@@ -637,11 +648,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
 
 						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 							error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
 						}
 					} catch ( Exception $e ) {
 						// Handle random_bytes() exception gracefully.
 						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 							error_log(
 								sprintf(
 									'[NV oOS Settings] Failed to generate mesh API key: %s',
@@ -666,6 +679,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$validation_errors = $this->validate_merged_settings( $merged_settings, $existing_settings );
 				if ( ! empty( $validation_errors ) ) {
 					if ( $enable_logging ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 						error_log(
 							sprintf(
 								'[NV oOS Settings] VALIDATION ERRORS: %s',
@@ -686,41 +700,46 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// Save to database with autoload=yes for performance.
 					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
 
-					// CRITICAL: Always log federation checkbox save result for debugging.
-					$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
-					$has_fed      = false;
-					$saved_values = array();
-					foreach ( $fed_keys as $key ) {
-						if ( isset( $merged_settings[ $key ] ) ) {
-							$has_fed              = true;
-							$saved_values[ $key ] = var_export( $merged_settings[ $key ], true );
-						}
-					}
-					if ( $has_fed ) {
-						error_log(
-							sprintf(
-								'[NV oOS FEDERATION DEBUG] SAVE: Result=%s, Values=%s',
-								$update_result ? 'SUCCESS' : 'UNCHANGED',
-								wp_json_encode( $saved_values )
-							)
-						);
-						// Immediately read back from database to verify.
-						$verified        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-						$verified_values = array();
+					// Log federation checkbox save result for debugging (only if logging enabled).
+					if ( $enable_logging ) {
+						$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+						$has_fed      = false;
+						$saved_values = array();
 						foreach ( $fed_keys as $key ) {
-							if ( isset( $verified[ $key ] ) ) {
-								$verified_values[ $key ] = var_export( $verified[ $key ], true );
+							if ( isset( $merged_settings[ $key ] ) ) {
+								$has_fed              = true;
+								$saved_values[ $key ] = var_export( $merged_settings[ $key ], true );
 							}
 						}
-						error_log(
-							sprintf(
-								'[NV oOS FEDERATION DEBUG] VERIFY: Read back from DB=%s',
-								wp_json_encode( $verified_values )
-							)
-						);
+						if ( $has_fed ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+							error_log(
+								sprintf(
+									'[NV oOS FEDERATION DEBUG] SAVE: Result=%s, Values=%s',
+									$update_result ? 'SUCCESS' : 'UNCHANGED',
+									wp_json_encode( $saved_values )
+								)
+							);
+							// Immediately read back from database to verify.
+							$verified        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+							$verified_values = array();
+							foreach ( $fed_keys as $key ) {
+								if ( isset( $verified[ $key ] ) ) {
+									$verified_values[ $key ] = var_export( $verified[ $key ], true );
+								}
+							}
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
+							error_log(
+								sprintf(
+									'[NV oOS FEDERATION DEBUG] VERIFY: Read back from DB=%s',
+									wp_json_encode( $verified_values )
+								)
+							);
+						}
 					}
 
 					if ( $enable_logging ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 						error_log(
 							sprintf(
 								'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d, Changed keys: %s',
@@ -753,6 +772,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						WP_MCP_AI_Media_Template_Presets::seed_presets();
 
 						if ( $enable_logging ) {
+							// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 							error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
 						}
 					}
@@ -768,6 +788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 						if ( $enable_logging ) {
 							if ( is_wp_error( $result ) ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 								error_log(
 									sprintf(
 										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant creation failed: %s',
@@ -775,6 +796,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 									)
 								);
 							} else {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 								error_log(
 									sprintf(
 										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant created (ID: %d)',
@@ -790,6 +812,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$merged_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 				if ( $enable_logging ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for user-enabled diagnostic logging; active only when plugin logging is explicitly enabled in settings.
 					error_log( '[NV oOS Settings] Skipped database update - Simple Settings Saver already saved' );
 				}
 			}

@@ -1039,6 +1039,7 @@ class WP_MCP_AI_Shortcode {
 				$tool_slugs_to_include[] = 'semantic_content_search';
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic trace confirming semantic_content_search auto-add for knowledge-file assistants.
 					error_log(
 						sprintf(
 							'[WP_MCP_AI] Auto-adding semantic_content_search tool for assistant %d (has knowledge files)',
@@ -1211,6 +1212,7 @@ class WP_MCP_AI_Shortcode {
 
 			// Log for debugging PM assistant issues.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic trace confirming shortcode config storage per instance.
 				error_log(
 					sprintf(
 						'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
