@@ -233,7 +233,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Tax laws vary by jurisdiction and change frequently', 'mcp-ai-wpoos' ),
 				),
 				'knowledge_base'   => __( "### Tax Compliance\n- Maintain accurate records of all income and expenses\n- Keep receipts and documentation for at least 7 years\n- Be aware of filing deadlines to avoid penalties\n- Understand which deductions and credits apply\n- Consider estimated tax payments for self-employed individuals", 'mcp-ai-wpoos' ),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'deep_research', 'analyze_file_suitability', 'tax_estimator', 'generate_pdf' ),
 			),
 			array(
 				'title'            => __( 'Accountant', 'mcp-ai-wpoos' ),
@@ -251,7 +251,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Complex accounting matters should be reviewed by a certified accountant', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'create_cron_job' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'create_cron_job', 'deep_research', 'cash_flow_analyzer', 'generate_excel', 'expense_tracker' ),
 			),
 			array(
 				'title'            => __( 'Bookkeeper', 'mcp-ai-wpoos' ),
@@ -269,7 +269,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Complex financial matters should be reviewed by a certified professional', 'mcp-ai-wpoos' ),
 					__( 'Ensure compliance with applicable accounting standards and regulations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'analyze_file_suitability', 'expense_tracker', 'generate_excel' ),
 			),
 			array(
 				'title'            => __( 'Lawyer', 'mcp-ai-wpoos' ),
@@ -288,7 +288,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide legal advice - always recommend consulting a licensed attorney', 'mcp-ai-wpoos' ),
 					__( 'Legal requirements vary by jurisdiction', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart', 'deep_research', 'generate_pdf', 'extract_pdf_text', 'client_summarize_text' ),
 			),
 			array(
 				'title'            => __( 'Legal Advisor', 'mcp-ai-wpoos' ),
@@ -305,7 +305,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide legal advice - always recommend consulting a licensed attorney', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart', 'deep_research', 'generate_pdf', 'extract_pdf_text' ),
 			),
 			array(
 				'title'            => __( 'Customs Broker', 'mcp-ai-wpoos' ),
@@ -325,7 +325,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Customs regulations vary by country and product type', 'mcp-ai-wpoos' ),
 					__( 'Always verify current duty rates with customs authorities', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments', 'deep_research', 'check_hs_code', 'generate_pdf' ),
 			),
 			array(
 				'title'            => __( 'Import/Export Specialist', 'mcp-ai-wpoos' ),
@@ -343,7 +343,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Trade regulations vary by country and are subject to change', 'mcp-ai-wpoos' ),
 					__( 'Consult licensed customs brokers for complex transactions', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments', 'deep_research', 'check_hs_code', 'check_product_compliance' ),
 			),
 			array(
 				'title'            => __( 'Financial Advisor', 'mcp-ai-wpoos' ),
@@ -361,7 +361,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Consult licensed financial advisors for investment decisions', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'search_attachments', 'deep_research', 'retirement_calculator', 'asset_allocation_planner', 'net_worth_calculator', 'budget_planner' ),
 			),
 			array(
 				'title'            => __( 'Business Consultant', 'mcp-ai-wpoos' ),
@@ -380,7 +380,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Business decisions should be made considering your specific circumstances', 'mcp-ai-wpoos' ),
 					__( 'Consult qualified professionals for legal, financial, and tax implications', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_woo_products', 'get_woo_recent_orders', 'create_chart', 'get_site_summary' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_woo_products', 'get_woo_recent_orders', 'create_chart', 'get_site_summary', 'deep_research', 'manage_crm_contact', 'revenue_forecast', 'funnel_analysis' ),
 			),
 			array(
 				'title'            => __( 'Real Estate Agent', 'mcp-ai-wpoos' ),
@@ -399,7 +399,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Work with licensed real estate professionals for transactions', 'mcp-ai-wpoos' ),
 					__( 'Property laws and market conditions vary by location', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_places', 'geocode_address', 'generate_openai_image', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_places', 'geocode_address', 'generate_openai_image', 'send_group_email', 'analyze_image', 'create_appointment', 'manage_crm_contact', 'generate_pdf' ),
 			),
 			array(
 				'title'            => __( 'Healthcare Advisor', 'mcp-ai-wpoos' ),
@@ -416,7 +416,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide medical diagnosis or treatment advice', 'mcp-ai-wpoos' ),
 					__( 'Always recommend consulting licensed healthcare professionals', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'send_group_email', 'deep_research', 'guide_health_record_creation', 'parse_health_information' ),
 			),
 			array(
 				'title'            => __( 'Marketing Consultant', 'mcp-ai-wpoos' ),
@@ -435,7 +435,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Marketing results vary based on industry, market conditions, and execution', 'mcp-ai-wpoos' ),
 					__( 'Ensure compliance with advertising regulations and platform policies', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'post_facebook_instagram', 'create_chart', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'post_facebook_instagram', 'create_chart', 'generate_openai_image', 'deep_research', 'schedule_social_post', 'create_content_calendar', 'competitor_analysis', 'attribution_modeling' ),
 			),
 			array(
 				'title'            => __( 'HR Consultant', 'mcp-ai-wpoos' ),
@@ -454,7 +454,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Employment laws vary by jurisdiction and change frequently', 'mcp-ai-wpoos' ),
 					__( 'Consult legal counsel for employment-related legal matters', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments', 'deep_research', 'generate_pdf', 'create_appointment', 'generate_email_template' ),
 			),
 			array(
 				'title'            => __( 'IT Consultant', 'mcp-ai-wpoos' ),
@@ -473,7 +473,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always implement proper security measures and backup procedures', 'mcp-ai-wpoos' ),
 					__( 'Test changes in non-production environments before deployment', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_site_health', 'check_site_security', 'purge_cache', 'get_system_logs' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_site_health', 'check_site_security', 'purge_cache', 'get_system_logs', 'generate_mermaid', 'format_code_prettier', 'web_browser' ),
 			),
 			array(
 				'title'            => __( 'Restaurant Consultant', 'mcp-ai-wpoos' ),
@@ -492,7 +492,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always comply with local health codes and food safety regulations', 'mcp-ai-wpoos' ),
 					__( 'Licensing and permit requirements vary by location', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments', 'analyze_image', 'manage_crm_contact', 'deep_research' ),
 			),
 
 			// CREATIVE SERVICES PROFESSIONS.
@@ -513,7 +513,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and licensing restrictions for all creative works', 'mcp-ai-wpoos' ),
 					__( 'Obtain proper permissions for client work and usage rights', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image', 'remove_image_background', 'enhance_image_quality', 'apply_artistic_style', 'generate_mermaid' ),
 			),
 			array(
 				'title'            => __( 'Graphic Designer', 'mcp-ai-wpoos' ),
@@ -532,7 +532,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and licensing restrictions for all design elements', 'mcp-ai-wpoos' ),
 					__( 'Clarify usage rights and deliverables in client agreements', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image', 'remove_image_background', 'enhance_image_quality', 'generate_mermaid' ),
 			),
 			array(
 				'title'            => __( 'Architect', 'mcp-ai-wpoos' ),
@@ -551,7 +551,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Building projects require licensed architects and proper permits', 'mcp-ai-wpoos' ),
 					__( 'Building codes vary by location', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments', 'generate_architectural_drawing', 'generate_floor_plan', 'render_architectural_view', 'check_building_code_compliance', 'estimate_construction_cost' ),
 			),
 			array(
 				'title'            => __( 'Web Designer', 'mcp-ai-wpoos' ),
@@ -570,7 +570,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure accessibility compliance (WCAG guidelines)', 'mcp-ai-wpoos' ),
 					__( 'Test across multiple browsers and devices before launch', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_rankmath_seo', 'generate_openai_image', 'resize_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_rankmath_seo', 'generate_openai_image', 'resize_image', 'generate_landing_page', 'create_homepage_layout', 'generate_mermaid', 'format_code_prettier' ),
 			),
 			array(
 				'title'            => __( 'UX/UI Designer', 'mcp-ai-wpoos' ),
@@ -589,7 +589,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Validate designs through user testing before final implementation', 'mcp-ai-wpoos' ),
 					__( 'Consider accessibility requirements for all user groups', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments', 'remove_image_background', 'generate_mermaid', 'batch_process_images', 'enhance_image_quality' ),
 			),
 			array(
 				'title'            => __( 'Video Producer', 'mcp-ai-wpoos' ),
@@ -608,7 +608,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain proper releases and permissions from all participants', 'mcp-ai-wpoos' ),
 					__( 'Respect copyright for music, footage, and other licensed content', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption', 'trim_video', 'compress_video', 'generate_video_thumbnails', 'extract_video_frames', 'merge_videos', 'create_video_from_images' ),
 			),
 			array(
 				'title'            => __( 'Photographer', 'mcp-ai-wpoos' ),
@@ -627,7 +627,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain model releases for commercial use of recognizable individuals', 'mcp-ai-wpoos' ),
 					__( 'Respect property rights and privacy laws when photographing', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'resize_image', 'crop_image', 'generate_image_caption' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'resize_image', 'crop_image', 'generate_image_caption', 'remove_image_background', 'enhance_image_quality', 'batch_process_images', 'upscale_image_ai' ),
 			),
 			array(
 				'title'            => __( 'Content Creator', 'mcp-ai-wpoos' ),
@@ -646,7 +646,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always disclose sponsored content and partnerships per FTC guidelines', 'mcp-ai-wpoos' ),
 					__( 'Respect copyright and obtain proper licensing for all content elements', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'post_facebook_instagram', 'post_linkedin_update', 'generate_openai_image', 'get_rankmath_seo' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'post_facebook_instagram', 'post_linkedin_update', 'generate_openai_image', 'get_rankmath_seo', 'deep_research', 'schedule_social_post', 'create_content_calendar', 'semantic_content_search' ),
 			),
 
 			// FEATURE FILM PRODUCTION PROFESSIONS.
@@ -667,7 +667,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and intellectual property rights for all creative works', 'mcp-ai-wpoos' ),
 					__( 'Ensure proper contracts and releases for cast and crew', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image', 'generate_mermaid', 'extract_video_frames', 'create_video_from_images' ),
 			),
 			array(
 				'title'            => __( 'Film Producer', 'mcp-ai-wpoos' ),
@@ -686,7 +686,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain proper insurance and bonding for production', 'mcp-ai-wpoos' ),
 					__( 'Ensure all contracts, rights, and releases are legally binding', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'create_cron_job' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'create_cron_job', 'generate_pdf', 'create_appointment', 'manage_crm_contact' ),
 			),
 			array(
 				'title'            => __( 'Screenwriter', 'mcp-ai-wpoos' ),
@@ -705,7 +705,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Register scripts with Writers Guild or copyright office', 'mcp-ai-wpoos' ),
 					__( 'Understand option agreements and rights management', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'count_tokens', 'search_attachments', 'deep_research', 'semantic_content_search', 'client_summarize_text' ),
 			),
 			array(
 				'title'            => __( 'Cinematographer', 'mcp-ai-wpoos' ),
@@ -724,7 +724,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow safety protocols for lighting and camera rigging', 'mcp-ai-wpoos' ),
 					__( 'Respect location permits and filming regulations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image', 'extract_video_frames', 'analyze_image', 'generate_mermaid' ),
 			),
 			array(
 				'title'            => __( 'Film Editor', 'mcp-ai-wpoos' ),
@@ -743,7 +743,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Maintain backups of all footage and project files', 'mcp-ai-wpoos' ),
 					__( 'Respect music licensing and sound effect usage rights', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption', 'trim_video', 'merge_videos', 'generate_video_captions' ),
 			),
 			array(
 				'title'            => __( 'Video Editor', 'mcp-ai-wpoos' ),
@@ -766,7 +766,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure proper licensing for stock footage and audio', 'mcp-ai-wpoos' ),
 				),
 				'knowledge_base'   => __( "### Video Editing Best Practices\n\n- **Organization**: Use consistent naming conventions and folder structures\n- **Proxies**: Work with proxy files for smoother editing of 4K+ footage\n- **Color Workflow**: Edit first, then apply color grading\n- **Audio**: Balance levels, remove noise, and ensure clear dialogue\n- **Export**: Choose appropriate codecs and settings for target platform\n- **Backup**: Follow the 3-2-1 rule (3 copies, 2 different media, 1 offsite)", 'mcp-ai-wpoos' ),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_sora_video', 'generate_veo_video', 'analyze_video' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'trim_video', 'merge_videos', 'compress_video', 'generate_video_thumbnails' ),
 			),
 			array(
 				'title'            => __( 'Production Designer', 'mcp-ai-wpoos' ),
@@ -785,7 +785,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure set construction meets safety codes and regulations', 'mcp-ai-wpoos' ),
 					__( 'Secure proper permissions for location modifications', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments', 'remove_image_background', 'generate_mermaid', 'render_architectural_view' ),
 			),
 			array(
 				'title'            => __( 'Sound Designer', 'mcp-ai-wpoos' ),
@@ -804,7 +804,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect music licensing and sound library terms of use', 'mcp-ai-wpoos' ),
 					__( 'Follow hearing protection standards during mixing', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_music', 'transcribe_openai_audio', 'generate_openai_speech' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_music', 'transcribe_openai_audio', 'generate_openai_speech', 'generate_jukebox_music', 'check_jukebox_status', 'analyze_video' ),
 			),
 
 			// WHO (WORLD HEALTH ORGANIZATION) PROFESSIONS.
@@ -825,7 +825,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide medical advice - always recommend consulting healthcare professionals', 'mcp-ai-wpoos' ),
 					__( 'Health recommendations should follow official guidelines', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email', 'deep_research', 'get_gdacs_events', 'compile_health_research_data', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Public Health Advisor', 'mcp-ai-wpoos' ),
@@ -843,7 +843,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide medical advice', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email', 'deep_research', 'get_gdacs_events', 'parse_health_information', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Medical Researcher', 'mcp-ai-wpoos' ),
@@ -861,7 +861,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide medical advice or treatment recommendations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens', 'deep_research', 'compile_health_research_data', 'semantic_content_search', 'huggingface_dataset_search' ),
 			),
 			array(
 				'title'            => __( 'Global Health Specialist', 'mcp-ai-wpoos' ),
@@ -880,7 +880,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide medical advice', 'mcp-ai-wpoos' ),
 					__( 'Health policies vary by country and region', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email', 'deep_research', 'get_gdacs_events', 'compile_health_research_data', 'client_translate_text' ),
 			),
 
 			// FEMA (EMERGENCY MANAGEMENT) PROFESSIONS.
@@ -900,7 +900,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'In actual emergencies, contact official emergency services immediately', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'get_open_meteo_forecast', 'create_chart' ),
 			),
 			array(
 				'title'            => __( 'Disaster Response Coordinator', 'mcp-ai-wpoos' ),
@@ -918,7 +918,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'In actual emergencies, dial 911 or local emergency number', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'get_open_meteo_forecast', 'create_chart' ),
 			),
 			array(
 				'title'            => __( 'Crisis Communications Manager', 'mcp-ai-wpoos' ),
@@ -937,7 +937,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'In actual emergencies, follow official emergency protocols first', 'mcp-ai-wpoos' ),
 					__( 'Verify information before disseminating during crisis situations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'post_facebook_instagram' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'post_facebook_instagram', 'get_gdacs_events', 'get_nhc_active_storms', 'schedule_social_post', 'monitor_mentions_replies' ),
 			),
 			array(
 				'title'            => __( 'Hazard Mitigation Specialist', 'mcp-ai-wpoos' ),
@@ -956,7 +956,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Mitigation plans must comply with local codes and regulations', 'mcp-ai-wpoos' ),
 					__( 'Consult licensed engineers for structural modifications', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email', 'get_gdacs_events', 'get_nhc_active_storms', 'gemini_geospatial_query' ),
 			),
 
 			// ANIMAL/OCEAN PROFESSIONS.
@@ -977,7 +977,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow safety protocols when conducting marine research', 'mcp-ai-wpoos' ),
 					__( 'Respect environmental regulations and protected species laws', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments', 'deep_research', 'semantic_content_search', 'huggingface_dataset_search', 'gemini_geospatial_query', 'analyze_geospatial', 'analyze_image', 'analyze_video' ),
 			),
 			array(
 				'title'            => __( 'Veterinarian', 'mcp-ai-wpoos' ),
@@ -996,7 +996,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide veterinary diagnosis or treatment - always recommend consulting a licensed veterinarian', 'mcp-ai-wpoos' ),
 					__( 'In emergencies, contact an emergency veterinary clinic immediately', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email', 'deep_research', 'analyze_image', 'parse_health_information' ),
 			),
 			array(
 				'title'            => __( 'Oceanographer', 'mcp-ai-wpoos' ),
@@ -1015,7 +1015,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow safety protocols for ocean research and field work', 'mcp-ai-wpoos' ),
 					__( 'Ensure proper equipment calibration and data validation', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments', 'deep_research', 'gemini_geospatial_query', 'semantic_content_search', 'huggingface_dataset_search', 'analyze_geospatial' ),
 			),
 			array(
 				'title'            => __( 'Wildlife Conservationist', 'mcp-ai-wpoos' ),
@@ -1034,7 +1034,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow wildlife protection laws and obtain required permits', 'mcp-ai-wpoos' ),
 					__( 'Maintain safe distances from wild animals', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments', 'deep_research', 'gemini_geospatial_query', 'semantic_content_search', 'analyze_geospatial' ),
 			),
 			array(
 				'title'            => __( 'Animal Behaviorist', 'mcp-ai-wpoos' ),
@@ -1052,7 +1052,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Serious behavioral issues should be addressed by certified professionals', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'deep_research', 'analyze_image', 'analyze_video', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Aquaculture Specialist', 'mcp-ai-wpoos' ),
@@ -1071,7 +1071,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Comply with environmental regulations and water quality standards', 'mcp-ai-wpoos' ),
 					__( 'Follow biosecurity protocols to prevent disease spread', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments', 'deep_research', 'gemini_geospatial_query', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Environmental Scientist', 'mcp-ai-wpoos' ),
@@ -1090,7 +1090,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow safety protocols when handling hazardous materials', 'mcp-ai-wpoos' ),
 					__( 'Ensure compliance with environmental regulations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_open_meteo_forecast', 'create_chart', 'search_attachments', 'deep_research', 'gemini_geospatial_query', 'semantic_content_search', 'analyze_geospatial', 'huggingface_dataset_search' ),
 			),
 
 			// STEM PROFESSIONS.
@@ -1112,7 +1112,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Validate models and ensure data quality before making critical decisions', 'mcp-ai-wpoos' ),
 					__( 'Consider privacy and ethical implications of data usage', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'create_chart', 'query_mesh_intelligent', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'create_chart', 'query_mesh_intelligent', 'count_tokens', 'deep_research', 'semantic_content_search', 'huggingface_dataset_search', 'create_text_embeddings', 'cohort_analysis', 'revenue_forecast' ),
 			),
 			array(
 				'title'            => __( 'Software Engineer', 'mcp-ai-wpoos' ),
@@ -1132,7 +1132,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always implement security best practices and code reviews', 'mcp-ai-wpoos' ),
 					__( 'Test thoroughly before deploying to production', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens', 'generate_mermaid', 'format_code_prettier', 'analyze_code_sequence', 'validate_reasoning_chain', 'web_browser' ),
 			),
 			array(
 				'title'            => __( 'Mechanical Engineer', 'mcp-ai-wpoos' ),
@@ -1151,7 +1151,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Engineering designs should be reviewed by licensed professional engineers', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image', 'deep_research', 'analyze_image', 'generate_mermaid', 'calculate_sustainability_metrics' ),
 			),
 			array(
 				'title'            => __( 'Electrical Engineer', 'mcp-ai-wpoos' ),
@@ -1171,7 +1171,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Electrical work must be performed by licensed electricians and engineers', 'mcp-ai-wpoos' ),
 					__( 'Always follow local electrical codes and safety standards', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image', 'deep_research', 'analyze_image', 'generate_mermaid', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Civil Engineer', 'mcp-ai-wpoos' ),
@@ -1190,7 +1190,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Construction projects require licensed professional engineers', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image', 'deep_research', 'geocode_address', 'gemini_geospatial_query', 'generate_mermaid', 'check_building_code_compliance' ),
 			),
 			array(
 				'title'            => __( 'Mathematician', 'mcp-ai-wpoos' ),
@@ -1210,7 +1210,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Verify mathematical proofs and assumptions rigorously', 'mcp-ai-wpoos' ),
 					__( 'Consider numerical stability and precision in computations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments', 'solve_equation', 'calculate_derivative', 'calculate_integral', 'matrix_operations', 'graph_function', 'render_math_equation' ),
 			),
 			array(
 				'title'            => __( 'Physicist', 'mcp-ai-wpoos' ),
@@ -1230,7 +1230,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow radiation safety protocols when applicable', 'mcp-ai-wpoos' ),
 					__( 'Validate theoretical predictions with experimental evidence', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments', 'deep_research', 'solve_equation', 'calculate_derivative', 'calculate_integral', 'graph_function', 'render_math_equation' ),
 			),
 			array(
 				'title'            => __( 'Chemist', 'mcp-ai-wpoos' ),
@@ -1249,7 +1249,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Laboratory work requires proper training and safety protocols', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments', 'deep_research', 'solve_equation', 'render_math_equation', 'simplify_expression', 'semantic_content_search' ),
 			),
 			array(
 				'title'            => __( 'Biologist', 'mcp-ai-wpoos' ),
@@ -1269,7 +1269,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow biosafety protocols when working with biological materials', 'mcp-ai-wpoos' ),
 					__( 'Adhere to ethical guidelines for research involving living organisms', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'count_tokens', 'search_attachments', 'deep_research', 'semantic_content_search', 'huggingface_dataset_search', 'analyze_image', 'compile_health_research_data' ),
 			),
 			array(
 				'title'            => __( 'Computer Scientist', 'mcp-ai-wpoos' ),
@@ -1289,7 +1289,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Consider computational complexity and scalability in algorithm design', 'mcp-ai-wpoos' ),
 					__( 'Validate theoretical results with empirical testing', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens', 'generate_mermaid', 'format_code_prettier', 'analyze_code_sequence', 'validate_reasoning_chain' ),
 			),
 			array(
 				'title'            => __( 'Biomedical Engineer', 'mcp-ai-wpoos' ),
@@ -1308,7 +1308,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Medical devices must meet regulatory requirements', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image', 'deep_research', 'analyze_image', 'parse_health_information', 'compile_health_research_data' ),
 			),
 			array(
 				'title'            => __( 'Aerospace Engineer', 'mcp-ai-wpoos' ),
@@ -1328,7 +1328,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Aerospace systems must comply with strict safety and regulatory standards', 'mcp-ai-wpoos' ),
 					__( 'Designs require validation through testing and certification', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'generate_openai_image', 'deep_research', 'generate_mermaid', 'semantic_content_search', 'calculate_sustainability_metrics' ),
 			),
 			array(
 				'title'            => __( 'Statistician', 'mcp-ai-wpoos' ),
@@ -1348,7 +1348,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Verify assumptions before applying statistical methods', 'mcp-ai-wpoos' ),
 					__( 'Consider sample size and statistical power in study design', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'query_mesh_intelligent', 'count_tokens', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'query_mesh_intelligent', 'count_tokens', 'search_attachments', 'deep_research', 'solve_equation', 'graph_function', 'semantic_content_search', 'huggingface_dataset_search' ),
 			),
 			array(
 				'title'            => __( 'Research Scientist', 'mcp-ai-wpoos' ),
@@ -1368,7 +1368,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow ethical guidelines and obtain necessary approvals', 'mcp-ai-wpoos' ),
 					__( 'Ensure reproducibility and proper documentation of research', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens', 'deep_research', 'semantic_content_search', 'huggingface_dataset_search', 'semantic_context_search', 'create_text_embeddings' ),
 			),
 
 			// MEDICAL/PHARMACEUTICAL SECTOR PROFESSIONS.
@@ -1391,7 +1391,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always recommend consulting a licensed pharmacist or physician for medication questions', 'mcp-ai-wpoos' ),
 					__( 'Medication information should be verified with current prescribing information', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'create_chart', 'analyze_file_suitability' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'create_chart', 'analyze_file_suitability', 'deep_research', 'semantic_content_search', 'client_summarize_text' ),
 			),
 			array(
 				'title'            => __( 'Pharmaceutical Researcher', 'mcp-ai-wpoos' ),
@@ -1410,7 +1410,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Drug development requires regulatory approval', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens', 'deep_research', 'semantic_content_search', 'huggingface_dataset_search', 'compile_health_research_data' ),
 			),
 			array(
 				'title'            => __( 'Clinical Pharmacologist', 'mcp-ai-wpoos' ),
@@ -1429,7 +1429,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide medical diagnosis or treatment recommendations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens', 'deep_research', 'semantic_content_search', 'parse_health_information' ),
 			),
 			array(
 				'title'            => __( 'Drug Safety Specialist', 'mcp-ai-wpoos' ),
@@ -1449,7 +1449,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Adverse events must be reported according to regulatory timelines', 'mcp-ai-wpoos' ),
 					__( 'Follow established pharmacovigilance procedures and guidelines', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email', 'deep_research', 'semantic_content_search', 'parse_health_information', 'generate_compliance_report' ),
 			),
 			array(
 				'title'            => __( 'Medical Science Liaison', 'mcp-ai-wpoos' ),
@@ -1469,7 +1469,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Provide only approved scientific information within regulatory guidelines', 'mcp-ai-wpoos' ),
 					__( 'You do NOT provide medical advice or treatment recommendations', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'deep_research', 'semantic_content_search', 'create_chart', 'compile_health_research_data', 'generate_pdf' ),
 			),
 			array(
 				'title'            => __( 'Regulatory Affairs Specialist', 'mcp-ai-wpoos' ),
@@ -1489,7 +1489,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Regulatory requirements vary by jurisdiction and product type', 'mcp-ai-wpoos' ),
 					__( 'Always verify current regulations with applicable authorities', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email', 'deep_research', 'check_product_compliance', 'generate_compliance_report', 'create_registration', 'list_registrations' ),
 			),
 			array(
 				'title'            => __( 'Clinical Research Coordinator', 'mcp-ai-wpoos' ),
@@ -1509,7 +1509,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Protect patient safety and rights at all times', 'mcp-ai-wpoos' ),
 					__( 'Ensure strict compliance with GCP and ethical standards', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email', 'deep_research', 'compile_health_research_data', 'generate_pdf', 'create_appointment' ),
 			),
 			array(
 				'title'            => __( 'Medical Writer', 'mcp-ai-wpoos' ),
@@ -1529,7 +1529,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure accuracy and completeness of all scientific information', 'mcp-ai-wpoos' ),
 					__( 'Follow regulatory guidelines for promotional and educational materials', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'count_tokens', 'deep_research', 'semantic_content_search', 'client_summarize_text', 'compile_health_research_data' ),
 			),
 			array(
 				'title'            => __( 'Toxicologist', 'mcp-ai-wpoos' ),
@@ -1548,7 +1548,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'In case of poisoning or toxic exposure, contact poison control immediately', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens', 'deep_research', 'semantic_content_search', 'parse_health_information' ),
 			),
 			array(
 				'title'            => __( 'Quality Assurance Manager (Pharma)', 'mcp-ai-wpoos' ),
@@ -1568,7 +1568,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Quality systems must comply with regulatory GMP requirements', 'mcp-ai-wpoos' ),
 					__( 'Document all quality-related activities thoroughly', 'mcp-ai-wpoos' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email', 'deep_research', 'generate_compliance_report', 'generate_pdf', 'check_product_compliance' ),
 			),
 		);
 	}
