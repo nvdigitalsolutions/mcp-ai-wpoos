@@ -1495,26 +1495,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for LangChain packages (optional dependencies).
 			// These packages are used in langchain-orchestration.js and langchain-tool-adapter.js.
+			// Files live in the Pro addon's assets directory (addons/pro/assets/js/).
 			$langchain_packages = array(
 				'langchain',
 				'@langchain/core',
 				'@langchain/community',
 			);
 			if ( in_array( $package, $langchain_packages, true ) ) {
+				if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+					return false;
+				}
 				// Priority 1: Check if langchain minified bundles exist (production).
-				$langchain_orchestration = WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.min.js';
-				$langchain_adapter       = WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.min.js';
+				$langchain_orchestration = WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.min.js';
+				$langchain_adapter       = WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.min.js';
 				if ( file_exists( $langchain_orchestration ) || file_exists( $langchain_adapter ) ) {
 					return true;
 				}
 				// Priority 2: Check if source files exist (development).
-				$langchain_orchestration_src = WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.js';
-				$langchain_adapter_src       = WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.js';
+				$langchain_orchestration_src = WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.js';
+				$langchain_adapter_src       = WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.js';
 				if ( file_exists( $langchain_orchestration_src ) || file_exists( $langchain_adapter_src ) ) {
 					return true;
 				}
-				// Priority 3: Check base node_modules (development).
-				$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
+				// Priority 3: Check pro node_modules (development).
+				$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
 				if ( file_exists( $node_modules_path ) ) {
 					return true;
 				}

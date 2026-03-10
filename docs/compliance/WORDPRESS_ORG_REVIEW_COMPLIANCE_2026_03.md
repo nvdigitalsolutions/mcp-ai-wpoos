@@ -1913,3 +1913,128 @@ All unique domains extracted from `wp_remote_*` calls cross-checked against `rea
 
 *Last updated: March 9, 2026*
 
+---
+
+## Post-Merge Compliance Review — March 10, 2026 (Pass 5 — Browser-Native CDN Audit)
+
+**Trigger:** Fresh compliance sweep after new code additions. Re-audit of **Guideline 4 (External Services)** with focus on client-side CDN library loads that were added alongside the browser-native AI features (Transformers.js, WebLLM, LangChain).
+
+**Tool:** `vendor/bin/phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,...`
+**Files scanned:** 722
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (722 files scanned)**
+
+### Issues Found and Fixed
+
+| # | Area | Issue | Fix Applied |
+|---|------|-------|-------------|
+| 1 | `readme.txt` entry #12 | Chart.js was documented as a CDN service at v4.4.0, but the plugin now ships Chart.js v4.5.1 locally at `assets/js/vendor/chart.min.js` — no CDN contact occurs | Updated entry #12 to "Chart.js (Bundled)" with N/A CDN URL and local path reference |
+| 2 | `readme.txt` | `@xenova/transformers@2.17.2` loaded from `https://cdn.jsdelivr.net/npm/` when "Browser-Native AI Tasks" feature is enabled — absent from readme.txt | Added entry **#39 (Transformers.js jsDelivr CDN)** with Purpose, Data Sent, When, Service URL, Terms, Privacy |
+| 3 | `readme.txt` | `@mlc-ai/web-llm` loaded from `https://esm.run/` when "Embedded Browser LLM" provider is used — absent from readme.txt | Added entry **#40 (WebLLM — MLC AI esm.run CDN)** with full documentation |
+| 4 | `readme.txt` | `@langchain/core` loaded from `https://cdn.jsdelivr.net/npm/` when LangChain browser orchestration is active — absent from readme.txt | Added entry **#41 (LangChain Core jsDelivr CDN)** with full documentation |
+| 5 | `readme.txt` Privacy Policy | Browser-native CDN libraries not mentioned in Privacy Policy section | Added "Browser-Native AI CDN Libraries" sub-section after Yahoo OAuth2 with disclosure for all three CDN library loads |
+| 6 | `readme.txt` Third-Party Services | Quick-reference list did not include browser-native CDN libraries | Added "Optional browser-native AI CDN libraries" subsection listing Transformers.js, WebLLM, and LangChain Core |
+
+### Complete External-Service Domain Cross-Check (722 files)
+
+All unique domains from `wp_remote_*` calls and client-side CDN loads cross-checked against `readme.txt`:
+
+| Domain | Entry |
+|--------|-------|
+| `api.anthropic.com` | #3 ✅ |
+| `api.cloudflare.com` | #6, #15 ✅ |
+| `api.cloudways.com` | #29 ✅ |
+| `api.duckduckgo.com` | #13 ✅ |
+| `api.exa.ai` | #33 ✅ |
+| `api.flowhub.co` | #18 ✅ |
+| `api.github.com` | #28 ✅ |
+| `api.login.yahoo.com` | #38 ✅ |
+| `api.open-meteo.com` | #9 ✅ |
+| `api.openai.com` | #1 ✅ |
+| `api.perplexity.ai` | #34 ✅ |
+| `api.remove.bg` | #17 ✅ |
+| `api.reliefweb.int` | #10 ✅ |
+| `api.search.brave.com` | #8 ✅ |
+| `api.tavily.com` | #32 ✅ |
+| `api.wordpress.org` | #11 ✅ |
+| `cdn.jsdelivr.net` (`@xenova/transformers`) | #39 ✅ (added this pass) |
+| `cdn.jsdelivr.net` (`@langchain/core`) | #41 ✅ (added this pass) |
+| `esm.run` (`@mlc-ai/web-llm`) | #40 ✅ (added this pass) |
+| `generativelanguage.googleapis.com` | #2, #2a ✅ |
+| `gmail.googleapis.com` | #16 ✅ |
+| `graph.facebook.com` | #25 ✅ |
+| `maps.googleapis.com` | #24 ✅ |
+| `music-api.mubert.com` | #22 ✅ |
+| `nvdigitalsolutions.com` | #26, #27 ✅ |
+| `oauth2.googleapis.com` | Google OAuth infra for #16, #36 ✅ |
+| `public-api.wordpress.com` | #37 ✅ |
+| `sandbox.payhere.lk` / `www.payhere.lk` | #20 ✅ |
+| `sandbox.plaid.com` / `production.plaid.com` | #19 ✅ |
+| `vision.googleapis.com` | #35 ✅ |
+| `www.gdacs.org` | #23 ✅ |
+| `www.googleapis.com` | #36 ✅ |
+| `www.nhc.noaa.gov` | #14 ✅ |
+| Chart.js | #12 ✅ (now bundled locally — no external call) |
+| Self-hosted (Varnish, Crawl4AI, Ollama, LM Studio) | N/A — user-configured URLs only ✅ |
+| Webhook / federation peer URLs | User-configured at runtime — no hardcoded domain ✅ |
+
+### Verification of All 10+ WordPress.org Guideline Categories
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ `is_pro_active()` returns `true` by default via filter; all features free |
+| 2 | readme.txt URLs valid | ✅ All documented service URLs active; 41 entries + 2a |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.34 (current LTS); Chart.js 4.5.1 bundled locally; 0 advisories |
+| 4 | External services documented | ✅ All `wp_remote_*` call sites + client-side CDN loads cross-checked; **41 services** fully documented |
+| 5 | No saving data to plugin folder | ✅ All `file_put_contents` target `uploads_dir/mcp-ai/` or system temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All 14 call sites have `sanitize_callback` |
+| 7 | Input sanitization / output escaping | ✅ PHPCS `lint:base` 0 errors/warnings |
+| 8 | Prefixing (functions, classes, hooks) | ✅ All global functions use `wp_mcp_ai_` prefix |
+| 9 | Privacy Policy | ✅ Comprehensive section updated to cover all 41 services including CDN libraries |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions remain — all have `-- justification` text |
+| 11 | `error_log()` gating | ✅ All instances are `WP_DEBUG`-gated or `$enable_logging`-gated with `phpcs:ignore` |
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (722 files scanned)**
+
+**Base plugin compliance status: ✅ Fully compliant — March 10, 2026 (Pass 5)**
+
+---
+
+*Last updated: March 10, 2026*
+
+---
+
+## Pass 5 Addendum — Base vs. Pro Service Audit (March 10, 2026)
+
+**Trigger:** Follow-up question: *"Some of these are pro features — do they need to be documented in the base plugin readme?"*
+
+### Investigation Method
+
+For each of the 41 documented services, verified whether the **base plugin** (`includes/` + `mcp-ai-wpoos.php`) contains actual HTTP-calling code (`wp_remote_*`, constants with HTTPS URLs, or client-side CDN enqueue via PHP) without requiring `addons/pro/` to be active.
+
+### Findings
+
+| Service | In `includes/`? | Verdict |
+|---------|-----------------|---------|
+| #1–#38 (all AI providers, OAuth integrations, tools) | ✅ Yes — client classes, tool classes, or AJAX handlers with real `wp_remote_*` calls in `includes/` | Keep |
+| #39 Transformers.js | ✅ Yes — `WP_MCP_AI_Transformers_Enqueue::init()` called from `mcp-ai-wpoos.php` line 572 | Keep |
+| #40 WebLLM | ✅ Yes — `WP_MCP_AI_WebLLM_Enqueue::init()` called from `mcp-ai-wpoos.php` line 567 | Keep |
+| **#41 LangChain Core** | ❌ **No** — `WP_MCP_AI_LangChain_Enqueue` class lives ONLY in `addons/pro/includes/class-wp-mcp-ai-langchain-enqueue.php`; never loaded by base plugin | **Remove** |
+
+### Action Taken
+
+**Removed entry #41 (LangChain Core)** from:
+1. `readme.txt` — External Services section (entries #39–#40 remain; #41 deleted)
+2. `readme.txt` — Privacy Policy "Browser-Native AI CDN Libraries" sub-section
+3. `readme.txt` — Third-Party Services quick-reference
+
+**Rationale:** When the base plugin runs without `addons/pro`, `langchain-orchestration.min.js` is never enqueued and `cdn.jsdelivr.net/@langchain/core` is never contacted. The JS files exist in `assets/js/` as part of the plugin distribution but are only activated by the pro addon's enqueue class. WordPress.org's external service guideline covers runtime connections; no connection is made from base-only code.
+
+**Total documented services: 40** (entries #1–#40; entry #41 removed as pro-only)
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (unchanged — only readme.txt updated)**
+
+---
+
+*Last updated: March 10, 2026*
+
