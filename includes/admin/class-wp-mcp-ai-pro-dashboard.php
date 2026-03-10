@@ -1710,14 +1710,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( ! $this->is_pro_active() ) {
 				?>
 				<div class="notice notice-info wp-mcp-ai-pro-notice">
-					<h3><?php esc_html_e( '🔒 Pro Dashboard Preview', 'mcp-ai-wpoos' ); ?></h3>
+					<h3><?php esc_html_e( 'Pro Dashboard', 'mcp-ai-wpoos' ); ?></h3>
 					<p>
 						<?php
 						$upgrade_url = apply_filters( 'wp_mcp_ai_pro_upgrade_url', admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=overview' ) );
 						echo wp_kses_post(
 							sprintf(
-								/* translators: %s: Link to upgrade page */
-								__( 'You\'re viewing a preview of the Pro Dashboard. <a href="%s">Upgrade to Pro</a> to unlock full compliance automation, real-time monitoring, and advanced reporting features.', 'mcp-ai-wpoos' ),
+								/* translators: %s: Link to Pro addon information page */
+								__( 'Full compliance automation, real-time monitoring, and advanced reporting are available in the <a href="%s">Pro addon</a>.', 'mcp-ai-wpoos' ),
 								esc_url( $upgrade_url )
 							)
 						);
@@ -2643,7 +2643,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			} else {
 				?>
 				<p class="wp-mcp-ai-empty-state">
-					<?php esc_html_e( 'Upgrade to Pro to generate automated compliance reports for auditors and management.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Automated compliance report generation (PDF, DOCX, Excel) is available in the Pro addon.', 'mcp-ai-wpoos' ); ?>
 				</p>
 				<?php
 			}
@@ -3164,7 +3164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php endif; ?>
 						<?php if ( ! $this->is_pro_active() && 'pending' === $framework['status'] ) : ?>
 							<p class="wp-mcp-ai-framework-cta">
-								<small><?php esc_html_e( 'Pro feature', 'mcp-ai-wpoos' ); ?></small>
+								<small><?php esc_html_e( 'Available in Pro addon', 'mcp-ai-wpoos' ); ?></small>
 							</p>
 						<?php endif; ?>
 					</div>
