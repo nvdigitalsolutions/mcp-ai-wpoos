@@ -292,7 +292,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['path'] . '/' . $filename;
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 		if ( false === file_put_contents( $file_path, $image_content ) ) {
 			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'mcp-ai-wpoos' ) );
 		}

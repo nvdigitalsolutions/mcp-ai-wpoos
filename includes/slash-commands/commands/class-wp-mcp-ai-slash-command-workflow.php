@@ -439,7 +439,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 		}
 
 		// Save file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $export_file, $yaml_content );
 
 		if ( false === $result ) {
@@ -570,7 +570,7 @@ class WP_MCP_AI_Slash_Command_Workflow {
 			$custom_file  = str_replace( '.yml', '.json', $custom_file );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $custom_file, $save_content );
 
 		if ( false === $result ) {
