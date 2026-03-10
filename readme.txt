@@ -641,11 +641,11 @@ These services are only contacted when specific tools/features are used:
 
 These services are only used if you explicitly configure OAuth integrations:
 
-**28. GitHub API**
-* **Purpose:** Repository management, code search, issue tracking
-* **Data Sent:** OAuth tokens, repository queries, commit data
-* **When:** When GitHub tools are used after OAuth setup
-* **Service URL:** https://api.github.com
+**28. GitHub API & GitHub OAuth token exchange**
+* **Purpose:** Repository management, code search, issue tracking, and OAuth authorisation flow to connect the GitHub integration
+* **Data Sent:** OAuth tokens, repository queries, commit data; during OAuth setup: client ID, client secret (as Basic Auth header), authorisation code, and redirect URI
+* **When:** When GitHub tools are used after OAuth setup; the OAuth token exchange endpoint is called once per authorisation when a user connects their GitHub account
+* **Service URL:** https://api.github.com (GitHub REST API); https://github.com/login/oauth/access_token (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 

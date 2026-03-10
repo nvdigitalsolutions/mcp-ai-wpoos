@@ -117,7 +117,7 @@ class WP_MCP_AI_Skill_Registry {
 		// Add an index.php to prevent directory listing.
 		$index_file = $dir . '/index.php';
 		if ( ! file_exists( $index_file ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 			file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
 		}
 
@@ -125,7 +125,7 @@ class WP_MCP_AI_Skill_Registry {
 		// even if a malicious file were written it could not be executed via HTTP.
 		$htaccess_file = $dir . '/.htaccess';
 		if ( ! file_exists( $htaccess_file ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 			file_put_contents(
 				$htaccess_file,
 				"# Block direct PHP execution in the skills directory.\n" .
@@ -276,7 +276,7 @@ class WP_MCP_AI_Skill_Registry {
 
 		$skill_file = $skill_dir . '/SKILL.md';
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 		$written = file_put_contents( $skill_file, $content );
 
 		if ( false === $written ) {
@@ -309,7 +309,7 @@ class WP_MCP_AI_Skill_Registry {
 				wp_mkdir_p( $file_parent );
 			}
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 			file_put_contents( $full_path, $file_content );
 		}
 
