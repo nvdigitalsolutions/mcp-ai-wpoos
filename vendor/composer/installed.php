@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/extend-skills-with-pro-plugin',
-        'version' => 'dev-copilot/extend-skills-with-pro-plugin',
-        'reference' => '4072d27f943411d6678950b5c81c0601cddd9d80',
+        'pretty_version' => 'dev-copilot/update-readme-documentation-one-more-time',
+        'version' => 'dev-copilot/update-readme-documentation-one-more-time',
+        'reference' => 'ecf483a1d08a5be38c70935c9694d20a63b13c68',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/extend-skills-with-pro-plugin',
-            'version' => 'dev-copilot/extend-skills-with-pro-plugin',
-            'reference' => '4072d27f943411d6678950b5c81c0601cddd9d80',
+            'pretty_version' => 'dev-copilot/update-readme-documentation-one-more-time',
+            'version' => 'dev-copilot/update-readme-documentation-one-more-time',
+            'reference' => 'ecf483a1d08a5be38c70935c9694d20a63b13c68',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
