@@ -2933,9 +2933,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					__( 'Warnings: %d teams have no members. Try reseeding professions first.', 'mcp-ai-wpoos' ),
 					count( $warnings )
 				);
-				// Log the warnings for debugging.
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records non-fatal team-reseed warnings as a diagnostic fallback; informational only.
-				error_log( 'WP_MCP_AI Team Reseed Warnings: ' . implode( '; ', $warnings ) );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic logger; records non-fatal team-reseed warnings.
+					error_log( 'WP_MCP_AI Team Reseed Warnings: ' . implode( '; ', $warnings ) );
+				}
 			}
 
 			wp_send_json_success(
