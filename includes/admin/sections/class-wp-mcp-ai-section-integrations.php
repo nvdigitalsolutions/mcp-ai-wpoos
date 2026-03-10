@@ -187,6 +187,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description'    => __( 'Enables AI-powered Cloudflare integration toolkit including cache purging, zone management, DNS operations, and advanced CDN features. Provides additional tools for managing Cloudflare services through AI assistants. Requires Cloudflare API Token and Zone ID to be configured. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				// NOTE: enable_cloudflare_pro_toolkit is intentionally kept in the field
+				// registry so that previously-saved values are sanitized correctly if the
+				// Pro addon is later activated. The UI control is conditionally hidden via
+				// get_subtabs() when Pro is not active (see below).
 
 				// Cloudways.
 				'cloudways_api_key'             => array(
@@ -397,7 +401,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' ),
+					// enable_cloudflare_pro_toolkit is only shown when the Pro addon is active.
+					// Showing a non-functional "pro-only" toggle in the base plugin admin violates
+					// WordPress.org Guideline 5 (no locked/non-functional feature controls).
+					'fields' => defined( 'WP_MCP_AI_PRO_VERSION' )
+						? array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' )
+						: array( 'cloudflare_api_token', 'cloudflare_zone_id' ),
 				),
 				'cloudways'    => array(
 					'id'     => 'cloudways',
@@ -1939,50 +1948,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</p>
 				</td>
 			</tr>
-			<?php if ( $pro_toolkit_enabled ) : ?>
+			<?php if ( $pro_toolkit_enabled && $is_pro_active ) : ?>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Pro Toolkit Status', 'mcp-ai-wpoos' ); ?></th>
 					<td>
-						<?php if ( $is_pro_active ) : ?>
-							<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-								<p style="margin: 0; color: #155724;">
-									<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-									<strong><?php esc_html_e( 'Cloudflare Pro Toolkit Active', 'mcp-ai-wpoos' ); ?></strong>
-								</p>
-							</div>
-							<p class="description">
-								<?php
-								echo wp_kses_post(
-									__(
-										'The Cloudflare Pro Toolkit is enabled. AI assistants can now use advanced Cloudflare features including cache purging, zone management, and DNS operations.',
-										'mcp-ai-wpoos'
-									)
-								);
-								?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Cloudflare Pro Toolkit Active', 'mcp-ai-wpoos' ); ?></strong>
 							</p>
-						<?php else : ?>
-							<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
-								<p style="margin: 0; color: #856404;">
-									<span class="dashicons dashicons-warning" style="color: #856404;"></span>
-									<strong><?php esc_html_e( 'Pro Addon Required', 'mcp-ai-wpoos' ); ?></strong>
-								</p>
-							</div>
-							<p class="description">
-								<?php
-								echo wp_kses_post(
-									__(
-										'The Cloudflare Pro Toolkit setting is enabled but requires the Pro addon to be installed and active. Install the Pro addon to unlock advanced Cloudflare features.',
-										'mcp-ai-wpoos'
-									)
-								);
-								?>
-							</p>
-							<p>
-								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary">
-									<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
-								</a>
-							</p>
-						<?php endif; ?>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'The Cloudflare Pro Toolkit is enabled. AI assistants can now use advanced Cloudflare features including cache purging, zone management, and DNS operations.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
+						</p>
 					</td>
 				</tr>
 			<?php endif; ?>

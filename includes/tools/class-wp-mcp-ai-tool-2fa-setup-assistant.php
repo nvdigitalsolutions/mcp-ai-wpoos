@@ -239,11 +239,10 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			rawurlencode( $issuer )
 		);
 
-		// Generate QR code URL (using a QR code service).
-		$qr_code_url = sprintf(
-			'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s',
-			rawurlencode( $qr_data )
-		);
+		// Generate QR code as a base64 data URI via a server-side request to api.qrserver.com.
+		// Using a server-side fetch prevents the user's browser from sending the TOTP secret
+		// (embedded in the OTP URI) directly to the external service.
+		$qr_code_url = $this->fetch_qr_code_as_data_uri( $qr_data );
 
 		return array(
 			'secret'       => $secret,
@@ -471,6 +470,60 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 				$role
 			),
 		);
+	}
+
+	/**
+	 * Fetch a QR code image from api.qrserver.com server-side and return it as a base64 data URI.
+	 *
+	 * By fetching the image on the server and returning a data URI, the user's browser never
+	 * contacts the external QR code service directly. This prevents the TOTP secret (embedded
+	 * in the OTP URI payload) from appearing in browser request logs or being seen by browser
+	 * extensions that monitor network traffic.
+	 *
+	 * @since 1.7.3
+	 * @param string $data The data to encode in the QR code (e.g. an otpauth:// URI).
+	 * @return string|null Base64 data URI on success, or null on failure.
+	 */
+	private function fetch_qr_code_as_data_uri( $data ) {
+		$api_url = add_query_arg(
+			array(
+				'size' => '200x200',
+				'data' => rawurlencode( $data ),
+			),
+			'https://api.qrserver.com/v1/create-qr-code/'
+		);
+
+		$response = wp_remote_get(
+			$api_url,
+			array(
+				'timeout' => 10,
+				'headers' => array( 'Accept' => 'image/png, image/*' ),
+			)
+		);
+
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$error_info = is_wp_error( $response )
+				? $response->get_error_message()
+				: 'HTTP ' . wp_remote_retrieve_response_code( $response );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic; 2FA QR fetch failure should be surfaced in dev/staging.
+				error_log( '[WP_MCP_AI] 2FA QR code fetch from api.qrserver.com failed: ' . $error_info );
+			}
+			return null;
+		}
+
+		$image_data = wp_remote_retrieve_body( $response );
+		$mime_type  = wp_remote_retrieve_header( $response, 'content-type' );
+
+		if ( empty( $image_data ) || empty( $mime_type ) ) {
+			return null;
+		}
+
+		// Strip any parameters (e.g. "image/png; charset=...") from the MIME type.
+		$mime_type = strtok( $mime_type, ';' );
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Standard base64 encoding for RFC 2397 data URI generation; no obfuscation involved.
+		return 'data:' . $mime_type . ';base64,' . base64_encode( $image_data );
 	}
 
 	/**
