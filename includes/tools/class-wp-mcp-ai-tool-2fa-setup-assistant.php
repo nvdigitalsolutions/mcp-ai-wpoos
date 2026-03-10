@@ -502,6 +502,13 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$error_info = is_wp_error( $response )
+				? $response->get_error_message()
+				: 'HTTP ' . wp_remote_retrieve_response_code( $response );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic; 2FA QR fetch failure should be surfaced in dev/staging.
+				error_log( '[WP_MCP_AI] 2FA QR code fetch from api.qrserver.com failed: ' . $error_info );
+			}
 			return null;
 		}
 

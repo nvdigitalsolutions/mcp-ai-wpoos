@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 				// NOTE: enable_cloudflare_pro_toolkit is intentionally kept in the field
 				// registry so that previously-saved values are sanitized correctly if the
-				// Pro addon is later activated.  The UI control is conditionally hidden via
+				// Pro addon is later activated. The UI control is conditionally hidden via
 				// get_subtabs() when Pro is not active (see below).
 
 				// Cloudways.
