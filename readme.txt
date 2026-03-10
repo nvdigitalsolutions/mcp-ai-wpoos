@@ -53,6 +53,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Per-assistant model configuration (temperature, max tokens)
 * 182 pre-built profession templates across 12 industry categories
 * One-click team deployments for coordinated AI workflows
+* 16 pre-built Agent Skills (document editing, design, MCP server building, testing, and more) included in the base plugin — auto-installed on activation, fully customisable
 
 **Multi-Provider AI Routing**
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))

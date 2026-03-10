@@ -68,6 +68,7 @@
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
 - [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
+- [🧠 Agent Skills](#-agent-skills)
 - [👔 Professional & Team Layers](#-professional--team-layers)
 - [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
 
@@ -2525,6 +2526,73 @@ Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate pr
 Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
 
 ➡️ [Read the full guide to assistant prompt shortcuts.](docs/getting-started/first-steps/assistant-tool-shortcuts.md)
+
+## 🧠 Agent Skills
+
+**Agent Skills** ([agentskills.io](https://agentskills.io/specification)) are reusable, portable behaviour packages that extend any assistant without touching its system prompt. Each skill is a `SKILL.md` file — a standard Markdown document with a small YAML frontmatter block — that lives in `wp-content/uploads/mcp-ai-skills/{skill-name}/SKILL.md`. When an assistant loads a skill, its instructions are automatically injected into the conversation context so the model knows exactly when and how to use that capability.
+
+### 16 Pre-Built Skills (Base Plugin)
+
+The **base plugin** ships with 16 pre-built skills that are automatically installed to `wp-content/uploads/mcp-ai-skills/` on first activation. No Pro add-on is required — they are available on every install out of the box.
+
+| Skill slug | What it does |
+|---|---|
+| `algorithmic-art` | Generates algorithmic art with p5.js, seeded randomness, and interactive parameters |
+| `brand-guidelines` | Applies Anthropic's official brand colours and typography to any artifact |
+| `canvas-design` | Creates beautiful visual art in PNG/PDF documents using design philosophy |
+| `doc-coauthoring` | Guides users through a structured co-authoring workflow for documentation |
+| `docx` | Creates, reads, edits, and manipulates Word `.docx` files |
+| `frontend-design` | Produces distinctive, production-grade frontend interfaces with high design quality |
+| `internal-comms` | Drafts all kinds of internal communications (memos, announcements, updates) |
+| `mcp-builder` | Guides creation of high-quality MCP (Model Context Protocol) servers |
+| `pdf` | Handles any PDF task — creation, reading, editing, and form filling |
+| `pptx` | Handles any `.pptx` PowerPoint file as input or output |
+| `skill-creator` | Creates, modifies, and measures the performance of other skills |
+| `slack-gif-creator` | Creates animated GIFs optimised for Slack with design best practices |
+| `theme-factory` | Applies consistent visual themes to slides, docs, and other artifacts |
+| `web-artifacts-builder` | Builds elaborate multi-component HTML artifacts for Claude.ai |
+| `webapp-testing` | Tests local web applications using Playwright browser automation |
+| `xlsx` | Handles any spreadsheet file as primary input or output |
+
+### How Skills Are Loaded
+
+Skills are selected per-assistant via the **Skills** meta box in the assistant editor. Whichever skills are checked, their combined instructions are prepended to the system prompt under an `# Active Skills` heading at inference time. This means skills are composable — you can combine `pdf` + `xlsx` + `doc-coauthoring` on a single document-specialist assistant.
+
+Skills are stored as plain text files and can be customised in-place. The original bundled content can be restored at any time from **Settings → Advanced → Skill Management → Force Reinstall Bundled Skills**.
+
+### Managing Skills
+
+**Base plugin** — Skill management is available under **Settings → Advanced → Skill Management**:
+- View installed skills and their metadata
+- Refresh the skill index
+- Install or force-reinstall the 16 bundled skills
+
+**Pro add-on** — The dedicated **Skill Manager** admin page (`Assistants → Skill Manager`) adds:
+- Upload a `SKILL.md` file or a ZIP archive containing a skill directory
+- Install a skill from a remote URL
+- Inline CodeMirror editor to create or edit `SKILL.md` content directly in the browser
+- Delete / uninstall skills
+
+### SKILL.md Format
+
+```yaml
+---
+name: my-skill
+description: One-line description of what this skill does.
+compatibility: claude-3-5-sonnet, claude-3-opus
+---
+
+# My Skill
+
+Detailed instructions for the model go here in standard Markdown.
+Use headings, lists, code blocks — whatever best conveys the behaviour.
+```
+
+The `name` field (max 64 chars) becomes the skill's slug. The `description` field (max 1 024 chars) is shown in the admin UI. The `compatibility` field is optional and informational.
+
+➡️ See [Agent Skills reference](docs/features/agent-skills.md) for the complete specification, filters, and developer API.
+
+---
 
 ## 👔 Professional & Team Layers
 
