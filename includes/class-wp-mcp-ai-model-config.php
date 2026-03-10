@@ -325,8 +325,34 @@ class WP_MCP_AI_Model_Config {
 
 	/**
 	 * Merge user configs with defaults.
-			// OpenAI Models (February 2026).
-			// GPT-5.3 series: Latest flagship agentic coding models - Feb 2026.
+			// OpenAI Models (March 2026).
+			// GPT-5.4 series: Latest flagship model - Mar 2026. 1M+ context, native computer use.
+			'gpt-5.4'                                      => array(
+				'name'           => 'GPT-5.4 (Flagship)',
+				'provider'       => 'openai',
+				'tpm'            => 150000,
+				'rpm'            => 1500,
+				'tpd'            => 15000000,
+				'rpd'            => 75000,
+				'context_window' => 1050000,
+				'fallback_model' => 'gpt-5.3-codex',
+				'cost_per_1k'    => 0.0025,
+				'status'         => 'active',
+			),
+			'gpt-5.4-pro'                                  => array(
+				'name'           => 'GPT-5.4 Pro (Enterprise)',
+				'provider'       => 'openai',
+				'tpm'            => 75000,
+				'rpm'            => 750,
+				'tpd'            => 7500000,
+				'rpd'            => 37500,
+				'context_window' => 1050000,
+				'fallback_model' => 'gpt-5.4',
+				'cost_per_1k'    => 0.03,
+				'status'         => 'active',
+			),
+
+			// GPT-5.3 series: Agentic coding models - Feb 2026.
 			'gpt-5.3-codex'                                => array(
 				'name'           => 'GPT-5.3 Codex (Agentic Coding)',
 				'provider'       => 'openai',
@@ -334,9 +360,9 @@ class WP_MCP_AI_Model_Config {
 				'rpm'            => 1500,
 				'tpd'            => 15000000,
 				'rpd'            => 75000,
-				'context_window' => 400000,
+				'context_window' => 922000,
 				'fallback_model' => 'gpt-5.2',
-				'cost_per_1k'    => 0.012,
+				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
 			'gpt-5.3-codex-spark'                          => array(
