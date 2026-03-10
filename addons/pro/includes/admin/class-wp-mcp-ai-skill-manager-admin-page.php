@@ -838,6 +838,32 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			wp_send_json_error( __( 'Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Block SSRF: resolve the host to an IP and reject private/reserved ranges.
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		if ( empty( $host ) ) {
+			wp_send_json_error( __( 'Invalid URL: could not determine host.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// gethostbyname() returns the input unchanged when resolution fails.
+		// Treat an unresolvable hostname as a hard rejection: we cannot determine
+		// whether it points to a private address, so failing closed is safer.
+		// Note: when $host is already a valid IP address, gethostbyname() returns
+		// it unchanged and filter_var( $host, FILTER_VALIDATE_IP ) returns a
+		// non-false value, so the AND condition is FALSE and we proceed to the
+		// IP-range check below — which is the correct behavior for bare IPs.
+		$resolved_ip = gethostbyname( $host );
+		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			wp_send_json_error( __( 'URL hostname could not be resolved. Please verify the URL is correct.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Reject private, loopback, link-local, and reserved IP ranges.
+		// FILTER_FLAG_NO_PRIV_RANGE covers RFC-1918 (10/8, 172.16/12, 192.168/16),
+		// loopback (127/8), and link-local (169.254/16).
+		// FILTER_FLAG_NO_RES_RANGE covers IANA-reserved blocks including 0.0.0.0/8.
+		if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			wp_send_json_error( __( 'URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-wpoos-pro' ) );
+		}
+
 		$response = wp_remote_get(
 			$url,
 			array(

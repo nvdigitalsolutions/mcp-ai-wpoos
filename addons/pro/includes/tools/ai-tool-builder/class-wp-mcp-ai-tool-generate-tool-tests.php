@@ -121,15 +121,22 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$tool_class        = sanitize_text_field( $arguments['tool_class'] );
-		$tool_file         = isset( $arguments['tool_file'] ) ? sanitize_text_field( $arguments['tool_file'] ) : '';
+		$tool_file_raw     = isset( $arguments['tool_file'] ) ? sanitize_text_field( $arguments['tool_file'] ) : '';
 		$test_types        = isset( $arguments['test_types'] ) ? array_map( 'sanitize_text_field', (array) $arguments['test_types'] ) : array( 'unit', 'integration', 'edge-cases' );
 		$mock_dependencies = isset( $arguments['mock_dependencies'] ) ? (bool) $arguments['mock_dependencies'] : true;
 		$coverage_goal     = isset( $arguments['coverage_goal'] ) ? absint( $arguments['coverage_goal'] ) : 80;
 
 		// Load tool code for analysis.
 		$tool_code = '';
-		if ( ! empty( $tool_file ) && file_exists( $tool_file ) ) {
-			$tool_code = file_get_contents( $tool_file );
+		if ( ! empty( $tool_file_raw ) ) {
+			// Security: Resolve canonical path and restrict to the WordPress content
+			// directory to prevent reading arbitrary server files.
+			$resolved_tool = realpath( $tool_file_raw );
+			if ( false !== $resolved_tool &&
+				0 === strpos( wp_normalize_path( $resolved_tool ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local PHP tool file; path validated against WP_CONTENT_DIR.
+				$tool_code = file_get_contents( $resolved_tool );
+			}
 		}
 
 		// Analyze tool structure.
@@ -173,6 +180,14 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 
 		// Determine output path.
 		$output_path = $this->determine_output_path( $tool_class, $arguments );
+
+		// Propagate path validation errors.
+		if ( is_wp_error( $output_path ) ) {
+			return array(
+				'success' => false,
+				'error'   => $output_path->get_error_message(),
+			);
+		}
 
 		// Write test file.
 		$bytes_written = file_put_contents( $output_path, $test_code );
@@ -361,7 +376,26 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function determine_output_path( $tool_class, $arguments ) {
 		if ( isset( $arguments['output_path'] ) && ! empty( $arguments['output_path'] ) ) {
-			return sanitize_text_field( $arguments['output_path'] );
+			$output_path = sanitize_text_field( $arguments['output_path'] );
+
+			// Security: Restrict to the WordPress content directory to prevent
+			// writing PHP files to arbitrary server paths.
+			$resolved = realpath( dirname( $output_path ) );
+			if ( false === $resolved ) {
+				return new WP_Error(
+					'invalid_output_path',
+					__( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				return new WP_Error(
+					'invalid_output_path',
+					__( 'Output path must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			return $output_path;
 		}
 
 		$test_name = 'test-' . str_replace( '_', '-', strtolower( str_replace( 'WP_MCP_AI_Tool_', '', $tool_class ) ) ) . '.php';
