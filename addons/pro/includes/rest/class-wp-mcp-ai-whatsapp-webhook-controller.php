@@ -304,16 +304,17 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		$connection_id = $request->get_param( 'connection_id' );
 		$app_secret    = $this->get_app_secret( $connection_id ? sanitize_key( $connection_id ) : '' );
 
-		// When the App Secret is not configured, skip signature validation and
-		// allow the webhook to be processed. Log a security warning so the site
-		// owner knows to configure the App Secret for hardened security.
+		// When the App Secret is not configured, reject the request.
 		if ( empty( $app_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'whatsapp_webhook_no_app_secret',
-				'WhatsApp webhook received without App Secret configured. Signature validation skipped. Configure your App Secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'WhatsApp webhook rejected: App Secret is not configured. Configure your App Secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'WhatsApp webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// App Secret is configured — the signature header is required.

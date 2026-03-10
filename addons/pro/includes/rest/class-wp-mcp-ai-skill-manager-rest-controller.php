@@ -229,6 +229,10 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ) {
+		// NOTE: $content is intentionally not run through sanitize_text_field() here.
+		// Raw SKILL.md Markdown (including multi-line frontmatter and instructions) is
+		// validated by WP_MCP_AI_Skill_Parser::parse() inside install_skill(). Sanitizing
+		// would silently truncate newlines and corrupt the skill specification.
 		$content  = $request->get_param( 'content' );
 		$registry = $this->get_registry();
 		$result   = $registry->install_skill( $content );
@@ -263,6 +267,40 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 			return new WP_Error(
 				'rest_skill_invalid_url',
 				__( 'Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Block SSRF: resolve the host to an IP and reject private/reserved ranges.
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		if ( empty( $host ) ) {
+			return new WP_Error(
+				'rest_skill_invalid_url',
+				__( 'Invalid URL: could not determine host.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// gethostbyname() returns the input unchanged when resolution fails.
+		// Treat an unresolvable hostname as a hard rejection: we cannot determine
+		// whether it points to a private address, so failing closed is safer.
+		$resolved_ip = gethostbyname( $host );
+		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return new WP_Error(
+				'rest_skill_invalid_url',
+				__( 'URL hostname could not be resolved. Please verify the URL is correct.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Reject private, loopback, link-local, and reserved IP ranges.
+		// FILTER_FLAG_NO_PRIV_RANGE covers RFC-1918 (10/8, 172.16/12, 192.168/16),
+		// loopback (127/8), and link-local (169.254/16).
+		// FILTER_FLAG_NO_RES_RANGE covers IANA-reserved blocks including 0.0.0.0/8.
+		if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			return new WP_Error(
+				'rest_skill_ssrf',
+				__( 'URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -332,7 +370,11 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_item( $request ) {
-		$name     = sanitize_key( $request->get_param( 'name' ) );
+		$name = sanitize_key( $request->get_param( 'name' ) );
+		// NOTE: $content is intentionally not run through sanitize_text_field() here.
+		// Raw SKILL.md Markdown (including multi-line frontmatter and instructions) is
+		// validated by WP_MCP_AI_Skill_Parser::parse() inside install_skill(). Sanitizing
+		// would silently truncate newlines and corrupt the skill specification.
 		$content  = $request->get_param( 'content' );
 		$registry = $this->get_registry();
 

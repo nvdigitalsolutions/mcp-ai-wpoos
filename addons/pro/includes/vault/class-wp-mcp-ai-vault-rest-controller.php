@@ -205,8 +205,10 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		// Check capability (edit_posts minimum).
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		// Check capability — only administrators (manage_options) may access the vault.
+		// Password vault entries are sensitive credentials; allowing Author/Contributor
+		// level users (edit_posts) would expose secrets if their accounts are compromised.
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access the vault.', 'mcp-ai-wpoos-pro' ),

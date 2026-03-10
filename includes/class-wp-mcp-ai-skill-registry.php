@@ -92,6 +92,16 @@ class WP_MCP_AI_Skill_Registry {
 	}
 
 	/**
+	 * File extensions that are allowed for extra skill files (e.g. examples, resources).
+	 *
+	 * PHP-executable extensions (php, phtml, phar, etc.) are intentionally absent so
+	 * that a malicious ZIP cannot introduce a server-side script into the uploads dir.
+	 *
+	 * @var string[]
+	 */
+	const ALLOWED_EXTRA_EXTENSIONS = array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'css', 'js' );
+
+	/**
 	 * Ensure the skills directory exists with proper protections.
 	 *
 	 * @since 1.7.0
@@ -109,6 +119,26 @@ class WP_MCP_AI_Skill_Registry {
 		if ( ! file_exists( $index_file ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
 			file_put_contents( $index_file, "<?php\n// Silence is golden.\n" );
+		}
+
+		// Add an .htaccess that blocks PHP execution inside the skills directory so that
+		// even if a malicious file were written it could not be executed via HTTP.
+		$htaccess_file = $dir . '/.htaccess';
+		if ( ! file_exists( $htaccess_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to uploads dir.
+			file_put_contents(
+				$htaccess_file,
+				"# Block direct PHP execution in the skills directory.\n" .
+				"<FilesMatch \"\\.ph(p[2-9]?|tml|ar)$\">\n" .
+				"  Require all denied\n" .
+				"</FilesMatch>\n" .
+				"# Apache 2.2 compat\n" .
+				"<IfModule !mod_authz_core.c>\n" .
+				"  <FilesMatch \"\\.ph(p[2-9]?|tml|ar)$\">\n" .
+				"    deny from all\n" .
+				"  </FilesMatch>\n" .
+				"</IfModule>\n"
+			);
 		}
 
 		return is_dir( $dir ) && is_writable( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
@@ -262,6 +292,13 @@ class WP_MCP_AI_Skill_Registry {
 			// Prevent directory traversal.
 			$safe_path = ltrim( $relative_path, '/' );
 			if ( false !== strpos( $safe_path, '..' ) ) {
+				continue;
+			}
+
+			// Only allow safe, non-executable extensions to prevent PHP RCE via
+			// a crafted ZIP that embeds a .php file alongside SKILL.md.
+			$ext = strtolower( pathinfo( $safe_path, PATHINFO_EXTENSION ) );
+			if ( ! in_array( $ext, self::ALLOWED_EXTRA_EXTENSIONS, true ) ) {
 				continue;
 			}
 

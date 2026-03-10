@@ -330,13 +330,15 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// When OIDC verification is disabled for this connection, accept any POST
-		// request without token validation. This mirrors Telegram's no-secret-token
-		// mode and is useful for environments where the Authorization header is
-		// stripped by a server, proxy, or WAF.
+		// request without token validation. This is useful for environments where
+		// the Authorization header is stripped by a server, proxy, or WAF. However,
+		// it means any caller who knows the webhook URL can inject messages.
+		// Only enable this setting in controlled environments with network-level access
+		// restrictions in place (e.g. IP allowlisting at the firewall/WAF layer).
 		if ( $connection && ! empty( $connection['disable_oidc_verification'] ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'google_chat_webhook_oidc_skipped',
-				'Google Chat webhook: OIDC verification is disabled for this connection. Accepting request without token validation. Enable OIDC verification for production environments.',
+				'SECURITY WARNING: Google Chat webhook OIDC verification is DISABLED for this connection. The endpoint will accept requests from any caller. This setting should only be used with additional network-level controls (e.g. IP allowlisting). Enable OIDC verification for production environments.',
 				array()
 			);
 			return true;

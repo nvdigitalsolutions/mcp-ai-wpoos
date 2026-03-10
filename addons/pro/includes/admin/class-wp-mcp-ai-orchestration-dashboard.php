@@ -499,13 +499,20 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 		// Count active sessions (from transients for now).
 		$active_sessions = 0;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$transients      = $wpdb->get_results(
-			"SELECT option_name, option_value FROM {$wpdb->options} 
-			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options}
+				WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
+			)
 		);
 
 		foreach ( $transients as $transient ) {
-			$session_data = maybe_unserialize( $transient->option_value );
+			$session_data = json_decode( $transient->option_value, true );
+			if ( ! is_array( $session_data ) ) {
+				continue;
+			}
 			if ( isset( $session_data['status'] ) && 'active' === $session_data['status'] ) {
 				++$active_sessions;
 			}
@@ -573,15 +580,19 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		global $wpdb;
 
 		$sessions   = array();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$transients = $wpdb->get_results(
-			"SELECT option_name, option_value FROM {$wpdb->options} 
-			WHERE option_name LIKE '_transient_mcp_ai_session_%'
-			LIMIT 50"
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options}
+				WHERE option_name LIKE %s
+				LIMIT 50",
+				$wpdb->esc_like( '_transient_mcp_ai_session_' ) . '%'
+			)
 		);
 
 		foreach ( $transients as $transient ) {
 			$session_id   = str_replace( array( '_transient_mcp_ai_session_', '_transient_timeout_mcp_ai_session_' ), '', $transient->option_name );
-			$session_data = maybe_unserialize( $transient->option_value );
+			$session_data = json_decode( $transient->option_value, true );
 
 			if ( ! is_array( $session_data ) ) {
 				continue;
@@ -641,7 +652,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 				continue;
 			}
 
-			$workflow_data = maybe_unserialize( $transient->option_value );
+			$workflow_data = json_decode( $transient->option_value, true );
 
 			if ( ! is_array( $workflow_data ) || ! isset( $workflow_data['workflow_id'] ) ) {
 				continue;
