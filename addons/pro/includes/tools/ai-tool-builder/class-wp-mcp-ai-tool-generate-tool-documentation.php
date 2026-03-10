@@ -132,12 +132,27 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 		}
 
 		$tool_class        = sanitize_text_field( $arguments['tool_class'] );
-		$tool_file         = isset( $arguments['tool_file'] ) ? sanitize_text_field( $arguments['tool_file'] ) : '';
+		$tool_file_raw     = isset( $arguments['tool_file'] ) ? sanitize_text_field( $arguments['tool_file'] ) : '';
 		$doc_sections      = isset( $arguments['doc_sections'] ) ? array_map( 'sanitize_text_field', (array) $arguments['doc_sections'] ) : array( 'overview', 'parameters', 'examples', 'return-values' );
 		$include_examples  = isset( $arguments['include_examples'] ) ? (bool) $arguments['include_examples'] : true;
 		$example_scenarios = isset( $arguments['example_scenarios'] ) ? array_map( 'sanitize_text_field', (array) $arguments['example_scenarios'] ) : array();
 		$output_format     = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'markdown';
 		$audience_level    = isset( $arguments['audience_level'] ) ? sanitize_text_field( $arguments['audience_level'] ) : 'intermediate';
+
+		// Security: Validate tool_file before passing it to the analysis helper.
+		$tool_file = '';
+		$tool_file_security_warning = '';
+		if ( ! empty( $tool_file_raw ) ) {
+			$resolved_tool = realpath( $tool_file_raw );
+			if ( false !== $resolved_tool &&
+				0 === strpos( wp_normalize_path( $resolved_tool ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				$tool_file = $resolved_tool;
+			} else {
+				// Path is outside WP_CONTENT_DIR or unresolvable: reject it and fall back
+				// to reflection-only analysis. Surface this to the caller so they know why.
+				$tool_file_security_warning = __( 'tool_file was ignored: path must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' );
+			}
+		}
 
 		// Load and analyze tool.
 		$tool_data = $this->analyze_tool_for_docs( $tool_class, $tool_file );
@@ -186,17 +201,34 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 			'word_count'    => str_word_count( strip_tags( $formatted_docs ) ),
 		);
 
+		// Surface any tool_file security rejection so the caller understands
+		// why the file was not used for analysis.
+		if ( ! empty( $tool_file_security_warning ) ) {
+			$result['tool_file_warning'] = $tool_file_security_warning;
+		}
+
 		// Save to file if path provided.
 		if ( isset( $arguments['output_file'] ) && ! empty( $arguments['output_file'] ) ) {
-			$output_file   = sanitize_text_field( $arguments['output_file'] );
-			$bytes_written = file_put_contents( $output_file, $formatted_docs );
+			$output_file = sanitize_text_field( $arguments['output_file'] );
 
-			if ( false !== $bytes_written ) {
-				$result['file_saved'] = true;
-				$result['file_path']  = $output_file;
-				$result['file_size']  = $bytes_written;
+			// Security: Restrict output location to the WordPress content directory to
+			// prevent writing files to arbitrary server paths.
+			$resolved_parent = realpath( dirname( $output_file ) );
+			if ( false === $resolved_parent ) {
+				$result['warning'] = __( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' );
+			} elseif ( 0 !== strpos( wp_normalize_path( $resolved_parent ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				$result['warning'] = __( 'Output file must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' );
 			} else {
-				$result['warning'] = __( 'Failed to save documentation file.', 'mcp-ai-wpoos-pro' );
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing documentation markdown file to local disk.
+				$bytes_written = file_put_contents( $output_file, $formatted_docs );
+
+				if ( false !== $bytes_written ) {
+					$result['file_saved'] = true;
+					$result['file_path']  = $output_file;
+					$result['file_size']  = $bytes_written;
+				} else {
+					$result['warning'] = __( 'Failed to save documentation file.', 'mcp-ai-wpoos-pro' );
+				}
 			}
 		}
 
@@ -222,6 +254,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 
 		// Try to load tool file for analysis.
 		if ( ! empty( $tool_file ) && file_exists( $tool_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local PHP tool file; path already validated against WP_CONTENT_DIR.
 			$tool_code = file_get_contents( $tool_file );
 
 			// Extract tool name.
