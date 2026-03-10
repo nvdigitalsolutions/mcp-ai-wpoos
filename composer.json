@@ -36,7 +36,7 @@
         "test": "vendor/bin/phpunit",
         "test:coverage": "vendor/bin/phpunit --coverage-html coverage/ --coverage-clover coverage.xml",
         "test:coverage-dashboard": "bash bin/generate-coverage-dashboard.sh",
-        "build:autoload": "composer install --no-dev --prefer-dist --no-interaction",
+        "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative --no-interaction",
         "ci:all": [
             "@lint:errors-only",
             "@test:coverage"
