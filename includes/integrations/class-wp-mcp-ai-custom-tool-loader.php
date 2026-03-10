@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 				// Add index.php to prevent directory listing.
 				$index_file = $this->custom_tools_dir . '/index.php';
 				if ( ! file_exists( $index_file ) ) {
-					file_put_contents( $index_file, '<?php // Silence is golden.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+					file_put_contents( $index_file, '<?php // Silence is golden.' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 				}
 
 				// Add .htaccess to prevent direct access.
@@ -61,7 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 					$htaccess_content  = "# Deny direct access to custom tools\n";
 					$htaccess_content .= "Order deny,allow\n";
 					$htaccess_content .= "Deny from all\n";
-					file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+					file_put_contents( $htaccess_file, $htaccess_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 				}
 
 				// Create a README file.
@@ -76,7 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 					$readme_content .= "- Files must start with: class-wp-mcp-ai-tool-custom-\n";
 					$readme_content .= "- Example: class-wp-mcp-ai-tool-custom-my-tool.php\n\n";
 					$readme_content .= "All tools must implement WP_MCP_AI_Tool_Interface.\n";
-					file_put_contents( $readme_file, $readme_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+					file_put_contents( $readme_file, $readme_content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 				}
 			}
 		}
@@ -305,7 +305,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 			$template = $this->get_tool_template_content( $class_name, $tool_name );
 
 			// Write the file.
-			$result = file_put_contents( $filepath, $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+			$result = file_put_contents( $filepath, $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 
 			if ( false === $result ) {
 				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to create tool file.', 'mcp-ai-wpoos' ) );

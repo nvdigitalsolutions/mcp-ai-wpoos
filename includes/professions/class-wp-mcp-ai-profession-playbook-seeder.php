@@ -440,7 +440,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$target_file = trailingslashit( $target_dir ) . $filename;
 
 		// Write content to file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 		$result = file_put_contents( $target_file, $content );
 
 		if ( false === $result ) {
@@ -496,7 +496,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		// Update file content.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem not available in this REST/cron/tool execution context.
 		file_put_contents( $file_path, $content );
 
 		// Update hash meta.
