@@ -3193,7 +3193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<?php
 			printf(
 				/* translators: %s: settings page URL */
-				esc_html__( 'Enable individual toolkits in %s to unlock their features and tools.', 'mcp-ai-wpoos' ),
+				esc_html__( 'Enable individual toolkits in %s to activate their features and tools.', 'mcp-ai-wpoos' ),
 				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced' ) ) . '"><strong>' . esc_html__( 'Settings → Advanced', 'mcp-ai-wpoos' ) . '</strong></a>'
 			);
 			?>

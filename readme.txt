@@ -629,13 +629,13 @@ These services are only contacted when specific tools/features are used:
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
 
-**27. NV Digital Solutions License Server**
-* **Purpose:** Optional license validation for future premium add-on support
-* **Data Sent:** License key, site URL, product identifier
-* **When:** Only when a user manually enters and activates a license key
-* **Service URL:** https://nvdigitalsolutions.com/api/licenses
-* **Terms of Service:** https://nvdigitalsolutions.com/terms
-* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
+**27. NV Digital Solutions License Server & Optional Component Downloads**
+* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
+* **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
+* **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
+* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://nvdigitalsolutions.com/terms; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
 
