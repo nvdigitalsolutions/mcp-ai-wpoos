@@ -14,8 +14,9 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Provides an assistant tool that detects and localizes objects using Vision API.
  *
- * Note: This tool intentionally does NOT include authentication credentials,
- * demonstrating what happens when Vision API calls are made without proper auth.
+ * Requires a Google Cloud API key with the Cloud Vision API enabled. The plugin
+ * reuses the configured Gemini API key, which can be overridden via the
+ * `wp_mcp_ai_vision_api_key` filter.
  */
 class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
@@ -143,10 +144,25 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 
 		$timeout = apply_filters( 'wp_mcp_ai_vision_request_timeout', 30, $context, $arguments, $this );
 
-		// Intentionally make the request WITHOUT authentication.
-		// This demonstrates the behavior when authentication is missing.
+		// Retrieve the Google Cloud API key (reuses the Gemini key; override via filter).
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$api_key  = apply_filters(
+			'wp_mcp_ai_vision_api_key',
+			isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '',
+			$context,
+			$arguments
+		);
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_vision_missing_api_key',
+				__( 'A Google Cloud API key with the Cloud Vision API enabled is required. Configure a Gemini API key in NV oOS settings, or supply one via the wp_mcp_ai_vision_api_key filter.', 'mcp-ai-wpoos' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$response = wp_remote_post(
-			self::VISION_API_ENDPOINT,
+			add_query_arg( 'key', $api_key, self::VISION_API_ENDPOINT ),
 			array(
 				'headers' => array(
 					'Content-Type' => 'application/json',
@@ -172,7 +188,7 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 		$body        = wp_remote_retrieve_body( $response );
 		$decoded     = json_decode( $body, true );
 
-		// Handle API errors (expected when authentication is missing).
+		// Handle API errors.
 		if ( $status_code >= 400 ) {
 			$error_message = __( 'Vision API returned an error.', 'mcp-ai-wpoos' );
 			if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) ) {
@@ -235,7 +251,6 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
 	}

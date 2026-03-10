@@ -234,7 +234,7 @@ class WP_MCP_AI_Chat_Service {
 							'assistant_id'     => $assistant_id,
 						)
 					);
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; only active when WP_DEBUG is enabled.
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; active only when agentic loop logging is enabled in plugin settings.
 					error_log( sprintf( '[NV oOS Agentic Loop] Completed after %d iterations - %s', $iteration, $exit_reason ) );
 				}
 				break; // Final response ready.
@@ -260,7 +260,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; only active when WP_DEBUG is enabled.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; active only when agentic loop logging is enabled in plugin settings.
 				error_log(
 					sprintf(
 						'[NV oOS Agentic Loop] Iteration %d/%d - Executing %d tool(s): %s',
@@ -299,7 +299,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; only active when WP_DEBUG is enabled.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; active only when agentic loop logging is enabled in plugin settings.
 				error_log(
 					sprintf(
 						'[NV oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
@@ -356,7 +356,7 @@ class WP_MCP_AI_Chat_Service {
 					)
 				);
 
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; only active when WP_DEBUG is enabled.
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used for agentic loop diagnostic tracing; active only when agentic loop logging is enabled in plugin settings.
 				error_log(
 					sprintf(
 						'[NV oOS Agentic Loop] Iteration %d - Sending follow-up request with %d messages',
