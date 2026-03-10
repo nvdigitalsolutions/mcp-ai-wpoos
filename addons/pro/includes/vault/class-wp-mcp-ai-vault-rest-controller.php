@@ -42,11 +42,18 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	protected $encryption_service;
 
 	/**
-	 * Rate limiter
+	 * Rate limit window in seconds.
 	 *
-	 * @var array
+	 * @var int
 	 */
-	protected $rate_limits = array();
+	const RATE_LIMIT_WINDOW = 60;
+
+	/**
+	 * Maximum requests per rate limit window.
+	 *
+	 * @var int
+	 */
+	const RATE_LIMIT_MAX = 60;
 
 	/**
 	 * Constructor
@@ -211,40 +218,34 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check rate limit for user
+	 * Check rate limit for user using persistent transient storage.
+	 *
+	 * Stores the request count in a transient so limits are enforced
+	 * across all concurrent requests and page reloads.
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool
+	 * @return bool True if the request is allowed, false if rate limit exceeded.
 	 */
 	protected function check_rate_limit( $request ) {
 		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
-			$user_id = 'guest_' . md5( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
-		}
-
-		$current_time = time();
-		$window       = 60; // 1 minute window.
-		$max_requests = 60; // 60 requests per minute.
-
-		// Clean old entries.
-		if ( isset( $this->rate_limits[ $user_id ] ) ) {
-			$this->rate_limits[ $user_id ] = array_filter(
-				$this->rate_limits[ $user_id ],
-				function ( $timestamp ) use ( $current_time, $window ) {
-					return $timestamp > ( $current_time - $window );
-				}
-			);
+		if ( $user_id ) {
+			$cache_key = 'vault_rl_u_' . $user_id;
 		} else {
-			$this->rate_limits[ $user_id ] = array();
+			// Validate the IP before using it as a cache key.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated with filter_var immediately below.
+			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+			$ip        = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
+			$cache_key = 'vault_rl_g_' . md5( $ip );
 		}
 
-		// Check if limit exceeded.
-		if ( count( $this->rate_limits[ $user_id ] ) >= $max_requests ) {
+		$count = (int) get_transient( $cache_key );
+
+		if ( $count >= self::RATE_LIMIT_MAX ) {
 			return false;
 		}
 
-		// Add current request.
-		$this->rate_limits[ $user_id ][] = $current_time;
+		// Increment counter; initialise the transient window on first request.
+		set_transient( $cache_key, $count + 1, self::RATE_LIMIT_WINDOW );
 
 		return true;
 	}
@@ -322,7 +323,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -331,6 +332,41 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+	}
+
+	/**
+	 * Verify that a folder belongs to the current user.
+	 *
+	 * Returns a WP_Error when the folder does not exist or is owned by another
+	 * user, so callers can return it directly from their endpoint handler.
+	 *
+	 * @param int $folder_id Folder post ID (0 means "no folder" — always valid).
+	 * @return true|WP_Error True when ownership is confirmed, WP_Error otherwise.
+	 */
+	protected function verify_folder_ownership( $folder_id ) {
+		if ( 0 === $folder_id ) {
+			return true;
+		}
+
+		$folder = get_post( $folder_id );
+
+		if ( ! $folder || 'mcp_vault_folder' !== $folder->post_type ) {
+			return new WP_Error(
+				'rest_not_found',
+				__( 'Vault folder not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( (int) $folder->post_author !== get_current_user_id() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to use this vault folder.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -353,6 +389,12 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 				__( 'Invalid item type.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
+		}
+
+		// Verify the target folder (if any) belongs to the current user.
+		$folder_check = $this->verify_folder_ownership( $folder_id );
+		if ( is_wp_error( $folder_check ) ) {
+			return $folder_check;
 		}
 
 		// Create post.
@@ -406,7 +448,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to update this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -426,7 +468,13 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		// Update metadata if provided.
 		if ( $request->has_param( 'folder_id' ) ) {
-			update_post_meta( $id, '_vault_folder_id', absint( $request->get_param( 'folder_id' ) ) );
+			$new_folder_id = absint( $request->get_param( 'folder_id' ) );
+			// Verify the target folder (if any) belongs to the current user.
+			$folder_check = $this->verify_folder_ownership( $new_folder_id );
+			if ( is_wp_error( $folder_check ) ) {
+				return $folder_check;
+			}
+			update_post_meta( $id, '_vault_folder_id', $new_folder_id );
 		}
 
 		if ( $request->has_param( 'favorite' ) ) {
@@ -466,7 +514,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to delete this vault item.', 'mcp-ai-wpoos-pro' ),
