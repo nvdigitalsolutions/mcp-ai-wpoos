@@ -746,6 +746,30 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 
 		$ext = strtolower( pathinfo( $original_name, PATHINFO_EXTENSION ) );
 
+		// Allowed extensions and the MIME types that each may legitimately produce.
+		// Both the extension guard and the finfo MIME check draw from this single map.
+		$allowed_mime_map = array(
+			'md'  => array( 'text/plain', 'text/x-markdown', 'application/octet-stream' ),
+			'zip' => array( 'application/zip', 'application/x-zip', 'application/x-zip-compressed', 'application/octet-stream' ),
+		);
+
+		if ( ! array_key_exists( $ext, $allowed_mime_map ) ) {
+			wp_send_json_error( __( 'Unsupported file type. Please upload a .md or .zip file.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Use finfo to detect the real MIME type of the uploaded file.
+		if ( function_exists( 'finfo_open' ) ) {
+			$finfo     = finfo_open( FILEINFO_MIME_TYPE );
+			$real_mime = $finfo ? finfo_file( $finfo, $tmp_path ) : false;
+			if ( $finfo ) {
+				finfo_close( $finfo );
+			}
+
+			if ( $real_mime && ! in_array( $real_mime, $allowed_mime_map[ $ext ], true ) ) {
+				wp_send_json_error( __( 'File content does not match the declared extension. Upload rejected.', 'mcp-ai-wpoos-pro' ) );
+			}
+		}
+
 		if ( 'md' === $ext ) {
 			// Direct SKILL.md upload.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading temporary uploaded file.
@@ -788,8 +812,6 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 				)
 			);
 		}
-
-		wp_send_json_error( __( 'Unsupported file type. Please upload a .md or .zip file.', 'mcp-ai-wpoos-pro' ) );
 	}
 
 	/**
