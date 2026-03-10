@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/conduct-code-review-plugin-compliance-again',
-        'version' => 'dev-copilot/conduct-code-review-plugin-compliance-again',
-        'reference' => '6ed15a30566d49f936092dadcec6ced9d60b1483',
+        'pretty_version' => 'dev-copilot/add-gpt-5-3-and-5-4-config',
+        'version' => 'dev-copilot/add-gpt-5-3-and-5-4-config',
+        'reference' => '8b1cf9a716fd77578b97b1f955a856bcadb405b3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/conduct-code-review-plugin-compliance-again',
-            'version' => 'dev-copilot/conduct-code-review-plugin-compliance-again',
-            'reference' => '6ed15a30566d49f936092dadcec6ced9d60b1483',
+            'pretty_version' => 'dev-copilot/add-gpt-5-3-and-5-4-config',
+            'version' => 'dev-copilot/add-gpt-5-3-and-5-4-config',
+            'reference' => '8b1cf9a716fd77578b97b1f955a856bcadb405b3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

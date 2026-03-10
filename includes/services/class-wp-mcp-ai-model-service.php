@@ -134,7 +134,11 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// GPT-5.3 series (flagship - Feb 2026) - 400K context window, advanced agentic coding.
+		// GPT-5.4 series (flagship - Mar 2026) - 1M+ context window, native computer use.
+		$models['gpt-5.4']     = 'GPT-5.4 (Flagship - 1M Context)';
+		$models['gpt-5.4-pro'] = 'GPT-5.4 Pro (Enterprise)';
+
+		// GPT-5.3 series (flagship - Feb 2026) - 922K context window, advanced agentic coding.
 		$models['gpt-5.3-codex']       = 'GPT-5.3 Codex (Agentic Coding - Flagship)';
 		$models['gpt-5.3-codex-spark'] = 'GPT-5.3 Codex Spark (Ultra-Fast)';
 
