@@ -153,13 +153,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	 * 2. **Secret-token header verification** – when a secret_token is stored
 	 *    on the connection, checks that Telegram's
 	 *    X-Telegram-Bot-Api-Secret-Token header matches the stored value.
-	 *    When no token is configured, the request is logged and allowed
-	 *    through with a security warning.
+	 *    When no token is configured, the request is rejected with a 403 error.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the request passes all configured security checks.
+	 * @return bool|WP_Error True if the request passes all configured security checks, WP_Error on failure.
 	 */
 	public function validate_webhook_secret( $request ) {
 		// --- Layer 1: IP range validation -------------------------------------------
@@ -178,12 +177,15 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$stored_secret = $this->get_secret_token( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'telegram_webhook_no_secret_token',
-				'Telegram webhook received without secret token configured. Header validation skipped. Configure a secret_token in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Telegram webhook rejected: secret token is not configured. Configure a secret_token in the connection settings to enable this webhook.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Telegram webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$provided_token = $request->get_header( 'x-telegram-bot-api-secret-token' );

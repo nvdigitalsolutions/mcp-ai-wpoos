@@ -240,12 +240,15 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 		$consumer_secret = $this->get_consumer_secret( $connection_id ? sanitize_key( $connection_id ) : '' );
 
 		if ( empty( $consumer_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'twitter_webhook_no_consumer_secret',
-				'Twitter webhook received without consumer secret configured. Signature validation skipped. Configure your API Secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Twitter webhook rejected: consumer secret is not configured. Configure your API Secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Twitter webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$signature_header = $request->get_header( 'x-twitter-webhooks-signature' );

@@ -108,25 +108,27 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 *   "v0=" . HMAC-SHA256( "v0:{timestamp}:{raw_body}", signing_secret )
 	 * and sent in the X-Slack-Signature header.
 	 *
-	 * When the signing secret is not configured the webhook is allowed through
-	 * with a security warning so that the URL-verification step can still be
-	 * completed.
+	 * When the signing secret is not configured the webhook request is rejected
+	 * with a 403 error so that unconfigured endpoints cannot be exploited.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if signature is valid or signing secret is not configured.
+	 * @return bool|WP_Error True if signature is valid, WP_Error on failure.
 	 */
 	public function validate_slack_signature( $request ) {
 		$signing_secret = $this->get_signing_secret();
 
 		if ( empty( $signing_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'slack_webhook_no_signing_secret',
-				'Slack webhook received without signing secret configured. Signature validation skipped. Configure signing_secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Slack webhook rejected: signing secret is not configured. Configure signing_secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Slack webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$timestamp = $request->get_header( 'x-slack-request-timestamp' );

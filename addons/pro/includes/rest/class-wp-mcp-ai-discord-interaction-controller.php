@@ -150,22 +150,28 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 		$public_key = $this->get_public_key();
 
 		if ( empty( $public_key ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'discord_webhook_no_public_key',
-				'Discord interaction received without public key configured. Ed25519 signature validation skipped. Configure public_key in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Discord interaction rejected: public key is not configured. Configure public_key in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Discord webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// Ed25519 verification requires the sodium PHP extension.
 		if ( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'discord_webhook_sodium_unavailable',
-				'Discord interaction received but PHP sodium extension is not available. Ed25519 signature validation skipped. Enable the sodium extension for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Discord interaction rejected: PHP sodium extension is required for Ed25519 signature validation but is not available on this server.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Discord webhook requires the PHP sodium extension for Ed25519 signature validation.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
 		}
 
 		$signature = $request->get_header( 'x-signature-ed25519' );

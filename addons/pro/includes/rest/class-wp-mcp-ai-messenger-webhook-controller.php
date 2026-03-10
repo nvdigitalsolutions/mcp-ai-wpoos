@@ -249,16 +249,17 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		// Get app secret from connection settings.
 		$app_secret = $this->get_app_secret();
 
-		// When the App Secret is not configured, skip signature validation and
-		// allow the webhook to be processed. Log a security warning so the site
-		// owner knows to configure the App Secret for hardened security.
+		// When the App Secret is not configured, reject the request.
 		if ( empty( $app_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'messenger_webhook_no_app_secret',
-				'Messenger webhook received without App Secret configured. Signature validation skipped. Configure your App Secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Messenger webhook rejected: App Secret is not configured. Configure your App Secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Messenger webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// App Secret is configured — the signature header is required.
@@ -1162,9 +1163,12 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$result = wp_remote_post(
-			add_query_arg( 'access_token', $access_token, $endpoint ),
+			$endpoint,
 			array(
-				'headers' => array( 'Content-Type' => 'application/json' ),
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
 				'timeout' => 20,
 				'body'    => $body,
 			)
@@ -1330,10 +1334,17 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 
 		foreach ( $connections as $connection ) {
 			if ( isset( $connection['api_secret'] ) && ! empty( $connection['api_secret'] ) ) {
-				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+				if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					// Remote Site Manager is unavailable; returning the raw (possibly
+					// encrypted) value would produce a wrong HMAC and silently accept
+					// unauthenticated requests. Return empty to trigger the hard-fail path.
+					WP_MCP_AI_Logger::log_error(
+						'Messenger: WP_MCP_AI_Pro_Remote_Site_Manager is not available; cannot decrypt App Secret. Webhook will be rejected.',
+						array()
+					);
+					return '';
 				}
-				return $connection['api_secret'];
+				return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
 			}
 		}
 
