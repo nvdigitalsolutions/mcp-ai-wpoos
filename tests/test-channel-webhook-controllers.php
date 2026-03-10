@@ -4532,4 +4532,125 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'ok', $data );
 		$this->assertTrue( $data['ok'], 'iCloud webhook should acknowledge payloads missing event_type without error' );
 	}
+	// =========================================================================
+	// CCT History Fallback – channel controllers
+	// =========================================================================
+
+	/**
+	 * Helper: call get_recent_messages() and assert it returns an empty array when
+	 * the CCT table does not exist (unit test environment has no JetEngine tables).
+	 *
+	 * This validates the contract that get_recent_messages() is safe to call from
+	 * every channel controller even without JetEngine active.
+	 *
+	 * @param string $channel    Channel slug to pass to get_recent_messages().
+	 * @param string $contact_id Contact/user ID.
+	 * @param string $connection Connection ID.
+	 */
+	private function assert_cct_fallback_safe( $channel, $contact_id = 'u123', $connection_id = 'c1' ) {
+		$this->load_channel_messages_cct();
+		$result = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages( $channel, $contact_id, $connection_id, 5 );
+		$this->assertIsArray( $result );
+		$this->assertEmpty( $result );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Slack (table absent → empty array, no error).
+	 */
+	public function test_slack_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'slack' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Discord (table absent → empty array, no error).
+	 */
+	public function test_discord_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'discord' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Teams (table absent → empty array, no error).
+	 */
+	public function test_teams_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'teams' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for WhatsApp (table absent → empty array, no error).
+	 */
+	public function test_whatsapp_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'whatsapp' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Google Chat (table absent → empty array, no error).
+	 */
+	public function test_google_chat_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'google_chat' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Twitter (table absent → empty array, no error).
+	 */
+	public function test_twitter_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'twitter' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Outlook (table absent → empty array, no error).
+	 */
+	public function test_outlook_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'outlook' );
+	}
+
+	/**
+	 * Test CCT fallback is safe for Messenger (table absent → empty array, no error).
+	 */
+	public function test_messenger_cct_fallback_returns_empty_when_table_missing() {
+		$this->assert_cct_fallback_safe( 'messenger' );
+	}
+
+	/**
+	 * Test Messenger controller now has CONVERSATION_HISTORY_TTL constant.
+	 */
+	public function test_messenger_conversation_history_ttl_constant_exists() {
+		$this->load_controller(
+			'WP_MCP_AI_Messenger_Webhook_Controller',
+			'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php'
+		);
+
+		$this->assertSame(
+			86400,
+			WP_MCP_AI_Messenger_Webhook_Controller::CONVERSATION_HISTORY_TTL,
+			'Messenger CONVERSATION_HISTORY_TTL should be 86400 seconds'
+		);
+	}
+
+	/**
+	 * Test Messenger controller get_conversation_history_key is deterministic.
+	 */
+	public function test_messenger_conversation_history_key_is_deterministic() {
+		$this->load_controller(
+			'WP_MCP_AI_Messenger_Webhook_Controller',
+			'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php'
+		);
+
+		$controller = new WP_MCP_AI_Messenger_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$key1 = $method->invoke( $controller, 'psid_abc', 'conn_xyz' );
+		$key2 = $method->invoke( $controller, 'psid_abc', 'conn_xyz' );
+		$key3 = $method->invoke( $controller, 'psid_def', 'conn_xyz' );
+
+		$this->assertIsString( $key1 );
+		$this->assertNotEmpty( $key1 );
+		$this->assertSame( $key1, $key2, 'Same inputs must produce same key' );
+		$this->assertNotSame( $key1, $key3, 'Different sender ID produces different key' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_msng_conv_', $key1 );
+		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
+	}
+
+
 }

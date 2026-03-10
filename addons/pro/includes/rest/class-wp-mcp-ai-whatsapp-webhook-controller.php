@@ -1113,6 +1113,19 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 		// provider was used for prior turns in this conversation.
 		$history_for_chat = $this->normalize_conversation_history_for_chat( $history );
 
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history_for_chat ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history_for_chat = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'whatsapp',
+				$to,
+				$connection_id,
+				$max_history - 1
+			);
+		}
+
 		// Build the full messages array: prior conversation + current user turn.
 		$messages = array_merge(
 			$history_for_chat,
