@@ -1813,7 +1813,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$upload_dir = wp_upload_dir();
 			$temp_file  = wp_tempnam( $filename, $upload_dir['path'] );
 
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to plugin assets or uploads dir; WP_Filesystem is not available in this REST/cron/tool execution context.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to WordPress uploads directory (wp_upload_dir() path); never to plugin directory. WP_Filesystem is not available in this REST/cron/tool execution context.
 			if ( false === file_put_contents( $temp_file, $content ) ) {
 				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to write document file.', 'mcp-ai-wpoos' ) );
 			}

@@ -538,11 +538,11 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://www.cloudflare.com/terms/
 * **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
 
-**16. Gmail API (Google)**
-* **Purpose:** Email search and retrieval for AI assistants
-* **Data Sent:** OAuth access tokens, search queries, label filters
-* **When:** When Gmail search tools are used after OAuth setup
-* **Service URL:** https://gmail.googleapis.com/gmail/v1/
+**16. Gmail API & Google OAuth token exchange (Google)**
+* **Purpose:** Email search and retrieval for AI assistants; server-side OAuth token exchange during Gmail OAuth setup
+* **Data Sent:** OAuth access tokens, search queries, label filters; during OAuth setup: authorisation code and client credentials sent to the token endpoint
+* **When:** When Gmail search tools are used after OAuth setup; OAuth code-exchange request is made once during the initial OAuth authorisation flow
+* **Service URL:** https://gmail.googleapis.com/gmail/v1/ (Gmail API and profile lookup), https://oauth2.googleapis.com/token (OAuth token exchange)
 * **Terms of Service:** https://policies.google.com/terms
 * **Privacy Policy:** https://policies.google.com/privacy
 
@@ -705,11 +705,11 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://cloud.google.com/terms/
 * **Privacy Policy:** https://policies.google.com/privacy
 
-**36. Google Drive API**
-* **Purpose:** Search and list files stored in a user's Google Drive
-* **Data Sent:** OAuth access token and search query parameters
-* **When:** When the `search_drive` tool is used after Google OAuth integration is configured
-* **Service URL:** https://www.googleapis.com/drive/v3
+**36. Google Drive API & Google OAuth (Google)**
+* **Purpose:** Search and list files stored in a user's Google Drive; server-side OAuth token exchange and user-profile lookup during Google Drive OAuth setup
+* **Data Sent:** OAuth access token and search query parameters; during OAuth setup: authorisation code and client credentials (token exchange), access token (profile lookup to confirm authorised email address)
+* **When:** When the `search_drive` tool is used after Google OAuth integration is configured; OAuth code-exchange and profile requests are made once during the initial OAuth authorisation flow
+* **Service URL:** https://www.googleapis.com/drive/v3 (Drive API), https://oauth2.googleapis.com/token (OAuth token exchange), https://www.googleapis.com/oauth2/v2/userinfo (Google OAuth profile)
 * **Terms of Service:** https://policies.google.com/terms
 * **Privacy Policy:** https://policies.google.com/privacy
 
