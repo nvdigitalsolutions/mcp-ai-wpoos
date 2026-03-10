@@ -2002,3 +2002,39 @@ All unique domains from `wp_remote_*` calls and client-side CDN loads cross-chec
 
 *Last updated: March 10, 2026*
 
+---
+
+## Pass 5 Addendum — Base vs. Pro Service Audit (March 10, 2026)
+
+**Trigger:** Follow-up question: *"Some of these are pro features — do they need to be documented in the base plugin readme?"*
+
+### Investigation Method
+
+For each of the 41 documented services, verified whether the **base plugin** (`includes/` + `mcp-ai-wpoos.php`) contains actual HTTP-calling code (`wp_remote_*`, constants with HTTPS URLs, or client-side CDN enqueue via PHP) without requiring `addons/pro/` to be active.
+
+### Findings
+
+| Service | In `includes/`? | Verdict |
+|---------|-----------------|---------|
+| #1–#38 (all AI providers, OAuth integrations, tools) | ✅ Yes — client classes, tool classes, or AJAX handlers with real `wp_remote_*` calls in `includes/` | Keep |
+| #39 Transformers.js | ✅ Yes — `WP_MCP_AI_Transformers_Enqueue::init()` called from `mcp-ai-wpoos.php` line 572 | Keep |
+| #40 WebLLM | ✅ Yes — `WP_MCP_AI_WebLLM_Enqueue::init()` called from `mcp-ai-wpoos.php` line 567 | Keep |
+| **#41 LangChain Core** | ❌ **No** — `WP_MCP_AI_LangChain_Enqueue` class lives ONLY in `addons/pro/includes/class-wp-mcp-ai-langchain-enqueue.php`; never loaded by base plugin | **Remove** |
+
+### Action Taken
+
+**Removed entry #41 (LangChain Core)** from:
+1. `readme.txt` — External Services section (entries #39–#40 remain; #41 deleted)
+2. `readme.txt` — Privacy Policy "Browser-Native AI CDN Libraries" sub-section
+3. `readme.txt` — Third-Party Services quick-reference
+
+**Rationale:** When the base plugin runs without `addons/pro`, `langchain-orchestration.min.js` is never enqueued and `cdn.jsdelivr.net/@langchain/core` is never contacted. The JS files exist in `assets/js/` as part of the plugin distribution but are only activated by the pro addon's enqueue class. WordPress.org's external service guideline covers runtime connections; no connection is made from base-only code.
+
+**Total documented services: 40** (entries #1–#40; entry #41 removed as pro-only)
+
+**PHPCS `lint:base` result: ✅ 0 errors, 0 warnings (unchanged — only readme.txt updated)**
+
+---
+
+*Last updated: March 10, 2026*
+

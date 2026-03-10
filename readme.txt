@@ -748,14 +748,6 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://esm.run/ (re-exports packages under their original licences; Apache 2.0 for web-llm)
 * **Privacy Policy:** https://esm.sh/ (esm.run is powered by esm.sh — see https://esm.sh/privacy)
 
-**41. LangChain Core (jsDelivr CDN)**
-* **Purpose:** Optional LangChain orchestration primitives loaded client-side to support advanced multi-agent workflow coordination in the browser
-* **Data Sent:** None — only the library file itself is downloaded; no user chat data is sent to jsDelivr
-* **When:** Only when the experimental LangChain browser orchestration feature is in use (opt-in, off by default)
-* **Service URL:** https://cdn.jsdelivr.net/npm/@langchain/core/+esm
-* **Terms of Service:** https://www.jsdelivr.com/terms
-* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
-
 = Data Processing Summary =
 
 **What is sent to external services:**
@@ -904,7 +896,6 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 **Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
 * Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
 * WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
-* LangChain Core (when browser orchestration feature is active): browser downloads library from https://cdn.jsdelivr.net/npm/@langchain/core — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr
 
 = GDPR Compliance =
 
@@ -958,7 +949,6 @@ This plugin may connect to the following external services based on your configu
 **Optional browser-native AI CDN libraries (no user data transmitted):**
 * Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
 * WebLLM / MLC AI (embedded browser LLM provider, opt-in) - loaded from esm.run CDN - [Privacy](https://esm.sh/privacy) | [Terms](https://esm.run/)
-* LangChain Core (browser orchestration, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 
