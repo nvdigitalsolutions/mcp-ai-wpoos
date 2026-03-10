@@ -864,11 +864,23 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 			wp_send_json_error( __( 'URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Replace the hostname with its resolved IP to prevent DNS rebinding: the IP
+		// is pinned here so a second DNS lookup at request time cannot return a
+		// different (private) address. Mirrors the REST controller pattern.
+		$path     = wp_parse_url( $url, PHP_URL_PATH );
+		$query    = wp_parse_url( $url, PHP_URL_QUERY );
+		$port     = wp_parse_url( $url, PHP_URL_PORT );
+		$host_str = $resolved_ip . ( $port ? ':' . (int) $port : '' );
+		$safe_url = $scheme . '://' . $host_str . ( $path ? $path : '' ) . ( $query ? '?' . $query : '' );
+
 		$response = wp_remote_get(
-			$url,
+			$safe_url,
 			array(
 				'timeout'    => 15,
 				'user-agent' => 'WP-MCP-AI-Skill-Manager/' . WP_MCP_AI_PRO_VERSION . ' (WordPress/' . get_bloginfo( 'version' ) . ')',
+				'headers'    => array(
+					'Host' => $host,
+				),
 			)
 		);
 
