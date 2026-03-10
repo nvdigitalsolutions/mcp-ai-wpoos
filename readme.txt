@@ -660,7 +660,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Accounting and financial data integration
 * **Data Sent:** OAuth tokens, financial queries
 * **When:** When QuickBooks tools are used after OAuth setup
-* **Service URL:** https://appcenter.intuit.com/connect/oauth2
+* **Service URL:** https://appcenter.intuit.com/connect/oauth2 (OAuth authorize), https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer (OAuth token exchange), https://quickbooks.api.intuit.com/v3 (accounting data API)
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
 * **Privacy Policy:** https://www.intuit.com/privacy/statement/
 
@@ -668,7 +668,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Email marketing and transactional email
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
-* **Service URL:** https://app.mailjet.com/oauth/authorize
+* **Service URL:** https://app.mailjet.com/oauth/authorize (OAuth authorize), https://api.mailjet.com/v3/REST (email campaign API)
 * **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
@@ -748,7 +748,31 @@ The following libraries are loaded as external CDN connections directly in the v
 * **Terms of Service:** https://esm.run/ (re-exports packages under their original licences; Apache 2.0 for web-llm)
 * **Privacy Policy:** https://esm.sh/ (esm.run is powered by esm.sh — see https://esm.sh/privacy)
 
-= Data Processing Summary =
+**41. Google Cloud Speech-to-Text API**
+* **Purpose:** Convert audio recordings to text transcripts using Google Cloud's speech recognition engine
+* **Data Sent:** Audio file data (binary); sent only when the speech-to-text feature is explicitly triggered via an AI assistant tool
+* **When:** Only when an AI assistant calls the speech-to-text feature and the Gemini provider is configured with a valid API key
+* **Service URL:** https://speech.googleapis.com/v1/speech:recognize
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**42. Google Cloud Text-to-Speech API**
+* **Purpose:** Convert text to natural-sounding speech audio using Google Cloud's text-to-speech engine
+* **Data Sent:** Text content to be synthesised; sent only when the text-to-speech feature is explicitly triggered via an AI assistant tool
+* **When:** Only when an AI assistant calls the text-to-speech feature and the Gemini provider is configured with a valid API key
+* **Service URL:** https://texttospeech.googleapis.com/v1/text:synthesize
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**43. QR Server API (api.qrserver.com)**
+* **Purpose:** Generate QR code images for two-factor authentication (TOTP) setup; the QR code encodes the authenticator app enrollment URI
+* **Data Sent:** TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret); the request is made server-side by WordPress — the user's browser never contacts this service directly
+* **When:** Only when the `setup_2fa` tool is used and the TOTP (authenticator app) method is selected
+* **Service URL:** https://api.qrserver.com/v1/create-qr-code/
+* **Terms of Service:** https://goqr.me/api/
+* **Privacy Policy:** https://goqr.me/privacy/
+
+
 
 **What is sent to external services:**
 * User messages and chat conversations (AI providers only)
@@ -893,6 +917,18 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Terms of Service: [Yahoo Terms of Service](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
 * Used for: Exchanging an authorisation code for Yahoo OAuth2 access/refresh tokens (Fantasy Sports integration only)
 
+**Google Cloud Speech-to-Text and Text-to-Speech APIs (when voice features are used):**
+* Data sent to: https://speech.googleapis.com (audio → text), https://texttospeech.googleapis.com (text → audio)
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Cloud Terms](https://cloud.google.com/terms/)
+* Used for: Transcribing audio uploads to text and synthesising speech from AI responses; only triggered when the respective tool is called by an AI assistant
+
+**QR Server API (when TOTP two-factor authentication setup is used):**
+* Data sent to: https://api.qrserver.com — server-side request made by WordPress (not by the user's browser); the request payload is the TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret)
+* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy/)
+* Terms of Service: https://goqr.me/api/
+* Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
+
 **Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
 * Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
 * WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
@@ -942,9 +978,12 @@ This plugin may connect to the following external services based on your configu
 * Web search - Brave Search, DuckDuckGo, Tavily, Exa AI, or Perplexity (provider must be configured)
 * Image generation - OpenAI, Gemini, or Cloudflare
 * Google Cloud Vision API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Cloud Speech-to-Text API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Cloud Text-to-Speech API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
 * Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
 * WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
 * Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
+* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy/) | [Terms](https://goqr.me/api/)
 
 **Optional browser-native AI CDN libraries (no user data transmitted):**
 * Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
