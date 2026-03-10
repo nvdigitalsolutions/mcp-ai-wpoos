@@ -597,7 +597,6 @@ require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
 // Load project management initialization moved to Pro addon.
 // require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';.

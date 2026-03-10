@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/code-review-wordpress-plugin-again',
-        'version' => 'dev-copilot/code-review-wordpress-plugin-again',
-        'reference' => '3277db7d0b4836c5b19f2f568c52e3c61c78874b',
+        'pretty_version' => 'dev-copilot/conduct-code-review-plugin-compliance',
+        'version' => 'dev-copilot/conduct-code-review-plugin-compliance',
+        'reference' => '9b1f51ae096b69a0951714ca3c019a49412b77f5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/code-review-wordpress-plugin-again',
-            'version' => 'dev-copilot/code-review-wordpress-plugin-again',
-            'reference' => '3277db7d0b4836c5b19f2f568c52e3c61c78874b',
+            'pretty_version' => 'dev-copilot/conduct-code-review-plugin-compliance',
+            'version' => 'dev-copilot/conduct-code-review-plugin-compliance',
+            'reference' => '9b1f51ae096b69a0951714ca3c019a49412b77f5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

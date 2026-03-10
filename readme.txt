@@ -505,13 +505,13 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://wordpress.org/about/privacy/
 * **Privacy Policy:** https://wordpress.org/about/privacy/
 
-**12. Chart.js CDN**
+**12. Chart.js**
 * **Purpose:** Chart visualization library for displaying data
-* **Data Sent:** None (library loaded client-side)
+* **Data Sent:** None — Chart.js is bundled locally within the plugin; no external CDN is contacted
 * **When:** When chart generation tools create visualizations
-* **Service URL:** https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js
-* **Terms of Service:** https://www.jsdelivr.com/terms
-* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+* **Service URL:** N/A — Chart.js v4.5.1 is included locally in `assets/js/vendor/chart.min.js`
+* **Terms of Service:** https://github.com/chartjs/Chart.js/blob/master/LICENSE.md (MIT)
+* **Privacy Policy:** N/A — no external connection made
 
 **13. DuckDuckGo Instant Answer API**
 * **Purpose:** Fallback web search and instant answers
@@ -728,6 +728,26 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
 * **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
 
+= Optional Browser-Native AI CDN Libraries =
+
+The following libraries are loaded as external CDN connections directly in the visitor's browser (not server-side) when specific optional AI features are enabled. These are external service contacts and are disclosed here in accordance with WordPress.org Plugin Guidelines. No user chat data or personal information is transmitted — the browser only downloads a JavaScript library file.
+
+**39. Transformers.js (jsDelivr CDN)**
+* **Purpose:** Browser-native machine learning library enabling in-browser NLP tasks (summarisation, sentiment analysis, entity extraction, translation, semantic search) without sending data to a remote AI provider
+* **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
+* **When:** Only when the "Browser-Native AI Tasks (Transformers.js)" feature is explicitly enabled by the administrator (disabled by default)
+* **Service URL:** https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
+* **Terms of Service:** https://www.jsdelivr.com/terms
+* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+
+**40. WebLLM — MLC AI (esm.run CDN)**
+* **Purpose:** Browser-native large language model runner; enables the "Embedded Browser LLM" provider to perform inference entirely within the visitor's browser using WebGPU, with no server-side AI API call
+* **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
+* **When:** Only when the "Embedded (Browser)" AI provider is selected for an assistant and the visitor's browser supports WebGPU (opt-in, off by default)
+* **Service URL:** https://esm.run/@mlc-ai/web-llm (ESM CDN proxy for https://github.com/mlc-ai/web-llm)
+* **Terms of Service:** https://esm.run/ (re-exports packages under their original licences; Apache 2.0 for web-llm)
+* **Privacy Policy:** https://esm.sh/ (esm.run is powered by esm.sh — see https://esm.sh/privacy)
+
 = Data Processing Summary =
 
 **What is sent to external services:**
@@ -873,6 +893,10 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Terms of Service: [Yahoo Terms of Service](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
 * Used for: Exchanging an authorisation code for Yahoo OAuth2 access/refresh tokens (Fantasy Sports integration only)
 
+**Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
+* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
+* WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
+
 = GDPR Compliance =
 
 **Your Rights:**
@@ -921,6 +945,10 @@ This plugin may connect to the following external services based on your configu
 * Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
 * WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
 * Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
+
+**Optional browser-native AI CDN libraries (no user data transmitted):**
+* Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
+* WebLLM / MLC AI (embedded browser LLM provider, opt-in) - loaded from esm.run CDN - [Privacy](https://esm.sh/privacy) | [Terms](https://esm.run/)
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 
