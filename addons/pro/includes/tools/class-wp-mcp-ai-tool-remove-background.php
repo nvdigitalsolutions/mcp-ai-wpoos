@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/tools/remove-background.php';
 
 /**
  * Remove background from images using free (rembg) or paid (remove.bg API) methods.
