@@ -2174,4 +2174,85 @@ These references are retained as development conveniences for the bundled/combin
 
 ---
 
+## Pass 7 — March 10, 2026 — Full Re-Audit Against All 13 Guidelines
+
+### Scope
+Full proactive re-audit of the base plugin (`includes/`, `assets/`, root PHP files) against all 13 WordPress.org guideline categories. No WP.org review trigger; initiated to keep the compliance record current before the next release.
+
+### Linter Result
+```
+composer run lint:base
+# phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,...
+# 721 files scanned — Time: 2 mins, 21.52 secs; Memory: 236MB
+# EXIT 0 — 0 errors, 0 warnings
+```
+
+### Findings
+
+#### A. New / Changed External Calls
+
+| Domain | Finding |
+|--------|---------|
+| `accounts.google.com/o/oauth2/v2/auth` | **Browser-redirect only** — used as the `urlAuthorize` parameter in the OAuth 2.0 PKCE flow for Gmail and Google Drive. No data is sent server-side via `wp_remote_*`; the user's browser is redirected to Google's consent page. Already covered under services #16 (Gmail) and #36 (Google Drive) which document "Google OAuth integration". No new readme.txt entry required. |
+| `github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download` | Used by `WP_MCP_AI_Optional_Components` to download the knowledge-base zip on activation/demand. Covered under existing service **#27** (nvdigitalsolutions.com — optional knowledge-base downloads via GitHub releases). No new entry required. |
+| `raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/dev-working/…` | **Development-only** — gated behind `defined('WP_MCP_AI_DEV_COMPONENTS') && true === WP_MCP_AI_DEV_COMPONENTS`. This constant is never defined in production builds. Not a production external service; no readme.txt entry required. |
+
+All other `wp_remote_*` call sites cross-checked against the 43-entry service list — no new undocumented domains found.
+
+#### B. error_log() Gating — Re-verified
+
+All `error_log()` calls in `includes/` re-examined. Every instance is wrapped in one of:
+
+- `if ( defined( 'WP_DEBUG' ) && WP_DEBUG )` — explicit debug gate
+- `if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG )` — debug-log gate
+- `if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() )` — settings gate (checks `is_logging_enabled()` internally)
+- `if ( function_exists( 'wp_mcp_ai_log' ) )` fallback — prefers plugin logging system
+
+All carry a `// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- <justification>` comment. **0 ungated instances.**
+
+#### C. phpcs:disable / phpcs:ignore — Re-verified
+
+Re-checked all suppressions in `includes/`:
+
+- All `phpcs:disable` directives include `-- <justification>` text
+- All `phpcs:ignore` directives include `-- <justification>` text
+- **0 bare suppressions found**
+
+#### D. Vision API Tools — Confirmed Correct
+
+`vision_object_localization` and `vision_product_search` tools re-reviewed:
+
+- Both retrieve the Google Cloud API key via `apply_filters('wp_mcp_ai_vision_api_key', $settings['gemini_api_key'])` and return `WP_Error` when unconfigured
+- API key is passed as `?key=` query parameter to `vision.googleapis.com`
+- Capability flags: `['read-only', 'requires-capability']` — no false `'local-only'` flag
+- No changes required
+
+#### E. Vendor Autoloader — Production Reset
+
+`composer install --no-dev --classmap-authoritative` run to remove dev-dependency entries (phpunit, phpcs, wpcs, wordpress-stubs, phpcompatibility, etc.) that had polluted `vendor/composer/` during the linting phase. Post-reset, `vendor/composer/installed.json` contains only the 28 production runtime packages.
+
+### Updated Compliance Table
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ `is_pro_active()` returns `true` by default; all features free |
+| 2 | readme.txt URLs valid | ✅ All 43 service entries verified active |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.34 (current LTS); Chart.js 4.5.1 bundled locally; 0 advisories |
+| 4 | External services documented | ✅ All `wp_remote_*` sites cross-checked; `accounts.google.com` OAuth redirect is browser-side (covered under #16/#36); `raw.githubusercontent.com` is dev-only gated by `WP_MCP_AI_DEV_COMPONENTS` |
+| 5 | No saving data to plugin folder | ✅ All `file_put_contents` target `uploads_dir/mcp-ai/` or system temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites have `sanitize_callback` |
+| 7 | Input sanitization / output escaping | ✅ PHPCS `lint:base` 0 errors/warnings across 721 files |
+| 8 | Prefixing (functions, classes, hooks) | ✅ All global functions use `wp_mcp_ai_` prefix |
+| 9 | Privacy Policy | ✅ Comprehensive section covers all 43 services |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions — all have `-- justification` text |
+| 11 | `error_log()` gating | ✅ All instances are `WP_DEBUG`-gated or settings-gated with `phpcs:ignore` |
+| 12 | Pro feature separation | ✅ `addons/` excluded via `.distignore`; `enable_cloudflare_pro_toolkit` gated behind `defined('WP_MCP_AI_PRO_VERSION')` |
+| 13 | Security — TOTP secret exposure | ✅ QR code fetched server-side; browser never contacts `api.qrserver.com` with TOTP secret |
+
+**Total documented services: 43** — unchanged from Pass 6.
+
+**Base plugin compliance status: ✅ Fully compliant — March 10, 2026 (Pass 7)**
+
+---
+
 *Last updated: March 10, 2026*
