@@ -1183,6 +1183,19 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$max_history = (int) apply_filters( 'wp_mcp_ai_google_chat_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
 
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'google_chat',
+				$sender_name,
+				$connection_id,
+				$max_history - 1
+			);
+		}
+
 		if ( count( $history ) >= $max_history ) {
 			$history = array_slice( $history, -( $max_history - 1 ) );
 		}
