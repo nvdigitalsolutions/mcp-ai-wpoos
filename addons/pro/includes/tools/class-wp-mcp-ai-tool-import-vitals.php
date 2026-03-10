@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * import_vitals tool implementation.
  */
-class WP_MCP_AI_Tool_Import_Vitals extends WP_MCP_AI_Tool_Base {
+class WP_MCP_AI_Tool_Import_Vitals implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
 	 * LOINC code → vitals_log CCT field name.
@@ -211,7 +211,14 @@ class WP_MCP_AI_Tool_Import_Vitals extends WP_MCP_AI_Tool_Base {
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function get_capability_flags() {
+		return array( 'pro', 'database-write', 'pii-data', 'hipaa-relevant', 'requires-capability' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$member_id = absint( $arguments['member_id'] ?? 0 );
 		if ( ! $member_id ) {
 			return array( 'success' => false, 'error' => __( 'member_id is required and must be a positive integer.', 'mcp-ai-wpoos-pro' ) );
