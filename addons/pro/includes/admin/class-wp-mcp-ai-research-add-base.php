@@ -660,11 +660,12 @@ border-radius: 4px;
 
 		// Verify nonce for POST operations.
 		if ( isset( $_POST['action'] ) ) {
-			if ( 'save' === $_POST['action'] && ! wp_verify_nonce( $_POST['wp_mcp_ai_research_nonce'], 'wp_mcp_ai_research_add_item' ) ) {
+			$nonce = isset( $_POST['wp_mcp_ai_research_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_research_nonce'] ) ) : '';
+			if ( 'save' === $_POST['action'] && ! wp_verify_nonce( $nonce, 'wp_mcp_ai_research_add_item' ) ) {
 				wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			if ( 'update' === $_POST['action'] && ! wp_verify_nonce( $_POST['wp_mcp_ai_research_nonce'], 'wp_mcp_ai_research_update_item' ) ) {
+			if ( 'update' === $_POST['action'] && ! wp_verify_nonce( $nonce, 'wp_mcp_ai_research_update_item' ) ) {
 				wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
 			}
 		}

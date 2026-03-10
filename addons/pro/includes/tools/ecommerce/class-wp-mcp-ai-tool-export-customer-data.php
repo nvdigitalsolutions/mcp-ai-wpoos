@@ -392,7 +392,19 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 			wp_mkdir_p( $temp_dir );
 		}
 
-		$filename = 'customer-data-' . sanitize_file_name( $email ) . '-' . time();
+		// Protect the directory from direct browser access.
+		$htaccess = $temp_dir . '/.htaccess';
+		if ( ! file_exists( $htaccess ) ) {
+			// Apache 2.4+ syntax with 2.2 fallback.
+			$htaccess_content = "# Apache 2.4+\n<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n# Apache 2.2\n<IfModule !mod_authz_core.c>\n\tdeny from all\n</IfModule>\n";
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			file_put_contents( $htaccess, $htaccess_content );
+		}
+
+		// Use a cryptographically random, non-guessable filename so that an
+		// attacker who knows the customer's e-mail address and export timestamp
+		// cannot enumerate the file via a public URL.
+		$filename = 'export-' . wp_generate_password( 32, false ) . '-' . time();
 
 		if ( 'json' === $format ) {
 			return $this->generate_json_file( $data, $temp_dir, $filename );

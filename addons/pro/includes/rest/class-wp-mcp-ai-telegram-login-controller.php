@@ -571,9 +571,10 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			return (int) $user_ids[0];
 		}
 
-		// Determine auto-create setting: connection setting takes precedence over the
-		// filter default (true) when explicitly saved. New connections default to true.
-		$connection_auto_create = ! isset( $connection['auto_create_wp_user'] ) || ! empty( $connection['auto_create_wp_user'] );
+		// Determine auto-create setting: connection setting takes precedence.
+		// Defaults to false (opt-in) when the key is absent — administrators must
+		// explicitly enable automatic user creation to avoid unexpected registrations.
+		$connection_auto_create = ! empty( $connection['auto_create_wp_user'] );
 
 		/**
 		 * Filters whether a new WordPress user should be created for an
@@ -617,7 +618,43 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 		$placeholder_email = sanitize_email( $telegram_id . '@telegram.users.invalid' );
 
 		// Role: connection admin setting takes precedence; filter allows code override.
+		// Enforce an allow-list of non-privileged roles to prevent a misconfigured
+		// filter hook from granting administrator or editor access to all Telegram users.
 		$connection_role = ! empty( $connection['new_user_role'] ) ? sanitize_key( $connection['new_user_role'] ) : 'subscriber';
+
+		/**
+		 * Filters the WordPress role assigned to newly-created Telegram login users.
+		 *
+		 * The assigned role is validated against the allowed-roles list
+		 * (wp_mcp_ai_telegram_login_allowed_roles) and falls back to 'subscriber'
+		 * if the returned value is not in the list.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $role      Role slug. Connection admin setting used as default.
+		 * @param array  $auth_data Verified Telegram auth data.
+		 */
+		$filtered_role = apply_filters( 'wp_mcp_ai_telegram_login_new_user_role', $connection_role, $auth_data );
+
+		/**
+		 * Filters the list of WordPress roles that may be assigned to
+		 * automatically-created Telegram login users.
+		 *
+		 * Extending this list allows site administrators to grant author or editor
+		 * access to trusted Telegram communities, while keeping the default
+		 * restrictive. Never include 'administrator' or other privileged roles.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string[] $allowed_roles Array of allowed role slugs.
+		 * @param array    $auth_data     Verified Telegram auth data.
+		 */
+		$allowed_roles = apply_filters(
+			'wp_mcp_ai_telegram_login_allowed_roles',
+			array( 'subscriber', 'contributor' ),
+			$auth_data
+		);
+		$enforced_role = in_array( $filtered_role, (array) $allowed_roles, true ) ? $filtered_role : 'subscriber';
 
 		$user_data = array(
 			'user_login'   => $login,
@@ -626,15 +663,7 @@ class WP_MCP_AI_Telegram_Login_Controller extends WP_REST_Controller {
 			'display_name' => $display_name,
 			'first_name'   => $first_name,
 			'last_name'    => $last_name,
-			/**
-			 * Filters the WordPress role assigned to newly-created Telegram login users.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $role      Role slug. Connection admin setting used as default.
-			 * @param array  $auth_data Verified Telegram auth data.
-			 */
-			'role'         => apply_filters( 'wp_mcp_ai_telegram_login_new_user_role', $connection_role, $auth_data ),
+			'role'         => $enforced_role,
 		);
 
 		$user_id = wp_insert_user( $user_data );

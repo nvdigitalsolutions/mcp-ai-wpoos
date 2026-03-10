@@ -150,13 +150,16 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 		$stored_secret = $this->get_webhook_secret( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'apple_messages_webhook_no_secret',
-				'Apple Messages webhook received without a signing secret configured. Signature validation skipped. Configure a webhook_secret for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Apple Messages webhook rejected: no signing secret configured. Set a webhook_secret in the connection settings to enable webhook authentication.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a signing secret in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// Retrieve the raw request body for signature calculation.

@@ -294,7 +294,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		$items = array();
 		foreach ( $query->posts as $post ) {
-			$items[] = $this->prepare_item_for_response( $post );
+			$items[] = $this->prepare_item_for_response( $post, false );
 		}
 
 		$response = rest_ensure_response( $items );
@@ -333,7 +333,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
 	}
 
 	/**
@@ -421,14 +421,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		// Encrypt and save item data based on type.
 		$item_data = $this->prepare_item_data_for_storage( $item_type, $request );
 		if ( $item_data ) {
-			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ) );
+			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ), $user_id );
 			if ( $encrypted_data ) {
 				update_post_meta( $post_id, '_vault_encrypted_data', $encrypted_data );
 			}
 		}
 
 		$post = get_post( $post_id );
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
 	}
 
 	/**
@@ -487,14 +487,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$item_type = get_post_meta( $id, '_vault_item_type', true );
 		$item_data = $this->prepare_item_data_for_storage( $item_type, $request );
 		if ( $item_data ) {
-			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ) );
+			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ), get_current_user_id() );
 			if ( $encrypted_data ) {
 				update_post_meta( $id, '_vault_encrypted_data', $encrypted_data );
 			}
 		}
 
 		$post = get_post( $id );
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
 	}
 
 	/**
@@ -707,7 +707,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		$items = array();
 		foreach ( $query_obj->posts as $post ) {
-			$items[] = $this->prepare_item_for_response( $post );
+			$items[] = $this->prepare_item_for_response( $post, false );
 		}
 
 		return rest_ensure_response( $items );
@@ -716,35 +716,42 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Prepare item for REST response
 	 *
-	 * @param WP_Post         $item Post object.
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_Post $item         Post object.
+	 * @param bool    $include_data Whether to decrypt and include the sensitive data field.
+	 *                              Pass true only for single-item reads (GET /items/{id}),
+	 *                              create, and update responses. Pass false for list/search
+	 *                              responses to avoid bulk plaintext credential exposure.
 	 * @return array
 	 */
-	public function prepare_item_for_response( $item, $request ) {
-		$post           = $item; // For backward compatibility with existing code
-		$item_type      = get_post_meta( $post->ID, '_vault_item_type', true );
-		$folder_id      = get_post_meta( $post->ID, '_vault_folder_id', true );
-		$favorite       = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
-		$encrypted_data = get_post_meta( $post->ID, '_vault_encrypted_data', true );
+	public function prepare_item_for_response( $item, $include_data = false ) {
+		$post      = $item; // For backward compatibility with existing code
+		$item_type = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$favorite  = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
 
-		$data = array();
-		if ( $encrypted_data ) {
-			$decrypted = $this->encryption_service->decrypt( $encrypted_data );
-			if ( $decrypted ) {
-				$data = json_decode( $decrypted, true );
-			}
-		}
-
-		return array(
+		$response = array(
 			'id'         => $post->ID,
 			'name'       => $post->post_title,
 			'item_type'  => $item_type,
 			'folder_id'  => (int) $folder_id,
 			'favorite'   => $favorite,
-			'data'       => $data,
 			'created_at' => $post->post_date_gmt,
 			'updated_at' => $post->post_modified_gmt,
 		);
+
+		if ( $include_data ) {
+			$encrypted_data = get_post_meta( $post->ID, '_vault_encrypted_data', true );
+			$data           = array();
+			if ( $encrypted_data ) {
+				$decrypted = $this->encryption_service->decrypt( $encrypted_data, (int) $post->post_author );
+				if ( $decrypted && ! is_wp_error( $decrypted ) ) {
+					$data = json_decode( $decrypted, true );
+				}
+			}
+			$response['data'] = $data;
+		}
+
+		return $response;
 	}
 
 	/**

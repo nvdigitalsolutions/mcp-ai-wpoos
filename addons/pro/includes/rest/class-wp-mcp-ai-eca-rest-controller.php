@@ -190,7 +190,7 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function check_read_permission( $request ) {
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Sorry, you are not allowed to view ECAs or students.', 'mcp-ai-wpoos-pro' ),
