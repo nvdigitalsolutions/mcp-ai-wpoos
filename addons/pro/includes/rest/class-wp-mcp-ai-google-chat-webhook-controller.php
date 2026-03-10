@@ -399,13 +399,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		if ( empty( $audience ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'google_chat_webhook_no_audience',
-				'Google Chat webhook received without audience URL configured. OIDC audience check skipped. Configure the audience URL on the connection for enhanced security.',
-				array()
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: no audience URL configured for OIDC verification. Configure the audience URL in the connection settings to enable token validation.'
 			);
-			// Token presence has been verified above; allow through without audience check.
-			return true;
+			return false;
 		}
 
 		// Decode the JWT payload (base64url) to inspect claims without full crypto verification.

@@ -301,16 +301,25 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 
 		// Fetch all registration counts in a single query grouped by country_id.
 		global $wpdb;
-		$registration_counts = $wpdb->get_results(
-			"SELECT pm.meta_value as country_id, COUNT(*) as total
-			FROM {$wpdb->posts} p
-			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-			WHERE p.post_type = 'mcp_ai_registration'
-			AND pm.meta_key = 'country_id'
-			AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
-			GROUP BY pm.meta_value',
-			ARRAY_A
-		);
+		if ( ! empty( $country_ids ) ) {
+			$placeholders        = implode( ',', array_fill( 0, count( $country_ids ), '%d' ) );
+			$registration_counts = $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- result of $wpdb->prepare() below.
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					"SELECT pm.meta_value as country_id, COUNT(*) as total
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					WHERE p.post_type = 'mcp_ai_registration'
+					AND pm.meta_key = 'country_id'
+					AND pm.meta_value IN ($placeholders)
+					GROUP BY pm.meta_value",
+					...$country_ids
+				),
+				ARRAY_A
+			);
+		} else {
+			$registration_counts = array();
+		}
 
 		// Convert to associative array for quick lookup.
 		$counts_by_country = array();

@@ -137,12 +137,14 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 		$client_state  = $this->get_client_state( $connection_id );
 
 		if ( empty( $client_state ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'outlook_webhook_no_client_state',
-				'Outlook webhook received without client state configured. Validation skipped. Configure client_state in the connection settings for enhanced security.',
-				array()
+			WP_MCP_AI_Logger::log_error(
+				'Outlook webhook rejected: no client state configured. Set client_state in the connection settings to enable webhook validation.'
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a client state in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$payload = $request->get_json_params();

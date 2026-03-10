@@ -438,6 +438,16 @@ class WP_MCP_AI_Vault_Encryption_Service {
 
 			// Timing-safe comparison to prevent timing attacks.
 			if ( hash_equals( $expected_code, $code ) ) {
+				// RFC 6238 §5.2: each OTP MUST be accepted only once within its time window.
+				// Record the used counter in a transient so a second request in the same
+				// window is rejected even if it carries the identical code.
+				$counter   = (int) floor( $check_timestamp / self::TOTP_TIME_STEP );
+				$cache_key = 'vault_totp_used_' . wp_hash( $secret . '_' . $counter );
+				if ( get_transient( $cache_key ) ) {
+					return false; // Code already consumed in this time window.
+				}
+				// Keep the transient alive for three full time steps (covers clock drift).
+				set_transient( $cache_key, 1, self::TOTP_TIME_STEP * 3 );
 				return true;
 			}
 		}

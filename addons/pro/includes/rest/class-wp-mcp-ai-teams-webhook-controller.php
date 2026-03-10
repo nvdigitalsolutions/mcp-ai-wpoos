@@ -120,12 +120,14 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$signing_secret = $this->get_signing_secret();
 
 		if ( empty( $signing_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'teams_webhook_no_signing_secret',
-				'Teams outgoing webhook received without signing secret configured. HMAC validation skipped. Configure signing_secret in the connection settings for enhanced security.',
-				array()
+			WP_MCP_AI_Logger::log_error(
+				'Teams webhook rejected: no signing secret configured. Set signing_secret in the connection settings to enable HMAC validation.'
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a signing secret in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$auth_header = $request->get_header( 'authorization' );
