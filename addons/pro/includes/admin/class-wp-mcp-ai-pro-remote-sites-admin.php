@@ -1858,7 +1858,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $tg_assistants as $tg_assistant ) :
 								$tg_is_selected = in_array( $tg_assistant->ID, $tg_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>" <?php echo esc_attr( $tg_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>"<?php echo $tg_is_selected; ?>>
 									<?php echo esc_html( $tg_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2581,7 +2581,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $wa_assistants as $wa_assistant ) :
 								$is_selected = in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>" <?php echo esc_attr( $is_selected ); ?>>
+								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>"<?php echo $is_selected; ?>>
 									<?php echo esc_html( $wa_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2702,7 +2702,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="slack_bot_token" id="slack_bot_token" class="regular-text" value="" autocomplete="new-password" placeholder="xoxb-your-bot-token">
-						<?php if ( $is_edit ) : ?>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'slack' === ( $connection['connection_type'] ?? '' ) ) : ?>
+							<p class="description" style="color:#00a32a;">&#10003; <?php esc_html_e( 'Bot token is saved. Leave blank to keep the existing token, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php elseif ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing bot token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your Slack Bot User OAuth Token (starts with xoxb-).', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2716,7 +2718,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="slack_signing_secret" id="slack_signing_secret" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
+						<?php if ( $is_edit && ! empty( $connection['signing_secret'] ) && 'slack' === ( $connection['connection_type'] ?? '' ) ) : ?>
+							<p class="description" style="color:#00a32a;">&#10003; <?php esc_html_e( 'Signing secret is saved. Leave blank to keep the existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php elseif ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing signing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Used to verify requests from Slack.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2778,7 +2782,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $sl_assistants as $sl_assistant ) :
 								$sl_is_selected = in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>" <?php echo esc_attr( $sl_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>"<?php echo $sl_is_selected; ?>>
 									<?php echo esc_html( $sl_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2913,7 +2917,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $ds_assistants as $ds_assistant ) :
 								$ds_is_selected = in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>" <?php echo esc_attr( $ds_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>"<?php echo $ds_is_selected; ?>>
 									<?php echo esc_html( $ds_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3052,7 +3056,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $ms_assistants as $ms_assistant ) :
 								$ms_is_selected = in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>" <?php echo esc_attr( $ms_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>"<?php echo $ms_is_selected; ?>>
 									<?php echo esc_html( $ms_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3263,7 +3267,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $msng_assistants as $msng_assistant ) :
 								$msng_is_selected = in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>" <?php echo esc_attr( $msng_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>"<?php echo $msng_is_selected; ?>>
 									<?php echo esc_html( $msng_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3652,7 +3656,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $gc_assistants as $gc_assistant ) :
 								$gc_is_selected = in_array( $gc_assistant->ID, $gc_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>" <?php echo esc_attr( $gc_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>"<?php echo $gc_is_selected; ?>>
 									<?php echo esc_html( $gc_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3873,7 +3877,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $tw_assistants as $tw_assistant ) :
 								$tw_is_selected = in_array( $tw_assistant->ID, $tw_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>" <?php echo esc_attr( $tw_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>"<?php echo $tw_is_selected; ?>>
 									<?php echo esc_html( $tw_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -11006,14 +11010,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( empty( $body['ok'] ) ) {
-			$error = isset( $body['error'] ) ? $body['error'] : __( 'Unknown error.', 'mcp-ai-wpoos-pro' );
-			wp_send_json_error(
-				sprintf(
-					/* translators: %s: error code */
-					__( 'Slack API error: %s', 'mcp-ai-wpoos-pro' ),
-					$error
-				)
-			);
+			$error   = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			$message = $this->get_slack_friendly_error_message( $error );
+			wp_send_json_error( $message );
 			return;
 		}
 
@@ -11024,6 +11023,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'team_id'  => isset( $body['team_id'] ) ? $body['team_id'] : '',
 				'user_id'  => isset( $body['user_id'] ) ? $body['user_id'] : '',
 			)
+		);
+	}
+
+	/**
+	 * Map a Slack API error code to a human-readable, actionable error message.
+	 *
+	 * @param string $error_code Slack API error code (e.g. 'account_inactive').
+	 * @return string Translated error message with actionable guidance.
+	 */
+	protected function get_slack_friendly_error_message( $error_code ) {
+		$known = array(
+			'account_inactive'   => __( 'Slack API error: account_inactive — The bot account associated with this token has been deactivated. Please check that your Slack app is still installed in the workspace and that the bot user has not been removed. Generate a new Bot Token from your Slack app configuration (api.slack.com/apps) and update the token here.', 'mcp-ai-wpoos-pro' ),
+			'invalid_auth'       => __( 'Slack API error: invalid_auth — The bot token is invalid or has been revoked. Please generate a new token from your Slack app and update it here.', 'mcp-ai-wpoos-pro' ),
+			'token_revoked'      => __( 'Slack API error: token_revoked — This token has been revoked. Please reinstall your Slack app to the workspace and update the token here.', 'mcp-ai-wpoos-pro' ),
+			'not_authed'         => __( 'Slack API error: not_authed — No bot token was provided. Please enter a valid Bot Token (xoxb-).', 'mcp-ai-wpoos-pro' ),
+			'missing_scope'      => __( 'Slack API error: missing_scope — The bot token does not have the required OAuth scopes. Please update your Slack app permissions and reinstall the app.', 'mcp-ai-wpoos-pro' ),
+			'org_login_required' => __( 'Slack API error: org_login_required — The token requires re-authentication at the organization level. Please reinstall your Slack app.', 'mcp-ai-wpoos-pro' ),
+			'ekm_access_denied'  => __( 'Slack API error: ekm_access_denied — Access was denied by Enterprise Key Management. Please contact your Slack workspace administrator.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		if ( isset( $known[ $error_code ] ) ) {
+			return $known[ $error_code ];
+		}
+
+		return sprintf(
+			/* translators: %s: Slack API error code */
+			__( 'Slack API error: %s', 'mcp-ai-wpoos-pro' ),
+			$error_code
 		);
 	}
 
@@ -11159,7 +11186,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						if ( ! empty( $send_body['ok'] ) ) {
 							$result['sent'] = true;
 						} else {
-							$result['send_error'] = isset( $send_body['error'] ) ? $send_body['error'] : __( 'Unknown Slack error.', 'mcp-ai-wpoos-pro' );
+							$send_error_code      = isset( $send_body['error'] ) ? $send_body['error'] : 'unknown_error';
+							$result['send_error'] = $this->get_slack_friendly_error_message( $send_error_code );
 						}
 					} else {
 						$result['send_error'] = $send_result->get_error_message();
