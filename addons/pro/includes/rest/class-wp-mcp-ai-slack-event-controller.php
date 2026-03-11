@@ -294,7 +294,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
-			? array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
 			: array();
 
 		if ( empty( $assigned_assistant_ids ) ) {
@@ -382,6 +382,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 
 		if ( ! $assistant_id || '' === $message_text || '' === $channel_id || '' === $connection_id ) {
+			WP_MCP_AI_Logger::log_error(
+				'Slack AI reply: missing required job argument.',
+				array(
+					'assistant_id'  => $assistant_id,
+					'has_message'   => '' !== $message_text,
+					'has_channel'   => '' !== $channel_id,
+					'connection_id' => $connection_id,
+				)
+			);
 			return;
 		}
 
