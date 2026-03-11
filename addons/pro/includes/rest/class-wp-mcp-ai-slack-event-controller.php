@@ -554,13 +554,24 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 
 		if ( 200 !== $http_code || ! $api_ok ) {
 			$api_error = is_array( $decoded_body ) && isset( $decoded_body['error'] ) ? $decoded_body['error'] : '';
-			WP_MCP_AI_Logger::log_error(
-				'Slack AI reply: API returned an error.',
-				array(
-					'http_code' => $http_code,
-					'api_error' => $api_error,
-				)
-			);
+
+			if ( 'account_inactive' === $api_error ) {
+				WP_MCP_AI_Logger::log_error(
+					'Slack AI reply: bot account is inactive (account_inactive). The Slack app may have been removed from the workspace or the bot user deactivated. Update the Bot Token in the connection settings.',
+					array(
+						'connection_id' => $connection_id,
+						'api_error'     => $api_error,
+					)
+				);
+			} else {
+				WP_MCP_AI_Logger::log_error(
+					'Slack AI reply: API returned an error.',
+					array(
+						'http_code' => $http_code,
+						'api_error' => $api_error,
+					)
+				);
+			}
 			return;
 		}
 
