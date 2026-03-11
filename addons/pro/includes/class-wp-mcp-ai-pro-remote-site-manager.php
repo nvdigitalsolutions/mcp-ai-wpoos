@@ -847,6 +847,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_ezuite_connection( $connection );
 		}
 
+		// Handle Slack connections separately.
+		if ( 'slack' === $connection_type ) {
+			return self::test_slack_connection( $connection );
+		}
+
 		// Handle Google Chat connections separately.
 		if ( 'google_chat' === $connection_type ) {
 			return self::test_google_chat_connection( $connection );
@@ -1235,6 +1240,95 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 */
 	public static function is_valid_telegram_secret_token( $secret_token ) {
 		return 1 === preg_match( '/^[A-Za-z0-9_-]{1,256}$/', (string) $secret_token );
+	}
+
+	/**
+	 * Test Slack Bot API connection.
+	 *
+	 * Verifies the Slack Bot Token by calling the auth.test endpoint and
+	 * checks that the Event Subscriptions Request URL is reachable.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_slack_connection( $connection ) {
+		$bot_token = ! empty( $connection['api_key'] ) ? self::decrypt_value( $connection['api_key'] ) : '';
+
+		if ( '' === $bot_token ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_missing_token',
+				__( 'Slack Bot Token is required. Enter the Bot User OAuth Token (starts with xoxb-) and save before testing.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$response = wp_remote_post(
+			'https://slack.com/api/auth.test',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $bot_token,
+					'Content-Type'  => 'application/json; charset=utf-8',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_http_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Slack API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( empty( $body['ok'] ) ) {
+			$error_code = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			return new WP_Error(
+				'wp_mcp_ai_pro_slack_api_error',
+				sprintf(
+					/* translators: %s: Slack API error code */
+					__( 'Slack API error: %s — Check that the Bot Token is valid and that your Slack app has the required scopes (chat:write, channels:history, app_mentions:read).', 'mcp-ai-wpoos-pro' ),
+					$error_code
+				)
+			);
+		}
+
+		$connection_id     = isset( $connection['id'] ) ? $connection['id'] : '';
+		$webhook_path      = $connection_id
+			? '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection_id
+			: '/wp-json/mcp-ai/v1/webhooks/slack';
+		$webhook_url       = home_url( $webhook_path );
+		$team              = isset( $body['team'] ) ? sanitize_text_field( $body['team'] ) : '';
+		$bot_user          = isset( $body['user'] ) ? sanitize_text_field( $body['user'] ) : '';
+		$team_id           = isset( $body['team_id'] ) ? sanitize_text_field( $body['team_id'] ) : '';
+		$bot_user_id       = isset( $body['user_id'] ) ? sanitize_text_field( $body['user_id'] ) : '';
+
+		$message = sprintf(
+			/* translators: 1: Slack team name, 2: bot username, 3: Slack team ID, 4: bot user ID, 5: webhook URL */
+			__( 'Team: %1$s (%2$s), Bot: %3$s (%4$s). Event Subscriptions URL: %5$s', 'mcp-ai-wpoos-pro' ),
+			$team,
+			$team_id,
+			$bot_user,
+			$bot_user_id,
+			$webhook_url
+		);
+
+		return array(
+			'success'     => true,
+			'slack'       => true,
+			'team'        => $team,
+			'bot_user'    => $bot_user,
+			'team_id'     => $team_id,
+			'bot_user_id' => $bot_user_id,
+			'webhook_url' => $webhook_url,
+			'message'     => $message,
+		);
 	}
 
 	/**
