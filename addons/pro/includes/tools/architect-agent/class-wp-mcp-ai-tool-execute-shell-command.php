@@ -38,25 +38,31 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	 * @var array
 	 */
 	private $dangerous_patterns = array(
-		'/rm\s+-rf\s*\//',           // rm -rf / (with or without space).
-		'/rm\s+-rf\s*\*/',           // rm -rf * (with or without space).
-		'/dd\s+if=/',                // dd operations.
-		'/mkfs/',                    // filesystem formatting.
-		'/:\(\)\{.*\};:/',           // fork bomb.
-		'/chmod\s+-R\s+777/',        // dangerous permissions.
-		'/chown\s+-R/',              // ownership changes.
-		'/\>\s*\/dev\/sd/',          // writing to disk.
-		'/curl.*\|\s*(sh|bash)/',    // piping to shell.
-		'/wget.*\|\s*(sh|bash)/',    // piping to shell.
-		'/sudo\s/',                  // privilege escalation.
-		'/eval\s/',                  // code injection.
-		'/killall\s/',               // kill all processes.
-		'/pkill\s/',                 // kill processes by name.
-		'/\bsu\s/',                  // switch user.
-		'/rm\s+-rf.*\.git/',         // destructive git operations.
-		'/&&.*rm\s+-rf/',            // chained dangerous commands.
-		'/;\s*rm\s+-rf/',            // chained dangerous commands.
-		'/\|\|.*rm\s+-rf/',          // chained dangerous commands.
+		'/rm\s+-rf\s*\//',              // rm -rf / (with or without space).
+		'/rm\s+-rf\s*\*/',              // rm -rf * (with or without space).
+		'/dd\s+if=/',                   // dd operations.
+		'/mkfs/',                       // filesystem formatting.
+		'/:\(\)\{.*\};:/',              // fork bomb.
+		'/chmod\s+-R\s+777/',           // dangerous permissions.
+		'/chown\s+-R/',                 // ownership changes.
+		'/\>\s*\/dev\/sd/',             // writing to disk.
+		'/curl.*\|\s*(sh|bash|dash|python\d*|perl|ruby|node)/',  // piping to interpreter.
+		'/wget.*\|\s*(sh|bash|dash|python\d*|perl|ruby|node)/',  // piping to interpreter.
+		'/curl\s+.*-[oO]\s/',           // curl writing output to file (potential webshell).
+		'/wget\s+.*-O\s/',              // wget writing output to file (potential webshell).
+		'/sudo\s/',                     // privilege escalation.
+		'/\beval\b/',                   // code injection.
+		'/killall\s/',                  // kill all processes.
+		'/pkill\s/',                    // kill processes by name.
+		'/\bsu\s/',                     // switch user.
+		'/rm\s+-rf.*\.git/',            // destructive git operations.
+		'/&&.*rm\s+-rf/',               // chained dangerous commands.
+		'/;\s*rm\s+-rf/',               // chained dangerous commands.
+		'/\|\|.*rm\s+-rf/',             // chained dangerous commands.
+		'/`[^`]+`/',                    // backtick command substitution.
+		'/\$\([^)]+\)/',               // $(...) command substitution.
+		'/\bnohup\s/',                  // detaching persistent background processes.
+		'/\bcrontab\s/',                // installing persistent cron jobs.
 	);
 
 	/**
@@ -199,7 +205,9 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	private function execute_command( $command, $timeout ) {
 		// Change to plugin directory.
 		$original_dir = getcwd();
-		chdir( WP_MCP_AI_PATH );
+		if ( ! chdir( WP_MCP_AI_PATH ) ) {
+			return $this->error_response( __( 'Failed to set working directory. Cannot execute command.', 'mcp-ai-wpoos' ) );
+		}
 
 		// Prepare command with timeout.
 		if ( function_exists( 'proc_open' ) ) {
@@ -209,7 +217,9 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Restore original directory.
-		chdir( $original_dir );
+		if ( $original_dir ) {
+			chdir( $original_dir );
+		}
 
 		return $result;
 	}
