@@ -99,7 +99,7 @@ class WP_MCP_AI_Skill_Registry {
 	 *
 	 * @var string[]
 	 */
-	const ALLOWED_EXTRA_EXTENSIONS = array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'css', 'js' );
+	const ALLOWED_EXTRA_EXTENSIONS = array( 'md', 'txt', 'json', 'yaml', 'yml', 'png', 'jpg', 'jpeg', 'gif', 'webp' );
 
 	/**
 	 * Ensure the skills directory exists with proper protections.

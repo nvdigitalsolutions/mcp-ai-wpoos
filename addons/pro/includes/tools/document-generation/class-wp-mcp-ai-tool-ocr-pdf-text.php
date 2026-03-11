@@ -139,11 +139,61 @@ The PDF file with attachment ID %d could not be found. This may be due to an inc
 				);
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
+			// Validate the URL to prevent SSRF before downloading.
+			$url    = esc_url_raw( $arguments['url'] );
+			$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+Only http and https URLs are supported.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( empty( $host ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+Could not determine host from the provided URL.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
+			$resolved_ip = gethostbyname( $host );
+			if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL hostname could not be resolved.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL resolves to a private or reserved address and cannot be fetched.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 			// Download URL to temp file.
 			if ( ! function_exists( 'download_url' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/file.php';
 			}
-			$temp_file = download_url( $arguments['url'] );
+			$temp_file = download_url( $url );
 
 			if ( is_wp_error( $temp_file ) ) {
 				return array(
