@@ -213,33 +213,50 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 	 * Convert a URL to a local file path if it's a WordPress upload URL.
 	 *
 	 * @param string $path_or_url File path or URL.
-	 * @return string Local file path.
+	 * @return string|false Local file path on success, false if path cannot be safely resolved.
 	 */
 	private function resolve_file_path( $path_or_url ) {
-		// If it's already a local path, return it.
-		if ( file_exists( $path_or_url ) ) {
-			return $path_or_url;
-		}
+		$upload_dir = wp_upload_dir();
+		$base_path  = $upload_dir['basedir'];
 
-		// Check if it's a URL.
+		$local_path = $path_or_url;
+
+		// Check if it's a URL — convert to a local path first.
 		if ( filter_var( $path_or_url, FILTER_VALIDATE_URL ) ) {
-			$upload_dir = wp_upload_dir();
-			$base_url   = $upload_dir['baseurl'];
-			$base_path  = $upload_dir['basedir'];
-
-			// Normalize URLs to handle http/https differences.
+			$base_url            = $upload_dir['baseurl'];
 			$normalized_url      = preg_replace( '#^https?://#i', '', $path_or_url );
 			$normalized_base_url = preg_replace( '#^https?://#i', '', $base_url );
 
-			// If it's a WordPress upload URL, convert to local path.
-			if ( strpos( $normalized_url, $normalized_base_url ) === 0 ) {
-				$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
-				return $base_path . $relative_path;
+			// Only convert URLs that point into the uploads directory.
+			if ( strpos( $normalized_url, $normalized_base_url ) !== 0 ) {
+				return false;
 			}
+
+			$relative_path = str_replace( $normalized_base_url, '', $normalized_url );
+
+			// Security: Decode URL-encoding before checking for traversal sequences so
+			// that encoded variants like %2e%2e cannot bypass the check.
+			$decoded_relative = urldecode( $relative_path );
+			if ( false !== strpos( $decoded_relative, '..' ) ) {
+				return false;
+			}
+
+			$local_path = $base_path . $relative_path;
 		}
 
-		// Return as-is if we can't resolve it.
-		return $path_or_url;
+		// Security: Resolve the canonical path to prevent directory traversal attacks.
+		$resolved = realpath( $local_path );
+		if ( false === $resolved ) {
+			return false;
+		}
+
+		// Security: Restrict file access to the WordPress uploads directory.
+		$uploads_base = wp_normalize_path( trailingslashit( $base_path ) );
+		if ( 0 !== strpos( wp_normalize_path( $resolved ), $uploads_base ) ) {
+			return false;
+		}
+
+		return $resolved;
 	}
 
 	/**
@@ -297,9 +314,9 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 		// Resolve URL to local path if needed.
 		$file_path = $this->resolve_file_path( $file_path );
 
-		// Verify file exists.
-		if ( ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'Excel file not found.', 'mcp-ai-wpoos-pro' ) );
+		// Verify file was successfully resolved to a safe local path.
+		if ( ! $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'Excel file not found or is not accessible.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Verify file extension.

@@ -433,7 +433,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 
 			// Attempt to increase the execution time limit.
 			// Some hosts disable set_time_limit() for security, so we use @ to suppress warnings.
-			$result = @set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			$result = @set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical (best-effort timeout extension).
 
 			/**
 			 * Fires after attempting to adjust PHP execution time.

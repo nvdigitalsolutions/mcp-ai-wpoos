@@ -509,7 +509,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		$table_name = $wpdb->prefix . 'jet_cct_mcp_ai_chat_transcripts';
 
 		// Check if table exists.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		if ( ! $table_exists ) {
@@ -519,7 +519,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		// Get most recent transcript.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is defined above; data is properly prepared
 		$last_transcript = $wpdb->get_row(
-			$wpdb->prepare( "SELECT cct_created FROM {$table_name} WHERE assistant_id = %d ORDER BY cct_created DESC LIMIT 1", $assistant_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT cct_created FROM {$table_name} WHERE assistant_id = %d ORDER BY cct_created DESC LIMIT 1", $assistant_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 		);
 
 		return $last_transcript ? $last_transcript->cct_created : null;

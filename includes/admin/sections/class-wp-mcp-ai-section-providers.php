@@ -474,6 +474,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'options'     => $gemini_models,
 					'default'     => 'gemini-2.5-flash',
 				),
+				'gemini_thinking_budget_tokens'      => array(
+					'type'        => 'number',
+					'label'       => __( 'Gemini Thinking Budget (tokens)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum thinking tokens for Gemini 2.5+ extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-2.5-flash, gemini-2.5-pro).', 'mcp-ai-wpoos' ),
+					'default'     => '0',
+					'min'         => '0',
+					'max'         => '24576',
+					'step'        => '256',
+				),
 				'gemini_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Model', 'mcp-ai-wpoos' ),
@@ -962,7 +971,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_thinking_budget_tokens', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'enable_gemini_api_caching', 'gemini_model_list_cache_ttl', 'gemini_embedding_cache_ttl', 'gemini_token_count_cache_ttl', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',

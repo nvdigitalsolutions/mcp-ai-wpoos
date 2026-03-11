@@ -229,6 +229,39 @@ class Test_Chat_Channels extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Format_message includes decoded raw_payload when include_metadata is enabled.
+	 */
+	public function test_chat_channels_format_message_include_metadata() {
+		$this->load_pro_class( 'WP_MCP_AI_Chat_Channels_REST_Controller', 'includes/rest/class-wp-mcp-ai-chat-channels-rest-controller.php' );
+
+		$controller = new WP_MCP_AI_Chat_Channels_REST_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'format_message' );
+		$method->setAccessible( true );
+
+		$row = array(
+			'_ID'               => 55,
+			'channel'           => 'telegram',
+			'channel_contact_id' => '123',
+			'raw_payload'       => wp_json_encode(
+				array(
+					'agentic_tool_messages' => array(
+						array(
+							'role'    => 'assistant',
+							'content' => 'tool output',
+						),
+					),
+				)
+			),
+		);
+
+		$formatted = $method->invoke( $controller, $row, true );
+
+		$this->assertArrayHasKey( 'raw_payload', $formatted );
+		$this->assertSame( 'tool output', $formatted['raw_payload']['agentic_tool_messages'][0]['content'] );
+	}
+
+	/**
 	 * The admin_permissions_check must reject unauthenticated requests.
 	 */
 	public function test_chat_channels_rest_controller_permissions_unauthenticated() {

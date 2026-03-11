@@ -406,12 +406,26 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$type      = $request->get_param( 'type' );
 		$sdp       = $request->get_param( 'sdp' );
 
-		// Verify both peers exist.
-		if ( ! $this->get_peer( $room_id, $from_peer ) ) {
+		// Verify both peers exist and that the caller owns the source peer.
+		$from_peer_data = $this->get_peer( $room_id, $from_peer );
+		if ( ! $from_peer_data ) {
 			return new WP_Error(
 				'invalid_peer',
 				__( 'Source peer not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 404 )
+			);
+		}
+
+		// Verify that the requesting user owns the source peer identity.
+		// Without this check any authenticated user could impersonate another
+		// peer and perform a man-in-the-middle attack on WebRTC signaling.
+		// Fail closed: if user_id is not present in the peer record, reject
+		// rather than bypassing the ownership check.
+		if ( ! isset( $from_peer_data['user_id'] ) || (int) $from_peer_data['user_id'] !== get_current_user_id() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not own this peer identity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
 			);
 		}
 
@@ -448,12 +462,26 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$room_id   = $request->get_param( 'room_id' );
 		$candidate = $request->get_param( 'candidate' );
 
-		// Verify both peers exist.
-		if ( ! $this->get_peer( $room_id, $from_peer ) ) {
+		// Verify both peers exist and that the caller owns the source peer.
+		$from_peer_data = $this->get_peer( $room_id, $from_peer );
+		if ( ! $from_peer_data ) {
 			return new WP_Error(
 				'invalid_peer',
 				__( 'Source peer not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 404 )
+			);
+		}
+
+		// Verify that the requesting user owns the source peer identity.
+		// Without this check any authenticated user could impersonate another
+		// peer and intercept ICE candidates.
+		// Fail closed: if user_id is not present in the peer record, reject
+		// rather than bypassing the ownership check.
+		if ( ! isset( $from_peer_data['user_id'] ) || (int) $from_peer_data['user_id'] !== get_current_user_id() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not own this peer identity.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
 			);
 		}
 
@@ -504,7 +532,8 @@ class WP_MCP_AI_WebChat_Signaling_REST_Controller extends WP_REST_Controller {
 		$response->header( 'Content-Type', 'text/event-stream; charset=UTF-8' );
 		$response->header( 'Cache-Control', 'no-cache, no-store, must-revalidate' );
 		$response->header( 'X-Accel-Buffering', 'no' );
-		$response->header( 'Access-Control-Allow-Origin', '*' );
+		$response->header( 'Access-Control-Allow-Origin', get_site_url() );
+		$response->header( 'Vary', 'Origin' );
 
 		return $response;
 	}

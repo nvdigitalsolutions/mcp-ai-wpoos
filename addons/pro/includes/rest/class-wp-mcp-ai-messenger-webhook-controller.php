@@ -67,6 +67,11 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 	const DEDUP_TRANSIENT_TTL = 60;
 
 	/**
+	 * TTL in seconds for per-user conversation history transients (24 hours).
+	 */
+	const CONVERSATION_HISTORY_TTL = 86400;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -244,16 +249,17 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		// Get app secret from connection settings.
 		$app_secret = $this->get_app_secret();
 
-		// When the App Secret is not configured, skip signature validation and
-		// allow the webhook to be processed. Log a security warning so the site
-		// owner knows to configure the App Secret for hardened security.
+		// When the App Secret is not configured, reject the request.
 		if ( empty( $app_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'messenger_webhook_no_app_secret',
-				'Messenger webhook received without App Secret configured. Signature validation skipped. Configure your App Secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Messenger webhook rejected: App Secret is not configured. Configure your App Secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Messenger webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// App Secret is configured — the signature header is required.
@@ -1017,17 +1023,62 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// --- Per-user conversation history ---
+		$history_key = $this->get_conversation_history_key( $sender_id, $connection_id );
+		$history     = get_transient( $history_key );
+		$history     = is_array( $history ) ? $history : array();
+
+		$max_history = 8;
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings    = WP_MCP_AI_Admin_Settings::get_settings();
+			$max_history = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : $max_history;
+		}
+
+		/**
+		 * Filters the maximum number of messages kept in a Messenger conversation history.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int   $max_history Maximum message count.
+		 * @param array $args        Current job arguments.
+		 */
+		$max_history = (int) apply_filters( 'wp_mcp_ai_messenger_max_history_messages', $max_history, $args );
+		$max_history = max( 1, $max_history );
+
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'messenger',
+				$sender_id,
+				$connection_id,
+				$max_history - 1
+			);
+		}
+
+		if ( count( $history ) >= $max_history ) {
+			$history = array_slice( $history, -( $max_history - 1 ) );
+		}
+
+		$messages = array_merge(
+			$history,
+			array(
+				array(
+					'role'    => 'user',
+					'content' => $message_text,
+				),
+			)
+		);
+		// --- End conversation history ---
+
 		// Generate AI response via internal chat endpoint.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_body_params(
 			array(
 				'assistant_id' => $assistant_id,
-				'messages'     => array(
-					array(
-						'role'    => 'user',
-						'content' => $message_text,
-					),
-				),
+				'messages'     => $messages,
 				'stream'       => false,
 			)
 		);
@@ -1112,9 +1163,12 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		$result = wp_remote_post(
-			add_query_arg( 'access_token', $access_token, $endpoint ),
+			$endpoint,
 			array(
-				'headers' => array( 'Content-Type' => 'application/json' ),
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $access_token,
+				),
 				'timeout' => 20,
 				'body'    => $body,
 			)
@@ -1151,6 +1205,20 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 				'sender_id'    => substr( $sender_id, 0, 4 ) . '***',
 			)
 		);
+
+		// Persist updated conversation history to the transient cache.
+		$history[] = array(
+			'role'    => 'user',
+			'content' => $message_text,
+		);
+		$history[] = array(
+			'role'    => 'assistant',
+			'content' => $content,
+		);
+		if ( count( $history ) > $max_history ) {
+			$history = array_slice( $history, -$max_history );
+		}
+		set_transient( $history_key, $history, self::CONVERSATION_HISTORY_TTL );
 
 		// Persist the outbound AI reply to the Channel Messages CCT.
 		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
@@ -1266,10 +1334,17 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 
 		foreach ( $connections as $connection ) {
 			if ( isset( $connection['api_secret'] ) && ! empty( $connection['api_secret'] ) ) {
-				if ( class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
+				if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+					// Remote Site Manager is unavailable; returning the raw (possibly
+					// encrypted) value would produce a wrong HMAC and silently accept
+					// unauthenticated requests. Return empty to trigger the hard-fail path.
+					WP_MCP_AI_Logger::log_error(
+						'Messenger: WP_MCP_AI_Pro_Remote_Site_Manager is not available; cannot decrypt App Secret. Webhook will be rejected.',
+						array()
+					);
+					return '';
 				}
-				return $connection['api_secret'];
+				return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] );
 			}
 		}
 
@@ -1298,6 +1373,23 @@ class WP_MCP_AI_Messenger_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return $messenger_connections;
+	}
+
+	/**
+	 * Return the transient key used to store the conversation history for a
+	 * specific Messenger sender on a specific connection.
+	 *
+	 * The key is hashed to avoid PII in option names and to stay within
+	 * WordPress's 172-character transient key limit.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $sender_id     Sender PSID.
+	 * @param string $connection_id Remote connection ID.
+	 * @return string Transient key.
+	 */
+	protected function get_conversation_history_key( $sender_id, $connection_id ) {
+		return 'wp_mcp_ai_msng_conv_' . md5( $sender_id . '_' . $connection_id );
 	}
 
 	/**

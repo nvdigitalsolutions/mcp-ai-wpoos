@@ -119,10 +119,11 @@ class WP_MCP_AI_Token_Tracking_Database {
 		dbDelta( $sql );
 
 		// Verify table was created.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
 
 		if ( $table_exists !== $table_name ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records table creation failure as a last-resort diagnostic; this indicates a database schema problem requiring admin attention.
 			error_log( 'WP MCP AI: Failed to create token tracking table: ' . $table_name );
 		}
 	}
@@ -202,10 +203,11 @@ class WP_MCP_AI_Token_Tracking_Database {
 			'%s', // created_at.
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 		$result = $wpdb->insert( self::get_table_name(), $data, $format );
 
 		if ( false === $result ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records a DB insert failure as a last-resort diagnostic fallback; indicates a database problem requiring admin attention.
 			error_log( 'WP MCP AI: Failed to insert token usage record: ' . $wpdb->last_error );
 			return false;
 		}
@@ -538,7 +540,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct DELETE required for bulk pruning; no WP_Query equivalent. Table name from esc_sql()-escaped plugin constant. $wpdb->prepare() wraps all value placeholders.
 		$deleted = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table_name} WHERE timestamp < %s",

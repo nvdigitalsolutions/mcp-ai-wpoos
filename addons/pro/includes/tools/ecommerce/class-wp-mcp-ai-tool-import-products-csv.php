@@ -317,18 +317,38 @@ class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( ! empty( $arguments['file_path'] ) ) {
-			$file_path = $arguments['file_path'];
+			$file_path = sanitize_text_field( $arguments['file_path'] );
 
-			// Security: Validate file path.
-			if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
+			// Security: Resolve canonical path to prevent directory traversal attacks.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
 				return new WP_Error(
 					'invalid_file',
-					__( 'File does not exist or is not readable.', 'mcp-ai-wpoos-pro' )
+					__( 'File not found or not accessible.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Security: Restrict file access to the WordPress uploads directory.
+			$upload_dir   = wp_upload_dir();
+			$uploads_base = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) );
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), $uploads_base ) ) {
+				return new WP_Error(
+					'invalid_file',
+					__( 'File must be located in the WordPress uploads directory.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Security: Ensure the file is readable.
+			if ( ! is_readable( $resolved ) ) {
+				return new WP_Error(
+					'invalid_file',
+					__( 'File is not readable.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			// Read file content.
-			$content = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local file reading.
+			$content = file_get_contents( $resolved );
 
 			if ( false === $content ) {
 				return new WP_Error(

@@ -291,6 +291,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'provider_priority_list'               => $provider_list,
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
+				'tavily_api_key'                       => '',
+				'exa_api_key'                          => '',
+				'perplexity_api_key'                   => '',
+				'gemini_thinking_budget_tokens'        => 0,
 				'google_maps_api_key'                  => '',
 				'ita_tariff_api_key'                   => '',
 				'request_timeout'                      => 200,
@@ -534,7 +538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @param int $attachment_id Attachment ID.
 		 * @return int Filtered max bytes.
 		 */
-		public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter required by hook or interface signature but not used in this implementation.
 			$settings = self::get_settings();
 			if ( isset( $settings['memory_max_file_bytes'] ) && $settings['memory_max_file_bytes'] > 0 ) {
 				return absint( $settings['memory_max_file_bytes'] );

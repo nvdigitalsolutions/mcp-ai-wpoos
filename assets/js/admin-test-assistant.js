@@ -200,12 +200,13 @@
 	 * @return {string} HTML string for chat interface.
 	 */
 	function buildChatHTML(instanceId) {
+		const escapedInstanceId = escapeHtml(instanceId);
 		const placeholderEscaped = escapeHtml(getPlaceholder());
 		const attachLabelEscaped = escapeHtml(getAttachLabel());
 		const transcribeLabelEscaped = escapeHtml(getTranscribeLabel());
 		const sendLabelEscaped = escapeHtml(getSendLabel());
 		
-		return '<div class="wp-mcp-ai-chat" id="' + instanceId + '" data-wp-mcp-ai-chat>' +
+		return '<div class="wp-mcp-ai-chat" id="' + escapedInstanceId + '" data-wp-mcp-ai-chat>' +
 			'<div class="wp-mcp-ai-chat__transcript-controls">' +
 			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false" aria-label="Expand conversation">' +
 			'<svg class="wp-mcp-ai-chat__transcript-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -218,13 +219,13 @@
 			'<form class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
 			'<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>' +
-			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="' + instanceId + '-tool-shortcuts">' +
+			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="' + escapedInstanceId + '-tool-shortcuts">' +
 			'<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text">Quick Tasks</span>' +
 			'<svg class="wp-mcp-ai-chat__tool-shortcuts-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
 			'<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />' +
 			'</svg>' +
 			'</button>' +
-			'<div id="' + instanceId + '-tool-shortcuts" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="Assistant tool tasks" hidden></div>' +
+			'<div id="' + escapedInstanceId + '-tool-shortcuts" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="Assistant tool tasks" hidden></div>' +
 			'</div>' +
 			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="' + placeholderEscaped + '" required></textarea>' +
 			'<div class="wp-mcp-ai-chat__attachments" hidden>' +
@@ -272,7 +273,7 @@
 			'</svg>' +
 			'<span class="screen-reader-text">Export conversation</span>' +
 			'</button>' +
-			'<button type="button" class="wp-mcp-ai-chat__history-toggle" aria-expanded="false" aria-controls="' + instanceId + '-history" aria-label="Show previous conversations">' +
+			'<button type="button" class="wp-mcp-ai-chat__history-toggle" aria-expanded="false" aria-controls="' + escapedInstanceId + '-history" aria-label="Show previous conversations">' +
 			'<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
 			'<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />' +
 			'<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />' +
@@ -287,7 +288,7 @@
 			'</button>' +
 			'</div>' +
 			'</div>' +
-			'<section class="wp-mcp-ai-chat__history" id="' + instanceId + '-history" hidden aria-label="Previous conversations">' +
+			'<section class="wp-mcp-ai-chat__history" id="' + escapedInstanceId + '-history" hidden aria-label="Previous conversations">' +
 			'<div class="wp-mcp-ai-chat__history-header">' +
 			'<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="Refresh conversation history" title="Refresh conversation history">' +
 			'<svg class="wp-mcp-ai-chat__history-refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +

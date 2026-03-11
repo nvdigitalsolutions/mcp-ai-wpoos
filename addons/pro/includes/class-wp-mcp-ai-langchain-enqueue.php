@@ -42,7 +42,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// Tool adapter (NEW - thin wrapper, ~3KB minified).
 		wp_register_script(
 			'wp-mcp-ai-langchain-tool-adapter',
-			plugins_url( 'assets/js/langchain-tool-adapter.min.js', WP_MCP_AI_FILE ),
+			plugins_url( 'assets/js/langchain-tool-adapter.min.js', WP_MCP_AI_PRO_FILE ),
 			array(),
 			WP_MCP_AI_VERSION,
 			true
@@ -51,7 +51,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// LangChain orchestration client (NEW - thin wrapper, ~5KB minified).
 		wp_register_script(
 			'wp-mcp-ai-langchain-orchestration',
-			plugins_url( 'assets/js/langchain-orchestration.min.js', WP_MCP_AI_FILE ),
+			plugins_url( 'assets/js/langchain-orchestration.min.js', WP_MCP_AI_PRO_FILE ),
 			array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-langchain-tool-adapter' ),
 			WP_MCP_AI_VERSION,
 			true

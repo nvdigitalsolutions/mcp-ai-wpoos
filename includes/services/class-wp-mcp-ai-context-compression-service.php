@@ -82,9 +82,9 @@ class WP_MCP_AI_Context_Compression_Service {
 	 */
 	public function compress_context( $content, $options = array() ) {
 		$defaults = array(
-			'target_ratio'   => 0.5, // Target 50% compression.
+			'target_ratio'   => 0.5,            // Target 50% compression.
 			'preserve_facts' => true,
-			'method'         => 'summarization', // 'summarization' or 'chunking'.
+			'method'         => 'summarization', // phpcs:ignore Squiz.PHP.CommentedOutCode.Found -- Accepted values: 'summarization' or 'chunking'; documents valid options, not commented-out code.
 		);
 
 		$options = wp_parse_args( $options, $defaults );

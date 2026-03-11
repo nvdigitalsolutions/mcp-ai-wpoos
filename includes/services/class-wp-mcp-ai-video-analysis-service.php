@@ -268,7 +268,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 		if ( ! class_exists( 'WP_MCP_AI_Video_Frame_Extractor_Service' ) ) {
 			if ( $temp_file && file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Deleting a temp/processed file; WP_Filesystem is not available in this REST/cron/tool execution context.
 				unlink( $file_path );
 			}
 
@@ -284,7 +284,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		// Check if FFmpeg is available.
 		if ( ! $frame_extractor->is_ffmpeg_available() ) {
 			if ( $temp_file && file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Deleting a temp/processed file; WP_Filesystem is not available in this REST/cron/tool execution context.
 				unlink( $file_path );
 			}
 
@@ -306,7 +306,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 		// Clean up temporary video file if downloaded.
 		if ( $temp_file && file_exists( $file_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Deleting a temp/processed file; WP_Filesystem is not available in this REST/cron/tool execution context.
 			unlink( $file_path );
 		}
 
@@ -477,7 +477,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		}
 
 		$temp_file = wp_tempnam( 'video' );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Writing to a WordPress-managed temp path (wp_tempnam); WP_Filesystem is not available in this REST/cron execution context.
 		$written = file_put_contents( $temp_file, $body );
 
 		if ( false === $written ) {

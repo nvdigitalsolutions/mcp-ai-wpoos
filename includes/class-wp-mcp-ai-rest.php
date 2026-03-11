@@ -1047,7 +1047,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for SSE streaming.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical (best-effort timeout extension).
 			}
 
 			while ( $poll_count < $max_polls ) {
@@ -1371,6 +1371,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'tool_count'          => count( $tools ),
 				'memory_file_count'   => $memory_files,
 				'has_vector_store'    => ( isset( $config['vector_store_id'] ) && '' !== $config['vector_store_id'] ),
+				'has_corpus'          => ( isset( $config['corpus_name'] ) && '' !== $config['corpus_name'] ),
 				'has_external_action' => ( ! empty( $config['external_action_identifier'] ) ),
 				'description'         => $this->get_assistant_directory_description( $assistant_post ),
 				'updated_at'          => get_post_modified_time( 'c', true, $assistant_post ),
@@ -2475,8 +2476,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Track original tool results for frontend display.
 			$tool_result_messages = array();
 
+			// Track intermediate assistant messages with tool_calls so that
+			// server-side callers (e.g. the Telegram reply job) can fall back to
+			// them when the final choice has empty content after the agentic loop
+			// exhausts its iteration cap.
+			$agentic_tool_messages = array();
+
 			// If streaming is requested, use streaming-enabled agentic loop.
 			if ( $wants_streaming ) {
+				// Enforce SSE rate limits before opening a streaming connection.
+				if ( class_exists( 'WP_MCP_AI_SSE_Rate_Limiter' ) ) {
+					$sse_limiter       = new WP_MCP_AI_SSE_Rate_Limiter();
+					$rate_limit_result = $sse_limiter->check_connection_allowed();
+
+					if ( is_wp_error( $rate_limit_result ) ) {
+						$error_data  = $rate_limit_result->get_error_data();
+						$retry_after = isset( $error_data['retry_after'] ) ? (int) $error_data['retry_after'] : 30;
+						$response    = rest_ensure_response(
+							array(
+								'code'    => $rate_limit_result->get_error_code(),
+								'message' => $rate_limit_result->get_error_message(),
+								'data'    => $error_data,
+							)
+						);
+						$response->set_status( 429 );
+						$response->header( 'Retry-After', (string) $retry_after );
+						return $response;
+					}
+				}
+
 				return $this->handle_chat_request_with_streaming(
 					$assistant_id,
 					$messages,
@@ -2541,7 +2569,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				// must be followed by tool response messages.
 				$assistant_message = $this->extract_assistant_message_from_response( $response );
 				if ( $assistant_message ) {
-					$messages[] = $assistant_message;
+					$messages[]              = $assistant_message;
+					$agentic_tool_messages[] = $assistant_message;
 				}
 
 				// Execute each tool and collect results.
@@ -2831,6 +2860,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Attach intermediate agentic assistant messages (with tool_calls) to the
+			// response data so that server-side callers such as the Telegram reply job
+			// can fall back to partial content when the final choice has empty content.
+			if ( ! empty( $agentic_tool_messages ) ) {
+				$payload['data']['agentic_tool_messages'] = $agentic_tool_messages;
+			}
 
 			// Include usage data if available for frontend badge display.
 			if ( $usage_data ) {
@@ -4706,7 +4742,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$server->send_header( $key, $value );
 					}
 
-					echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $body is a raw HTTP proxy response sent directly to the client; HTML escaping would corrupt binary/JSON/text content.
 
 					return true;
 				},
@@ -4739,7 +4775,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$meta_key = WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY;
 			$like     = '%' . $wpdb->esc_like( $file_id ) . '%';
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$post_ids = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
@@ -7680,7 +7716,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return false;
 			}
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 
 			return $result === $table;
@@ -9292,7 +9328,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					// Only set if we can (some hosting environments don't allow this).
 					if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
-						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings on restricted hosts; failure is non-critical (best-effort timeout extension).
 					}
 				}
 

@@ -131,7 +131,49 @@ class WP_MCP_AI_Skill_Registry_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test uninstalling a skill.
+	 * Test that PHP files in extra_files are silently dropped (CRITICAL security fix).
+	 */
+	public function test_install_skill_extra_files_blocks_php() {
+		$content = "---\nname: evil-skill\ndescription: Attempts PHP injection.\n---\n\nInstructions.";
+
+		$extra_files = array(
+			'shell.php'         => '<?php system($_GET["cmd"]); ?>',
+			'shell.phtml'       => '<?php phpinfo(); ?>',
+			'safe.md'           => '# Safe file',
+		);
+
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+		$result   = $registry->install_skill( $content, $extra_files );
+
+		$this->assertNotWPError( $result );
+
+		$skill_dir = $registry->get_skills_dir() . '/evil-skill';
+
+		// PHP files must NOT be written.
+		$this->assertFileDoesNotExist( $skill_dir . '/shell.php' );
+		$this->assertFileDoesNotExist( $skill_dir . '/shell.phtml' );
+
+		// Allowed extension must still be written.
+		$this->assertFileExists( $skill_dir . '/safe.md' );
+	}
+
+	/**
+	 * Test that the skills directory .htaccess is created on first ensure_skills_dir() call.
+	 */
+	public function test_ensure_skills_dir_creates_htaccess() {
+		$registry    = WP_MCP_AI_Skill_Registry::instance();
+		$skills_dir  = $registry->get_skills_dir();
+		$htaccess    = $skills_dir . '/.htaccess';
+
+		// Ensure the directory is set up (may already be set up from prior tests).
+		$registry->ensure_skills_dir();
+
+		$this->assertFileExists( $htaccess );
+		$content = file_get_contents( $htaccess ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$this->assertStringContainsString( 'FilesMatch', $content );
+	}
+
+	/**
 	 */
 	public function test_uninstall_skill() {
 		$content = "---\nname: removable-skill\ndescription: Will be removed.\n---\n\nInstructions.";

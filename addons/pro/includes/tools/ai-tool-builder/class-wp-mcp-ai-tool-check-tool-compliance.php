@@ -117,13 +117,36 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		} elseif ( ! empty( $arguments['tool_file'] ) ) {
 			$file_path = sanitize_text_field( $arguments['tool_file'] );
 
-			if ( ! file_exists( $file_path ) ) {
+			// Security: Validate PHP file extension.
+			$extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+			if ( 'php' !== $extension ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'Tool file not found.', 'mcp-ai-wpoos-pro' ),
+					'error'   => __( 'Only PHP files (.php) are allowed.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 
+			// Security: Resolve canonical path to prevent directory traversal attacks.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Tool file not found or not accessible.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Security: Restrict to the WordPress content directory (plugins, themes, etc.).
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'File must be in the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Use the resolved path for all subsequent operations (run_phpcs, auto_fix_issues, etc.).
+			$file_path = $resolved;
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local PHP file reading.
 			$code = file_get_contents( $file_path );
 		}
 

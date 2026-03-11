@@ -118,18 +118,45 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 	 * was specified when the subscription was created. This value is compared
 	 * against the stored client state for the connection.
 	 *
-	 * When the client state is not configured the webhook is allowed through
-	 * with a security warning.
+	 * When the client state is not configured the webhook is rejected with
+	 * a 403 error (fail-closed). Subscription validation requests that carry a
+	 * validationToken query parameter are allowed through regardless of client
+	 * state because they originate from Microsoft Graph before any subscription
+	 * is active; the handler echoes the token back and returns immediately.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if client state is valid or not configured.
+	 * @return bool|WP_Error True if client state is valid or request is a
+	 *                        Microsoft subscription validation. WP_Error(403)
+	 *                        if client state is not configured or does not match.
 	 */
 	public function validate_outlook_signature( $request ) {
-		// Validation token requests are always allowed through.
+		// Subscription validation: Microsoft Graph sends a POST with a validationToken
+		// query parameter to confirm the webhook endpoint is reachable before creating
+		// the subscription. The handler echoes the token back as plain text/returns early,
+		// so no notification payload is ever processed on this path.
+		//
+		// We still require that at least one Outlook connection is configured before
+		// allowing this bypass, so that the endpoint cannot be invoked when no integration
+		// is active.
 		$validation_token = $request->get_param( 'validationToken' );
-		if ( null !== $validation_token ) {
+		if ( null !== $validation_token && '' !== $validation_token ) {
+			// Require that a connection (and therefore a client_state) is actually
+			// configured for this site, preventing bypass when no Outlook integration
+			// is active.
+			$connection_id = $request->get_param( 'connection_id' );
+			$client_state  = $this->get_client_state( $connection_id );
+			if ( empty( $client_state ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Outlook webhook validation token rejected: no active Outlook connection configured.'
+				);
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'Webhook authentication is not configured. Please set a client state in the connection settings.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
 			return true;
 		}
 
@@ -137,12 +164,14 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 		$client_state  = $this->get_client_state( $connection_id );
 
 		if ( empty( $client_state ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'outlook_webhook_no_client_state',
-				'Outlook webhook received without client state configured. Validation skipped. Configure client_state in the connection settings for enhanced security.',
-				array()
+			WP_MCP_AI_Logger::log_error(
+				'Outlook webhook rejected: no client state configured. Set client_state in the connection settings to enable webhook validation.'
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a client state in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$payload = $request->get_json_params();
@@ -426,6 +455,19 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 		 */
 		$max_history = (int) apply_filters( 'wp_mcp_ai_outlook_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
+
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'outlook',
+				$sender_email,
+				$connection_id,
+				$max_history - 1
+			);
+		}
 
 		if ( count( $history ) >= $max_history ) {
 			$history = array_slice( $history, -( $max_history - 1 ) );

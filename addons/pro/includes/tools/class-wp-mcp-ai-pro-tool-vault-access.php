@@ -79,7 +79,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 				),
 				'required'   => array( 'action' ),
 			),
-			'required_capability' => 'edit_posts',
+			'required_capability' => 'manage_options',
 		);
 	}
 
@@ -91,6 +91,14 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 * @return array
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Enforce manage_options capability regardless of tool-framework checks.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return array(
+				'success' => false,
+				'error'   => 'Insufficient permissions. Only administrators may access the password vault.',
+			);
+		}
+
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
 			return array(
