@@ -1165,30 +1165,6 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					'This is a placeholder implementation. Full worker functionality will be added when RabbitMQ is enabled on your Cloudways server.'
 				);
 
-				// Example worker loop (pseudo-code):
-				// while ( true ) {.
-				// $message = $queue->get();
-				// if ( ! $message ) {
-				// usleep( 100000 ); // 100ms.
-				// continue;
-				// }.
-				//
-				// $payload = json_decode( $message->getBody(), true );
-				// $tool = $registry->get_tool( $payload['tool_name'] );
-				//
-				// if ( $tool ) {.
-				// $result = $tool->execute( $payload['arguments'], $payload['context'] );
-				// $client->store_job_result( $payload['job_id'], $result );
-				// }.
-				//
-				// $queue->ack( $message->getDeliveryTag() );
-				// $jobs_processed++;
-				//
-				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {.
-				// break;
-				// }.
-				// }.
-
 				WP_CLI::success( sprintf( 'Worker stopped. Processed %d jobs.', $jobs_processed ) );
 			}
 		}
@@ -1275,11 +1251,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				}
 
 				// Write startup message to stderr (not stdout, which is for JSON-RPC).
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output.
 				fwrite( STDERR, "[NV oOS] STDIO transport starting...\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 				if ( $assistant_id > 0 ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output. Integer assistant_id is safe.
 					fwrite( STDERR, "[NV oOS] Scoped to assistant ID: {$assistant_id}\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 				}
 
@@ -1289,7 +1265,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// Handle SIGTERM and SIGINT for graceful shutdown.
 				if ( function_exists( 'pcntl_signal' ) ) {
 					$shutdown_handler = function () use ( $transport ) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output.
 						fwrite( STDERR, "\n[NV oOS] Shutting down...\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 						$transport->stop();
 					};
@@ -1300,7 +1276,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				$transport->run();
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing to STDERR stream; HTML escaping does not apply to CLI/STDIO output.
 				fwrite( STDERR, "[NV oOS] STDIO transport stopped.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 			}
 		}

@@ -110,7 +110,7 @@ class WP_MCP_AI_Async_Health_Monitor {
 		// Query transients for async jobs.
 		$transient_prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value
@@ -159,7 +159,7 @@ class WP_MCP_AI_Async_Health_Monitor {
 		$long_running     = array();
 		$transient_prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value

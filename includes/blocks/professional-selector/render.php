@@ -74,7 +74,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	$wrapper_attributes = sprintf( 'class="%s"', esc_attr( $wrapper_class ) );
 }
 
-echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $wrapper_attributes is sanitized by get_block_wrapper_attributes() (WP core) or via esc_attr() in the non-block fallback.
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode handles escaping.
 echo do_shortcode( $shortcode );
 echo '</div>';

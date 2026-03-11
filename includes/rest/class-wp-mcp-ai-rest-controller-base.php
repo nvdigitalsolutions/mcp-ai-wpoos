@@ -362,6 +362,6 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 		}
 
 		$prefix = $context ? "[{$context}] " : '';
-		error_log( "[NV oOS REST] {$prefix}{$message}" );
+		error_log( "[NV oOS REST] {$prefix}{$message}" ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional production logging; caller already gates on is_logging_enabled().
 	}
 }

@@ -467,6 +467,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Always enabled - provides secure password storage with AES-256-GCM encryption.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/password-vault-init.php';
 
+		// Load Pro Skill Manager (always enabled - provides skill upload, install, and editor UI).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/skills-manager-init.php';
+
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
@@ -592,6 +595,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Update_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
 			'WP_MCP_AI_Tool_Delete_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
 			'WP_MCP_AI_Tool_List_Tasks'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-tasks.php',
+			// Task Dependency tools (Pro feature - v1.2.0).
+			'WP_MCP_AI_Tool_Add_Task_Dependency'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-task-dependency.php',
+			'WP_MCP_AI_Tool_Remove_Task_Dependency'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-task-dependency.php',
+			'WP_MCP_AI_Tool_Get_Task_Dependencies'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-task-dependencies.php',
 			'WP_MCP_AI_Tool_Create_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-event.php',
 			'WP_MCP_AI_Tool_Update_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-event.php',
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
@@ -842,10 +849,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Create_Health_Reminder'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-health-reminder.php',
 				'WP_MCP_AI_Tool_Track_Vaccinations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-track-vaccinations.php',
 				'WP_MCP_AI_Tool_Log_Vital_Signs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-log-vital-signs.php',
+				'WP_MCP_AI_Tool_Import_Vitals'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-vitals.php',
 				'WP_MCP_AI_Tool_Export_FHIR_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-fhir-data.php',
 				'WP_MCP_AI_Tool_Manage_Care_Plan'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-care-plan.php',
+				// Health Research: compile data from CCT, options, files, and vector store.
+				'WP_MCP_AI_Tool_Compile_Health_Research_Data' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-compile-health-research-data.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
+
+			// Auto-include JetEngine CCT tool when health management is enabled and JetEngine is active.
+			// This allows the AI to create/update/delete vital_signs CCT items directly without using create_post.
+			if ( function_exists( 'jet_engine' ) && ! isset( $pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] ) ) {
+				$pro_tools['WP_MCP_AI_Pro_Tool_JetEngine'] = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php';
+			}
 		}
 
 		// Add WooCommerce tools if enabled.

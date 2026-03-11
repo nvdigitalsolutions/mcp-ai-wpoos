@@ -60,7 +60,7 @@ class WP_MCP_AI_Transcript_Repository {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 
 		return $result === $table;
@@ -135,7 +135,7 @@ class WP_MCP_AI_Transcript_Repository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 		$query = $wpdb->prepare( $query_template, $query_values );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
 		if ( ! is_array( $rows ) ) {
@@ -175,7 +175,7 @@ class WP_MCP_AI_Transcript_Repository {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 			$fallback_query = $wpdb->prepare( $fallback_query_template, $fallback_query_values );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 			$rows = $wpdb->get_results( $fallback_query, ARRAY_A );
 
 			if ( ! is_array( $rows ) ) {
@@ -189,7 +189,7 @@ class WP_MCP_AI_Transcript_Repository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 		$total_query = $wpdb->prepare( $total_query_template, $where_values );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 		$total = (int) $wpdb->get_var( $total_query );
 
 		// If we used fallback for rows, also use fallback for total count.
@@ -208,7 +208,7 @@ class WP_MCP_AI_Transcript_Repository {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query template is built above with escaped table name and hardcoded placeholders.
 			$fallback_total_query = $wpdb->prepare( $fallback_total_query_template, $fallback_where_values );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Query string built dynamically from sanitized/validated components; $wpdb->prepare() applied for all value placeholders.
 			$total = (int) $wpdb->get_var( $fallback_total_query );
 		}
 
@@ -538,7 +538,7 @@ class WP_MCP_AI_Transcript_Repository {
 		}
 
 		// Try deleting using user_id first (custom CCT field).
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$deleted = $wpdb->delete(
 			$table,
 			array(
@@ -550,7 +550,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 		// If no rows deleted with user_id, try with cct_author_id (JetEngine built-in).
 		if ( false !== $deleted && 0 === $deleted ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$deleted = $wpdb->delete(
 				$table,
 				array(

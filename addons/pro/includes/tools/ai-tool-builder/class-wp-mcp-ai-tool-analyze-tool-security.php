@@ -120,14 +120,26 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 		} elseif ( ! empty( $arguments['tool_file'] ) ) {
 			$tool_file = sanitize_text_field( $arguments['tool_file'] );
 
-			if ( ! file_exists( $tool_file ) ) {
+			// Security: Resolve canonical path to prevent directory traversal attacks.
+			$resolved = realpath( $tool_file );
+			if ( false === $resolved ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'Tool file not found.', 'mcp-ai-wpoos-pro' ),
+					'error'   => __( 'Tool file not found or not accessible.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 
-			$code = file_get_contents( $tool_file );
+			// Security: Restrict to the WordPress content directory so this tool
+			// cannot be used to read arbitrary server files (e.g. /etc/passwd).
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Tool file must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local PHP tool file.
+			$code = file_get_contents( $resolved );
 		}
 
 		if ( empty( $code ) ) {

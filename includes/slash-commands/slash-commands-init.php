@@ -650,7 +650,7 @@ function wp_mcp_ai_cleanup_slash_audit() {
 	$deleted      = $audit->clean_old_logs( $days_to_keep );
 
 	if ( $deleted && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 		error_log( sprintf( '[SlashCommands:AUDIT] Cleaned %d old audit log entries (older than %d days)', $deleted, $days_to_keep ) );
 	}
 }

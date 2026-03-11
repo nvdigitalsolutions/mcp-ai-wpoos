@@ -399,7 +399,7 @@ class WP_MCP_AI_Vector_Context_Service {
 
 		// Clear all embedding cache if no agent specified.
 		if ( null === $agent_id ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$transients = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",

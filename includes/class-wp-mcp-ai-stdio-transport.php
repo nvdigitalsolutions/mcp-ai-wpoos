@@ -157,7 +157,7 @@ class WP_MCP_AI_STDIO_Transport {
 		}
 
 		// Write response followed by newline.
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing JSON-RPC response to STDOUT stream; HTML escaping does not apply to STDIO protocol output.
 		fwrite( STDOUT, $json . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 
 		// Flush output immediately.
@@ -588,7 +588,7 @@ class WP_MCP_AI_STDIO_Transport {
 	 */
 	protected function log_debug( $message ) {
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Writing debug message to STDERR stream; HTML escaping does not apply to CLI/STDIO output.
 			fwrite( STDERR, '[NV oOS STDIO] ' . $message . "\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- Direct filesystem operation required; WP_Filesystem not available in this execution context.
 		}
 	}

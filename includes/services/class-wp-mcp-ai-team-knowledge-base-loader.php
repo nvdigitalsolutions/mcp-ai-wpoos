@@ -58,7 +58,10 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 
 			if ( is_wp_error( $teams ) ) {
 				// Log error but continue with other files.
-				error_log( sprintf( 'WP_MCP_AI: Error loading %s: %s', basename( $file ), $teams->get_error_message() ) );
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					sprintf( 'Error loading %s: %s', basename( $file ), $teams->get_error_message() )
+				);
 				continue;
 			}
 
@@ -83,7 +86,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$json_content = file_get_contents( $file_path );
 
 		if ( false === $json_content ) {
@@ -176,7 +179,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 			return array();
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_dir
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_dir -- is_dir() used to check arbitrary system directory existence; WP_Filesystem does not expose an is_dir() equivalent for non-site paths.
 		$files = glob( $this->knowledge_base_path . '*.json' );
 
 		if ( false === $files ) {

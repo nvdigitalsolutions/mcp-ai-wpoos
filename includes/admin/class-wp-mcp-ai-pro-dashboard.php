@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Skip if class doesn't exist.
 			if ( ! class_exists( $class_name ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log used as a diagnostic fallback logger; active only when WP_DEBUG is enabled or as last-resort error capture in catch blocks.
 					error_log(
 						sprintf(
 							'[WP_MCP_AI] Pro Dashboard delegate class not found: %s (key: %s)',
@@ -820,7 +820,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$valid_tabs = array( 'iso27001', 'overview', 'reports', 'monitoring', 'risk', 'multi-framework' );
 
 			// Get current tab from URL parameter, sanitize and validate immediately.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation parameter; immediately validated against an allowlist on the next line.
 			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'iso27001';
 
 			// Validate tab - ensure it's in the valid tabs list.
@@ -1710,14 +1710,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( ! $this->is_pro_active() ) {
 				?>
 				<div class="notice notice-info wp-mcp-ai-pro-notice">
-					<h3><?php esc_html_e( '🔒 Pro Dashboard Preview', 'mcp-ai-wpoos' ); ?></h3>
+					<h3><?php esc_html_e( 'Pro Dashboard', 'mcp-ai-wpoos' ); ?></h3>
 					<p>
 						<?php
 						$upgrade_url = apply_filters( 'wp_mcp_ai_pro_upgrade_url', admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=overview' ) );
 						echo wp_kses_post(
 							sprintf(
-								/* translators: %s: Link to upgrade page */
-								__( 'You\'re viewing a preview of the Pro Dashboard. <a href="%s">Upgrade to Pro</a> to unlock full compliance automation, real-time monitoring, and advanced reporting features.', 'mcp-ai-wpoos' ),
+								/* translators: %s: Link to Pro addon information page */
+								__( 'Full compliance automation, real-time monitoring, and advanced reporting are available in the <a href="%s">Pro addon</a>.', 'mcp-ai-wpoos' ),
 								esc_url( $upgrade_url )
 							)
 						);
@@ -2643,7 +2643,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			} else {
 				?>
 				<p class="wp-mcp-ai-empty-state">
-					<?php esc_html_e( 'Upgrade to Pro to generate automated compliance reports for auditors and management.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Automated compliance report generation (PDF, DOCX, Excel) is available in the Pro addon.', 'mcp-ai-wpoos' ); ?>
 				</p>
 				<?php
 			}
@@ -3164,7 +3164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php endif; ?>
 						<?php if ( ! $this->is_pro_active() && 'pending' === $framework['status'] ) : ?>
 							<p class="wp-mcp-ai-framework-cta">
-								<small><?php esc_html_e( 'Pro feature', 'mcp-ai-wpoos' ); ?></small>
+								<small><?php esc_html_e( 'Available in Pro addon', 'mcp-ai-wpoos' ); ?></small>
 							</p>
 						<?php endif; ?>
 					</div>
@@ -4071,21 +4071,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					$table = esc_sql( $repository->get_table_name() );
 
 					// Get total conversations (unique session keys).
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 					$total                            = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
 					$chat_data['total_conversations'] = absint( $total );
 
 					// Get active users (unique user IDs).
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 					$active_users              = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
 					$chat_data['active_users'] = absint( $active_users );
 
 					// Get today's conversations.
 					$today_start = gmdate( 'Y-m-d 00:00:00' );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 					$today_count = $wpdb->get_var(
 						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
 							$today_start
 						)
@@ -4094,10 +4094,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 					// Get this week's conversations.
 					$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 					$week_count = $wpdb->get_var(
 						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
 							$week_start
 						)

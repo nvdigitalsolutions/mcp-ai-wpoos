@@ -715,6 +715,14 @@ class WP_MCP_AI_REST_Validator {
 			$options['vector_store_id'] = '';
 		}
 
+		if ( isset( $options['corpus_name'] ) ) {
+			$options['corpus_name'] = sanitize_text_field( $options['corpus_name'] );
+		} elseif ( isset( $assistant_config['corpus_name'] ) && '' !== $assistant_config['corpus_name'] ) {
+			$options['corpus_name'] = sanitize_text_field( $assistant_config['corpus_name'] );
+		} else {
+			$options['corpus_name'] = '';
+		}
+
 		if ( isset( $options['max_tokens'] ) ) {
 			$options['max_tokens'] = absint( $options['max_tokens'] );
 
@@ -725,6 +733,24 @@ class WP_MCP_AI_REST_Validator {
 
 		if ( isset( $options['enable_web_search'] ) ) {
 			$options['enable_web_search'] = (bool) $options['enable_web_search'];
+		}
+
+		// Gemini extended thinking / reasoning budget.
+		// When set, Gemini 2.5+ models will use thinkingConfig with the specified token budget.
+		if ( isset( $options['thinking_budget_tokens'] ) ) {
+			$budget = absint( $options['thinking_budget_tokens'] );
+			if ( $budget > 0 ) {
+				$options['thinking_budget_tokens'] = min( 24576, $budget );
+			} else {
+				unset( $options['thinking_budget_tokens'] );
+			}
+		} elseif ( 'gemini' === $provider ) {
+			// Propagate the global Gemini thinking budget from settings when not overridden per-request.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$budget   = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 0;
+			if ( $budget > 0 ) {
+				$options['thinking_budget_tokens'] = $budget;
+			}
 		}
 
 		// Remove 'stream' parameter if present - it's only used by SSE handler to determine.

@@ -775,9 +775,16 @@ class WP_MCP_AI_Vault_Item_CPT {
 			update_post_meta( $post_id, '_vault_item_type', $item_type );
 		}
 
-		// Save folder ID.
+		// Save folder ID — verify the folder belongs to the current user.
 		if ( isset( $_POST['vault_folder_id'] ) ) {
 			$folder_id = absint( $_POST['vault_folder_id'] );
+			if ( $folder_id > 0 ) {
+				$folder = get_post( $folder_id );
+				if ( ! $folder || 'mcp_vault_folder' !== $folder->post_type || (int) $folder->post_author !== $user_id ) {
+					// Silently ignore an invalid/unauthorized folder assignment.
+					$folder_id = 0;
+				}
+			}
 			update_post_meta( $post_id, '_vault_folder_id', $folder_id );
 		}
 

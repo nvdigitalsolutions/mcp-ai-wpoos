@@ -27,6 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_SYSTEM_PROMPT           = '_wp_mcp_ai_system_prompt';
 		const META_MEMORY_FILES            = '_wp_mcp_ai_memory_files';
 		const META_VECTOR_STORE_ID         = '_wp_mcp_ai_vector_store_id';
+		const META_CORPUS_NAME             = '_wp_mcp_ai_corpus_name';
 		const META_TOOL_SHORTCUTS          = '_wp_mcp_ai_tool_shortcuts';
 		const META_TOOL_PREBUILT_SHORTCUTS = '_wp_mcp_ai_tool_prebuilt_shortcuts';
 		const META_DISABLE_TOOL_SHORTCUTS  = '_wp_mcp_ai_disable_tool_shortcuts';
@@ -1485,6 +1486,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			register_post_meta(
 				self::POST_TYPE,
+				self::META_CORPUS_NAME,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_corpus_name_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
 				self::META_TOOL_SHORTCUTS,
 				array(
 					'type'              => 'array',
@@ -1877,6 +1890,23 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return sanitize_text_field( $vector_store_id );
+		}
+
+		/**
+		 * Sanitize the Gemini corpus name meta value.
+		 *
+		 * Accepts either a bare corpus ID or the full resource name
+		 * (e.g. "my-corpus-id" or "corpora/my-corpus-id").
+		 *
+		 * @param mixed $corpus_name Raw corpus name.
+		 * @return string
+		 */
+		public static function sanitize_corpus_name_meta( $corpus_name ) {
+			if ( ! is_string( $corpus_name ) ) {
+				return '';
+			}
+
+			return sanitize_text_field( $corpus_name );
 		}
 
 		/**
@@ -3077,14 +3107,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								name="wp_mcp_ai_external_action_identifier"
 								value="<?php echo esc_attr( $external_action_id ); ?>"
 								class="widefat"
-								data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe literal attribute string: either ' disabled="disabled"' or ''. ?>
 							/>
 						</p>
 						<p>
 							<label for="<?php echo esc_attr( $type_field_id ); ?>">
 								<strong><?php esc_html_e( 'Default action type', 'mcp-ai-wpoos' ); ?></strong>
 							</label>
-							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe literal attribute string: either ' disabled="disabled"' or ''. ?>>
 								<option value="">
 									<?php esc_html_e( 'Use runtime choice', 'mcp-ai-wpoos' ); ?>
 								</option>
@@ -4490,6 +4520,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_vector_store_meta().
 				$vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? self::sanitize_vector_store_meta( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : '';
 				update_post_meta( $post_id, self::META_VECTOR_STORE_ID, $vector_store_id );
+
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_corpus_name_meta().
+				$corpus_name = isset( $_POST['wp_mcp_ai_corpus_name'] ) ? self::sanitize_corpus_name_meta( wp_unslash( $_POST['wp_mcp_ai_corpus_name'] ) ) : '';
+				update_post_meta( $post_id, self::META_CORPUS_NAME, $corpus_name );
 			}
 
 			// Handle mesh routing configuration.
@@ -4642,6 +4676,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} catch ( Exception $e ) {
 				// Log error but don't block the save process.
 				if ( function_exists( 'error_log' ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- error_log records CCT sync failure as a last-resort catch-block diagnostic; does not block save process.
 					error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
 				}
 			} finally {
@@ -4753,6 +4788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'system_prompt'              => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
 				'memory_files'               => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
 				'vector_store_id'            => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
+				'corpus_name'                => get_post_meta( $assistant_id, self::META_CORPUS_NAME, true ),
 				'tool_shortcuts'             => get_post_meta( $assistant_id, self::META_TOOL_SHORTCUTS, true ),
 				'tool_prebuilt_shortcuts'    => get_post_meta( $assistant_id, self::META_TOOL_PREBUILT_SHORTCUTS, true ),
 				'tool_role_rules'            => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
@@ -4831,6 +4867,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['vector_store_id'] = '';
 			} else {
 				$config['vector_store_id'] = sanitize_text_field( $config['vector_store_id'] );
+			}
+
+			if ( ! is_string( $config['corpus_name'] ) ) {
+				$config['corpus_name'] = '';
+			} else {
+				$config['corpus_name'] = sanitize_text_field( $config['corpus_name'] );
 			}
 
 			if ( ! is_array( $config['tool_shortcuts'] ) ) {

@@ -843,7 +843,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				$token_url,
 				array(
 					'headers' => array(
-						'Authorization' => 'Basic ' . base64_encode( $client_id . ':' . $client_secret ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						'Authorization' => 'Basic ' . base64_encode( $client_id . ':' . $client_secret ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to construct an HTTP Basic Auth header (RFC 7617), not for obfuscation.
 						'Content-Type'  => 'application/x-www-form-urlencoded',
 					),
 					'body'    => array(

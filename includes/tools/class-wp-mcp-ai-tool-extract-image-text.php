@@ -496,7 +496,7 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 				);
 			}
 
-			$image_content = base64_encode( wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			$image_content = base64_encode( wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		}
 
 		$model        = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-1.5-flash';

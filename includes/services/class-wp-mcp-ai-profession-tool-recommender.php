@@ -272,7 +272,7 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 			// If no registry provided, log warning and return all slugs.
 			// This should only happen in testing scenarios.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'WP_MCP_AI: Tool recommender initialized without registry. Tool availability cannot be verified.' );
+				error_log( 'WP_MCP_AI: Tool recommender initialized without registry. Tool availability cannot be verified.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_DEBUG.
 			}
 			return $tool_slugs;
 		}
