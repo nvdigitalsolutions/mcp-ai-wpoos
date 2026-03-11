@@ -834,8 +834,8 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		}
 
 		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
-		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
-			wp_send_json_error( __( 'Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ) );
+		if ( 'https' !== $scheme ) {
+			wp_send_json_error( __( 'Only HTTPS URLs are supported for skill installation.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Block SSRF: resolve the host to an IP and reject private/reserved ranges.
