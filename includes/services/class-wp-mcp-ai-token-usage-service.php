@@ -228,7 +228,7 @@ class WP_MCP_AI_Token_Usage_Service {
 		$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
 
 		// Get all user IDs with usage data.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$user_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
@@ -313,7 +313,7 @@ class WP_MCP_AI_Token_Usage_Service {
 		// Collect tool usage statistics.
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$tool_users = $wpdb->get_col(
 				$wpdb->prepare(
 					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",

@@ -40,6 +40,8 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -47,7 +49,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of posts to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
-					'maximum'     => 50,
+					'maximum'     => $max_limit,
 					'default'     => 5,
 				),
 				'post_type' => array(
@@ -78,8 +80,10 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		$limit     = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
-		$limit     = $limit > 0 ? min( $limit, 50 ) : 5;
+		$limit     = $limit > 0 ? min( $limit, $max_limit ) : 5;
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
 		$posts = get_posts(

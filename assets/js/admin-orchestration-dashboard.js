@@ -558,7 +558,7 @@
 					if (response.success) {
 						OrchestrationDashboard.renderWorkflows(response.data);
 					} else {
-						$container.html('<div class="workflows-error"><p>Error: ' + (response.data.message || 'Unknown error') + '</p></div>');
+						$container.html('<div class="workflows-error"><p>Error: ' + OrchestrationDashboard.escapeHtml(response.data.message || 'Unknown error') + '</p></div>');
 					}
 					$button.prop('disabled', false);
 					$button.html(originalText);

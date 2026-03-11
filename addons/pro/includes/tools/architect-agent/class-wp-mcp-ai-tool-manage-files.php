@@ -253,11 +253,17 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 			$real_path = $real_parent . '/' . basename( $absolute_path );
 		} else {
-			$real_path = $absolute_path;
+			// Neither the file nor its parent directory exists yet.
+			// Normalise by stripping trailing slashes so the prefix check is exact.
+			$real_path = rtrim( $absolute_path, '/' );
 		}
 
 		// Ensure the resolved path is within the plugin directory.
-		if ( strpos( $real_path, $real_plugin_dir ) !== 0 ) {
+		// Append a slash to both sides so that a directory whose name is a prefix of
+		// another directory cannot bypass the check (e.g. /plugins/mcp vs /plugins/mcp-addon).
+		$real_plugin_dir_norm = rtrim( $real_plugin_dir, '/' ) . '/';
+		$real_path_norm       = rtrim( (string) $real_path, '/' ) . '/';
+		if ( strpos( $real_path_norm, $real_plugin_dir_norm ) !== 0 ) {
 			return new WP_Error(
 				'wp_mcp_ai_path_outside_plugin',
 				__( 'Access denied. Path must be within the plugin directory.', 'mcp-ai-wpoos' )
@@ -332,6 +338,21 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return new WP_Error(
 				'wp_mcp_ai_missing_content',
 				__( 'The "content" parameter is required for write action.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Restrict write operations to safe, non-executable file extensions to prevent
+		// an AI assistant (or a prompt-injected payload) from writing PHP webshells.
+		$allowed_extensions = array( 'txt', 'json', 'md', 'css', 'js', 'ts', 'html', 'htm', 'xml', 'yaml', 'yml', 'ini', 'env.example', 'svg', 'csv', 'log' );
+		$extension          = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
+		if ( ! in_array( $extension, $allowed_extensions, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_restricted_extension',
+				sprintf(
+					/* translators: %s: file extension */
+					__( 'Writing files with ".%s" extension is not allowed. Use the WordPress plugin editor for PHP files.', 'mcp-ai-wpoos' ),
+					esc_html( $extension )
+				)
 			);
 		}
 

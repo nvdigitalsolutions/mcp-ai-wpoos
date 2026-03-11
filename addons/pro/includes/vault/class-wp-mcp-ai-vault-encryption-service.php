@@ -225,12 +225,16 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		// Combines WordPress master key + user salt + user ID for uniqueness.
 		$key_material = AUTH_KEY . $user_salt . $user_id;
 
+		// Derive an independent PBKDF2 salt from the user salt using HMAC so that
+		// the salt parameter is distinct from the key material (OWASP requirement).
+		$pbkdf2_salt = hash_hmac( 'sha256', 'pbkdf2-salt-v1:' . $user_id, $user_salt, true );
+
 		// Derive 32-byte key using PBKDF2-HMAC-SHA256.
 		// OWASP recommendation: minimum 100,000 iterations for PBKDF2-SHA256.
 		$derived_key = hash_pbkdf2(
 			'sha256',
 			$key_material,
-			$user_salt,
+			$pbkdf2_salt,
 			self::PBKDF2_ITERATIONS,
 			32, // Key length in bytes (256 bits for AES-256).
 			true // Return raw binary data.
@@ -438,6 +442,16 @@ class WP_MCP_AI_Vault_Encryption_Service {
 
 			// Timing-safe comparison to prevent timing attacks.
 			if ( hash_equals( $expected_code, $code ) ) {
+				// RFC 6238 §5.2: each OTP MUST be accepted only once within its time window.
+				// Record the used counter in a transient so a second request in the same
+				// window is rejected even if it carries the identical code.
+				$counter   = (int) floor( $check_timestamp / self::TOTP_TIME_STEP );
+				$cache_key = 'vault_totp_used_' . wp_hash( $secret . '_' . $counter );
+				if ( get_transient( $cache_key ) ) {
+					return false; // Code already consumed in this time window.
+				}
+				// Keep the transient alive for three full time steps (covers clock drift).
+				set_transient( $cache_key, 1, self::TOTP_TIME_STEP * 3 );
 				return true;
 			}
 		}

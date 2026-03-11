@@ -82,6 +82,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 				$settings['brave_search_api_key'] = sanitize_text_field( wp_unslash( $_POST['brave_search_api_key'] ) );
 			}
 
+			// Sanitize Tavily settings.
+			if ( isset( $_POST['tavily_api_key'] ) ) {
+				$settings['tavily_api_key'] = sanitize_text_field( wp_unslash( $_POST['tavily_api_key'] ) );
+			}
+
 			// Sanitize Cloudflare settings.
 			if ( isset( $_POST['cloudflare_api_token'] ) ) {
 				$settings['cloudflare_api_token'] = sanitize_text_field( wp_unslash( $_POST['cloudflare_api_token'] ) );
@@ -158,6 +163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 			$crawl4ai_base_url            = isset( $settings['crawl4ai_base_url'] ) ? $settings['crawl4ai_base_url'] : '';
 			$crawl4ai_api_key             = isset( $settings['crawl4ai_api_key'] ) ? $settings['crawl4ai_api_key'] : '';
 			$brave_search_api_key         = isset( $settings['brave_search_api_key'] ) ? $settings['brave_search_api_key'] : '';
+			$tavily_api_key               = isset( $settings['tavily_api_key'] ) ? $settings['tavily_api_key'] : '';
 			$cloudflare_api_token         = isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
 			$cloudflare_zone_id           = isset( $settings['cloudflare_zone_id'] ) ? $settings['cloudflare_zone_id'] : '';
 			$cloudways_api_key            = isset( $settings['cloudways_api_key'] ) ? $settings['cloudways_api_key'] : '';
@@ -271,6 +277,34 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 										/* translators: %s: URL to Brave Search API */
 										esc_html__( 'API key for Brave Search integration. Get your API key from %s.', 'mcp-ai-wpoos' ),
 										'<a href="https://brave.com/search/api/" target="_blank">Brave Search API</a>'
+									);
+									?>
+								</p>
+							</td>
+						</tr>
+
+						<!-- Tavily Section -->
+						<tr>
+							<td colspan="2">
+								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-search"></span>
+									<?php esc_html_e( 'Tavily', 'mcp-ai-wpoos' ); ?>
+								</h2>
+								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="tavily_api_key"><?php esc_html_e( 'Tavily API Key', 'mcp-ai-wpoos' ); ?></label>
+							</th>
+							<td>
+								<input type="password" id="tavily_api_key" name="tavily_api_key" value="<?php echo esc_attr( $tavily_api_key ); ?>" class="regular-text" autocomplete="new-password" />
+								<p class="description">
+									<?php
+									printf(
+										/* translators: %s: URL to Tavily */
+										esc_html__( 'API key for Tavily Search integration (AI-first provider optimised for agent workflows). Get your API key from %s.', 'mcp-ai-wpoos' ),
+										'<a href="https://tavily.com/" target="_blank">tavily.com</a>'
 									);
 									?>
 								</p>

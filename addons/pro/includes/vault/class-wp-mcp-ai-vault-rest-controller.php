@@ -42,11 +42,18 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	protected $encryption_service;
 
 	/**
-	 * Rate limiter
+	 * Rate limit window in seconds.
 	 *
-	 * @var array
+	 * @var int
 	 */
-	protected $rate_limits = array();
+	const RATE_LIMIT_WINDOW = 60;
+
+	/**
+	 * Maximum requests per rate limit window.
+	 *
+	 * @var int
+	 */
+	const RATE_LIMIT_MAX = 60;
 
 	/**
 	 * Constructor
@@ -198,8 +205,10 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		// Check capability (edit_posts minimum).
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		// Check capability — only administrators (manage_options) may access the vault.
+		// Password vault entries are sensitive credentials; allowing Author/Contributor
+		// level users (edit_posts) would expose secrets if their accounts are compromised.
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access the vault.', 'mcp-ai-wpoos-pro' ),
@@ -211,40 +220,34 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Check rate limit for user
+	 * Check rate limit for user using persistent transient storage.
+	 *
+	 * Stores the request count in a transient so limits are enforced
+	 * across all concurrent requests and page reloads.
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool
+	 * @return bool True if the request is allowed, false if rate limit exceeded.
 	 */
 	protected function check_rate_limit( $request ) {
 		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
-			$user_id = 'guest_' . md5( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
-		}
-
-		$current_time = time();
-		$window       = 60; // 1 minute window.
-		$max_requests = 60; // 60 requests per minute.
-
-		// Clean old entries.
-		if ( isset( $this->rate_limits[ $user_id ] ) ) {
-			$this->rate_limits[ $user_id ] = array_filter(
-				$this->rate_limits[ $user_id ],
-				function ( $timestamp ) use ( $current_time, $window ) {
-					return $timestamp > ( $current_time - $window );
-				}
-			);
+		if ( $user_id ) {
+			$cache_key = 'vault_rl_u_' . $user_id;
 		} else {
-			$this->rate_limits[ $user_id ] = array();
+			// Validate the IP before using it as a cache key.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated with filter_var immediately below.
+			$raw_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+			$ip        = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
+			$cache_key = 'vault_rl_g_' . md5( $ip );
 		}
 
-		// Check if limit exceeded.
-		if ( count( $this->rate_limits[ $user_id ] ) >= $max_requests ) {
+		$count = (int) get_transient( $cache_key );
+
+		if ( $count >= self::RATE_LIMIT_MAX ) {
 			return false;
 		}
 
-		// Add current request.
-		$this->rate_limits[ $user_id ][] = $current_time;
+		// Increment counter; initialise the transient window on first request.
+		set_transient( $cache_key, $count + 1, self::RATE_LIMIT_WINDOW );
 
 		return true;
 	}
@@ -291,7 +294,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		$items = array();
 		foreach ( $query->posts as $post ) {
-			$items[] = $this->prepare_item_for_response( $post );
+			$items[] = $this->prepare_item_for_response( $post, false );
 		}
 
 		$response = rest_ensure_response( $items );
@@ -322,7 +325,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to access this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -330,7 +333,42 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
+	}
+
+	/**
+	 * Verify that a folder belongs to the current user.
+	 *
+	 * Returns a WP_Error when the folder does not exist or is owned by another
+	 * user, so callers can return it directly from their endpoint handler.
+	 *
+	 * @param int $folder_id Folder post ID (0 means "no folder" — always valid).
+	 * @return true|WP_Error True when ownership is confirmed, WP_Error otherwise.
+	 */
+	protected function verify_folder_ownership( $folder_id ) {
+		if ( 0 === $folder_id ) {
+			return true;
+		}
+
+		$folder = get_post( $folder_id );
+
+		if ( ! $folder || 'mcp_vault_folder' !== $folder->post_type ) {
+			return new WP_Error(
+				'rest_not_found',
+				__( 'Vault folder not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( (int) $folder->post_author !== get_current_user_id() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to use this vault folder.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 
 	/**
@@ -355,6 +393,12 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Verify the target folder (if any) belongs to the current user.
+		$folder_check = $this->verify_folder_ownership( $folder_id );
+		if ( is_wp_error( $folder_check ) ) {
+			return $folder_check;
+		}
+
 		// Create post.
 		$post_id = wp_insert_post(
 			array(
@@ -377,14 +421,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		// Encrypt and save item data based on type.
 		$item_data = $this->prepare_item_data_for_storage( $item_type, $request );
 		if ( $item_data ) {
-			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ) );
+			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ), $user_id );
 			if ( $encrypted_data ) {
 				update_post_meta( $post_id, '_vault_encrypted_data', $encrypted_data );
 			}
 		}
 
 		$post = get_post( $post_id );
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
 	}
 
 	/**
@@ -406,7 +450,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to update this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -426,7 +470,13 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		// Update metadata if provided.
 		if ( $request->has_param( 'folder_id' ) ) {
-			update_post_meta( $id, '_vault_folder_id', absint( $request->get_param( 'folder_id' ) ) );
+			$new_folder_id = absint( $request->get_param( 'folder_id' ) );
+			// Verify the target folder (if any) belongs to the current user.
+			$folder_check = $this->verify_folder_ownership( $new_folder_id );
+			if ( is_wp_error( $folder_check ) ) {
+				return $folder_check;
+			}
+			update_post_meta( $id, '_vault_folder_id', $new_folder_id );
 		}
 
 		if ( $request->has_param( 'favorite' ) ) {
@@ -437,14 +487,14 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		$item_type = get_post_meta( $id, '_vault_item_type', true );
 		$item_data = $this->prepare_item_data_for_storage( $item_type, $request );
 		if ( $item_data ) {
-			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ) );
+			$encrypted_data = $this->encryption_service->encrypt( wp_json_encode( $item_data ), get_current_user_id() );
 			if ( $encrypted_data ) {
 				update_post_meta( $id, '_vault_encrypted_data', $encrypted_data );
 			}
 		}
 
 		$post = get_post( $id );
-		return rest_ensure_response( $this->prepare_item_for_response( $post ) );
+		return rest_ensure_response( $this->prepare_item_for_response( $post, true ) );
 	}
 
 	/**
@@ -466,7 +516,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		}
 
 		// Check ownership.
-		if ( $post->post_author != get_current_user_id() ) {
+		if ( (int) $post->post_author !== get_current_user_id() ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'You do not have permission to delete this vault item.', 'mcp-ai-wpoos-pro' ),
@@ -657,7 +707,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 		$items = array();
 		foreach ( $query_obj->posts as $post ) {
-			$items[] = $this->prepare_item_for_response( $post );
+			$items[] = $this->prepare_item_for_response( $post, false );
 		}
 
 		return rest_ensure_response( $items );
@@ -666,35 +716,42 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Prepare item for REST response
 	 *
-	 * @param WP_Post         $item Post object.
-	 * @param WP_REST_Request $request Request object.
+	 * @param WP_Post $item         Post object.
+	 * @param bool    $include_data Whether to decrypt and include the sensitive data field.
+	 *                              Pass true only for single-item reads (GET /items/{id}),
+	 *                              create, and update responses. Pass false for list/search
+	 *                              responses to avoid bulk plaintext credential exposure.
 	 * @return array
 	 */
-	public function prepare_item_for_response( $item, $request ) {
-		$post           = $item; // For backward compatibility with existing code
-		$item_type      = get_post_meta( $post->ID, '_vault_item_type', true );
-		$folder_id      = get_post_meta( $post->ID, '_vault_folder_id', true );
-		$favorite       = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
-		$encrypted_data = get_post_meta( $post->ID, '_vault_encrypted_data', true );
+	public function prepare_item_for_response( $item, $include_data = false ) {
+		$post      = $item; // For backward compatibility with existing code
+		$item_type = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$favorite  = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
 
-		$data = array();
-		if ( $encrypted_data ) {
-			$decrypted = $this->encryption_service->decrypt( $encrypted_data );
-			if ( $decrypted ) {
-				$data = json_decode( $decrypted, true );
-			}
-		}
-
-		return array(
+		$response = array(
 			'id'         => $post->ID,
 			'name'       => $post->post_title,
 			'item_type'  => $item_type,
 			'folder_id'  => (int) $folder_id,
 			'favorite'   => $favorite,
-			'data'       => $data,
 			'created_at' => $post->post_date_gmt,
 			'updated_at' => $post->post_modified_gmt,
 		);
+
+		if ( $include_data ) {
+			$encrypted_data = get_post_meta( $post->ID, '_vault_encrypted_data', true );
+			$data           = array();
+			if ( $encrypted_data ) {
+				$decrypted = $this->encryption_service->decrypt( $encrypted_data, (int) $post->post_author );
+				if ( $decrypted && ! is_wp_error( $decrypted ) ) {
+					$data = json_decode( $decrypted, true );
+				}
+			}
+			$response['data'] = $data;
+		}
+
+		return $response;
 	}
 
 	/**

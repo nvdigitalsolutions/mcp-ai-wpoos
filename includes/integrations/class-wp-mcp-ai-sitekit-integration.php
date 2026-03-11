@@ -433,6 +433,7 @@ class WP_MCP_AI_SiteKit_Integration {
 			wp_mcp_ai_log( '[Site Kit] ' . $message, $level );
 		} elseif ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 			// Fallback to error_log.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG_LOG-gated fallback; only runs when NV oOS logging is unavailable and WP_DEBUG_LOG is enabled.
 			error_log( sprintf( '[WP_MCP_AI][Site Kit][%s] %s', strtoupper( $level ), $message ) );
 		}
 	}

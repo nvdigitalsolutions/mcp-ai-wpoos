@@ -556,7 +556,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// If remove-background.php isn't loaded, try to load it.
-		$remove_bg_file = WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
+		$remove_bg_file = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH . 'includes/tools/remove-background.php' : '';
 		if ( file_exists( $remove_bg_file ) ) {
 			require_once $remove_bg_file;
 			if ( function_exists( 'wp_mcp_ai_remove_image_background' ) ) {

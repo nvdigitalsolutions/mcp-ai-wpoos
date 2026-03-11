@@ -198,6 +198,10 @@ composer run test
 
 # Check PHP compatibility
 composer run lint:compat
+
+# Base plugin certification checks (excludes pro/examples/tests)
+composer run lint:base
+composer run lint:base:compat
 ```
 
 ### npm Commands

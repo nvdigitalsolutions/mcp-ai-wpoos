@@ -1273,7 +1273,7 @@ composer install</pre>
 		$queries_before = $wpdb->num_queries;
 
 		// Perform a simple query test.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Hardcoded literal, no user input.
 		$wpdb->get_var( 'SELECT 1' );
 
 		$queries_after = $wpdb->num_queries;

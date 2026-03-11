@@ -906,11 +906,11 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		// Should only include top 3 results (not all 5).
 		$this->assertCount( 3, $sanitized['results'], 'Should condense to top 3 results for LLM' );
 
-		// Each result should only have title and URL, no snippets.
+		// Each result should have title, URL, and a trimmed snippet.
 		foreach ( $sanitized['results'] as $result ) {
 			$this->assertArrayHasKey( 'title', $result );
 			$this->assertArrayHasKey( 'url', $result );
-			$this->assertArrayNotHasKey( 'snippet', $result, 'Snippets should be removed to save tokens' );
+			$this->assertArrayHasKey( 'snippet', $result, 'Snippet should be included for LLM grounding' );
 			$this->assertArrayNotHasKey( 'source', $result );
 			$this->assertArrayNotHasKey( 'type', $result );
 		}
@@ -1257,5 +1257,254 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $action_fired, 'Action should NOT fire for error results' );
 		$this->assertWPError( $result );
+	}
+
+	// -------------------------------------------------------------------------
+	// PR #4060: geo/freshness params, extra_snippets, Tavily provider
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Test that Brave search forwards country and language options in URL params.
+	 */
+	public function test_brave_search_forwards_geo_params() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'web_search_provider'  => 'brave',
+				'brave_search_api_key' => 'test-brave-key',
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$captured_url = null;
+
+		$http_stub = function ( $pre, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'web' => array( 'results' => array() ) ) ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$tool->execute(
+			array(
+				'query'    => 'test',
+				'country'  => 'GB',
+				'language' => 'en',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_url, 'HTTP request should have been made' );
+		$this->assertStringContainsString( 'country=GB', $captured_url );
+		$this->assertStringContainsString( 'search_lang=en', $captured_url );
+	}
+
+	/**
+	 * Test that DuckDuckGo builds the kl region param from country + language.
+	 */
+	public function test_duckduckgo_builds_kl_param() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array( 'web_search_provider' => 'duckduckgo' )
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$captured_url = null;
+
+		$http_stub = function ( $pre, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'RelatedTopics' => array() ) ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$tool->execute(
+			array(
+				'query'    => 'test',
+				'country'  => 'GB',
+				'language' => 'en',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_url );
+		$this->assertStringContainsString( 'kl=gb-en', $captured_url );
+	}
+
+	/**
+	 * Test that an invalid country code (not exactly 2 uppercase letters) is silently rejected.
+	 */
+	public function test_invalid_country_code_rejected() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array( 'web_search_provider' => 'duckduckgo' )
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$captured_url = null;
+
+		$http_stub = function ( $pre, $args, $url ) use ( &$captured_url ) {
+			$captured_url = $url;
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'RelatedTopics' => array() ) ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$tool->execute(
+			array(
+				'query'   => 'test',
+				'country' => 'INVALID',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		// kl should not appear since country was rejected, and no kl-only (no language provided).
+		$this->assertNotNull( $captured_url );
+		$this->assertStringNotContainsString( 'kl=', $captured_url );
+	}
+
+	/**
+	 * Test that Tavily results are mapped correctly including published_date.
+	 */
+	public function test_tavily_result_mapping_with_published_date() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'web_search_provider' => 'tavily',
+				'tavily_api_key'      => 'test-tavily-key',
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$tavily_response = array(
+			'results' => array(
+				array(
+					'title'          => 'EU AI Act 2025',
+					'url'            => 'https://example.com/ai-act',
+					'content'        => 'The EU AI Act entered into force in August 2024.',
+					'published_date' => '2025-03-01',
+				),
+			),
+		);
+
+		$http_stub = function ( $pre, $args, $url ) use ( $tavily_response ) {
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( $tavily_response ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$result  = $tool->execute(
+			array( 'query' => 'EU AI Act' ),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'results', $result );
+		$this->assertNotEmpty( $result['results'] );
+
+		$first = $result['results'][0];
+		$this->assertSame( 'EU AI Act 2025', $first['title'] );
+		$this->assertSame( 'https://example.com/ai-act', $first['url'] );
+		$this->assertStringContainsString( 'EU AI Act', $first['snippet'] );
+		$this->assertArrayHasKey( 'published_date', $first );
+		$this->assertSame( '2025-03-01', $first['published_date'] );
+		$this->assertSame( 'tavily', $result['provider'] );
+	}
+
+	/**
+	 * Test that Tavily returns a WP_Error when the API key is missing.
+	 */
+	public function test_tavily_missing_api_key_returns_error() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'web_search_provider' => 'tavily',
+				'tavily_api_key'      => '',
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$result  = $tool->execute(
+			array( 'query' => 'test' ),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_search_missing_api_key', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that Tavily POST request includes Authorization header and JSON body.
+	 */
+	public function test_tavily_post_body_and_auth_header() {
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'web_search_provider' => 'tavily',
+				'tavily_api_key'      => 'tvly-test-key',
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		$captured_args = null;
+
+		$http_stub = function ( $pre, $args, $url ) use ( &$captured_args ) {
+			$captured_args = $args;
+			return array(
+				'response' => array( 'code' => 200 ),
+				'body'     => wp_json_encode( array( 'results' => array() ) ),
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool    = new WP_MCP_AI_Tool_Web_Search();
+		$tool->execute(
+			array( 'query' => 'test query' ),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_args );
+		$this->assertSame( 'POST', $captured_args['method'] );
+		$this->assertArrayHasKey( 'Authorization', $captured_args['headers'] );
+		$this->assertSame( 'Bearer tvly-test-key', $captured_args['headers']['Authorization'] );
+		$this->assertArrayHasKey( 'body', $captured_args );
+
+		$body = json_decode( $captured_args['body'], true );
+		$this->assertIsArray( $body );
+		$this->assertSame( 'test query', $body['query'] );
 	}
 }

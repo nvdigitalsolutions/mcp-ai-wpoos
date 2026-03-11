@@ -75,7 +75,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$content = file_get_contents( $file_path );
 
 		return false !== $content ? $content : '';
@@ -100,7 +100,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$content = file_get_contents( $file_path );
 
 		return false !== $content ? $content : '';
@@ -125,7 +125,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$content = file_get_contents( $file_path );
 
 		return false !== $content ? $content : '';

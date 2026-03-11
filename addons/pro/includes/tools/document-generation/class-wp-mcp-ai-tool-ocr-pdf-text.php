@@ -139,13 +139,77 @@ The PDF file with attachment ID %d could not be found. This may be due to an inc
 				);
 			}
 		} elseif ( ! empty( $arguments['url'] ) ) {
-			// Download URL to temp file.
-			if ( ! function_exists( 'download_url' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-			}
-			$temp_file = download_url( $arguments['url'] );
+			// Validate the URL to prevent SSRF before downloading.
+			$url    = esc_url_raw( $arguments['url'] );
+			$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
 
-			if ( is_wp_error( $temp_file ) ) {
+Only http and https URLs are supported.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( empty( $host ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+Could not determine host from the provided URL.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
+			$resolved_ip = gethostbyname( $host );
+			if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL hostname could not be resolved.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL resolves to a private or reserved address and cannot be fetched.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			// Download PDF to a temp file, pinning the TCP connection to the already-resolved
+			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside
+			// download_url() could return a different address after a short TTL expires).
+			$url_port  = wp_parse_url( $url, PHP_URL_PORT );
+			$url_path  = wp_parse_url( $url, PHP_URL_PATH );
+			$url_query = wp_parse_url( $url, PHP_URL_QUERY );
+			$safe_host = $resolved_ip . ( $url_port ? ':' . (int) $url_port : '' );
+			$safe_url  = $scheme . '://' . $safe_host . ( $url_path ? $url_path : '/' ) . ( $url_query ? '?' . $url_query : '' );
+
+			$response = wp_remote_get(
+				$safe_url,
+				array(
+					'timeout'     => 60,
+					'redirection' => 0,
+					'headers'     => array(
+						'Host' => $host . ( $url_port ? ':' . (int) $url_port : '' ),
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
 				return array(
 					'success' => false,
 					'error'   => 'download_failed',
@@ -156,8 +220,53 @@ The PDF file with attachment ID %d could not be found. This may be due to an inc
 Failed to download PDF from URL: %s
 
 ✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
-						$temp_file->get_error_message()
+						$response->get_error_message()
 					),
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => sprintf(
+						/* translators: %d: HTTP response code */
+						__( '❌ **Download Failed**
+
+The server returned HTTP %d.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+						(int) $response_code
+					),
+				);
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			if ( '' === $body ) {
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => __( '❌ **Download Failed**
+
+The downloaded file is empty.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$temp_file = wp_tempnam( 'mcp_ai_pdf_' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			if ( false === file_put_contents( $temp_file, $body ) ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => __( '❌ **Download Failed**
+
+Failed to write downloaded PDF to a temporary file.
+
+✅ The workflow will continue with other tasks.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 

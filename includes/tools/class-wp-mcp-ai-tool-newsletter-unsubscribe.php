@@ -111,14 +111,14 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		if ( ! empty( $arguments['subscriber_id'] ) ) {
 			$subscriber_id = absint( $arguments['subscriber_id'] );
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 		} elseif ( ! empty( $arguments['email'] ) ) {
 			$email = sanitize_email( $arguments['email'] );
 			if ( ! is_email( $email ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type. Table name interpolated from $wpdb->prefix-derived constant or validated list; not user input.
 		} else {
 			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Either email or subscriber_id is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}

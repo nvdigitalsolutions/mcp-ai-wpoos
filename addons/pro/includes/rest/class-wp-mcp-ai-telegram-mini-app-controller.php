@@ -355,6 +355,40 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
+
+		// Template registry: list available templates.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/templates',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_list_templates' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+			)
+		);
+
+		// Template registry: save the global template selection.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/template',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_save_template' ),
+				'permission_callback' => function() {
+					return current_user_can( 'manage_options' );
+				},
+				'args'                => array(
+					'template' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+						'description'       => __( 'Template slug to activate globally.', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+			)
+		);
 	}
 
 	// =========================================================================
@@ -525,6 +559,99 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		// Resolve the active Telegram connection once; used both for assistant
 		// lookup and for extracting the bot username shown in the Settings tab.
 		$connection = $this->get_active_telegram_connection();
+
+		// ── Template resolution (preview → per-connection → global → default) ──
+		$this->load_template_registry();
+
+		$preview_slug   = sanitize_key( $request->get_param( 'tma_preview' ) );
+		$connection_tpl = ( $connection && ! empty( $connection['mini_app_template'] ) )
+			? sanitize_key( $connection['mini_app_template'] )
+			: '';
+		$global_tpl     = sanitize_key( get_option( 'wp_mcp_ai_telegram_mini_app_template', 'default' ) );
+
+		// Prefer: ?tma_preview (admin only) → connection override → global setting.
+		if ( $preview_slug && current_user_can( 'manage_options' ) ) {
+			$active_template_slug = $preview_slug;
+		} elseif ( $connection_tpl ) {
+			$active_template_slug = $connection_tpl;
+		} else {
+			$active_template_slug = $global_tpl;
+		}
+
+		// Delegate to a non-default template when the registry recognises the slug.
+		if (
+			class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+			&& 'default' !== $active_template_slug
+			&& WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $active_template_slug )
+		) {
+			$template = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get( $active_template_slug );
+			if ( $template && is_callable( array( $template, 'render_html' ) ) ) {
+				/**
+				 * Filters the Mini App page title for non-default templates.
+				 *
+				 * @since 1.1.3
+				 *
+				 * @param string $title Default page title.
+				 */
+				$page_title    = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+
+				// Resolve the assistant configured for this Mini App connection so that
+				// templates can pass it as assistant_id to the chat-client endpoint.
+				$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
+				$chat_url     = rest_url( 'mcp-ai/v1/chat-client' );
+
+				// Build the context array that non-default templates expect.
+				$ctx = array(
+					'request'       => $request,
+					'connection'    => $connection,
+					'namespace'     => $this->namespace,
+					'rest_base'     => $this->rest_base,
+					'assistant'     => $request->get_param( 'assistant' ),
+					'assistant_id'  => $assistant_id,
+					'chat_url'      => $chat_url,
+					'site_name'     => $page_title,
+					'nonce'         => wp_create_nonce( 'wp_rest' ),
+					'tools_url'     => $tools_url,
+					'analytics_url' => $analytics_url,
+					'chart_js_url'  => $chart_js_url,
+					'member_id'     => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
+						: 0,
+				);
+
+				// render_html() returns a <body>…</body> fragment.  All
+				// dynamic values inside are escaped by the template class.
+				$body_html = $template->render_html( $ctx );
+
+				// Mirror the same header + echo + exit pattern used by the
+				// built-in default template below so the REST API router does
+				// not JSON-encode the standalone HTML page.
+				header( 'Content-Type: text/html; charset=utf-8' );
+				header( 'X-Robots-Tag: noindex, nofollow' );
+				header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+				header( 'Pragma: no-cache' );
+
+				// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Standalone HTML page; static structure + values escaped individually.
+				echo '<!DOCTYPE html>';
+				echo '<html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '">';
+				echo '<head>';
+				echo '<meta charset="utf-8">';
+				echo '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">';
+				echo '<meta name="robots" content="noindex, nofollow">';
+				echo '<title>' . esc_html( $page_title ) . '</title>';
+				echo '<script src="https://telegram.org/js/telegram-web-app.js"></script>';
+				echo '</head>';
+				echo $body_html;
+				echo '</html>';
+				// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+				exit;
+			}
+		}
+
+		// Fall through to the built-in default Content Manager template below.
 
 		// Collect styles and scripts enqueued by WordPress.
 		ob_start();
@@ -3005,17 +3132,43 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 		);
 
 		// Enumerate active pro toolkits so the UI can group tools.
-		$active_toolkits          = $this->get_active_toolkits();
-		$result['toolkits']       = array_values( $active_toolkits );
+		$active_toolkits    = $this->get_active_toolkits();
+		$result['toolkits'] = array_values( $active_toolkits );
+
+		// Scope the tool listing to the tools configured on the Mini App's assistant,
+		// mirroring the /tools slash-command behaviour. Falls back to the full registry
+		// when no assistant is resolved or the assistant has no explicit tool restriction.
+		$allowed_slugs = array(); // Empty = no restriction.
+		$connection    = $this->get_active_telegram_connection();
+		$assistant_id  = (int) $this->resolve_mini_app_assistant( $request, $connection );
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
+				$allowed_slugs = $config['tools'];
+			}
+		}
 
 		// Collect tools from the tool registry.
 		if ( function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
 			$registry = wp_mcp_ai_get_tool_registry();
 			if ( $registry ) {
-				$group_map  = method_exists( $registry, 'get_tool_group_map' ) ? $registry->get_tool_group_map() : array();
-				$all_tools  = $registry->get_all_tools();
+				$group_map = method_exists( $registry, 'get_tool_group_map' ) ? $registry->get_tool_group_map() : array();
 
-				foreach ( $all_tools as $slug => $tool ) {
+				if ( ! empty( $allowed_slugs ) ) {
+					// Assistant has an explicit tool list — show only those tools.
+					$display_tools = array();
+					foreach ( $allowed_slugs as $slug ) {
+						$slug = (string) $slug;
+						$tool = $registry->get_tool( $slug );
+						if ( $tool ) {
+							$display_tools[ $slug ] = $tool;
+						}
+					}
+				} else {
+					$display_tools = $registry->get_all_tools();
+				}
+
+				foreach ( $display_tools as $slug => $tool ) {
 					// Resolve which toolkit this tool belongs to (if any).
 					$toolkit_label = '';
 					foreach ( $active_toolkits as $tk ) {
@@ -3025,7 +3178,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 						}
 					}
 
-				$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
+					$params = method_exists( $tool, 'get_parameters_schema' ) ? $tool->get_parameters_schema() : array();
 
 					$result['tools'][] = array(
 						'slug'        => $slug,
@@ -3039,12 +3192,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			}
 		}
 
-		// Collect slash commands the current user can run.
+		// Collect slash commands the current user can run, respecting the
+		// connection's disabled_commands list so the Mini App commands tab
+		// stays in sync with which commands the bot actually handles.
+		$disabled_commands = ( $connection && isset( $connection['disabled_commands'] ) && is_array( $connection['disabled_commands'] ) )
+			? $connection['disabled_commands']
+			: array();
+
 		if ( function_exists( 'wp_mcp_ai_get_slash_command_handler' ) ) {
 			$handler = wp_mcp_ai_get_slash_command_handler();
 			if ( $handler && method_exists( $handler, 'get_commands' ) ) {
 				$commands = $handler->get_commands( true );
 				foreach ( $commands as $name => $config ) {
+					if ( in_array( $name, $disabled_commands, true ) ) {
+						continue; // Command disabled for this connection.
+					}
 					$result['slash_commands'][] = array(
 						'name'        => '/' . $name,
 						'description' => isset( $config['description'] ) ? $config['description'] : '',
@@ -3672,6 +3834,28 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	* @return WP_REST_Response|WP_Error
 	*/
 	public function handle_validate_init_data( $request ) {
+		// Rate-limit this public endpoint to mitigate replay and enumeration attacks.
+		// The /validate endpoint accepts any initData token, so without a rate limit
+		// an attacker who has obtained a valid token within the auth_date expiry window
+		// could replay it from many IPs, and user existence could be probed freely.
+		$remote_ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
+		$rate_key    = 'wp_mcp_ai_tma_validate_' . md5( $remote_ip );
+		$rate_window = MINUTE_IN_SECONDS;
+		$max_per_min = 20;
+		$rate_count  = (int) get_transient( $rate_key );
+		if ( $rate_count >= $max_per_min ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram Mini App: /validate rate limit exceeded.',
+				array( 'ip' => $remote_ip )
+			);
+			return new WP_Error(
+				'wp_mcp_ai_telegram_mini_app_rate_limit',
+				__( 'Too many requests. Please try again later.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $rate_key, $rate_count + 1, $rate_window );
+
 		$raw_init_data = $request->get_param( 'init_data' );
 
 		if ( empty( $raw_init_data ) ) {
@@ -4525,7 +4709,15 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			return (string) $assistant;
 		}
 
-		// 2. Use the first assistant assigned to the active Telegram connection.
+		// 2. Use the dedicated Mini App assistant when configured on the connection.
+		if ( $connection && ! empty( $connection['mini_app_assistant_id'] ) ) {
+			$mini_app_id = absint( $connection['mini_app_assistant_id'] );
+			if ( $mini_app_id ) {
+				return (string) $mini_app_id;
+			}
+		}
+
+		// 3. Use the first assistant assigned to the active Telegram connection.
 		if ( $connection && ! empty( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] ) ) {
 			$ids      = array_values( $connection['assigned_assistant_ids'] );
 			$first_id = absint( $ids[0] );
@@ -4534,13 +4726,13 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 			}
 		}
 
-		// 3. Fall back to the global default from the automation rules option.
+		// 4. Fall back to the global default from the automation rules option.
 		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
 		if ( ! empty( $automation_rules['default_assistant_id'] ) ) {
 			return (string) absint( $automation_rules['default_assistant_id'] );
 		}
 
-		// 4. Fall back to the default assistant saved in the Chat Channels Toolkit settings page.
+		// 5. Fall back to the default assistant saved in the Chat Channels Toolkit settings page.
 		$toolkit_settings = get_option( 'wp_mcp_ai_chat_channels_toolkit_settings', array() );
 		if ( ! empty( $toolkit_settings['default_assistant'] ) ) {
 			return (string) absint( $toolkit_settings['default_assistant'] );
@@ -4556,6 +4748,74 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;
 	*
 	* @return array|null Connection array or null if none found.
 	*/
+	/**
+	 * REST handler: GET /telegram-mini-app/templates
+	 *
+	 * Returns the list of all registered Mini App templates as JSON, keyed for
+	 * the React TMATemplateBuilder admin component.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function handle_list_templates() {
+		$this->load_template_registry();
+
+		$templates = WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta();
+		return rest_ensure_response( $templates );
+	}
+
+	/**
+	 * REST handler: POST /telegram-mini-app/template
+	 *
+	 * Persists the chosen global template slug to the site options table.
+	 *
+	 * @since 1.1.3
+	 *
+	 * @param WP_REST_Request $request REST request (body: { template: string }).
+	 * @return WP_REST_Response
+	 */
+	public function handle_save_template( $request ) {
+		$this->load_template_registry();
+
+		$slug = sanitize_key( $request->get_param( 'template' ) );
+
+		if ( ! WP_MCP_AI_Telegram_Mini_App_Template_Registry::exists( $slug ) ) {
+			return new WP_Error(
+				'invalid_template',
+				sprintf(
+					/* translators: %s: template slug */
+					__( 'Unknown template slug: %s', 'mcp-ai-wpoos-pro' ),
+					$slug
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		update_option( 'wp_mcp_ai_telegram_mini_app_template', $slug, false );
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'template' => $slug,
+			)
+		);
+	}
+
+	/**
+	 * Load the template registry class if not already loaded.
+	 *
+	 * @since 1.1.3
+	 */
+	protected function load_template_registry() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
+			$file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
+			if ( file_exists( $file ) ) {
+				require_once $file;
+			}
+		}
+	}
+
 	protected function get_active_telegram_connection() {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$file = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';

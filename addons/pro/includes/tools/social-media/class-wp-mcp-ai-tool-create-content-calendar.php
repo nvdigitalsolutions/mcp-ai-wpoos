@@ -508,6 +508,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 	 * @return string Escaped string.
 	 */
 	protected function escape_ics_string( $string ) {
+		$string = str_replace( '\\', '\\\\', $string );
 		$string = str_replace( array( "\r\n", "\n", "\r" ), '\\n', $string );
 		$string = str_replace( ',', '\\,', $string );
 		$string = str_replace( ';', '\\;', $string );

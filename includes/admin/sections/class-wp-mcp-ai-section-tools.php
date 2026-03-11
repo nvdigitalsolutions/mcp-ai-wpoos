@@ -93,10 +93,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'web_search_provider'                    => array(
 					'type'        => 'select',
 					'label'       => __( 'Web Search Provider', 'mcp-ai-wpoos' ),
-					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results. Tavily is purpose-built for AI agents and offers the richest structured results.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'duckduckgo' => 'DuckDuckGo (Free, Rate Limited)',
 						'brave'      => 'Brave Search (API Key Required)',
+						'tavily'     => 'Tavily (API Key Required, AI-optimised)',
 					),
 					'default'     => 'duckduckgo',
 				),
@@ -191,6 +192,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						/* translators: %s: URL to Brave Search API */
 						__( 'API key for Brave Search integration. Get your API key from %s.', 'mcp-ai-wpoos' ),
 						'<a href="https://brave.com/search/api/" target="_blank">Brave Search API</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'tavily_api_key'                         => array(
+					'type'         => 'password',
+					'label'        => __( 'Tavily API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Tavily */
+						__( 'API key for Tavily Search integration (AI-first provider optimised for agent workflows). Get your API key from %s.', 'mcp-ai-wpoos' ),
+						'<a href="https://tavily.com/" target="_blank">tavily.com</a>'
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
@@ -832,7 +844,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
+					'fields' => array( 'web_search_provider', 'brave_search_api_key', 'tavily_api_key', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
 				),
 				'document_generation' => array(
 					'id'     => 'document_generation',
@@ -941,37 +953,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				return;
 			}
 
-			// The 'connections' subtab is handled by the Integrations section itself,.
-			// which will render when the subtab is active. No special rendering needed here.
-			// Show a helper message for this subtab.
+			// The 'connections' subtab content is rendered by WP_MCP_AI_Section_Integrations below.
+			// Return early here — WP_MCP_AI_Section_Integrations::render_wrapper() outputs
+			// the connection tabs (Gmail, Google Drive, Crawl4AI, Brave Search, Tavily, etc.)
+			// whenever this subtab is active.
 			if ( 'connections' === $active_subtab ) {
-				?>
-				<tr>
-					<td colspan="2" style="padding: 20px;">
-						<div class="notice notice-info inline" style="margin: 0;">
-							<p>
-								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to integrations tab */
-										__( 'Connection settings are managed in the <a href="%s">Integrations</a> tab. Use that tab to configure OAuth connections for external services like Google Drive, Gmail, GitHub, and more.', 'mcp-ai-wpoos' ),
-										esc_url(
-											add_query_arg(
-												array(
-													'page' => 'wp-mcp-ai-dashboard',
-													'tab'  => 'integrations',
-												),
-												admin_url( 'admin.php' )
-											)
-										)
-									)
-								);
-								?>
-							</p>
-						</div>
-					</td>
-				</tr>
-				<?php
 				return;
 			}
 

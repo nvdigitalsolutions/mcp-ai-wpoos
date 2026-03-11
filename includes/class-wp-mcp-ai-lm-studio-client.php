@@ -542,6 +542,25 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// Add tools if provided (OpenAI-compatible function calling).
 			if ( ! empty( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+
+				// tool_choice controls which tool the model calls ('auto', 'none', 'required', or a specific function).
+				if ( isset( $options['tool_choice'] ) ) {
+					if ( is_string( $options['tool_choice'] ) && in_array( $options['tool_choice'], array( 'auto', 'none', 'required' ), true ) ) {
+						$payload['tool_choice'] = $options['tool_choice'];
+					} elseif ( is_array( $options['tool_choice'] ) && isset( $options['tool_choice']['type'] ) && 'function' === $options['tool_choice']['type'] && isset( $options['tool_choice']['function']['name'] ) ) {
+						$payload['tool_choice'] = array(
+							'type'     => 'function',
+							'function' => array(
+								'name' => sanitize_text_field( $options['tool_choice']['function']['name'] ),
+							),
+						);
+					}
+				}
+
+				// parallel_tool_calls controls whether the model can call multiple tools concurrently.
+				if ( isset( $options['parallel_tool_calls'] ) ) {
+					$payload['parallel_tool_calls'] = (bool) $options['parallel_tool_calls'];
+				}
 			}
 
 			// Add temperature if specified.
@@ -910,10 +929,72 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 				$tool['name'] = (string) $tool['name'];
 
+				// Sanitize the parameters schema to ensure OpenAI-compatible format.
+				// LM Studio uses OpenAI-compatible function calling, so the same schema
+				// constraints apply (e.g. root-level composition keywords are not allowed).
+				if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['parameters'] ) && is_array( $tool['function']['parameters'] ) ) {
+					$tool['function']['parameters'] = $this->sanitize_parameters_for_openai( $tool['function']['parameters'] );
+				} elseif ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$tool['parameters'] = $this->sanitize_parameters_for_openai( $tool['parameters'] );
+				}
+
 				$normalised[] = $tool;
 			}
 
 			return array_values( $normalised );
+		}
+
+		/**
+		 * Sanitize a function parameter schema to meet LM Studio / OpenAI requirements.
+		 *
+		 * LM Studio uses the OpenAI-compatible function-calling API, so the same schema
+		 * constraints apply: composition keywords (oneOf, anyOf, allOf, not) are not
+		 * permitted at the root level of the parameters object, and the root type must
+		 * be 'object'.
+		 *
+		 * Mirrors the sanitize_parameters_for_openai implementation in WP_MCP_AI_OpenAI_Client
+		 * to ensure full parity when passing tool definitions to LM Studio.
+		 *
+		 * @param array  $schema     JSON Schema array to sanitize.
+		 * @param string $parent_key Parent key (empty string signals root-level checks).
+		 * @return array Sanitized schema.
+		 */
+		protected function sanitize_parameters_for_openai( array $schema, $parent_key = '' ) {
+			$sanitized = array();
+
+			// At the root level, remove composition keywords not allowed by OpenAI/LM Studio.
+			if ( '' === $parent_key ) {
+				$root_unsupported = array( 'oneOf', 'anyOf', 'allOf', 'not' );
+				foreach ( $root_unsupported as $keyword ) {
+					if ( isset( $schema[ $keyword ] ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'lm_studio_schema_sanitization',
+							"Removed unsupported top-level keyword: {$keyword}",
+							array(
+								'keyword' => $keyword,
+								'context' => 'root_level',
+							)
+						);
+						unset( $schema[ $keyword ] );
+					}
+				}
+
+				// Ensure root type is 'object'.
+				if ( ! isset( $schema['type'] ) ) {
+					$schema['type'] = 'object';
+				}
+			}
+
+			// Recursively process nested structures.
+			foreach ( $schema as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$sanitized[ $key ] = $this->sanitize_parameters_for_openai( $value, $key );
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+
+			return $sanitized;
 		}
 	}
 }

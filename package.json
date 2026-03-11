@@ -17,8 +17,12 @@
 		"build:js:pro": "node esbuild.config.pro.js",
 		"build:workflow": "wp-scripts build src/workflow-builder/index.jsx --output-path=addons/pro/build/workflow-builder",
 		"start:workflow": "wp-scripts start src/workflow-builder/index.jsx --output-path=addons/pro/build/workflow-builder",
+		"build:tma-builder": "wp-scripts build --config webpack.config.tma-builder.js",
+		"start:tma-builder": "wp-scripts start --config webpack.config.tma-builder.js",
+		"cosmos:tma": "cosmos --config cosmos.config.json",
+		"cosmos:tma:export": "cosmos-export --config cosmos.config.json",
 		"build": "npm run build:css && npm run build:js && npm run build:js:pro",
-		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow",
+		"build:full": "npm run build:css && npm run build:js && npm run build:js:pro && npm run build:workflow && npm run build:tma-builder",
 		"build:zip": "./bin/build-plugin-zip.sh",
 		"build:zip:base": "./bin/build-plugin-zip.sh --base",
 		"build:zip:pro": "./bin/build-plugin-zip.sh --pro",
@@ -50,13 +54,18 @@
 	},
 	"optionalDependencies": {
 		"@langchain/community": "^1.1.0",
-		"@langchain/core": "^1.1.0",
-		"langchain": "^1.2.0"
+		"@langchain/core": "^1.1.8",
+		"langchain": "^1.2.3"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.5",
 		"@babel/preset-env": "^7.28.5",
 		"@babel/preset-react": "^7.28.5",
+		"babel-loader": "^9.2.1",
+		"css-loader": "^7.1.2",
+		"style-loader": "^4.0.0",
+		"react-cosmos": "^7.2.0",
+		"react-cosmos-plugin-webpack": "^7.2.0",
 		"@testing-library/dom": "^10.4.1",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@types/jest": "^30.0.0",
@@ -83,6 +92,7 @@
 		"langsmith": ">=0.4.6",
 		"zustand": "^4.5.6",
 		"minimatch@^3": "3.1.5",
+		"minimatch@^5": "5.1.9",
 		"minimatch@^9": "9.0.9",
 		"serialize-javascript": ">=7.0.3"
 	},

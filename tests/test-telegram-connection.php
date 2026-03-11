@@ -3303,4 +3303,459 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 		$result = $controller->get_telegram_max_agentic_iterations( 7, array() );
 		$this->assertEquals( 7, $result, 'Already-raised admin value should be honoured' );
 	}
+
+	// =========================================================================
+	// resolve_content_to_string tests — multi-provider content format handling
+	// =========================================================================
+
+	/**
+	 * Return a reflection-unlocked resolve_content_to_string method.
+	 *
+	 * @return array{0: WP_MCP_AI_Telegram_Webhook_Controller, 1: ReflectionMethod}|null
+	 */
+	private function get_telegram_resolve_content_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_content_to_string' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * resolve_content_to_string: plain string input (OpenAI/Anthropic format).
+	 */
+	public function test_resolve_content_to_string_with_plain_string() {
+		$pair = $this->get_telegram_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$this->assertEquals( 'Hello world', $method->invoke( $controller, 'Hello world' ) );
+		$this->assertEquals( 'trimmed', $method->invoke( $controller, '  trimmed  ' ) );
+		$this->assertEquals( '', $method->invoke( $controller, '' ) );
+	}
+
+	/**
+	 * resolve_content_to_string: Gemini/Ollama array segment format.
+	 */
+	public function test_resolve_content_to_string_with_array_segments() {
+		$pair = $this->get_telegram_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Single text segment — standard Gemini/Ollama format.
+		$segments = array(
+			array( 'type' => 'text', 'text' => 'Hello from Gemini!' ),
+		);
+		$this->assertEquals( 'Hello from Gemini!', $method->invoke( $controller, $segments ) );
+
+		// Multiple text segments are concatenated with newline separator.
+		$multi = array(
+			array( 'type' => 'text', 'text' => 'Part one.' ),
+			array( 'type' => 'text', 'text' => 'Part two.' ),
+		);
+		$this->assertEquals( "Part one.\nPart two.", $method->invoke( $controller, $multi ) );
+
+		// Non-text segments (e.g. image_url) are silently skipped.
+		$mixed = array(
+			array( 'type' => 'image_url', 'image_url' => array( 'url' => 'https://example.com/img.png' ) ),
+			array( 'type' => 'text', 'text' => 'Only this text.' ),
+		);
+		$this->assertEquals( 'Only this text.', $method->invoke( $controller, $mixed ) );
+	}
+
+	/**
+	 * resolve_content_to_string: invalid / non-text inputs return empty string.
+	 */
+	public function test_resolve_content_to_string_with_invalid_inputs() {
+		$pair = $this->get_telegram_resolve_content_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$this->assertEquals( '', $method->invoke( $controller, null ) );
+		$this->assertEquals( '', $method->invoke( $controller, 42 ) );
+		$this->assertEquals( '', $method->invoke( $controller, array() ) );
+		// Array with only non-text segments.
+		$this->assertEquals( '', $method->invoke( $controller, array( array( 'type' => 'image_url', 'image_url' => array() ) ) ) );
+	}
+
+	/**
+	 * extract_content_from_chat_response: Gemini-style array content in choices.
+	 */
+	public function test_telegram_extract_content_gemini_array_format() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Gemini normalises content as an array of typed segments.
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => array(
+								array( 'type' => 'text', 'text' => 'Hello from Gemini!' ),
+							),
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Hello from Gemini!',
+			$method->invoke( $controller, $response_data ),
+			'Should extract text from Gemini-style array content segments'
+		);
+	}
+
+	/**
+	 * extract_content_from_chat_response: Ollama-style array content in choices.
+	 */
+	public function test_telegram_extract_content_ollama_array_format() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Ollama normalises content the same way as Gemini.
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => array(
+								array( 'type' => 'text', 'text' => 'Hello from Ollama!' ),
+							),
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+				'provider' => 'ollama',
+			),
+		);
+
+		$this->assertEquals(
+			'Hello from Ollama!',
+			$method->invoke( $controller, $response_data ),
+			'Should extract text from Ollama-style array content segments'
+		);
+	}
+
+	/**
+	 * extract_content_from_chat_response: array-format content in agentic_tool_messages fallback.
+	 */
+	public function test_telegram_extract_content_agentic_fallback_array_format() {
+		$pair = $this->get_telegram_extract_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Choices have no text content; agentic_tool_messages uses array format.
+		$response_data = array(
+			'assistant_id' => 1,
+			'data'         => array(
+				'choices'               => array(
+					array(
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => null,
+						),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array(
+						'role'    => 'assistant',
+						'content' => array(
+							array( 'type' => 'text', 'text' => 'Agentic answer from Gemini.' ),
+						),
+					),
+				),
+			),
+		);
+
+		$this->assertEquals(
+			'Agentic answer from Gemini.',
+			$method->invoke( $controller, $response_data ),
+			'Should extract array-format content from agentic_tool_messages fallback'
+		);
+	}
+
+	// =========================================================================
+	// extract_agentic_tool_messages_from_chat_response — multi-provider tests
+	// =========================================================================
+
+	/**
+	 * Return a reflection-unlocked extract_agentic_tool_messages_from_chat_response.
+	 *
+	 * @return array{0: WP_MCP_AI_Telegram_Webhook_Controller, 1: ReflectionMethod}|null
+	 */
+	private function get_telegram_extract_agentic_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_agentic_tool_messages_from_chat_response' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * extract_agentic_tool_messages_from_chat_response: string content (OpenAI format).
+	 */
+	public function test_extract_agentic_tool_messages_string_content() {
+		$pair = $this->get_telegram_extract_agentic_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$data = array(
+			'data' => array(
+				'agentic_tool_messages' => array(
+					array( 'role' => 'assistant', 'content' => 'Step 1 result.' ),
+					array( 'role' => 'tool', 'content' => '{"result":"ok"}', 'tool_call_id' => 'call_abc', 'name' => 'search' ),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $data );
+
+		$this->assertCount( 2, $result );
+		$this->assertEquals( 'assistant', $result[0]['role'] );
+		$this->assertEquals( 'Step 1 result.', $result[0]['content'] );
+		$this->assertEquals( 'tool', $result[1]['role'] );
+		$this->assertEquals( '{"result":"ok"}', $result[1]['content'] );
+		$this->assertEquals( 'call_abc', $result[1]['tool_call_id'] );
+		$this->assertEquals( 'search', $result[1]['name'] );
+	}
+
+	/**
+	 * extract_agentic_tool_messages_from_chat_response: Gemini/Ollama array content.
+	 */
+	public function test_extract_agentic_tool_messages_array_content() {
+		$pair = $this->get_telegram_extract_agentic_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$data = array(
+			'data' => array(
+				'agentic_tool_messages' => array(
+					array(
+						'role'    => 'assistant',
+						'content' => array(
+							array( 'type' => 'text', 'text' => 'I searched for that.' ),
+						),
+					),
+					// Tool result message — always plain JSON string.
+					array(
+						'role'         => 'tool',
+						'content'      => '{"results":["item1","item2"]}',
+						'tool_call_id' => 'call_xyz',
+						'name'         => 'web_search',
+					),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $data );
+
+		$this->assertCount( 2, $result, 'Both assistant and tool messages should be extracted' );
+		$this->assertEquals( 'I searched for that.', $result[0]['content'], 'Array content should be flattened to string' );
+		$this->assertEquals( '{"results":["item1","item2"]}', $result[1]['content'], 'Tool result JSON string should be preserved' );
+	}
+
+	/**
+	 * extract_agentic_tool_messages_from_chat_response: messages with null/empty content are skipped.
+	 */
+	public function test_extract_agentic_tool_messages_skips_empty_content() {
+		$pair = $this->get_telegram_extract_agentic_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$data = array(
+			'data' => array(
+				'agentic_tool_messages' => array(
+					array( 'role' => 'assistant', 'content' => null ),
+					array( 'role' => 'assistant', 'content' => array() ),
+					array( 'role' => 'assistant', 'content' => 'Real content.' ),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $data );
+
+		$this->assertCount( 1, $result, 'Only the message with non-empty content should be returned' );
+		$this->assertEquals( 'Real content.', $result[0]['content'] );
+	}
+
+	// =========================================================================
+	// normalize_conversation_history_for_chat — multi-provider tests
+	// =========================================================================
+
+	/**
+	 * Return a reflection-unlocked normalize_conversation_history_for_chat method.
+	 *
+	 * @return array{0: WP_MCP_AI_Telegram_Webhook_Controller, 1: ReflectionMethod}|null
+	 */
+	private function get_telegram_normalize_history_method() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			$controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php';
+			if ( file_exists( $controller_file ) ) {
+				require_once $controller_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Webhook_Controller' ) ) {
+			return null;
+		}
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'normalize_conversation_history_for_chat' );
+		$method->setAccessible( true );
+
+		return array( $controller, $method );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: plain string content (OpenAI format).
+	 */
+	public function test_normalize_history_string_content() {
+		$pair = $this->get_telegram_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$history = array(
+			array( 'role' => 'user', 'content' => 'Hello!' ),
+			array( 'role' => 'assistant', 'content' => 'Hi there!' ),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result );
+		$this->assertEquals( 'Hello!', $result[0]['content'] );
+		$this->assertEquals( 'Hi there!', $result[1]['content'] );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: Gemini/Ollama array content in history.
+	 */
+	public function test_normalize_history_array_content() {
+		$pair = $this->get_telegram_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		// Simulates history stored when a Gemini/Ollama assistant responded
+		// before this fix was applied, leaving array-format content in the transient.
+		$history = array(
+			array( 'role' => 'user', 'content' => 'What is 2+2?' ),
+			array(
+				'role'    => 'assistant',
+				'content' => array(
+					array( 'type' => 'text', 'text' => 'The answer is 4.' ),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result );
+		$this->assertEquals( 'The answer is 4.', $result[1]['content'], 'Array history content should be flattened to string' );
+	}
+
+	/**
+	 * normalize_conversation_history_for_chat: entries with empty content are dropped.
+	 */
+	public function test_normalize_history_drops_empty_content() {
+		$pair = $this->get_telegram_normalize_history_method();
+		if ( null === $pair ) {
+			$this->markTestSkipped( 'Telegram Webhook Controller not available' );
+			return;
+		}
+
+		[ $controller, $method ] = $pair;
+
+		$history = array(
+			array( 'role' => 'user', 'content' => 'Hello.' ),
+			array( 'role' => 'assistant', 'content' => null ),
+			array( 'role' => 'assistant', 'content' => array() ),
+			array( 'role' => 'assistant', 'content' => 'Valid reply.' ),
+		);
+
+		$result = $method->invoke( $controller, $history );
+
+		$this->assertCount( 2, $result, 'Entries with null/empty content should be dropped' );
+		$this->assertEquals( 'Hello.', $result[0]['content'] );
+		$this->assertEquals( 'Valid reply.', $result[1]['content'] );
+	}
 }

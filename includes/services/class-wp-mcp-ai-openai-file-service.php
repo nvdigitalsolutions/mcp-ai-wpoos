@@ -302,7 +302,7 @@ class WP_MCP_AI_OpenAI_File_Service {
 			$mod_time  = '';
 
 			if ( $file_path && file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime -- filemtime() used for cache-busting; WP_Filesystem does not expose a filemtime() equivalent.
 				$mod_time = filemtime( $file_path );
 			}
 

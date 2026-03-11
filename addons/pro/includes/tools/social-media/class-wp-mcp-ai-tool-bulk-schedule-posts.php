@@ -318,16 +318,27 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! empty( $arguments['csv_file'] ) ) {
 			$file_path = sanitize_text_field( $arguments['csv_file'] );
 
-			// Validate file path for security.
-			if ( ! file_exists( $file_path ) ) {
+			// Security: Resolve canonical path to prevent directory traversal attacks.
+			$resolved = realpath( $file_path );
+			if ( false === $resolved ) {
 				return new WP_Error(
 					'file_not_found',
-					__( 'CSV file not found.', 'mcp-ai-wpoos-pro' )
+					__( 'CSV file not found or not accessible.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
-			// Check file extension.
-			$file_extension = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+			// Security: Restrict file access to the WordPress uploads directory.
+			$upload_dir   = wp_upload_dir();
+			$uploads_base = wp_normalize_path( trailingslashit( $upload_dir['basedir'] ) );
+			if ( 0 !== strpos( wp_normalize_path( $resolved ), $uploads_base ) ) {
+				return new WP_Error(
+					'invalid_file_path',
+					__( 'CSV file must be located in the WordPress uploads directory.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check file extension on the resolved path.
+			$file_extension = strtolower( pathinfo( $resolved, PATHINFO_EXTENSION ) );
 			if ( 'csv' !== $file_extension ) {
 				return new WP_Error(
 					'invalid_file_type',
@@ -335,7 +346,8 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 				);
 			}
 
-			$csv_data = file_get_contents( $file_path );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local file reading.
+			$csv_data = file_get_contents( $resolved );
 
 			if ( false === $csv_data ) {
 				return new WP_Error(

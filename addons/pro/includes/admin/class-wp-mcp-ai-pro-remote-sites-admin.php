@@ -47,6 +47,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_send_group', array( $this, 'ajax_test_telegram_send_group' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_set_telegram_webhook', array( $this, 'ajax_set_telegram_webhook' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_telegram_webhook_info', array( $this, 'ajax_get_telegram_webhook_info' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_register_telegram_commands', array( $this, 'ajax_register_telegram_commands' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_slack_live', array( $this, 'ajax_test_slack_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_slack_auto_reply', array( $this, 'ajax_test_slack_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_discord_live', array( $this, 'ajax_test_discord_live' ) );
@@ -499,6 +500,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'bot_username'         => isset( $_POST['telegram_bot_username'] ) ? sanitize_text_field( wp_unslash( $_POST['telegram_bot_username'] ) ) : '',
 				'secret_token'         => $telegram_secret_token,
 				'enable_groups'        => ! empty( $_POST['telegram_enable_groups'] ),
+				'enable_channels'      => ! empty( $_POST['telegram_enable_channels'] ),
 				'enable_web_login'     => ! empty( $_POST['telegram_enable_web_login'] ),
 				'web_login_redirect_url' => isset( $_POST['telegram_web_login_redirect_url'] ) ? esc_url_raw( wp_unslash( $_POST['telegram_web_login_redirect_url'] ) ) : '',
 				'auto_create_wp_user'  => ! empty( $_POST['telegram_auto_create_wp_user'] ),
@@ -518,6 +520,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						)
 					)
 					: array(),
+				// Welcome message & client settings.
+				'welcome_message'      => isset( $_POST['telegram_welcome_message'] )
+					? sanitize_textarea_field( wp_unslash( $_POST['telegram_welcome_message'] ) )
+					: '',
+				'parse_mode'           => ( isset( $_POST['telegram_parse_mode'] ) && in_array( $_POST['telegram_parse_mode'], array( 'HTML', 'Markdown', 'MarkdownV2' ), true ) )
+					? sanitize_text_field( wp_unslash( $_POST['telegram_parse_mode'] ) )
+					: 'HTML',
+				'disabled_commands'    => isset( $_POST['telegram_disabled_commands'] ) && is_array( $_POST['telegram_disabled_commands'] )
+					? array_map( 'sanitize_key', wp_unslash( $_POST['telegram_disabled_commands'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
+					: array(),
+				'command_descriptions' => ( isset( $_POST['telegram_command_descriptions'] ) && is_array( $_POST['telegram_command_descriptions'] ) )
+					? array_map( 'sanitize_text_field', array_map( 'wp_unslash', $_POST['telegram_command_descriptions'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map.
+					: array(),
+				// Mini App settings.
+				'enable_mini_app'         => ! empty( $_POST['telegram_enable_mini_app'] ),
+				'mini_app_assistant_id'   => isset( $_POST['telegram_mini_app_assistant_id'] ) ? absint( $_POST['telegram_mini_app_assistant_id'] ) : 0,
+				'mini_app_template'       => isset( $_POST['telegram_mini_app_template'] ) ? sanitize_key( wp_unslash( $_POST['telegram_mini_app_template'] ) ) : '',
 				// WhatsApp-specific fields.
 				'phone_number_id'      => isset( $_POST['whatsapp_phone_number_id'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_phone_number_id'] ) ) : '',
 				'display_phone_number' => isset( $_POST['whatsapp_display_phone_number'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_display_phone_number'] ) ) : '',
@@ -574,6 +593,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'assigned_assistant_ids' => isset( $_POST['assigned_assistant_ids'] ) && is_array( $_POST['assigned_assistant_ids'] )
 					? array_values( array_map( 'absint', wp_unslash( $_POST['assigned_assistant_ids'] ) ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					: array(),
+				// WordPress/WooCommerce granular access controls.
+				'post_type_access'   => $this->resolve_post_type_access(),
+				'wc_resource_access' => $this->resolve_wc_resource_access(),
+				'custom_post_types'  => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -1835,7 +1858,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $tg_assistants as $tg_assistant ) :
 								$tg_is_selected = in_array( $tg_assistant->ID, $tg_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>" <?php echo esc_attr( $tg_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $tg_assistant->ID ); ?>"<?php echo $tg_is_selected; ?>>
 									<?php echo esc_html( $tg_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2048,6 +2071,210 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php endforeach; ?>
 						</select>
 						<p class="description"><?php esc_html_e( 'WordPress role assigned to newly-created Telegram users. "Subscriber" is recommended for public-facing bots. Raise this for internal/team bots only.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Enable Channel Posts', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="telegram_enable_channels" id="telegram_enable_channels" value="1" <?php checked( $is_edit && ! empty( $connection['enable_channels'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ); ?>>
+							<?php esc_html_e( 'Allow the bot to read and auto-reply to posts in Telegram Channels where it is an admin', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'When enabled, incoming channel posts and edited channel posts are forwarded to the AI assistant for a reply. The bot must be an admin of the channel with post and message permissions.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_welcome_message"><?php esc_html_e( 'Welcome Message', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_welcome = $is_edit && isset( $connection['welcome_message'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? $connection['welcome_message']
+							: '';
+						?>
+						<textarea name="telegram_welcome_message" id="telegram_welcome_message" class="large-text" rows="5" placeholder="<?php esc_attr_e( 'Leave blank to use the default welcome message shown to users when they send /start.', 'mcp-ai-wpoos-pro' ); ?>"><?php echo esc_textarea( $tg_welcome ); ?></textarea>
+						<p class="description"><?php esc_html_e( 'Custom text sent to users who send the /start command. Leave blank to use the default welcome message. You may use Markdown formatting: **bold**, *italic*, `code`.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Slash Commands', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$tg_disabled_cmds = $is_edit && isset( $connection['disabled_commands'] ) && is_array( $connection['disabled_commands'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? $connection['disabled_commands']
+							: array();
+						$tg_cmd_descs     = $is_edit && isset( $connection['command_descriptions'] ) && is_array( $connection['command_descriptions'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? $connection['command_descriptions']
+							: array();
+						$tg_builtin_cmds  = array(
+							'start'    => __( 'Start the bot &amp; see welcome message', 'mcp-ai-wpoos-pro' ),
+							'help'     => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
+							'tools'    => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
+							'balance'  => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
+							'app'      => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
+							'settings' => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
+							'status'   => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
+							'cancel'   => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
+						);
+						?>
+						<table style="border-collapse: collapse; width: 100%;">
+							<thead>
+								<tr>
+									<th style="text-align: left; padding: 4px 8px; width: 30px;"><?php esc_html_e( 'Disable', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th style="text-align: left; padding: 4px 8px; width: 120px;"><?php esc_html_e( 'Command', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th style="text-align: left; padding: 4px 8px;"><?php esc_html_e( 'Description (shown in Telegram)', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $tg_builtin_cmds as $cmd_name => $cmd_default_desc ) : ?>
+									<?php $cmd_enabled = ! in_array( $cmd_name, $tg_disabled_cmds, true ); ?>
+									<?php $cmd_desc    = isset( $tg_cmd_descs[ $cmd_name ] ) ? $tg_cmd_descs[ $cmd_name ] : ''; ?>
+									<tr>
+										<td style="padding: 4px 8px; text-align: center; vertical-align: middle;">
+											<input type="checkbox" name="telegram_disabled_commands[]" value="<?php echo esc_attr( $cmd_name ); ?>" id="telegram_cmd_disable_<?php echo esc_attr( $cmd_name ); ?>"
+												style="transform: scale(1.2);"
+												<?php if ( ! $cmd_enabled ) : ?>checked="checked"<?php endif; ?>>
+										</td>
+										<td style="padding: 4px 8px; vertical-align: middle;">
+											<label for="telegram_cmd_disable_<?php echo esc_attr( $cmd_name ); ?>" style="font-family: monospace; font-size: 13px;">/<?php echo esc_html( $cmd_name ); ?></label>
+										</td>
+										<td style="padding: 4px 8px;">
+											<input type="text" name="telegram_command_descriptions[<?php echo esc_attr( $cmd_name ); ?>]"
+												class="regular-text" style="width: 100%;"
+												value="<?php echo esc_attr( $cmd_desc ); ?>"
+												placeholder="<?php echo esc_attr( $cmd_default_desc ); ?>">
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+						<p class="description" style="margin-top: 8px;"><?php esc_html_e( 'Check "Disable" to hide a command from users (it will not appear in the Telegram command menu and will be silently ignored or handled by the AI). Descriptions appear as hints in the Telegram "/" menu when "Register Commands" is clicked. Leave blank to use the default.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div style="margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+							<button type="button" id="telegram_register_commands_btn" class="button button-secondary" <?php echo $is_edit ? '' : 'disabled="disabled"'; ?>>
+								<?php esc_html_e( 'Register Commands with Telegram', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="telegram_register_commands_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<?php if ( ! $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Save the connection first to enable command registration.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Sends the enabled commands to Telegram (setMyCommands). Users will see these in the "/" command menu. Save the connection before registering.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<div id="telegram_register_commands_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_parse_mode"><?php esc_html_e( 'AI Reply Format', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_parse_mode = $is_edit && isset( $connection['parse_mode'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? $connection['parse_mode']
+							: 'HTML';
+						?>
+						<select name="telegram_parse_mode" id="telegram_parse_mode">
+							<option value="HTML" <?php selected( $tg_parse_mode, 'HTML' ); ?>><?php esc_html_e( 'HTML (recommended — supports bold, italic, links)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="Markdown" <?php selected( $tg_parse_mode, 'Markdown' ); ?>><?php esc_html_e( 'Markdown', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="MarkdownV2" <?php selected( $tg_parse_mode, 'MarkdownV2' ); ?>><?php esc_html_e( 'MarkdownV2', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Parse mode used when sending AI-generated replies to Telegram. HTML is recommended because the plugin automatically converts Markdown output from the AI model to Telegram-compatible HTML. Change only if you have a specific reason.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Mini App', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						// Default to enabled for new connections and for existing connections
+						// that pre-date this setting (backwards compatibility).
+						$tg_mini_app_enabled = ! $is_edit
+							|| ! array_key_exists( 'enable_mini_app', $connection )
+							|| ! empty( $connection['enable_mini_app'] );
+						?>
+						<label>
+							<input type="checkbox" name="telegram_enable_mini_app" id="telegram_enable_mini_app" value="1" <?php checked( $tg_mini_app_enabled ); ?>>
+							<?php esc_html_e( 'Enable the Telegram Mini App for this bot', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'When enabled, the /app command and deep-link buttons open the built-in Telegram Mini App (Web App). The Mini App URL below must be set as the bot\'s menu button URL in @BotFather via /setmenubutton.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<p class="description" style="margin-top: 6px;">
+							<strong><?php esc_html_e( 'Mini App URL:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( rest_url( 'mcp-ai/v1/telegram-mini-app' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; display: inline-block; max-width: 460px; vertical-align: middle; margin-left: 6px;">
+						</p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label for="telegram_mini_app_assistant_id"><?php esc_html_e( 'Mini App Assistant', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_ma_assistants   = get_posts(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'posts_per_page' => -1,
+								'post_status'    => 'publish',
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+						$tg_ma_assistant_id = $is_edit && isset( $connection['mini_app_assistant_id'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' )
+							? absint( $connection['mini_app_assistant_id'] )
+							: 0;
+						?>
+						<select name="telegram_mini_app_assistant_id" id="telegram_mini_app_assistant_id">
+							<option value="0"><?php esc_html_e( '— Use first Assigned Assistant (default) —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $tg_ma_assistants as $tg_ma_post ) : ?>
+								<option value="<?php echo esc_attr( $tg_ma_post->ID ); ?>" <?php selected( $tg_ma_assistant_id, $tg_ma_post->ID ); ?>>
+									<?php echo esc_html( $tg_ma_post->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Choose a dedicated assistant for the Telegram Mini App. Leave as default to use the first assistant from the "Assigned Assistants" list above. This allows different AI personas for the in-app chat versus direct bot messages.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="telegram-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Mini App Template', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$tg_ma_template = ( $is_edit && isset( $connection['mini_app_template'] ) && 'telegram' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) )
+							? sanitize_key( $connection['mini_app_template'] )
+							: '';
+
+						// Load template registry to populate the dropdown.
+						if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' ) ) {
+							$_tpl_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-telegram-mini-app-templates.php';
+							if ( file_exists( $_tpl_file ) ) {
+								require_once $_tpl_file;
+							}
+						}
+
+						$all_templates = class_exists( 'WP_MCP_AI_Telegram_Mini_App_Template_Registry' )
+							? WP_MCP_AI_Telegram_Mini_App_Template_Registry::get_all_meta()
+							: array();
+						?>
+						<select name="telegram_mini_app_template" id="telegram_mini_app_template">
+							<option value=""><?php esc_html_e( '— Use global default template —', 'mcp-ai-wpoos-pro' ); ?></option>
+							<?php foreach ( $all_templates as $tpl ) : ?>
+								<option value="<?php echo esc_attr( $tpl['slug'] ); ?>" <?php selected( $tg_ma_template, $tpl['slug'] ); ?>>
+									<?php echo esc_html( $tpl['icon'] . ' ' . $tpl['name'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Choose a Mini App template for this specific bot connection. Overrides the global template set in Chat Channels settings. Leave blank to use the global default.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -2354,7 +2581,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $wa_assistants as $wa_assistant ) :
 								$is_selected = in_array( $wa_assistant->ID, $saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>" <?php echo esc_attr( $is_selected ); ?>>
+								<option value="<?php echo esc_attr( $wa_assistant->ID ); ?>"<?php echo $is_selected; ?>>
 									<?php echo esc_html( $wa_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2475,7 +2702,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="slack_bot_token" id="slack_bot_token" class="regular-text" value="" autocomplete="new-password" placeholder="xoxb-your-bot-token">
-						<?php if ( $is_edit ) : ?>
+						<?php if ( $is_edit && ! empty( $connection['api_key'] ) && 'slack' === ( $connection['connection_type'] ?? '' ) ) : ?>
+							<p class="description" style="color:#00a32a;">&#10003; <?php esc_html_e( 'Bot token is saved. Leave blank to keep the existing token, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php elseif ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing bot token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your Slack Bot User OAuth Token (starts with xoxb-).', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2489,7 +2718,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="slack_signing_secret" id="slack_signing_secret" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
+						<?php if ( $is_edit && ! empty( $connection['signing_secret'] ) && 'slack' === ( $connection['connection_type'] ?? '' ) ) : ?>
+							<p class="description" style="color:#00a32a;">&#10003; <?php esc_html_e( 'Signing secret is saved. Leave blank to keep the existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php elseif ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing signing secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Used to verify requests from Slack.', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -2512,8 +2743,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Configure as Request URL in Slack app Event Subscriptions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Workspace-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;">
+								<?php esc_html_e( 'Use this URL when configuring Event Subscriptions in your Slack app (Request URL field). Each Slack workspace has its own dedicated endpoint so that multiple workspaces can receive events independently.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all workspaces):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use this generic URL only if a single Slack workspace is configured. The workspace-specific URL above is preferred.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a workspace-specific webhook URL to configure in your Slack app Event Subscriptions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -2540,7 +2782,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $sl_assistants as $sl_assistant ) :
 								$sl_is_selected = in_array( $sl_assistant->ID, $sl_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>" <?php echo esc_attr( $sl_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $sl_assistant->ID ); ?>"<?php echo $sl_is_selected; ?>>
 									<?php echo esc_html( $sl_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2675,7 +2917,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $ds_assistants as $ds_assistant ) :
 								$ds_is_selected = in_array( $ds_assistant->ID, $ds_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>" <?php echo esc_attr( $ds_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $ds_assistant->ID ); ?>"<?php echo $ds_is_selected; ?>>
 									<?php echo esc_html( $ds_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -2814,7 +3056,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $ms_assistants as $ms_assistant ) :
 								$ms_is_selected = in_array( $ms_assistant->ID, $ms_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>" <?php echo esc_attr( $ms_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $ms_assistant->ID ); ?>"<?php echo $ms_is_selected; ?>>
 									<?php echo esc_html( $ms_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3025,7 +3267,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $msng_assistants as $msng_assistant ) :
 								$msng_is_selected = in_array( $msng_assistant->ID, $msng_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>" <?php echo esc_attr( $msng_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $msng_assistant->ID ); ?>"<?php echo $msng_is_selected; ?>>
 									<?php echo esc_html( $msng_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3414,7 +3656,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $gc_assistants as $gc_assistant ) :
 								$gc_is_selected = in_array( $gc_assistant->ID, $gc_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>" <?php echo esc_attr( $gc_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $gc_assistant->ID ); ?>"<?php echo $gc_is_selected; ?>>
 									<?php echo esc_html( $gc_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -3635,7 +3877,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php foreach ( $tw_assistants as $tw_assistant ) :
 								$tw_is_selected = in_array( $tw_assistant->ID, $tw_saved_assistant_ids, true ) ? 'selected="selected"' : '';
 								?>
-								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>" <?php echo esc_attr( $tw_is_selected ); ?>>
+								<option value="<?php echo esc_attr( $tw_assistant->ID ); ?>"<?php echo $tw_is_selected; ?>>
 									<?php echo esc_html( $tw_assistant->post_title ); ?>
 								</option>
 							<?php endforeach; ?>
@@ -4034,6 +4276,125 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'This site has WooCommerce installed', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Enable to access WooCommerce products, orders, and other data.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="wordpress-only-field">
+					<th scope="row"><?php esc_html_e( 'Post Type Access Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$pt_access_enabled = $is_edit && ! empty( $connection['post_type_access'] );
+						$pt_access         = $is_edit && isset( $connection['post_type_access'] ) ? $connection['post_type_access'] : array();
+						$custom_pt_raw     = $is_edit && isset( $connection['custom_post_types'] ) ? $connection['custom_post_types'] : '';
+						?>
+						<label style="display:block; margin-bottom:8px;">
+							<input type="checkbox" name="enable_pt_access_controls" id="enable_pt_access_controls" value="1"
+								<?php checked( $pt_access_enabled ); ?>
+								onchange="document.getElementById('pt_access_controls_section').style.display=this.checked?'block':'none';">
+							<strong><?php esc_html_e( 'Restrict post type access (leave unchecked to allow all post types with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+						</label>
+						<div id="pt_access_controls_section" style="<?php echo $pt_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+							<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which post types can be accessed and which CRUD operations are permitted. Unchecked post types will be blocked.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<table class="widefat striped" style="max-width:560px;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Post Type', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$built_in_pt = array(
+										'post'       => __( 'Posts', 'mcp-ai-wpoos-pro' ),
+										'page'       => __( 'Pages', 'mcp-ai-wpoos-pro' ),
+										'attachment' => __( 'Media / Attachments', 'mcp-ai-wpoos-pro' ),
+									);
+
+									// Add saved custom post types.
+									if ( ! empty( $custom_pt_raw ) ) {
+										foreach ( explode( ',', $custom_pt_raw ) as $cpt_slug ) {
+											$cpt_slug = sanitize_key( trim( $cpt_slug ) );
+											if ( ! empty( $cpt_slug ) && ! isset( $built_in_pt[ $cpt_slug ] ) ) {
+												$built_in_pt[ $cpt_slug ] = $cpt_slug;
+											}
+										}
+									}
+
+									foreach ( $built_in_pt as $pt_slug => $pt_label ) :
+										$pt_ops = isset( $pt_access[ $pt_slug ] ) ? (array) $pt_access[ $pt_slug ] : array();
+										?>
+									<tr>
+										<td><strong><?php echo esc_html( $pt_label ); ?></strong> <code><?php echo esc_html( $pt_slug ); ?></code></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $pt_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="pt_<?php echo esc_attr( $pt_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $pt_ops, true ) ); ?>></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+							<p class="description" style="margin-top:8px;">
+								<label for="custom_post_types"><strong><?php esc_html_e( 'Additional custom post types (comma-separated slugs):', 'mcp-ai-wpoos-pro' ); ?></strong></label><br>
+								<input type="text" name="custom_post_types" id="custom_post_types" class="regular-text"
+									value="<?php echo esc_attr( $custom_pt_raw ); ?>"
+									placeholder="<?php esc_attr_e( 'e.g. product,event,team', 'mcp-ai-wpoos-pro' ); ?>">
+								<span class="description"><?php esc_html_e( 'Save and re-open the connection to see custom types in the table above.', 'mcp-ai-wpoos-pro' ); ?></span>
+							</p>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="wordpress-only-field">
+					<th scope="row"><?php esc_html_e( 'WooCommerce Resource Controls', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$wc_access_enabled = $is_edit && ! empty( $connection['wc_resource_access'] );
+						$wc_access         = $is_edit && isset( $connection['wc_resource_access'] ) ? $connection['wc_resource_access'] : array();
+						?>
+						<label style="display:block; margin-bottom:8px;">
+							<input type="checkbox" name="enable_wc_access_controls" id="enable_wc_access_controls" value="1"
+								<?php checked( $wc_access_enabled ); ?>
+								onchange="document.getElementById('wc_access_controls_section').style.display=this.checked?'block':'none';">
+							<strong><?php esc_html_e( 'Restrict WooCommerce resource access (leave unchecked to allow all resources with read access)', 'mcp-ai-wpoos-pro' ); ?></strong>
+						</label>
+						<div id="wc_access_controls_section" style="<?php echo $wc_access_enabled ? '' : 'display:none;'; ?> margin-left:24px;">
+							<p class="description" style="margin-bottom:8px;"><?php esc_html_e( 'Select which WooCommerce resources can be accessed and which CRUD operations are permitted. This requires WooCommerce to be enabled above.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<table class="widefat striped" style="max-width:560px;">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Resource', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Read', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Create', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Update', 'mcp-ai-wpoos-pro' ); ?></th>
+										<th><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									$wc_resources = array(
+										'products'   => __( 'Products', 'mcp-ai-wpoos-pro' ),
+										'orders'     => __( 'Orders', 'mcp-ai-wpoos-pro' ),
+										'customers'  => __( 'Customers', 'mcp-ai-wpoos-pro' ),
+										'categories' => __( 'Product Categories', 'mcp-ai-wpoos-pro' ),
+									);
+
+									foreach ( $wc_resources as $res_slug => $res_label ) :
+										$res_ops = isset( $wc_access[ $res_slug ] ) ? (array) $wc_access[ $res_slug ] : array();
+										?>
+									<tr>
+										<td><strong><?php echo esc_html( $res_label ); ?></strong></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_read" value="1" <?php checked( in_array( 'read', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_create" value="1" <?php checked( in_array( 'create', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_update" value="1" <?php checked( in_array( 'update', $res_ops, true ) ); ?>></td>
+										<td><input type="checkbox" name="wc_<?php echo esc_attr( $res_slug ); ?>_delete" value="1" <?php checked( in_array( 'delete', $res_ops, true ) ); ?>></td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</div>
 					</td>
 				</tr>
 
@@ -4915,6 +5276,50 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (tgWebhookResult) {
 								tgWebhookResult.style.display = 'block';
 								tgWebhookResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Telegram: Register Commands with Telegram button.
+			var tgRegisterCmdsBtn     = document.getElementById('telegram_register_commands_btn');
+			var tgRegisterCmdsSpinner = document.getElementById('telegram_register_commands_spinner');
+			var tgRegisterCmdsResult  = document.getElementById('telegram_register_commands_result');
+			var tgRegisterCmdsConnId  = <?php echo wp_json_encode( $is_edit && ! empty( $connection['id'] ) ? $connection['id'] : '' ); ?>;
+
+			if (tgRegisterCmdsBtn) {
+				tgRegisterCmdsBtn.addEventListener('click', function() {
+					tgRegisterCmdsBtn.disabled = true;
+					if (tgRegisterCmdsSpinner) { tgRegisterCmdsSpinner.style.display = 'inline-block'; }
+					if (tgRegisterCmdsResult)  { tgRegisterCmdsResult.style.display = 'none'; tgRegisterCmdsResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_register_telegram_commands');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_register_telegram_commands' ) ); ?>);
+					data.append('connection_id', tgRegisterCmdsConnId);
+
+					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							tgRegisterCmdsBtn.disabled = false;
+							if (tgRegisterCmdsSpinner) { tgRegisterCmdsSpinner.style.display = 'none'; }
+							if (!tgRegisterCmdsResult) { return; }
+							tgRegisterCmdsResult.style.display = 'block';
+							if (result.success) {
+								tgRegisterCmdsResult.innerHTML = '<div class="notice notice-success inline" style="margin:0;"><p>✓ ' + (result.data && result.data.message ? result.data.message : <?php echo wp_json_encode( __( 'Commands registered successfully.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							} else {
+								tgRegisterCmdsResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to register commands.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							tgRegisterCmdsBtn.disabled = false;
+							if (tgRegisterCmdsSpinner) { tgRegisterCmdsSpinner.style.display = 'none'; }
+							if (tgRegisterCmdsResult) {
+								tgRegisterCmdsResult.style.display = 'block';
+								tgRegisterCmdsResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -10411,6 +10816,146 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
+	 * AJAX handler: Register slash commands with Telegram (setMyCommands).
+	 *
+	 * Reads enabled commands and their descriptions from the saved connection
+	 * and calls the Telegram Bot API setMyCommands endpoint to make them
+	 * appear in the "/" command menu for users.
+	 *
+	 * Accepts (POST): connection_id, nonce.
+	 */
+	public function ajax_register_telegram_commands() {
+		check_ajax_referer( 'wp_mcp_ai_register_telegram_commands', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( empty( $connection ) || empty( $connection['api_key'] ) ) {
+			wp_send_json_error( __( 'Connection not found or missing bot token. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+
+		if ( empty( $bot_token ) ) {
+			wp_send_json_error( __( 'Could not decrypt the bot token. Re-enter and save the bot token.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		if ( ! WP_MCP_AI_Pro_Remote_Site_Manager::is_valid_telegram_bot_token( $bot_token ) ) {
+			wp_send_json_error( __( 'The stored bot token format is invalid.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$disabled_commands    = isset( $connection['disabled_commands'] ) && is_array( $connection['disabled_commands'] ) ? $connection['disabled_commands'] : array();
+		$command_descriptions = isset( $connection['command_descriptions'] ) && is_array( $connection['command_descriptions'] ) ? $connection['command_descriptions'] : array();
+
+		// Default descriptions for each built-in command.
+		$defaults = array(
+			'start'    => __( 'Start the bot & see welcome message', 'mcp-ai-wpoos-pro' ),
+			'help'     => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
+			'tools'    => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
+			'balance'  => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
+			'app'      => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
+			'settings' => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
+			'status'   => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
+			'cancel'   => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
+		);
+
+		$commands = array();
+
+		foreach ( $defaults as $cmd_name => $default_desc ) {
+			if ( in_array( $cmd_name, $disabled_commands, true ) ) {
+				continue;
+			}
+			$desc       = isset( $command_descriptions[ $cmd_name ] ) && '' !== trim( $command_descriptions[ $cmd_name ] )
+				? sanitize_text_field( $command_descriptions[ $cmd_name ] )
+				: $default_desc;
+			$commands[] = array(
+				'command'     => $cmd_name,
+				'description' => substr( $desc, 0, 256 ),
+			);
+		}
+
+		if ( empty( $commands ) ) {
+			// No enabled commands — delete all registered commands.
+			$endpoint = sprintf( 'https://api.telegram.org/bot%s/deleteMyCommands', rawurlencode( $bot_token ) );
+			$response = wp_remote_post( $endpoint, array( 'timeout' => 20 ) );
+		} else {
+			$endpoint = sprintf( 'https://api.telegram.org/bot%s/setMyCommands', rawurlencode( $bot_token ) );
+			$body     = wp_json_encode( array( 'commands' => $commands ) );
+
+			if ( false === $body ) {
+				wp_send_json_error( __( 'Failed to encode command list.', 'mcp-ai-wpoos-pro' ) );
+				return;
+			}
+
+			$response = wp_remote_post(
+				$endpoint,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'timeout' => 20,
+					'body'    => $body,
+				)
+			);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Telegram API: %s', 'mcp-ai-wpoos-pro' ),
+					$response->get_error_message()
+				)
+			);
+			return;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( 200 !== $code || empty( $data['ok'] ) ) {
+			$description = isset( $data['description'] ) ? $data['description'] : __( 'Invalid response from Telegram API.', 'mcp-ai-wpoos-pro' );
+			wp_send_json_error(
+				sprintf(
+					/* translators: %s: error description */
+					__( 'Telegram API error: %s', 'mcp-ai-wpoos-pro' ),
+					$description
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'registered' => count( $commands ),
+				'message'    => empty( $commands )
+					? __( 'All commands removed from Telegram.', 'mcp-ai-wpoos-pro' )
+					: sprintf(
+						/* translators: %d: number of commands registered */
+						_n( '%d command registered with Telegram.', '%d commands registered with Telegram.', count( $commands ), 'mcp-ai-wpoos-pro' ),
+						count( $commands )
+					),
+			)
+		);
+	}
+
+	/**
 	 * AJAX handler: Test Slack bot token by calling the auth.test API.
 	 *
 	 * Accepts (POST): bot_token, connection_id, nonce.
@@ -10465,14 +11010,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( empty( $body['ok'] ) ) {
-			$error = isset( $body['error'] ) ? $body['error'] : __( 'Unknown error.', 'mcp-ai-wpoos-pro' );
-			wp_send_json_error(
-				sprintf(
-					/* translators: %s: error code */
-					__( 'Slack API error: %s', 'mcp-ai-wpoos-pro' ),
-					$error
-				)
-			);
+			$error   = isset( $body['error'] ) ? $body['error'] : 'unknown_error';
+			$message = $this->get_slack_friendly_error_message( $error );
+			wp_send_json_error( $message );
 			return;
 		}
 
@@ -10483,6 +11023,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'team_id'  => isset( $body['team_id'] ) ? $body['team_id'] : '',
 				'user_id'  => isset( $body['user_id'] ) ? $body['user_id'] : '',
 			)
+		);
+	}
+
+	/**
+	 * Map a Slack API error code to a human-readable, actionable error message.
+	 *
+	 * @param string $error_code Slack API error code (e.g. 'account_inactive').
+	 * @return string Translated error message with actionable guidance.
+	 */
+	protected function get_slack_friendly_error_message( $error_code ) {
+		$known = array(
+			'account_inactive'   => __( 'Slack API error: account_inactive — The bot account associated with this token has been deactivated. Please check that your Slack app is still installed in the workspace and that the bot user has not been removed. Generate a new Bot Token from your Slack app configuration (api.slack.com/apps) and update the token here.', 'mcp-ai-wpoos-pro' ),
+			'invalid_auth'       => __( 'Slack API error: invalid_auth — The bot token is invalid or has been revoked. Please generate a new token from your Slack app and update it here.', 'mcp-ai-wpoos-pro' ),
+			'token_revoked'      => __( 'Slack API error: token_revoked — This token has been revoked. Please reinstall your Slack app to the workspace and update the token here.', 'mcp-ai-wpoos-pro' ),
+			'not_authed'         => __( 'Slack API error: not_authed — No bot token was provided. Please enter a valid Bot Token (xoxb-).', 'mcp-ai-wpoos-pro' ),
+			'missing_scope'      => __( 'Slack API error: missing_scope — The bot token does not have the required OAuth scopes. Please update your Slack app permissions and reinstall the app.', 'mcp-ai-wpoos-pro' ),
+			'org_login_required' => __( 'Slack API error: org_login_required — The token requires re-authentication at the organization level. Please reinstall your Slack app.', 'mcp-ai-wpoos-pro' ),
+			'ekm_access_denied'  => __( 'Slack API error: ekm_access_denied — Access was denied by Enterprise Key Management. Please contact your Slack workspace administrator.', 'mcp-ai-wpoos-pro' ),
+		);
+
+		if ( isset( $known[ $error_code ] ) ) {
+			return $known[ $error_code ];
+		}
+
+		return sprintf(
+			/* translators: %s: Slack API error code */
+			__( 'Slack API error: %s', 'mcp-ai-wpoos-pro' ),
+			$error_code
 		);
 	}
 
@@ -10618,7 +11186,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						if ( ! empty( $send_body['ok'] ) ) {
 							$result['sent'] = true;
 						} else {
-							$result['send_error'] = isset( $send_body['error'] ) ? $send_body['error'] : __( 'Unknown Slack error.', 'mcp-ai-wpoos-pro' );
+							$send_error_code      = isset( $send_body['error'] ) ? $send_body['error'] : 'unknown_error';
+							$result['send_error'] = $this->get_slack_friendly_error_message( $send_error_code );
 						}
 					} else {
 						$result['send_error'] = $send_result->get_error_message();
@@ -11055,6 +11624,116 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$raw = array_map( 'sanitize_key', wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		return array_values( array_intersect( $raw, $allowed ) );
+	}
+
+	/**
+	 * Build the post_type_access map from the submitted form data.
+	 *
+	 * Each built-in post type has four checkbox fields in the form:
+	 * pt_{slug}_read, pt_{slug}_create, pt_{slug}_update, pt_{slug}_delete.
+	 * Custom post types listed in the `custom_post_types` text field receive
+	 * the same treatment.  Only 'read', 'create', 'update', and 'delete' are
+	 * accepted as operation values.
+	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Sanitized post_type_access map, e.g.
+	 *               array( 'post' => array( 'read' ), 'page' => array( 'read', 'create' ) ).
+	 *               Returns an empty array when access controls are not configured
+	 *               (all post types allowed, read-only – backward compatible).
+	 */
+	private function resolve_post_type_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_pt_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+
+		$built_in_types = array( 'post', 'page', 'attachment' );
+
+		// Merge custom post types from the text field.
+		$custom_raw   = isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '';
+		$custom_types = array();
+
+		if ( ! empty( $custom_raw ) ) {
+			foreach ( explode( ',', $custom_raw ) as $cpt ) {
+				$slug = sanitize_key( trim( $cpt ) );
+				if ( ! empty( $slug ) ) {
+					$custom_types[] = $slug;
+				}
+			}
+		}
+
+		$all_types = array_unique( array_merge( $built_in_types, $custom_types ) );
+		$access    = array();
+
+		foreach ( $all_types as $post_type ) {
+			$ops = array();
+
+			foreach ( $valid_operations as $op ) {
+				$field = 'pt_' . $post_type . '_' . $op;
+				if ( ! empty( $_POST[ $field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			// Only include post types where at least one operation is enabled.
+			if ( ! empty( $ops ) ) {
+				$access[ $post_type ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
+	}
+
+	/**
+	 * Build the wc_resource_access map from the submitted form data.
+	 *
+	 * Each WooCommerce resource has four checkbox fields:
+	 * wc_{resource}_read, wc_{resource}_create, wc_{resource}_update, wc_{resource}_delete.
+	 *
+	 * Note: nonce verification is performed by the calling method
+	 * handle_actions() before this helper is invoked.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Sanitized wc_resource_access map, e.g.
+	 *               array( 'products' => array( 'read', 'create' ), 'orders' => array( 'read' ) ).
+	 *               Returns an empty array when WooCommerce access controls are not configured.
+	 */
+	private function resolve_wc_resource_access() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( empty( $_POST['enable_wc_access_controls'] ) ) {
+			return array();
+		}
+
+		$valid_operations = array( 'read', 'create', 'update', 'delete' );
+		$wc_resources     = array( 'products', 'orders', 'customers', 'categories' );
+		$access           = array();
+
+		foreach ( $wc_resources as $resource ) {
+			$ops = array();
+
+			foreach ( $valid_operations as $op ) {
+				$field = 'wc_' . $resource . '_' . $op;
+				if ( ! empty( $_POST[ $field ] ) ) {
+					$ops[] = $op;
+				}
+			}
+
+			// Only include resources where at least one operation is enabled.
+			if ( ! empty( $ops ) ) {
+				$access[ $resource ] = $ops;
+			}
+		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return $access;
 	}
 }
 

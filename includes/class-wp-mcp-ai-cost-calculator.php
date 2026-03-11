@@ -19,11 +19,28 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of January 2026.
+	 * Prices updated as of March 2026.
 	 * Source: Official provider pricing pages and Hugging Face Inference API.
 	 */
 	const PRICING = array(
 		'openai'      => array(
+			// GPT-5.4 series (March 2026).
+			'gpt-5.4'                                 => array(
+				'input'        => 2.50,  // $2.50 per 1M input tokens.
+				'output'       => 15.00, // $15 per 1M output tokens.
+				'cached_input' => 0.25,  // $0.25 per 1M cached input tokens (90% off).
+			),
+			'gpt-5.4-pro'                             => array(
+				'input'        => 30.00,  // $30 per 1M input tokens.
+				'output'       => 180.00, // $180 per 1M output tokens.
+				'cached_input' => 3.00,   // $3 per 1M cached input tokens (90% off).
+			),
+			// GPT-5.3 Codex (updated March 2026).
+			'gpt-5.3-codex'                           => array(
+				'input'        => 3.00,  // $3 per 1M input tokens.
+				'output'       => 15.00, // $15 per 1M output tokens.
+				'cached_input' => 0.30,  // $0.30 per 1M cached input tokens (90% off).
+			),
 			'gpt-5'                                   => array(
 				'input'  => 10.00,
 				'output' => 30.00,

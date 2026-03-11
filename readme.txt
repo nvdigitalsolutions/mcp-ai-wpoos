@@ -9,13 +9,21 @@ Stable tag: 1.1.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-AI Assistant framework for WordPress supporting OpenAI, Gemini, Anthropic, and Ollama (Local). Works standalone with optional third-party plugin integrations.
+AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base Version (165 core tools) or Full Version (519 tools) via the Pro add-on plugin.
 
 == Description ==
 
 **NV Digital Open Operator System (oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
 The plugin works standalone with vanilla WordPress and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
+
+= Versions =
+
+**Base Version (default — 165 core tools):** Active out of the box. Covers content management, media generation, research, site operations, analytics, MCP server, and more.
+
+**Full Version (519 tools):** Unlocks all Pro add-ons. Install the separate **NV oOS Pro add-on** plugin alongside this plugin to enable the Full Version automatically.
+
+Pro add-ons include WooCommerce e-commerce tools, JetEngine CPT/Taxonomy AI integration, social media publishing and analytics, GitHub integration, Google services, FFmpeg media processing, WP-CLI automation, and multi-agent orchestration.
 
 **Important:** This plugin sends data to third-party AI services. Please review the [Privacy & Data Usage section](#privacy-policy) and each provider's terms before use:
 * [OpenAI Terms of Service](https://openai.com/policies/terms-of-use) | [Privacy Policy](https://openai.com/privacy)
@@ -45,6 +53,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Per-assistant model configuration (temperature, max tokens)
 * 182 pre-built profession templates across 12 industry categories
 * One-click team deployments for coordinated AI workflows
+* 16 pre-built Agent Skills (document editing, design, MCP server building, testing, and more) included in the base plugin — auto-installed on activation, fully customisable
 
 **Multi-Provider AI Routing**
 * **OpenAI** - GPT-4o, GPT-4, GPT-4o-mini ([Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy))
@@ -414,6 +423,14 @@ Initial release. Welcome to Open Operator System!
 * **Terms of Service:** https://ai.google.dev/terms
 * **Privacy Policy:** https://ai.google.dev/privacy
 
+**2a. Google Gemini Semantic Retrieval API (Corpus / RAG)**
+* **Purpose:** Native Retrieval-Augmented Generation (RAG) — store and query document corpora for grounded AI responses
+* **Data Sent:** Corpus display names, document content uploaded to corpora, natural-language query strings; only transmitted when a corpus is configured for the assistant and the user sends a message
+* **When:** Only when a Gemini assistant has a corpus name configured (optional feature, off by default)
+* **Service URL:** https://generativelanguage.googleapis.com/v1beta/corpora
+* **Terms of Service:** https://ai.google.dev/terms
+* **Privacy Policy:** https://ai.google.dev/privacy
+
 **3. Anthropic API (Claude)**
 * **Purpose:** Core AI functionality (chat, vision, document analysis)
 * **Data Sent:** Chat messages, system prompts, file attachments, tool results
@@ -453,7 +470,7 @@ These services are only contacted when specific tools/features are used:
 * **Purpose:** Access to public machine learning datasets and AI model inference (text-to-speech, chat)
 * **Data Sent:** Dataset queries and filters; text or chat prompts for model inference
 * **When:** When dataset exploration tools or Hugging Face AI inference tools are used
-* **Service URL:** https://huggingface.co/api/datasets and https://api-inference.huggingface.co/models/
+* **Service URL:** https://router.huggingface.co/v1 (Inference Router / chat completions), https://datasets-server.huggingface.co (Datasets Server), https://api-inference.huggingface.co/models/ (legacy inference, if configured)
 * **Terms of Service:** https://huggingface.co/terms-of-service
 * **Privacy Policy:** https://huggingface.co/privacy
 
@@ -489,13 +506,13 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://wordpress.org/about/privacy/
 * **Privacy Policy:** https://wordpress.org/about/privacy/
 
-**12. Chart.js CDN**
+**12. Chart.js**
 * **Purpose:** Chart visualization library for displaying data
-* **Data Sent:** None (library loaded client-side)
+* **Data Sent:** None — Chart.js is bundled locally within the plugin; no external CDN is contacted
 * **When:** When chart generation tools create visualizations
-* **Service URL:** https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js
-* **Terms of Service:** https://www.jsdelivr.com/terms
-* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+* **Service URL:** N/A — Chart.js v4.5.1 is included locally in `assets/js/vendor/chart.min.js`
+* **Terms of Service:** https://github.com/chartjs/Chart.js/blob/master/LICENSE.md (MIT)
+* **Privacy Policy:** N/A — no external connection made
 
 **13. DuckDuckGo Instant Answer API**
 * **Purpose:** Fallback web search and instant answers
@@ -521,11 +538,11 @@ These services are only contacted when specific tools/features are used:
 * **Terms of Service:** https://www.cloudflare.com/terms/
 * **Privacy Policy:** https://www.cloudflare.com/privacypolicy/
 
-**16. Gmail API (Google)**
-* **Purpose:** Email search and retrieval for AI assistants
-* **Data Sent:** OAuth access tokens, search queries, label filters
-* **When:** When Gmail search tools are used after OAuth setup
-* **Service URL:** https://gmail.googleapis.com/gmail/v1/
+**16. Gmail API & Google OAuth token exchange (Google)**
+* **Purpose:** Email search and retrieval for AI assistants; server-side OAuth token exchange during Gmail OAuth setup
+* **Data Sent:** OAuth access tokens, search queries, label filters; during OAuth setup: authorisation code and client credentials sent to the token endpoint
+* **When:** When Gmail search tools are used after OAuth setup; OAuth code-exchange request is made once during the initial OAuth authorisation flow
+* **Service URL:** https://gmail.googleapis.com/gmail/v1/ (Gmail API and profile lookup), https://oauth2.googleapis.com/token (OAuth token exchange)
 * **Terms of Service:** https://policies.google.com/terms
 * **Privacy Policy:** https://policies.google.com/privacy
 
@@ -563,9 +580,9 @@ These services are only contacted when specific tools/features are used:
 
 **21. Auth0 API**
 * **Purpose:** Enterprise authentication and user management via Auth0
-* **Data Sent:** OAuth tokens, user subject identifiers
+* **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URL:** https://{your-auth0-domain}/api/v2/
+* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
@@ -612,23 +629,23 @@ These services are only contacted when specific tools/features are used:
 * **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
 * **Opt-Out:** Disable via Settings → NV oOS → "Disable activation tracking" or the `wp_mcp_ai_enable_usage_tracking` filter. Tracking is automatically skipped in local/development environments.
 
-**27. NV Digital Solutions License Server**
-* **Purpose:** Optional license validation for future premium add-on support
-* **Data Sent:** License key, site URL, product identifier
-* **When:** Only when a user manually enters and activates a license key
-* **Service URL:** https://nvdigitalsolutions.com/api/licenses
-* **Terms of Service:** https://nvdigitalsolutions.com/terms
-* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy
+**27. NV Digital Solutions License Server & Optional Component Downloads**
+* **Purpose:** (a) Optional license validation for future premium add-on support; (b) On-demand download of optional plugin components (profession-playbook knowledge base) hosted on GitHub releases to reduce base plugin ZIP size
+* **Data Sent:** (a) License key, site URL, product identifier — only when a user manually enters and activates a license key; (b) Standard HTTP GET request with no user data — only the plugin version is embedded in the URL path
+* **When:** (a) Only when a user manually enters and activates a license key; (b) On plugin activation or manual trigger if the optional knowledge base has not yet been downloaded
+* **Service URLs:** https://nvdigitalsolutions.com/api/licenses (license server); https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download (optional component ZIP downloads from the plugin's own GitHub releases)
+* **Terms of Service:** https://nvdigitalsolutions.com/terms; https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **Privacy Policy:** https://nvdigitalsolutions.com/privacy-policy; https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
 = Optional OAuth/Integration Services =
 
 These services are only used if you explicitly configure OAuth integrations:
 
-**28. GitHub API**
-* **Purpose:** Repository management, code search, issue tracking
-* **Data Sent:** OAuth tokens, repository queries, commit data
-* **When:** When GitHub tools are used after OAuth setup
-* **Service URL:** https://api.github.com
+**28. GitHub API & GitHub OAuth token exchange**
+* **Purpose:** Repository management, code search, issue tracking, and OAuth authorisation flow to connect the GitHub integration
+* **Data Sent:** OAuth tokens, repository queries, commit data; during OAuth setup: client ID, client secret (as Basic Auth header), authorisation code, and redirect URI
+* **When:** When GitHub tools are used after OAuth setup; the OAuth token exchange endpoint is called once per authorisation when a user connects their GitHub account
+* **Service URL:** https://api.github.com (GitHub REST API); https://github.com/login/oauth/access_token (OAuth token exchange — server-side POST to exchange the authorisation code for access/refresh tokens)
 * **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
 
@@ -644,7 +661,7 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Accounting and financial data integration
 * **Data Sent:** OAuth tokens, financial queries
 * **When:** When QuickBooks tools are used after OAuth setup
-* **Service URL:** https://appcenter.intuit.com/connect/oauth2
+* **Service URL:** https://appcenter.intuit.com/connect/oauth2 (OAuth authorize), https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer (OAuth token exchange), https://quickbooks.api.intuit.com/v3 (accounting data API)
 * **Terms of Service:** https://accounts.intuit.com/terms-of-service
 * **Privacy Policy:** https://www.intuit.com/privacy/statement/
 
@@ -652,11 +669,111 @@ These services are only used if you explicitly configure OAuth integrations:
 * **Purpose:** Email marketing and transactional email
 * **Data Sent:** OAuth tokens, email campaign data
 * **When:** When Mailjet tools are used after OAuth setup
-* **Service URL:** https://app.mailjet.com/oauth/authorize
+* **Service URL:** https://app.mailjet.com/oauth/authorize (OAuth authorize), https://api.mailjet.com/v3/REST (email campaign API)
 * **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
 * **Privacy Policy:** https://www.mailjet.com/privacy-policy/
 
-= Data Processing Summary =
+**32. Tavily Search API**
+* **Purpose:** AI-first web search purpose-built for LLM agents and RAG pipelines; returns structured results including page excerpts and publication dates
+* **Data Sent:** Search query string; sent only when Tavily is selected as the web search provider
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Tavily"
+* **Service URL:** https://api.tavily.com/search
+* **Terms of Service:** https://tavily.com/terms-of-use
+* **Privacy Policy:** https://tavily.com/privacy-policy
+
+**33. Exa AI Search API**
+* **Purpose:** Neural/semantic web search purpose-built for AI agents; returns full-text page content and metadata
+* **Data Sent:** Search query string and search parameters (number of results, content type)
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Exa"
+* **Service URL:** https://api.exa.ai/search
+* **Terms of Service:** https://exa.ai/terms
+* **Privacy Policy:** https://exa.ai/privacy
+
+**34. Perplexity AI API**
+* **Purpose:** AI-powered web search that returns synthesised answers with inline citations
+* **Data Sent:** Search query string, model identifier
+* **When:** When an AI assistant uses the `web_search` tool and the provider setting is set to "Perplexity"
+* **Service URL:** https://api.perplexity.ai/chat/completions
+* **Terms of Service:** https://www.perplexity.ai/hub/legal/terms-of-service
+* **Privacy Policy:** https://www.perplexity.ai/hub/legal/privacy-policy
+
+**35. Google Cloud Vision API**
+* **Purpose:** Image annotation, product visual search, and object localisation using Google's pre-trained Vision models
+* **Data Sent:** Base64-encoded image data and API key
+* **When:** When the `vision_product_search` or `vision_object_localization` tools are used
+* **Service URL:** https://vision.googleapis.com/v1/images:annotate
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**36. Google Drive API & Google OAuth (Google)**
+* **Purpose:** Search and list files stored in a user's Google Drive; server-side OAuth token exchange and user-profile lookup during Google Drive OAuth setup
+* **Data Sent:** OAuth access token and search query parameters; during OAuth setup: authorisation code and client credentials (token exchange), access token (profile lookup to confirm authorised email address)
+* **When:** When the `search_drive` tool is used after Google OAuth integration is configured; OAuth code-exchange and profile requests are made once during the initial OAuth authorisation flow
+* **Service URL:** https://www.googleapis.com/drive/v3 (Drive API), https://oauth2.googleapis.com/token (OAuth token exchange), https://www.googleapis.com/oauth2/v2/userinfo (Google OAuth profile)
+* **Terms of Service:** https://policies.google.com/terms
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**37. WordPress.com OAuth2 API (Gravatar)**
+* **Purpose:** Validate WordPress.com / Gravatar bearer tokens to authenticate users against their WordPress.com or Gravatar profile
+* **Data Sent:** OAuth bearer token (no user content)
+* **When:** When the WordPress.com / Gravatar authentication integration is enabled and a bearer token is presented
+* **Service URL:** https://public-api.wordpress.com/oauth2/userinfo
+* **Terms of Service:** https://wordpress.com/tos/
+* **Privacy Policy:** https://automattic.com/privacy/
+
+**38. Yahoo OAuth2 API**
+* **Purpose:** OAuth2 authorisation flow for Yahoo Fantasy Sports integration — exchanges an authorisation code for access/refresh tokens
+* **Data Sent:** Client ID, client secret (base64-encoded in Authorization header), authorisation code, redirect URI
+* **When:** Only when a user completes the Yahoo Fantasy Sports OAuth authorisation flow (optional integration, off by default)
+* **Service URL:** https://api.login.yahoo.com/oauth2/get_token
+* **Terms of Service:** https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html
+* **Privacy Policy:** https://legal.yahoo.com/us/en/yahoo/privacy/index.html
+
+= Optional Browser-Native AI CDN Libraries =
+
+The following libraries are loaded as external CDN connections directly in the visitor's browser (not server-side) when specific optional AI features are enabled. These are external service contacts and are disclosed here in accordance with WordPress.org Plugin Guidelines. No user chat data or personal information is transmitted — the browser only downloads a JavaScript library file.
+
+**39. Transformers.js (jsDelivr CDN)**
+* **Purpose:** Browser-native machine learning library enabling in-browser NLP tasks (summarisation, sentiment analysis, entity extraction, translation, semantic search) without sending data to a remote AI provider
+* **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
+* **When:** Only when the "Browser-Native AI Tasks (Transformers.js)" feature is explicitly enabled by the administrator (disabled by default)
+* **Service URL:** https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2
+* **Terms of Service:** https://www.jsdelivr.com/terms
+* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+
+**40. WebLLM — MLC AI (esm.run CDN)**
+* **Purpose:** Browser-native large language model runner; enables the "Embedded Browser LLM" provider to perform inference entirely within the visitor's browser using WebGPU, with no server-side AI API call
+* **Data Sent:** None — only the library file itself is downloaded; all inference runs locally in the visitor's browser
+* **When:** Only when the "Embedded (Browser)" AI provider is selected for an assistant and the visitor's browser supports WebGPU (opt-in, off by default)
+* **Service URL:** https://esm.run/@mlc-ai/web-llm (ESM CDN proxy for https://github.com/mlc-ai/web-llm)
+* **Terms of Service:** https://esm.run/ (re-exports packages under their original licences; Apache 2.0 for web-llm)
+* **Privacy Policy:** https://esm.sh/ (esm.run is powered by esm.sh — see https://esm.sh/privacy)
+
+**41. Google Cloud Speech-to-Text API**
+* **Purpose:** Convert audio recordings to text transcripts using Google Cloud's speech recognition engine
+* **Data Sent:** Audio file data (binary); sent only when the speech-to-text feature is explicitly triggered via an AI assistant tool
+* **When:** Only when an AI assistant calls the speech-to-text feature and the Gemini provider is configured with a valid API key
+* **Service URL:** https://speech.googleapis.com/v1/speech:recognize
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**42. Google Cloud Text-to-Speech API**
+* **Purpose:** Convert text to natural-sounding speech audio using Google Cloud's text-to-speech engine
+* **Data Sent:** Text content to be synthesised; sent only when the text-to-speech feature is explicitly triggered via an AI assistant tool
+* **When:** Only when an AI assistant calls the text-to-speech feature and the Gemini provider is configured with a valid API key
+* **Service URL:** https://texttospeech.googleapis.com/v1/text:synthesize
+* **Terms of Service:** https://cloud.google.com/terms/
+* **Privacy Policy:** https://policies.google.com/privacy
+
+**43. QR Server API (api.qrserver.com)**
+* **Purpose:** Generate QR code images for two-factor authentication (TOTP) setup; the QR code encodes the authenticator app enrollment URI
+* **Data Sent:** TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret); the request is made server-side by WordPress — the user's browser never contacts this service directly
+* **When:** Only when the `setup_2fa` tool is used and the TOTP (authenticator app) method is selected
+* **Service URL:** https://api.qrserver.com/v1/create-qr-code/
+* **Terms of Service:** https://goqr.me/api/
+* **Privacy Policy:** https://goqr.me/privacy/
+
+
 
 **What is sent to external services:**
 * User messages and chat conversations (AI providers only)
@@ -735,6 +852,7 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Terms of Service: [Google Gemini Terms](https://ai.google.dev/terms)
 * Data Usage: Google uses API data as described in their privacy policy
 * Review Google's data retention policies before use
+* Corpus/RAG feature: When a Gemini assistant has a corpus configured, document content and queries are also sent to https://generativelanguage.googleapis.com/v1beta/corpora (Semantic Retrieval API)
 
 **Anthropic (when configured):**
 * Data sent to: https://api.anthropic.com/v1/messages
@@ -751,10 +869,10 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * Review Cloudflare's data handling policies before use
 
 **Hugging Face (when configured):**
-* Data sent to: https://huggingface.co/api/datasets
+* Data sent to: https://router.huggingface.co/v1 (Inference Router), https://datasets-server.huggingface.co (Datasets Server)
 * Processed according to: [Hugging Face Privacy](https://huggingface.co/privacy)
 * Terms of Service: [Hugging Face Terms](https://huggingface.co/terms-of-service)
-* Used for: Dataset access and exploration
+* Used for: Dataset access, exploration, and AI model inference (chat, text-to-speech)
 * Review Hugging Face's data policies before use
 
 **Ollama (when configured):**
@@ -768,6 +886,53 @@ When you use AI features, data is transmitted to your configured AI provider(s):
 * No external data transmission
 * Complete data privacy and control
 * Recommended for sensitive data
+
+**Web Search Providers (when configured):**
+* Brave Search: data sent to https://api.search.brave.com — [Privacy](https://brave.com/privacy/browser/) | [Terms](https://brave.com/terms-of-use/)
+* Tavily: data sent to https://api.tavily.com — [Privacy](https://tavily.com/privacy-policy) | [Terms](https://tavily.com/terms-of-use)
+* Exa AI: data sent to https://api.exa.ai — [Privacy](https://exa.ai/privacy) | [Terms](https://exa.ai/terms)
+* Perplexity: data sent to https://api.perplexity.ai — [Privacy](https://www.perplexity.ai/hub/legal/privacy-policy) | [Terms](https://www.perplexity.ai/hub/legal/terms-of-service)
+* DuckDuckGo: data sent to https://api.duckduckgo.com — [Privacy](https://duckduckgo.com/privacy) | [Terms](https://duckduckgo.com/terms)
+
+**Google Cloud Vision API (when vision tools are used):**
+* Data sent to: https://vision.googleapis.com
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Cloud Terms](https://cloud.google.com/terms/)
+* Used for: Image annotation, product visual search, and object localisation
+
+**Google Drive API (when search_drive tool is used):**
+* Data sent to: https://www.googleapis.com/drive/v3
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Terms](https://policies.google.com/terms)
+* Used for: Search and listing of files in a user's Google Drive (requires OAuth setup)
+
+**WordPress.com OAuth2 / Gravatar (when configured):**
+* Data sent to: https://public-api.wordpress.com/oauth2/userinfo
+* Processed according to: [Automattic Privacy Policy](https://automattic.com/privacy/)
+* Terms of Service: [WordPress.com Terms](https://wordpress.com/tos/)
+* Used for: Validating WordPress.com / Gravatar bearer tokens for user authentication
+
+**Yahoo OAuth2 (when Yahoo Fantasy Sports integration is used):**
+* Data sent to: https://api.login.yahoo.com/oauth2/get_token
+* Processed according to: [Yahoo Privacy Policy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html)
+* Terms of Service: [Yahoo Terms of Service](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
+* Used for: Exchanging an authorisation code for Yahoo OAuth2 access/refresh tokens (Fantasy Sports integration only)
+
+**Google Cloud Speech-to-Text and Text-to-Speech APIs (when voice features are used):**
+* Data sent to: https://speech.googleapis.com (audio → text), https://texttospeech.googleapis.com (text → audio)
+* Processed according to: [Google Privacy Policy](https://policies.google.com/privacy)
+* Terms of Service: [Google Cloud Terms](https://cloud.google.com/terms/)
+* Used for: Transcribing audio uploads to text and synthesising speech from AI responses; only triggered when the respective tool is called by an AI assistant
+
+**QR Server API (when TOTP two-factor authentication setup is used):**
+* Data sent to: https://api.qrserver.com — server-side request made by WordPress (not by the user's browser); the request payload is the TOTP enrollment URI (contains site name, user e-mail address, and the one-time-password secret)
+* Processed according to: [goQR.me Privacy Policy](https://goqr.me/privacy/)
+* Terms of Service: https://goqr.me/api/
+* Used for: Generating a QR code image for scanning with an authenticator app during 2FA setup; the returned image is converted to a base64 data URI so the user's browser never contacts api.qrserver.com directly
+
+**Browser-Native AI CDN Libraries (when optional features are enabled, client-side only):**
+* Transformers.js (when "Browser-Native AI Tasks" feature is enabled): browser downloads library from https://cdn.jsdelivr.net/npm/@xenova/transformers — [jsDelivr Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms); no user chat data is sent to jsDelivr; all inference runs in the visitor's browser
+* WebLLM (when "Embedded Browser LLM" provider is selected): browser downloads library from https://esm.run/@mlc-ai/web-llm — [esm.sh Privacy](https://esm.sh/privacy); no user chat data is sent; all inference runs locally via WebGPU
 
 = GDPR Compliance =
 
@@ -811,8 +976,19 @@ This plugin may connect to the following external services based on your configu
 * Cloudflare Workers AI - [Privacy](https://www.cloudflare.com/privacypolicy/) | [Terms](https://www.cloudflare.com/terms/)
 * Hugging Face - [Privacy](https://huggingface.co/privacy) | [Terms](https://huggingface.co/terms-of-service)
 * Weather data - Open-Meteo API
-* Web search - Brave Search API
+* Web search - Brave Search, DuckDuckGo, Tavily, Exa AI, or Perplexity (provider must be configured)
 * Image generation - OpenAI, Gemini, or Cloudflare
+* Google Cloud Vision API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Cloud Speech-to-Text API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Cloud Text-to-Speech API - [Privacy](https://policies.google.com/privacy) | [Terms](https://cloud.google.com/terms/)
+* Google Drive API - [Privacy](https://policies.google.com/privacy) | [Terms](https://policies.google.com/terms)
+* WordPress.com OAuth2 (Gravatar) - [Privacy](https://automattic.com/privacy/) | [Terms](https://wordpress.com/tos/)
+* Yahoo OAuth2 (Fantasy Sports) - [Privacy](https://legal.yahoo.com/us/en/yahoo/privacy/index.html) | [Terms](https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html)
+* QR Server API (2FA setup, server-side only) - [Privacy](https://goqr.me/privacy/) | [Terms](https://goqr.me/api/)
+
+**Optional browser-native AI CDN libraries (no user data transmitted):**
+* Transformers.js (browser-native AI tasks, opt-in) - loaded from jsDelivr CDN - [Privacy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [Terms](https://www.jsdelivr.com/terms)
+* WebLLM / MLC AI (embedded browser LLM provider, opt-in) - loaded from esm.run CDN - [Privacy](https://esm.sh/privacy) | [Terms](https://esm.run/)
 
 For complete privacy, configure Ollama or LM Studio for fully local AI processing.
 

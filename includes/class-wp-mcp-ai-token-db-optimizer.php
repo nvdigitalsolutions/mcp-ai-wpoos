@@ -106,7 +106,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 	protected static function get_existing_indexes() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$indexes = $wpdb->get_results(
 			"SHOW INDEX FROM {$wpdb->usermeta}",
 			ARRAY_A
@@ -169,12 +169,12 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		$indexes = self::get_existing_indexes();
 
 		// Get count of token-related user meta records.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$tier_count = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = '_wp_mcp_ai_token_tier'"
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$usage_count = $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = '_wp_mcp_ai_tool_token_usage'"
 		);
@@ -212,7 +212,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		);
 
 		// Analyze tier lookup query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$tier_explain = $wpdb->get_results(
 			$wpdb->prepare(
 				"EXPLAIN SELECT meta_value FROM {$wpdb->usermeta}
@@ -233,7 +233,7 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		}
 
 		// Analyze usage lookup query.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$usage_explain = $wpdb->get_results(
 			$wpdb->prepare(
 				"EXPLAIN SELECT meta_value FROM {$wpdb->usermeta}

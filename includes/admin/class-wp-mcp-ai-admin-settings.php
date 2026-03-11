@@ -122,7 +122,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudways_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_tavily_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_anthropic_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_exa_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_perplexity_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_plaid_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_yahoo_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_removebg_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_flowhub_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -149,6 +154,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_seed_task_templates', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_seed_orchestration', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_refresh_skills', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_delete_old_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -238,6 +244,48 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						'web_search_provider' => array( 'brave' ),
 					),
 					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
+				),
+				'tavily'           => array(
+					'label'            => __( 'Tavily', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'tavily_api_key' ),
+					'fields'           => array(
+						'tavily_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables AI-optimised web search results. Tavily is purpose-built for AI agents and returns richer structured results.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Tavily.', 'mcp-ai-wpoos' ),
+					'active_when'      => array(
+						'web_search_provider' => array( 'tavily' ),
+					),
+					'inactive_message' => __( 'Set the web search provider to Tavily to activate this connector.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://tavily.com/',
+				),
+				'exa'              => array(
+					'label'            => __( 'Exa AI', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'exa_api_key' ),
+					'fields'           => array(
+						'exa_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Neural web search purpose-built for AI apps. Exa uses semantic understanding rather than keyword matching, returning highly relevant results for AI agents.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Exa AI.', 'mcp-ai-wpoos' ),
+					'active_when'      => array(
+						'web_search_provider' => array( 'exa' ),
+					),
+					'inactive_message' => __( 'Set the web search provider to Exa AI to activate this connector.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://exa.ai',
+				),
+				'perplexity'       => array(
+					'label'            => __( 'Perplexity Sonar', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'perplexity_api_key' ),
+					'fields'           => array(
+						'perplexity_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'AI-powered search with real-time web grounding and inline citations. Powered by Perplexity\'s Sonar models for comprehensive, sourced answers.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Perplexity.', 'mcp-ai-wpoos' ),
+					'active_when'      => array(
+						'web_search_provider' => array( 'perplexity' ),
+					),
+					'inactive_message' => __( 'Set the web search provider to Perplexity to activate this connector.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://www.perplexity.ai/settings/api',
 				),
 				'mubert'           => array(
 					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
@@ -1507,6 +1555,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_gemini_section'
 			);
 
+			add_settings_field(
+				'gemini_thinking_budget_tokens',
+				__( 'Gemini Thinking Budget (tokens)', 'mcp-ai-wpoos' ),
+				array( $this, 'render_gemini_thinking_budget_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_gemini_section'
+			);
+
 			add_settings_section(
 				'wp_mcp_ai_google_maps_section',
 				__( 'Google Maps Platform Configuration', 'mcp-ai-wpoos' ),
@@ -1837,6 +1893,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'brave_search_api_key',
 				__( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_brave_search_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'exa_api_key',
+				__( 'Exa AI API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_exa_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
+				'perplexity_api_key',
+				__( 'Perplexity API Key', 'mcp-ai-wpoos' ),
+				array( $this, 'render_perplexity_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
 			);
@@ -2305,7 +2377,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['web_search_provider'] ) ) {
 				$provider = sanitize_key( $settings['web_search_provider'] );
-				$allowed  = array( 'duckduckgo', 'brave' );
+				$allowed  = array( 'duckduckgo', 'brave', 'tavily', 'exa', 'perplexity' );
 
 				if ( in_array( $provider, $allowed, true ) ) {
 					$clean['web_search_provider'] = $provider;
@@ -2314,6 +2386,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['tavily_api_key'] ) ) {
+				$clean['tavily_api_key'] = trim( sanitize_text_field( $settings['tavily_api_key'] ) );
+			}
+
+			if ( isset( $settings['exa_api_key'] ) ) {
+				$clean['exa_api_key'] = trim( sanitize_text_field( $settings['exa_api_key'] ) );
+			}
+
+			if ( isset( $settings['perplexity_api_key'] ) ) {
+				$clean['perplexity_api_key'] = trim( sanitize_text_field( $settings['perplexity_api_key'] ) );
+			}
+
+			if ( isset( $settings['gemini_thinking_budget_tokens'] ) ) {
+				$budget = absint( $settings['gemini_thinking_budget_tokens'] );
+				$clean['gemini_thinking_budget_tokens'] = min( 24576, $budget );
 			}
 
 			if ( isset( $settings['mubert_api_key'] ) ) {
@@ -3802,8 +3891,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings  = self::get_settings();
 			$current   = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 			$providers = array(
-				'duckduckgo' => __( 'DuckDuckGo Instant Answer API', 'mcp-ai-wpoos' ),
-				'brave'      => __( 'Brave Search API', 'mcp-ai-wpoos' ),
+				'duckduckgo'  => __( 'DuckDuckGo Instant Answer API (free, no key)', 'mcp-ai-wpoos' ),
+				'brave'       => __( 'Brave Search API (requires API key)', 'mcp-ai-wpoos' ),
+				'tavily'      => __( 'Tavily (AI-optimised, requires API key)', 'mcp-ai-wpoos' ),
+				'exa'         => __( 'Exa AI (neural search, requires API key)', 'mcp-ai-wpoos' ),
+				'perplexity'  => __( 'Perplexity Sonar (AI answers + citations, requires API key)', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
@@ -3823,6 +3915,78 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Exa AI API key field.
+		 */
+		public function render_exa_api_key_field() {
+			$settings = self::get_settings();
+			$api_key  = isset( $settings['exa_api_key'] ) ? $settings['exa_api_key'] : '';
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[exa_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description">
+			<?php
+				printf(
+					wp_kses(
+						/* translators: %s: Exa AI website URL */
+						__( 'Required when Exa AI is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">exa.ai</a>.', 'mcp-ai-wpoos' ),
+						array(
+							'a' => array(
+								'href' => array(),
+								'target' => array(),
+								'rel' => array(),
+							),
+						)
+					),
+					'https://exa.ai'
+				);
+			?>
+		</p>
+			<?php
+		}
+
+		/**
+		 * Render the Perplexity API key field.
+		 */
+		public function render_perplexity_api_key_field() {
+			$settings = self::get_settings();
+			$api_key  = isset( $settings['perplexity_api_key'] ) ? $settings['perplexity_api_key'] : '';
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[perplexity_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description">
+			<?php
+				printf(
+					wp_kses(
+						/* translators: %s: Perplexity AI website URL */
+						__( 'Required when Perplexity Sonar is selected as the web search provider. Get your key at <a href="%s" target="_blank" rel="noopener noreferrer">perplexity.ai</a>.', 'mcp-ai-wpoos' ),
+						array(
+							'a' => array(
+								'href' => array(),
+								'target' => array(),
+								'rel' => array(),
+							),
+						)
+					),
+					'https://www.perplexity.ai/settings/api'
+				);
+			?>
+		</p>
+			<?php
+		}
+
+		/**
+		 * Render the Gemini thinking budget tokens field.
+		 */
+		public function render_gemini_thinking_budget_field() {
+			$settings = self::get_settings();
+			$budget   = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 0;
+			?>
+		<input type="number" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_thinking_budget_tokens]" value="<?php echo esc_attr( (string) $budget ); ?>" class="small-text" min="0" max="24576" step="256" />
+		<p class="description">
+			<?php esc_html_e( 'Maximum thinking tokens for Gemini 2.5+ extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-2.5-flash, gemini-2.5-pro).', 'mcp-ai-wpoos' ); ?>
+		</p>
 			<?php
 		}
 
@@ -5519,7 +5683,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @param int $attachment_id Attachment ID being evaluated.
 		 * @return int
 		 */
-		public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter required by hook or interface signature but not used in this implementation.
 			$settings = self::get_settings();
 			$limit    = isset( $settings['memory_max_file_bytes'] ) ? absint( $settings['memory_max_file_bytes'] ) : 0;
 
