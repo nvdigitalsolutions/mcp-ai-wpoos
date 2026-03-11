@@ -700,6 +700,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
 		);
 
+		// Add CRM Toolkit tools if enabled.
+		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
+			$crm_tools = array(
+				// CRM core CRUD tools.
+				'WP_MCP_AI_Tool_Manage_CRM_Contact' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-manage-crm-contact.php',
+				'WP_MCP_AI_Tool_Create_Company'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-create-company.php',
+				'WP_MCP_AI_Tool_Get_Companies'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-get-companies.php',
+				'WP_MCP_AI_Tool_Research_Company'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-research-company.php',
+				// CRM Email Search tools (with caching + scheduling).
+				'WP_MCP_AI_Tool_CRM_Email_Search_Leads'            => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-leads.php',
+				'WP_MCP_AI_Tool_CRM_Email_Search_Correspondence'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-correspondence.php',
+				'WP_MCP_AI_Tool_CRM_Email_Search_Accounting'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-crm-email-search-accounting.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $crm_tools );
+		}
+
 		// Add AI CPT Management tools if enabled.
 		if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 			$cpt_research_tools = array(
