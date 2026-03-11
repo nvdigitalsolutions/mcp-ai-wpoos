@@ -133,6 +133,83 @@ class WP_MCP_AI_Channel_Messages_CCT {
 	}
 
 	/**
+	 * Retrieve recent messages for a contact from the CCT as OpenAI-style chat pairs.
+	 *
+	 * Returns up to $limit of the most recent text messages for the given channel
+	 * contact on the given connection, ordered chronologically (oldest first) so
+	 * they can be prepended to the current user message when building the AI
+	 * request. Inbound messages map to role "user"; outbound to role "assistant".
+	 *
+	 * The method is intentionally lightweight (one direct SQL query) and safe to
+	 * call when the JetEngine module is not active—it falls back to direct $wpdb
+	 * access whenever the table exists.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $channel    Platform slug, e.g. 'telegram'.
+	 * @param string $contact_id Platform-side contact/user ID.
+	 * @param string $connection_id Plugin connection identifier.
+	 * @param int    $limit      Maximum number of message pairs to return (default 10).
+	 * @return array[] Array of ['role' => 'user'|'assistant', 'content' => string].
+	 */
+	public static function get_recent_messages( $channel, $contact_id, $connection_id, $limit = 10 ) {
+		if ( ! self::table_exists() ) {
+			return array();
+		}
+
+		global $wpdb;
+
+		$table = self::get_table_name();
+		$limit = max( 1, (int) $limit );
+
+		// Retrieve the most recent $limit rows in reverse-chronological order, then
+		// reverse them so the returned array is oldest-first (chronological).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT direction, content FROM {$table}
+				 WHERE channel = %s
+				   AND channel_contact_id = %s
+				   AND connection_id = %s
+				   AND message_type = 'text'
+				   AND content != ''
+				 ORDER BY message_timestamp DESC, _ID DESC
+				 LIMIT %d",
+				sanitize_key( $channel ),
+				sanitize_text_field( $contact_id ),
+				sanitize_text_field( $connection_id ),
+				$limit
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $rows ) ) {
+			return array();
+		}
+
+		// Reverse to restore chronological order (oldest → newest).
+		$rows     = array_reverse( $rows );
+		$messages = array();
+
+		foreach ( $rows as $row ) {
+			$direction = isset( $row['direction'] ) ? $row['direction'] : '';
+			$content   = isset( $row['content'] ) ? trim( (string) $row['content'] ) : '';
+
+			if ( '' === $content ) {
+				continue;
+			}
+
+			$messages[] = array(
+				'role'    => 'outbound' === $direction ? 'assistant' : 'user',
+				'content' => $content,
+			);
+		}
+
+		return $messages;
+	}
+
+	/**
 	 * Retrieve the JetEngine item handler.
 	 *
 	 * @return object|null

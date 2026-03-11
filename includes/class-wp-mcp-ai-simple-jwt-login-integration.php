@@ -339,7 +339,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 					$server_keys      = array( 'REMOTE_ADDR', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'HTTP_X_REAL_IP' );
 					foreach ( $server_keys as $key ) {
 						if ( isset( $_SERVER[ $key ] ) ) {
-							$raw_value = wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+							$raw_value = wp_unslash( $_SERVER[ $key ] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated immediately: checked via rest_is_ip_address() or sanitized via sanitize_text_field() in the block below.
 							// For IP fields, validate as IP or sanitize as text for comma-separated lists.
 							if ( rest_is_ip_address( $raw_value ) ) {
 								$sanitized_server[ $key ] = $raw_value;

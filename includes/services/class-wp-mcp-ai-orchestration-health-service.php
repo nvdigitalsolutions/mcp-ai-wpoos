@@ -680,7 +680,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		} catch ( Exception $e ) {
 			// Silent fail - don't break plugin operations just for logging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'WP_MCP_AI: Failed to record activity: ' . $e->getMessage() );
+				error_log( 'WP_MCP_AI: Failed to record activity: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_DEBUG.
 			}
 		}
 	}

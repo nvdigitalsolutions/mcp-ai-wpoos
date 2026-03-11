@@ -128,36 +128,39 @@ class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 	 * Gateway services typically sign every payload with an HMAC-SHA256 digest
 	 * using a shared secret and send the signature in a header. The exact header
 	 * name varies by provider; this controller checks the most common variants
-	 * and falls back gracefully when no secret is configured.
+	 * and rejects the request (fail-closed) when no secret is configured.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the signature is valid or no secret is configured.
+	 * @return bool|WP_Error True if the signature is valid.
+	 *                        WP_Error(403) if signing secret is not configured.
+	 *                        False if the signature header is missing or invalid.
 	 */
 	public function validate_webhook_signature( WP_REST_Request $request ) {
 		$connection_id = $request->get_param( 'connection_id' );
 		$stored_secret = $this->get_signing_secret( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'icloud_webhook_no_secret',
-				'iCloud webhook received without a signing secret configured. Signature validation skipped. Configure a signing_secret for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'iCloud webhook rejected: no signing secret configured. Set a signing_secret in the connection settings to enable webhook authentication.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a signing secret in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// Retrieve the raw request body for signature calculation.
 		$raw_body = $request->get_body();
 
-		// Try common gateway signature header names.
+		// Try iCloud gateway signature header names in order of specificity.
 		$provided_signature = '';
 		$header_candidates  = array(
 			'x-icloud-signature',
-			'x-gateway-signature',
-			'x-webhook-signature',
 		);
 
 		foreach ( $header_candidates as $header ) {

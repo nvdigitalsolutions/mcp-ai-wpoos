@@ -1286,7 +1286,7 @@ class WP_MCP_AI_Default_Assistants {
 
 		// Log the successful creation.
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
-			error_log(
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_MCP_AI_DEBUG.
 				sprintf(
 					'[NV oOS] Architect Agent assistant created (ID: %d) when toolkit was enabled',
 					$result

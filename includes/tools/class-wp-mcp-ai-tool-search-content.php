@@ -40,6 +40,8 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -56,7 +58,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
-					'maximum'     => 50,
+					'maximum'     => $max_limit,
 					'default'     => 10,
 				),
 				'taxonomy_filters'  => array(
@@ -162,8 +164,10 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		$search_term = isset( $arguments['search_term'] ) ? sanitize_text_field( $arguments['search_term'] ) : '';
 		$post_type   = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'any';
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$max_limit = isset( $settings['query_posts_limit'] ) && $settings['query_posts_limit'] > 0 ? absint( $settings['query_posts_limit'] ) : 50;
 		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$limit       = $limit > 0 ? min( $limit, 50 ) : 10;
+		$limit       = $limit > 0 ? min( $limit, $max_limit ) : 10;
 
 		$taxonomy_filters = $this->prepare_taxonomy_filters( $arguments );
 		$meta_filters     = $this->prepare_meta_filters( $arguments );

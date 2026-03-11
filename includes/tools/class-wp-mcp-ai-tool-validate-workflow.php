@@ -87,30 +87,23 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 	 * @return array Result array.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$workflow_file = isset( $arguments['workflow_file'] ) ? $arguments['workflow_file'] : '';
+		$workflow_file = isset( $arguments['workflow_file'] ) ? sanitize_text_field( $arguments['workflow_file'] ) : '';
 		$strict        = isset( $arguments['strict'] ) ? (bool) $arguments['strict'] : false;
 
-		// Validate file exists.
-		if ( ! file_exists( $workflow_file ) ) {
+		// Security: Validate and read the file safely.
+		$content_or_error = $this->read_workflow_file( $workflow_file );
+
+		if ( is_wp_error( $content_or_error ) ) {
 			return array(
 				'valid'  => false,
-				'errors' => array( sprintf( 'Workflow file not found: %s', $workflow_file ) ),
+				'errors' => array( $content_or_error->get_error_message() ),
 			);
 		}
 
-		// Read and parse file.
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		$content = file_get_contents( $workflow_file );
+		$content = $content_or_error;
 
-		if ( false === $content ) {
-			return array(
-				'valid'  => false,
-				'errors' => array( 'Failed to read workflow file.' ),
-			);
-		}
-
-		// Parse YAML or JSON.
-		$extension = pathinfo( $workflow_file, PATHINFO_EXTENSION );
+		// Parse YAML or JSON using the already-validated extension.
+		$extension = strtolower( pathinfo( $workflow_file, PATHINFO_EXTENSION ) );
 
 		if ( 'yml' === $extension || 'yaml' === $extension ) {
 			if ( ! function_exists( 'yaml_parse' ) ) {
@@ -178,6 +171,106 @@ class WP_MCP_AI_Tool_Validate_Workflow implements WP_MCP_AI_Tool_Interface {
 				'has_conditionals' => $this->has_conditional_steps( $workflow['steps'] ?? array() ),
 				'has_dag'          => $this->has_dag_structure( $workflow['steps'] ?? array() ),
 			),
+		);
+	}
+
+	/**
+	 * Safely read a workflow file after validating the path.
+	 *
+	 * @param string $file_path Path to workflow file provided by the caller.
+	 * @return string|WP_Error File contents on success, WP_Error on failure.
+	 */
+	private function read_workflow_file( $file_path ) {
+		if ( empty( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_path', __( 'No workflow file path provided.', 'mcp-ai-wpoos' ) );
+		}
+
+		// Security: Validate file extension before resolving the path so we
+		// never call realpath() on a path that is clearly invalid.
+		$allowed_extensions = array( 'yml', 'yaml', 'json' );
+		$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+		if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_file_type',
+				__( 'Only workflow files with .yml, .yaml, or .json extensions are allowed.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Security: Resolve the real path to prevent directory traversal attacks
+		// (e.g. ../../wp-config.php). realpath() returns false when the file does
+		// not exist, permissions prevent resolution, or the path contains null bytes.
+		$resolved = realpath( $file_path );
+
+		if ( false === $resolved ) {
+			return new WP_Error(
+				'wp_mcp_ai_file_not_found',
+				__( 'Workflow file not found or is not accessible.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Security: Restrict file access to safe directories.
+		$path_check = $this->is_path_in_safe_directory( $resolved );
+		if ( is_wp_error( $path_check ) ) {
+			return $path_check;
+		}
+
+		// Security: Ensure the file is readable.
+		if ( ! is_readable( $resolved ) ) {
+			return new WP_Error( 'wp_mcp_ai_file_not_readable', __( 'Workflow file is not readable.', 'mcp-ai-wpoos' ) );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local file reading.
+		$content = file_get_contents( $resolved );
+
+		if ( false === $content ) {
+			return new WP_Error( 'wp_mcp_ai_file_read_failed', __( 'Failed to read workflow file.', 'mcp-ai-wpoos' ) );
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Check whether a resolved file path is within an allowed directory.
+	 *
+	 * @param string $file_path Resolved (realpath) absolute file path.
+	 * @return true|WP_Error True if path is safe, WP_Error otherwise.
+	 */
+	private function is_path_in_safe_directory( $file_path ) {
+		$normalized_path = wp_normalize_path( $file_path );
+
+		$safe_directories = array();
+
+		// Allow WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		if ( ! empty( $upload_dir['basedir'] ) ) {
+			$safe_directories[] = wp_normalize_path( $upload_dir['basedir'] );
+		}
+
+		// Allow WordPress content directory.
+		if ( defined( 'WP_CONTENT_DIR' ) ) {
+			$safe_directories[] = wp_normalize_path( WP_CONTENT_DIR );
+		}
+
+		/**
+		 * Filter the list of directories from which workflow files may be read.
+		 *
+		 * @param string[] $safe_directories Absolute directory paths.
+		 */
+		$safe_directories = apply_filters( 'wp_mcp_ai_validate_workflow_safe_directories', $safe_directories );
+
+		foreach ( $safe_directories as $safe_dir ) {
+			// Append a trailing slash before comparison so that a directory named
+			// "uploads-evil" cannot satisfy a check for "uploads". For example,
+			// "/uploads-evil/file.yml" does NOT start with "/uploads/".
+			if ( 0 === strpos( $normalized_path, trailingslashit( $safe_dir ) ) ) {
+				return true;
+			}
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_unsafe_file_path',
+			__( 'Workflow file path is not within allowed directories. Files must be in the WordPress uploads or content directory.', 'mcp-ai-wpoos' )
 		);
 	}
 

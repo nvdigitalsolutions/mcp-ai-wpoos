@@ -13,8 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load the chat response trait from base plugin.
+// Load required traits from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 
 /**
  * Extract text from PDF documents.
@@ -26,6 +27,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  */
 class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Attachment_File_Resolver;
 
 	/**
 	 * {@inheritdoc}
@@ -59,9 +61,12 @@ class WP_MCP_AI_Tool_Extract_PDF_Text implements WP_MCP_AI_Tool_Interface, WP_MC
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the PDF file to extract text from.', 'mcp-ai-wpoos-pro' ),
 				),
+				'file_id'       => $this->get_file_id_parameter_schema(
+					__( 'AI provider file identifier (e.g., an OpenAI file ID such as "file-Nfe1VozHi3BxjiLwWzRKRC"). Used when the PDF lives inside a provider storage (vector store, Files API) rather than the WordPress media library.', 'mcp-ai-wpoos-pro' )
+				),
 				'url'           => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the PDF file to extract text from (alternative to attachment_id).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'URL of the PDF file to extract text from (alternative to attachment_id or file_id).', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_pages'     => array(
 					'type'        => 'integer',
@@ -110,6 +115,7 @@ You do not have permission to access files.', 'mcp-ai-wpoos-pro' ),
 
 		// Get PDF file path.
 		$file_path = null;
+		$temp_file = null;
 
 		if ( ! empty( $arguments['attachment_id'] ) ) {
 			$attachment_id = absint( $arguments['attachment_id'] );
@@ -128,14 +134,92 @@ The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
 					),
 				);
 			}
-		} elseif ( ! empty( $arguments['url'] ) ) {
-			// Download URL to temp file.
-			if ( ! function_exists( 'download_url' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-			}
-			$temp_file = download_url( $arguments['url'] );
+		} elseif ( ! empty( $arguments['file_id'] ) ) {
+			// Resolve provider file ID (e.g., OpenAI "file-xxx") to a local path.
+			$resolved = $this->resolve_file_id_to_temp_path( sanitize_text_field( $arguments['file_id'] ) );
 
-			if ( is_wp_error( $temp_file ) ) {
+			if ( is_wp_error( $resolved ) ) {
+				return array(
+					'success' => false,
+					'error'   => $resolved->get_error_code(),
+					'report'  => sprintf(
+						/* translators: %s: error message */
+						__( '❌ **Provider File Not Found**
+
+%s', 'mcp-ai-wpoos-pro' ),
+						$resolved->get_error_message()
+					),
+				);
+			}
+
+			$file_path = $resolved['path'];
+			if ( $resolved['is_temp'] ) {
+				$temp_file = $file_path;
+			}
+		} elseif ( ! empty( $arguments['url'] ) ) {
+			// Validate the URL to prevent SSRF before downloading.
+			$url    = esc_url_raw( $arguments['url'] );
+			$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			if ( empty( $host ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+Could not determine host from the provided URL.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			// Resolve the hostname and reject private / reserved IP ranges (SSRF guard).
+			$resolved_ip = gethostbyname( $host );
+			if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL hostname could not be resolved.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			if ( false === filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return array(
+					'success' => false,
+					'error'   => 'invalid_url',
+					'report'  => __( '❌ **Invalid URL**
+
+URL resolves to a private or reserved address and cannot be fetched.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			// Download PDF to a temp file, pinning the TCP connection to the already-resolved
+			// IP address to prevent DNS-rebinding SSRF (a second gethostbyname() call inside
+			// download_url() could return a different address after a short TTL expires).
+			$url_port  = wp_parse_url( $url, PHP_URL_PORT );
+			$url_path  = wp_parse_url( $url, PHP_URL_PATH );
+			$url_query = wp_parse_url( $url, PHP_URL_QUERY );
+			$safe_host = $resolved_ip . ( $url_port ? ':' . (int) $url_port : '' );
+			$safe_url  = $scheme . '://' . $safe_host . ( $url_path ? $url_path : '/' ) . ( $url_query ? '?' . $url_query : '' );
+
+			$response = wp_remote_get(
+				$safe_url,
+				array(
+					'timeout'     => 60,
+					'redirection' => 0,
+					'headers'     => array(
+						'Host' => $host . ( $url_port ? ':' . (int) $url_port : '' ),
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
 				return array(
 					'success' => false,
 					'error'   => 'download_failed',
@@ -144,8 +228,47 @@ The PDF file with attachment ID %d could not be found.', 'mcp-ai-wpoos-pro' ),
 						__( '❌ **Download Failed**
 
 Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
-						$temp_file->get_error_message()
+						$response->get_error_message()
 					),
+				);
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => sprintf(
+						/* translators: %d: HTTP response code */
+						__( '❌ **Download Failed**
+
+The server returned HTTP %d.', 'mcp-ai-wpoos-pro' ),
+						(int) $response_code
+					),
+				);
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			if ( '' === $body ) {
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => __( '❌ **Download Failed**
+
+The downloaded file is empty.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$temp_file = wp_tempnam( 'mcp_ai_pdf_' );
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			if ( false === file_put_contents( $temp_file, $body ) ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return array(
+					'success' => false,
+					'error'   => 'download_failed',
+					'report'  => __( '❌ **Download Failed**
+
+Failed to write downloaded PDF to a temporary file.', 'mcp-ai-wpoos-pro' ),
 				);
 			}
 
@@ -156,15 +279,15 @@ Failed to download PDF from URL: %s', 'mcp-ai-wpoos-pro' ),
 				'error'   => 'missing_input',
 				'report'  => __( '❌ **Missing Input**
 
-Either `attachment_id` or `url` parameter is required.', 'mcp-ai-wpoos-pro' ),
+Either `attachment_id`, `file_id`, or `url` parameter is required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Validate it's a PDF.
 		$mime_type = mime_content_type( $file_path );
 		if ( 'application/pdf' !== $mime_type ) {
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 			return array(
 				'success' => false,
@@ -227,8 +350,8 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 			}
 
 			// Clean up temp file if we downloaded one.
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 
 			if ( is_wp_error( $text ) ) {
@@ -293,8 +416,8 @@ File is not a valid PDF document (detected: %s).', 'mcp-ai-wpoos-pro' ),
 
 		} catch ( Exception $e ) {
 			// Clean up temp file if we downloaded one.
-			if ( isset( $temp_file ) ) {
-				@unlink( $temp_file );
+			if ( null !== $temp_file ) {
+				@unlink( $temp_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 			}
 
 			return array(

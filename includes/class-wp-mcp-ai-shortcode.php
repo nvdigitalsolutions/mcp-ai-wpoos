@@ -764,18 +764,34 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+				$current_user_id   = get_current_user_id();
 				$current_user      = wp_get_current_user();
 				$user_capabilities = ( $current_user && isset( $current_user->allcaps ) ) ? $current_user->allcaps : array();
 
-				WP_MCP_AI_Logger::log_warning(
-					'Shortcode access denied due to insufficient capability',
-					array(
-						'assistant_id'        => $assistant_id,
-						'required_capability' => $capability,
-						'user_id'             => get_current_user_id(),
-						'user_capabilities'   => $user_capabilities,
-					)
-				);
+				// Only log a warning when a logged-in user lacks the required capability.
+				// Unauthenticated visitors hitting a restricted shortcode is expected
+				// behaviour and does not need a warning log entry — use debug level instead
+				// so that it remains visible when debug logging is enabled.
+				if ( $current_user_id > 0 ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Shortcode access denied due to insufficient capability',
+						array(
+							'assistant_id'        => $assistant_id,
+							'required_capability' => $capability,
+							'user_id'             => $current_user_id,
+							'user_capabilities'   => $user_capabilities,
+						)
+					);
+				} else {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'Shortcode access denied: visitor lacks required capability',
+						array(
+							'assistant_id'        => $assistant_id,
+							'required_capability' => $capability,
+						)
+					);
+				}
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ) . '</div>';
 			}
 
@@ -1023,6 +1039,7 @@ class WP_MCP_AI_Shortcode {
 				$tool_slugs_to_include[] = 'semantic_content_search';
 
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic trace confirming semantic_content_search auto-add for knowledge-file assistants.
 					error_log(
 						sprintf(
 							'[WP_MCP_AI] Auto-adding semantic_content_search tool for assistant %d (has knowledge files)',
@@ -1195,6 +1212,7 @@ class WP_MCP_AI_Shortcode {
 
 			// Log for debugging PM assistant issues.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- WP_DEBUG-gated diagnostic trace confirming shortcode config storage per instance.
 				error_log(
 					sprintf(
 						'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
@@ -1220,7 +1238,7 @@ class WP_MCP_AI_Shortcode {
 		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>">
 			<?php
 			if ( $is_elementor_editor ) {
-				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_editor_notice() returns a static HTML string with all dynamic values escaped via esc_html_e().
 			}
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
@@ -1237,7 +1255,7 @@ class WP_MCP_AI_Shortcode {
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
-						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $assistant_content is processed by apply_filters('the_content', ...) which applies standard WordPress content filters and escaping. ?>
 					</div>
 				<?php endif; ?>
 			</div>

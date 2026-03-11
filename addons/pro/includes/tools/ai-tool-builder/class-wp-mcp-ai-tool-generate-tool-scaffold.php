@@ -170,6 +170,27 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		// Build output path.
 		if ( isset( $arguments['output_path'] ) && ! empty( $arguments['output_path'] ) ) {
 			$output_dir = sanitize_text_field( $arguments['output_path'] );
+
+			// Security: Restrict output directory to the WordPress content directory to
+			// prevent writing PHP files to arbitrary server paths.
+			$resolved_dir = realpath( $output_dir );
+			if ( false === $resolved_dir ) {
+				// Directory doesn't exist yet — resolve the nearest existing ancestor and validate.
+				$resolved_dir = realpath( dirname( $output_dir ) );
+				if ( false === $resolved_dir ) {
+					return array(
+						'success' => false,
+						'error'   => __( 'Invalid output path: parent directory does not exist.', 'mcp-ai-wpoos-pro' ),
+					);
+				}
+			}
+
+			if ( 0 !== strpos( wp_normalize_path( $resolved_dir ), trailingslashit( wp_normalize_path( WP_CONTENT_DIR ) ) ) ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Output path must be within the WordPress content directory.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
 		} else {
 			$output_dir = WP_MCP_AI_PRO_PATH . 'includes/tools/' . sanitize_file_name( $toolkit );
 		}

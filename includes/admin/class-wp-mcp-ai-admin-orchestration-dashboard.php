@@ -1517,7 +1517,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 			// Get a sample agent ID or aggregate metrics.
 			global $wpdb;
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 			$sample_agent_id = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT option_name FROM {$wpdb->options} 

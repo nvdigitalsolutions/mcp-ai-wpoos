@@ -187,6 +187,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'min'         => 10,
 					'max'         => 600,
 				),
+				'query_posts_limit'                     => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Posts Query Results', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of posts returned by content query tools such as Get Recent Posts and Search Content. Increase this to allow AI tools to retrieve more posts per query. Default: 50.', 'mcp-ai-wpoos' ),
+					'default'     => 50,
+					'placeholder' => '50',
+					'min'         => 1,
+					'max'         => 500,
+				),
 				// Custom Filters fields.
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
@@ -278,7 +287,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'id'     => 'behavior',
 					'label'  => __( 'Behavior & Limits', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-performance',
-					'fields' => array( 'max_history_messages', 'request_timeout' ),
+					'fields' => array( 'max_history_messages', 'request_timeout', 'query_posts_limit' ),
 				),
 				'logs'           => array(
 					'id'     => 'logs',
@@ -708,6 +717,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 				if ( is_wp_error( $result ) ) {
 					$errors[] = $result->get_error_message();
+				}
+			}
+
+			// Validate query_posts_limit.
+			if ( isset( $input['query_posts_limit'] ) ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['query_posts_limit'],
+					1,
+					500
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Posts Query Results: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 

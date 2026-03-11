@@ -40,12 +40,16 @@ class SearchContentArguments {
 	/**
 	 * Maximum number of results.
 	 *
+	 * 500 is the absolute ceiling enforced by the attribute (matches the maximum allowed
+	 * value of the 'query_posts_limit' setting). The effective per-request cap is then
+	 * applied at execution time using the configured setting value.
+	 *
 	 * @var int
 	 */
 	#[Assert\Type( type: 'int' )]
 	#[Assert\Range(
 		min: 1,
-		max: 50,
+		max: 500,
 		notInRangeMessage: 'Limit must be between {{ min }} and {{ max }}.'
 	)]
 	public $limit = 10;

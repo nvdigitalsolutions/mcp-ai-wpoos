@@ -79,9 +79,14 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			$detected_preset_id = 'conservative';
 		}
 
-		// Call the specific preset method directly to avoid circular dependency.
-		$preset_method = 'get_' . $detected_preset_id . '_preset';
-		$base_preset   = call_user_func( array( self::class, $preset_method ) );
+		// Call the specific preset method directly via explicit dispatch to avoid circular dependency.
+		if ( 'aggressive' === $detected_preset_id ) {
+			$base_preset = self::get_aggressive_preset();
+		} elseif ( 'conservative' === $detected_preset_id ) {
+			$base_preset = self::get_conservative_preset();
+		} else {
+			$base_preset = self::get_balanced_preset();
+		}
 
 		return array(
 			'name'        => __( 'Auto', 'mcp-ai-wpoos' ),
