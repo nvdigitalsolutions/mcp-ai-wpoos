@@ -182,6 +182,26 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Rate-limit the CRC endpoint to prevent it being used as a HMAC signing oracle.
+		// Twitter will only call this endpoint a small number of times for webhook registration.
+		$remote_ip       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
+		$rate_key        = 'wp_mcp_ai_twitter_crc_' . md5( $remote_ip );
+		$rate_window     = 60; // seconds.
+		$max_crc_per_min = 5;
+		$rate_count      = (int) get_transient( $rate_key );
+		if ( $rate_count >= $max_crc_per_min ) {
+			WP_MCP_AI_Logger::log_error(
+				'Twitter CRC challenge rate limit exceeded.',
+				array( 'ip' => $remote_ip )
+			);
+			return new WP_Error(
+				'twitter_crc_rate_limit',
+				__( 'Too many CRC challenge requests. Please try again later.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $rate_key, $rate_count + 1, $rate_window );
+
 		WP_MCP_AI_Logger::log_event(
 			'twitter_crc_challenge_received',
 			'Twitter CRC challenge request received.',

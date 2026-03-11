@@ -522,6 +522,9 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	/**
 	 * Check if URL is internal (localhost, private IPs, etc.).
 	 *
+	 * Resolves the hostname via DNS before checking, so that domain names that
+	 * point at private/reserved addresses are also blocked (SSRF guard).
+	 *
 	 * @param string $url URL to check.
 	 * @return bool True if internal, false otherwise.
 	 */
@@ -539,8 +542,20 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return true;
 		}
 
-		// Block private IP ranges.
-		if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+		// Resolve the hostname to catch SSRF via DNS (e.g., a domain that resolves
+		// to 192.168.x.x passes the literal-IP check above but must still be blocked).
+		$resolved_ip = gethostbyname( $host );
+
+		// gethostbyname() returns the original hostname unchanged on DNS failure.
+		// Block if resolution failed (no valid IP returned) or if the resolved IP
+		// falls in a private or reserved range.
+		if ( $resolved_ip === $host && false === filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			return true; // DNS resolution failed; block to be safe.
+		}
+
+		// Block private IP ranges (includes 127.x, 10.x, 172.16-31.x, 192.168.x)
+		// and reserved/documentation ranges (169.254.x, etc.).
+		if ( filter_var( $resolved_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
 			return true;
 		}
 
