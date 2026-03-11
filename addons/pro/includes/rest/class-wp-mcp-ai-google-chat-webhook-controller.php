@@ -298,13 +298,39 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Validate a Google Chat space resource name.
+	 *
+	 * Google Chat space names must follow the pattern "spaces/<ID>" where <ID>
+	 * contains only alphanumeric characters, underscores, and hyphens. This
+	 * matches the format returned by the Google Chat API and documented at
+	 * https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.
+	 * Validating before URL construction prevents URL-injection attacks where a
+	 * crafted space name could redirect outbound API calls (including the Bearer
+	 * token) to an attacker-controlled server.
+	 *
+	 * The regex is intentionally restrictive. Should Google ever introduce
+	 * space IDs with additional characters (e.g., dots), the pattern here should
+	 * be updated accordingly after verifying the new format is safe to embed in URLs.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $space_name The space resource name to validate.
+	 * @return bool True when the name is safe to use in a URL path, false otherwise.
+	 */
+	protected function is_valid_space_name( $space_name ) {
+		return (bool) preg_match( '/^spaces\/[A-Za-z0-9_-]+$/', $space_name );
+	}
+
+	/**
 	 * Validate the Google OIDC Bearer token sent by Google Chat.
 	 *
 	 * Google Chat signs each request with a Google OIDC token in the
-	 * Authorization header (Bearer scheme). When an audience URL is stored on
-	 * the connection the `aud` claim of the decoded JWT payload is checked
-	 * against it. If no audience is configured the token presence check is
-	 * still enforced, but audience matching is skipped with a security notice.
+	 * Authorization header (Bearer scheme). The token is validated by sending
+	 * it to Google's tokeninfo endpoint, which performs full RS256 signature
+	 * verification server-side. This prevents forged tokens from being
+	 * accepted — local JWT decoding without signature verification is
+	 * insufficient because any caller could craft a payload with valid-looking
+	 * claims.
 	 *
 	 * When `disable_oidc_verification` is enabled on the connection, all OIDC
 	 * token checks are bypassed and any POST request is accepted. This mirrors
@@ -405,39 +431,60 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		// Decode the JWT payload (base64url) to inspect claims without full crypto verification.
-		$jwt_parts = explode( '.', $token );
+		// Validate the OIDC token via Google's tokeninfo endpoint.
+		//
+		// Sending the token to Google performs full RS256 signature verification
+		// server-side, which prevents forged tokens with valid-looking claims
+		// from being accepted. Local JWT decoding without signature verification
+		// is not sufficient — any caller can craft a base64-encoded payload with
+		// arbitrary iss/aud/exp values.
+		//
+		// The tokeninfo endpoint returns HTTP 200 with the decoded claims on
+		// success, or HTTP 400 when the token is expired, has an invalid
+		// signature, or is otherwise malformed.
+		//
+		// Note: Google's tokeninfo API is designed as a GET endpoint and requires
+		// the id_token as a query parameter — this is Google's documented interface
+		// (https://developers.google.com/identity/sign-in/web/backend-auth#verify-the-integrity-of-the-id-token).
+		// The JWT is already a public bearer credential; its exposure in server logs
+		// is mitigated by its short expiry (typically 1 hour for OIDC tokens).
+		$tokeninfo_url = add_query_arg( 'id_token', rawurlencode( $token ), self::GOOGLE_TOKENINFO_URL );
 
-		if ( count( $jwt_parts ) < 2 ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: token is not a valid JWT.' );
+		$response = wp_remote_get(
+			$tokeninfo_url,
+			array(
+				'timeout'    => 10,
+				'user-agent' => 'WP-MCP-AI/' . WP_MCP_AI_PRO_VERSION . ' (WordPress/' . get_bloginfo( 'version' ) . ')',
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: tokeninfo API call failed.',
+				array( 'error' => $response->get_error_message() )
+			);
 			return false;
 		}
 
-		// Decode the payload (second segment).
-		$payload_json = $this->base64url_decode( $jwt_parts[1] );
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( false === $payload_json ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: failed to base64-decode JWT payload.' );
+		if ( 200 !== $status_code ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat webhook rejected: tokeninfo API returned non-200 status.',
+				array( 'status' => $status_code )
+			);
 			return false;
 		}
 
-		$claims = json_decode( $payload_json, true );
+		$info = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( ! is_array( $claims ) ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: JWT payload is not valid JSON.' );
-			return false;
-		}
-
-		// Validate token expiry.
-		if ( isset( $claims['exp'] ) && (int) $claims['exp'] < time() ) {
-			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: OIDC token has expired.' );
+		if ( ! is_array( $info ) ) {
+			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: tokeninfo response is not valid JSON.' );
 			return false;
 		}
 
 		// Validate issuer — must be a recognised Google issuer.
-		// Google Chat HTTP-endpoint apps use chat@system.gserviceaccount.com;
-		// Workspace Add-ons may additionally use accounts.google.com or its HTTPS variant.
-		$token_iss     = isset( $claims['iss'] ) ? (string) $claims['iss'] : '';
+		$token_iss     = isset( $info['iss'] ) ? (string) $info['iss'] : '';
 		$valid_issuers = array(
 			self::GOOGLE_OIDC_ISSUER,          // chat@system.gserviceaccount.com.
 			'accounts.google.com',             // Workspace Add-ons / OAuth-based tokens.
@@ -452,14 +499,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		// Validate audience claim.
+		// Validate audience claim against the configured audience URL.
 		// The JWT spec (RFC 7519 §4.1.3) allows 'aud' to be either a single string
-		// or an array of strings.  Handle both forms to avoid incorrectly rejecting
+		// or an array of strings. Handle both forms to avoid incorrectly rejecting
 		// legitimate Google Chat OIDC tokens.
-		$token_aud = isset( $claims['aud'] ) ? $claims['aud'] : '';
+		$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
 
 		if ( is_array( $token_aud ) ) {
-			// aud is an array — verify the configured audience is one of the values.
 			if ( ! in_array( $audience, $token_aud, true ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
@@ -477,6 +523,12 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			);
 			return false;
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'google_chat_webhook_oidc_verified',
+			'Google Chat webhook: OIDC token cryptographically verified via tokeninfo endpoint.',
+			array()
+		);
 
 		return true;
 	}
@@ -1270,6 +1322,17 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( '' !== $access_token ) {
 			// --- OAuth / Service Account path ---
+			// Validate space_name format before embedding it in the URL.
+			// sanitize_text_field() does not strip URL-special characters; an
+			// attacker-controlled space name could redirect the authenticated API
+			// call to a different host and exfiltrate the Bearer token.
+			if ( ! $this->is_valid_space_name( $space_name ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google Chat AI reply: invalid space name format, skipping.',
+					array( 'space_name_prefix' => substr( $space_name, 0, 20 ) )
+				);
+				return;
+			}
 			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
 
 			if ( '' !== $thread_name ) {
@@ -1456,6 +1519,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$access_token = $this->get_connection_access_token( $connection, $connection_id, 'Google Chat welcome message' );
 
 		if ( '' === $access_token ) {
+			return;
+		}
+
+		// Validate space_name format before embedding it in the URL to prevent
+		// URL-injection attacks that could redirect the authenticated API call.
+		if ( ! $this->is_valid_space_name( $space_name ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Google Chat welcome message: invalid space name format, skipping.',
+				array( 'space_name_prefix' => substr( $space_name, 0, 20 ) )
+			);
 			return;
 		}
 
@@ -1998,6 +2071,15 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( '' !== $access_token ) {
 			// --- OAuth / Service Account path ---
+			// Validate space_name format before embedding it in the URL to prevent
+			// URL-injection attacks that could redirect the authenticated API call.
+			if ( ! $this->is_valid_space_name( $space_name ) ) {
+				return new WP_Error(
+					'google_chat_invalid_space',
+					__( 'Invalid Google Chat space name format.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 400 )
+				);
+			}
 			$endpoint = self::CHAT_API_BASE . '/' . $space_name . '/messages';
 			$response = wp_remote_post(
 				$endpoint,
