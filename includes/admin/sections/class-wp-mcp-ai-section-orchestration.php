@@ -2226,8 +2226,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
-			echo wp_kses_post( WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view() );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML including inline admin script; wp_kses_post() must not be used here as it strips <script> tags.
+			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
 
 		/**
