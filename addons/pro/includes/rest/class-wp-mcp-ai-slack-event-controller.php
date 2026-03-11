@@ -9,9 +9,11 @@
  * - Per-user conversation history respecting max_history_messages
  * - AI auto-reply via WordPress cron (async, within 3-second acknowledgement window)
  * - Message deduplication via transient cache
+ * - Per-connection webhook endpoints for multiple Slack workspace support
  *
  * @see https://api.slack.com/events-api
  * @see https://api.slack.com/authentication/verifying-requests-from-slack
+ * @see https://sean-rennie.medium.com/building-a-slack-bot-c39cce21e106
  *
  * @package WP_MCP_AI_Pro
  * @since 1.0.0
@@ -54,6 +56,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	protected $rest_base = 'webhooks/slack';
 
 	/**
+	 * Tracks the connection_id resolved from the incoming request URL so every
+	 * helper called during the request lifecycle targets the correct Slack workspace
+	 * without requiring connection_id to be threaded through every method signature.
+	 *
+	 * @var string|null
+	 */
+	protected $current_connection_id = null;
+
+	/**
 	 * Cron hook for dispatching AI replies to incoming Slack messages.
 	 */
 	const REPLY_CRON_HOOK = 'wp_mcp_ai_slack_send_ai_reply';
@@ -85,10 +96,17 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	/**
 	 * Register REST routes for Slack webhooks.
 	 *
+	 * Registers two routes:
+	 * - Generic:        POST /mcp-ai/v1/webhooks/slack
+	 * - Per-connection: POST /mcp-ai/v1/webhooks/slack/{connection_id}
+	 *
+	 * The per-connection route lets multiple Slack workspaces each have a
+	 * dedicated webhook URL, matching the pattern used by the Telegram controller.
+	 *
 	 * @since 1.0.0
 	 */
 	public function register_routes() {
-		// Single endpoint handles both URL-verification challenge and event payloads.
+		// Global webhook endpoint (backward-compatible, single-workspace setups).
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base,
@@ -96,6 +114,25 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_event' ),
 				'permission_callback' => array( $this, 'validate_slack_signature' ),
+			)
+		);
+
+		// Per-connection webhook endpoint so multiple Slack workspaces can each
+		// have a dedicated URL: /mcp-ai/v1/webhooks/slack/{connection_id}.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/(?P<connection_id>[a-zA-Z0-9_-]+)',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_event' ),
+				'permission_callback' => array( $this, 'validate_slack_signature' ),
+				'args'                => array(
+					'connection_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
 			)
 		);
 	}
@@ -108,6 +145,10 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 *   "v0=" . HMAC-SHA256( "v0:{timestamp}:{raw_body}", signing_secret )
 	 * and sent in the X-Slack-Signature header.
 	 *
+	 * When a `connection_id` is present in the URL the signing secret is looked up
+	 * from that specific connection. When absent, the first active Slack connection
+	 * with a signing secret configured is used (backward-compatible).
+	 *
 	 * When the signing secret is not configured the webhook request is rejected
 	 * with a 403 error so that unconfigured endpoints cannot be exploited.
 	 *
@@ -117,12 +158,13 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * @return bool|WP_Error True if signature is valid, WP_Error on failure.
 	 */
 	public function validate_slack_signature( $request ) {
-		$signing_secret = $this->get_signing_secret();
+		$connection_id  = $request->get_param( 'connection_id' );
+		$signing_secret = $this->get_signing_secret( $connection_id );
 
 		if ( empty( $signing_secret ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Slack webhook rejected: signing secret is not configured. Configure signing_secret in the connection settings to enable this webhook.',
-				array()
+				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 			return new WP_Error(
 				'rest_forbidden',
@@ -166,6 +208,10 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response Response.
 	 */
 	public function handle_event( $request ) {
+		// Resolve the per-connection ID from the URL so all helper methods in
+		// this request lifecycle can target the correct Slack workspace.
+		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+
 		$payload = $request->get_json_params();
 
 		if ( empty( $payload ) || ! is_array( $payload ) ) {
@@ -240,7 +286,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$connection = $this->get_active_slack_connection();
+		$connection = $this->get_active_slack_connection( $this->current_connection_id );
 
 		if ( ! $connection ) {
 			WP_MCP_AI_Logger::log_error( 'Slack webhook: no active Slack connection with assigned assistants found.' );
@@ -599,7 +645,46 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Retrieve the HMAC signing secret from the first active Slack connection.
+	 * Find a specific Slack connection by its ID.
+	 *
+	 * Only returns the connection when it is enabled; does not require
+	 * assigned assistants so it can be used for both signing-secret lookup
+	 * (URL verification) and event routing.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID to look up.
+	 * @param array  $connections   All stored connections (must already be loaded).
+	 * @return array|null Connection array or null if not found.
+	 */
+	protected function find_slack_connection_by_id( $connection_id, array $connections ) {
+		foreach ( $connections as $connection ) {
+			if ( ! isset( $connection['connection_type'] ) || 'slack' !== $connection['connection_type'] ) {
+				continue;
+			}
+
+			if ( empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			if ( isset( $connection['id'] ) && $connection['id'] === $connection_id ) {
+				return $connection;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Retrieve the HMAC signing secret for a given Slack connection.
+	 *
+	 * When a `$connection_id` is supplied the signing secret is read from that
+	 * specific connection regardless of whether assistants have been assigned.
+	 * This allows the URL-verification challenge to succeed during initial setup
+	 * before assistants are configured.
+	 *
+	 * Falls back to the first active Slack connection that has a signing secret
+	 * configured when no connection_id is provided (backward-compatible behaviour).
 	 *
 	 * Checks `signing_secret` first (populated by the updated admin form).
 	 * Falls back to `api_secret` for legacy connections saved before the admin
@@ -607,38 +692,81 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string|null $connection_id Optional connection ID from the request URL.
 	 * @return string Signing secret or empty string if not configured.
 	 */
-	protected function get_signing_secret() {
-		$connection = $this->get_active_slack_connection();
-
-		if ( ! $connection ) {
-			return '';
-		}
-
-		// Prefer the canonical field; fall back to api_secret for legacy connections.
-		$secret = ! empty( $connection['signing_secret'] ) ? $connection['signing_secret']
-			: ( ! empty( $connection['api_secret'] ) ? $connection['api_secret'] : '' );
-
-		if ( '' === $secret ) {
-			return '';
-		}
-
+	protected function get_signing_secret( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
 
-		return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $secret );
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		if ( ! is_array( $connections ) ) {
+			return '';
+		}
+
+		// When a specific connection is requested, look it up directly (no
+		// assistant requirement — signing secret is needed for URL verification
+		// even before assistants are assigned).
+		if ( $connection_id ) {
+			$connection = $this->find_slack_connection_by_id( $connection_id, $connections );
+
+			if ( ! $connection ) {
+				return '';
+			}
+
+			$secret = ! empty( $connection['signing_secret'] ) ? $connection['signing_secret']
+				: ( ! empty( $connection['api_secret'] ) ? $connection['api_secret'] : '' );
+
+			if ( '' === $secret ) {
+				return '';
+			}
+
+			return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $secret );
+		}
+
+		// Fallback: return the signing secret from the first active Slack
+		// connection that has one configured (backward-compatible).
+		foreach ( $connections as $connection ) {
+			if ( ! isset( $connection['connection_type'] ) || 'slack' !== $connection['connection_type'] ) {
+				continue;
+			}
+
+			if ( empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			$secret = ! empty( $connection['signing_secret'] ) ? $connection['signing_secret']
+				: ( ! empty( $connection['api_secret'] ) ? $connection['api_secret'] : '' );
+
+			if ( '' === $secret ) {
+				continue;
+			}
+
+			return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $secret );
+		}
+
+		return '';
 	}
 
 	/**
-	 * Find the first active Slack connection with assigned assistants.
+	 * Find the active Slack connection for processing an incoming event.
+	 *
+	 * When a `$connection_id` is supplied the matching connection is returned
+	 * directly, enabling per-workspace routing for multi-workspace setups.
+	 *
+	 * Without a connection_id the instance property `$this->current_connection_id`
+	 * is checked first (set by `handle_event()` from the URL), then the first
+	 * active Slack connection with assigned assistants is returned for
+	 * backward-compatible single-workspace setups.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string|null $connection_id Optional connection ID to target directly.
 	 * @return array|null Connection array or null if none found.
 	 */
-	protected function get_active_slack_connection() {
+	protected function get_active_slack_connection( $connection_id = null ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		}
@@ -649,6 +777,17 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return null;
 		}
 
+		// Resolve target connection ID: explicit param > instance property.
+		$target_id = $connection_id ?? $this->current_connection_id;
+
+		// When a specific connection is requested, look it up directly.
+		if ( $target_id ) {
+			// find_slack_connection_by_id() does not require assigned_assistant_ids.
+			// The caller (process_event) enforces that check after this returns.
+			return $this->find_slack_connection_by_id( $target_id, $connections );
+		}
+
+		// Fallback: return the first active Slack connection with assigned assistants.
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'slack' !== $connection['connection_type'] ) {
 				continue;

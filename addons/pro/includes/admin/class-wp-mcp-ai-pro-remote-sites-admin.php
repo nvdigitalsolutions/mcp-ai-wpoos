@@ -2739,8 +2739,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Configure as Request URL in Slack app Event Subscriptions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Workspace-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;">
+								<?php esc_html_e( 'Use this URL when configuring Event Subscriptions in your Slack app (Request URL field). Each Slack workspace has its own dedicated endpoint so that multiple workspaces can receive events independently.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all workspaces):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use this generic URL only if a single Slack workspace is configured. The workspace-specific URL above is preferred.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/slack' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a workspace-specific webhook URL to configure in your Slack app Event Subscriptions.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
