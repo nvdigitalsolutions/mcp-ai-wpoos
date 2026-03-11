@@ -182,6 +182,26 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Rate-limit the CRC endpoint to prevent it being used as a HMAC signing oracle.
+		// Twitter will only call this endpoint a small number of times for webhook registration.
+		$remote_ip       = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
+		$rate_key        = 'wp_mcp_ai_twitter_crc_' . md5( $remote_ip );
+		$rate_window     = 60; // seconds.
+		$max_crc_per_min = 5;
+		$rate_count      = (int) get_transient( $rate_key );
+		if ( $rate_count >= $max_crc_per_min ) {
+			WP_MCP_AI_Logger::log_error(
+				'Twitter CRC challenge rate limit exceeded.',
+				array( 'ip' => $remote_ip )
+			);
+			return new WP_Error(
+				'twitter_crc_rate_limit',
+				__( 'Too many CRC challenge requests. Please try again later.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $rate_key, $rate_count + 1, $rate_window );
+
 		WP_MCP_AI_Logger::log_event(
 			'twitter_crc_challenge_received',
 			'Twitter CRC challenge request received.',
@@ -240,12 +260,15 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 		$consumer_secret = $this->get_consumer_secret( $connection_id ? sanitize_key( $connection_id ) : '' );
 
 		if ( empty( $consumer_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'twitter_webhook_no_consumer_secret',
-				'Twitter webhook received without consumer secret configured. Signature validation skipped. Configure your API Secret in the connection settings for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Twitter webhook rejected: consumer secret is not configured. Configure your API Secret in the connection settings to enable this webhook.',
 				array()
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Twitter webhook authentication is not configured.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$signature_header = $request->get_header( 'x-twitter-webhooks-signature' );
@@ -531,6 +554,19 @@ class WP_MCP_AI_Twitter_Webhook_Controller extends WP_REST_Controller {
 		 */
 		$max_history = (int) apply_filters( 'wp_mcp_ai_twitter_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
+
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'twitter',
+				$sender_id,
+				$connection_id,
+				$max_history - 1
+			);
+		}
 
 		if ( count( $history ) >= $max_history ) {
 			$history = array_slice( $history, -( $max_history - 1 ) );

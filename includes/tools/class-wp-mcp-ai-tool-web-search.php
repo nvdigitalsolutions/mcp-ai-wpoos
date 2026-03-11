@@ -137,6 +137,19 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'maximum'     => 10,
 					'default'     => 5,
 				),
+				'country'     => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 3166-1 alpha-2 country code to geo-target results (e.g. "US", "GB", "DE"). Supported by Brave and Tavily.', 'mcp-ai-wpoos' ),
+				),
+				'language'    => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 639-1 language code to localise results (e.g. "en", "de", "fr"). Combined with country for DuckDuckGo region targeting.', 'mcp-ai-wpoos' ),
+				),
+				'freshness'   => array(
+					'type'        => 'string',
+					'description' => __( 'Filter results by recency: "pd" = past day, "pw" = past week, "pm" = past month, "py" = past year. Supported by Brave.', 'mcp-ai-wpoos' ),
+					'enum'        => array( 'pd', 'pw', 'pm', 'py' ),
+				),
 			),
 			'required'             => array( 'query' ),
 			'additionalProperties' => false,
@@ -174,6 +187,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$provider = WP_MCP_AI_Settings_Registry::get_setting( 'web_search_provider', 'duckduckgo' );
 
+		// Extract optional localisation / freshness parameters (industry-standard fields).
+		$search_options = array();
+
+		if ( ! empty( $arguments['country'] ) ) {
+			$country = strtoupper( sanitize_text_field( $arguments['country'] ) );
+			if ( preg_match( '/^[A-Z]{2}$/', $country ) ) {
+				$search_options['country'] = $country;
+			}
+		}
+
+		if ( ! empty( $arguments['language'] ) ) {
+			$search_options['language'] = strtolower( sanitize_text_field( $arguments['language'] ) );
+		}
+
+		$allowed_freshness = array( 'pd', 'pw', 'pm', 'py' );
+		if ( ! empty( $arguments['freshness'] ) && in_array( $arguments['freshness'], $allowed_freshness, true ) ) {
+			$search_options['freshness'] = $arguments['freshness'];
+		}
+
 		// Check cache first to avoid unnecessary API calls.
 		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$cache_key     = $this->get_cache_key( $query, $max_results, $provider );
@@ -193,9 +225,15 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Perform the search.
 		if ( 'brave' === $provider ) {
-			$result = $this->perform_brave_search( $query, $max_results );
+			$result = $this->perform_brave_search( $query, $max_results, $search_options );
+		} elseif ( 'tavily' === $provider ) {
+			$result = $this->perform_tavily_search( $query, $max_results, $search_options );
+		} elseif ( 'exa' === $provider ) {
+			$result = $this->perform_exa_search( $query, $max_results, $search_options );
+		} elseif ( 'perplexity' === $provider ) {
+			$result = $this->perform_perplexity_search( $query, $max_results, $search_options );
 		} else {
-			$result = $this->perform_duckduckgo_search( $query, $max_results );
+			$result = $this->perform_duckduckgo_search( $query, $max_results, $search_options );
 		}
 
 		// Validate and normalize the result before caching and returning.
@@ -419,18 +457,26 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
 	 *
+	 * @param array  $options     Optional: country, language.
 	 * @return array|WP_Error Search response payload or WP_Error on failure.
 	 */
-	protected function perform_duckduckgo_search( $query, $max_results ) {
-		$request_url = add_query_arg(
-			array(
-				'q'             => $query,
-				'format'        => 'json',
-				'no_html'       => 1,
-				'skip_disambig' => 1,
-			),
-			'https://api.duckduckgo.com/'
+	protected function perform_duckduckgo_search( $query, $max_results, array $options = array() ) {
+		$query_args = array(
+			'q'             => $query,
+			'format'        => 'json',
+			'no_html'       => 1,
+			'skip_disambig' => 1,
 		);
+
+		// Build DuckDuckGo region (kl) from country + language when provided.
+		// Format: "{country_lower}-{language}" e.g. "us-en", "de-de".
+		if ( ! empty( $options['country'] ) && ! empty( $options['language'] ) ) {
+			$query_args['kl'] = strtolower( $options['country'] ) . '-' . strtolower( $options['language'] );
+		} elseif ( ! empty( $options['language'] ) ) {
+			$query_args['kl'] = strtolower( $options['language'] );
+		}
+
+		$request_url = add_query_arg( $query_args, 'https://api.duckduckgo.com/' );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -589,24 +635,40 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 *
 	 * @param string $query       The sanitized search query.
 	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $options     Optional: country, language, freshness.
 	 *
 	 * @return array|WP_Error Search response payload or WP_Error on failure.
 	 */
-	protected function perform_brave_search( $query, $max_results ) {
+	protected function perform_brave_search( $query, $max_results, array $options = array() ) {
 		$api_key = WP_MCP_AI_Settings_Registry::get_setting( 'brave_search_api_key', '' );
 
 		if ( '' === $api_key ) {
 			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Brave Search API key is required to perform searches.', 'mcp-ai-wpoos' ) );
 		}
 
-		$request_url = add_query_arg(
-			array(
-				'q'          => $query,
-				'count'      => max( 1, $max_results ),
-				'safesearch' => 'moderate',
-			),
-			'https://api.search.brave.com/res/v1/web/search'
+		$query_args = array(
+			'q'              => $query,
+			'count'          => max( 1, $max_results ),
+			'safesearch'     => 'moderate',
+			'extra_snippets' => 1, // Return additional context snippets per result.
 		);
+
+		// Country targeting (ISO 3166-1 alpha-2).
+		if ( ! empty( $options['country'] ) ) {
+			$query_args['country'] = strtoupper( $options['country'] );
+		}
+
+		// Content language (ISO 639-1).
+		if ( ! empty( $options['language'] ) ) {
+			$query_args['search_lang'] = strtolower( $options['language'] );
+		}
+
+		// Freshness filter: pd=day, pw=week, pm=month, py=year.
+		if ( ! empty( $options['freshness'] ) ) {
+			$query_args['freshness'] = $options['freshness'];
+		}
+
+		$request_url = add_query_arg( $query_args, 'https://api.search.brave.com/res/v1/web/search' );
 
 		$response = $this->perform_search_with_retry(
 			$request_url,
@@ -671,8 +733,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 				if ( ! empty( $item['description'] ) ) {
 					$snippet = $this->sanitize_utf8( sanitize_text_field( $item['description'] ) );
-				} elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
-					$snippet = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
+				}
+
+				// Append extra_snippets (returned when extra_snippets=1 is set) for richer context.
+				if ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
+					$extra   = $this->sanitize_utf8( sanitize_text_field( implode( ' ', $item['extra_snippets'] ) ) );
+					$snippet = $snippet ? $snippet . ' ' . $extra : $extra;
 				}
 
 				$results[] = array(
@@ -800,6 +866,495 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		return count( $results ) >= $max_results;
+	}
+
+	/**
+	 * Perform a Tavily search.
+	 *
+	 * Tavily is an AI-first search API purpose-built for LLM agents and RAG pipelines.
+	 * It aggregates and parses real-time web content, returning structured results and
+	 * optionally an AI-generated answer — all optimised for LLM consumption.
+	 *
+	 * @link https://docs.tavily.com/docs/rest-api/api-reference
+	 *
+	 * @param string $query       The sanitized search query.
+	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $options     Optional: country.
+	 *
+	 * @return array|WP_Error Search response payload or WP_Error on failure.
+	 */
+	protected function perform_tavily_search( $query, $max_results, array $options = array() ) {
+		$api_key = WP_MCP_AI_Settings_Registry::get_setting( 'tavily_api_key', '' );
+
+		if ( '' === $api_key ) {
+			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Tavily API key is required to perform searches.', 'mcp-ai-wpoos' ) );
+		}
+
+		$body = array(
+			'query'          => $query,
+			'max_results'    => max( 1, min( $max_results, 10 ) ),
+			'search_depth'   => 'basic',
+			'include_answer' => false,
+		);
+
+		// Tavily does not have an official country/language query param as of their current API.
+		// The country value from $options is accepted in the schema for future compatibility
+		// but is not forwarded in the request body. Future API versions may add geo-targeting.
+		// phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- accepted for future use
+		$encoded_body = wp_json_encode( $body );
+		if ( false === $encoded_body ) {
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Tavily search payload.', 'mcp-ai-wpoos' ) );
+		}
+
+		$response = $this->perform_search_with_retry(
+			'https://api.tavily.com/search',
+			array(
+				'method'  => 'POST',
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+					'Accept'        => 'application/json',
+				),
+				'body'    => $encoded_body,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
+				return $response;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'mcp-ai-wpoos' ),
+				$response->get_error_message()
+			);
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		if ( 202 === $status_code ) {
+			return $this->handle_pending_response( $response );
+		}
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_http_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'The web search service returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
+					$status_code
+				)
+			);
+		}
+
+		$raw_body = wp_remote_retrieve_body( $response );
+		$data     = json_decode( $raw_body, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'mcp-ai-wpoos' ) );
+		}
+
+		$results = array();
+
+		if ( isset( $data['results'] ) && is_array( $data['results'] ) ) {
+			foreach ( $data['results'] as $item ) {
+				if ( empty( $item['url'] ) ) {
+					continue;
+				}
+
+				$title = isset( $item['title'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['title'] ) ) : '';
+				// Tavily returns content (page excerpt) rather than a short description.
+				$snippet = isset( $item['content'] ) ? $this->sanitize_utf8( sanitize_text_field( $item['content'] ) ) : '';
+
+				$result_item = array(
+					'title'   => $title ? $title : esc_url_raw( $item['url'] ),
+					'url'     => esc_url_raw( $item['url'] ),
+					'snippet' => $snippet,
+					'source'  => 'tavily',
+					'type'    => 'result',
+				);
+
+				if ( ! empty( $item['published_date'] ) ) {
+					$result_item['published_date'] = sanitize_text_field( $item['published_date'] );
+				}
+
+				$results[] = $result_item;
+
+				if ( count( $results ) >= $max_results ) {
+					break;
+				}
+			}
+		}
+
+		// Deduplicate results by URL.
+		$results = $this->deduplicate_results( $results );
+
+		if ( empty( $results ) ) {
+			$task_id = $this->generate_task_id( $query, 'tavily' );
+			return $this->ensure_response_message(
+				array(
+					'task_id'        => $task_id,
+					'query'          => $query,
+					'results'        => array(),
+					'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
+					'cached'         => false,
+					'provider'       => 'tavily',
+					'system_message' => sprintf(
+						/* translators: %s: search query */
+						__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+						$query
+					),
+				),
+				sprintf(
+					/* translators: %s: search query */
+					__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+					$query
+				)
+			);
+		}
+
+		// Build descriptive text for the LLM and chat UI.
+		$text_parts   = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: result count, 2: search query */
+			_n(
+				'Found %1$d web search result for "%2$s"',
+				'Found %1$d web search results for "%2$s"',
+				count( $results ),
+				'mcp-ai-wpoos'
+			),
+			count( $results ),
+			$query
+		);
+
+		if ( ! empty( $results[0]['title'] ) ) {
+			$text_parts[] = sprintf(
+				/* translators: %s: title of first search result */
+				__( 'Top result: %s', 'mcp-ai-wpoos' ),
+				wp_trim_words( $results[0]['title'], 10, '...' )
+			);
+		}
+
+		$task_id = $this->generate_task_id( $query, 'tavily' );
+		return $this->ensure_response_message(
+			array(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => $results,
+				'result_count'   => count( $results ),
+				'cached'         => false,
+				'provider'       => 'tavily',
+				'timestamp'      => time(),
+				'system_message' => implode( ' ', $text_parts ),
+			),
+			sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d results', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
+		);
+	}
+
+		/**
+		 * Perform a web search using Exa AI's neural search API.
+		 *
+		 * Exa provides semantic / neural web search purpose-built for AI applications.
+		 * Unlike keyword-based search, Exa understands query intent and returns highly
+		 * relevant results using embedding-based retrieval.
+		 *
+		 * API reference: https://docs.exa.ai/reference/search
+		 *
+		 * @param string $query       Search query string.
+		 * @param int    $max_results Maximum number of results to return.
+		 * @param array  $options     Optional: 'country', 'language', 'freshness' parameters.
+		 * @return array|WP_Error Normalized result array or WP_Error on failure.
+		 */
+	protected function perform_exa_search( $query, $max_results, array $options = array() ) {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$api_key  = isset( $settings['exa_api_key'] ) ? trim( $settings['exa_api_key'] ) : '';
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_exa_api_key',
+				__( 'An Exa AI API key is required. Configure it in NV oOS → Settings → Tools.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 10;
+		$timeout      = max( 5, min( 15, $timeout ) );
+
+		// Build request payload.
+		$payload = array(
+			'query'          => $query,
+			'numResults'     => $max_results,
+			'useAutoprompt'  => true,
+			'type'           => 'auto',
+			'contents'       => array(
+				'text' => array(
+					'maxCharacters' => 1000,
+				),
+			),
+		);
+
+		// Freshness filter: Exa uses startCrawlDate / startPublishedDate.
+		if ( ! empty( $options['freshness'] ) ) {
+			$days_map = array(
+				'pd' => 1,
+				'pw' => 7,
+				'pm' => 30,
+				'py' => 365,
+			);
+			if ( isset( $days_map[ $options['freshness'] ] ) ) {
+				$days                         = $days_map[ $options['freshness'] ];
+				$payload['startPublishedDate'] = gmdate( 'Y-m-d\TH:i:s\Z', strtotime( "-{$days} days" ) );
+			}
+		}
+
+		/**
+		 * Filter the Exa AI search payload before it is sent.
+		 *
+		 * @param array  $payload     Request payload.
+		 * @param string $query       Search query.
+		 * @param int    $max_results Maximum results requested.
+		 * @param array  $options     Search options.
+		 */
+		$payload = apply_filters( 'wp_mcp_ai_exa_search_payload', $payload, $query, $max_results, $options );
+
+		$response = wp_remote_post(
+			'https://api.exa.ai/search',
+			array(
+				'headers' => array(
+					'x-api-key'    => $api_key,
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_exa_invalid_response',
+				__( 'Exa AI returned an invalid response.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$msg = isset( $data['error'] ) && is_string( $data['error'] ) ? $data['error'] : __( 'Exa AI search request failed.', 'mcp-ai-wpoos' );
+
+			return new WP_Error( 'wp_mcp_ai_exa_error', $msg, array( 'status' => $code ) );
+		}
+
+		// Normalize results to the standard tool result format.
+		$results = array();
+		if ( isset( $data['results'] ) && is_array( $data['results'] ) ) {
+			foreach ( $data['results'] as $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+
+				$title   = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
+				$url     = isset( $item['url'] ) ? esc_url_raw( $item['url'] ) : '';
+				$snippet = '';
+
+				if ( isset( $item['text'] ) && is_string( $item['text'] ) ) {
+					$snippet = sanitize_text_field( substr( $item['text'], 0, 300 ) );
+				} elseif ( isset( $item['highlights'] ) && is_array( $item['highlights'] ) ) {
+					$snippet = sanitize_text_field( implode( ' ', array_slice( $item['highlights'], 0, 2 ) ) );
+				}
+
+				if ( '' === $url ) {
+					continue;
+				}
+
+				$results[] = array(
+					'title'   => $title,
+					'url'     => $url,
+					'snippet' => $snippet,
+				);
+			}
+		}
+
+		$text_parts = array();
+		foreach ( array_slice( $results, 0, self::MAX_LLM_RESULTS ) as $r ) {
+			$text_parts[] = sprintf( '%s — %s', $r['title'], $r['snippet'] );
+		}
+
+		return $this->build_tool_result(
+			array(
+				'results'        => $results,
+				'provider'       => 'exa',
+				'query'          => $query,
+				'system_message' => implode( ' ', $text_parts ),
+			),
+			sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d results', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
+		);
+	}
+
+	/**
+	 * Perform a web search using Perplexity's Sonar API.
+	 *
+	 * Perplexity Sonar is an AI-powered search model that produces grounded answers
+	 * with inline citations from real-time web sources. The API uses the chat-completions
+	 * format with `online_` or `sonar` model family prefixes.
+	 *
+	 * API reference: https://docs.perplexity.ai/reference/post_chat_completions
+	 *
+	 * @param string $query       Search query string.
+	 * @param int    $max_results Maximum number of results to surface (informational only;
+	 *                            Perplexity returns a synthesised answer with citations).
+	 * @param array  $options     Optional: 'country', 'language' parameters.
+	 * @return array|WP_Error Normalized result array or WP_Error on failure.
+	 */
+	protected function perform_perplexity_search( $query, $max_results, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- $max_results retained for API signature parity.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$api_key  = isset( $settings['perplexity_api_key'] ) ? trim( $settings['perplexity_api_key'] ) : '';
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_perplexity_api_key',
+				__( 'A Perplexity API key is required. Configure it in NV oOS → Settings → Tools.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 15;
+		$timeout = max( 5, min( 30, $timeout ) );
+
+		// Choose the model — sonar-pro delivers richer citations.
+		$model = apply_filters( 'wp_mcp_ai_perplexity_search_model', 'sonar-pro', $options );
+		$model = sanitize_text_field( $model );
+
+		// Build system instruction for concise, citation-rich answers.
+		$system_instruction = __( 'You are a helpful web search assistant. Provide a clear, concise answer with relevant citations to real web sources. Cite your sources inline.', 'mcp-ai-wpoos' );
+
+		// Append language hint to query if provided.
+		$search_query = $query;
+		if ( ! empty( $options['country'] ) ) {
+			$search_query .= ' site:' . strtolower( $options['country'] );
+		}
+
+		$payload = array(
+			'model'    => $model,
+			'messages' => array(
+				array(
+					'role'    => 'system',
+					'content' => $system_instruction,
+				),
+				array(
+					'role'    => 'user',
+					'content' => $search_query,
+				),
+			),
+		);
+
+		// Freshness via search_recency_filter.
+		if ( ! empty( $options['freshness'] ) ) {
+			$recency_map = array(
+				'pd' => 'day',
+				'pw' => 'week',
+				'pm' => 'month',
+				'py' => 'year',
+			);
+			if ( isset( $recency_map[ $options['freshness'] ] ) ) {
+				$payload['search_recency_filter'] = $recency_map[ $options['freshness'] ];
+			}
+		}
+
+		/**
+		 * Filter the Perplexity search payload before it is sent.
+		 *
+		 * @param array  $payload  Request payload.
+		 * @param string $query    Search query.
+		 * @param array  $options  Search options.
+		 */
+		$payload = apply_filters( 'wp_mcp_ai_perplexity_search_payload', $payload, $query, $options );
+
+		$response = wp_remote_post(
+			'https://api.perplexity.ai/chat/completions',
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_perplexity_invalid_response',
+				__( 'Perplexity returned an invalid response.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$msg = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Perplexity search request failed.', 'mcp-ai-wpoos' );
+
+			return new WP_Error( 'wp_mcp_ai_perplexity_error', $msg, array( 'status' => $code ) );
+		}
+
+		// Extract the answer text.
+		$answer = '';
+		if ( isset( $data['choices'][0]['message']['content'] ) ) {
+			$answer = sanitize_textarea_field( $data['choices'][0]['message']['content'] );
+		}
+
+		// Extract citations.
+		$citations = array();
+		if ( isset( $data['citations'] ) && is_array( $data['citations'] ) ) {
+			foreach ( $data['citations'] as $citation_url ) {
+				if ( is_string( $citation_url ) && '' !== $citation_url ) {
+					$citations[] = esc_url_raw( $citation_url );
+				}
+			}
+		}
+
+		// Build normalized result list from citations.
+		$results = array();
+		foreach ( $citations as $citation_url ) {
+			$results[] = array(
+				'title'   => '',
+				'url'     => $citation_url,
+				'snippet' => '',
+			);
+		}
+
+		return $this->build_tool_result(
+			array(
+				'results'        => $results,
+				'provider'       => 'perplexity',
+				'query'          => $query,
+				'answer'         => $answer,
+				'citations'      => $citations,
+				'system_message' => $answer,
+			),
+			'' !== $answer
+				? __( 'Perplexity Sonar answered your query', 'mcp-ai-wpoos' )
+				: __( 'No results found', 'mcp-ai-wpoos' )
+		);
 	}
 
 	/**
@@ -994,10 +1549,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					break;
 				}
 
-				// Only include title and URL, skip snippets to save tokens.
+				// Include title, URL, and a trimmed snippet so the LLM has enough context
+				// to ground its answer without consuming excessive tokens.
 				$condensed_results[] = array(
-					'title' => isset( $item['title'] ) ? $item['title'] : '',
-					'url'   => isset( $item['url'] ) ? $item['url'] : '',
+					'title'   => isset( $item['title'] ) ? $item['title'] : '',
+					'url'     => isset( $item['url'] ) ? $item['url'] : '',
+					'snippet' => isset( $item['snippet'] ) ? wp_trim_words( $item['snippet'], 40, '...' ) : '',
 				);
 
 				++$count;

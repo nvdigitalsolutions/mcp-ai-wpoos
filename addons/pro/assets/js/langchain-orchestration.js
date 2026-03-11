@@ -221,7 +221,7 @@ prompt = prompt.replace( new RegExp( '\\{' + k + '\\}', 'g' ), String( v ) );
 
 if ( this.memory.messages.length > 0 ) {
 if ( template.includes( '{chat_history}' ) ) {
-prompt = prompt.replace( '{chat_history}', this.memory.formatContext() );
+prompt = prompt.replace( /\{chat_history\}/g, this.memory.formatContext() );
 } else {
 prompt = 'Chat history:\n' + this.memory.formatContext() + '\n\nCurrent:\n' + prompt;
 }

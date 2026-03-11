@@ -402,6 +402,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			// Count configured connectors.
 			$connectors       = array(
 				'brave'            => ! empty( $settings['brave_search_api_key'] ),
+				'tavily'           => ! empty( $settings['tavily_api_key'] ),
 				'crawl4ai'         => ! empty( $settings['crawl4ai_base_url'] ),
 				'cloudflare'       => ! empty( $settings['cloudflare_api_token'] ),
 				'cloudways'        => ! empty( $settings['cloudways_api_key'] ),

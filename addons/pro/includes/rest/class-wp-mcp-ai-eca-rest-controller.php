@@ -190,7 +190,7 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function check_read_permission( $request ) {
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Sorry, you are not allowed to view ECAs or students.', 'mcp-ai-wpoos-pro' ),
@@ -208,7 +208,7 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function check_write_permission( $request ) {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Sorry, you are not allowed to create or edit ECAs or students.', 'mcp-ai-wpoos-pro' ),
@@ -226,7 +226,7 @@ class WP_MCP_AI_ECA_REST_Controller extends WP_REST_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function check_delete_permission( $request ) {
-		if ( ! current_user_can( 'delete_posts' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
 				__( 'Sorry, you are not allowed to delete ECAs or students.', 'mcp-ai-wpoos-pro' ),

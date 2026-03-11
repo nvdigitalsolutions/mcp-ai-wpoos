@@ -492,5 +492,5 @@ class WP_MCP_AI_Asset_Inventory {
 	/**
 	 * Prevent unserialization.
 	 */
-	public function __wakeup() {} // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+	public function __wakeup() {} // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore -- Double-underscore magic method (__wakeup/__clone) required by PHP serialization interface; PSR-2 exception for magic methods.
 }

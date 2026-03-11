@@ -286,8 +286,8 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			}
 
 			// Get token from request.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$token = isset( $_POST['token'] ) ? trim( wp_unslash( $_POST['token'] ) ) : '';
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_text_field() applied immediately on the next line.
+			$token = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
 
 			if ( empty( $token ) ) {
 				wp_send_json_error( array( 'message' => __( 'Please provide an Auth0 bearer token.', 'mcp-ai-wpoos' ) ) );

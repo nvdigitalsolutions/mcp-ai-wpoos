@@ -156,14 +156,14 @@ const builds = [
 	},
 	// LangChain.js files (Phase 3) — target ES2020+ since WebLLM requires modern browsers
 	{
-		entryPoints: ['assets/js/langchain-tool-adapter.js'],
-		outfile: 'assets/js/langchain-tool-adapter.min.js',
+		entryPoints: ['addons/pro/assets/js/langchain-tool-adapter.js'],
+		outfile: 'addons/pro/assets/js/langchain-tool-adapter.min.js',
 		...commonOptions,
 		target: ['es2020', 'chrome89', 'safari15', 'firefox90'],
 	},
 	{
-		entryPoints: ['assets/js/langchain-orchestration.js'],
-		outfile: 'assets/js/langchain-orchestration.min.js',
+		entryPoints: ['addons/pro/assets/js/langchain-orchestration.js'],
+		outfile: 'addons/pro/assets/js/langchain-orchestration.min.js',
 		...commonOptions,
 		target: ['es2020', 'chrome89', 'safari15', 'firefox90'],
 	},

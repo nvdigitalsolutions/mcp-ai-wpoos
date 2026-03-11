@@ -82,12 +82,12 @@ class WP_MCP_AI_Pro_Settings_Optional_Dependencies_Test extends WP_UnitTestCase 
 		// Test with a LangChain package.
 		$result = $method->invoke( null, 'langchain' );
 
-		// Check expected paths would be tested:
-		// 1. WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.min.js' (production)
-		// 2. WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.min.js' (production)
-		// 3. WP_MCP_AI_PATH . 'assets/js/langchain-orchestration.js' (development)
-		// 4. WP_MCP_AI_PATH . 'assets/js/langchain-tool-adapter.js' (development)
-		// 5. WP_MCP_AI_PATH . 'node_modules/langchain' (development)
+		// Check expected paths would be tested (files now live in Pro addon directory):
+		// 1. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.min.js' (production)
+		// 2. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.min.js' (production)
+		// 3. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-orchestration.js' (development)
+		// 4. WP_MCP_AI_PRO_PATH . 'assets/js/langchain-tool-adapter.js' (development)
+		// 5. WP_MCP_AI_PRO_PATH . 'node_modules/langchain' (development)
 
 		// The result depends on environment, but method should not throw errors.
 		$this->assertIsBool( $result, 'LangChain package check should return boolean' );

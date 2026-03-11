@@ -108,7 +108,7 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 		if ( empty( $content ) ) {
 			// No document file found, skip (don't overwrite existing content with empty).
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'WP_MCP_AI: No profession-documents file found for ' . $slug );
+				error_log( 'WP_MCP_AI: No profession-documents file found for ' . $slug ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging, guarded by WP_DEBUG.
 			}
 			return;
 		}
@@ -133,7 +133,7 @@ class WP_MCP_AI_Profession_Base_Knowledge_Seeder {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin or temp file; WP_Filesystem is not available in this REST/cron/tool execution context.
 		$content = file_get_contents( $file_path );
 
 		return false !== $content ? $content : '';

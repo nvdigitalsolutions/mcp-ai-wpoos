@@ -345,7 +345,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $agent_role );
 		}
 
-		// Save JSON fields (they will be validated by the sanitize_json_field callback).
+		// Save JSON fields — decode to validate structure, then re-encode cleanly.
 		$json_fields = array(
 			'wp_mcp_ai_task_patterns'         => WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS,
 			'wp_mcp_ai_decision_criteria'     => WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA,
@@ -357,8 +357,11 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 
 		foreach ( $json_fields as $field_name => $meta_key ) {
 			if ( isset( $_POST[ $field_name ] ) ) {
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by update_post_meta callback.
-				$value = wp_unslash( $_POST[ $field_name ] );
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON re-encoding below serves as sanitization.
+				$raw_value     = wp_unslash( $_POST[ $field_name ] );
+				$decoded_value = json_decode( $raw_value, true );
+				// json_decode( $raw, true ) converts JSON objects and arrays to PHP arrays; primitives and invalid JSON yield non-array results.
+				$value = ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded_value ) ) ? wp_json_encode( $decoded_value ) : '{}';
 				update_post_meta( $post_id, $meta_key, $value );
 			}
 		}

@@ -215,7 +215,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 
 		$name        = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
 		$description = isset( $_POST['description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['description'] ) ) : '';
-		$steps       = isset( $_POST['steps'] ) ? json_decode( wp_unslash( $_POST['steps'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$steps       = isset( $_POST['steps'] ) ? json_decode( wp_unslash( $_POST['steps'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string decoded from raw POST; all values are sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
 		$steps       = is_array( $steps ) ? wp_mcp_ai_sanitize_recursive( $steps ) : array();
 
 		if ( empty( $name ) || empty( $steps ) ) {
@@ -296,7 +296,7 @@ class WP_MCP_AI_Workflow_Editor_Page {
 		}
 
 		$workflow_slug = isset( $_POST['workflow'] ) ? sanitize_key( $_POST['workflow'] ) : '';
-		$params        = isset( $_POST['params'] ) ? json_decode( wp_unslash( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$params        = isset( $_POST['params'] ) ? json_decode( wp_unslash( $_POST['params'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string decoded from raw POST; all values are sanitized recursively by wp_mcp_ai_sanitize_recursive() on the next line.
 		$params        = is_array( $params ) ? wp_mcp_ai_sanitize_recursive( $params ) : array();
 
 		if ( empty( $workflow_slug ) ) {

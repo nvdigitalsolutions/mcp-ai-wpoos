@@ -201,6 +201,7 @@ class WP_MCP_AI_HTTP_Helper {
 
 		$parts = array_map( 'intval', explode( '.', $ip ) );
 
+		// phpcs:disable Squiz.PHP.CommentedOutCode.Found -- CIDR notation comments document the IP ranges checked below; not commented-out code.
 		// 10.0.0.0/8 (10.0.0.0 - 10.255.255.255).
 		if ( 10 === $parts[0] ) {
 			return true;
@@ -215,6 +216,7 @@ class WP_MCP_AI_HTTP_Helper {
 		if ( 192 === $parts[0] && 168 === $parts[1] ) {
 			return true;
 		}
+		// phpcs:enable Squiz.PHP.CommentedOutCode.Found
 
 		return false;
 	}

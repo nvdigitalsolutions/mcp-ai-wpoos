@@ -138,37 +138,40 @@ class WP_MCP_AI_Apple_Messages_Webhook_Controller extends WP_REST_Controller {
 	 * shared secret and send the signature in a header such as
 	 * X-Apple-Messages-Signature or X-MSP-Signature. The exact header name
 	 * varies by provider; this controller checks the most common variants and
-	 * falls back gracefully when no secret is configured.
+	 * rejects the request (fail-closed) when no secret is configured.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the signature is valid or no secret is configured.
+	 * @return bool|WP_Error True if the signature is valid.
+	 *                        WP_Error(403) if signing secret is not configured.
+	 *                        False if the signature header is missing or invalid.
 	 */
 	public function validate_webhook_signature( WP_REST_Request $request ) {
 		$connection_id = $request->get_param( 'connection_id' );
 		$stored_secret = $this->get_webhook_secret( $connection_id );
 
 		if ( empty( $stored_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'apple_messages_webhook_no_secret',
-				'Apple Messages webhook received without a signing secret configured. Signature validation skipped. Configure a webhook_secret for enhanced security.',
+			WP_MCP_AI_Logger::log_error(
+				'Apple Messages webhook rejected: no signing secret configured. Set a webhook_secret in the connection settings to enable webhook authentication.',
 				array( 'connection_id' => $connection_id ? $connection_id : 'default' )
 			);
 
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a signing secret in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// Retrieve the raw request body for signature calculation.
 		$raw_body = $request->get_body();
 
-		// Try common MSP signature header names.
+		// Try MSP signature header names in order of specificity.
 		$provided_signature = '';
 		$header_candidates  = array(
 			'x-apple-messages-signature',
 			'x-msp-signature',
-			'x-hub-signature-256',
-			'x-signature',
 		);
 
 		foreach ( $header_candidates as $header ) {

@@ -60,7 +60,10 @@ class WP_MCP_AI_Team_Seeder {
 
 		// Fallback to hard-coded teams if JSON loading fails.
 		if ( is_wp_error( $teams ) || empty( $teams ) ) {
-			error_log( 'WP_MCP_AI: JSON loading failed for teams, using hard-coded teams. Error: ' . ( is_wp_error( $teams ) ? $teams->get_error_message() : 'Empty result' ) );
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JSON loading failed for teams, using hard-coded teams. Error: ' . ( is_wp_error( $teams ) ? $teams->get_error_message() : 'Empty result' )
+			);
 			$teams = self::get_default_teams();
 		}
 

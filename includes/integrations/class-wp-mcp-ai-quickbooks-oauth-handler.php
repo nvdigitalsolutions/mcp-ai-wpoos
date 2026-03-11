@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			$token_endpoint = apply_filters( 'wp_mcp_ai_quickbooks_oauth_token_endpoint', self::QUICKBOOKS_OAUTH_TOKEN_ENDPOINT );
 
 			// QuickBooks requires Basic authentication with client_id:client_secret.
-			$auth_string = base64_encode( $settings['quickbooks_client_id'] . ':' . $settings['quickbooks_client_secret'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			$auth_string = base64_encode( $settings['quickbooks_client_id'] . ':' . $settings['quickbooks_client_secret'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to construct an HTTP Basic Auth header (RFC 7617), not for obfuscation.
 
 			$response = wp_remote_post(
 				$token_endpoint,
@@ -429,7 +429,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			}
 
 			$token_endpoint = apply_filters( 'wp_mcp_ai_quickbooks_oauth_token_endpoint', self::QUICKBOOKS_OAUTH_TOKEN_ENDPOINT );
-			$auth_string    = base64_encode( $settings['quickbooks_client_id'] . ':' . $settings['quickbooks_client_secret'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			$auth_string    = base64_encode( $settings['quickbooks_client_id'] . ':' . $settings['quickbooks_client_secret'] ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to construct an HTTP Basic Auth header (RFC 7617), not for obfuscation.
 
 			$response = wp_remote_post(
 				$token_endpoint,

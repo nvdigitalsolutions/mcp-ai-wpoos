@@ -78,7 +78,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 					</div>
 				</div>
 
-				<?php echo self::render_storage_info(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo self::render_storage_info(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_storage_info() returns pre-escaped HTML built with esc_html() on all dynamic values. ?>
 
 				<table class="wp-list-table widefat fixed striped wp-mcp-ai-model-config-table">
 					<thead>
@@ -108,12 +108,12 @@ class WP_MCP_AI_Model_Config_Renderer {
 					</thead>
 					<tbody>
 						<?php foreach ( $model_configs as $model_id => $config ) : ?>
-							<?php echo self::render_model_row( $model_id, $config, $providers ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<?php echo self::render_model_row( $model_id, $config, $providers ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_model_row() returns pre-escaped HTML built with esc_html() on all dynamic values. ?>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
 
-				<?php echo self::render_legend(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo self::render_legend(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- render_legend() returns pre-escaped HTML built with esc_html() on all dynamic values. ?>
 			</div>
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for model config table layout and styling on this admin page only

@@ -137,7 +137,7 @@ class WP_MCP_AI_Queue_Manager {
 	 * @param array  $context   Execution context.
 	 * @return string Execution mode constant.
 	 */
-	public function get_execution_mode( $tool_name, array $arguments, array $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function get_execution_mode( $tool_name, array $arguments, array $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter required by hook or interface signature but not used in this implementation.
 		$tool = $this->get_tool_registry()->get_tool( $tool_name );
 
 		if ( null === $tool ) {
@@ -200,7 +200,7 @@ class WP_MCP_AI_Queue_Manager {
 	 * @param array  $arguments Tool arguments (reserved for future use with argument-based estimation).
 	 * @return int Estimated time in milliseconds.
 	 */
-	private function estimate_execution_time( $tool_name, array $arguments ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	private function estimate_execution_time( $tool_name, array $arguments ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameter required by hook or interface signature but not used in this implementation.
 		// Check for cached estimates.
 		$cache_key = 'wp_mcp_ai_tool_time_' . md5( $tool_name );
 		$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai' );

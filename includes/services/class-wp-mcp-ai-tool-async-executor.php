@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for long-running tools.
 			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Silenced intentionally: set_time_limit() may emit warnings when safe_mode is on or the function is disabled; failure is non-critical as this is a best-effort timeout extension.
 			}
 
 			$start_time = microtime( true );
@@ -865,7 +865,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// Find expired transients.
 		$prefix = self::METADATA_TRANSIENT_PREFIX;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Direct query required for performance-critical aggregation on custom plugin table; WP_Query does not support custom table queries of this type.
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT option_name FROM {$wpdb->options}

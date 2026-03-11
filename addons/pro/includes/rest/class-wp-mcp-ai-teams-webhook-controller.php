@@ -120,12 +120,14 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		$signing_secret = $this->get_signing_secret();
 
 		if ( empty( $signing_secret ) ) {
-			WP_MCP_AI_Logger::log_event(
-				'teams_webhook_no_signing_secret',
-				'Teams outgoing webhook received without signing secret configured. HMAC validation skipped. Configure signing_secret in the connection settings for enhanced security.',
-				array()
+			WP_MCP_AI_Logger::log_error(
+				'Teams webhook rejected: no signing secret configured. Set signing_secret in the connection settings to enable HMAC validation.'
 			);
-			return true;
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Webhook authentication is not configured. Please set a signing secret in the connection settings.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$auth_header = $request->get_header( 'authorization' );
@@ -358,6 +360,19 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 		 */
 		$max_history = (int) apply_filters( 'wp_mcp_ai_teams_max_history_messages', $max_history, $args );
 		$max_history = max( 1, $max_history );
+
+		// When the transient cache is empty (e.g. after expiry or a cache flush),
+		// hydrate the conversation context from the Channel Messages CCT so that
+		// prior exchanges are never silently dropped. The CCT is the persistent
+		// source of truth; the transient is a fast in-memory cache on top of it.
+		if ( empty( $history ) && $max_history > 1 && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$history = WP_MCP_AI_Channel_Messages_CCT::get_recent_messages(
+				'teams',
+				$user_id,
+				$connection_id,
+				$max_history - 1
+			);
+		}
 
 		if ( count( $history ) >= $max_history ) {
 			$history = array_slice( $history, -( $max_history - 1 ) );

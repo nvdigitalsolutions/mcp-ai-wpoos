@@ -227,7 +227,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 			return wp_json_encode(
 				array(
 					'compressed'    => true,
-					'data'          => base64_encode( $compressed ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					'data'          => base64_encode( $compressed ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used for binary data transport (compressed workflow state), not for code obfuscation.
 					'original_size' => strlen( $content ),
 				)
 			);

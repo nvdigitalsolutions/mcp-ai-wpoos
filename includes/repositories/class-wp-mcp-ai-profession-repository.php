@@ -208,7 +208,7 @@ class WP_MCP_AI_Profession_Repository {
 
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT meta_value as category, COUNT(*) as count

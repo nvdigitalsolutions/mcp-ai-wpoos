@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/conduct-code-review-compliance-again',
+        'version' => 'dev-copilot/conduct-code-review-compliance-again',
+        'reference' => '27a5391ca7219290bfd3ad97da87df6e286ccb62',
         'pretty_version' => 'dev-copilot/rebuild-wordpress-zips',
         'version' => 'dev-copilot/rebuild-wordpress-zips',
         'reference' => '8ca50e9e3abf5a83cfde14b25edba2f11e48675d',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/conduct-code-review-compliance-again',
+            'version' => 'dev-copilot/conduct-code-review-compliance-again',
+            'reference' => '27a5391ca7219290bfd3ad97da87df6e286ccb62',
             'pretty_version' => 'dev-copilot/rebuild-wordpress-zips',
             'version' => 'dev-copilot/rebuild-wordpress-zips',
             'reference' => '8ca50e9e3abf5a83cfde14b25edba2f11e48675d',

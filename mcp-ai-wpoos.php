@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Set WP_MCP_AI_BASE_VERSION to false in wp-config.php for Full Version (519 tools including Pro add-ons with WooCommerce, JetEngine CPT/Taxonomy AI integration, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Defaults to Base Version (165 core tools). Install the Pro add-on for Full Version (519 tools including WooCommerce, JetEngine CPT/Taxonomy AI integration, social media, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
  * Version: 1.1.3
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -597,7 +597,6 @@ require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
 
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
 // Load project management initialization moved to Pro addon.
 // require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';.
@@ -627,6 +626,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-tester.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-peer-test-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-rate-limiter.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-sse-rate-limiter.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 
