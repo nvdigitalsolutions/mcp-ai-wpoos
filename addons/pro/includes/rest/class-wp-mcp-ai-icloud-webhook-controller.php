@@ -128,12 +128,14 @@ class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 	 * Gateway services typically sign every payload with an HMAC-SHA256 digest
 	 * using a shared secret and send the signature in a header. The exact header
 	 * name varies by provider; this controller checks the most common variants
-	 * and falls back gracefully when no secret is configured.
+	 * and rejects the request (fail-closed) when no secret is configured.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if the signature is valid or no secret is configured.
+	 * @return bool|WP_Error True if the signature is valid.
+	 *                        WP_Error(403) if signing secret is not configured.
+	 *                        False if the signature header is missing or invalid.
 	 */
 	public function validate_webhook_signature( WP_REST_Request $request ) {
 		$connection_id = $request->get_param( 'connection_id' );
@@ -155,12 +157,10 @@ class WP_MCP_AI_iCloud_Webhook_Controller extends WP_REST_Controller {
 		// Retrieve the raw request body for signature calculation.
 		$raw_body = $request->get_body();
 
-		// Try common gateway signature header names.
+		// Try iCloud gateway signature header names in order of specificity.
 		$provided_signature = '';
 		$header_candidates  = array(
 			'x-icloud-signature',
-			'x-gateway-signature',
-			'x-webhook-signature',
 		);
 
 		foreach ( $header_candidates as $header ) {

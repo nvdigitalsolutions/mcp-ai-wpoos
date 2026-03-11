@@ -118,13 +118,18 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 	 * was specified when the subscription was created. This value is compared
 	 * against the stored client state for the connection.
 	 *
-	 * When the client state is not configured the webhook is allowed through
-	 * with a security warning.
+	 * When the client state is not configured the webhook is rejected with
+	 * a 403 error (fail-closed). Subscription validation requests that carry a
+	 * validationToken query parameter are allowed through regardless of client
+	 * state because they originate from Microsoft Graph before any subscription
+	 * is active; the handler echoes the token back and returns immediately.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param WP_REST_Request $request Request object.
-	 * @return bool True if client state is valid or not configured.
+	 * @return bool|WP_Error True if client state is valid or request is a
+	 *                        Microsoft subscription validation. WP_Error(403)
+	 *                        if client state is not configured or does not match.
 	 */
 	public function validate_outlook_signature( $request ) {
 		// Validation token requests are always allowed through.
