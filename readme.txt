@@ -580,9 +580,9 @@ These services are only contacted when specific tools/features are used:
 
 **21. Auth0 API**
 * **Purpose:** Enterprise authentication and user management via Auth0
-* **Data Sent:** OAuth tokens, user subject identifiers
+* **Data Sent:** OAuth tokens, user subject identifiers; JWKS public keys retrieved for JWT signature verification (no user data transmitted)
 * **When:** When Auth0 integration is configured for authentication
-* **Service URL:** https://{your-auth0-domain}/api/v2/
+* **Service URLs:** https://{your-auth0-domain}/oauth/token (server-side POST: client credentials token generation); https://{your-auth0-domain}/.well-known/jwks.json (server-side GET: JWT public-key retrieval for bearer token validation); https://{your-auth0-domain}/api/v2/ (optional: user management API)
 * **Terms of Service:** https://auth0.com/web-terms
 * **Privacy Policy:** https://auth0.com/privacy
 
