@@ -3834,6 +3834,28 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	* @return WP_REST_Response|WP_Error
 	*/
 	public function handle_validate_init_data( $request ) {
+		// Rate-limit this public endpoint to mitigate replay and enumeration attacks.
+		// The /validate endpoint accepts any initData token, so without a rate limit
+		// an attacker who has obtained a valid token within the auth_date expiry window
+		// could replay it from many IPs, and user existence could be probed freely.
+		$remote_ip   = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '0.0.0.0';
+		$rate_key    = 'wp_mcp_ai_tma_validate_' . md5( $remote_ip );
+		$rate_window = MINUTE_IN_SECONDS;
+		$max_per_min = 20;
+		$rate_count  = (int) get_transient( $rate_key );
+		if ( $rate_count >= $max_per_min ) {
+			WP_MCP_AI_Logger::log_error(
+				'Telegram Mini App: /validate rate limit exceeded.',
+				array( 'ip' => $remote_ip )
+			);
+			return new WP_Error(
+				'wp_mcp_ai_telegram_mini_app_rate_limit',
+				__( 'Too many requests. Please try again later.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $rate_key, $rate_count + 1, $rate_window );
+
 		$raw_init_data = $request->get_param( 'init_data' );
 
 		if ( empty( $raw_init_data ) ) {

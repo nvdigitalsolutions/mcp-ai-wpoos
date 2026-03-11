@@ -261,12 +261,12 @@ class WP_MCP_AI_Skill_Manager_REST_Controller extends WP_REST_Controller {
 	public function install_from_url( $request ) {
 		$url = esc_url_raw( $request->get_param( 'url' ) );
 
-		// Only allow http/https.
+		// Only allow https.
 		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
-		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+		if ( 'https' !== $scheme ) {
 			return new WP_Error(
 				'rest_skill_invalid_url',
-				__( 'Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ),
+				__( 'Only HTTPS URLs are supported for skill installation.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}

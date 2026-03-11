@@ -132,9 +132,31 @@ class WP_MCP_AI_Outlook_Webhook_Controller extends WP_REST_Controller {
 	 *                        if client state is not configured or does not match.
 	 */
 	public function validate_outlook_signature( $request ) {
-		// Validation token requests are always allowed through.
+		// Subscription validation: Microsoft Graph sends a POST with a validationToken
+		// query parameter to confirm the webhook endpoint is reachable before creating
+		// the subscription. The handler echoes the token back as plain text/returns early,
+		// so no notification payload is ever processed on this path.
+		//
+		// We still require that at least one Outlook connection is configured before
+		// allowing this bypass, so that the endpoint cannot be invoked when no integration
+		// is active.
 		$validation_token = $request->get_param( 'validationToken' );
-		if ( null !== $validation_token ) {
+		if ( null !== $validation_token && '' !== $validation_token ) {
+			// Require that a connection (and therefore a client_state) is actually
+			// configured for this site, preventing bypass when no Outlook integration
+			// is active.
+			$connection_id = $request->get_param( 'connection_id' );
+			$client_state  = $this->get_client_state( $connection_id );
+			if ( empty( $client_state ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Outlook webhook validation token rejected: no active Outlook connection configured.'
+				);
+				return new WP_Error(
+					'rest_forbidden',
+					__( 'Webhook authentication is not configured. Please set a client state in the connection settings.', 'mcp-ai-wpoos-pro' ),
+					array( 'status' => 403 )
+				);
+			}
 			return true;
 		}
 
