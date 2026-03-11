@@ -66,6 +66,16 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	const INQUIRY_TYPES = array( 'new_inquiry', 'demo_request', 'pricing_inquiry', 'partnership', 'general', 'all' );
 
 	/**
+	 * Allowed MQL/SQL pipeline stage values (industry-standard lead qualification).
+	 *
+	 * MQL = Marketing Qualified Lead (engaged with marketing content).
+	 * SQL = Sales Qualified Lead (accepted by sales for active pursuit).
+	 *
+	 * @var string[]
+	 */
+	const MQL_STAGES = array( 'mql', 'sql', 'all' );
+
+	/**
 	 * Allowed cron schedule recurrences.
 	 *
 	 * @var string[]
@@ -189,6 +199,21 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'WP Cron recurrence for automatic cache refresh (hourly, twicedaily, daily). Used with action=schedule.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'hourly',
 				),
+				'force_refresh'   => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, bypass any cached results and execute a fresh database query. Useful for on-demand data refreshes during the day.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'contact_owner'   => array(
+					'type'        => 'string',
+					'description' => __( 'Filter leads by assigned contact owner (WordPress username or email of the sales rep). Industry standard: HubSpot Contact Owner / Salesforce Lead Owner field.', 'mcp-ai-wpoos-pro' ),
+				),
+				'mql_stage'       => array(
+					'type'        => 'string',
+					'enum'        => self::MQL_STAGES,
+					'description' => __( 'Lead qualification stage filter. "mql" = Marketing Qualified Lead (engaged with marketing content); "sql" = Sales Qualified Lead (accepted by sales for active pursuit); "all" = no stage filter. Industry standard: HubSpot lifecycle stages, Salesforce lead qualification workflow.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'all',
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
@@ -279,24 +304,39 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Execute search, cache results, and return them.
+	 * Execute search using cache-aside pattern (industry standard for throughout-the-day querying).
+	 *
+	 * Returns cached results when available unless force_refresh is requested.
+	 * Always re-caches the results after a fresh database query.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
 	private function run_search( array $arguments ) {
-		$filters   = $this->extract_filters( $arguments );
-		$cache_key = $this->build_cache_key( $filters );
-		$cache_ttl = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$filters       = $this->extract_filters( $arguments );
+		$cache_key     = $this->build_cache_key( $filters );
+		$cache_ttl     = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$force_refresh = ! empty( $arguments['force_refresh'] );
+
+		// Cache-aside: return cached results unless a forced refresh is requested.
+		if ( ! $force_refresh ) {
+			$cached = $this->cache_get( $cache_key );
+			if ( false !== $cached ) {
+				$cached['from_cache']   = true;
+				$cached['force_refresh'] = false;
+				return $cached;
+			}
+		}
 
 		$results = $this->query_leads( $filters );
 
 		$this->cache_set( $cache_key, $results, $cache_ttl );
 
-		$results['cached']    = true;
-		$results['cache_ttl'] = $cache_ttl;
-		$results['cached_at'] = current_time( 'mysql' );
-		$results['cache_key'] = $cache_key;
+		$results['cached']        = true;
+		$results['cache_ttl']     = $cache_ttl;
+		$results['cached_at']     = current_time( 'mysql' );
+		$results['cache_key']     = $cache_key;
+		$results['force_refresh'] = $force_refresh;
 
 		return $results;
 	}
@@ -493,6 +533,24 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
+		// MQL/SQL stage (industry-standard: HubSpot lifecycle stage / Salesforce lead qualification).
+		if ( ! empty( $filters['mql_stage'] ) && 'all' !== $filters['mql_stage'] ) {
+			$meta_query[] = array(
+				'key'     => 'mql_stage',
+				'value'   => sanitize_key( $filters['mql_stage'] ),
+				'compare' => '=',
+			);
+		}
+
+		// Contact owner / assigned sales rep (HubSpot Contact Owner / Salesforce Lead Owner).
+		if ( ! empty( $filters['contact_owner'] ) ) {
+			$meta_query[] = array(
+				'key'     => 'contact_owner',
+				'value'   => sanitize_text_field( $filters['contact_owner'] ),
+				'compare' => '=',
+			);
+		}
+
 		// Lead score range (industry-standard: 0-39 cold, 40-69 warm, 70-100 hot).
 		if ( isset( $filters['lead_score_min'] ) || isset( $filters['lead_score_max'] ) ) {
 			$score_clause = array(
@@ -549,19 +607,21 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			$score_label = $this->score_label( $lead_score );
 
 			$leads[] = array(
-				'id'           => $post->ID,
-				'name'         => $post->post_title,
-				'email'        => sanitize_email( $email ),
-				'first_name'   => sanitize_text_field( (string) get_post_meta( $post->ID, 'first_name', true ) ),
-				'last_name'    => sanitize_text_field( (string) get_post_meta( $post->ID, 'last_name', true ) ),
-				'company'      => sanitize_text_field( (string) get_post_meta( $post->ID, 'company', true ) ),
-				'lead_status'  => sanitize_key( (string) get_post_meta( $post->ID, 'lead_status', true ) ),
-				'inquiry_type' => sanitize_key( (string) get_post_meta( $post->ID, 'inquiry_type', true ) ),
-				'source'       => sanitize_text_field( (string) get_post_meta( $post->ID, 'source', true ) ),
-				'lead_score'   => $lead_score,
-				'score_label'  => $score_label,
-				'added_date'   => $post->post_date,
-				'edit_url'     => get_edit_post_link( $post->ID, 'raw' ),
+				'id'            => $post->ID,
+				'name'          => $post->post_title,
+				'email'         => sanitize_email( $email ),
+				'first_name'    => sanitize_text_field( (string) get_post_meta( $post->ID, 'first_name', true ) ),
+				'last_name'     => sanitize_text_field( (string) get_post_meta( $post->ID, 'last_name', true ) ),
+				'company'       => sanitize_text_field( (string) get_post_meta( $post->ID, 'company', true ) ),
+				'lead_status'   => sanitize_key( (string) get_post_meta( $post->ID, 'lead_status', true ) ),
+				'inquiry_type'  => sanitize_key( (string) get_post_meta( $post->ID, 'inquiry_type', true ) ),
+				'mql_stage'     => sanitize_key( (string) get_post_meta( $post->ID, 'mql_stage', true ) ),
+				'contact_owner' => sanitize_text_field( (string) get_post_meta( $post->ID, 'contact_owner', true ) ),
+				'source'        => sanitize_text_field( (string) get_post_meta( $post->ID, 'source', true ) ),
+				'lead_score'    => $lead_score,
+				'score_label'   => $score_label,
+				'added_date'    => $post->post_date,
+				'edit_url'      => get_edit_post_link( $post->ID, 'raw' ),
 			);
 		}
 
@@ -623,15 +683,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Leads implements WP_MCP_AI_Tool_Interface,
 			$inquiry_type = 'all';
 		}
 
+		$mql_stage = isset( $arguments['mql_stage'] ) ? sanitize_key( $arguments['mql_stage'] ) : 'all';
+		if ( ! in_array( $mql_stage, self::MQL_STAGES, true ) ) {
+			$mql_stage = 'all';
+		}
+
 		$filters = array(
-			'lead_status'  => $lead_status,
-			'inquiry_type' => $inquiry_type,
-			'email_domain' => isset( $arguments['email_domain'] ) ? sanitize_text_field( $arguments['email_domain'] ) : '',
-			'source'       => isset( $arguments['source'] ) ? sanitize_text_field( $arguments['source'] ) : '',
-			'date_from'    => isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : '',
-			'date_to'      => isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : '',
-			'per_page'     => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
-			'page'         => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
+			'lead_status'   => $lead_status,
+			'inquiry_type'  => $inquiry_type,
+			'mql_stage'     => $mql_stage,
+			'contact_owner' => isset( $arguments['contact_owner'] ) ? sanitize_text_field( $arguments['contact_owner'] ) : '',
+			'email_domain'  => isset( $arguments['email_domain'] ) ? sanitize_text_field( $arguments['email_domain'] ) : '',
+			'source'        => isset( $arguments['source'] ) ? sanitize_text_field( $arguments['source'] ) : '',
+			'date_from'     => isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : '',
+			'date_to'       => isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : '',
+			'per_page'      => isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20,
+			'page'          => isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1,
 		);
 
 		if ( isset( $arguments['lead_score_min'] ) ) {

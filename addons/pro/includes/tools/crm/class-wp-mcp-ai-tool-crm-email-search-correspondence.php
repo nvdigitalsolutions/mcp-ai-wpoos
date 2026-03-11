@@ -72,6 +72,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	const CRON_SCHEDULES = array( 'hourly', 'twicedaily', 'daily' );
 
 	/**
+	 * Allowed communication channel values (industry-standard omnichannel CRM tracking).
+	 *
+	 * Modern CRMs (Salesforce, HubSpot, Zoho) track interactions across all channels.
+	 *
+	 * @var string[]
+	 */
+	const CHANNELS = array( 'email', 'phone', 'chat', 'social', 'all' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -184,6 +193,22 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 					'description' => __( 'WP Cron recurrence for automatic cache refresh (hourly, twicedaily, daily). Used with action=schedule.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'hourly',
 				),
+				'force_refresh'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, bypass any cached results and execute a fresh database query. Useful for on-demand refreshes during the day.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'channel'             => array(
+					'type'        => 'string',
+					'enum'        => self::CHANNELS,
+					'description' => __( 'Filter by communication channel. Industry-standard omnichannel CRM tracking: "email" = email correspondence; "phone" = phone call logs; "chat" = live chat / messaging; "social" = social media interactions; "all" = no channel filter.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'all',
+				),
+				'sla_breach_only'     => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, return only contacts that have breached SLA (Service Level Agreement) response time thresholds. Uses days_since_contact as the SLA threshold. Industry standard in enterprise CRM / helpdesk operations.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
@@ -274,24 +299,39 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Execute search, cache results, and return them.
+	 * Execute search using cache-aside pattern (industry standard for throughout-the-day querying).
+	 *
+	 * Returns cached results when available unless force_refresh is requested.
+	 * Always re-caches the results after a fresh database query.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
 	private function run_search( array $arguments ) {
-		$filters   = $this->extract_filters( $arguments );
-		$cache_key = $this->build_cache_key( $filters );
-		$cache_ttl = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$filters       = $this->extract_filters( $arguments );
+		$cache_key     = $this->build_cache_key( $filters );
+		$cache_ttl     = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$force_refresh = ! empty( $arguments['force_refresh'] );
+
+		// Cache-aside: return cached results unless a forced refresh is requested.
+		if ( ! $force_refresh ) {
+			$cached = $this->cache_get( $cache_key );
+			if ( false !== $cached ) {
+				$cached['from_cache']    = true;
+				$cached['force_refresh'] = false;
+				return $cached;
+			}
+		}
 
 		$results = $this->query_correspondence( $filters );
 
 		$this->cache_set( $cache_key, $results, $cache_ttl );
 
-		$results['cached']    = true;
-		$results['cache_ttl'] = $cache_ttl;
-		$results['cached_at'] = current_time( 'mysql' );
-		$results['cache_key'] = $cache_key;
+		$results['cached']        = true;
+		$results['cache_ttl']     = $cache_ttl;
+		$results['cached_at']     = current_time( 'mysql' );
+		$results['cache_key']     = $cache_key;
+		$results['force_refresh'] = $force_refresh;
 
 		return $results;
 	}
@@ -542,6 +582,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			);
 		}
 
+		// Communication channel (industry-standard omnichannel CRM tracking).
+		if ( ! empty( $filters['channel'] ) && 'all' !== $filters['channel'] ) {
+			$meta_query[] = array(
+				'key'     => 'channel',
+				'value'   => sanitize_key( $filters['channel'] ),
+				'compare' => '=',
+			);
+		}
+
 		if ( count( $meta_query ) > 1 ) {
 			$query_args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for CRM correspondence filtering on indexed meta fields.
 		}
@@ -576,6 +625,15 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			$follow_up_date  = (string) get_post_meta( $post->ID, 'follow_up_date', true );
 			$contact_count   = absint( get_post_meta( $post->ID, 'contact_count', true ) );
 			$category        = sanitize_key( (string) get_post_meta( $post->ID, 'correspondence_category', true ) );
+			$channel_value   = sanitize_key( (string) get_post_meta( $post->ID, 'channel', true ) );
+
+			// SLA breach filter: skip contacts within SLA threshold when sla_breach_only is active.
+			if ( ! empty( $filters['sla_breach_only'] ) && $last_contacted ) {
+				$diff_seconds = current_time( 'timestamp', true ) - strtotime( $last_contacted );
+				if ( $diff_seconds < ( $days_since * DAY_IN_SECONDS ) ) {
+					continue;
+				}
+			}
 
 			$record = array(
 				'id'             => $post->ID,
@@ -586,6 +644,9 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 				'company'        => sanitize_text_field( (string) get_post_meta( $post->ID, 'company', true ) ),
 				'contact_status' => sanitize_text_field( (string) get_post_meta( $post->ID, 'contact_status', true ) ),
 				'category'       => $category,
+				// Default to 'email' when no channel is stored — email is the primary
+			// correspondence channel in CRM systems that don't yet track omnichannel.
+			'channel'        => $channel_value ?: 'email',
 				'last_contacted' => sanitize_text_field( $last_contacted ),
 				'follow_up_date' => sanitize_text_field( $follow_up_date ),
 				'contact_count'  => $contact_count,
@@ -722,9 +783,16 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Correspondence implements WP_MCP_AI_Tool_I
 			$tags = array_map( 'sanitize_text_field', $arguments['tags'] );
 		}
 
+		$channel = isset( $arguments['channel'] ) ? sanitize_key( $arguments['channel'] ) : 'all';
+		if ( ! in_array( $channel, self::CHANNELS, true ) ) {
+			$channel = 'all';
+		}
+
 		return array(
 			'correspondence_type' => $correspondence_type,
 			'category'            => $category,
+			'channel'             => $channel,
+			'sla_breach_only'     => isset( $arguments['sla_breach_only'] ) ? (bool) $arguments['sla_breach_only'] : false,
 			'days_since_contact'  => isset( $arguments['days_since_contact'] ) ? max( 1, absint( $arguments['days_since_contact'] ) ) : 7,
 			'contact_status'      => isset( $arguments['contact_status'] ) ? sanitize_text_field( $arguments['contact_status'] ) : '',
 			'tags'                => $tags,

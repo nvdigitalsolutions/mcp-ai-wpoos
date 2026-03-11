@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/enhance-crm-email-search-tools',
         'version' => 'dev-copilot/enhance-crm-email-search-tools',
-        'reference' => '8d4d132b0e00533990ed4524f59223475966dc04',
+        'reference' => 'eddb11bc46106a68d451c75ba15718be7296fd58',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/enhance-crm-email-search-tools',
             'version' => 'dev-copilot/enhance-crm-email-search-tools',
-            'reference' => '8d4d132b0e00533990ed4524f59223475966dc04',
+            'reference' => 'eddb11bc46106a68d451c75ba15718be7296fd58',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

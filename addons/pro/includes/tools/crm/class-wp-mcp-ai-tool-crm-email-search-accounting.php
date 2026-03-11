@@ -85,6 +85,16 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	const CRON_SCHEDULES = array( 'hourly', 'twicedaily', 'daily' );
 
 	/**
+	 * Allowed fiscal quarter values for financial reporting (industry standard).
+	 *
+	 * Fiscal quarter filtering is standard in QuickBooks Online, Xero, and
+	 * Microsoft Dynamics 365 Finance reporting modules.
+	 *
+	 * @var string[]
+	 */
+	const FISCAL_QUARTERS = array( 'Q1', 'Q2', 'Q3', 'Q4', 'all' );
+
+	/**
 	 * Constructor – registers WP Cron callback.
 	 */
 	public function __construct() {
@@ -211,6 +221,27 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 					'description' => __( 'WP Cron recurrence for automatic cache refresh (hourly, twicedaily, daily). Used with action=schedule.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'hourly',
 				),
+				'force_refresh'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'When true, bypass any cached results and execute a fresh database query. Useful for on-demand refreshes during the day.', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'fiscal_year'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Filter by fiscal year (e.g. 2025). Industry standard in QuickBooks Online, Xero, and Dynamics 365 Finance reporting. Filters by the post_date year of the contact record.', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 2000,
+					'maximum'     => 2100,
+				),
+				'fiscal_quarter'      => array(
+					'type'        => 'string',
+					'enum'        => self::FISCAL_QUARTERS,
+					'description' => __( 'Filter by fiscal quarter within the fiscal_year. Q1 = Jan-Mar, Q2 = Apr-Jun, Q3 = Jul-Sep, Q4 = Oct-Dec. Standard in QuickBooks Online, Xero, and FreshBooks financial reporting.', 'mcp-ai-wpoos-pro' ),
+					'default'     => 'all',
+				),
+				'currency_code'       => array(
+					'type'        => 'string',
+					'description' => __( 'Filter by ISO 4217 currency code (e.g. "USD", "EUR", "GBP"). Multi-currency standard in Xero, QuickBooks Online, and FreshBooks for international clients.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
@@ -301,24 +332,39 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	// -------------------------------------------------------------------------
 
 	/**
-	 * Execute search, cache results, and return them.
+	 * Execute search using cache-aside pattern (industry standard for throughout-the-day querying).
+	 *
+	 * Returns cached results when available unless force_refresh is requested.
+	 * Always re-caches the results after a fresh database query.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @return array
 	 */
 	private function run_search( array $arguments ) {
-		$filters   = $this->extract_filters( $arguments );
-		$cache_key = $this->build_cache_key( $filters );
-		$cache_ttl = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$filters       = $this->extract_filters( $arguments );
+		$cache_key     = $this->build_cache_key( $filters );
+		$cache_ttl     = isset( $arguments['cache_ttl'] ) ? max( 60, absint( $arguments['cache_ttl'] ) ) : self::DEFAULT_CACHE_TTL;
+		$force_refresh = ! empty( $arguments['force_refresh'] );
+
+		// Cache-aside: return cached results unless a forced refresh is requested.
+		if ( ! $force_refresh ) {
+			$cached = $this->cache_get( $cache_key );
+			if ( false !== $cached ) {
+				$cached['from_cache']    = true;
+				$cached['force_refresh'] = false;
+				return $cached;
+			}
+		}
 
 		$results = $this->query_accounting( $filters );
 
 		$this->cache_set( $cache_key, $results, $cache_ttl );
 
-		$results['cached']    = true;
-		$results['cache_ttl'] = $cache_ttl;
-		$results['cached_at'] = current_time( 'mysql' );
-		$results['cache_key'] = $cache_key;
+		$results['cached']        = true;
+		$results['cache_ttl']     = $cache_ttl;
+		$results['cached_at']     = current_time( 'mysql' );
+		$results['cache_key']     = $cache_key;
+		$results['force_refresh'] = $force_refresh;
 
 		return $results;
 	}
@@ -541,15 +587,33 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			$query_args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for CRM accounting filtering on indexed meta fields.
 		}
 
-		// Date range (transaction / email date).
+		// Date range (transaction / email date) – explicit or derived from fiscal year/quarter.
 		$date_query = array();
-		if ( ! empty( $filters['date_from'] ) ) {
-			$date_query['after'] = sanitize_text_field( $filters['date_from'] );
-		}
-		if ( ! empty( $filters['date_to'] ) ) {
-			$date_query['before']    = sanitize_text_field( $filters['date_to'] );
+		$fiscal_year    = ! empty( $filters['fiscal_year'] ) ? absint( $filters['fiscal_year'] ) : 0;
+		$fiscal_quarter = isset( $filters['fiscal_quarter'] ) ? $filters['fiscal_quarter'] : 'all';
+
+		if ( $fiscal_year > 0 && 'all' !== $fiscal_quarter ) {
+			// Derive exact date range from fiscal year + quarter (calendar-year based).
+			$quarter_dates  = $this->fiscal_quarter_dates( $fiscal_year, $fiscal_quarter );
+			$date_query['after']     = $quarter_dates['start'];
+			$date_query['before']    = $quarter_dates['end'];
 			$date_query['inclusive'] = true;
+		} elseif ( $fiscal_year > 0 ) {
+			// Full fiscal year.
+			$date_query['after']     = $fiscal_year . '-01-01';
+			$date_query['before']    = $fiscal_year . '-12-31';
+			$date_query['inclusive'] = true;
+		} else {
+			// Manual date range.
+			if ( ! empty( $filters['date_from'] ) ) {
+				$date_query['after'] = sanitize_text_field( $filters['date_from'] );
+			}
+			if ( ! empty( $filters['date_to'] ) ) {
+				$date_query['before']    = sanitize_text_field( $filters['date_to'] );
+				$date_query['inclusive'] = true;
+			}
 		}
+
 		if ( ! empty( $date_query ) ) {
 			$query_args['date_query'] = array( $date_query );
 		}
@@ -571,6 +635,24 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			$billing_status  = sanitize_key( (string) get_post_meta( $post->ID, 'billing_status', true ) );
 			$due_date_raw    = (string) get_post_meta( $post->ID, 'invoice_due_date', true );
 			$days_overdue    = $this->compute_days_overdue( $billing_status, $due_date_raw );
+			$raw_currency    = strtoupper( sanitize_text_field( (string) get_post_meta( $post->ID, 'invoice_currency', true ) ) );
+			/**
+			 * Filter the default currency code when no value is stored on the contact record.
+			 *
+			 * International sites may use EUR, GBP, CAD, etc. as their base currency.
+			 * Uses ISO 4217 currency codes. Default is 'USD'.
+			 *
+			 * @since 2.1.0
+			 *
+			 * @param string $default_currency Default ISO 4217 currency code.
+			 */
+			$default_currency = apply_filters( 'wp_mcp_ai_crm_default_currency', 'USD' );
+			$currency         = $raw_currency ?: strtoupper( sanitize_text_field( $default_currency ) );
+
+			// Currency code filter (ISO 4217 – Xero/QuickBooks multi-currency standard).
+			if ( ! empty( $filters['currency_code'] ) && strtoupper( $filters['currency_code'] ) !== $currency ) {
+				continue;
+			}
 
 			// Days-overdue minimum filter.
 			if ( isset( $filters['days_overdue_min'] ) && ( null === $days_overdue || $days_overdue < absint( $filters['days_overdue_min'] ) ) ) {
@@ -594,7 +676,7 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 				'invoice_amount'   => $invoice_amount,
 				'invoice_due_date' => sanitize_text_field( $due_date_raw ),
 				'days_overdue'     => $days_overdue,
-				'currency'         => sanitize_text_field( (string) get_post_meta( $post->ID, 'invoice_currency', true ) ) ?: 'USD',
+				'currency'         => $currency,
 				'added_date'       => $post->post_date,
 				'edit_url'         => get_edit_post_link( $post->ID, 'raw' ),
 			);
@@ -624,6 +706,34 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 	// -------------------------------------------------------------------------
 	// Accounting helpers
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Convert a fiscal year and quarter to calendar start/end dates.
+	 *
+	 * Uses calendar-year quarters (industry default unless a custom fiscal year start
+	 * is configured). Q1 = Jan-Mar, Q2 = Apr-Jun, Q3 = Jul-Sep, Q4 = Oct-Dec.
+	 * Standard in QuickBooks Online, Xero, FreshBooks reporting.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param int    $year    Fiscal year (e.g. 2025).
+	 * @param string $quarter Quarter identifier: Q1, Q2, Q3, or Q4.
+	 * @return array Associative array with 'start' and 'end' date strings (Y-m-d).
+	 */
+	private function fiscal_quarter_dates( $year, $quarter ) {
+		$year    = absint( $year );
+		$quarter = strtoupper( $quarter ); // Normalise to uppercase for case-insensitive matching.
+		$map     = array(
+			'Q1' => array( 'start' => "{$year}-01-01", 'end' => "{$year}-03-31" ),
+			'Q2' => array( 'start' => "{$year}-04-01", 'end' => "{$year}-06-30" ),
+			'Q3' => array( 'start' => "{$year}-07-01", 'end' => "{$year}-09-30" ),
+			'Q4' => array( 'start' => "{$year}-10-01", 'end' => "{$year}-12-31" ),
+		);
+
+		return isset( $map[ $quarter ] )
+			? $map[ $quarter ]
+			: array( 'start' => "{$year}-01-01", 'end' => "{$year}-12-31" );
+	}
 
 	/**
 	 * Compute days overdue for a contact record.
@@ -772,10 +882,18 @@ class WP_MCP_AI_Tool_CRM_Email_Search_Accounting implements WP_MCP_AI_Tool_Inter
 			$service_category = 'all';
 		}
 
+		$fiscal_quarter = isset( $arguments['fiscal_quarter'] ) ? strtoupper( sanitize_text_field( $arguments['fiscal_quarter'] ) ) : 'all';
+		if ( ! in_array( $fiscal_quarter, self::FISCAL_QUARTERS, true ) ) {
+			$fiscal_quarter = 'all';
+		}
+
 		$filters = array(
 			'transaction_type'   => $transaction_type,
 			'billing_status'     => $billing_status,
 			'service_category'   => $service_category,
+			'fiscal_year'        => isset( $arguments['fiscal_year'] ) ? absint( $arguments['fiscal_year'] ) : 0,
+			'fiscal_quarter'     => $fiscal_quarter,
+			'currency_code'      => isset( $arguments['currency_code'] ) ? strtoupper( sanitize_text_field( $arguments['currency_code'] ) ) : '',
 			'email_domain'       => isset( $arguments['email_domain'] ) ? sanitize_text_field( $arguments['email_domain'] ) : '',
 			'date_from'          => isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : '',
 			'date_to'            => isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : '',
