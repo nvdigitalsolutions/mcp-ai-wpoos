@@ -375,21 +375,86 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Resolve automation rules and assistant IDs early so they are available
+		// for both inbox persistence and the AI-reply pipeline below.
+		$automation_rules       = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+		$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
+
+		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
+
+		if ( '' === $connection_id ) {
+			return;
+		}
+
+		// ── Persist inbound message to the inbox ──────────────────────────────
+		// Group chats use the chat ID (not the sender's user ID) as the contact
+		// identifier so all messages from the same group appear in a single
+		// unified thread in the inbox. Private messages use from_id as before.
+		$tg_contact_id = $is_group ? $chat_id : ( '' !== $from_id ? $from_id : $chat_id );
+
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( $is_group ) {
+				$tg_contact_name = isset( $message['chat']['title'] ) ? sanitize_text_field( $message['chat']['title'] ) : $chat_id;
+				$tg_contact_extra = array(
+					'display_name' => $tg_contact_name,
+					'metadata'     => array( 'contact_type' => $chat_type ),
+				);
+			} else {
+				$tg_contact_name = '';
+				if ( isset( $message['from']['first_name'] ) ) {
+					$tg_contact_name = trim( $message['from']['first_name'] . ' ' . ( isset( $message['from']['last_name'] ) ? $message['from']['last_name'] : '' ) );
+				}
+				$tg_contact_extra = array(
+					'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id,
+					'metadata'     => array( 'contact_type' => 'private' ),
+				);
+			}
+
+			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+				'telegram',
+				$tg_contact_id,
+				$tg_contact_extra
+			);
+			if ( $contact_row_id ) {
+				WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
+			}
+		}
+
+		if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
+			$tg_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
+			WP_MCP_AI_Channel_Messages_CCT::insert(
+				array(
+					'channel'            => 'telegram',
+					'channel_contact_id' => $tg_contact_id,
+					'direction'          => 'inbound',
+					'message_id'         => $tg_message_id,
+					'message_type'       => 'text',
+					'content'            => $text,
+					'raw_payload'        => $message,
+					'status'             => 'received',
+					'connection_id'      => $connection_id,
+					'phone_number_id'    => $chat_id,
+					'timestamp'          => isset( $message['date'] ) ? absint( $message['date'] ) : time(),
+					'reply_sent'         => 0,
+					'assigned_agent'     => ! empty( $assigned_assistant_ids ) ? (string) $assigned_assistant_ids[0] : '',
+				)
+			);
+		}
+
 		// In groups, only reply when the bot is mentioned or the message is a
 		// reply to one of the bot's own messages – but only when require_mention
 		// is explicitly enabled for this connection. Defaults to off so the bot
 		// responds to every group message out of the box.
+		// Note: the message is already stored in the inbox above regardless.
 		$require_mention_in_group = $is_group && ! empty( $connection['require_mention'] );
 		if ( $require_mention_in_group ) {
-			$bot_mentioned  = $this->message_mentions_bot( $text, $connection, $message );
-			$reply_to_bot   = $this->is_reply_to_bot( $message, $connection );
+			$bot_mentioned = $this->message_mentions_bot( $text, $connection, $message );
+			$reply_to_bot  = $this->is_reply_to_bot( $message, $connection );
 
 			if ( ! $bot_mentioned && ! $reply_to_bot ) {
 				// Also check for assistant @slug mentions.
-				$automation_rules      = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
-				$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
 				if ( ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
-					return; // Not addressed to the bot; stay silent.
+					return; // Not addressed to the bot; no reply will be sent.
 				}
 			}
 		}
@@ -399,15 +464,14 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$text = $this->strip_bot_mention( $text, $connection );
 
 		// --- Automation keyword checks (mirrors WhatsApp maybe_auto_reply) ---
-		$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
-		$text_lower       = strtolower( $text );
+		$text_lower = strtolower( $text );
 
 		if ( ! empty( $automation_rules['human_takeover_keywords'] ) && '' !== $text_lower ) {
 			$takeover_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['human_takeover_keywords'] ) ) );
 			foreach ( $takeover_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
-					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, true );
 						}
@@ -429,8 +493,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$resume_kws = array_map( 'trim', explode( ',', strtolower( $automation_rules['ai_resume_keywords'] ) ) );
 			foreach ( $resume_kws as $kw ) {
 				if ( '' !== $kw && false !== strpos( $text_lower, $kw ) ) {
-					if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-						$contact_id = $this->get_channel_contact_id( 'telegram', $from_id );
+					if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+						$contact_id = $this->get_channel_contact_id( 'telegram', $tg_contact_id );
 						if ( $contact_id ) {
 							WP_MCP_AI_Channel_Contacts_CCT::set_human_takeover( $contact_id, false );
 						}
@@ -449,8 +513,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		// --- Human takeover gate ---
-		if ( '' !== $from_id && class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $from_id ) ) {
+		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+			if ( WP_MCP_AI_Channel_Contacts_CCT::is_human_takeover_active( 'telegram', $tg_contact_id ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'telegram_auto_reply_skipped_human_takeover',
 					'Auto-reply skipped: human takeover is active for this contact.',
@@ -458,14 +522,6 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				);
 				return;
 			}
-		}
-
-		$assigned_assistant_ids = $this->resolve_assistant_ids( $connection, $automation_rules );
-
-		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
-
-		if ( '' === $connection_id ) {
-			return;
 		}
 
 		/**
@@ -490,56 +546,16 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		do_action( 'wp_mcp_ai_telegram_auto_reply', $message, $automation_rules, $assigned_assistant_ids );
 
 		if ( ! empty( $assigned_assistant_ids ) ) {
-			$tg_contact_id = '' !== $from_id ? $from_id : $chat_id;
-
-			// Find or create the contact in the Channel Contacts CCT.
-			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
-				$tg_contact_name = '';
-				if ( isset( $message['from']['first_name'] ) ) {
-					$tg_contact_name = trim( $message['from']['first_name'] . ' ' . ( isset( $message['from']['last_name'] ) ? $message['from']['last_name'] : '' ) );
-				}
-				$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
-					'telegram',
-					$tg_contact_id,
-					array( 'display_name' => $tg_contact_name ? $tg_contact_name : $tg_contact_id )
-				);
-				if ( $contact_row_id ) {
-					WP_MCP_AI_Channel_Contacts_CCT::touch( $contact_row_id );
-				}
-			}
-
-			// Persist inbound message to Channel Messages CCT.
-			if ( class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
-				$tg_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
-				WP_MCP_AI_Channel_Messages_CCT::insert(
-					array(
-						'channel'            => 'telegram',
-						'channel_contact_id' => $tg_contact_id,
-						'direction'          => 'inbound',
-						'message_id'         => $tg_message_id,
-						'message_type'       => 'text',
-						'content'            => $text,
-						'raw_payload'        => $message,
-						'status'             => 'received',
-						'connection_id'      => $connection_id,
-						'phone_number_id'    => $chat_id,
-						'timestamp'          => isset( $message['date'] ) ? absint( $message['date'] ) : time(),
-						'reply_sent'         => 0,
-						'assigned_agent'     => (string) $assigned_assistant_ids[0],
-					)
-				);
-			}
-
 			$reply_to_message_id = isset( $message['message_id'] ) ? (string) $message['message_id'] : '';
 
 			$job_args = array(
 				array(
-					'assistant_id'       => $assigned_assistant_ids[0],
-					'message_text'       => $text,
-					'chat_id'            => $chat_id,
-					'from_id'            => '' !== $from_id ? $from_id : $chat_id,
-					'connection_id'      => $connection_id,
-					'chat_type'          => $chat_type,
+					'assistant_id'        => $assigned_assistant_ids[0],
+					'message_text'        => $text,
+					'chat_id'             => $chat_id,
+					'from_id'             => '' !== $from_id ? $from_id : $chat_id,
+					'connection_id'       => $connection_id,
+					'chat_type'           => $chat_type,
 					'reply_to_message_id' => $is_group ? $reply_to_message_id : '',
 				),
 			);
@@ -2665,7 +2681,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			)
 		);
 
-		// Persist to Channel Messages CCT.
+		// Persist to Channel Messages CCT and upsert the channel contact so that
+		// the conversation appears in the inbox (which queries the contacts table).
 		if ( '' !== $text && class_exists( 'WP_MCP_AI_Channel_Messages_CCT' ) ) {
 			$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
 			$message_id    = isset( $post['message_id'] ) ? (string) $post['message_id'] : '';
@@ -2685,6 +2702,24 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 					'reply_sent'         => 0,
 				)
 			);
+
+			// Upsert the channel contact. Without a matching contact record the
+			// inbox REST endpoint (which queries the contacts table) would not
+			// return this channel's conversation.
+			if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
+				$channel_contact_name = $chat_title ? $chat_title : $chat_id;
+				$channel_contact_row  = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(
+					'telegram',
+					$chat_id,
+					array(
+						'display_name' => $channel_contact_name,
+						'metadata'     => array( 'contact_type' => 'channel' ),
+					)
+				);
+				if ( $channel_contact_row ) {
+					WP_MCP_AI_Channel_Contacts_CCT::touch( $channel_contact_row );
+				}
+			}
 		}
 
 		/**
