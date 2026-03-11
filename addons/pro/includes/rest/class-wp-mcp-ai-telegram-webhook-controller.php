@@ -1695,6 +1695,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				case 'app':
 					$this->cmd_app( $chat_id, $message );
 					return true;
+
+				case 'vectorstore':
+					$this->cmd_vectorstore( $chat_id, $message );
+					return true;
 			}
 		}
 
@@ -1783,6 +1787,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'/settings – Open the Mini App settings',
 			'/status – Check bot connection status',
 			'/cancel – Reset your conversation history',
+			'/vectorstore – Get vector store info for this assistant',
 		);
 
 		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
@@ -2071,6 +2076,133 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Handle /vectorstore – retrieve vector store information for the assistant.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param string $chat_id Chat ID.
+	 * @param array  $message Telegram message.
+	 */
+	protected function cmd_vectorstore( $chat_id, array $message ) {
+		// Resolve the connected assistant to obtain its vector store configuration.
+		$vector_store_id = '';
+		$assistant_name  = '';
+
+		$connection = $this->get_active_telegram_connection();
+		if ( $connection ) {
+			$automation_rules = get_option( 'wp_mcp_ai_chat_channels_automation_rules', array() );
+			$assistant_ids    = $this->resolve_assistant_ids( $connection, $automation_rules );
+			$assistant_id     = ! empty( $assistant_ids ) ? (int) $assistant_ids[0] : 0;
+
+			if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+				if ( ! empty( $config['vector_store_id'] ) ) {
+					$vector_store_id = sanitize_text_field( $config['vector_store_id'] );
+				}
+				$post = get_post( $assistant_id );
+				if ( $post ) {
+					$assistant_name = $post->post_title;
+				}
+			}
+		}
+
+		if ( empty( $vector_store_id ) ) {
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ No vector store is configured for this assistant.',
+				$message
+			);
+			return;
+		}
+
+		// Execute the get_vector_store tool via the registry when available,
+		// falling back to a direct instantiation.
+		$tool   = null;
+		$result = null;
+
+		if ( function_exists( 'wp_mcp_ai_get_tool_registry' ) ) {
+			$registry = wp_mcp_ai_get_tool_registry();
+			if ( $registry ) {
+				$tool = $registry->get_tool( 'get_vector_store' );
+			}
+		}
+
+		if ( ! $tool ) {
+			$tool_file = WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-vector-store.php';
+			if ( file_exists( $tool_file ) ) {
+				require_once $tool_file;
+			}
+			if ( class_exists( 'WP_MCP_AI_Tool_Get_Vector_Store' ) ) {
+				$tool = new WP_MCP_AI_Tool_Get_Vector_Store();
+			}
+		}
+
+		if ( ! $tool ) {
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ Vector store tool is not available.',
+				$message
+			);
+			return;
+		}
+
+		$result = $tool->execute(
+			array( 'vector_store_id' => $vector_store_id ),
+			array()
+		);
+
+		if ( empty( $result['success'] ) ) {
+			$error = ! empty( $result['error'] ) ? $result['error'] : __( 'Unknown error.', 'mcp-ai-wpoos' );
+			$this->send_command_reply(
+				$chat_id,
+				'🗄️ ' . wp_strip_all_tags( $error ),
+				$message
+			);
+			return;
+		}
+
+		$data   = ! empty( $result['data'] ) ? $result['data'] : array();
+		$name   = ! empty( $data['name'] ) ? $this->sanitize_for_telegram_markdown( $data['name'] ) : __( 'Unknown', 'mcp-ai-wpoos' );
+		$id     = ! empty( $data['id'] ) ? $this->sanitize_for_telegram_markdown( $data['id'] ) : $this->sanitize_for_telegram_markdown( $vector_store_id );
+		$status = ! empty( $data['status'] ) ? $this->sanitize_for_telegram_markdown( $data['status'] ) : __( 'unknown', 'mcp-ai-wpoos' );
+
+		$header = '🗄️ *Vector Store*';
+		if ( '' !== $assistant_name ) {
+			$safe_assistant = $this->sanitize_for_telegram_markdown( $assistant_name );
+			$header         = "🗄️ *Vector Store – $safe_assistant*";
+		}
+
+		$text  = $header . "\n\n";
+		$text .= "*Name:* $name\n";
+		$text .= "*ID:* `$id`\n";
+		$text .= "*Status:* $status\n";
+
+		if ( ! empty( $data['file_counts'] ) && is_array( $data['file_counts'] ) ) {
+			$counts = $data['file_counts'];
+			$text  .= "\n*Files:*\n";
+			if ( isset( $counts['completed'] ) ) {
+				$text .= '  ✅ Completed: ' . (int) $counts['completed'] . "\n";
+			}
+			if ( isset( $counts['in_progress'] ) ) {
+				$text .= '  🔄 In progress: ' . (int) $counts['in_progress'] . "\n";
+			}
+			if ( isset( $counts['failed'] ) ) {
+				$text .= '  ❌ Failed: ' . (int) $counts['failed'] . "\n";
+			}
+			if ( isset( $counts['cancelled'] ) ) {
+				$text .= '  ⏹ Cancelled: ' . (int) $counts['cancelled'] . "\n";
+			}
+		}
+
+		if ( ! empty( $data['expires_at'] ) ) {
+			$expires = date_i18n( get_option( 'date_format' ), (int) $data['expires_at'] );
+			$text   .= "\n*Expires:* " . $this->sanitize_for_telegram_markdown( $expires ) . "\n";
+		}
+
+		$this->send_command_reply( $chat_id, $text, $message, 'Markdown' );
 	}
 
 	/**
@@ -2459,6 +2591,10 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			array(
 				'command'     => 'app',
 				'description' => 'Open the Mini App',
+			),
+			array(
+				'command'     => 'vectorstore',
+				'description' => 'Get vector store info for this assistant',
 			),
 		);
 
