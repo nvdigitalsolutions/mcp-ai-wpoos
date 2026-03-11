@@ -6997,9 +6997,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									if (d.business_name)  { items.push(<?php echo wp_json_encode( __( 'Business Profile:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.business_name); }
 									if (d.site_name)      { items.push(<?php echo wp_json_encode( __( 'Site:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.site_name); }
 									if (d.slack) {
-										if (d.team)        { items.push(<?php echo wp_json_encode( __( 'Team:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.team + (d.team_id ? ' (<code>' + d.team_id + '</code>)' : '')); }
-										if (d.bot_user)    { items.push(<?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_user + (d.bot_user_id ? ' (<code>' + d.bot_user_id + '</code>)' : '')); }
-										if (d.webhook_url) { items.push(<?php echo wp_json_encode( __( 'Event Subscriptions URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.webhook_url + '</code>'); }
+										var escH = function(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+										if (d.team)        { items.push(<?php echo wp_json_encode( __( 'Team:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + escH(String(d.team)) + (d.team_id ? ' (<code>' + escH(String(d.team_id)) + '</code>)' : '')); }
+										if (d.bot_user)    { items.push(<?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + escH(String(d.bot_user)) + (d.bot_user_id ? ' (<code>' + escH(String(d.bot_user_id)) + '</code>)' : '')); }
+										if (d.webhook_url) { items.push(<?php echo wp_json_encode( __( 'Event Subscriptions URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + escH(String(d.webhook_url)) + '</code>'); }
 									}
 									if (d.message && !d.phone_number && !d.site_name && !d.slack) { items.push(d.message); }
 									if (items.length) {
