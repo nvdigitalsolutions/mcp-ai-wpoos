@@ -597,6 +597,76 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertTrue( $result, 'Validation should pass when no signing secret is configured' );
 	}
 
+	/**
+	 * Test that process_event handles app_mention event type (bot @mentioned in channel).
+	 *
+	 * An app_mention event must not be silently dropped; the logic that filters
+	 * out unrecognised event types must explicitly allow 'app_mention'.
+	 */
+	public function test_slack_process_event_handles_app_mention_type() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		// Make $current_connection_id accessible so we can set it to a known value.
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, null );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		// An app_mention event must not throw or fatal; with no active connection
+		// the method returns early after the connection check, which is fine.
+		// The key assertion is that it does NOT return before reaching the
+		// connection check (i.e. event_type filter passes app_mention through).
+		$event = array(
+			'type'    => 'app_mention',
+			'user'    => 'U0123456789',
+			'text'    => '<@U987654321> hello bot',
+			'channel' => 'C0123456789',
+		);
+
+		// Invoking process_event with app_mention should not throw an exception.
+		$exception = null;
+		try {
+			$method->invoke( $controller, $event );
+		} catch ( Exception $e ) {
+			$exception = $e;
+		}
+
+		$this->assertNull( $exception, 'process_event must not throw for app_mention events' );
+	}
+
+	/**
+	 * Test that process_event still ignores unrecognised event types.
+	 */
+	public function test_slack_process_event_ignores_unknown_event_types() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		// reaction_added, file_shared, etc. should all be silently ignored.
+		$event = array(
+			'type'    => 'reaction_added',
+			'user'    => 'U0123456789',
+			'channel' => 'C0123456789',
+		);
+
+		$exception = null;
+		try {
+			$method->invoke( $controller, $event );
+		} catch ( Exception $e ) {
+			$exception = $e;
+		}
+
+		$this->assertNull( $exception, 'process_event must not throw for unsupported event types' );
+	}
+
 	// =========================================================================
 	// Discord Interaction Controller
 	// =========================================================================

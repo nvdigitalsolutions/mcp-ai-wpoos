@@ -2805,6 +2805,40 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="slack-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Required Scopes', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<p class="description" style="margin-bottom: 8px;">
+							<?php esc_html_e( 'Your Slack app (api.slack.com/apps) must have the following OAuth Bot Token Scopes enabled, and the app must be reinstalled to the workspace after adding scopes. See:', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="https://docs.slack.dev/reference/scopes/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Slack Scopes Reference', 'mcp-ai-wpoos-pro' ); ?></a>
+						</p>
+						<table class="widefat striped" style="max-width: 640px;">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'OAuth Scope', 'mcp-ai-wpoos-pro' ); ?></th>
+									<th><?php esc_html_e( 'Required For', 'mcp-ai-wpoos-pro' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td><code>chat:write</code></td><td><?php esc_html_e( 'Sending AI replies to channels and DMs', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>app_mentions:read</code></td><td><?php esc_html_e( '@mention detection â subscribe to the app_mention event so the bot replies when @mentioned in any channel', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>channels:history</code></td><td><?php esc_html_e( 'Reading messages in public channels (message.channels event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>groups:history</code></td><td><?php esc_html_e( 'Reading messages in private channels (message.groups event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>im:history</code></td><td><?php esc_html_e( 'Reading direct messages sent to the bot (message.im event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>mpim:history</code></td><td><?php esc_html_e( 'Reading messages in multi-person DMs (message.mpim event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>channels:read</code></td><td><?php esc_html_e( 'Listing and identifying public channels', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>groups:read</code></td><td><?php esc_html_e( 'Listing and identifying private channels', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>im:read</code></td><td><?php esc_html_e( 'Listing direct message conversations', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>users:read</code></td><td><?php esc_html_e( 'Looking up user display names and info', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+							</tbody>
+						</table>
+						<p class="description" style="margin-top: 8px;">
+							<strong><?php esc_html_e( 'Event Subscriptions:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'In your Slack app under Event Subscriptions â Subscribe to bot events, add: app_mention (for @mentions), message.channels (public channels), message.groups (private channels), message.im (DMs), message.mpim (group DMs).', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
 					<th scope="row"><?php esc_html_e( 'Test Bot Connection', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<button type="button" id="slack_test_connection_btn" class="button button-secondary">
@@ -6962,7 +6996,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									}
 									if (d.business_name)  { items.push(<?php echo wp_json_encode( __( 'Business Profile:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.business_name); }
 									if (d.site_name)      { items.push(<?php echo wp_json_encode( __( 'Site:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.site_name); }
-									if (d.message && !d.phone_number && !d.site_name) { items.push(d.message); }
+									if (d.slack) {
+										var escH = function(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+										if (d.team)        { items.push(<?php echo wp_json_encode( __( 'Team:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + escH(String(d.team)) + (d.team_id ? ' (<code>' + escH(String(d.team_id)) + '</code>)' : '')); }
+										if (d.bot_user)    { items.push(<?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + escH(String(d.bot_user)) + (d.bot_user_id ? ' (<code>' + escH(String(d.bot_user_id)) + '</code>)' : '')); }
+										if (d.webhook_url) { items.push(<?php echo wp_json_encode( __( 'Event Subscriptions URL:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + escH(String(d.webhook_url)) + '</code>'); }
+									}
+									if (d.message && !d.phone_number && !d.site_name && !d.slack) { items.push(d.message); }
 									if (items.length) {
 										html += '<ul style="margin:8px 0;padding-left:20px;">';
 										items.forEach(function(item) { html += '<li>' + item + '</li>'; });

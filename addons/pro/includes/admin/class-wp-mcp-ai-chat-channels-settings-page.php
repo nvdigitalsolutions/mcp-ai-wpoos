@@ -1096,12 +1096,40 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				</table>
 
 				<h4><?php esc_html_e( 'Required Scopes', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<div class="code-snippet">chat:write, channels:read, channels:manage, groups:read, groups:write, im:read, im:write, users:read</div>
+				<p class="description" style="margin-bottom: 6px;">
+					<?php esc_html_e( 'Add these OAuth Bot Token Scopes in your Slack app (api.slack.com/apps â OAuth & Permissions). Reinstall the app to the workspace after any scope changes.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'OAuth Scope', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Required For', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr><td><code>chat:write</code></td><td><?php esc_html_e( 'Sending AI replies to channels and DMs', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>app_mentions:read</code></td><td><?php esc_html_e( '@mention detection â enables app_mention events so the bot replies when @mentioned in any channel', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>channels:history</code></td><td><?php esc_html_e( 'Reading messages in public channels (message.channels event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>groups:history</code></td><td><?php esc_html_e( 'Reading messages in private channels (message.groups event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>im:history</code></td><td><?php esc_html_e( 'Reading direct messages sent to the bot (message.im event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>mpim:history</code></td><td><?php esc_html_e( 'Reading messages in multi-person DMs (message.mpim event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>channels:read</code></td><td><?php esc_html_e( 'Listing and identifying public channels', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>groups:read</code></td><td><?php esc_html_e( 'Listing and identifying private channels', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>im:read</code></td><td><?php esc_html_e( 'Listing direct message conversations', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+						<tr><td><code>users:read</code></td><td><?php esc_html_e( 'Looking up user display names and info', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+					</tbody>
+				</table>
+
+				<h4><?php esc_html_e( 'Event Subscriptions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'In your Slack app under Event Subscriptions â Subscribe to bot events, add:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<div class="code-snippet">app_mention, message.channels, message.groups, message.im, message.mpim</div>
+				<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'The app_mention event triggers when a user @mentions the bot; message.* events cover all messages in channels/DMs where the bot is a member.', 'mcp-ai-wpoos-pro' ); ?></p>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
 					<li><a href="https://api.slack.com/docs" target="_blank"><?php esc_html_e( 'Slack API Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
 					<li><a href="https://api.slack.com/methods" target="_blank"><?php esc_html_e( 'API Methods Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://docs.slack.dev/reference/scopes/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Slack Scopes Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>

@@ -259,7 +259,11 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	/**
 	 * Process a Slack event object.
 	 *
-	 * Only handles non-bot text messages (`message` type without a subtype).
+	 * Handles non-bot text messages (`message` type without a subtype) and
+	 * direct @mentions of the app (`app_mention` type). The `app_mention` event
+	 * is fired by Slack when a user @mentions the bot in a channel where the app
+	 * is installed and requires the `app_mentions:read` scope plus the
+	 * `app_mention` event subscription.
 	 *
 	 * @since 1.0.0
 	 *
@@ -268,13 +272,20 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	protected function process_event( array $event ) {
 		$event_type = isset( $event['type'] ) ? $event['type'] : '';
 
-		// Only handle plain user messages, not bot messages or message edits.
-		if ( 'message' !== $event_type ) {
+		// Handle both plain channel messages and direct @mentions (app_mention).
+		// app_mention is fired when a user @mentions the bot in any channel.
+		// message.channels / message.groups / message.im cover all messages in
+		// channels where the bot is a member.
+		$is_app_mention = ( 'app_mention' === $event_type );
+
+		if ( 'message' !== $event_type && ! $is_app_mention ) {
 			return;
 		}
 
-		// Skip bot messages and subtypes (edits, deletions, etc.).
-		if ( isset( $event['bot_id'] ) || isset( $event['subtype'] ) ) {
+		// Skip bot messages and subtypes (edits, deletions, etc.) for message events.
+		// app_mention events originate from real users, so the subtype check is
+		// applied only to the generic message type to avoid double-replies.
+		if ( ! $is_app_mention && ( isset( $event['bot_id'] ) || isset( $event['subtype'] ) ) ) {
 			return;
 		}
 
@@ -307,9 +318,10 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// When the connection requires an @slug mention, only reply if the message
-		// explicitly addresses an assigned assistant by its WordPress post slug.
-		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+		// When the connection requires a mention, app_mention events always satisfy
+		// it (the user @mentioned the bot). For plain message events, check whether
+		// the text contains an @slug mention.
+		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
 			return;
 		}
 
