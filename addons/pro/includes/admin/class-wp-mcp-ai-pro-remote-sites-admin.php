@@ -54,6 +54,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_test_discord_auto_reply', array( $this, 'ajax_test_discord_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_teams_live', array( $this, 'ajax_test_teams_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_teams_auto_reply', array( $this, 'ajax_test_teams_auto_reply' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_generate_teams_manifest', array( $this, 'ajax_generate_teams_manifest' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_office365_live', array( $this, 'ajax_test_office365_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_office365_auto_reply', array( $this, 'ajax_test_office365_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_icloud_live', array( $this, 'ajax_test_icloud_live' ) );
@@ -3174,6 +3175,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</div>
 						<p class="description"><?php esc_html_e( 'Save the connection first, then use this to simulate an incoming message and see the AI-generated reply. Requires at least one Assigned Assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<div id="teams_test_auto_reply_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Declarative Agent Manifest', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" id="teams_generate_manifest_btn" class="button button-secondary">
+							<?php esc_html_e( 'Generate Manifest', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span id="teams_manifest_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: link to Microsoft 365 Copilot declarative agent documentation */
+								esc_html__( 'Generates a Microsoft 365 Copilot %s JSON file pre-filled with this connection\'s settings. Save the connection before generating. Download the file and upload it to the Microsoft Teams Developer Portal to create a declarative agent.', 'mcp-ai-wpoos-pro' ),
+								'<a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent" target="_blank" rel="noopener noreferrer">' . esc_html__( 'declarative agent manifest', 'mcp-ai-wpoos-pro' ) . '</a>'
+							);
+							?>
+						</p>
+						<div id="teams_manifest_result" style="display: none; margin-top: 8px;"></div>
 					</td>
 				</tr>
 
@@ -6984,6 +7005,67 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							if (teamsAutoReplyResult) {
 								teamsAutoReplyResult.style.display = 'block';
 								teamsAutoReplyResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+							}
+						});
+				});
+			}
+
+			// Microsoft Teams: Generate Manifest button.
+			const teamsManifestBtn     = document.getElementById('teams_generate_manifest_btn');
+			const teamsManifestSpinner = document.getElementById('teams_manifest_spinner');
+			const teamsManifestResult  = document.getElementById('teams_manifest_result');
+			if (teamsManifestBtn) {
+				teamsManifestBtn.addEventListener('click', function() {
+					var connIdEl     = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
+					var connectionId = connIdEl ? connIdEl.value.trim() : '';
+
+					if (!connectionId) {
+						if (teamsManifestResult) {
+							teamsManifestResult.style.display = 'block';
+							teamsManifestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Save the connection first, then generate the manifest.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+						}
+						return;
+					}
+
+					teamsManifestBtn.disabled = true;
+					if (teamsManifestSpinner) { teamsManifestSpinner.style.display = 'inline-block'; }
+					if (teamsManifestResult)  { teamsManifestResult.style.display = 'none'; teamsManifestResult.innerHTML = ''; }
+
+					var data = new FormData();
+					data.append('action', 'wp_mcp_ai_generate_teams_manifest');
+					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_generate_teams_manifest' ) ); ?>);
+					data.append('connection_id', connectionId);
+
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+						.then(function(response) {
+							if (!response.ok) { throw new Error('HTTP ' + response.status); }
+							return response.json();
+						})
+						.then(function(result) {
+							teamsManifestBtn.disabled = false;
+							if (teamsManifestSpinner) { teamsManifestSpinner.style.display = 'none'; }
+							if (!teamsManifestResult) { return; }
+							teamsManifestResult.style.display = 'block';
+							if (result.success) {
+								var manifestJson = JSON.stringify(result.data.manifest, null, 2);
+								var blob = new Blob([manifestJson], { type: 'application/json' });
+								var url  = URL.createObjectURL(blob);
+								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Manifest generated!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
+								html += '<p style="margin:6px 0 0;"><a href="' + url + '" download="declarativeAgent.json" class="button button-primary">' + <?php echo wp_json_encode( __( 'Download declarativeAgent.json', 'mcp-ai-wpoos-pro' ) ); ?> + '</a></p>';
+								html += '<p style="margin:8px 0 0;">' + <?php echo wp_json_encode( __( 'Upload this file to the Microsoft Teams Developer Portal to register a declarative agent.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+								html += '</div>';
+								teamsManifestResult.innerHTML = html;
+								setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+							} else {
+								teamsManifestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Manifest generation failed.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+							}
+						})
+						.catch(function() {
+							teamsManifestBtn.disabled = false;
+							if (teamsManifestSpinner) { teamsManifestSpinner.style.display = 'none'; }
+							if (teamsManifestResult) {
+								teamsManifestResult.style.display = 'block';
+								teamsManifestResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 							}
 						});
 				});
@@ -11709,6 +11791,122 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'ai_reply' => $ai_reply,
 			)
 		);
+	}
+
+	/**
+	 * AJAX handler: Generate a Microsoft 365 Copilot declarative agent manifest.
+	 *
+	 * Builds a declarativeAgent.json manifest pre-filled with data from the
+	 * saved Teams connection (name, App ID, assistant instructions, site URL).
+	 * The manifest is returned inline so the browser can offer it as a download
+	 * without writing any files to disk.
+	 *
+	 * Reference: https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent
+	 *
+	 * Accepts (POST): connection_id, nonce.
+	 */
+	public function ajax_generate_teams_manifest() {
+		check_ajax_referer( 'wp_mcp_ai_generate_teams_manifest', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection_id = isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '';
+
+		if ( empty( $connection_id ) ) {
+			wp_send_json_error( __( 'Connection ID is required. Save the connection first.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		if ( ! $connection ) {
+			wp_send_json_error( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		// Resolve display name: prefer connection name, fall back to site title.
+		$agent_name = isset( $connection['name'] ) && '' !== trim( $connection['name'] )
+			? sanitize_text_field( $connection['name'] )
+			: get_bloginfo( 'name' );
+
+		// Retrieve the first assigned assistant to populate instructions.
+		$assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
+			: array();
+
+		$instructions    = '';
+		$assistant_title = '';
+		if ( ! empty( $assistant_ids ) ) {
+			$assistant_post = get_post( $assistant_ids[0] );
+			if ( $assistant_post instanceof WP_Post && 'publish' === get_post_status( $assistant_post ) ) {
+				$assistant_title = $assistant_post->post_title;
+				// System prompt is stored in post meta.
+				$system_prompt = get_post_meta( $assistant_post->ID, '_wp_mcp_ai_system_prompt', true );
+				if ( ! empty( $system_prompt ) ) {
+					$instructions = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $system_prompt ) ) );
+				}
+			}
+		}
+
+		if ( '' === $instructions ) {
+			/* translators: %s: agent name */
+			$instructions = sprintf( __( 'You are %s, a helpful AI assistant.', 'mcp-ai-wpoos-pro' ), $agent_name );
+		}
+
+		$site_url = home_url();
+
+		/**
+		 * Declarative agent manifest (schema v1.5).
+		 *
+		 * @see https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/declarative-agent-manifest-1.5
+		 */
+		$manifest = array(
+			'$schema'              => 'https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.5/schema.json',
+			'version'              => 'v1.5',
+			'name'                 => $agent_name,
+			'description'          => '' !== $assistant_title
+				? sprintf(
+					/* translators: 1: assistant title, 2: site URL */
+					__( '%1$s — AI assistant powered by NV oOS at %2$s', 'mcp-ai-wpoos-pro' ),
+					$assistant_title,
+					$site_url
+				)
+				: sprintf(
+					/* translators: %s: site URL */
+					__( 'AI assistant powered by NV oOS at %s', 'mcp-ai-wpoos-pro' ),
+					$site_url
+				),
+			'instructions'         => $instructions,
+			'conversation_starters' => array(
+				array(
+					'title' => __( 'Get started', 'mcp-ai-wpoos-pro' ),
+					'text'  => __( 'What can you help me with?', 'mcp-ai-wpoos-pro' ),
+				),
+				array(
+					'title' => __( 'About this assistant', 'mcp-ai-wpoos-pro' ),
+					'text'  => __( 'Tell me about your capabilities.', 'mcp-ai-wpoos-pro' ),
+				),
+			),
+		);
+
+		// Include App ID as the bot_id when available.
+		$app_id = isset( $connection['app_id'] ) ? sanitize_text_field( $connection['app_id'] ) : '';
+		if ( '' !== $app_id ) {
+			$manifest['bot'] = array( 'bot_id' => $app_id );
+		}
+
+		/**
+		 * Filters the declarative agent manifest array before it is returned.
+		 *
+		 * @param array  $manifest      The manifest array.
+		 * @param string $connection_id The Teams connection ID.
+		 * @param array  $connection    The full connection data.
+		 */
+		$manifest = apply_filters( 'wp_mcp_ai_teams_declarative_agent_manifest', $manifest, $connection_id, $connection );
+
+		wp_send_json_success( array( 'manifest' => $manifest ) );
 	}
 
 	/**
