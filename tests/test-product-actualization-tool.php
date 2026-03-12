@@ -91,6 +91,10 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'background_mode', $properties );
 		$this->assertArrayHasKey( 'placement_hint', $properties );
 		$this->assertArrayHasKey( 'scale_factor', $properties );
+
+		// Check new provider-agnostic parameters.
+		$this->assertArrayHasKey( 'integration_mode', $properties );
+		$this->assertArrayHasKey( 'provider', $properties );
 	}
 
 	/**
@@ -347,5 +351,71 @@ class WP_MCP_AI_Product_Actualization_Tool_Test extends WP_UnitTestCase {
 		$this->assertContains( 'auto', $modes );
 		$this->assertContains( 'remove', $modes );
 		$this->assertContains( 'preserve', $modes );
+	}
+
+	/**
+	 * Test integration_mode parameter options and defaults.
+	 */
+	public function test_integration_mode_parameter() {
+		if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+			$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+		}
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'integration_mode', $schema['properties'] );
+
+		$prop = $schema['properties']['integration_mode'];
+		$this->assertArrayHasKey( 'enum', $prop );
+		$this->assertContains( 'ai', $prop['enum'] );
+		$this->assertContains( 'composite', $prop['enum'] );
+
+		// Default must be 'ai' (the new AI-powered integration approach).
+		$this->assertSame( 'ai', $prop['default'] );
+	}
+
+	/**
+	 * Test provider parameter options and defaults.
+	 */
+	public function test_provider_parameter() {
+		if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+			$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+		}
+
+		$tool   = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'provider', $schema['properties'] );
+
+		$prop = $schema['properties']['provider'];
+		$this->assertArrayHasKey( 'enum', $prop );
+		$this->assertContains( 'auto', $prop['enum'] );
+		$this->assertContains( 'gemini', $prop['enum'] );
+		$this->assertContains( 'openai', $prop['enum'] );
+
+		// Default must be 'auto' (prefers Gemini when available).
+		$this->assertSame( 'auto', $prop['default'] );
+	}
+
+	/**
+	 * Test tool rules include new providers and integration capabilities.
+	 */
+	public function test_tool_rules_include_gemini_provider() {
+		if ( ! WP_MCP_AI_Pro_Tool_Product_Actualization::is_available() ) {
+			$this->markTestSkipped( 'Product Actualization tool requires Imagick or GD extension.' );
+		}
+
+		$tool  = new WP_MCP_AI_Pro_Tool_Product_Actualization();
+		$rules = $tool->get_tool_rules();
+
+		$this->assertArrayHasKey( 'model_requirements', $rules );
+		$providers = $rules['model_requirements']['providers'];
+		$this->assertContains( 'gemini', $providers );
+		$this->assertContains( 'openai', $providers );
+
+		$capabilities = $rules['model_requirements']['capabilities'];
+		$this->assertContains( 'image-generation', $capabilities );
+		$this->assertContains( 'image-editing', $capabilities );
 	}
 }
