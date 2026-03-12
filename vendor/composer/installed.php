@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-settings-page-troubleshooting',
+        'version' => 'dev-copilot/enhance-settings-page-troubleshooting',
+        'reference' => 'c553404f575be048fe6d02534911fd7483feaa16',
         'pretty_version' => 'dev-copilot/extend-teams-chat-connection',
         'version' => 'dev-copilot/extend-teams-chat-connection',
         'reference' => '01a04ee0b6cd077bf45874146b409c8abfa4b661',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-settings-page-troubleshooting',
+            'version' => 'dev-copilot/enhance-settings-page-troubleshooting',
+            'reference' => 'c553404f575be048fe6d02534911fd7483feaa16',
             'pretty_version' => 'dev-copilot/extend-teams-chat-connection',
             'version' => 'dev-copilot/extend-teams-chat-connection',
             'reference' => '01a04ee0b6cd077bf45874146b409c8abfa4b661',

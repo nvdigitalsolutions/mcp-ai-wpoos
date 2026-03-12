@@ -120,6 +120,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 
 	/**
+	 * WordPress option key for the webhook receipt diagnostic log.
+	 */
+	const WEBHOOK_LOG_OPTION = 'wp_mcp_ai_gc_webhook_log';
+
+	/**
+	 * Maximum number of webhook log entries to retain.
+	 */
+	const WEBHOOK_LOG_MAX_ENTRIES = 25;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -431,6 +441,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook rejected: missing or malformed Authorization Bearer header.'
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'Missing or malformed Authorization Bearer header — Google Chat cannot reach this endpoint or the header is being stripped by a proxy/WAF.',
+			) );
 			return false;
 		}
 
@@ -438,6 +452,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( empty( $token ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: empty Bearer token.' );
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'Authorization Bearer header present but token value is empty.',
+			) );
 			return false;
 		}
 
@@ -492,6 +510,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API call failed.',
 				array( 'error' => $response->get_error_message() )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo API call failed: ' . $response->get_error_message(),
+			) );
 			return false;
 		}
 
@@ -502,6 +524,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: tokeninfo API returned non-200 status.',
 				array( 'status' => $status_code )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo API returned HTTP ' . $status_code . ' — token may be expired or invalid.',
+			) );
 			return false;
 		}
 
@@ -509,6 +535,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( ! is_array( $info ) ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook rejected: tokeninfo response is not valid JSON.' );
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC tokeninfo response was not valid JSON.',
+			) );
 			return false;
 		}
 
@@ -525,6 +555,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				'Google Chat webhook rejected: OIDC token issuer is not a recognised Google issuer.',
 				array( 'iss' => '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' )
 			);
+			$this->store_webhook_log_entry( array(
+				'status' => 'rejected',
+				'reason' => 'OIDC token issuer not recognised: ' . ( '' !== $token_iss ? substr( $token_iss, 0, 40 ) : '(empty)' ),
+			) );
 			return false;
 		}
 
@@ -544,6 +578,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 						'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
 						array( 'expected' => $audience )
 					);
+					$this->store_webhook_log_entry( array(
+						'status' => 'rejected',
+						'reason' => 'OIDC audience mismatch — token audience array does not contain the configured Audience URL. Check the Audience URL field on this connection.',
+					) );
 					return false;
 				}
 			} elseif ( $token_aud !== $audience ) {
@@ -554,6 +592,10 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 						'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
 					)
 				);
+				$this->store_webhook_log_entry( array(
+					'status' => 'rejected',
+					'reason' => 'OIDC audience mismatch — token aud does not match the configured Audience URL. Check the Audience URL field on this connection.',
+				) );
 				return false;
 			}
 		}
@@ -645,6 +687,11 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 
 		if ( '' === $space_name ) {
 			WP_MCP_AI_Logger::log_error( 'Google Chat webhook: unable to determine space name.' );
+			$this->store_webhook_log_entry( array(
+				'status'     => 'rejected',
+				'reason'     => 'Unable to determine space name from payload.',
+				'event_type' => $event_type,
+			) );
 			return rest_ensure_response( $this->empty_response() );
 		}
 
@@ -667,8 +714,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			WP_MCP_AI_Logger::log_error(
 				'Google Chat webhook: no active Google Chat connection found.'
 			);
+			$this->store_webhook_log_entry( array(
+				'status'     => 'rejected',
+				'reason'     => 'No active Google Chat connection found for this space. Check that a connection is saved and enabled, and that the Space Name field (if set) matches this space.',
+				'event_type' => $event_type,
+				'space'      => $space_name,
+			) );
 			return rest_ensure_response( $this->empty_response() );
 		}
+
+		$this->store_webhook_log_entry( array(
+			'status'     => 'accepted',
+			'reason'     => 'Message received and queued for AI reply.',
+			'event_type' => $event_type,
+			'space'      => $space_name,
+		) );
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
 			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
@@ -2234,6 +2294,64 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Append a diagnostic entry to the webhook receipt log.
+	 *
+	 * Stores up to WEBHOOK_LOG_MAX_ENTRIES entries (newest first) in the
+	 * wp_mcp_ai_gc_webhook_log option so admins can inspect recent activity
+	 * from the connection settings page without enabling full debug logging.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $entry {
+	 *     Fields for the log entry.
+	 *
+	 *     @type string $status     'accepted', 'rejected', or 'processed'.
+	 *     @type string $reason     Human-readable status detail or rejection reason.
+	 *     @type string $event_type Google Chat event type (MESSAGE, ADDED_TO_SPACE, …).
+	 *     @type string $space      Space resource name (spaces/XXXXXXX).
+	 * }
+	 */
+	protected function store_webhook_log_entry( array $entry ) {
+		$log = get_option( self::WEBHOOK_LOG_OPTION, array() );
+		if ( ! is_array( $log ) ) {
+			$log = array();
+		}
+
+		$client_ip  = '';
+		$raw_ip     = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : ( isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '' );
+		$raw_ip     = explode( ',', $raw_ip );
+		$raw_ip     = trim( reset( $raw_ip ) );
+		if ( filter_var( $raw_ip, FILTER_VALIDATE_IP ) ) {
+			// Mask the last octet (IPv4) or last segment (IPv6) for privacy.
+			$parts = explode( '.', $raw_ip );
+			if ( count( $parts ) === 4 ) {
+				$parts[3] = 'xxx';
+				$client_ip = implode( '.', $parts );
+			} else {
+				$colon_pos = strrpos( $raw_ip, ':' );
+				$client_ip = ( false !== $colon_pos ) ? substr( $raw_ip, 0, $colon_pos + 1 ) . 'xxxx' : $raw_ip;
+			}
+		}
+
+		$log_entry = array(
+			'ts'         => current_time( 'mysql', true ),
+			'status'     => isset( $entry['status'] ) ? sanitize_text_field( $entry['status'] ) : 'unknown',
+			'reason'     => isset( $entry['reason'] ) ? sanitize_text_field( $entry['reason'] ) : '',
+			'event_type' => isset( $entry['event_type'] ) ? sanitize_text_field( $entry['event_type'] ) : '',
+			'space'      => isset( $entry['space'] ) ? sanitize_text_field( $entry['space'] ) : '',
+			'ip'         => $client_ip,
+		);
+
+		array_unshift( $log, $log_entry );
+
+		if ( count( $log ) > self::WEBHOOK_LOG_MAX_ENTRIES ) {
+			$log = array_slice( $log, 0, self::WEBHOOK_LOG_MAX_ENTRIES );
+		}
+
+		update_option( self::WEBHOOK_LOG_OPTION, $log, false );
 	}
 
 	/**
