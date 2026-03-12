@@ -1,40 +1,39 @@
 {
-  "name": "@nvdigitalsolutions/nvoos-storage",
+  "name": "@nvdigitalsolutions/nvoos-clipboard",
   "version": "0.1.0-alpha.1",
-  "description": "Async storage utilities with Web Worker optimization - Extracted from NV Open Operator System",
-  "main": "dist/nvoos-storage.js",
-  "module": "dist/nvoos-storage.js",
-  "types": "dist/nvoos-storage.d.ts",
+  "description": "Clipboard copy utilities with Clipboard API and legacy execCommand fallback - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-clipboard.js",
+  "module": "dist/nvoos-clipboard.js",
+  "types": "dist/nvoos-clipboard.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/nvoos-storage.js",
-      "default": "./dist/nvoos-storage.js"
+      "import": "./dist/nvoos-clipboard.js",
+      "default": "./dist/nvoos-clipboard.js"
     }
   },
   "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
   "license": "MIT",
-  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-storage",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-clipboard",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
-    "directory": "packages/nvoos-storage"
+    "directory": "packages/nvoos-clipboard"
   },
   "bugs": {
     "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
   },
   "keywords": [
-    "storage",
-    "localStorage",
-    "web-worker",
-    "async",
-    "json-parser",
-    "performance",
+    "clipboard",
+    "copy",
+    "paste",
+    "copy-to-clipboard",
+    "clipboard-api",
+    "browser",
     "nvdigital",
     "nvoos"
   ],
   "files": [
     "dist",
-    "storage-worker.js",
     "README.md",
     "LICENSE"
   ],

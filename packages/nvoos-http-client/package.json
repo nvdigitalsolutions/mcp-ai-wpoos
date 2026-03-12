@@ -1,34 +1,35 @@
 {
-  "name": "@nvdigitalsolutions/nvoos-markdown",
+  "name": "@nvdigitalsolutions/nvoos-http-client",
   "version": "0.1.0-alpha.1",
-  "description": "Security-hardened markdown renderer with XSS protection - Extracted from NV Open Operator System",
-  "main": "dist/nvoos-markdown.js",
-  "module": "dist/nvoos-markdown.js",
-  "types": "dist/nvoos-markdown.d.ts",
+  "description": "Resilient HTTP client with automatic retry, exponential backoff, and request hooks - Extracted from NV Open Operator System",
+  "main": "dist/nvoos-http-client.js",
+  "module": "dist/nvoos-http-client.js",
+  "types": "dist/nvoos-http-client.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/nvoos-markdown.js",
-      "default": "./dist/nvoos-markdown.js"
+      "import": "./dist/nvoos-http-client.js",
+      "default": "./dist/nvoos-http-client.js"
     }
   },
   "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
   "license": "MIT",
-  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-markdown",
+  "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-http-client",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
-    "directory": "packages/nvoos-markdown"
+    "directory": "packages/nvoos-http-client"
   },
   "bugs": {
     "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues"
   },
   "keywords": [
-    "markdown",
-    "security",
-    "xss-protection",
-    "sanitization",
-    "marked",
-    "dompurify",
+    "http-client",
+    "retry",
+    "exponential-backoff",
+    "fetch",
+    "ky",
+    "resilient",
+    "timeout",
     "nvdigital",
     "nvoos"
   ],
@@ -43,8 +44,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "marked": "^9.0.0",
-    "dompurify": "^3.0.0"
+    "ky": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
