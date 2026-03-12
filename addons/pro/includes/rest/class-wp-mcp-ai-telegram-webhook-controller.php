@@ -1765,6 +1765,50 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 
+		// Dispatch to the global slash command handler for dynamically registered commands.
+		if ( ! in_array( $command, $disabled_commands, true ) ) {
+			global $wp_mcp_ai_slash_command_handler;
+			if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler
+				&& $wp_mcp_ai_slash_command_handler->command_exists( $command )
+			) {
+				$from    = isset( $message['from'] ) ? $message['from'] : array();
+				$tg_id   = isset( $from['id'] ) ? (string) $from['id'] : '';
+				$user_id = $this->resolve_wp_user_from_telegram_id( $tg_id );
+
+				$context = array(
+					'user_id'        => $user_id ? $user_id : 0,
+					'request_time'   => current_time( 'mysql' ),
+					'ip_address'     => '',
+					'correlation_id' => 'telegram_' . wp_generate_uuid4(),
+					'channel'        => 'telegram',
+					'chat_id'        => $chat_id,
+				);
+
+				$input  = '/' . $command . ( '' !== $args ? ' ' . $args : '' );
+				$result = $wp_mcp_ai_slash_command_handler->execute( $input, $context );
+
+				if ( is_wp_error( $result ) ) {
+					if ( ! $user_id && 'insufficient_capability' === $result->get_error_code() ) {
+						$reply = "🔐 This command requires a linked WordPress account.\n\nUse /settings to link your account.";
+					} else {
+						$reply = '⚠️ ' . wp_strip_all_tags( $result->get_error_message() );
+					}
+				} elseif ( is_string( $result ) && '' !== $result ) {
+					$reply = wp_strip_all_tags( $result );
+				} elseif ( is_array( $result ) && ! empty( $result['message'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['message'] );
+				} elseif ( is_array( $result ) && ! empty( $result['output'] ) ) {
+					$reply = wp_strip_all_tags( (string) $result['output'] );
+				} else {
+					/* translators: %s: command name */
+					$reply = '✅ ' . sprintf( __( 'Command /%s executed.', 'mcp-ai-wpoos-pro' ), sanitize_key( $command ) );
+				}
+
+				$this->send_command_reply( $chat_id, $reply, $message );
+				return true;
+			}
+		}
+
 		/**
 		 * Fires when an unrecognised bot command is received.
 		 *
@@ -1796,10 +1840,23 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		if ( $connection && ! empty( $connection['welcome_message'] ) ) {
 			$text = $connection['welcome_message'];
 		} else {
-			$text = sprintf(
-				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/vectorstore – Get vector store info\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
-				$site_name
+			$welcome_lines = array(
+				sprintf( "👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:", $site_name ),
+				'/help – List available commands',
+				'/tools – Browse AI tools',
+				'/vectorstore – Get vector store info',
+				'/balance – Check credits',
+				'/app – Open the Mini App',
+				'/settings – Open settings',
+				'/status – Check connection status',
+				'/cancel – Reset conversation',
 			);
+			// Append dynamically registered slash commands.
+			foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
+				$welcome_lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
+			}
+			$welcome_lines[] = "\nJust type your question to get started!";
+			$text = implode( "\n", $welcome_lines );
 		}
 
 		/**
@@ -1852,6 +1909,11 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			'/cancel – Reset your conversation history',
 			'/vectorstore – Get vector store info for this assistant',
 		);
+
+		// Append dynamically registered slash commands.
+		foreach ( $this->get_registered_slash_commands() as $cmd_name => $cmd_desc ) {
+			$lines[] = '/' . $cmd_name . ' – ' . wp_strip_all_tags( $cmd_desc );
+		}
 
 		$is_group = in_array( $chat_type, array( 'group', 'supergroup' ), true );
 		if ( $is_group ) {
@@ -2611,6 +2673,34 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get slash commands registered with the global slash command handler that
+	 * are not already handled as built-in Telegram bot commands.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return array Associative array of command_name => description.
+	 */
+	protected function get_registered_slash_commands() {
+		global $wp_mcp_ai_slash_command_handler;
+
+		if ( ! ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) ) {
+			return array();
+		}
+
+		// Commands handled natively by this controller – skip to avoid duplication.
+		$builtin = array( 'start', 'help', 'settings', 'status', 'cancel', 'tools', 'balance', 'app', 'vectorstore' );
+
+		$registered = array();
+		foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $name => $config ) {
+			if ( ! in_array( $name, $builtin, true ) ) {
+				$registered[ $name ] = ! empty( $config['description'] ) ? (string) $config['description'] : $name;
+			}
+		}
+
+		return $registered;
+	}
+
+	/**
 	 * Get the default set of bot commands to register with Telegram.
 	 *
 	 * These are the built-in commands the webhook controller handles.
@@ -2660,6 +2750,21 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'description' => 'Get vector store info for this assistant',
 			),
 		);
+
+		// Merge dynamically registered slash commands that are not already listed.
+		global $wp_mcp_ai_slash_command_handler;
+		if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) {
+			$builtin_names = wp_list_pluck( $commands, 'command' );
+			foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $cmd_name => $config ) {
+				if ( ! in_array( $cmd_name, $builtin_names, true ) ) {
+					$desc       = ! empty( $config['description'] ) ? wp_strip_all_tags( (string) $config['description'] ) : $cmd_name;
+					$commands[] = array(
+						'command'     => $cmd_name,
+						'description' => substr( $desc, 0, 256 ),
+					);
+				}
+			}
+		}
 
 		/**
 		 * Filters the default bot commands before registration with Telegram.
