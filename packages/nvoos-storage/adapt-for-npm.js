@@ -59,9 +59,10 @@ const configProps = `
 
 `;
 
-// Insert after the WORKER_THRESHOLD property (inside the object literal)
+// Insert after the WORKER_THRESHOLD property (inside the object literal).
+// Match WORKER_THRESHOLD: 10000, followed by any optional inline comment.
 code = code.replace(
-  /(WORKER_THRESHOLD: 10000,\s*\/\/ 10KB)/,
+  /(WORKER_THRESHOLD: 10000,[^\n]*)/,
   '$1' + configProps
 );
 

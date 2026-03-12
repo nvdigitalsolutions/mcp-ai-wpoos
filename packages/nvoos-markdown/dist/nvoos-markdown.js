@@ -247,6 +247,10 @@ export class MarkdownRenderer {
 		const config = this.config;
 
 		renderer.code = function(code, language) {
+			// Note: The 'escaped' parameter from marked's renderer API is intentionally
+			// omitted — we perform our own escaping via escapeHtml(), making the
+			// marked-provided flag redundant. This matches the behaviour of the
+			// original WordPress source (chat-markdown-service.js).
 			const safeCode = code || '';
 			const lang = language || '';
 			const escapedLang = lang.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
