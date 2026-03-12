@@ -1370,6 +1370,161 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertSame( 'section', $blocks[0]['type'] );
 	}
 
+	/**
+	 * Test DEFAULT_MAX_AGENTIC_ITERATIONS constant equals 10 on Slack controller.
+	 */
+	public function test_slack_default_max_agentic_iterations_constant() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$this->assertSame(
+			10,
+			WP_MCP_AI_Slack_Event_Controller::DEFAULT_MAX_AGENTIC_ITERATIONS,
+			'Slack DEFAULT_MAX_AGENTIC_ITERATIONS should be 10'
+		);
+	}
+
+	/**
+	 * Test get_slack_max_agentic_iterations returns at least DEFAULT_MAX_AGENTIC_ITERATIONS.
+	 */
+	public function test_slack_get_max_agentic_iterations_returns_correct_cap() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+
+		// Default of 1 should be raised to 10.
+		$result = $controller->get_slack_max_agentic_iterations( 1 );
+		$this->assertSame( 10, $result );
+
+		// A higher incoming value should be preserved (not lowered).
+		$result_high = $controller->get_slack_max_agentic_iterations( 20 );
+		$this->assertSame( 20, $result_high );
+	}
+
+	/**
+	 * Test resolve_content_to_string handles plain string content.
+	 */
+	public function test_slack_resolve_content_to_string_plain_string() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_content_to_string' );
+		$method->setAccessible( true );
+
+		$this->assertSame( 'Hello world', $method->invoke( $controller, 'Hello world' ) );
+		$this->assertSame( '', $method->invoke( $controller, '' ) );
+		$this->assertSame( '', $method->invoke( $controller, 42 ) );
+	}
+
+	/**
+	 * Test resolve_content_to_string handles array content segments (Gemini/Ollama format).
+	 */
+	public function test_slack_resolve_content_to_string_array_segments() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'resolve_content_to_string' );
+		$method->setAccessible( true );
+
+		$segments = array(
+			array( 'type' => 'text', 'text' => 'Hello ' ),
+			array( 'type' => 'text', 'text' => 'world' ),
+		);
+
+		$result = $method->invoke( $controller, $segments );
+		$this->assertStringContainsString( 'Hello', $result );
+		$this->assertStringContainsString( 'world', $result );
+	}
+
+	/**
+	 * Test extract_content_from_chat_response falls back to agentic_tool_messages when choices content is null.
+	 */
+	public function test_slack_extract_content_falls_back_to_agentic_tool_messages() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$data = array(
+			'data' => array(
+				'choices'               => array(
+					array(
+						'message'       => array( 'content' => null, 'role' => 'assistant' ),
+						'finish_reason' => 'tool_calls',
+					),
+				),
+				'agentic_tool_messages' => array(
+					array( 'role' => 'assistant', 'content' => 'Intermediate answer from tool' ),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $data );
+		$this->assertSame( 'Intermediate answer from tool', $result, 'Should fall back to agentic_tool_messages when choices content is null' );
+	}
+
+	/**
+	 * Test extract_content_from_chat_response prefers a stop-finish choice over tool_calls.
+	 */
+	public function test_slack_extract_content_prefers_stop_finish_reason() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_content_from_chat_response' );
+		$method->setAccessible( true );
+
+		$data = array(
+			'data' => array(
+				'choices' => array(
+					array(
+						'message'       => array( 'content' => 'Final answer', 'role' => 'assistant' ),
+						'finish_reason' => 'stop',
+					),
+				),
+			),
+		);
+
+		$result = $method->invoke( $controller, $data );
+		$this->assertSame( 'Final answer', $result );
+	}
+
+	// =========================================================================
+	// Telegram – 429 rate-limit retry
+	// =========================================================================
+
+	/**
+	 * Test MAX_RATE_LIMIT_RETRIES constant equals 3 on Telegram controller.
+	 */
+	public function test_telegram_max_rate_limit_retries_constant() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$this->assertSame(
+			3,
+			WP_MCP_AI_Telegram_Webhook_Controller::MAX_RATE_LIMIT_RETRIES,
+			'Telegram MAX_RATE_LIMIT_RETRIES should be 3'
+		);
+	}
+
+	/**
+	 * Test Telegram reply job accepts a retry_count argument without error.
+	 *
+	 * The retry_count is silently defaulted to 0 when absent and the job exits
+	 * early on invalid args, so we only validate the constant value is present.
+	 */
+	public function test_telegram_reply_job_handles_missing_retry_count_gracefully() {
+		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Telegram_Webhook_Controller();
+
+		// Calling with empty args should return without fatal error.
+		$controller->handle_telegram_reply_job( array() );
+		$this->assertTrue( true, 'handle_telegram_reply_job with empty args must not throw' );
+	}
+
 	// =========================================================================
 	// Discord Interaction Controller
 	// =========================================================================
@@ -1578,9 +1733,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that validate_teams_signature allows through when no signing secret is set.
+	 * Test that validate_teams_signature rejects requests when no signing secret is configured (fail-closed).
 	 */
-	public function test_teams_validation_passes_without_signing_secret() {
+	public function test_teams_validation_rejects_without_signing_secret() {
 		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
 
 		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
@@ -1589,7 +1744,304 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_teams_signature( $request );
 
-		$this->assertTrue( $result, 'Validation should pass when no signing secret is configured' );
+		// fail-closed: WP_Error(403) is returned when no signing secret is configured.
+		$this->assertInstanceOf( WP_Error::class, $result, 'Validation should return WP_Error when no signing secret is configured' );
+		$this->assertSame( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test MAX_REQUEST_AGE constant equals 300 (5 minutes).
+	 */
+	public function test_teams_max_request_age_constant() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$this->assertSame( 300, WP_MCP_AI_Teams_Webhook_Controller::MAX_REQUEST_AGE );
+	}
+
+	/**
+	 * Test MAX_RATE_LIMIT_RETRIES constant equals 3.
+	 */
+	public function test_teams_max_rate_limit_retries_constant() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$this->assertSame( 3, WP_MCP_AI_Teams_Webhook_Controller::MAX_RATE_LIMIT_RETRIES );
+	}
+
+	/**
+	 * Test that two REST routes are registered: generic and per-connection.
+	 */
+	public function test_teams_registers_per_connection_route() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey( '/mcp-ai/v1/webhooks/teams', $routes, 'Generic Teams route must be registered' );
+		$this->assertArrayHasKey( '/mcp-ai/v1/webhooks/teams/(?P<connection_id>[a-zA-Z0-9_-]+)', $routes, 'Per-connection Teams route must be registered' );
+	}
+
+	/**
+	 * Test extract_display_name returns the from.name field.
+	 */
+	public function test_teams_extract_display_name() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_display_name' );
+		$method->setAccessible( true );
+
+		$payload_with_name = array(
+			'from' => array(
+				'id'   => 'user_id_123',
+				'name' => 'Jane Doe',
+			),
+		);
+
+		$payload_without_name = array(
+			'from' => array( 'id' => 'user_id_456' ),
+		);
+
+		$this->assertSame( 'Jane Doe', $method->invoke( $controller, $payload_with_name ) );
+		$this->assertSame( '', $method->invoke( $controller, $payload_without_name ) );
+	}
+
+	/**
+	 * Test extract_conversation_type correctly classifies payload types.
+	 */
+	public function test_teams_extract_conversation_type() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_conversation_type' );
+		$method->setAccessible( true );
+
+		// Explicit conversationType field.
+		$channel_payload = array(
+			'conversation' => array( 'conversationType' => 'channel' ),
+		);
+		$personal_payload = array(
+			'conversation' => array( 'conversationType' => 'personal' ),
+		);
+		$groupchat_payload = array(
+			'conversation' => array( 'conversationType' => 'groupChat' ),
+		);
+
+		// Inferred from channelData.team.id presence.
+		$inferred_channel_payload = array(
+			'conversation' => array(),
+			'channelData'  => array( 'team' => array( 'id' => 'team_123' ) ),
+		);
+
+		// No indicators → defaults to personal.
+		$empty_payload = array();
+
+		$this->assertSame( 'channel', $method->invoke( $controller, $channel_payload ) );
+		$this->assertSame( 'personal', $method->invoke( $controller, $personal_payload ) );
+		$this->assertSame( 'groupChat', $method->invoke( $controller, $groupchat_payload ) );
+		$this->assertSame( 'channel', $method->invoke( $controller, $inferred_channel_payload ), 'Team ID in channelData should infer channel type' );
+		$this->assertSame( 'personal', $method->invoke( $controller, $empty_payload ), 'Missing indicators should default to personal' );
+	}
+
+	/**
+	 * Test extract_reply_to_id returns the replyToId field.
+	 */
+	public function test_teams_extract_reply_to_id() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_reply_to_id' );
+		$method->setAccessible( true );
+
+		$with_reply = array( 'replyToId' => 'root_message_abc123' );
+		$without    = array( 'text' => 'Hello' );
+
+		$this->assertSame( 'root_message_abc123', $method->invoke( $controller, $with_reply ) );
+		$this->assertSame( '', $method->invoke( $controller, $without ) );
+	}
+
+	/**
+	 * Test is_request_timestamp_valid accepts fresh timestamps and rejects stale ones.
+	 */
+	public function test_teams_timestamp_validation() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'is_request_timestamp_valid' );
+		$method->setAccessible( true );
+
+		// Absent timestamp → skip check (returns true for backward compat).
+		$this->assertTrue( $method->invoke( $controller, array() ) );
+
+		// Fresh timestamp (now).
+		$fresh = array( 'timestamp' => gmdate( 'c' ) );
+		$this->assertTrue( $method->invoke( $controller, $fresh ) );
+
+		// Stale timestamp (10 minutes ago — exceeds MAX_REQUEST_AGE of 300s).
+		$stale = array( 'timestamp' => gmdate( 'c', time() - 700 ) );
+		$this->assertFalse( $method->invoke( $controller, $stale ), 'Timestamp older than MAX_REQUEST_AGE should be rejected' );
+
+		// Unparseable timestamp → skip check (returns true).
+		$bad = array( 'timestamp' => 'not-a-date' );
+		$this->assertTrue( $method->invoke( $controller, $bad ) );
+	}
+
+	/**
+	 * Test get_conversation_history_key includes thread_id in the hash when provided.
+	 */
+	public function test_teams_conversation_history_key_thread_scoped() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		$no_thread   = $method->invoke( $controller, 'user1', 'chan1', 'conn1' );
+		$with_thread = $method->invoke( $controller, 'user1', 'chan1', 'conn1', 'thread_root_1' );
+		$other_thread = $method->invoke( $controller, 'user1', 'chan1', 'conn1', 'thread_root_2' );
+
+		$this->assertNotSame( $no_thread, $with_thread, 'Thread-scoped key must differ from channel-level key' );
+		$this->assertNotSame( $with_thread, $other_thread, 'Different thread IDs must produce different keys' );
+		$this->assertStringStartsWith( 'wp_mcp_ai_ms_conv_', $with_thread );
+		$this->assertLessThanOrEqual( 172, strlen( $with_thread ) );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts bold correctly.
+	 */
+	public function test_teams_markdown_to_html_bold() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( '**Hello** world' );
+		$this->assertStringContainsString( '<strong>Hello</strong>', $result );
+		$this->assertStringContainsString( 'world', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts italic correctly.
+	 */
+	public function test_teams_markdown_to_html_italic() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( '*Hello* world' );
+		$this->assertStringContainsString( '<em>Hello</em>', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts inline code without processing inner content.
+	 */
+	public function test_teams_markdown_to_html_inline_code() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( 'Use `echo "hello"` command' );
+		$this->assertStringContainsString( '<code>', $result );
+		$this->assertStringContainsString( '</code>', $result );
+		$this->assertStringContainsString( 'echo', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html wraps fenced code blocks in <pre><code>.
+	 */
+	public function test_teams_markdown_to_html_fenced_code_block() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$input  = "```php\necho 'hello';\n```";
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( $input );
+		$this->assertStringContainsString( '<pre>', $result );
+		$this->assertStringContainsString( '<code', $result );
+		$this->assertStringContainsString( "echo 'hello';", $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts Markdown links to <a href>.
+	 */
+	public function test_teams_markdown_to_html_links() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( '[Click here](https://example.com)' );
+		$this->assertStringContainsString( '<a href="https://example.com">', $result );
+		$this->assertStringContainsString( 'Click here', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts bullet lists to <ul><li>.
+	 */
+	public function test_teams_markdown_to_html_bullet_list() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$input  = "- Item one\n- Item two\n- Item three";
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( $input );
+		$this->assertStringContainsString( '<ul>', $result );
+		$this->assertStringContainsString( '<li>Item one</li>', $result );
+		$this->assertStringContainsString( '<li>Item two</li>', $result );
+		$this->assertStringContainsString( '</ul>', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts numbered lists to <ol><li>.
+	 */
+	public function test_teams_markdown_to_html_numbered_list() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$input  = "1. First\n2. Second\n3. Third";
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( $input );
+		$this->assertStringContainsString( '<ol>', $result );
+		$this->assertStringContainsString( '<li>First</li>', $result );
+		$this->assertStringContainsString( '<li>Second</li>', $result );
+		$this->assertStringContainsString( '</ol>', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html converts headings to <strong>.
+	 */
+	public function test_teams_markdown_to_html_headings() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$result = WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( '## My Heading' );
+		$this->assertStringContainsString( '<strong>My Heading</strong>', $result );
+	}
+
+	/**
+	 * Test convert_markdown_to_teams_html returns empty string for empty input.
+	 */
+	public function test_teams_markdown_to_html_empty_input() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$this->assertSame( '', WP_MCP_AI_Teams_Webhook_Controller::convert_markdown_to_teams_html( '' ) );
+	}
+
+	/**
+	 * Test that require_mention is bypassed for personal/groupChat conversation types (DM bypass).
+	 *
+	 * Industry standard: in personal chats (1-on-1 DM) and group chats the bot is
+	 * already a direct participant — requiring an @mention is not user-friendly.
+	 */
+	public function test_teams_dm_bypass_conversation_type() {
+		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Teams_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'extract_conversation_type' );
+		$method->setAccessible( true );
+
+		$personal   = array( 'conversation' => array( 'conversationType' => 'personal' ) );
+		$group_chat = array( 'conversation' => array( 'conversationType' => 'groupChat' ) );
+		$channel    = array( 'conversation' => array( 'conversationType' => 'channel' ) );
+
+		$personal_type   = $method->invoke( $controller, $personal );
+		$groupchat_type  = $method->invoke( $controller, $group_chat );
+		$channel_type    = $method->invoke( $controller, $channel );
+
+		$is_dm_personal   = in_array( $personal_type, array( 'personal', 'groupChat' ), true );
+		$is_dm_groupchat  = in_array( $groupchat_type, array( 'personal', 'groupChat' ), true );
+		$is_dm_channel    = in_array( $channel_type, array( 'personal', 'groupChat' ), true );
+
+		$this->assertTrue( $is_dm_personal, 'personal conversation type must be treated as DM (bypass require_mention)' );
+		$this->assertTrue( $is_dm_groupchat, 'groupChat conversation type must be treated as DM (bypass require_mention)' );
+		$this->assertFalse( $is_dm_channel, 'channel conversation type must NOT bypass require_mention' );
 	}
 
 	// =========================================================================

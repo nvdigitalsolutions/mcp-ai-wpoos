@@ -93,6 +93,22 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	const MAX_RATE_LIMIT_RETRIES = 3;
 
 	/**
+	 * Minimum number of seconds to wait when rescheduling a rate-limited
+	 * (HTTP 429) reply job, regardless of the Retry-After header value.
+	 */
+	const MIN_RETRY_DELAY = 30;
+
+	/**
+	 * Default maximum agentic loop iterations for Slack reply jobs.
+	 *
+	 * The /mcp-ai/v1/chat endpoint defaults to 1 iteration. Slack reply jobs
+	 * use a higher cap so multi-step tool workflows (e.g. search → analyse →
+	 * respond) can complete before the reply is dispatched. This mirrors the
+	 * pattern used by the Telegram and browser chat-client endpoints.
+	 */
+	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -618,7 +634,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Raise the agentic-loop iteration cap for Slack reply jobs so that
+		// multi-step tool workflows (search → analyse → respond, etc.) can run
+		// to completion. Without this, the /mcp-ai/v1/chat endpoint defaults to
+		// a single iteration and the final content remains null when a second
+		// tool round is needed.
+		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_slack_max_agentic_iterations' ), 10, 2 );
 		$response = rest_do_request( $request );
+		remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_slack_max_agentic_iterations' ), 10 );
+
 		wp_set_current_user( $original_user_id );
 
 		if ( $response->is_error() ) {
@@ -717,8 +741,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			}
 
 			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
-			// Always wait at least 30 s; honour the Retry-After value when larger.
-			$delay       = max( 30, $retry_after );
+			// Always wait at least MIN_RETRY_DELAY s; honour the Retry-After value when larger.
+			$delay       = max( self::MIN_RETRY_DELAY, $retry_after );
 
 			WP_MCP_AI_Logger::log_error(
 				sprintf(
@@ -1209,7 +1233,84 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Return the maximum number of agentic iterations for Slack reply jobs.
+	 *
+	 * Hooked to the `wp_mcp_ai_max_agentic_iterations` filter during cron
+	 * execution so that multi-step tool workflows complete before the Slack
+	 * reply is dispatched.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $default_max     Current maximum from upstream filter chain.
+	 * @param array $assistant_config Assistant configuration (unused).
+	 * @return int The higher of the incoming default and DEFAULT_MAX_AGENTIC_ITERATIONS.
+	 */
+	public function get_slack_max_agentic_iterations( $default_max, $assistant_config = array() ) {
+		return max( (int) $default_max, self::DEFAULT_MAX_AGENTIC_ITERATIONS );
+	}
+
+	/**
+	 * Resolve a message content value to a plain-text string.
+	 *
+	 * The /mcp-ai/v1/chat endpoint can return content as either:
+	 * - A plain string (OpenAI, Anthropic).
+	 * - An array of typed segments (Gemini / Ollama normalised format), where
+	 *   each segment has at minimum a `type` key. Only `text`-type segments
+	 *   carry displayable text.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $content Raw content value from message.content.
+	 * @return string Plain-text content or empty string.
+	 */
+	protected function resolve_content_to_string( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		// Array of content segments (Gemini / Ollama normalised format).
+		$parts = array();
+		foreach ( $content as $segment ) {
+			if ( ! is_array( $segment ) ) {
+				if ( is_string( $segment ) ) {
+					$parts[] = $segment;
+				}
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+			if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			} elseif ( isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			}
+		}
+
+		return implode( "\n", $parts );
+	}
+
+	/**
 	 * Extract plain-text content from the internal /mcp-ai/v1/chat response.
+	 *
+	 * Handles both string and array content segments (multi-provider normalisation
+	 * for Gemini and Ollama responses that return content as an array).
+	 *
+	 * When an agentic tool-calling workflow runs, some providers set
+	 * `message.content` to null on intermediate responses where
+	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
+	 * all choices and falling back to `agentic_tool_messages` so that the last
+	 * assistant message with non-empty text is returned.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1221,17 +1322,54 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return '';
 		}
 
-		$choices = isset( $data['data']['choices'] ) ? $data['data']['choices']
-			: ( isset( $data['choices'] ) ? $data['choices'] : array() );
+		// Normalise: the endpoint wraps the raw LLM response under 'data'.
+		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		if ( ! is_array( $choices ) || empty( $choices ) ) {
-			return '';
+		// --- Pass 1: scan every choice for a non-empty content value.
+		// Prefer choices whose finish_reason is 'stop' over 'tool_calls'.
+		$best_content = '';
+		foreach ( $choices as $choice ) {
+			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
+
+			if ( '' === $content ) {
+				continue;
+			}
+
+			$finish = isset( $choice['finish_reason'] ) ? (string) $choice['finish_reason'] : '';
+
+			// A 'stop' finish is the definitive final answer — return immediately.
+			if ( 'stop' === $finish ) {
+				return $content;
+			}
+
+			if ( '' === $best_content ) {
+				$best_content = $content;
+			}
 		}
 
-		$first = reset( $choices );
+		if ( '' !== $best_content ) {
+			return $best_content;
+		}
 
-		if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
-			return trim( $first['message']['content'] );
+		// --- Pass 2: fall back to agentic_tool_messages.
+		// When all choices have null/empty content (e.g. the loop exhausted its
+		// iteration cap before the model produced a final text reply), the chat
+		// service attaches intermediate assistant messages to the response under
+		// `agentic_tool_messages`. Return the last one that contains text.
+		$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+			? $llm_data['agentic_tool_messages']
+			: array();
+
+		foreach ( array_reverse( $agentic_messages ) as $msg ) {
+			if ( ! is_array( $msg ) ) {
+				continue;
+			}
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
+			if ( '' !== $content ) {
+				return $content;
+			}
 		}
 
 		return '';
