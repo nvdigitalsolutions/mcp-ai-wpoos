@@ -352,7 +352,30 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( sanitize_key( $url_connection_id ) );
 		} else {
-			$connection = $this->get_active_google_chat_connection();
+			// When using the generic webhook URL (no connection_id in the URL),
+			// extract the space name from the request body so we can find a
+			// space-specific connection and correctly check its
+			// disable_oidc_verification flag. Without this, connections that have
+			// google_chat_space set are never found by get_active_google_chat_connection()
+			// (which only returns generic / no-space connections when called without an
+			// argument), so the disable_oidc_verification bypass never takes effect even
+			// when the admin has checked "Disable OIDC Verification" in the settings.
+			$body = $request->get_json_params();
+			if ( ! is_array( $body ) ) {
+				$body = array();
+			}
+			// Normalize Workspace Add-on wrapper so the space name can be read.
+			if (
+				isset( $body['type'] ) && 'GOOGLE_CHAT' === $body['type'] &&
+				isset( $body['google'] ) && is_array( $body['google'] ) &&
+				isset( $body['google']['chat'] ) && is_array( $body['google']['chat'] )
+			) {
+				$body = $body['google']['chat'];
+			}
+			$space_name_for_lookup = isset( $body['space']['name'] )
+				? sanitize_text_field( $body['space']['name'] )
+				: '';
+			$connection = $this->get_active_google_chat_connection( $space_name_for_lookup );
 		}
 
 		// When OIDC verification is disabled for this connection, accept any POST
@@ -961,7 +984,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			( ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] ) && ! empty( $connection['refresh_token'] ) )
 		);
 
-		if ( ! $has_credentials ) {
+		$has_reply_webhook = $connection && ! empty( $connection['reply_webhook_url'] )
+			&& preg_match( self::WEBHOOK_URL_PATTERN, $connection['reply_webhook_url'] );
+
+		// A valid connection must have either OAuth/Service-Account credentials or
+		// an incoming webhook URL to send replies. Connections that only have a
+		// Google Chat space configured (but no send capability) are skipped.
+		if ( ! $has_credentials && ! $has_reply_webhook ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
