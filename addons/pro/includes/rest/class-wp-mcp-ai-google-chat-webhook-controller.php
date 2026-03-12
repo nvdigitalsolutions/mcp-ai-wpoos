@@ -425,10 +425,16 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		}
 
 		if ( empty( $audience ) ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat webhook rejected: no audience URL configured for OIDC verification. Configure the audience URL in the connection settings to enable token validation.'
+			// No audience URL configured — the OIDC token will still be cryptographically
+			// verified against Google's tokeninfo endpoint and its issuer will be validated,
+			// but the audience (aud) claim will NOT be checked. This matches the documented
+			// "Leave blank to skip audience verification (less secure)" setting behavior.
+			// Configure the Audience URL in the connection settings for stricter security.
+			WP_MCP_AI_Logger::log_event(
+				'google_chat_webhook_oidc_no_audience',
+				'Google Chat webhook: no Audience URL configured — audience claim will not be verified. Set the Audience URL to your webhook URL in the connection settings for stricter OIDC security.',
+				array()
 			);
-			return false;
 		}
 
 		// Validate the OIDC token via Google's tokeninfo endpoint.
@@ -499,29 +505,34 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return false;
 		}
 
-		// Validate audience claim against the configured audience URL.
+		// Validate audience claim against the configured audience URL only when one
+		// has been provided. When left blank (skip audience verification mode) the
+		// token's issuer has already been verified above, which is sufficient to
+		// confirm it is a legitimate Google-signed token.
 		// The JWT spec (RFC 7519 §4.1.3) allows 'aud' to be either a single string
 		// or an array of strings. Handle both forms to avoid incorrectly rejecting
 		// legitimate Google Chat OIDC tokens.
-		$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
+		if ( ! empty( $audience ) ) {
+			$token_aud = isset( $info['aud'] ) ? $info['aud'] : '';
 
-		if ( is_array( $token_aud ) ) {
-			if ( ! in_array( $audience, $token_aud, true ) ) {
+			if ( is_array( $token_aud ) ) {
+				if ( ! in_array( $audience, $token_aud, true ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
+						array( 'expected' => $audience )
+					);
+					return false;
+				}
+			} elseif ( $token_aud !== $audience ) {
 				WP_MCP_AI_Logger::log_error(
-					'Google Chat webhook rejected: OIDC token audience array does not contain the expected audience.',
-					array( 'expected' => $audience )
+					'Google Chat webhook rejected: OIDC token audience mismatch.',
+					array(
+						'expected' => $audience,
+						'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
+					)
 				);
 				return false;
 			}
-		} elseif ( $token_aud !== $audience ) {
-			WP_MCP_AI_Logger::log_error(
-				'Google Chat webhook rejected: OIDC token audience mismatch.',
-				array(
-					'expected' => $audience,
-					'received' => is_string( $token_aud ) ? substr( $token_aud, 0, 20 ) . '***' : gettype( $token_aud ),
-				)
-			);
-			return false;
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -675,6 +686,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 		$should_reply = apply_filters( 'wp_mcp_ai_google_chat_should_auto_reply', ! empty( $assigned_assistant_ids ), $payload, $automation_rules );
 
 		if ( ! $should_reply ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'google_chat', $sender_name ) ) {
 			return rest_ensure_response( $this->empty_response() );
 		}
 

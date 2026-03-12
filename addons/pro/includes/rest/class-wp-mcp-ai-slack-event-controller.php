@@ -360,6 +360,13 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			}
 		}
 
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'slack', $user_id ) ) {
+			return;
+		}
+
 		// Find or create the contact in the Channel Contacts CCT.
 		if ( class_exists( 'WP_MCP_AI_Channel_Contacts_CCT' ) ) {
 			$contact_row_id = WP_MCP_AI_Channel_Contacts_CCT::find_or_create(

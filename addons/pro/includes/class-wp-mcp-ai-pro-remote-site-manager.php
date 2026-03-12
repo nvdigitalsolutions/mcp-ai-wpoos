@@ -938,9 +938,30 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Connection test results or error.
 	 */
 	protected static function test_google_chat_connection( $connection ) {
-		$has_api_key     = ! empty( $connection['api_key'] );
-		$has_refresh     = ! empty( $connection['refresh_token'] );
-		$has_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$has_api_key       = ! empty( $connection['api_key'] );
+		$has_refresh       = ! empty( $connection['refresh_token'] );
+		$has_credentials   = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+		$connection_method = isset( $connection['connection_method'] ) ? $connection['connection_method'] : 'service_account';
+
+		// When the connection method is Incoming Webhook (outbound-only), and no
+		// Service Account key or OAuth credentials are configured, verify the webhook
+		// URL is present and return an informative result. This method can post
+		// outbound messages but cannot receive inbound events from Google Chat.
+		if ( 'webhook' === $connection_method && ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
+			if ( ! empty( $connection['reply_webhook_url'] ) ) {
+				return array(
+					'success'     => true,
+					'google_chat' => true,
+					'partial'     => true,
+					'message'     => __( 'Incoming Webhook URL is configured. The bot can post outbound messages to the configured space.', 'mcp-ai-wpoos-pro' ),
+					'notice'      => __( 'Note: The Incoming Webhook method is outbound-only. To receive and respond to messages from Google Chat, switch to the Service Account or OAuth 2.0 method and configure the webhook URL in the Google Cloud Console.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_google_chat_webhook_url',
+				__( 'No Incoming Webhook URL configured. Paste the webhook URL from your Google Chat space settings (Apps & integrations → Manage webhooks) to enable outbound messaging.', 'mcp-ai-wpoos-pro' )
+			);
+		}
 
 		if ( ! $has_api_key && ! $has_refresh && ! $has_credentials ) {
 			return new WP_Error(
@@ -1052,13 +1073,24 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$spaces      = isset( $body['spaces'] ) && is_array( $body['spaces'] ) ? $body['spaces'] : array();
 		$space_count = count( $spaces );
 
-		return array(
+		$result = array(
 			'success'     => true,
 			'google_chat' => true,
 			/* translators: %d: number of accessible Google Chat spaces */
 			'message'     => sprintf( _n( 'Google Chat connection successful. %d space accessible.', 'Google Chat connection successful. %d spaces accessible.', $space_count, 'mcp-ai-wpoos-pro' ), $space_count ),
 			'space_count' => $space_count,
 		);
+
+		// Warn when the Audience URL (verify_token) is not set and OIDC verification is
+		// not explicitly disabled. Without an audience URL, incoming webhook events will
+		// still be accepted (the OIDC token issuer is verified) but the audience claim
+		// will not be checked — which is less secure. Surfacing this in the test result
+		// helps admins configure the setting before going live.
+		if ( empty( $connection['verify_token'] ) && empty( $connection['disable_oidc_verification'] ) ) {
+			$result['notice'] = __( 'Tip: No Audience URL is configured. Incoming events will be accepted from any valid Google-signed token without audience checking. For stricter security, set the Audience URL to your webhook URL.', 'mcp-ai-wpoos-pro' );
+		}
+
+		return $result;
 	}
 
 	/**

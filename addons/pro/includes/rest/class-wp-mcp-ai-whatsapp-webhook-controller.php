@@ -970,6 +970,13 @@ class WP_MCP_AI_WhatsApp_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'whatsapp', $from ) ) {
+			return;
+		}
+
 		do_action( 'wp_mcp_ai_whatsapp_auto_reply', $message_data, $context, $assigned_assistant_ids );
 
 		// Dispatch an AI-generated reply when a connection and assigned assistants are available.
