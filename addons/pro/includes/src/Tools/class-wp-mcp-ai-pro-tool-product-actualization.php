@@ -72,7 +72,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Composite a product image into a generated scene or short video while preserving the original product pixels. Image mode creates static composited images. Video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'mcp-ai-wpoos-pro' );
+		return __( 'Integrate a product image into a generated scene or short video using AI-powered scene fusion. In AI integration mode (default), the product is naturally embedded into the generated environment using AI image editing — matching lighting, shadows, reflections, and depth — rather than being mechanically layered on top. Works with Gemini (preferred) or OpenAI. Image mode creates static integrated images; video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -126,7 +126,19 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 					'minimum'     => 0.1,
 					'maximum'     => 2.0,
 					'default'     => 1.0,
-					'description' => __( 'Scale factor for the product relative to the scene (1.0 = natural size).', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Scale factor for the product relative to the scene (1.0 = natural size). Only applies in composite integration mode.', 'mcp-ai-wpoos-pro' ),
+				),
+				'integration_mode'      => array(
+					'type'        => 'string',
+					'enum'        => array( 'ai', 'composite' ),
+					'default'     => 'ai',
+					'description' => __( 'How the product is placed into the scene. "ai" (default) uses AI image editing to naturally embed the product with matching lighting, shadows, and depth. "composite" uses the classic generate-then-overlay method.', 'mcp-ai-wpoos-pro' ),
+				),
+				'provider'              => array(
+					'type'        => 'string',
+					'enum'        => array( 'auto', 'gemini', 'openai' ),
+					'default'     => 'auto',
+					'description' => __( 'AI provider to use for scene generation and integration. "auto" prefers Gemini when a Gemini API key is configured, otherwise falls back to OpenAI.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'product_attachment_id', 'scene_prompt' ),
@@ -191,13 +203,15 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			$product_id         = $attachments_helper->get_attachment_id_for_openai_file( $product_id_param );
 		}
 
-		$scene_prompt = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
-		$mode         = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
-		$aspect_ratio = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
-		$duration     = isset( $arguments['duration_seconds'] ) ? absint( $arguments['duration_seconds'] ) : 6;
-		$bg_mode      = isset( $arguments['background_mode'] ) ? sanitize_key( $arguments['background_mode'] ) : 'auto';
-		$placement    = isset( $arguments['placement_hint'] ) ? sanitize_text_field( $arguments['placement_hint'] ) : '';
-		$scale_factor = isset( $arguments['scale_factor'] ) ? floatval( $arguments['scale_factor'] ) : 1.0;
+		$scene_prompt     = isset( $arguments['scene_prompt'] ) ? sanitize_textarea_field( $arguments['scene_prompt'] ) : '';
+		$mode             = isset( $arguments['mode'] ) ? sanitize_key( $arguments['mode'] ) : 'image';
+		$aspect_ratio     = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '16:9';
+		$duration         = isset( $arguments['duration_seconds'] ) ? absint( $arguments['duration_seconds'] ) : 6;
+		$bg_mode          = isset( $arguments['background_mode'] ) ? sanitize_key( $arguments['background_mode'] ) : 'auto';
+		$placement        = isset( $arguments['placement_hint'] ) ? sanitize_text_field( $arguments['placement_hint'] ) : '';
+		$scale_factor     = isset( $arguments['scale_factor'] ) ? floatval( $arguments['scale_factor'] ) : 1.0;
+		$integration_mode = isset( $arguments['integration_mode'] ) ? sanitize_key( $arguments['integration_mode'] ) : 'ai';
+		$provider         = isset( $arguments['provider'] ) ? sanitize_key( $arguments['provider'] ) : 'auto';
 
 		if ( ! $product_id ) {
 			return new WP_Error(
@@ -223,6 +237,16 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		// Validate scale factor.
 		if ( $scale_factor < 0.1 || $scale_factor > 2.0 ) {
 			$scale_factor = 1.0;
+		}
+
+		// Validate integration mode.
+		if ( ! in_array( $integration_mode, array( 'ai', 'composite' ), true ) ) {
+			$integration_mode = 'ai';
+		}
+
+		// Validate provider.
+		if ( ! in_array( $provider, array( 'auto', 'gemini', 'openai' ), true ) ) {
+			$provider = 'auto';
 		}
 
 		// Step 1: Validate and fetch product attachment.
@@ -270,51 +294,29 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
-		// Step 4: Generate the scene.
+		// Step 4: Generate or AI-integrate the scene.
 		if ( 'image' === $mode ) {
-			$background_result = $this->generate_scene_image( $scene_prompt, $aspect_ratio, $context );
-			if ( is_wp_error( $background_result ) ) {
-				// Clean up working file.
-				if ( file_exists( $working_path ) ) {
-					wp_delete_file( $working_path );
-				}
-				return $background_result;
-			}
-
-			$background_path = $background_result['file_path'];
-
-			// Step 5: Composite product onto image.
-			$composited_path = $this->composite_product_onto_image(
+			// Build the integrated or composited product scene.
+			$composited_path = $this->build_product_scene(
 				$working_path,
-				$background_path,
+				$scene_prompt,
+				$aspect_ratio,
 				$placement,
-				$scale_factor
+				$scale_factor,
+				$integration_mode,
+				$provider,
+				$context
 			);
 
+			// working_path is cleaned up inside build_product_scene.
 			if ( is_wp_error( $composited_path ) ) {
-				// Clean up.
-				if ( file_exists( $working_path ) ) {
-					wp_delete_file( $working_path );
-				}
-				if ( file_exists( $background_path ) ) {
-					wp_delete_file( $background_path );
-				}
 				return $composited_path;
 			}
 
-			// Clean up intermediate files.
-			if ( file_exists( $working_path ) ) {
-				wp_delete_file( $working_path );
-			}
-			if ( file_exists( $background_path ) ) {
-				wp_delete_file( $background_path );
-			}
-
-			// Step 6: Save final asset to Media Library (image mode only).
+			// Step 5: Save final asset to Media Library (image mode only).
 			$attachment_id = $this->import_composited_asset( $composited_path, $mode, $arguments, $user_id, $context );
 
 			if ( is_wp_error( $attachment_id ) ) {
-				// Clean up.
 				if ( file_exists( $composited_path ) ) {
 					wp_delete_file( $composited_path );
 				}
@@ -326,39 +328,24 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				wp_delete_file( $composited_path );
 			}
 		} else {
-			// Video mode - use VEO for video generation with composited image as reference.
-			// First, create the composited image.
-			$background_result = $this->generate_scene_image( $scene_prompt, $aspect_ratio, $context );
-			if ( is_wp_error( $background_result ) ) {
-				// Clean up working file.
-				if ( file_exists( $working_path ) ) {
-					wp_delete_file( $working_path );
-				}
-				return $background_result;
-			}
-
-			$background_path = $background_result['file_path'];
-
-			// Composite product onto image first.
-			$composited_path = $this->composite_product_onto_image(
+			// Video mode - build the reference image first, then pass to VEO.
+			$composited_path = $this->build_product_scene(
 				$working_path,
-				$background_path,
+				$scene_prompt,
+				$aspect_ratio,
 				$placement,
-				$scale_factor
+				$scale_factor,
+				$integration_mode,
+				$provider,
+				$context
 			);
 
+			// working_path is cleaned up inside build_product_scene.
 			if ( is_wp_error( $composited_path ) ) {
-				// Clean up.
-				if ( file_exists( $working_path ) ) {
-					wp_delete_file( $working_path );
-				}
-				if ( file_exists( $background_path ) ) {
-					wp_delete_file( $background_path );
-				}
 				return $composited_path;
 			}
 
-			// Import composited image temporarily to use as VEO reference.
+			// Import reference image temporarily to use as VEO reference.
 			$composited_attachment_id = $this->import_composited_asset(
 				$composited_path,
 				'image',
@@ -367,13 +354,6 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				$context
 			);
 
-			// Clean up intermediate files.
-			if ( file_exists( $working_path ) ) {
-				wp_delete_file( $working_path );
-			}
-			if ( file_exists( $background_path ) ) {
-				wp_delete_file( $background_path );
-			}
 			if ( file_exists( $composited_path ) ) {
 				wp_delete_file( $composited_path );
 			}
@@ -382,7 +362,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				return $composited_attachment_id;
 			}
 
-			// Generate video using VEO with the composited image as reference.
+			// Generate video using VEO with the integrated product image as reference.
 			$video_result = $this->generate_scene_video(
 				$scene_prompt,
 				$duration,
@@ -391,7 +371,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				$context
 			);
 
-			// Clean up temporary composited image.
+			// Clean up temporary reference image.
 			wp_delete_attachment( $composited_attachment_id, true );
 
 			if ( is_wp_error( $video_result ) ) {
@@ -572,18 +552,431 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * Generate a scene image using AI.
+	 * Build the product scene using either AI integration or classic compositing.
+	 *
+	 * Orchestrates the scene-building strategy:
+	 * - "ai" mode: product image is sent to an AI image editor (Gemini preferred,
+	 *   OpenAI fallback) which naturally embeds the product into the generated scene
+	 *   with matching lighting, shadows, and depth — no PHP pixel-level compositing.
+	 * - "composite" mode: generates a background scene via AI then overlays the
+	 *   product using Imagick/GD (legacy behaviour).
+	 *
+	 * @param string $product_path     Path to working product image (may have bg removed).
+	 * @param string $scene_prompt     Scene description.
+	 * @param string $aspect_ratio     Aspect ratio.
+	 * @param string $placement        Placement hint (composite mode only).
+	 * @param float  $scale_factor     Scale factor (composite mode only).
+	 * @param string $integration_mode 'ai' or 'composite'.
+	 * @param string $provider         'auto', 'gemini', or 'openai'.
+	 * @param array  $context          Execution context.
+	 * @return string|WP_Error Path to the final output image, or error.
+	 */
+	protected function build_product_scene( $product_path, $scene_prompt, $aspect_ratio, $placement, $scale_factor, $integration_mode, $provider, $context ) {
+		if ( 'ai' === $integration_mode ) {
+			// AI-powered integration: the AI embeds the product naturally into the scene.
+			$ai_result = $this->generate_ai_integrated_image( $product_path, $scene_prompt, $aspect_ratio, $provider, $context );
+
+			// Always clean up the working product file.
+			if ( file_exists( $product_path ) ) {
+				wp_delete_file( $product_path );
+			}
+
+			if ( is_wp_error( $ai_result ) ) {
+				return $ai_result;
+			}
+
+			return $ai_result['file_path'];
+		}
+
+		// Classic composite mode: generate background then overlay product with PHP.
+		$background_result = $this->generate_scene_image( $scene_prompt, $aspect_ratio, $provider, $context );
+
+		if ( is_wp_error( $background_result ) ) {
+			if ( file_exists( $product_path ) ) {
+				wp_delete_file( $product_path );
+			}
+			return $background_result;
+		}
+
+		$background_path = $background_result['file_path'];
+
+		$composited_path = $this->composite_product_onto_image(
+			$product_path,
+			$background_path,
+			$placement,
+			$scale_factor
+		);
+
+		// Clean up intermediate files.
+		if ( file_exists( $product_path ) ) {
+			wp_delete_file( $product_path );
+		}
+		if ( file_exists( $background_path ) ) {
+			wp_delete_file( $background_path );
+		}
+
+		return $composited_path;
+	}
+
+	/**
+	 * Generate an AI-integrated product scene using AI image editing.
+	 *
+	 * Sends the product image to an AI image editor (Gemini preferred, OpenAI
+	 * fallback) with a scene-integration prompt. The AI generates the surrounding
+	 * environment natively around the product — matching lighting, cast shadows,
+	 * reflections, and perspective — rather than mechanically overlaying it.
+	 *
+	 * @param string $product_path Path to the product image (background removed when applicable).
+	 * @param string $scene_prompt Scene description.
+	 * @param string $aspect_ratio Aspect ratio.
+	 * @param string $provider     'auto', 'gemini', or 'openai'.
+	 * @param array  $context      Execution context.
+	 * @return array|WP_Error Array with 'file_path', or error.
+	 */
+	protected function generate_ai_integrated_image( $product_path, $scene_prompt, $aspect_ratio, $provider, $context ) {
+		// Build a detailed integration prompt so the AI embeds the product naturally.
+		$integration_prompt = sprintf(
+			/* translators: %s: scene description provided by the user */
+			__( 'You are given a product image. Create a complete, photorealistic scene around this product: %s. The product must appear physically present in the scene with naturally matching lighting, cast shadows, reflections, and perspective depth. Do not alter the product itself; generate the surrounding environment so the product belongs there authentically.', 'mcp-ai-wpoos-pro' ),
+			$scene_prompt
+		);
+
+		/**
+		 * Filter the AI integration prompt used when embedding a product into a scene.
+		 *
+		 * @param string $integration_prompt Full integration prompt sent to the AI.
+		 * @param string $scene_prompt       Original scene description from the caller.
+		 * @param string $provider           Resolved provider ('gemini' or 'openai').
+		 */
+		$integration_prompt = apply_filters( 'wp_mcp_ai_pro_product_integration_prompt', $integration_prompt, $scene_prompt, $provider );
+
+		$resolved_provider = $this->detect_preferred_provider( $provider );
+
+		if ( 'gemini' === $resolved_provider ) {
+			return $this->generate_ai_integrated_image_gemini( $product_path, $integration_prompt, $aspect_ratio );
+		}
+
+		if ( 'openai' === $resolved_provider ) {
+			return $this->generate_ai_integrated_image_openai( $product_path, $integration_prompt, $aspect_ratio );
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_no_provider',
+			__( 'No AI provider is configured. Please add a Gemini or OpenAI API key in the plugin settings to use AI integration mode. Alternatively, set integration_mode to "composite".', 'mcp-ai-wpoos-pro' ),
+			array( 'status' => 400 )
+		);
+	}
+
+	/**
+	 * AI-integrate the product into a scene using Gemini image editing.
+	 *
+	 * Gemini's nano-banana (gemini-2.5-flash-image) model is used by default for
+	 * fast, high-quality scene integration with the product naturally embedded.
+	 *
+	 * @param string $product_path Path to the product image.
+	 * @param string $prompt       Full integration prompt.
+	 * @param string $aspect_ratio Aspect ratio for the output.
+	 * @return array|WP_Error Array with 'file_path', or error.
+	 */
+	protected function generate_ai_integrated_image_gemini( $product_path, $prompt, $aspect_ratio ) {
+		if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_dependency',
+				__( 'Gemini client is not available for AI integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// Read and base64-encode the product image for the Gemini edit_image call.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$image_data = file_get_contents( $product_path );
+		if ( false === $image_data || '' === $image_data ) {
+			return new WP_Error(
+				'wp_mcp_ai_read_failed',
+				__( 'Failed to read product image for Gemini integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$mime_info      = wp_check_filetype( $product_path );
+		$mime_type      = ( isset( $mime_info['type'] ) && '' !== $mime_info['type'] ) ? $mime_info['type'] : 'image/png';
+		$encoded_image  = base64_encode( $image_data );
+
+		$client  = new WP_MCP_AI_Gemini_Client();
+		$options = array(
+			'source_image' => array(
+				'data'      => $encoded_image,
+				'mime_type' => $mime_type,
+			),
+			'aspect_ratio' => $this->normalise_aspect_ratio_for_gemini( $aspect_ratio ),
+			'mime_type'    => 'image/png',
+		);
+
+		$result = $client->edit_image( $prompt, $options );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( empty( $result['image'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_result',
+				__( 'Gemini returned an empty image response during product integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		// image data from Gemini is base64-encoded.
+		return $this->save_ai_result_to_temp( $result['image'], 'png', true );
+	}
+
+	/**
+	 * AI-integrate the product into a scene using OpenAI image editing.
+	 *
+	 * Uses OpenAI's image edit endpoint to place the product naturally within
+	 * the generated scene (without a mask, OpenAI edits the full image context).
+	 *
+	 * @param string $product_path Path to the product image.
+	 * @param string $prompt       Full integration prompt.
+	 * @param string $aspect_ratio Aspect ratio for the output.
+	 * @return array|WP_Error Array with 'file_path', or error.
+	 */
+	protected function generate_ai_integrated_image_openai( $product_path, $prompt, $aspect_ratio ) {
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_dependency',
+				__( 'OpenAI client is not available for AI integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$client  = new WP_MCP_AI_OpenAI_Client();
+		$size    = $this->aspect_ratio_to_size( $aspect_ratio );
+		$options = array(
+			'size'  => $size,
+			'model' => 'gpt-image-1',
+		);
+
+		$result = $client->edit_image( $product_path, $prompt, $options );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( empty( $result['data'] ) || ! is_array( $result['data'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_result',
+				__( 'OpenAI returned an empty image response during product integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$image_data = $result['data'][0];
+		$raw_data   = null;
+
+		if ( ! empty( $image_data['b64_json'] ) ) {
+			$decoded = base64_decode( $image_data['b64_json'], true );
+			if ( false === $decoded ) {
+				return new WP_Error(
+					'wp_mcp_ai_decode_failed',
+					__( 'Failed to decode base64 image data from OpenAI response during product integration.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+			$raw_data = $decoded;
+		} elseif ( ! empty( $image_data['url'] ) ) {
+			$response = wp_remote_get(
+				$image_data['url'],
+				array( 'timeout' => 60 )
+			);
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+			$raw_data = wp_remote_retrieve_body( $response );
+		}
+
+		if ( empty( $raw_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_result',
+				__( 'Could not retrieve image data from OpenAI response during product integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $this->save_ai_result_to_temp( $raw_data, 'png', false );
+	}
+
+	/**
+	 * Save raw AI-returned image bytes to a temporary file.
+	 *
+	 * @param string $image_data Raw image data (binary or base64-encoded string).
+	 * @param string $format     File extension / format (e.g. 'png', 'jpg').
+	 * @param bool   $is_base64  True when $image_data is base64-encoded; false for raw bytes.
+	 * @return array|WP_Error Array with 'file_path' key, or WP_Error on failure.
+	 */
+	protected function save_ai_result_to_temp( $image_data, $format = 'png', $is_base64 = true ) {
+		if ( $is_base64 ) {
+			$raw_data = base64_decode( $image_data, true );
+			if ( false === $raw_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_decode_failed',
+					__( 'Failed to decode base64 image data returned by AI during product integration.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		} else {
+			$raw_data = $image_data;
+		}
+
+		if ( empty( $raw_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_empty_data',
+				__( 'AI returned empty image data during product integration.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$upload_dir = wp_upload_dir();
+		$temp_dir   = trailingslashit( $upload_dir['basedir'] ) . 'wp-mcp-ai-temp';
+
+		if ( ! file_exists( $temp_dir ) ) {
+			wp_mkdir_p( $temp_dir );
+		}
+
+		$file_name = 'ai-integrated-' . wp_generate_password( 12, false ) . '.' . $format;
+		$file_path = trailingslashit( $temp_dir ) . $file_name;
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === file_put_contents( $file_path, $raw_data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_save_failed',
+				__( 'Failed to save AI-integrated image to temporary file.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array( 'file_path' => $file_path );
+	}
+
+	/**
+	 * Detect the preferred AI provider based on availability and request.
+	 *
+	 * Gemini is preferred when a Gemini API key is configured (faster, high-quality
+	 * integration via the nano-banana flash model). Falls back to OpenAI when Gemini
+	 * is not configured or not available.
+	 *
+	 * @param string $requested_provider Caller's preference: 'auto', 'gemini', or 'openai'.
+	 * @return string Resolved provider slug ('gemini' or 'openai'), or '' if none available.
+	 */
+	protected function detect_preferred_provider( $requested_provider ) {
+		if ( 'openai' === $requested_provider ) {
+			return 'openai';
+		}
+
+		if ( 'gemini' === $requested_provider ) {
+			return 'gemini';
+		}
+
+		// Auto: prefer Gemini when its API key is configured.
+		if ( $this->is_gemini_available() ) {
+			return 'gemini';
+		}
+
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		if ( ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			return 'openai';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Check whether Gemini is available for image generation / editing.
+	 *
+	 * @return bool True when a Gemini API key is configured and the client class exists.
+	 */
+	protected function is_gemini_available() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		return ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' );
+	}
+
+	/**
+	 * Generate a scene background image using AI (provider-agnostic).
+	 *
+	 * Used in composite integration mode to generate a standalone background
+	 * before the product is overlaid via Imagick/GD. Prefers Gemini when
+	 * available, falls back to OpenAI.
+	 *
+	 * @param string $prompt      Scene description.
+	 * @param string $aspect_ratio Aspect ratio.
+	 * @param string $provider    Provider preference ('auto', 'gemini', 'openai').
+	 * @param array  $context     Execution context.
+	 * @return array|WP_Error Array with file_path and attachment_id, or error.
+	 */
+	protected function generate_scene_image( $prompt, $aspect_ratio, $provider, $context ) {
+		$resolved_provider = $this->detect_preferred_provider( $provider );
+
+		if ( 'gemini' === $resolved_provider ) {
+			$result = $this->generate_scene_image_gemini( $prompt, $aspect_ratio, $context );
+			if ( ! is_wp_error( $result ) ) {
+				return $result;
+			}
+			// Fall through to OpenAI if Gemini scene generation fails.
+		}
+
+		return $this->generate_scene_image_openai( $prompt, $aspect_ratio, $context );
+	}
+
+	/**
+	 * Generate a scene background using Gemini image generation.
 	 *
 	 * @param string $prompt      Scene description.
 	 * @param string $aspect_ratio Aspect ratio.
 	 * @param array  $context     Execution context.
 	 * @return array|WP_Error Array with file_path and attachment_id, or error.
 	 */
-	protected function generate_scene_image( $prompt, $aspect_ratio, $context ) {
+	protected function generate_scene_image_gemini( $prompt, $aspect_ratio, $context ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Gemini_Image' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_dependency',
+				__( 'Gemini image generation tool is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+		$args   = array(
+			'prompt'       => $prompt,
+			'aspect_ratio' => $this->normalise_aspect_ratio_for_gemini( $aspect_ratio ),
+		);
+		$result = $tool->execute( $args, $context );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		if ( empty( $result['attachment_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_result',
+				__( 'Gemini scene generation returned invalid result.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$file_path = get_attached_file( $result['attachment_id'] );
+		if ( ! $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_file_not_found',
+				__( 'Generated Gemini scene image file not found on disk.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return array(
+			'file_path'     => $file_path,
+			'attachment_id' => $result['attachment_id'],
+		);
+	}
+
+	/**
+	 * Generate a scene background using OpenAI image generation.
+	 *
+	 * @param string $prompt       Scene description.
+	 * @param string $aspect_ratio Aspect ratio.
+	 * @param array  $context      Execution context.
+	 * @return array|WP_Error Array with file_path and attachment_id, or error.
+	 */
+	protected function generate_scene_image_openai( $prompt, $aspect_ratio, $context ) {
 		// Convert aspect ratio to size.
 		$size = $this->aspect_ratio_to_size( $aspect_ratio );
 
-		// Check if OpenAI image generation tool exists.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_OpenAI_Image' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
@@ -591,13 +984,11 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
-		$tool = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
-
-		$args = array(
+		$tool   = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$args   = array(
 			'prompt' => $prompt,
 			'size'   => $size,
 		);
-
 		$result = $tool->execute( $args, $context );
 
 		if ( is_wp_error( $result ) ) {
@@ -615,6 +1006,28 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'file_path'     => $result['file_path'],
 			'attachment_id' => $result['attachment_id'],
 		);
+	}
+
+	/**
+	 * Normalise an aspect ratio string to a Gemini-supported value.
+	 *
+	 * Gemini supports: 1:1, 4:3, 3:4, 16:9, 9:16.
+	 *
+	 * @param string $aspect_ratio Input aspect ratio string.
+	 * @return string Nearest Gemini-supported aspect ratio.
+	 */
+	protected function normalise_aspect_ratio_for_gemini( $aspect_ratio ) {
+		$map = array(
+			'1:1'  => '1:1',
+			'4:5'  => '4:3',  // Closest Gemini-supported portrait.
+			'16:9' => '16:9',
+			'9:16' => '9:16',
+			'3:2'  => '4:3',  // Closest Gemini-supported landscape.
+			'2:3'  => '3:4',  // Closest Gemini-supported portrait.
+			'auto' => '4:3',
+		);
+
+		return isset( $map[ $aspect_ratio ] ) ? $map[ $aspect_ratio ] : '4:3';
 	}
 
 	/**
@@ -1085,6 +1498,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'scene_prompt'        => sanitize_textarea_field( $arguments['scene_prompt'] ),
 			'aspect_ratio'        => sanitize_text_field( $arguments['aspect_ratio'] ),
 			'background_mode'     => sanitize_key( $arguments['background_mode'] ),
+			'integration_mode'    => isset( $arguments['integration_mode'] ) ? sanitize_key( $arguments['integration_mode'] ) : 'ai',
+			'provider'            => isset( $arguments['provider'] ) ? sanitize_key( $arguments['provider'] ) : 'auto',
 		);
 
 		if ( ! empty( $arguments['placement_hint'] ) ) {
@@ -1108,11 +1523,11 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	public function get_capability_flags() {
 		return array(
 			'pro',                   // Pro tier tool.
-			'requires-credentials',  // Requires OpenAI API credentials for scene generation.
+			'requires-credentials',  // Requires a Gemini or OpenAI API key for scene generation/integration.
 			'requires-capability',   // Requires upload_files capability.
 			'write',                 // Creates media files.
 			'async',                 // May take significant time.
-			'consumes-tokens',       // Uses AI credits/tokens for scene generation.
+			'consumes-tokens',       // Uses AI credits/tokens for scene generation and integration.
 			'external-api',          // Makes external API calls (implies network-dependent).
 		);
 	}
@@ -1124,7 +1539,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_model_requirements() {
 		return array(
-			'image-generation', // Requires image generation capability for scenes.
+			'image-generation', // Requires image generation/editing capability (Gemini or OpenAI).
 		);
 	}
 
@@ -1136,13 +1551,15 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	public function get_tool_rules() {
 		return array(
 			'model_requirements'    => array(
-				'providers'    => array( 'openai', 'google' ), // OpenAI for images, Google Gemini VEO for videos.
-				'capabilities' => array( 'image-generation' ), // Video generation via VEO when mode=video.
+				// Supports Gemini (preferred) and OpenAI for both scene generation and AI integration.
+				// Google Gemini VEO is used for video mode.
+				'providers'    => array( 'gemini', 'openai', 'google' ),
+				'capabilities' => array( 'image-generation', 'image-editing' ),
 				'required'     => true,
 			),
 			'parameter_constraints' => array(
 				'required_fields' => array( 'product_attachment_id', 'scene_prompt' ),
-				'optional_fields' => array( 'mode', 'aspect_ratio', 'duration_seconds', 'background_mode', 'placement_hint', 'scale_factor' ),
+				'optional_fields' => array( 'mode', 'aspect_ratio', 'duration_seconds', 'background_mode', 'placement_hint', 'scale_factor', 'integration_mode', 'provider' ),
 			),
 			'rate_limits'           => array(
 				'requests_per_minute' => 5,
@@ -1150,15 +1567,16 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				'concurrent_requests' => 2,
 			),
 			'timeout_constraints'   => array(
-				'recommended_timeout' => 90,  // Image mode.
+				'recommended_timeout' => 90,  // Image mode (AI integration).
 				'max_execution_time'  => 300, // Video mode can take up to 5 minutes.
 			),
 			'dependencies'          => array(
 				'required_settings'   => array(
-					'api_key' => 'wp_mcp_ai_openai_api_key', // For image generation.
-					// VEO uses Google API key configured in core settings.
+					// At least one of these API keys must be present:
+					'gemini_api_key' => 'gemini_api_key', // Preferred for AI integration.
+					'openai_api_key' => 'openai_api_key', // Fallback for AI integration and composite mode.
 				),
-				'required_extensions' => array( 'imagick', 'gd' ), // At least one required.
+				'required_extensions' => array( 'imagick', 'gd' ), // At least one required for composite mode.
 				'optional_tools'      => array( 'generate_veo_video' ), // Required for video mode.
 			),
 			'orchestration_hints'   => array(
