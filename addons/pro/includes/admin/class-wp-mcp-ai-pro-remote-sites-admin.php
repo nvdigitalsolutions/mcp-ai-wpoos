@@ -3047,6 +3047,58 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<!-- Type-specific fields for Microsoft Teams -->
 				<tr class="microsoft_teams-only-field" style="display: none;">
+					<td colspan="2" style="padding: 0;">
+						<div style="background: #f0f2f7; border-left: 4px solid #6264a7; padding: 14px 16px 10px; margin-bottom: 2px;">
+							<h3 style="margin: 0 0 6px; font-size: 14px; color: #1d2327;">
+								<?php esc_html_e( 'Microsoft Teams Connection Settings', 'mcp-ai-wpoos-pro' ); ?>
+							</h3>
+							<p style="margin: 0 0 8px; font-size: 13px; color: #50575e;">
+								<?php
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: link to Microsoft Teams outgoing webhooks documentation */
+										__( 'Connect your WordPress site to Microsoft Teams by creating an <a href="%s" target="_blank" rel="noopener noreferrer">Outgoing Webhook</a> in Teams. Each Teams organisation can have its own dedicated webhook connection, allowing multiple tenants to connect independently.', 'mcp-ai-wpoos-pro' ),
+										'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-outgoing-webhook'
+									),
+									array(
+										'a' => array(
+											'href'   => true,
+											'target' => true,
+											'rel'    => true,
+										),
+									)
+								);
+								?>
+							</p>
+							<ol style="margin: 0 0 0 18px; font-size: 13px; color: #50575e;">
+								<li style="margin-bottom: 4px;"><?php esc_html_e( 'Save this connection first to generate your connection-specific Webhook URL below.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li style="margin-bottom: 4px;">
+									<?php
+									echo wp_kses(
+										sprintf(
+											/* translators: %s: link to Microsoft Teams Admin Center */
+											__( 'In Microsoft Teams, open a team, click <strong>… More options</strong> → <strong>Manage team</strong> → <strong>Apps</strong> → <strong>Create outgoing webhook</strong> (or visit the <a href="%s" target="_blank" rel="noopener noreferrer">Teams Admin Center</a> → Apps → Manage apps → Outgoing webhooks).', 'mcp-ai-wpoos-pro' ),
+											'https://admin.teams.microsoft.com/'
+										),
+										array(
+											'strong' => array(),
+											'a'      => array(
+												'href'   => true,
+												'target' => true,
+												'rel'    => true,
+											),
+										)
+									);
+									?>
+								</li>
+								<li style="margin-bottom: 4px;"><?php esc_html_e( 'Paste the Webhook URL (from the field below) as the Callback URL. Copy the Security Token shown by Teams into the Security Token field here.', 'mcp-ai-wpoos-pro' ); ?></li>
+								<li><?php esc_html_e( 'Optionally add a Microsoft Graph Access Token to enable proactive reply capabilities via the Graph API.', 'mcp-ai-wpoos-pro' ); ?></li>
+							</ol>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="microsoft_teams-only-field" style="display: none;">
 					<th scope="row">
 						<label for="teams_app_id"><?php esc_html_e( 'App ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -3099,8 +3151,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label><?php esc_html_e( 'Outgoing Webhook URL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description"><?php esc_html_e( 'Register this URL as the Callback URL when creating an Outgoing Webhook in the Microsoft Teams Admin Center (under Apps → Manage apps → Outgoing webhooks).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php if ( $is_edit && ! empty( $connection['id'] ) ) : ?>
+							<p style="margin: 0 0 6px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Connection-specific URL (recommended):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams/' . $connection['id'] ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0; margin-bottom: 6px;">
+							<p class="description" style="margin-bottom: 10px;">
+								<?php esc_html_e( 'Register this URL as the Callback URL when creating an Outgoing Webhook in Microsoft Teams. Each Teams organisation has its own dedicated endpoint so that multiple tenants can receive messages independently.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+							<p style="margin: 0 0 4px 0; font-weight: 600; font-size: 13px;"><?php esc_html_e( 'Generic URL (all tenants):', 'mcp-ai-wpoos-pro' ); ?></p>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Use this generic URL only if a single Teams tenant is configured. The connection-specific URL above is preferred for multi-tenant setups.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php else : ?>
+							<input type="text" readonly="readonly" value="<?php echo esc_url( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+							<p class="description"><?php esc_html_e( 'Save this connection first to get a connection-specific webhook URL to register in Microsoft Teams. Each connection gets its own dedicated URL, enabling multiple Teams organisations to connect independently.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 

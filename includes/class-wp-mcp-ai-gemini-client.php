@@ -957,7 +957,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * Create text embeddings for RAG/semantic search.
 		 *
 		 * @param string $text    Text content to embed.
-		 * @param array  $options Additional options (model, task_type, title, timeout, bypass_cache).
+		 * @param array  $options Additional options:
+		 *                        - model (string): Embedding model. Defaults to 'gemini-embedding-001'.
+		 *                        - task_type (string): Optimisation hint — RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT,
+		 *                          SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING,
+		 *                          FACT_VERIFICATION, CODE_RETRIEVAL_QUERY.
+		 *                        - title (string): Optional document title (RETRIEVAL_DOCUMENT only).
+		 *                        - output_dimensionality (int): Reduce embedding dimensions (e.g. 768, 1536, 3072).
+		 *                        - timeout (int): HTTP request timeout in seconds.
+		 *                        - bypass_cache (bool): Skip transient cache for this request.
 		 * @return array|WP_Error Embedding data or WP_Error on failure.
 		 */
 		public function create_embedding( $text, array $options = array() ) {
@@ -1007,15 +1015,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			if ( $use_cache && ! $bypass_cache ) {
 				// Build cache key from text and relevant options.
-				$model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
-				$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
-				$title     = isset( $options['title'] ) && '' !== $options['title'] ? sanitize_text_field( $options['title'] ) : '';
+				$model       = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+				$task_type   = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$title       = isset( $options['title'] ) && '' !== $options['title'] ? sanitize_text_field( $options['title'] ) : '';
+				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'text'      => $text,
-					'model'     => $model,
-					'task_type' => $task_type,
-					'title'     => $title,
+					'text'                 => $text,
+					'model'                => $model,
+					'task_type'            => $task_type,
+					'title'                => $title,
+					'output_dimensionality' => $output_dims,
 				);
 
 				$cache_key = 'gemini_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -1052,8 +1062,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Embedding data or WP_Error on failure.
 		 */
 		private function fetch_embedding_from_api( $api_key, $text, $options ) {
-			// Default to text-embedding-004 model for embeddings.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+			// Default to gemini-embedding-001 model (GA, replaces deprecated text-embedding-004).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
 
 			$payload = array(
 				'content' => array(
@@ -1065,16 +1075,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				),
 			);
 
-			// Optional task type for optimized embeddings.
+			// Optional task type for optimised embeddings.
 			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
 				$task_type = sanitize_text_field( $options['task_type'] );
-				// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
+				// Valid task types per Gemini API docs.
 				$allowed_task_types = array(
 					'RETRIEVAL_QUERY',
 					'RETRIEVAL_DOCUMENT',
 					'SEMANTIC_SIMILARITY',
 					'CLASSIFICATION',
 					'CLUSTERING',
+					'QUESTION_ANSWERING',
+					'FACT_VERIFICATION',
+					'CODE_RETRIEVAL_QUERY',
 				);
 
 				if ( in_array( $task_type, $allowed_task_types, true ) ) {
@@ -1085,6 +1098,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Optional title for RETRIEVAL_DOCUMENT task type.
 			if ( isset( $options['title'] ) && '' !== $options['title'] ) {
 				$payload['title'] = sanitize_text_field( $options['title'] );
+			}
+
+			// Optional output dimensionality — reduces vector size for storage/latency trade-offs.
+			// Typical values for gemini-embedding-001: 768, 1536, 3072. The API validates the value.
+			if ( isset( $options['output_dimensionality'] ) && $options['output_dimensionality'] > 0 ) {
+				$payload['outputDimensionality'] = absint( $options['output_dimensionality'] );
 			}
 
 			/**
@@ -1168,8 +1187,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 *
 		 * @param array $texts   Array of text strings to embed.
 		 * @param array $options Optional parameters:
-		 *                       - model (string): Embedding model (default: 'text-embedding-004').
-		 *                       - task_type (string): Task optimization type.
+		 *                       - model (string): Embedding model (default: 'gemini-embedding-001').
+		 *                       - task_type (string): Optimisation hint — RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT,
+		 *                         SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING, QUESTION_ANSWERING,
+		 *                         FACT_VERIFICATION, CODE_RETRIEVAL_QUERY.
+		 *                       - output_dimensionality (int): Reduce embedding dimensions (e.g. 768, 1536, 3072).
 		 *                       - timeout (int): Request timeout in seconds.
 		 *                       - bypass_cache (bool): Skip cache for this request.
 		 * @return array|WP_Error Batch embedding results with 'embeddings' array or error.
@@ -1219,13 +1241,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			if ( $use_cache && ! $bypass_cache ) {
 				// Build cache key from texts and relevant options.
-				$model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
-				$task_type = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$model       = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+				$task_type   = isset( $options['task_type'] ) && '' !== $options['task_type'] ? sanitize_text_field( $options['task_type'] ) : '';
+				$output_dims = isset( $options['output_dimensionality'] ) ? absint( $options['output_dimensionality'] ) : 0;
 
 				$cache_key_data = array(
-					'texts'     => $texts,
-					'model'     => $model,
-					'task_type' => $task_type,
+					'texts'                => $texts,
+					'model'                => $model,
+					'task_type'            => $task_type,
+					'output_dimensionality' => $output_dims,
 				);
 
 				$cache_key = 'gemini_batch_embedding_' . md5( wp_json_encode( $cache_key_data ) );
@@ -1262,8 +1286,34 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return array|WP_Error Batch embedding data or WP_Error on failure.
 		 */
 		private function fetch_batch_embeddings_from_api( $api_key, $texts, $options ) {
-			// Default to text-embedding-004 model for embeddings.
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+			// Default to gemini-embedding-001 model (GA, replaces deprecated text-embedding-004).
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gemini-embedding-001';
+
+			// Resolve shared options once before the loop.
+			$task_type            = '';
+			$output_dimensionality = 0;
+
+			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
+				$candidate = sanitize_text_field( $options['task_type'] );
+				// Valid task types per Gemini API docs.
+				$allowed_task_types = array(
+					'RETRIEVAL_QUERY',
+					'RETRIEVAL_DOCUMENT',
+					'SEMANTIC_SIMILARITY',
+					'CLASSIFICATION',
+					'CLUSTERING',
+					'QUESTION_ANSWERING',
+					'FACT_VERIFICATION',
+					'CODE_RETRIEVAL_QUERY',
+				);
+				if ( in_array( $candidate, $allowed_task_types, true ) ) {
+					$task_type = $candidate;
+				}
+			}
+
+			if ( isset( $options['output_dimensionality'] ) && $options['output_dimensionality'] > 0 ) {
+				$output_dimensionality = absint( $options['output_dimensionality'] );
+			}
 
 			// Build requests array.
 			$requests = array();
@@ -1274,6 +1324,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				$request = array(
+					// model is always required per-request in batchEmbedContents.
+					'model'   => 'models/' . $model,
 					'content' => array(
 						'parts' => array(
 							array( 'text' => $sanitized_text ),
@@ -1281,21 +1333,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					),
 				);
 
-				// Optional task type for optimized embeddings.
-				if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
-					$task_type = sanitize_text_field( $options['task_type'] );
-					// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
-					$allowed_task_types = array(
-						'RETRIEVAL_QUERY',
-						'RETRIEVAL_DOCUMENT',
-						'SEMANTIC_SIMILARITY',
-						'CLASSIFICATION',
-						'CLUSTERING',
-					);
+				if ( '' !== $task_type ) {
+					$request['taskType'] = $task_type;
+				}
 
-					if ( in_array( $task_type, $allowed_task_types, true ) ) {
-						$request['taskType'] = $task_type;
-					}
+				if ( $output_dimensionality > 0 ) {
+					$request['outputDimensionality'] = $output_dimensionality;
 				}
 
 				$requests[] = $request;
