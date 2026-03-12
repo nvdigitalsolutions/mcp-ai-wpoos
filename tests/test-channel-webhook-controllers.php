@@ -1185,6 +1185,192 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	// =========================================================================
+	// Slack convert_markdown_to_mrkdwn + build_slack_blocks
+	// =========================================================================
+
+	/**
+	 * Helper: load the Slack event controller and call convert_markdown_to_mrkdwn.
+	 *
+	 * @param mixed $input Input to pass to the converter.
+	 * @return string mrkdwn output.
+	 */
+	private function slack_mrkdwn( $input ) {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+		return WP_MCP_AI_Slack_Event_Controller::convert_markdown_to_mrkdwn( $input );
+	}
+
+	/**
+	 * Empty and non-string inputs must return an empty string.
+	 */
+	public function test_slack_mrkdwn_empty_input() {
+		$this->assertSame( '', $this->slack_mrkdwn( '' ) );
+		$this->assertSame( '', $this->slack_mrkdwn( null ) );
+		$this->assertSame( '', $this->slack_mrkdwn( false ) );
+		$this->assertSame( '', $this->slack_mrkdwn( 42 ) );
+		$this->assertSame( '', $this->slack_mrkdwn( array() ) );
+	}
+
+	/**
+	 * Plain text without Markdown passes through unchanged.
+	 */
+	public function test_slack_mrkdwn_plain_text() {
+		$result = $this->slack_mrkdwn( 'Hello world, no formatting here.' );
+		$this->assertSame( 'Hello world, no formatting here.', $result );
+	}
+
+	/**
+	 * **bold** and __bold__ must become *bold* (Slack single-asterisk bold).
+	 */
+	public function test_slack_mrkdwn_bold() {
+		$this->assertStringContainsString( '*bold*', $this->slack_mrkdwn( 'This is **bold** text.' ) );
+		$this->assertStringContainsString( '*bold*', $this->slack_mrkdwn( 'This is __bold__ text.' ) );
+		$this->assertStringNotContainsString( '**', $this->slack_mrkdwn( '**bold**' ) );
+	}
+
+	/**
+	 * *italic* must become _italic_ (Slack underscore italic).
+	 */
+	public function test_slack_mrkdwn_italic() {
+		$result = $this->slack_mrkdwn( 'This is *italic* text.' );
+		$this->assertStringContainsString( '_italic_', $result );
+		$this->assertStringNotContainsString( '*italic*', $result );
+	}
+
+	/**
+	 * ~~strikethrough~~ must become ~strikethrough~ (Slack single-tilde).
+	 */
+	public function test_slack_mrkdwn_strikethrough() {
+		$result = $this->slack_mrkdwn( 'This is ~~deleted~~ text.' );
+		$this->assertStringContainsString( '~deleted~', $result );
+		$this->assertStringNotContainsString( '~~', $result );
+	}
+
+	/**
+	 * Headings (# … ######) must become *bold* text on their own line.
+	 */
+	public function test_slack_mrkdwn_headings() {
+		$result = $this->slack_mrkdwn( "# Main Title\n\nSome text." );
+		$this->assertStringContainsString( '*Main Title*', $result );
+		$this->assertStringNotContainsString( '# Main Title', $result );
+
+		$result2 = $this->slack_mrkdwn( "## Sub Heading\n\nText." );
+		$this->assertStringContainsString( '*Sub Heading*', $result2 );
+	}
+
+	/**
+	 * [text](url) Markdown links must become <url|text> Slack links.
+	 */
+	public function test_slack_mrkdwn_links() {
+		$result = $this->slack_mrkdwn( 'Visit [Google](https://google.com) now.' );
+		$this->assertStringContainsString( '<https://google.com|Google>', $result );
+		$this->assertStringNotContainsString( '[Google]', $result );
+	}
+
+	/**
+	 * Inline code spans must be preserved verbatim (`code`).
+	 */
+	public function test_slack_mrkdwn_inline_code() {
+		$result = $this->slack_mrkdwn( 'Use `echo hello` here.' );
+		$this->assertStringContainsString( '`echo hello`', $result );
+	}
+
+	/**
+	 * Fenced code blocks must be preserved verbatim (```code```).
+	 */
+	public function test_slack_mrkdwn_code_block_preserved() {
+		$md     = "```php\necho 'hello';\n```";
+		$result = $this->slack_mrkdwn( $md );
+		$this->assertStringContainsString( '```', $result );
+		$this->assertStringContainsString( "echo 'hello';", $result );
+	}
+
+	/**
+	 * Content inside fenced code blocks must not be transformed.
+	 */
+	public function test_slack_mrkdwn_code_block_not_processed() {
+		$md     = "```\n**not bold** *not italic*\n```";
+		$result = $this->slack_mrkdwn( $md );
+		$this->assertStringNotContainsString( '*not bold*', $result );
+		$this->assertStringNotContainsString( '_not italic_', $result );
+		$this->assertStringContainsString( '**not bold**', $result );
+	}
+
+	/**
+	 * Bullet list items starting with "- " or "* " must become "• " (Unicode bullet).
+	 */
+	public function test_slack_mrkdwn_bullet_list() {
+		$md     = "- Item one\n- Item two\n- Item three";
+		$result = $this->slack_mrkdwn( $md );
+		$this->assertStringContainsString( '• Item one', $result );
+		$this->assertStringContainsString( '• Item two', $result );
+		$this->assertStringContainsString( '• Item three', $result );
+		$this->assertStringNotContainsString( '- Item', $result );
+	}
+
+	/**
+	 * Raw HTML anchor tags must be converted to Slack link syntax and other
+	 * HTML tags must be stripped.
+	 */
+	public function test_slack_mrkdwn_html_anchor_converted() {
+		$input  = 'See <a href="https://example.com">Example</a> here.';
+		$result = $this->slack_mrkdwn( $input );
+		$this->assertStringContainsString( '<https://example.com|Example>', $result );
+		$this->assertStringNotContainsString( '<a ', $result );
+	}
+
+	/**
+	 * build_slack_blocks must return a single section block for short content.
+	 */
+	public function test_slack_build_blocks_single_block() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$blocks = WP_MCP_AI_Slack_Event_Controller::build_slack_blocks( 'Hello world.' );
+
+		$this->assertIsArray( $blocks );
+		$this->assertCount( 1, $blocks );
+		$this->assertSame( 'section', $blocks[0]['type'] );
+		$this->assertSame( 'mrkdwn', $blocks[0]['text']['type'] );
+		$this->assertSame( 'Hello world.', $blocks[0]['text']['text'] );
+	}
+
+	/**
+	 * build_slack_blocks must split content that exceeds 3000 characters into
+	 * multiple section blocks.
+	 */
+	public function test_slack_build_blocks_splits_long_content() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		// Build content across two paragraphs that together exceed 3000 chars.
+		$para_a = str_repeat( 'A', 2000 );
+		$para_b = str_repeat( 'B', 2000 );
+		$input  = $para_a . "\n\n" . $para_b;
+
+		$blocks = WP_MCP_AI_Slack_Event_Controller::build_slack_blocks( $input );
+
+		$this->assertIsArray( $blocks );
+		$this->assertGreaterThan( 1, count( $blocks ), 'Long content must be split into multiple blocks' );
+
+		foreach ( $blocks as $block ) {
+			$this->assertSame( 'section', $block['type'] );
+			$this->assertSame( 'mrkdwn', $block['text']['type'] );
+			$this->assertLessThanOrEqual( 3000, strlen( $block['text']['text'] ), 'Each block text must not exceed 3000 characters' );
+		}
+	}
+
+	/**
+	 * build_slack_blocks must return a single section block for empty input.
+	 */
+	public function test_slack_build_blocks_empty_input() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$blocks = WP_MCP_AI_Slack_Event_Controller::build_slack_blocks( '' );
+
+		$this->assertIsArray( $blocks );
+		$this->assertCount( 1, $blocks );
+		$this->assertSame( 'section', $blocks[0]['type'] );
+	}
+
+	// =========================================================================
 	// Discord Interaction Controller
 	// =========================================================================
 

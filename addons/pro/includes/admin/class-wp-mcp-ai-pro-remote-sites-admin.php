@@ -2701,6 +2701,34 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<!-- Type-specific fields for Slack -->
 				<tr class="slack-only-field" style="display: none;">
+					<td colspan="2" style="padding: 0;">
+						<div style="background: #f7f5fb; border-left: 4px solid #4a154b; padding: 14px 16px 10px; margin-bottom: 2px;">
+							<h3 style="margin: 0 0 6px; font-size: 14px; color: #1d2327;">
+								<?php esc_html_e( 'Slack Channel Connection Settings', 'mcp-ai-wpoos-pro' ); ?>
+							</h3>
+							<p style="margin: 0; font-size: 13px; color: #50575e;">
+								<?php
+								echo wp_kses(
+									sprintf(
+										/* translators: %s: link to api.slack.com/apps */
+										__( 'Configure your Slack bot credentials from %s. After saving, use the Webhook URL below in your Slack app\'s Event Subscriptions to enable AI auto-replies.', 'mcp-ai-wpoos-pro' ),
+										'<a href="' . esc_url( 'https://api.slack.com/apps' ) . '" target="_blank" rel="noopener noreferrer">api.slack.com/apps</a>'
+									),
+									array(
+										'a' => array(
+											'href'   => true,
+											'target' => true,
+											'rel'    => true,
+										),
+									)
+								);
+								?>
+							</p>
+						</div>
+					</td>
+				</tr>
+
+				<tr class="slack-only-field" style="display: none;">
 					<th scope="row">
 						<label for="slack_bot_token"><?php esc_html_e( 'Bot Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
@@ -11204,15 +11232,36 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		if ( ! empty( $test_channel ) && ! empty( $connection['api_key'] ) ) {
 			$bot_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
 			if ( '' !== $bot_token ) {
-				$slack_body = wp_strip_all_tags( $ai_reply );
-				$slack_body = html_entity_decode( $slack_body, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+				// Load the Slack event controller so we can use its static
+				// markdown-to-mrkdwn converter and Block Kit builder.
+				$slack_controller_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-slack-event-controller.php';
+				if ( file_exists( $slack_controller_file ) && ! class_exists( 'WP_MCP_AI_Slack_Event_Controller' ) ) {
+					require_once $slack_controller_file;
+				}
 
-				$payload = wp_json_encode(
-					array(
-						'channel' => $test_channel,
-						'text'    => $slack_body,
-					)
+				// Convert the AI Markdown response to Slack mrkdwn so the reply
+				// renders with proper formatting (bold, italic, code, links) instead
+				// of showing raw Markdown syntax in the Slack channel.
+				$mrkdwn_content = class_exists( 'WP_MCP_AI_Slack_Event_Controller' )
+					? WP_MCP_AI_Slack_Event_Controller::convert_markdown_to_mrkdwn( $ai_reply )
+					: wp_strip_all_tags( $ai_reply );
+
+				$blocks = class_exists( 'WP_MCP_AI_Slack_Event_Controller' )
+					? WP_MCP_AI_Slack_Event_Controller::build_slack_blocks( $mrkdwn_content )
+					: array();
+
+				$fallback_text = wp_strip_all_tags( $ai_reply );
+
+				$post_data = array(
+					'channel' => $test_channel,
+					'text'    => $fallback_text,
 				);
+
+				if ( ! empty( $blocks ) ) {
+					$post_data['blocks'] = $blocks;
+				}
+
+				$payload = wp_json_encode( $post_data );
 
 				if ( false !== $payload ) {
 					$send_result = wp_remote_post(

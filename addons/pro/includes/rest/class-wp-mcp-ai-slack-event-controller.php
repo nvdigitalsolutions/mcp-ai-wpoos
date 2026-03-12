@@ -636,15 +636,25 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Convert AI markdown response to Slack mrkdwn so the reply renders
+		// with proper bold, italic, code, and link formatting instead of showing
+		// raw markdown syntax in the Slack channel.
+		$mrkdwn_content = self::convert_markdown_to_mrkdwn( $content );
+
 		// Post reply to Slack via chat.postMessage.
 		// Industry standard: if the incoming message was inside a Slack thread,
 		// reply inside the same thread by passing thread_ts. This keeps channel
 		// conversations tidy and is the expected behaviour for Slack bots.
 		// thread_ts is not included for DMs (already 1-on-1) or top-level
 		// channel messages (no active thread).
+		// Use Slack Block Kit with mrkdwn text type for rich formatting.
+		// The plain-text 'text' field is required as a notification fallback.
+		$blocks = self::build_slack_blocks( $mrkdwn_content );
+
 		$payload = array(
 			'channel' => $channel_id,
-			'text'    => $content,
+			'text'    => wp_strip_all_tags( $content ),
+			'blocks'  => $blocks,
 		);
 
 		if ( '' !== $thread_ts && ! $is_dm ) {
@@ -1000,6 +1010,202 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Convert standard Markdown to Slack mrkdwn format.
+	 *
+	 * AI models return responses in standard Markdown. Slack uses its own
+	 * "mrkdwn" dialect that differs in key ways (e.g. *bold* not **bold**,
+	 * _italic_, ~strikethrough~, <url|text> links). This method bridges the
+	 * gap so that AI replies render with proper formatting in Slack channels.
+	 *
+	 * Code spans and code blocks are preserved verbatim because their syntax
+	 * is identical in both dialects. Headings are converted to bold lines.
+	 * HTML anchor tags that AI assistants sometimes emit are converted to
+	 * Slack link syntax. Unrecognised HTML tags are stripped.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text Markdown-formatted AI response text.
+	 * @return string mrkdwn-formatted text suitable for Slack chat.postMessage.
+	 */
+	public static function convert_markdown_to_mrkdwn( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return '';
+		}
+
+		// 1. Extract fenced code blocks and replace with placeholders so that
+		//    content inside them is not processed by subsequent regex rules.
+		$code_blocks            = array();
+		$code_block_placeholder = "\x07SLKCB:";
+		$cb_index               = 0;
+
+		$text = preg_replace_callback(
+			'/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/s',
+			function ( $m ) use ( &$code_blocks, &$cb_index, $code_block_placeholder ) {
+				$key               = $code_block_placeholder . $cb_index . "\x07";
+				$code_blocks[$key] = '```' . rtrim( $m[2], "\n" ) . '```';
+				++$cb_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 2. Extract inline code spans and replace with placeholders.
+		$inline_codes            = array();
+		$inline_code_placeholder = "\x07SLKIC:";
+		$ic_index                = 0;
+
+		$text = preg_replace_callback(
+			'/`([^`\n]+?)`/',
+			function ( $m ) use ( &$inline_codes, &$ic_index, $inline_code_placeholder ) {
+				$key                = $inline_code_placeholder . $ic_index . "\x07";
+				$inline_codes[$key] = '`' . $m[1] . '`';
+				++$ic_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 3. Convert HTML anchor tags to Slack link syntax <url|link_text>.
+		//    AI responses sometimes emit raw <a href="…">…</a> instead of
+		//    Markdown [text](url) syntax.
+		$text = preg_replace_callback(
+			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
+			function ( $m ) {
+				$url       = esc_url( $m[1] );
+				$link_text = wp_strip_all_tags( $m[2] );
+				if ( '' === $url ) {
+					return $link_text;
+				}
+				return '' !== $link_text ? '<' . $url . '|' . $link_text . '>' : '<' . $url . '>';
+			},
+			$text
+		);
+
+		// 4. Strip any remaining HTML tags (Slack does not render HTML).
+		$text = wp_strip_all_tags( $text );
+		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+		// 5. Headings (# … through ######) → *bold* text on its own line.
+		$text = preg_replace( '/^#{1,6}\s+(.+)$/m', '*$1*', $text );
+
+		// 6. Bold: **text** or __text__ → *text* (Slack single-asterisk bold).
+		$text = preg_replace( '/\*\*(.+?)\*\*/s', '*$1*', $text );
+		$text = preg_replace( '/__(.+?)__/s', '*$1*', $text );
+
+		// 7. Italic: *text* → _text_ (Slack underscore italic).
+		//    Use lookbehind/lookahead to avoid matching Slack's own *bold* tokens
+		//    that were just created in step 6.
+		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '_$1_', $text );
+
+		// 8. Underscored italic: _text_ stays as _text_ (already mrkdwn).
+		//    No change needed.
+
+		// 9. Strikethrough: ~~text~~ → ~text~ (Slack single-tilde).
+		$text = preg_replace( '/~~(.+?)~~/s', '~$1~', $text );
+
+		// 10. Markdown links: [text](url) → <url|text>.
+		$text = preg_replace_callback(
+			'/\[([^\]]+)\]\(([^)]+)\)/',
+			function ( $m ) {
+				$url = esc_url( trim( $m[2] ) );
+				if ( '' === $url ) {
+					return $m[1];
+				}
+				return '<' . $url . '|' . $m[1] . '>';
+			},
+			$text
+		);
+
+		// 11. Bullet lists: lines starting with "- " or "* " → "• " (Unicode bullet).
+		$text = preg_replace( '/^[ \t]*[-*]\s+/m', '• ', $text );
+
+		// 12. Restore inline code placeholders.
+		if ( ! empty( $inline_codes ) ) {
+			$text = str_replace( array_keys( $inline_codes ), array_values( $inline_codes ), $text );
+		}
+
+		// 13. Restore fenced code block placeholders.
+		if ( ! empty( $code_blocks ) ) {
+			$text = str_replace( array_keys( $code_blocks ), array_values( $code_blocks ), $text );
+		}
+
+		return trim( $text );
+	}
+
+	/**
+	 * Build a Slack Block Kit payload from mrkdwn-formatted text.
+	 *
+	 * Slack Block Kit section blocks allow mrkdwn rendering and have a 3 000-
+	 * character limit per block. This method splits long replies into multiple
+	 * section blocks while keeping paragraph breaks intact. Each block renders
+	 * as rich text with proper bold, italic, code, and link formatting.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $mrkdwn mrkdwn-formatted text.
+	 * @return array Array of Slack Block Kit block objects.
+	 */
+	public static function build_slack_blocks( $mrkdwn ) {
+		// Slack section block text limit.
+		$max_block_len = 3000;
+
+		if ( strlen( $mrkdwn ) <= $max_block_len ) {
+			return array(
+				array(
+					'type' => 'section',
+					'text' => array(
+						'type' => 'mrkdwn',
+						'text' => $mrkdwn,
+					),
+				),
+			);
+		}
+
+		// Split on two or more consecutive newlines to identify paragraph boundaries.
+		// Each paragraph is accumulated into a block until the 3000-char limit is reached.
+		$paragraphs = preg_split( '/\n{2,}/', $mrkdwn );
+		$blocks     = array();
+		$current    = '';
+
+		foreach ( $paragraphs as $para ) {
+			$para = trim( $para );
+			if ( '' === $para ) {
+				continue;
+			}
+
+			$candidate = '' === $current ? $para : $current . "\n\n" . $para;
+
+			if ( strlen( $candidate ) <= $max_block_len ) {
+				$current = $candidate;
+			} else {
+				if ( '' !== $current ) {
+					$blocks[] = array(
+						'type' => 'section',
+						'text' => array(
+							'type' => 'mrkdwn',
+							'text' => $current,
+						),
+					);
+				}
+				// If a single paragraph exceeds the limit, truncate it.
+				$current = strlen( $para ) > $max_block_len ? substr( $para, 0, $max_block_len ) : $para;
+			}
+		}
+
+		if ( '' !== $current ) {
+			$blocks[] = array(
+				'type' => 'section',
+				'text' => array(
+					'type' => 'mrkdwn',
+					'text' => $current,
+				),
+			);
+		}
+
+		return $blocks;
 	}
 
 	/**
