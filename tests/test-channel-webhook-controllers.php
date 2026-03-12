@@ -667,6 +667,302 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertNull( $exception, 'process_event must not throw for unsupported event types' );
 	}
 
+	/**
+	 * process_event stops early for message events that contain a bot_id (bot
+	 * message in channel). app_mention events skip this filter.
+	 */
+	public function test_slack_process_event_filters_bot_messages_for_message_type() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		// A bot message in a channel — must be silently skipped (bot_id present).
+		$event = array(
+			'type'    => 'message',
+			'bot_id'  => 'B0BOTID',
+			'user'    => 'U0123456789',
+			'text'    => 'I am a bot reply',
+			'channel' => 'C0123456789',
+		);
+
+		$exception = null;
+		try {
+			$method->invoke( $controller, $event );
+		} catch ( Exception $e ) {
+			$exception = $e;
+		}
+
+		$this->assertNull( $exception, 'process_event must not throw for bot message events' );
+	}
+
+	/**
+	 * process_event must stop early for message events with a subtype (e.g.
+	 * message_changed, bot_message) to avoid double-processing Slack edits.
+	 */
+	public function test_slack_process_event_filters_message_subtypes() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		$event = array(
+			'type'    => 'message',
+			'subtype' => 'message_changed',
+			'user'    => 'U0123456789',
+			'text'    => 'edited message',
+			'channel' => 'C0123456789',
+		);
+
+		$exception = null;
+		try {
+			$method->invoke( $controller, $event );
+		} catch ( Exception $e ) {
+			$exception = $e;
+		}
+
+		$this->assertNull( $exception, 'process_event must not throw for message subtype events' );
+	}
+
+	/**
+	 * process_event must include the message ts field in the cron job so that
+	 * duplicate Slack events for the same message are deduplicated. Verify the
+	 * process_event method can be called with a ts field without errors.
+	 */
+	public function test_slack_process_event_accepts_ts_field() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		// Event with a ts field — process_event must accept it without error.
+		// With no active connection the method returns at the connection check.
+		$event = array(
+			'type'    => 'app_mention',
+			'user'    => 'U0123456789',
+			'text'    => '<@U987654321> hello',
+			'channel' => 'C0123456789',
+			'ts'      => '1234567890.123456',
+		);
+
+		$exception = null;
+		try {
+			$method->invoke( $controller, $event );
+		} catch ( Exception $e ) {
+			$exception = $e;
+		}
+
+		$this->assertNull( $exception, 'process_event must accept events with a ts field' );
+	}
+
+	/**
+	 * When require_mention is enabled and the message text contains the Slack
+	 * native bot-mention format <@BOT_USER_ID>, process_event must NOT drop
+	 * the message even if the text does not contain an @assistant-slug mention.
+	 *
+	 * This covers the real-world case where only the message.channels event is
+	 * subscribed (not app_mention) and a user @mentions the bot via Slack's
+	 * native <@USER_ID> format.
+	 */
+	public function test_slack_process_event_native_mention_satisfies_require_mention() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		// Store a Slack connection with require_mention enabled and a saved
+		// slack_bot_user_id so that process_event can detect the Slack mention.
+		$connection_id = 'conn_slk_test_' . wp_generate_password( 8, false );
+		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$assistant_id  = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Slack Test Assistant',
+				'post_name'   => 'slack-test-assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		$connections[ $connection_id ] = array(
+			'id'                  => $connection_id,
+			'name'                => 'Slack Native Mention Test',
+			'connection_type'     => 'slack',
+			'enabled'             => true,
+			'require_mention'     => true,
+			'slack_bot_user_id'   => 'UBOTXXX',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $connection_id );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		// Message event containing <@UBOTXXX> — native Slack mention of the bot.
+		// With require_mention enabled this must NOT be dropped; the cron hook
+		// should be scheduled.
+		$event = array(
+			'type'    => 'message',
+			'user'    => 'UUSER123',
+			'text'    => '<@UBOTXXX> what is the weather today?',
+			'channel' => 'CCHANNEL1',
+			'ts'      => '1700000001.000100',
+		);
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+
+		$method->invoke( $controller, $event );
+
+		// The cron job must have been scheduled.
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$this->assertNotFalse( $next, 'Cron job must be scheduled when <@BOT_USER_ID> satisfies require_mention' );
+
+		// Clean up.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_delete_post( $assistant_id, true );
+		unset( $connections[ $connection_id ] );
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
+	/**
+	 * When require_mention is enabled and the message text does NOT contain the
+	 * bot's Slack user ID (<@BOT_USER_ID>) or an @slug mention, process_event
+	 * must silently drop the message (no cron job scheduled).
+	 */
+	public function test_slack_process_event_require_mention_drops_unrelated_messages() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$connection_id = 'conn_slk_drop_' . wp_generate_password( 8, false );
+		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$assistant_id  = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Slack Drop Test',
+				'post_name'   => 'slack-drop-test',
+				'post_status' => 'publish',
+			)
+		);
+
+		$connections[ $connection_id ] = array(
+			'id'                  => $connection_id,
+			'name'                => 'Slack Drop Test',
+			'connection_type'     => 'slack',
+			'enabled'             => true,
+			'require_mention'     => true,
+			'slack_bot_user_id'   => 'UBOTXXX',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $connection_id );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+
+		// Regular message that does NOT mention the bot.
+		$event = array(
+			'type'    => 'message',
+			'user'    => 'UUSER123',
+			'text'    => 'Hi team, anyone free for lunch?',
+			'channel' => 'CCHANNEL1',
+			'ts'      => '1700000002.000200',
+		);
+
+		$method->invoke( $controller, $event );
+
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$this->assertFalse( $next, 'Cron job must NOT be scheduled for messages that do not mention the bot' );
+
+		wp_delete_post( $assistant_id, true );
+		unset( $connections[ $connection_id ] );
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
+	/**
+	 * Duplicate messages (same ts + channel + connection) must be deduplicated
+	 * so that when Slack sends both an app_mention and a message.channels event
+	 * for the same user message, only one cron job is scheduled.
+	 */
+	public function test_slack_process_event_deduplicates_same_message_ts() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$connection_id = 'conn_slk_dedup_' . wp_generate_password( 8, false );
+		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$assistant_id  = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Slack Dedup Test',
+				'post_name'   => 'slack-dedup-test',
+				'post_status' => 'publish',
+			)
+		);
+
+		$connections[ $connection_id ] = array(
+			'id'                  => $connection_id,
+			'name'                => 'Slack Dedup Test',
+			'connection_type'     => 'slack',
+			'enabled'             => true,
+			'require_mention'     => false,
+			'slack_bot_user_id'   => 'UBOTYYY',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $connection_id );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+
+		$message_ts = '1700000003.000300';
+		$event_base = array(
+			'user'    => 'UUSER456',
+			'text'    => '<@UBOTYYY> hello',
+			'channel' => 'CCHANNEL2',
+			'ts'      => $message_ts,
+		);
+
+		// First event — app_mention — should schedule a cron job.
+		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'app_mention' ) ) );
+		$next_after_first = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$this->assertNotFalse( $next_after_first, 'First event (app_mention) must schedule a cron job' );
+
+		// Second event — message.channels for the same ts — must be deduplicated.
+		// Unschedule the first job to test whether a new one would be added.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'message' ) ) );
+		$next_after_second = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$this->assertFalse( $next_after_second, 'Duplicate message event (same ts) must not schedule a second cron job' );
+
+		// Clean up.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_delete_post( $assistant_id, true );
+		unset( $connections[ $connection_id ] );
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
 	// =========================================================================
 	// Discord Interaction Controller
 	// =========================================================================

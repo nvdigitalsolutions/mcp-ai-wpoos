@@ -292,6 +292,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$text       = isset( $event['text'] ) ? (string) $event['text'] : '';
 		$user_id    = isset( $event['user'] ) ? (string) $event['user'] : '';
 		$channel_id = isset( $event['channel'] ) ? (string) $event['channel'] : '';
+		$message_ts = isset( $event['ts'] ) ? (string) $event['ts'] : '';
 
 		if ( '' === $text || '' === $user_id || '' === $channel_id ) {
 			return;
@@ -318,11 +319,45 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// When the connection requires a mention, app_mention events always satisfy
-		// it (the user @mentioned the bot). For plain message events, check whether
-		// the text contains an @slug mention.
-		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
-			return;
+		// Retrieve the bot's Slack user ID (stored when the admin last ran the
+		// connection test). Used to detect native Slack @mentions (<@USER_ID>)
+		// in message events and to strip the mention prefix before sending to AI.
+		$bot_user_id = isset( $connection['slack_bot_user_id'] )
+			? sanitize_text_field( $connection['slack_bot_user_id'] )
+			: '';
+
+		// When the connection requires a mention, app_mention events ALWAYS satisfy
+		// it (the user explicitly @mentioned the bot). For plain message events,
+		// accept EITHER a Slack native bot mention (<@BOT_USER_ID>) OR an
+		// @assistant-slug mention so the bot responds even when only the
+		// message.channels event is subscribed (not app_mention).
+		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention ) {
+			$has_slack_bot_mention = '' !== $bot_user_id && false !== strpos( $text, '<@' . $bot_user_id . '>' );
+			if ( ! $has_slack_bot_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+				return;
+			}
+		}
+
+		// Prevent duplicate AI replies when Slack delivers both an app_mention
+		// event AND a message.channels event for the same user message (Slack
+		// sends both when the bot is @mentioned in a public channel). Guard with
+		// a short transient keyed on the message timestamp + channel + connection.
+		if ( '' !== $message_ts ) {
+			$msg_dedup_key = 'wp_mcp_ai_sl_msg_' . md5( $message_ts . '_' . $channel_id . '_' . $connection_id );
+			if ( get_transient( $msg_dedup_key ) ) {
+				return;
+			}
+			set_transient( $msg_dedup_key, 1, self::DEDUP_TRANSIENT_TTL );
+		}
+
+		// Strip the leading "<@BOT_USER_ID> " Slack mention syntax from the
+		// message text before storing and sending to the AI so the assistant
+		// receives a clean question without the mention noise.
+		if ( '' !== $bot_user_id ) {
+			$stripped = trim( preg_replace( '/^<@' . preg_quote( $bot_user_id, '/' ) . '>\s*/u', '', $text ) );
+			if ( '' !== $stripped ) {
+				$text = $stripped;
+			}
 		}
 
 		// Find or create the contact in the Channel Contacts CCT.
@@ -350,7 +385,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 					'status'             => 'received',
 					'connection_id'      => $connection_id,
 					'phone_number_id'    => $channel_id,
-					'timestamp'          => isset( $event['ts'] ) ? (int) $event['ts'] : time(),
+					'timestamp'          => '' !== $message_ts ? (int) (float) $message_ts : time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) $assigned_assistant_ids[0],
 				)

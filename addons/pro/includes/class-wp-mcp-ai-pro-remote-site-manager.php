@@ -279,6 +279,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['workspace_id'] = $existing_connection['workspace_id'];
 			}
 
+			// Preserve existing slack_bot_user_id (Slack) if not provided.
+			if ( empty( $connection_data['slack_bot_user_id'] ) && ! empty( $existing_connection['slack_bot_user_id'] ) ) {
+				$connection_data['slack_bot_user_id'] = $existing_connection['slack_bot_user_id'];
+			}
+
 			// Preserve existing Discord-specific fields if not provided.
 			if ( empty( $connection_data['application_id'] ) && ! empty( $existing_connection['application_id'] ) ) {
 				$connection_data['application_id'] = $existing_connection['application_id'];
@@ -449,7 +454,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'channel_url'         => isset( $connection_data['channel_url'] ) ? esc_url_raw( $connection_data['channel_url'] ) : '',
 			'group_id'            => isset( $connection_data['group_id'] ) ? sanitize_text_field( $connection_data['group_id'] ) : '',
 			// Slack-specific fields.
-			'workspace_id'    => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			'workspace_id'      => isset( $connection_data['workspace_id'] ) ? sanitize_text_field( $connection_data['workspace_id'] ) : '',
+			// Bot's Slack user ID (U-prefixed), populated by the admin connection test.
+			// Used to detect native Slack @mentions (<@USER_ID>) in incoming messages.
+			'slack_bot_user_id' => isset( $connection_data['slack_bot_user_id'] ) ? sanitize_text_field( $connection_data['slack_bot_user_id'] ) : '',
 			// Discord-specific fields.
 			'application_id'  => isset( $connection_data['application_id'] ) ? sanitize_text_field( $connection_data['application_id'] ) : '',
 			'guild_id'        => isset( $connection_data['guild_id'] ) ? sanitize_text_field( $connection_data['guild_id'] ) : '',
@@ -1327,6 +1335,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$webhook_url
 		);
 
+		// Warn when the Signing Secret is not configured. Without it, HMAC
+		// signature validation rejects every incoming Slack event with a 403,
+		// so the bot will never respond even when the token is valid and the
+		// Event Subscriptions URL is correctly set up in Slack.
+		$has_signing_secret = ! empty( $connection['signing_secret'] ) || ! empty( $connection['api_secret'] );
+		$warning            = $has_signing_secret ? '' : __(
+			'Signing Secret is not configured. Without it, all Slack event webhooks are rejected with a 403 error and the bot cannot respond to messages. Add the Signing Secret from your Slack app\'s Basic Information page, enter it in the Signing Secret field, and save the connection.',
+			'mcp-ai-wpoos-pro'
+		);
+
 		return array(
 			'success'     => true,
 			'slack'       => true,
@@ -1336,6 +1354,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'bot_user_id' => $bot_user_id,
 			'webhook_url' => $webhook_url,
 			'message'     => $message,
+			'warning'     => $warning,
 		);
 	}
 
