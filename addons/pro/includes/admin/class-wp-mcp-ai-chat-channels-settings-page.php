@@ -1147,54 +1147,146 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<h3>🎮 <?php esc_html_e( 'Discord Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
 			</div>
 			<div class="platform-config-content">
-				<p><?php esc_html_e( 'Discord API enables server management with channels, roles, and rich embedded messages.', 'mcp-ai-wpoos-pro' ); ?></p>
-				
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: %s: link to Discord Developer Portal */
+							__( 'Discord integration uses the <a href="%s" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a> to create a bot application that receives messages from servers (guilds) via the Discord Gateway (WebSocket). The bot joins your server with specific permissions and responds to messages in channels and DMs. An Interactions Endpoint URL can also be registered to handle slash commands without maintaining a persistent connection.', 'mcp-ai-wpoos-pro' ),
+							'https://discord.com/developers/applications'
+						),
+						array(
+							'a' => array(
+								'href'   => true,
+								'target' => true,
+								'rel'    => true,
+							),
+						)
+					);
+					?>
+				</p>
+
 				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ol>
-					<li><?php esc_html_e( 'Go to https://discord.com/developers/applications', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Create a new application and add a bot', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Enable required intents (Server Members, Message Content)', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Copy the bot token and invite bot to your server', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li>
+						<?php
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to Discord Developer Portal */
+								__( 'Go to the <a href="%s" target="_blank" rel="noopener noreferrer">Discord Developer Portal</a> and click <strong>New Application</strong>. Give it a name and save.', 'mcp-ai-wpoos-pro' ),
+								'https://discord.com/developers/applications'
+							),
+							array(
+								'a'      => array( 'href' => true, 'target' => true, 'rel' => true ),
+								'strong' => array(),
+							)
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'In the application, go to the <strong>Bot</strong> tab. Click <strong>Add Bot</strong> (or <strong>Reset Token</strong> to reveal a new token). Copy the <strong>Bot Token</strong> — this is the primary credential for the Discord connection.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'On the <strong>Bot</strong> tab, scroll to <strong>Privileged Gateway Intents</strong> and enable <strong>Server Members Intent</strong> and <strong>Message Content Intent</strong>. These are required to read message content and user information.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'Go to <strong>OAuth2 → URL Generator</strong>. Under Scopes, select <code>bot</code> and <code>applications.commands</code>. Under Bot Permissions, select the required permissions below. Copy the generated URL and open it in a browser to invite the bot to your server.', 'mcp-ai-wpoos-pro' ),
+							array(
+								'strong' => array(),
+								'code'   => array(),
+							)
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'Copy the <strong>Application ID</strong> and <strong>Public Key</strong> from the <strong>General Information</strong> tab. Set the Interactions Endpoint URL to the Webhook URL shown below.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li><?php esc_html_e( 'Add a Discord connection in the Remote Site Manager with the Bot Token, Application ID, and Public Key. Assign an AI Assistant and save.', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
+				<h4><?php esc_html_e( 'Connection Credentials (set in Remote Site Manager)', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<table class="form-table">
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Bot Token', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<input type="password" name="discord_bot_token" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Discord bot token', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Discord bot token from the Bot tab of the Developer Portal. This is the primary credential used to authenticate all Discord API requests. Set per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Application ID', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<input type="text" name="discord_application_id" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Discord application ID', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Discord application ID from the General Information tab. Required for registering slash commands and building invite URLs. Set per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Public Key', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
-							<input type="text" name="discord_public_key" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Used for verifying interaction requests', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Discord application public key from the General Information tab. Used to verify the Ed25519 signature on interaction requests sent to the Interactions Endpoint URL. Set per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Webhook URL (Interactions Endpoint)', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/discord' ) ); ?></code>
-							<p class="description"><?php esc_html_e( 'Configure as Interactions Endpoint URL', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Set this as the Interactions Endpoint URL in the Discord Developer Portal → General Information. Discord will send all interaction payloads (slash commands, buttons, etc.) to this URL, verified using the Ed25519 Public Key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 				</table>
 
-				<h4><?php esc_html_e( 'Required Permissions', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<div class="code-snippet">Send Messages, Read Messages/View Channels, Manage Channels, Manage Roles, Embed Links, Attach Files, Read Message History</div>
+				<h4><?php esc_html_e( 'Required Privileged Gateway Intents', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Intent', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Required For', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><code>Server Members Intent</code></td>
+							<td><?php esc_html_e( 'Receiving member join/leave events and looking up user information by ID', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><code>Message Content Intent</code></td>
+							<td><?php esc_html_e( 'Reading the content of messages in channels — required for AI reply processing. Without this, message content is always empty.', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<h4><?php esc_html_e( 'Required Bot Permissions', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<div class="code-snippet">Send Messages, Read Messages/View Channels, Read Message History, Embed Links, Attach Files, Use Application Commands</div>
+				<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'Add Manage Channels and Manage Roles only if the AI assistant needs channel/role management capabilities.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies the Bot Token by querying the Discord API. Available on the connection edit page in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming Discord message and generates an AI-powered reply. Requires at least one assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
-					<li><a href="https://discord.com/developers/docs" target="_blank"><?php esc_html_e( 'Discord Developer Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
-					<li><a href="https://discord.com/developers/docs/resources/channel" target="_blank"><?php esc_html_e( 'Channel Resource Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://discord.com/developers/docs/intro" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Discord Developer Documentation', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://discord.com/developers/docs/topics/gateway" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Discord Gateway (WebSocket) Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://discord.com/developers/docs/interactions/overview" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Discord Interactions (Slash Commands & Buttons)', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://discord.com/developers/docs/resources/channel" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Channel Resource Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://discord.com/developers/docs/topics/permissions" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Discord Permissions Reference', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
@@ -1211,54 +1303,183 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<h3>👔 <?php esc_html_e( 'Microsoft Teams Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
 			</div>
 			<div class="platform-config-content">
-				<p><?php esc_html_e( 'Microsoft Teams integration enables enterprise collaboration with channels, tabs, and adaptive cards.', 'mcp-ai-wpoos-pro' ); ?></p>
-				
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: %s: link to Microsoft Teams outgoing webhooks documentation */
+							__( 'Microsoft Teams integration uses <a href="%s" target="_blank" rel="noopener noreferrer">Outgoing Webhooks</a> to receive messages from Teams channels and DMs. When a user mentions your bot or sends a direct message, Teams calls your Webhook URL signed with an HMAC-SHA256 Security Token. Optional Microsoft Graph API credentials enable AI-generated replies to be posted back into Teams threads, group chats, and personal chats.', 'mcp-ai-wpoos-pro' ),
+							'https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-outgoing-webhook'
+						),
+						array(
+							'a' => array(
+								'href'   => true,
+								'target' => true,
+								'rel'    => true,
+							),
+						)
+					);
+					?>
+				</p>
+
 				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ol>
-					<li><?php esc_html_e( 'Go to Azure Portal and register a new application', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Add Microsoft Graph API permissions', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Create a client secret', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Configure redirect URI for OAuth', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'Go to <strong>NV oOS Pro → Remote Sites</strong> and click <strong>Add New Connection</strong>. Choose <strong>Microsoft Teams</strong> as the connection type and save to generate your connection-specific Webhook URL.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to Microsoft Teams Admin Center */
+								__( 'In Microsoft Teams, open the team where you want the bot. Click <strong>… More options</strong> → <strong>Manage team</strong> → <strong>Apps</strong> tab → <strong>Create outgoing webhook</strong>. Alternatively, visit the <a href="%s" target="_blank" rel="noopener noreferrer">Teams Admin Center</a> → Apps → Manage apps → Outgoing webhooks.', 'mcp-ai-wpoos-pro' ),
+								'https://admin.teams.microsoft.com/'
+							),
+							array(
+								'strong' => array(),
+								'a'      => array(
+									'href'   => true,
+									'target' => true,
+									'rel'    => true,
+								),
+							)
+						);
+						?>
+					</li>
+					<li><?php esc_html_e( 'Fill in a Name (e.g. "AI Assistant"), Callback URL (paste the Webhook URL from step 1), and an optional Description. Click Create.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Copy the Security Token that Teams displays after creation. Paste it into the Security Token field in the Remote Site Manager for this connection.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( '<strong>Optional — AI replies via Graph API:</strong> To enable the bot to post AI-generated replies back into Teams, obtain a Microsoft Graph API Bearer token (e.g. via Azure AD application credentials with <code>ChannelMessage.Send</code> and <code>Chat.ReadWrite</code> permissions) and save it in the Graph Access Token field.', 'mcp-ai-wpoos-pro' ),
+							array(
+								'strong' => array(),
+								'code'   => array(),
+							)
+						);
+						?>
+					</li>
+					<li><?php esc_html_e( 'Assign an AI Assistant to the connection in the Remote Site Manager, then @mention your outgoing webhook by name in any Teams channel to trigger an AI reply.', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
+				<h4><?php esc_html_e( 'Connection Credentials (set in Remote Site Manager)', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<table class="form-table">
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Application (Client) ID', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td>
-							<input type="text" name="teams_client_id" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Azure AD application ID', 'mcp-ai-wpoos-pro' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Client Secret', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td>
-							<input type="password" name="teams_client_secret" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Azure AD client secret', 'mcp-ai-wpoos-pro' ); ?></p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Tenant ID', 'mcp-ai-wpoos-pro' ); ?></th>
-						<td>
-							<input type="text" name="teams_tenant_id" class="regular-text" />
-							<p class="description"><?php esc_html_e( 'Your Azure AD tenant ID', 'mcp-ai-wpoos-pro' ); ?></p>
-						</td>
-					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/teams' ) ); ?></code>
-							<p class="description"><?php esc_html_e( 'Configure as Bot Messaging Endpoint', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description">
+								<?php esc_html_e( 'Generic URL for single-tenant setups. Each connection in the Remote Site Manager also gets a dedicated per-connection URL (e.g. /webhooks/teams/{id}) — use that URL as the Teams Outgoing Webhook Callback URL for multi-tenant configurations.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Security Token (Signing Secret)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'The HMAC-SHA256 Security Token shown by Teams when you create the Outgoing Webhook. This is the required credential — it is set per-connection in the Remote Site Manager (Security Token field). Every incoming Teams request is validated against this secret before processing.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Microsoft Graph Access Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'Optional Bearer token used to send AI-generated replies back into Teams channels and chats via the Microsoft Graph API. Obtain this token from your Azure AD application using client credentials or admin consent. Set it per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Tenant ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'Optional Azure AD tenant ID for reference. Set per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'App ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<p class="description">
+								<?php esc_html_e( 'Optional Azure AD application ID for reference or use with the Declarative Agent Manifest. Set per-connection in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
 						</td>
 					</tr>
 				</table>
 
-				<h4><?php esc_html_e( 'Required API Permissions', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<div class="code-snippet">Chat.ReadWrite, Channel.ReadBasic.All, ChannelMessage.Send, Team.ReadBasic.All</div>
+				<h4><?php esc_html_e( 'Security', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'Every incoming Teams Outgoing Webhook request is validated using HMAC-SHA256 with your Security Token. The request body is hashed with the base64-decoded Security Token and the result (base64-encoded) is compared against the Authorization header sent by Teams. Requests with a timestamp older than 5 minutes are rejected to prevent replay attacks.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Conversation Types', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Behavior', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><code>channel</code></td>
+							<td><?php esc_html_e( 'Messages in team channels. Replies are posted in-thread via the Graph API replies endpoint to keep conversations tidy. The "Require Mention" option applies here.', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><code>groupChat</code></td>
+							<td><?php esc_html_e( 'Messages in Teams group chats. Replies use the Graph API /chats/{id}/messages endpoint. DM bypass: require_mention is not enforced for group chats.', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+						<tr>
+							<td><code>personal</code></td>
+							<td><?php esc_html_e( 'Direct messages (DMs) to the bot. Always replied to regardless of the "Require Mention" setting, matching industry-standard DM bot behavior.', 'mcp-ai-wpoos-pro' ); ?></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<h4><?php esc_html_e( 'Required Graph API Permissions (for AI replies)', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<div class="code-snippet">ChannelMessage.Send, Chat.ReadWrite, Channel.ReadBasic.All, Team.ReadBasic.All</div>
+				<p class="description" style="margin-top: 4px;"><?php esc_html_e( 'These permissions are only needed if you configure a Microsoft Graph Access Token to enable proactive AI replies. No Graph permissions are required to receive incoming messages via the Outgoing Webhook alone.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Declarative Agent Manifest', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: 1: opening <a> tag, 2: closing </a> tag */
+							__( 'After saving a Teams connection in the Remote Site Manager, use the <strong>Generate Manifest</strong> button on the connection edit page to create a %1$sMicrosoft 365 Copilot declarative agent manifest%2$s. Download the JSON file and upload it to the Microsoft Teams Developer Portal to publish your AI assistant as a Teams app.', 'mcp-ai-wpoos-pro' ),
+							'<a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent" target="_blank" rel="noopener noreferrer">',
+							'</a>'
+						),
+						array(
+							'strong' => array(),
+							'a'      => array(
+								'href'   => true,
+								'target' => true,
+								'rel'    => true,
+							),
+						)
+					);
+					?>
+				</p>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'After adding a Teams connection in the Remote Site Manager, use the following features on the connection edit page:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Graph Token', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies your Microsoft Graph Access Token by querying the Graph API. Requires a valid Graph token to be saved.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming Teams message and generates an AI-powered reply using the first assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
-					<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/" target="_blank"><?php esc_html_e( 'Microsoft Teams Developer Platform', 'mcp-ai-wpoos-pro' ); ?></a></li>
-					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview" target="_blank"><?php esc_html_e( 'Microsoft Graph Teams API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-outgoing-webhook" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Create an Outgoing Webhook in Microsoft Teams', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/microsoftteams/platform/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft Teams Developer Platform', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/resources/teams-api-overview" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft Graph Teams API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/graph/api/channel-post-messages" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Send a Message to a Teams Channel (Graph API)', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/overview-declarative-agent" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft 365 Copilot Declarative Agents', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://admin.teams.microsoft.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Microsoft Teams Admin Center', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
@@ -1784,35 +2005,134 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				<h3>💬 <?php esc_html_e( 'Google Chat Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
 			</div>
 			<div class="platform-config-content">
-				<p><?php esc_html_e( 'Google Chat integration enables bot responses to @mentions in Spaces and direct messages using the Google Chat API.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: %s: link to Google Chat API docs */
+							__( 'Google Chat integration uses the <a href="%s" target="_blank" rel="noopener noreferrer">Google Chat API</a> (HTTP endpoint connection type) to receive messages from Spaces and DMs. When a user @mentions your bot or sends it a direct message, Google Chat delivers the event as an HTTP POST to your Webhook URL. The bot replies synchronously by returning a JSON response, or asynchronously via the Google Chat REST API using a service account.', 'mcp-ai-wpoos-pro' ),
+							'https://developers.google.com/chat/how-tos/apps-overview'
+						),
+						array(
+							'a' => array(
+								'href'   => true,
+								'target' => true,
+								'rel'    => true,
+							),
+						)
+					);
+					?>
+				</p>
 
 				<h4><?php esc_html_e( 'Setup Instructions', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ol>
-					<li><?php esc_html_e( 'Go to Google Cloud Console and create or select a project.', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Enable the Google Chat API for your project.', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Under Google Chat API → Configuration, set the App URL to the Webhook URL below.', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Enable "Allow the app to join spaces and group conversations" so @mentions work.', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Set App visibility and enable "Receive messages from spaces" and "Respond to @mentions".', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><?php esc_html_e( 'Add the bot to your Space and @mention it — it will respond.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li>
+						<?php
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to Google Cloud Console */
+								__( 'Go to the <a href="%s" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> and create or select a project.', 'mcp-ai-wpoos-pro' ),
+								'https://console.cloud.google.com/'
+							),
+							array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							sprintf(
+								/* translators: %s: link to Google Chat API page */
+								__( '<a href="%s" target="_blank" rel="noopener noreferrer">Enable the Google Chat API</a> for your project.', 'mcp-ai-wpoos-pro' ),
+								'https://console.cloud.google.com/apis/library/chat.googleapis.com'
+							),
+							array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'In the Google Cloud Console, go to <strong>Google Chat API → Configuration</strong>. Set the <strong>App URL</strong> (Connection type: HTTP endpoint) to the Webhook URL shown below.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'Fill in the <strong>App name</strong>, <strong>Avatar URL</strong>, and <strong>Description</strong>. Under <strong>Functionality</strong>, enable <strong>Receive 1:1 messages</strong> and <strong>Join spaces and group conversations</strong>.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( 'Set <strong>App visibility</strong> to your domain (or specific users during testing). Save the configuration.', 'mcp-ai-wpoos-pro' ),
+							array( 'strong' => array() )
+						);
+						?>
+					</li>
+					<li>
+						<?php
+						echo wp_kses(
+							__( '<strong>Optional — proactive replies via service account:</strong> To enable the bot to send messages proactively (not just as a direct response to an incoming event), create a <strong>Service Account</strong> in <em>IAM & Admin → Service Accounts</em>, download the JSON key, and grant it the <code>chat.messages.create</code> scope. Add a Google Chat connection in the Remote Site Manager and upload or paste the service account credentials.', 'mcp-ai-wpoos-pro' ),
+							array(
+								'strong' => array(),
+								'em'     => array(),
+								'code'   => array(),
+							)
+						);
+						?>
+					</li>
+					<li><?php esc_html_e( 'Add the bot to a Space by @mentioning it and accepting the invitation, or add it directly via Space settings → Manage members → Add apps.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '@Mention the bot in a Space or send it a direct message — the AI assistant will reply.', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 
+				<h4><?php esc_html_e( 'Webhook URL (App URL)', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<table class="form-table">
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Webhook URL (App URL)', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<code><?php echo esc_html( home_url( '/wp-json/mcp-ai/v1/webhooks/google-chat' ) ); ?></code>
-							<p class="description"><?php esc_html_e( 'Set this as the App URL in Google Cloud Console → Google Chat API → Configuration.', 'mcp-ai-wpoos-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Set this as the App URL in Google Cloud Console → Google Chat API → Configuration (Connection type: HTTP endpoint). Google Chat will POST all space messages and DMs to this URL.', 'mcp-ai-wpoos-pro' ); ?></p>
 						</td>
 					</tr>
 				</table>
 
-				<h4><?php esc_html_e( 'How @mentions Work', 'mcp-ai-wpoos-pro' ); ?></h4>
-				<p><?php esc_html_e( 'When a user types "@YourBot what can you do?" in a Space, Google Chat sends a MESSAGE event to the Webhook URL above. This plugin strips the mention markup and fires the wp_mcp_ai_google_chat_message action so you can provide a reply via the wp_mcp_ai_google_chat_message_response filter.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<h4><?php esc_html_e( 'How @mentions and DMs Work', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p><?php esc_html_e( 'When a user types "@YourBot what can you do?" in a Space, Google Chat sends a MESSAGE event to the Webhook URL above. This plugin strips the mention markup, matches the message to a configured connection by Space ID (with a fallback to any enabled Google Chat connection for DMs), and fires an AI reply using the assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'For direct messages (DMs), Google Chat creates a unique Space for each user-bot pair. The plugin automatically handles these via a three-tier fallback: exact Space match → generic connection → any enabled Google Chat connection.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+				<h4><?php esc_html_e( 'Security', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<p>
+					<?php
+					echo wp_kses(
+						sprintf(
+							/* translators: %s: link to Google Chat security documentation */
+							__( 'Google Chat signs HTTP endpoint requests using a Bearer token in the Authorization header. The token is a Google-signed JWT that can be verified against Google\'s public keys. See the <a href="%s" target="_blank" rel="noopener noreferrer">Google Chat security documentation</a> for verification details.', 'mcp-ai-wpoos-pro' ),
+							'https://developers.google.com/chat/how-tos/bots-develop#verifying_requests'
+						),
+						array( 'a' => array( 'href' => true, 'target' => true, 'rel' => true ) )
+					);
+					?>
+				</p>
+
+				<h4><?php esc_html_e( 'Test Connection & Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Verifies Google Chat API connectivity for the connection. Available on the connection edit page in the Remote Site Manager.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Auto-Reply', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Simulates an incoming Google Chat message and generates an AI-powered reply. Requires at least one assigned assistant.', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Test Incoming Trigger', 'mcp-ai-wpoos-pro' ); ?></strong> — <?php esc_html_e( 'Fires a simulated MESSAGE event through the full webhook processing pipeline to verify end-to-end handling.', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
 
 				<h4><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></h4>
 				<ul>
-					<li><a href="https://developers.google.com/chat/how-tos/bots-develop" target="_blank"><?php esc_html_e( 'Google Chat Bot Development', 'mcp-ai-wpoos-pro' ); ?></a></li>
-					<li><a href="https://developers.google.com/chat/reference/rest/v1/spaces.messages" target="_blank"><?php esc_html_e( 'Google Chat Messages API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.google.com/chat/how-tos/apps-overview" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Chat Apps Overview', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.google.com/chat/how-tos/bots-develop" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Build a Google Chat App (HTTP Endpoint)', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.google.com/chat/reference/rest/v1/spaces.messages" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Google Chat Messages REST API', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://developers.google.com/chat/how-tos/bots-develop#verifying_requests" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Verifying Google Chat Requests', 'mcp-ai-wpoos-pro' ); ?></a></li>
+					<li><a href="https://console.cloud.google.com/apis/library/chat.googleapis.com" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Enable Google Chat API in Cloud Console', 'mcp-ai-wpoos-pro' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
