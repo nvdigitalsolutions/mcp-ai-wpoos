@@ -96,6 +96,19 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
 
 	/**
+	 * Maximum number of times a rate-limited (HTTP 429) Telegram reply job will
+	 * be retried before giving up. Each retry respects the Retry-After header
+	 * returned by the Telegram Bot API (typically 1–60 seconds).
+	 */
+	const MAX_RATE_LIMIT_RETRIES = 3;
+
+	/**
+	 * Minimum number of seconds to wait when rescheduling a rate-limited
+	 * (HTTP 429) reply job, regardless of the Retry-After header value.
+	 */
+	const MIN_RETRY_DELAY = 30;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -596,6 +609,8 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 		$connection_id        = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
 		$chat_type            = isset( $args['chat_type'] ) ? (string) $args['chat_type'] : 'private';
 		$reply_to_message_id  = isset( $args['reply_to_message_id'] ) ? (string) $args['reply_to_message_id'] : '';
+		// retry_count incremented each time the job is rescheduled due to a 429.
+		$retry_count          = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $chat_id || '' === $connection_id ) {
 			return;
@@ -825,6 +840,41 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 
 		$http_code     = (int) wp_remote_retrieve_response_code( $result );
 		$response_body = json_decode( wp_remote_retrieve_body( $result ), true );
+
+		// Industry standard: handle HTTP 429 Too Many Requests by respecting the
+		// Retry-After header returned by the Telegram Bot API and rescheduling
+		// the job. A retry counter prevents indefinite loops.
+		if ( 429 === $http_code ) {
+			if ( $retry_count >= self::MAX_RATE_LIMIT_RETRIES ) {
+				WP_MCP_AI_Logger::log_error(
+					'Telegram AI reply: rate limit retry limit reached; giving up.',
+					array(
+						'connection_id' => $connection_id,
+						'retry_count'   => $retry_count,
+					)
+				);
+				return;
+			}
+
+			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
+			// Always wait at least MIN_RETRY_DELAY s; honour the Retry-After value when larger.
+			$delay = max( self::MIN_RETRY_DELAY, $retry_after );
+
+			WP_MCP_AI_Logger::log_error(
+				sprintf(
+					'Telegram AI reply: rate limited (429). Retrying in %d seconds (attempt %d/%d).',
+					$delay,
+					$retry_count + 1,
+					self::MAX_RATE_LIMIT_RETRIES
+				),
+				array( 'connection_id' => $connection_id )
+			);
+
+			$retry_args                = $args;
+			$retry_args['retry_count'] = $retry_count + 1;
+			wp_schedule_single_event( time() + $delay, self::REPLY_CRON_HOOK, array( $retry_args ) );
+			return;
+		}
 
 		if ( 200 !== $http_code ) {
 			$api_description = isset( $response_body['description'] ) ? $response_body['description'] : '';
