@@ -106,6 +106,15 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 	const CONVERSATION_HISTORY_TTL = 86400;
 
 	/**
+	 * Maximum age in seconds for the X-Signature-Timestamp header.
+	 *
+	 * Discord requires the timestamp to be within this window to prevent replay attacks.
+	 *
+	 * @see https://discord.com/developers/docs/interactions/receiving-and-responding#security-and-authorization
+	 */
+	const MAX_TIMESTAMP_AGE = 5;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -179,6 +188,13 @@ class WP_MCP_AI_Discord_Interaction_Controller extends WP_REST_Controller {
 
 		if ( empty( $signature ) || empty( $timestamp ) ) {
 			WP_MCP_AI_Logger::log_error( 'Discord interaction rejected: missing signature or timestamp header.' );
+			return false;
+		}
+
+		// Reject requests with a stale timestamp to prevent replay attacks.
+		// Discord requires the timestamp to be within 5 seconds of the current time.
+		if ( ! is_numeric( $timestamp ) || abs( time() - (int) $timestamp ) > self::MAX_TIMESTAMP_AGE ) {
+			WP_MCP_AI_Logger::log_error( 'Discord interaction rejected: timestamp is stale or non-numeric (replay attack prevention).' );
 			return false;
 		}
 

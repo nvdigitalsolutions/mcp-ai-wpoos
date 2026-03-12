@@ -758,16 +758,25 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		}
 
 		// Use finfo to detect the real MIME type of the uploaded file.
-		if ( function_exists( 'finfo_open' ) ) {
-			$finfo     = finfo_open( FILEINFO_MIME_TYPE );
-			$real_mime = $finfo ? finfo_file( $finfo, $tmp_path ) : false;
-			if ( $finfo ) {
-				finfo_close( $finfo );
-			}
+		// Reject the upload entirely if MIME detection is unavailable (fail-closed).
+		if ( ! function_exists( 'finfo_open' ) ) {
+			wp_send_json_error( __( 'The fileinfo PHP extension is required to validate uploads securely. Please contact your host to enable it.', 'mcp-ai-wpoos-pro' ) );
+		}
 
-			if ( $real_mime && ! in_array( $real_mime, $allowed_mime_map[ $ext ], true ) ) {
-				wp_send_json_error( __( 'File content does not match the declared extension. Upload rejected.', 'mcp-ai-wpoos-pro' ) );
-			}
+		$finfo = finfo_open( FILEINFO_MIME_TYPE );
+		if ( ! $finfo ) {
+			wp_send_json_error( __( 'Could not open the fileinfo resource for MIME detection. Upload rejected.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$real_mime = finfo_file( $finfo, $tmp_path );
+		finfo_close( $finfo );
+
+		if ( false === $real_mime ) {
+			wp_send_json_error( __( 'Could not detect the MIME type of the uploaded file. Upload rejected.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! in_array( $real_mime, $allowed_mime_map[ $ext ], true ) ) {
+			wp_send_json_error( __( 'File content does not match the declared extension. Upload rejected.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( 'md' === $ext ) {
@@ -834,8 +843,8 @@ class WP_MCP_AI_Skill_Manager_Admin_Page {
 		}
 
 		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
-		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
-			wp_send_json_error( __( 'Only http and https URLs are supported.', 'mcp-ai-wpoos-pro' ) );
+		if ( 'https' !== $scheme ) {
+			wp_send_json_error( __( 'Only HTTPS URLs are supported for skill installation.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Block SSRF: resolve the host to an IP and reject private/reserved ranges.

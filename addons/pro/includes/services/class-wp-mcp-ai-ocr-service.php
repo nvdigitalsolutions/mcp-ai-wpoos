@@ -353,7 +353,12 @@ class WP_MCP_AI_OCR_Service {
 
 		if ( 0 !== $return_code ) {
 			@unlink( $temp_output );
-			return new WP_Error( 'preprocessing_failed', 'Sharp preprocessing failed: ' . implode( "\n", $output ) );
+			return $this->log_and_return_error(
+				'preprocessing_failed',
+				'ocr_sharp_failed',
+				'Sharp preprocessing command failed',
+				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+			);
 		}
 
 		return $temp_output;
@@ -399,7 +404,12 @@ class WP_MCP_AI_OCR_Service {
 
 			return $temp_output;
 		} catch ( Exception $e ) {
-			return new WP_Error( 'imagick_failed', sprintf( 'Imagick preprocessing failed: %s', $e->getMessage() ) );
+			return $this->log_and_return_error(
+				'imagick_failed',
+				'ocr_imagick_failed',
+				'Imagick preprocessing failed',
+				array( 'error' => $e->getMessage() )
+			);
 		}
 	}
 
@@ -478,7 +488,12 @@ class WP_MCP_AI_OCR_Service {
 				$pdf->destroy();
 			}
 
-			return new WP_Error( 'imagick_conversion_failed', sprintf( 'PDF to image conversion failed: %s', $e->getMessage() ) );
+			return $this->log_and_return_error(
+				'imagick_conversion_failed',
+				'ocr_imagick_pdf_failed',
+				'Imagick PDF-to-image conversion failed',
+				array( 'error' => $e->getMessage() )
+			);
 		}
 	}
 
@@ -503,7 +518,12 @@ class WP_MCP_AI_OCR_Service {
 		exec( $cmd, $output, $return_code );
 
 		if ( 0 !== $return_code ) {
-			return new WP_Error( 'pdftoppm_failed', 'pdftoppm conversion failed: ' . implode( "\n", $output ) );
+			return $this->log_and_return_error(
+				'pdftoppm_failed',
+				'ocr_pdftoppm_failed',
+				'pdftoppm conversion failed',
+				array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+			);
 		}
 
 		// Find generated images.
@@ -837,8 +857,13 @@ class WP_MCP_AI_OCR_Service {
 
 		@unlink( $text_file );
 		@unlink( $output_file );
-		
-		return new WP_Error( 'tesseract_failed', 'Tesseract OCR failed: ' . implode( "\n", $output ) );
+
+		return $this->log_and_return_error(
+			'tesseract_failed',
+			'ocr_tesseract_failed',
+			'Tesseract OCR failed',
+			array( 'output' => implode( "\n", $output ), 'code' => $return_code )
+		);
 	}
 
 	/**
@@ -854,7 +879,12 @@ class WP_MCP_AI_OCR_Service {
 				$pdf    = $parser->parseFile( $pdf_path );
 				return $pdf->getText();
 			} catch ( \Exception $e ) {
-				return new WP_Error( 'parse_failed', $e->getMessage() );
+				return $this->log_and_return_error(
+					'parse_failed',
+					'ocr_pdf_parse_failed',
+					'PDF text extraction failed',
+					array( 'error' => $e->getMessage() )
+				);
 			}
 		}
 
@@ -1491,5 +1521,27 @@ class WP_MCP_AI_OCR_Service {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Log an OCR error event privately and return a generic WP_Error.
+	 *
+	 * Ensures raw command output, exception messages, and other potentially
+	 * sensitive system details are logged internally rather than exposed to
+	 * callers. All error paths that involve external command output or
+	 * exception messages should go through this helper.
+	 *
+	 * @param string $error_code WP_Error code for the returned error.
+	 * @param string $event_type Logger event type slug.
+	 * @param string $message    Human-readable description for the log entry.
+	 * @param array  $context    Additional context to include in the log entry.
+	 * @return WP_Error Generic WP_Error without sensitive details.
+	 */
+	protected function log_and_return_error( $error_code, $event_type, $message, $context = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event( $event_type, $message, $context );
+		}
+		/* translators: %s: plugin log location hint */
+		return new WP_Error( $error_code, __( 'An OCR processing error occurred. See plugin logs for details.', 'mcp-ai-wpoos-pro' ) );
 	}
 }

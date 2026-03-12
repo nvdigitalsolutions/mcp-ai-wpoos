@@ -35,6 +35,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
 
 	/**
+	 * Prefix that marks values encrypted with the modern AES-256-CBC scheme.
+	 *
+	 * Legacy values (XOR cipher) lack this prefix and are still readable by
+	 * decrypt_value() for backward compatibility.
+	 */
+	const ENCRYPT_V2_PREFIX = 'v2.';
+
+	/**
 	 * Get all configured remote site connections.
 	 *
 	 * @since 1.0.0
@@ -2230,20 +2238,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Encrypt a sensitive value for storage.
 	 *
+	 * Uses AES-256-CBC via WP_MCP_AI_Encryption when available (PHP 7.4+,
+	 * OpenSSL required). Encrypted values are prefixed with ENCRYPT_V2_PREFIX
+	 * so decrypt_value() can distinguish them from legacy XOR-encrypted values.
+	 *
 	 * @since 1.0.0
+	 * @since 1.5.0 Upgraded from XOR to AES-256-CBC.
 	 *
 	 * @param string $value Value to encrypt.
-	 * @return string Encrypted value.
+	 * @return string Encrypted value (prefixed) or empty string on failure.
 	 */
 	public static function encrypt_value( $value ) {
 		if ( empty( $value ) ) {
 			return '';
 		}
 
-		// Use WordPress auth salt for encryption key.
-		$key = wp_salt( 'auth' );
+		// Prefer proper AES-256-CBC encryption when the base plugin class is loaded.
+		if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+			$encrypted = WP_MCP_AI_Encryption::encrypt( $value );
+			if ( false !== $encrypted ) {
+				return self::ENCRYPT_V2_PREFIX . $encrypted;
+			}
+		}
 
-		// Simple XOR encryption (WordPress doesn't have built-in encryption).
+		// Fallback: XOR cipher (used only if WP_MCP_AI_Encryption is unavailable).
+		$key          = wp_salt( 'auth' );
 		$encrypted    = '';
 		$key_length   = strlen( $key );
 		$value_length = strlen( $value );
@@ -2258,25 +2277,42 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * Decrypt a sensitive value.
 	 *
-	 * @since 1.0.0
+	 * Handles both the modern AES-256-CBC format (prefixed with ENCRYPT_V2_PREFIX)
+	 * and the legacy XOR format (no prefix) for backward compatibility.
 	 *
-	 * @param string $encrypted Encrypted value.
-	 * @return string Decrypted value.
+	 * @since 1.0.0
+	 * @since 1.5.0 Added AES-256-CBC format support with legacy XOR fallback.
+	 *
+	 * @param string $encrypted Encrypted value (with or without version prefix).
+	 * @return string Decrypted value or empty string on failure.
 	 */
 	public static function decrypt_value( $encrypted ) {
 		if ( empty( $encrypted ) ) {
 			return '';
 		}
 
-		$key       = wp_salt( 'auth' );
-		$encrypted = base64_decode( $encrypted );
+		// Modern AES-256-CBC format: prefixed with ENCRYPT_V2_PREFIX.
+		if ( str_starts_with( $encrypted, self::ENCRYPT_V2_PREFIX ) ) {
+			if ( class_exists( 'WP_MCP_AI_Encryption' ) ) {
+				$decrypted = WP_MCP_AI_Encryption::decrypt( substr( $encrypted, strlen( self::ENCRYPT_V2_PREFIX ) ) );
+				return ( false !== $decrypted ) ? $decrypted : '';
+			}
+			return '';
+		}
 
-		$decrypted        = '';
-		$key_length       = strlen( $key );
-		$encrypted_length = strlen( $encrypted );
+		// Legacy XOR format (no prefix).
+		$key  = wp_salt( 'auth' );
+		$data = base64_decode( $encrypted, true ); // Strict mode: reject malformed base64.
+		if ( false === $data ) {
+			return '';
+		}
 
-		for ( $i = 0; $i < $encrypted_length; $i++ ) {
-			$decrypted .= chr( ord( $encrypted[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
+		$decrypted    = '';
+		$key_length   = strlen( $key );
+		$data_length  = strlen( $data );
+
+		for ( $i = 0; $i < $data_length; $i++ ) {
+			$decrypted .= chr( ord( $data[ $i ] ) ^ ord( $key[ $i % $key_length ] ) );
 		}
 
 		return $decrypted;
