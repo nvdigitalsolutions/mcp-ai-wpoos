@@ -548,7 +548,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'verify_token'    => $verify_token,
 				'graph_api_version' => isset( $_POST['whatsapp_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['whatsapp_graph_api_version'] ) ) : ( isset( $_POST['messenger_graph_api_version'] ) ? sanitize_text_field( wp_unslash( $_POST['messenger_graph_api_version'] ) ) : '' ),
 				// Slack-specific fields.
-				'workspace_id'    => isset( $_POST['slack_workspace_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_workspace_id'] ) ) : '',
+				'workspace_id'      => isset( $_POST['slack_workspace_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_workspace_id'] ) ) : '',
+				'slack_bot_user_id' => isset( $_POST['slack_bot_user_id'] ) ? sanitize_text_field( wp_unslash( $_POST['slack_bot_user_id'] ) ) : '',
 				// Discord-specific fields.
 				'application_id'  => isset( $_POST['discord_application_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_application_id'] ) ) : '',
 				'guild_id'        => isset( $_POST['discord_guild_id'] ) ? sanitize_text_field( wp_unslash( $_POST['discord_guild_id'] ) ) : '',
@@ -2735,6 +2736,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="slack_workspace_id" id="slack_workspace_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['workspace_id'] ) ? esc_attr( $connection['workspace_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'Optional: Slack workspace ID for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<!-- Hidden field: bot Slack user ID (U-prefixed). Auto-populated by the Test Bot Token button. -->
+						<input type="hidden" name="slack_bot_user_id" id="slack_bot_user_id" value="<?php echo $is_edit && ! empty( $connection['slack_bot_user_id'] ) ? esc_attr( $connection['slack_bot_user_id'] ) : ''; ?>">
 					</td>
 				</tr>
 
@@ -6603,13 +6606,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							slackTestResult.style.display = 'block';
 							if (result.success) {
 								var d = result.data;
+								// Auto-populate the hidden slack_bot_user_id field so the bot's
+								// Slack user ID is saved with the connection. Used to detect
+								// native Slack @mentions (<@USER_ID>) in incoming messages.
+								if (d && d.user_id) {
+									var botUserIdEl = document.getElementById('slack_bot_user_id');
+									if (botUserIdEl) { botUserIdEl.value = d.user_id; }
+								}
 								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Slack connection successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
 								if (d) {
 									html += '<ul style="margin:8px 0;padding-left:20px;">';
 									if (d.team)    { html += '<li>' + <?php echo wp_json_encode( __( 'Team:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.team + '</li>'; }
-									if (d.bot_user) { html += '<li>' + <?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_user + '</li>'; }
+									if (d.bot_user) { html += '<li>' + <?php echo wp_json_encode( __( 'Bot User:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_user + (d.user_id ? ' (<code>' + d.user_id + '</code>)' : '') + '</li>'; }
 									if (d.team_id)  { html += '<li>' + <?php echo wp_json_encode( __( 'Team ID:', 'mcp-ai-wpoos-pro' ) ); ?> + ' <code>' + d.team_id + '</code></li>'; }
 									html += '</ul>';
+									// Warn if the signing secret field is empty — without it,
+									// HMAC validation will reject all Slack webhook events.
+									var signingSecretEl = document.getElementById('slack_signing_secret');
+									var signingSecretEmpty = !signingSecretEl || signingSecretEl.value.trim() === '';
+									var signingSecretSaved = <?php echo wp_json_encode( $is_edit && ! empty( $connection['signing_secret'] ) && 'slack' === ( $connection['connection_type'] ?? '' ) ); ?>;
+									if (signingSecretEmpty && !signingSecretSaved) {
+										html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">&#9888; ' + <?php echo wp_json_encode( __( 'Signing Secret is not yet configured. Without it, all Slack webhook events are rejected and the bot will not respond. Enter the Signing Secret from your Slack app\'s Basic Information page.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+									}
 								}
 								html += '</div>';
 								slackTestResult.innerHTML = html;
