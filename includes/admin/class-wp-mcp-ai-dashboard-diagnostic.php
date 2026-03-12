@@ -335,8 +335,8 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					<div style="padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
 						<p><strong><?php esc_html_e( 'Mode: New Dashboard', 'mcp-ai-wpoos' ); ?></strong></p>
 						<p><?php esc_html_e( 'Expected behavior: Top-level menu "NV oOS" with Auth0 submenu', 'mcp-ai-wpoos' ); ?></p>
-						<p><strong><?php esc_html_e( 'Dashboard:', 'mcp-ai-wpoos' ); ?></strong> <?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
-						<p><strong><?php esc_html_e( 'Auth0 Setup:', 'mcp-ai-wpoos' ); ?></strong> <?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
+						<p><strong><?php esc_html_e( 'Dashboard:', 'mcp-ai-wpoos' ); ?></strong> <?php echo wp_kses_post( $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>' ); ?></p>
+						<p><strong><?php esc_html_e( 'Auth0 Setup:', 'mcp-ai-wpoos' ); ?></strong> <?php echo wp_kses_post( $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>' ); ?></p>
 
 						<?php if ( ! $found_new ) : ?>
 							<hr>

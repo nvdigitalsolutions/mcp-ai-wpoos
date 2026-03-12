@@ -2745,3 +2745,89 @@ Both endpoints are on the **user's own Auth0 tenant** (the domain is read from `
 ---
 
 *Last updated: March 11, 2026*
+
+---
+
+## Pass 14 — March 12, 2026 — Final Pre-Submission Review
+
+### Scope
+
+Final compliance review before first submission to the WordPress.org plugin directory. Full 13-guideline sweep across all `includes/` PHP files (710 total), `readme.txt`, `.distignore`, and the build process. Manual grep-based audit performed across the entire codebase.
+
+### Files Audited / Changed
+
+| File | Action |
+|---|---|
+| `includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php` | **FIXED** — Added `wp_kses_post()` to two ternary echo statements (lines 338–339); static HTML strings were echoed without wrapping |
+| `includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php` | **FIXED** — Added `absint()` to `echo $compact ? '4' : '5'` in `colspan` attribute; integer-valued ternary had no escaping function |
+| `includes/admin/class-wp-mcp-ai-security-training-admin.php` | **FIXED** — Added `esc_attr()` to `echo $is_completed ? 'completed' : ''` injected into a CSS class attribute; boolean-controlled static string had no escaping function |
+| `.distignore` | **FIXED** — Added `esbuild.config.pro.js`, `cosmos.config.json`, `cosmos.webpack.config.js`, and `webpack.config.tma-builder.js` to exclude development-only build-tool configuration from the WordPress.org deployment ZIP |
+
+### Findings
+
+#### A. Missing Output Escaping (Guideline 7) — LOW — FIXED
+
+Three instances of output without an explicit escaping wrapper were identified. In all cases the echoed values are static strings chosen by a boolean condition (not user-controlled), so there was no real XSS risk; however, WordPress Coding Standards require an explicit escaping call on every `echo` of a non-literal value.
+
+| File | Line | Before | Fix |
+|------|------|--------|-----|
+| `class-wp-mcp-ai-dashboard-diagnostic.php` | 338–339 | `echo $found_new ? '<span>...' : '<span>...'` | Wrapped with `wp_kses_post()` — consistent with lines 279/289 in the same file |
+| `class-wp-mcp-ai-admin-slash-commands-dashboard.php` | 286 | `echo $compact ? '4' : '5'` | Wrapped with `absint()` |
+| `class-wp-mcp-ai-security-training-admin.php` | 182 | `echo $is_completed ? 'completed' : ''` | Wrapped with `esc_attr()` |
+
+#### B. Development Build-Config Files in Deployment ZIP (Guideline — General Cleanliness) — LOW — FIXED
+
+Four development-only files were not excluded from the WordPress.org deployment ZIP via `.distignore`:
+
+- `esbuild.config.pro.js` — Pro add-on esbuild configuration (irrelevant to base plugin)
+- `cosmos.config.json` — React Cosmos UI-component explorer config (dev tool only)
+- `cosmos.webpack.config.js` — React Cosmos webpack config (dev tool only)
+- `webpack.config.tma-builder.js` — Template builder webpack config (Pro feature, not in base)
+
+These files do not contain PHP code or user-facing content and would not cause rejection, but their inclusion adds unnecessary bloat to the plugin ZIP. All four were added to `.distignore`.
+
+Note: `esbuild.config.pro.js` was already excluded in the manual `bin/build-plugin-zip.sh` rsync command but was absent from `.distignore` (used by the 10up GitHub Actions deployment action). This pass aligns both exclusion lists.
+
+#### C. All Other Guidelines — PASS
+
+| # | Guideline | Result |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ No paywall/lock/unlock language in user-facing base plugin strings. Security key lockout ("unlock the plugin") and OAuth scope enablement ("unlocks Gmail search tools") are clearly not trialware. |
+| 2 | readme.txt URLs valid | ✅ All 43 numbered service entries (+2a Gemini Semantic Retrieval) verified; all URLs reachable and accurate. |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.x; Chart.js 4.5.1 bundled locally; vendor packages verified with `composer install --no-dev`. 0 known CVEs. |
+| 4 | External services documented | ✅ Full grep scan: all hardcoded `https://` domains in `includes/` cross-checked against readme.txt. `developer.trade.gov` appears only as a documentation hyperlink in admin UI (not an API call). QR Server, DuckDuckGo, Flowhub, all others already documented. |
+| 5 | No saving data to plugin folder | ✅ All `file_put_contents` calls target `wp_upload_dir()`, `wp_tempnam()`, or system temp; all have `phpcs:ignore` with accurate justifications. 0 plugin-folder writes. |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites verified: `class-wp-mcp-ai-admin-profession-settings.php` (×3), `class-wp-mcp-ai-admin-team-settings.php` (×4), `class-wp-mcp-ai-settings-dashboard.php`. `class-wp-mcp-ai-transformers-enqueue.php` is excluded from the base ZIP via `.distignore`. |
+| 7 | Input sanitization / output escaping | ✅ 3 LOW issues fixed (see section A). 0 remaining unescaped echo of user-supplied data. All superglobal accesses sanitized. All `$wpdb` queries use `prepare()` or `update()`/`insert()` with format arrays. |
+| 8 | Prefixing | ✅ All global functions (`wp_mcp_ai_*`), classes (`WP_MCP_AI_*`), hooks (`wp_mcp_ai_*`), and options (`wp_mcp_ai_*`) correctly prefixed. |
+| 9 | Privacy Policy | ✅ readme.txt Privacy Policy section covers all 43 services (+2a). No new external data-collection services introduced since Pass 13. |
+| 10 | `phpcs:disable/ignore` justifications | ✅ **0 bare suppressions** — all `phpcs:ignore` and `phpcs:disable` comments include `--` justification text (re-verified with grep). |
+| 11 | `error_log()` gating | ✅ All instances confirmed gated: `WP_DEBUG` checks, `is_agentic_loop_logging_enabled()`, `$enable_logging` flag, `WP_DEBUG_LOG` fallback, or catch-block-only diagnostic paths. |
+| 12 | Pro feature separation | ✅ No `require`/`include` of `addons/` paths in any `includes/` code. `addons/` excluded from deployment ZIP via `.distignore`. Additional Pro-only build configs now also excluded (see section B). |
+| 13 | Security | ✅ Nonces and capabilities verified across all AJAX/REST/form handlers. URL inputs validated with `filter_var(FILTER_VALIDATE_URL)` / `wp_http_validate_url()`. No new SQL injection vectors. |
+
+### Updated Compliance Table
+
+| # | Guideline | Status |
+|---|-----------|--------|
+| 1 | Trialware / Locked Features | ✅ No paywall language; all base features accessible |
+| 2 | readme.txt URLs valid | ✅ All 43 service entries (+2a) verified |
+| 3 | Out-of-date libraries | ✅ Symfony 6.4.x; Chart.js 4.5.1 bundled locally; 0 advisories |
+| 4 | External services documented | ✅ All server-side HTTP calls accounted for |
+| 5 | No saving data to plugin folder | ✅ All file writes target uploads/temp |
+| 6 | `register_setting()` sanitize_callback | ✅ All call sites verified |
+| 7 | Input sanitization / output escaping | ✅ All inputs sanitized; 3 LOW escaping issues fixed; all outputs now escaped |
+| 8 | Prefixing | ✅ All global symbols use `wp_mcp_ai_` / `WP_MCP_AI_` prefix |
+| 9 | Privacy Policy | ✅ All 43 services (+2a) documented |
+| 10 | `phpcs:disable/ignore` justifications | ✅ 0 bare suppressions |
+| 11 | `error_log()` gating | ✅ All instances are `WP_DEBUG`-gated or settings-gated |
+| 12 | Pro feature separation | ✅ `addons/` and Pro build configs excluded via `.distignore` |
+| 13 | Security | ✅ Nonces, capabilities, sanitization, prepared queries, URL validation verified |
+
+**Total documented services: 43** (+2a for Gemini Semantic Retrieval) — unchanged from Pass 13.
+
+**Base plugin compliance status: ✅ Fully compliant — March 12, 2026 (Pass 14 — Final Pre-Submission)**
+
+---
+
+*Last updated: March 12, 2026*
