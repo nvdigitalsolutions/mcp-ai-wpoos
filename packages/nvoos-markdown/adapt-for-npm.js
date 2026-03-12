@@ -18,22 +18,34 @@ console.log('   → Converting from IIFE to ES module');
 code = code.replace(/\(function\(window\) \{[\s]*'use strict';/, '');
 code = code.replace(/\/\/ Export public API[\s\S]*?window\.wpMcpAiChatMarkdown = \{[\s\S]*?\};[\s\S]*?\}\)\(window\);/, '');
 
-// Step 3: Extract internal helper functions
-console.log('   → Exposing helper functions as exports');
+// Step 3: Fix window.location.origin reference for non-browser environments
+console.log('   → Fixing window.location.origin for npm environments');
+code = code.replace(
+  /const parsed = new URL\(trimmed, window\.location\.origin\);/,
+  "const base = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://localhost';\n\t\tconst parsed = new URL(trimmed, base);"
+);
 
-// Mark the renderMarkdown function for export
+// Step 4: Extract internal helper functions as named exports
+console.log('   → Exposing helper functions as exports');
 code = code.replace('function renderMarkdown(text)', 'export function renderMarkdown(text)');
 code = code.replace('function renderInlineLabel(text)', 'export function renderInlineLabel(text)');
 code = code.replace('function escapeHtml(text)', 'export function escapeHtml(text)');
 code = code.replace('function sanitizeUrl(url)', 'export function sanitizeUrl(url)');
 code = code.replace('function formatInline(text)', 'export function formatInline(text)');
 
-// Step 4: Create a default export class that wraps all functionality
+// Step 5: Create a configurable MarkdownRenderer class as the default export.
+// The class has its own render() implementation using instance-level marked/DOMPurify
+// so multiple instances can have different configs without sharing state.
 const classWrapper = `
 
 /**
- * Markdown renderer with security hardening
- * Wraps marked + DOMPurify with production-ready configuration
+ * Markdown renderer with security hardening.
+ * Wraps marked + DOMPurify with production-ready, configurable settings.
+ *
+ * @example
+ * import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
+ * const renderer = new MarkdownRenderer(marked, DOMPurify, { codeBlockClass: 'my-code' });
+ * const html = renderer.render('## Hello **world**');
  */
 export class MarkdownRenderer {
 	constructor(markedInstance, domPurifyInstance, customConfig = {}) {
@@ -43,17 +55,17 @@ export class MarkdownRenderer {
 			codeBlockClass: customConfig.codeBlockClass || 'nvoos-code-block',
 			imageClass: customConfig.imageClass || 'nvoos-image',
 			allowedTags: customConfig.allowedTags || [
-				'p', 'br', 'strong', 'em', 'code', 'pre', 'a', 
-				'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 
+				'p', 'br', 'strong', 'em', 'code', 'pre', 'a',
+				'ul', 'ol', 'li', 'blockquote', 'h1', 'h2',
 				'h3', 'h4', 'h5', 'h6', 'del', 'img'
 			],
 			allowedAttributes: customConfig.allowedAttributes || ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'loading']
 		};
 		this._setupRenderer();
 	}
-	
+
 	_setupRenderer() {
-		// Configure marked
+		// Configure marked options on the instance
 		this.marked.setOptions({
 			breaks: true,
 			gfm: true,
@@ -61,19 +73,19 @@ export class MarkdownRenderer {
 			mangle: false,
 			sanitize: false,
 		});
-		
-		// Set up custom renderer
+
+		// Set up a custom renderer scoped to this instance's config
 		const renderer = new this.marked.Renderer();
 		const config = this.config;
-		
-		renderer.code = function(code, language, escaped) {
+
+		renderer.code = function(code, language) {
 			const safeCode = code || '';
 			const lang = language || '';
 			const escapedLang = lang.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
 			const className = escapedLang ? ' class="language-' + escapedLang + '"' : '';
 			return '<pre class="' + config.codeBlockClass + '"><code' + className + '>' + escapeHtml(safeCode) + '</code></pre>';
 		};
-		
+
 		renderer.image = function(href, title, text) {
 			const safeHref = href || '';
 			const safeTitle = title || '';
@@ -81,39 +93,47 @@ export class MarkdownRenderer {
 			const titleAttr = safeTitle ? ' title="' + safeTitle + '"' : '';
 			return '<img src="' + safeHref + '" alt="' + safeText + '"' + titleAttr + ' class="' + config.imageClass + '" loading="lazy" />';
 		};
-		
+
 		this.marked.use({ renderer });
 	}
-	
+
+	/**
+	 * Render markdown to sanitized HTML.
+	 * @param {string} text - Markdown input
+	 * @return {string} Sanitized HTML
+	 */
 	render(text) {
-		return renderMarkdown.call(this, text);
+		if (!text) {
+			return '';
+		}
+		try {
+			const rawHtml = this.marked.parse(text);
+			return this.DOMPurify.sanitize(rawHtml, {
+				ALLOWED_TAGS: this.config.allowedTags,
+				ALLOWED_ATTR: this.config.allowedAttributes,
+				ALLOW_DATA_ATTR: false,
+			});
+		} catch (error) {
+			console.error('MarkdownRenderer.render error:', error);
+			return '<p>' + escapeHtml(text) + '</p>';
+		}
 	}
-	
+
+	/**
+	 * Render inline markdown (handles inline code, bold, italic etc.)
+	 * @param {string} text - Inline markdown input
+	 * @return {string} Rendered HTML
+	 */
 	renderInline(text) {
 		return renderInlineLabel(text);
 	}
 }
 
-// Default export
+// Default export: the configurable class
 export default MarkdownRenderer;
 `;
 
 code = code.trim() + classWrapper;
-
-// Step 5: Update renderMarkdown to work with instance
-code = code.replace(
-	/const rawHtml = marked\.parse\(text\);/g,
-	'const rawHtml = this.marked.parse(text);'
-);
-
-code = code.replace(
-	/const sanitized = DOMPurify\.sanitize\(rawHtml, \{[\s\S]*?\}\);/,
-	`const sanitized = this.DOMPurify.sanitize(rawHtml, {
-				ALLOWED_TAGS: this.config.allowedTags,
-				ALLOWED_ATTR: this.config.allowedAttributes,
-				ALLOW_DATA_ATTR: false,
-			});`
-);
 
 // Step 6: Create dist directory
 const distDir = path.join(__dirname, 'dist');

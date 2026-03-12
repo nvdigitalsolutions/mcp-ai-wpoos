@@ -3,7 +3,14 @@
   "version": "0.1.0-alpha.1",
   "description": "Security-hardened markdown renderer with XSS protection - Extracted from NV Open Operator System",
   "main": "dist/nvoos-markdown.js",
+  "module": "dist/nvoos-markdown.js",
   "types": "dist/nvoos-markdown.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-markdown.js",
+      "default": "./dist/nvoos-markdown.js"
+    }
+  },
   "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
   "license": "MIT",
   "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-markdown",

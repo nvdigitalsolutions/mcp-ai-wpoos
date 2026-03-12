@@ -100,7 +100,8 @@ import DOMPurify from 'dompurify';
 		}
 
 		try {
-			const parsed = new URL(trimmed, window.location.origin);
+			const base = typeof window !== 'undefined' && window.location ? window.location.origin : 'https://localhost';
+		const parsed = new URL(trimmed, base);
 			const protocol = parsed.protocol ? parsed.protocol.replace(/:$/, '').toLowerCase() : '';
 			if (protocol && ['http', 'https', 'mailto', 'tel'].indexOf(protocol) === -1) {
 				return '#';
@@ -183,12 +184,17 @@ import DOMPurify from 'dompurify';
 
 		try {
 			// Parse markdown to HTML using marked
-			const rawHtml = this.marked.parse(text);
+			const rawHtml = marked.parse(text);
 
 			// Sanitize with DOMPurify to prevent XSS
-			const sanitized = this.DOMPurify.sanitize(rawHtml, {
-				ALLOWED_TAGS: this.config.allowedTags,
-				ALLOWED_ATTR: this.config.allowedAttributes,
+			const sanitized = DOMPurify.sanitize(rawHtml, {
+				ALLOWED_TAGS: [
+					'p', 'br', 'strong', 'em', 'code', 'pre', 'a', 
+					'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 
+					'h3', 'h4', 'h5', 'h6', 'del', 'img'
+				],
+				ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'loading'],
+				// Allow external links to open in new tabs
 				ALLOW_DATA_ATTR: false,
 			});
 
@@ -201,8 +207,13 @@ import DOMPurify from 'dompurify';
 	}
 
 /**
- * Markdown renderer with security hardening
- * Wraps marked + DOMPurify with production-ready configuration
+ * Markdown renderer with security hardening.
+ * Wraps marked + DOMPurify with production-ready, configurable settings.
+ *
+ * @example
+ * import MarkdownRenderer from '@nvdigitalsolutions/nvoos-markdown';
+ * const renderer = new MarkdownRenderer(marked, DOMPurify, { codeBlockClass: 'my-code' });
+ * const html = renderer.render('## Hello **world**');
  */
 export class MarkdownRenderer {
 	constructor(markedInstance, domPurifyInstance, customConfig = {}) {
@@ -212,17 +223,17 @@ export class MarkdownRenderer {
 			codeBlockClass: customConfig.codeBlockClass || 'nvoos-code-block',
 			imageClass: customConfig.imageClass || 'nvoos-image',
 			allowedTags: customConfig.allowedTags || [
-				'p', 'br', 'strong', 'em', 'code', 'pre', 'a', 
-				'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 
+				'p', 'br', 'strong', 'em', 'code', 'pre', 'a',
+				'ul', 'ol', 'li', 'blockquote', 'h1', 'h2',
 				'h3', 'h4', 'h5', 'h6', 'del', 'img'
 			],
 			allowedAttributes: customConfig.allowedAttributes || ['href', 'target', 'rel', 'class', 'src', 'alt', 'title', 'loading']
 		};
 		this._setupRenderer();
 	}
-	
+
 	_setupRenderer() {
-		// Configure marked
+		// Configure marked options on the instance
 		this.marked.setOptions({
 			breaks: true,
 			gfm: true,
@@ -230,19 +241,19 @@ export class MarkdownRenderer {
 			mangle: false,
 			sanitize: false,
 		});
-		
-		// Set up custom renderer
+
+		// Set up a custom renderer scoped to this instance's config
 		const renderer = new this.marked.Renderer();
 		const config = this.config;
-		
-		renderer.code = function(code, language, escaped) {
+
+		renderer.code = function(code, language) {
 			const safeCode = code || '';
 			const lang = language || '';
 			const escapedLang = lang.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
 			const className = escapedLang ? ' class="language-' + escapedLang + '"' : '';
 			return '<pre class="' + config.codeBlockClass + '"><code' + className + '>' + escapeHtml(safeCode) + '</code></pre>';
 		};
-		
+
 		renderer.image = function(href, title, text) {
 			const safeHref = href || '';
 			const safeTitle = title || '';
@@ -250,18 +261,41 @@ export class MarkdownRenderer {
 			const titleAttr = safeTitle ? ' title="' + safeTitle + '"' : '';
 			return '<img src="' + safeHref + '" alt="' + safeText + '"' + titleAttr + ' class="' + config.imageClass + '" loading="lazy" />';
 		};
-		
+
 		this.marked.use({ renderer });
 	}
-	
+
+	/**
+	 * Render markdown to sanitized HTML.
+	 * @param {string} text - Markdown input
+	 * @return {string} Sanitized HTML
+	 */
 	render(text) {
-		return renderMarkdown.call(this, text);
+		if (!text) {
+			return '';
+		}
+		try {
+			const rawHtml = this.marked.parse(text);
+			return this.DOMPurify.sanitize(rawHtml, {
+				ALLOWED_TAGS: this.config.allowedTags,
+				ALLOWED_ATTR: this.config.allowedAttributes,
+				ALLOW_DATA_ATTR: false,
+			});
+		} catch (error) {
+			console.error('MarkdownRenderer.render error:', error);
+			return '<p>' + escapeHtml(text) + '</p>';
+		}
 	}
-	
+
+	/**
+	 * Render inline markdown (handles inline code, bold, italic etc.)
+	 * @param {string} text - Inline markdown input
+	 * @return {string} Rendered HTML
+	 */
 	renderInline(text) {
 		return renderInlineLabel(text);
 	}
 }
 
-// Default export
+// Default export: the configurable class
 export default MarkdownRenderer;

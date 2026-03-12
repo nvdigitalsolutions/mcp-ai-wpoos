@@ -37,30 +37,32 @@ code = code.replace(/\/\/ Expose to global scope[\s]*window\.wpMcpAiStorageUtil 
 // Step 4: Add ES module exports
 code = code.trim() + '\n\n// ES Module exports\nexport { StorageUtil };\nexport default StorageUtil;\n';
 
-// Step 5: Add configuration method
-const configMethod = `
-	/**
-	 * Configure the storage utility (call this before using)
-	 * @param {Object} options Configuration options
-	 * @param {string} options.workerUrl URL to the Web Worker script
-	 * @param {number} options.sizeThreshold Size threshold in bytes (default: 10000)
-	 */
-	static configure(options = {}) {
-		if (options.workerUrl) {
-			this.config = this.config || {};
-			this.config.workerUrl = options.workerUrl;
-		}
-		if (typeof options.sizeThreshold === 'number') {
-			this.WORKER_THRESHOLD = options.sizeThreshold;
-		}
-	}
+// Step 5: Add configuration method and config property
+// config: {} must be part of the object so initWorker() can read this.config.workerUrl
+const configProps = `
+		config: {},
+
+		/**
+		 * Configure the storage utility (call this before using)
+		 * @param {Object} options Configuration options
+		 * @param {string} options.workerUrl URL to the Web Worker script
+		 * @param {number} options.sizeThreshold Size threshold in bytes (default: 10000)
+		 */
+		configure: function(options = {}) {
+			if (options.workerUrl) {
+				this.config.workerUrl = options.workerUrl;
+			}
+			if (typeof options.sizeThreshold === 'number') {
+				this.WORKER_THRESHOLD = options.sizeThreshold;
+			}
+		},
 
 `;
 
-// Insert configure method after class definition starts
+// Insert after the WORKER_THRESHOLD property (inside the object literal)
 code = code.replace(
-  /(const StorageUtil = \{[\s\S]*?WORKER_THRESHOLD: 10000,)/,
-  '$1' + configMethod
+  /(WORKER_THRESHOLD: 10000,\s*\/\/ 10KB)/,
+  '$1' + configProps
 );
 
 // Step 6: Create dist directory

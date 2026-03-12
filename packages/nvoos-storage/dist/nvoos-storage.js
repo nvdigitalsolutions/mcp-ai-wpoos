@@ -22,24 +22,25 @@
 		
 		// Threshold for using Web Worker (in bytes)
 		// Below this size, we use synchronous operations for better performance
-		WORKER_THRESHOLD: 10000,
-	/**
-	 * Configure the storage utility (call this before using)
-	 * @param {Object} options Configuration options
-	 * @param {string} options.workerUrl URL to the Web Worker script
-	 * @param {number} options.sizeThreshold Size threshold in bytes (default: 10000)
-	 */
-	static configure(options = {}) {
-		if (options.workerUrl) {
-			this.config = this.config || {};
-			this.config.workerUrl = options.workerUrl;
-		}
-		if (typeof options.sizeThreshold === 'number') {
-			this.WORKER_THRESHOLD = options.sizeThreshold;
-		}
-	}
+		WORKER_THRESHOLD: 10000, // 10KB
+		config: {},
 
- // 10KB
+		/**
+		 * Configure the storage utility (call this before using)
+		 * @param {Object} options Configuration options
+		 * @param {string} options.workerUrl URL to the Web Worker script
+		 * @param {number} options.sizeThreshold Size threshold in bytes (default: 10000)
+		 */
+		configure: function(options = {}) {
+			if (options.workerUrl) {
+				this.config.workerUrl = options.workerUrl;
+			}
+			if (typeof options.sizeThreshold === 'number') {
+				this.WORKER_THRESHOLD = options.sizeThreshold;
+			}
+		},
+
+
 
 		/**
 		 * Initialize the Web Worker.
