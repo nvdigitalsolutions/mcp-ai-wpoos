@@ -734,6 +734,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php if ( isset( $test_results['quality_note'] ) && ! empty( $test_results['quality_note'] ) ) : ?>
 							<p style="color: #2271b1; font-size: 13px;">ℹ <?php echo esc_html( $test_results['quality_note'] ); ?></p>
 						<?php endif; ?>
+						<?php if ( isset( $test_results['notice'] ) && ! empty( $test_results['notice'] ) ) : ?>
+							<p style="color: #2271b1; font-size: 13px;">ℹ <?php echo esc_html( $test_results['notice'] ); ?></p>
+						<?php endif; ?>
 						<?php
 						// Clean up transient after displaying.
 						if ( $editing ) {
@@ -7012,6 +7015,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									}
 									if (d.warning) { html += '<p style="margin:6px 0 0;color:#b45309;font-size:13px;">⚠ ' + d.warning + '</p>'; }
 									if (d.quality_note) { html += '<p style="margin:6px 0 0;color:#2271b1;font-size:13px;">ℹ ' + d.quality_note + '</p>'; }
+									if (d.notice) { html += '<p style="margin:6px 0 0;color:#2271b1;font-size:13px;">ℹ ' + d.notice + '</p>'; }
 								}
 								html += '</div>';
 								resultDiv.innerHTML = html;
