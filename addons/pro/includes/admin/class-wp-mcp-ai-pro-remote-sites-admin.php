@@ -2118,15 +2118,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							? $connection['command_descriptions']
 							: array();
 						$tg_builtin_cmds  = array(
-							'start'    => __( 'Start the bot &amp; see welcome message', 'mcp-ai-wpoos-pro' ),
-							'help'     => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
-							'tools'    => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
-							'balance'  => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
-							'app'      => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
-							'settings' => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
-							'status'   => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
-							'cancel'   => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
+							'start'       => __( 'Start the bot &amp; see welcome message', 'mcp-ai-wpoos-pro' ),
+							'help'        => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
+							'tools'       => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
+							'vectorstore' => __( 'Get vector store info for this assistant', 'mcp-ai-wpoos-pro' ),
+							'balance'     => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
+							'app'         => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
+							'settings'    => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
+							'status'      => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
+							'cancel'      => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
 						);
+						// Merge dynamically registered slash commands from the global handler.
+						global $wp_mcp_ai_slash_command_handler;
+						if ( $wp_mcp_ai_slash_command_handler instanceof WP_MCP_AI_Slash_Command_Handler ) {
+							foreach ( $wp_mcp_ai_slash_command_handler->get_commands() as $dyn_name => $dyn_config ) {
+								if ( ! isset( $tg_builtin_cmds[ $dyn_name ] ) ) {
+									$tg_builtin_cmds[ $dyn_name ] = ! empty( $dyn_config['description'] )
+										? esc_html( $dyn_config['description'] )
+										: esc_html( $dyn_name );
+								}
+							}
+						}
 						?>
 						<table style="border-collapse: collapse; width: 100%;">
 							<thead>
