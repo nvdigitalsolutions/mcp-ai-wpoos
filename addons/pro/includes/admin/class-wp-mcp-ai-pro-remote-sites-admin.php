@@ -42,6 +42,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_google_chat_spaces', array( $this, 'ajax_fetch_google_chat_spaces' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_google_chat_auto_reply', array( $this, 'ajax_test_google_chat_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_google_chat_incoming_trigger', array( $this, 'ajax_test_google_chat_incoming_trigger' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_google_chat_webhook_log', array( $this, 'ajax_get_google_chat_webhook_log' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_clear_google_chat_webhook_log', array( $this, 'ajax_clear_google_chat_webhook_log' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_live', array( $this, 'ajax_test_telegram_live' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_auto_reply', array( $this, 'ajax_test_telegram_auto_reply' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_telegram_send_group', array( $this, 'ajax_test_telegram_send_group' ) );
@@ -3815,6 +3817,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<tr class="google_chat-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Webhook Log', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+							<button type="button" id="google_chat_fetch_log_btn" class="button button-secondary">
+								<?php esc_html_e( 'Fetch Recent Webhook Events', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<button type="button" id="google_chat_clear_log_btn" class="button button-link" style="color: #d63638;">
+								<?php esc_html_e( 'Clear Log', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+							<span id="google_chat_log_spinner" class="spinner" style="float: none; vertical-align: middle; display: none;"></span>
+						</div>
+						<p class="description"><?php esc_html_e( 'Shows up to 25 of the most recent webhook requests received from Google Chat, including rejected requests. Use this to diagnose why messages are not reaching your site — a rejected entry with a reason explains the problem. If no entries appear after sending a message from Google Chat, the request is not reaching WordPress at all (check the webhook URL configured in Google Cloud Console, firewall, or Cloudflare settings).', 'mcp-ai-wpoos-pro' ); ?></p>
+						<div id="google_chat_log_result" style="display: none; margin-top: 8px;"></div>
+					</td>
+				</tr>
+
+				<tr class="google_chat-only-field" style="display: none;">
 					<th scope="row"></th>
 					<td>
 						<div style="background: #f0f6fc; border-left: 4px solid #1a73e8; padding: 12px; margin-top: 10px;">
@@ -6116,6 +6135,125 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if (gcIncomingResult) {
 			gcIncomingResult.style.display = 'block';
 			gcIncomingResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			});
+			});
+			}
+
+			// Google Chat: Fetch Webhook Log button.
+			var gcFetchLogBtn     = document.getElementById('google_chat_fetch_log_btn');
+			var gcClearLogBtn     = document.getElementById('google_chat_clear_log_btn');
+			var gcLogSpinner      = document.getElementById('google_chat_log_spinner');
+			var gcLogResult       = document.getElementById('google_chat_log_result');
+
+			function gcEscHtml(str) {
+			return String(str || '').replace(/[&<>"']/g, function(c) {
+			return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+			});
+			}
+
+			function gcFormatLogTable(entries) {
+			if (!entries || !entries.length) {
+			return '<div class="notice notice-warning inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'No webhook events recorded yet. Send a message from Google Chat and then click Fetch again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			var statusLabels = {
+			'accepted': '<span style="color:#00a32a;font-weight:600;">✓ Accepted</span>',
+			'rejected': '<span style="color:#d63638;font-weight:600;">✗ Rejected</span>',
+			'processed': '<span style="color:#00a32a;">✓ Processed</span>'
+			};
+			var html = '<div style="overflow-x:auto;margin-top:4px;">';
+			html += '<table class="widefat striped" style="font-size:12px;">';
+			html += '<thead><tr>';
+			html += '<th style="white-space:nowrap;">' + <?php echo wp_json_encode( __( 'Time (UTC)', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '<th>' + <?php echo wp_json_encode( __( 'Status', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '<th>' + <?php echo wp_json_encode( __( 'Event Type', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '<th>' + <?php echo wp_json_encode( __( 'Space', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '<th>' + <?php echo wp_json_encode( __( 'Detail / Reason', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '<th>' + <?php echo wp_json_encode( __( 'IP', 'mcp-ai-wpoos-pro' ) ); ?> + '</th>';
+			html += '</tr></thead><tbody>';
+			entries.forEach(function(e) {
+			var statusHtml = statusLabels[e.status] || ('<span>' + gcEscHtml(e.status) + '</span>');
+			html += '<tr>';
+			html += '<td style="white-space:nowrap;">' + gcEscHtml(e.ts) + '</td>';
+			html += '<td>' + statusHtml + '</td>';
+			html += '<td>' + gcEscHtml(e.event_type || '—') + '</td>';
+			html += '<td style="max-width:180px;word-break:break-all;">' + gcEscHtml(e.space || '—') + '</td>';
+			html += '<td style="max-width:300px;word-break:break-word;">' + gcEscHtml(e.reason) + '</td>';
+			html += '<td style="white-space:nowrap;">' + gcEscHtml(e.ip) + '</td>';
+			html += '</tr>';
+			});
+			html += '</tbody></table></div>';
+			return html;
+			}
+
+			if (gcFetchLogBtn) {
+			gcFetchLogBtn.addEventListener('click', function() {
+			gcFetchLogBtn.disabled = true;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'inline-block'; }
+			if (gcLogResult)  { gcLogResult.style.display = 'none'; gcLogResult.innerHTML = ''; }
+
+			var data = new FormData();
+			data.append('action', 'wp_mcp_ai_get_google_chat_webhook_log');
+			data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_get_google_chat_webhook_log' ) ); ?>);
+
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function(response) {
+			if (!response.ok) { throw new Error('HTTP ' + response.status); }
+			return response.json();
+			})
+			.then(function(result) {
+			gcFetchLogBtn.disabled = false;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'none'; }
+			if (!gcLogResult) { return; }
+			gcLogResult.style.display = 'block';
+			if (result.success) {
+			gcLogResult.innerHTML = gcFormatLogTable(result.data);
+			} else {
+			gcLogResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to fetch log.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+			}
+			})
+			.catch(function() {
+			gcFetchLogBtn.disabled = false;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'none'; }
+			if (gcLogResult) {
+			gcLogResult.style.display = 'block';
+			gcLogResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
+			}
+			});
+			});
+			}
+
+			if (gcClearLogBtn) {
+			gcClearLogBtn.addEventListener('click', function() {
+			if (!window.confirm(<?php echo wp_json_encode( __( 'Clear the Google Chat webhook log? This cannot be undone.', 'mcp-ai-wpoos-pro' ) ); ?>)) { return; }
+			gcClearLogBtn.disabled = true;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'inline-block'; }
+
+			var data = new FormData();
+			data.append('action', 'wp_mcp_ai_clear_google_chat_webhook_log');
+			data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_clear_google_chat_webhook_log' ) ); ?>);
+
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
+			.then(function(response) {
+			if (!response.ok) { throw new Error('HTTP ' + response.status); }
+			return response.json();
+			})
+			.then(function(result) {
+			gcClearLogBtn.disabled = false;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'none'; }
+			if (gcLogResult) {
+			gcLogResult.style.display = 'block';
+			gcLogResult.innerHTML = result.success
+			? '<div class="notice notice-success inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Webhook log cleared.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>'
+			: '<div class="notice notice-error inline" style="margin:0;"><p>' + (result.data || <?php echo wp_json_encode( __( 'Failed to clear log.', 'mcp-ai-wpoos-pro' ) ); ?>) + '</p></div>';
+			}
+			})
+			.catch(function() {
+			gcClearLogBtn.disabled = false;
+			if (gcLogSpinner) { gcLogSpinner.style.display = 'none'; }
+			if (gcLogResult) {
+			gcLogResult.style.display = 'block';
+			gcLogResult.innerHTML = '<div class="notice notice-error inline" style="margin:0;"><p>' + <?php echo wp_json_encode( __( 'Request failed. Please try again.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p></div>';
 			}
 			});
 			});
@@ -10687,6 +10825,43 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		wp_send_json_success( array( 'ai_reply' => $ai_reply ) );
+	}
+
+	/**
+	 * AJAX handler: Fetch the Google Chat webhook receipt log.
+	 *
+	 * Returns up to 25 recent webhook events stored by
+	 * WP_MCP_AI_Google_Chat_Webhook_Controller::store_webhook_log_entry().
+	 * Each entry includes the UTC timestamp, status, rejection reason or detail,
+	 * event type, space name, and masked client IP.
+	 */
+	public function ajax_get_google_chat_webhook_log() {
+		check_ajax_referer( 'wp_mcp_ai_get_google_chat_webhook_log', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		$log = get_option( 'wp_mcp_ai_gc_webhook_log', array() );
+
+		wp_send_json_success( is_array( $log ) ? $log : array() );
+	}
+
+	/**
+	 * AJAX handler: Clear the Google Chat webhook receipt log.
+	 */
+	public function ajax_clear_google_chat_webhook_log() {
+		check_ajax_referer( 'wp_mcp_ai_clear_google_chat_webhook_log', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+			return;
+		}
+
+		delete_option( 'wp_mcp_ai_gc_webhook_log' );
+
+		wp_send_json_success( array( 'cleared' => true ) );
 	}
 
 	/**
