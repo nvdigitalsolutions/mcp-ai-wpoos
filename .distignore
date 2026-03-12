@@ -36,7 +36,11 @@ package-lock.json
 babel.config.js
 jest.config.js
 esbuild.config.js
+esbuild.config.pro.js
+cosmos.config.json
+cosmos.webpack.config.js
 webpack.config.js
+webpack.config.tma-builder.js
 tsconfig.json
 .npmrc
 

@@ -283,7 +283,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			<tbody>
 				<?php if ( empty( $commands ) ) : ?>
 					<tr>
-						<td colspan="<?php echo $compact ? '4' : '5'; ?>"><?php esc_html_e( 'No commands available.', 'mcp-ai-wpoos' ); ?></td>
+						<td colspan="<?php echo absint( $compact ? 4 : 5 ); ?>"><?php esc_html_e( 'No commands available.', 'mcp-ai-wpoos' ); ?></td>
 					</tr>
 				<?php else : ?>
 					<?php foreach ( $commands as $command ) : ?>
