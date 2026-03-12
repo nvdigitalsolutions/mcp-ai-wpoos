@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-crm-email-search-tools',
-        'version' => 'dev-copilot/enhance-crm-email-search-tools',
-        'reference' => 'eddb11bc46106a68d451c75ba15718be7296fd58',
+        'pretty_version' => 'dev-copilot/fix-auto-reply-in-google-chat',
+        'version' => 'dev-copilot/fix-auto-reply-in-google-chat',
+        'reference' => '2b52d86f1b53ff0057619dc2bc22d3e25fa9dc9f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-crm-email-search-tools',
-            'version' => 'dev-copilot/enhance-crm-email-search-tools',
-            'reference' => 'eddb11bc46106a68d451c75ba15718be7296fd58',
+            'pretty_version' => 'dev-copilot/fix-auto-reply-in-google-chat',
+            'version' => 'dev-copilot/fix-auto-reply-in-google-chat',
+            'reference' => '2b52d86f1b53ff0057619dc2bc22d3e25fa9dc9f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
