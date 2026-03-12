@@ -2116,14 +2116,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							? $connection['command_descriptions']
 							: array();
 						$tg_builtin_cmds  = array(
-							'start'    => __( 'Start the bot &amp; see welcome message', 'mcp-ai-wpoos-pro' ),
-							'help'     => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
-							'tools'    => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
-							'balance'  => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
-							'app'      => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
-							'settings' => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
-							'status'   => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
-							'cancel'   => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
+							'start'       => __( 'Start the bot &amp; see welcome message', 'mcp-ai-wpoos-pro' ),
+							'help'        => __( 'Show available commands', 'mcp-ai-wpoos-pro' ),
+							'tools'       => __( 'Browse AI tools', 'mcp-ai-wpoos-pro' ),
+							'vectorstore' => __( 'Get vector store info for this assistant', 'mcp-ai-wpoos-pro' ),
+							'balance'     => __( 'Check credits balance', 'mcp-ai-wpoos-pro' ),
+							'app'         => __( 'Open the Mini App', 'mcp-ai-wpoos-pro' ),
+							'settings'    => __( 'Open Mini App settings', 'mcp-ai-wpoos-pro' ),
+							'status'      => __( 'Check bot connection status', 'mcp-ai-wpoos-pro' ),
+							'cancel'      => __( 'Reset conversation history', 'mcp-ai-wpoos-pro' ),
 						);
 						?>
 						<table style="border-collapse: collapse; width: 100%;">

@@ -1797,7 +1797,7 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			$text = $connection['welcome_message'];
 		} else {
 			$text = sprintf(
-				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
+				"👋 Welcome to %s!\n\nI'm your AI assistant. You can ask me anything or use these commands:\n\n/help – List available commands\n/tools – Browse AI tools\n/vectorstore – Get vector store info\n/balance – Check credits\n/app – Open the Mini App\n/settings – Open settings\n/status – Check connection status\n/cancel – Reset conversation\n\nJust type your question to get started!",
 				$site_name
 			);
 		}
