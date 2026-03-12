@@ -4487,6 +4487,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		</form>
 
 		<script type="text/javascript">
+		var wpMcpAiAjax = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
 		function toggleAuthFields(authType) {
 			var usernameField = document.getElementById('username_field');
 			var passwordField = document.getElementById('password_field');
@@ -4899,23 +4900,6 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 			}
 
-			// WhatsApp: Access Token show/hide toggle button.
-			var tokenToggleBtn = document.getElementById('whatsapp_access_token_toggle');
-			if (tokenToggleBtn) {
-				tokenToggleBtn.addEventListener('click', function() {
-					var tokenInput = document.getElementById('whatsapp_access_token');
-					if (tokenInput.type === 'password') {
-						tokenInput.type = 'text';
-						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Hide', 'mcp-ai-wpoos-pro' ) ); ?>;
-						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Hide access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-					} else {
-						tokenInput.type = 'password';
-						tokenToggleBtn.textContent = <?php echo wp_json_encode( __( 'Show', 'mcp-ai-wpoos-pro' ) ); ?>;
-						tokenToggleBtn.setAttribute('aria-label', <?php echo wp_json_encode( __( 'Show access token', 'mcp-ai-wpoos-pro' ) ); ?>);
-					}
-				});
-			}
-
 			// Telegram: inline Test Bot Token button (works before saving).
 			var tgTestBtn     = document.getElementById('telegram_test_connection_btn');
 			var tgTestSpinner = document.getElementById('telegram_test_spinner');
@@ -4944,7 +4928,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (botToken) { data.append('bot_token', botToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5034,7 +5018,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5127,7 +5111,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl2 = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl2) { data.append('connection_id', connIdEl2.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5194,7 +5178,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (secretToken) { data.append('secret_token', secretToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5255,7 +5239,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (botToken) { data.append('bot_token', botToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5332,7 +5316,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_register_telegram_commands' ) ); ?>);
 					data.append('connection_id', tgRegisterCmdsConnId);
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5403,7 +5387,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var apiVersionEl = document.getElementById('whatsapp_graph_api_version');
 					if (apiVersionEl) { data.append('graph_api_version', apiVersionEl.value.trim()); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5505,7 +5489,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (phoneNumberId) { data.append('phone_number_id', phoneNumberId); }
 					if (apiVersion)    { data.append('graph_api_version', apiVersion); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5582,7 +5566,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (phoneNumberId) { data.append('phone_number_id', phoneNumberId); }
 					if (apiVersion)    { data.append('graph_api_version', apiVersion); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5663,7 +5647,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -5734,7 +5718,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var waVersionEl = document.getElementById('whatsapp_graph_api_version');
 					if (waVersionEl && waVersionEl.value) { data.append('graph_api_version', waVersionEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(r) {
 							if (!r.ok) { throw new Error(r.status); }
 							return r.json();
@@ -5806,7 +5790,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			data.append('access_token', accessToken);
 			if (connectionId) { data.append('connection_id', connectionId); }
 
-			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 			.then(function(r) {
 			if (!r.ok) { throw new Error(r.status); }
 			return r.json();
@@ -5882,7 +5866,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			data.append('access_token', accessToken);
 			if (connectionId) { data.append('connection_id', connectionId); }
 
-			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 			.then(function(response) {
 			if (!response.ok) { throw new Error('HTTP ' + response.status); }
 			return response.json();
@@ -5953,7 +5937,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 			if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 			.then(function(response) {
 			if (!response.ok) { throw new Error('HTTP ' + response.status); }
 			return response.json();
@@ -6035,7 +6019,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			data.append('test_message', msg);
 			if (space) { data.append('test_space', space); }
 
-			fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+			fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 			.then(function(response) {
 			if (!response.ok) { throw new Error('HTTP ' + response.status); }
 			return response.json();
@@ -6129,7 +6113,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('app_id', appId);
 					data.append('app_secret', appSecret);
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6195,7 +6179,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('page_id', pageId);
 					data.append('api_version', apiVersion);
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6271,7 +6255,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6342,7 +6326,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (tenantId)     { data.append('tenant_id', tenantId); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6415,7 +6399,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6484,7 +6468,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (apiKey)       { data.append('api_key', apiKey); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6554,7 +6538,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6607,7 +6591,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (botToken) { data.append('bot_token', botToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6675,7 +6659,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6734,7 +6718,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (botToken) { data.append('bot_token', botToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6801,7 +6785,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6860,7 +6844,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					if (graphToken) { data.append('graph_token', graphToken); }
 					if (connectionId) { data.append('connection_id', connectionId); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6921,7 +6905,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					var connIdEl = document.getElementById('connection_id') || document.querySelector('input[name="connection_id"]');
 					if (connIdEl) { data.append('connection_id', connIdEl.value); }
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();
@@ -6972,7 +6956,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					data.append('nonce', nonce);
 					data.append('connection_id', connectionId);
 
-					fetch(ajaxurl, { method: 'POST', credentials: 'same-origin', body: data })
+					fetch(wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data })
 						.then(function(response) {
 							if (!response.ok) { throw new Error('HTTP ' + response.status); }
 							return response.json();

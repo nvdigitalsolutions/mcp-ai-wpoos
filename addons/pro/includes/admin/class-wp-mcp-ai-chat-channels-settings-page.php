@@ -978,6 +978,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 		<script>
 		( function() {
+			var wpMcpAiAjax = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
 			var btn = document.getElementById( 'wp-mcp-ai-fetch-whatsapp-phones' );
 			if ( ! btn ) {
 				return;
@@ -1002,7 +1003,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 				data.append( 'business_account_id', wabaId );
 				data.append( 'access_token', accessToken );
 
-				fetch( ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' } )
+				fetch( wpMcpAiAjax, { method: 'POST', body: data, credentials: 'same-origin' } )
 					.then( function( r ) {
 						if ( ! r.ok ) {
 							throw new Error( r.status );
@@ -1579,6 +1580,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 
 		<script>
 		( function() {
+			var wpMcpAiAjax = typeof ajaxurl !== 'undefined' ? ajaxurl : <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
 			// Show/Hide Page Access Token toggle.
 			var tokenToggleBtn = document.getElementById( 'wp-mcp-ai-messenger-token-toggle' );
 			if ( tokenToggleBtn ) {
@@ -1628,7 +1630,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					data.append( 'app_id',     appId );
 					data.append( 'app_secret', appSecret );
 
-					fetch( ajaxurl, { method: 'POST', credentials: 'same-origin', body: data } )
+					fetch( wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data } )
 						.then( function( response ) {
 							if ( ! response.ok ) { throw new Error( 'HTTP ' + response.status ); }
 							return response.json();
@@ -1686,7 +1688,7 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 					data.append( 'page_id',      pageId );
 					data.append( 'api_version',  apiVersion );
 
-					fetch( ajaxurl, { method: 'POST', credentials: 'same-origin', body: data } )
+					fetch( wpMcpAiAjax, { method: 'POST', credentials: 'same-origin', body: data } )
 						.then( function( response ) {
 							if ( ! response.ok ) { throw new Error( 'HTTP ' + response.status ); }
 							return response.json();
