@@ -543,6 +543,13 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'telegram', '' !== $from_id ? $from_id : $chat_id ) ) {
+			return;
+		}
+
 		do_action( 'wp_mcp_ai_telegram_auto_reply', $message, $automation_rules, $assigned_assistant_ids );
 
 		if ( ! empty( $assigned_assistant_ids ) ) {
@@ -617,6 +624,12 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 			);
 			return;
 		}
+
+		// Send a typing indicator before starting AI inference so the user knows
+		// their message is being processed. This is a widely-recommended industry
+		// practice for chatbots: the typing action is visible for up to 5 seconds
+		// and is automatically cleared when the reply arrives or after a timeout.
+		$this->send_typing_action( $bot_token, $chat_id );
 
 		// --- Per-user conversation history (mirrors PR #3844 for WhatsApp) ---
 		$history_key      = $this->get_conversation_history_key( $from_id, $connection_id );
@@ -2988,6 +3001,57 @@ class WP_MCP_AI_Telegram_Webhook_Controller extends WP_REST_Controller {
 				'body'    => $body,
 			)
 		);
+	}
+
+	/**
+	 * Send a typing indicator to a Telegram chat.
+	 *
+	 * Sends the `typing` chat action via the Telegram Bot API so the user sees
+	 * a "Bot is typing…" status while the AI assistant generates its reply.
+	 * This is an industry-standard UX pattern for conversational bots:
+	 *
+	 * - Telegram's typing action auto-expires after ~5 seconds and is
+	 *   automatically cleared when the actual message arrives.
+	 * - The call is fire-and-forget: failures are logged but do not block
+	 *   the AI reply pipeline.
+	 *
+	 * @see https://core.telegram.org/bots/api#sendchataction
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $bot_token Decrypted Telegram bot token.
+	 * @param string $chat_id   Telegram chat ID to send the typing action to.
+	 */
+	protected function send_typing_action( $bot_token, $chat_id ) {
+		$endpoint = sprintf( 'https://api.telegram.org/bot%s/sendChatAction', rawurlencode( $bot_token ) );
+
+		$body = wp_json_encode(
+			array(
+				'chat_id' => $chat_id,
+				'action'  => 'typing',
+			)
+		);
+
+		if ( false === $body ) {
+			return;
+		}
+
+		$result = wp_remote_post(
+			$endpoint,
+			array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'timeout' => 5,
+				'body'    => $body,
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'telegram_typing_action_failed',
+				'Telegram typing action could not be sent (non-blocking).',
+				array( 'error' => $result->get_error_message() )
+			);
+		}
 	}
 
 	/**

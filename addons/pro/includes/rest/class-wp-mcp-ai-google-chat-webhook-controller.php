@@ -689,6 +689,13 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return rest_ensure_response( $this->empty_response() );
 		}
 
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'google_chat', $sender_name ) ) {
+			return rest_ensure_response( $this->empty_response() );
+		}
+
 		$connection_id = isset( $connection['id'] ) ? sanitize_key( $connection['id'] ) : '';
 
 		if ( '' === $connection_id ) {
