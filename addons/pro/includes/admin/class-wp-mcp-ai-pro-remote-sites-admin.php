@@ -5913,7 +5913,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if (result.success) {
 			var d    = result.data;
 			var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'Connection test successful!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
-			if (d && typeof d === 'object') {
+			if (d && d.mode === 'webhook_only') {
+			html += '<p style="margin:4px 0 0;">' + <?php echo wp_json_encode( __( 'Webhook-only mode: OIDC verification is disabled and replies will be sent via the configured Incoming Webhook URL. No Service Account or OAuth credentials are required.', 'mcp-ai-wpoos-pro' ) ); ?> + '</p>';
+			} else if (d && typeof d === 'object') {
 			var items = [];
 			if (d.space_count !== undefined) { items.push(<?php echo wp_json_encode( __( 'Spaces accessible:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.space_count); }
 			if (d.bot_name)  { items.push(<?php echo wp_json_encode( __( 'Bot name:', 'mcp-ai-wpoos-pro' ) ); ?> + ' ' + d.bot_name); }
@@ -9009,6 +9011,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $access_token ) {
+		// Webhook-only mode: no SA/OAuth credentials, but OIDC verification is disabled
+		// and a reply webhook URL is configured. Incoming messages are accepted without
+		// token validation, and outbound replies go through the webhook URL — no
+		// service-account or OAuth credentials are needed for this setup.
+		if (
+			$stored_connection &&
+			! empty( $stored_connection['disable_oidc_verification'] ) &&
+			! empty( $stored_connection['reply_webhook_url'] ) &&
+			preg_match( '#^https://chat\.googleapis\.com/v1/spaces/[a-zA-Z0-9_-]+/messages\?#', $stored_connection['reply_webhook_url'] )
+		) {
+			wp_send_json_success(
+				array(
+					'mode'        => 'webhook_only',
+					'space_count' => 0,
+				)
+			);
+			return;
+		}
+
 		wp_send_json_error( __( 'No valid credentials found. Please provide a Service Account JSON key or set up OAuth via the 1-click connect button.', 'mcp-ai-wpoos-pro' ) );
 		return;
 		}

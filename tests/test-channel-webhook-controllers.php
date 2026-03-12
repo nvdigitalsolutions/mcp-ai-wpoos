@@ -2004,6 +2004,197 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_active_google_chat_connection uses space-specific connection as last resort for
+	 * DMs (unique space IDs that do not match any configured google_chat_space).
+	 *
+	 * Previously, if ALL connections had google_chat_space set, DM spaces returned null,
+	 * causing auto-reply to be silently dropped. The last-resort fallback ensures DMs
+	 * are always routed to the first enabled google_chat connection.
+	 */
+	public function test_google_chat_falls_back_to_last_resort_when_no_generic_connection() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Only space-specific connections — no generic connection exists.
+		$connections = array(
+			'space_conn_a' => array(
+				'id'                     => 'space_conn_a',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'dummy_token',
+				'google_chat_space'      => 'spaces/WORKSPACE',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// DM space ID does not match the configured workspace space.
+		$result = $method->invoke( $controller, 'spaces/dm-AAABBB' );
+
+		$this->assertIsArray( $result, 'Last-resort fallback should return a connection for DM spaces' );
+		$this->assertSame( 'space_conn_a', $result['id'], 'Should use the only enabled connection as last resort' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test get_active_google_chat_connection still prefers space-specific over last-resort
+	 * when using the last-resort fallback in multi-connection setups.
+	 */
+	public function test_google_chat_space_specific_still_wins_over_last_resort() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$connections = array(
+			'space_conn_a' => array(
+				'id'                     => 'space_conn_a',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'dummy_token',
+				'google_chat_space'      => 'spaces/AAAA',
+			),
+			'space_conn_b' => array(
+				'id'                     => 'space_conn_b',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 2 ),
+				'api_key'                => 'dummy_token',
+				'google_chat_space'      => 'spaces/BBBB',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		// Exact space match should still be returned (not the last-resort).
+		$result = $method->invoke( $controller, 'spaces/BBBB' );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'space_conn_b', $result['id'], 'Exact space-specific connection must win' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test get_active_google_chat_connection returns null when no google_chat connections exist.
+	 */
+	public function test_google_chat_connection_returns_null_with_no_connections() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Only a non-google_chat connection.
+		$connections = array(
+			'slack_conn' => array(
+				'id'              => 'slack_conn',
+				'connection_type' => 'slack',
+				'enabled'         => true,
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_active_google_chat_connection' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller, 'spaces/dm-AAABBB' );
+
+		$this->assertNull( $result, 'Should return null when no google_chat connections exist' );
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * Test handle_webhook routes DM messages to the last-resort connection when no generic
+	 * connection exists and the DM space does not match any configured google_chat_space.
+	 *
+	 * Verifies the wp_mcp_ai_google_chat_should_auto_reply filter fires (indicating the
+	 * connection was found and the event reached the reply decision point).
+	 */
+	public function test_google_chat_handle_webhook_routes_dm_via_last_resort_connection() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Only a space-specific connection — DM spaces will not match it.
+		$connections = array(
+			'space_conn' => array(
+				'id'                     => 'space_conn',
+				'connection_type'        => 'google_chat',
+				'enabled'                => true,
+				'assigned_assistant_ids' => array( 1 ),
+				'api_key'                => 'dummy_token',
+				'google_chat_space'      => 'spaces/WORKSPACE',
+			),
+		);
+
+		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
+
+		$filter_called = false;
+		add_filter(
+			'wp_mcp_ai_google_chat_should_auto_reply',
+			function ( $reply ) use ( &$filter_called ) {
+				$filter_called = true;
+				return false; // Block actual cron scheduling in test.
+			}
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'message' => array(
+				'name'   => 'spaces/dm-AAABBB/messages/msg1',
+				'text'   => 'Hello from DM',
+				'sender' => array( 'name' => 'users/12345' ),
+				'thread' => array( 'name' => 'spaces/dm-AAABBB/threads/thread1' ),
+			),
+			'space'   => array(
+				'name'      => 'spaces/dm-AAABBB',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'user'    => array( 'name' => 'users/12345' ),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$response = $controller->handle_webhook( $request );
+
+		remove_all_filters( 'wp_mcp_ai_google_chat_should_auto_reply' );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+
+		$this->assertTrue(
+			$filter_called,
+			'wp_mcp_ai_google_chat_should_auto_reply must fire for DM messages routed via last-resort connection'
+		);
+	}
+
+	/**
 	 * Test handle_welcome_message_job returns early when space_name is empty.
 	 */
 	public function test_google_chat_welcome_message_job_returns_early_on_empty_space() {
@@ -5701,6 +5892,71 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
 		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * validate_google_oidc_token bypasses OIDC for DM spaces when the only available
+	 * google_chat connection has a DIFFERENT google_chat_space and disable_oidc_verification
+	 * is enabled (last-resort fallback).
+	 *
+	 * Previously, the connection lookup returned null for DM spaces because the DM
+	 * space ID did not match the configured google_chat_space, so the
+	 * disable_oidc_verification flag was never read and OIDC validation failed.
+	 * The last-resort fallback in get_active_google_chat_connection now finds the
+	 * connection and enables the bypass.
+	 */
+	public function test_google_chat_oidc_bypass_works_for_dm_via_last_resort_connection() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Space-specific connection with OIDC disabled. DMs arrive from a different space.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_bypass_lastresort' => array(
+					'id'                        => 'gc_bypass_lastresort',
+					'connection_type'           => 'google_chat',
+					'enabled'                   => true,
+					'api_key'                   => 'dummy_token',
+					'google_chat_space'         => 'spaces/WORKSPACE',
+					'disable_oidc_verification' => true,
+					'assigned_assistant_ids'    => array( 1 ),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// DM arrives from a unique DM space — does NOT match spaces/WORKSPACE.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name'      => 'spaces/dm-UNIQUE123',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/dm-UNIQUE123/messages/msg-dm-001',
+				'text'   => 'Hi bot!',
+				'sender' => array( 'name' => 'users/999' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		// No Authorization header — OIDC bypass should kick in via last-resort connection.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue(
+			$result,
+			'validate_google_oidc_token must bypass OIDC for a DM space when the only connection has disable_oidc_verification=true (last-resort fallback)'
+		);
+
 		delete_option( 'wp_mcp_ai_pro_remote_sites' );
 	}
 

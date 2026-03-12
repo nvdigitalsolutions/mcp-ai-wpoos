@@ -1780,13 +1780,20 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	/**
 	 * Find the best active Google Chat connection for the given space.
 	 *
-	 * When a space-specific connection is available (i.e. the connection's
-	 * `google_chat_space` field matches $space_name) it is preferred over a
-	 * generic connection. Falls back to the first enabled connection that has
-	 * NO specific space configured (a "generic" connection). Connections that
-	 * are space-specific for a DIFFERENT space are never used as fallback — using
-	 * the wrong credentials/assistant for an unrelated space would route messages
-	 * incorrectly and could expose one space's data to another.
+	 * Priority order:
+	 *  1. Space-specific connection whose `google_chat_space` matches $space_name.
+	 *  2. Generic connection (no `google_chat_space` configured).
+	 *  3. Last-resort: any enabled Google Chat connection.
+	 *
+	 * The last-resort fallback handles Direct Messages (DMs) and @mentions in
+	 * spaces that are not explicitly mapped to a connection. Each DM between a
+	 * user and the bot is delivered through a unique space ID (e.g.
+	 * spaces/dm-XXXXXXXX) that will never match a workspace-space-specific
+	 * connection, so without this fallback every DM is silently dropped.
+	 *
+	 * Note: the AI reply is always sent back to the *incoming* space, so even
+	 * when a space-specific connection is used as last resort the reply reaches
+	 * the correct DM or space rather than the connection's configured space.
 	 *
 	 * @since 1.0.0
 	 *
@@ -1804,7 +1811,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			return null;
 		}
 
-		$fallback = null;
+		$fallback     = null; // First generic (no specific space) connection.
+		$last_resort  = null; // First enabled google_chat connection of any kind.
 
 		foreach ( $connections as $connection ) {
 			if ( ! isset( $connection['connection_type'] ) || 'google_chat' !== $connection['connection_type'] ) {
@@ -1815,14 +1823,21 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 				continue;
 			}
 
+			// Keep the first enabled google_chat connection as an absolute last resort
+			// so DMs and messages from unregistered spaces always get a response.
+			if ( null === $last_resort ) {
+				$last_resort = $connection;
+			}
+
 			// Check for a space-specific match first.
 			if ( '' !== $space_name && ! empty( $connection['google_chat_space'] ) ) {
 				$conn_space = sanitize_text_field( $connection['google_chat_space'] );
 				if ( $conn_space === $space_name ) {
 					return $connection;
 				}
-				// This connection is space-specific for a different space — skip it
-				// entirely; it must not become the fallback for an unrelated space.
+				// This connection targets a different space — skip it for the generic
+				// fallback so it does not shadow the correct connection in multi-connection
+				// setups, but keep it tracked in $last_resort for DM routing.
 				continue;
 			}
 
@@ -1832,7 +1847,8 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 			}
 		}
 
-		return $fallback;
+		// Return the generic connection if available, otherwise any enabled connection.
+		return null !== $fallback ? $fallback : $last_resort;
 	}
 
 	/**
