@@ -580,12 +580,16 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that validate_slack_signature allows requests when no signing secret is configured.
+	 * Test that validate_slack_signature rejects requests when no signing secret is configured.
+	 *
+	 * The controller uses a fail-closed security model: when the Signing Secret
+	 * has not been saved the method returns WP_Error(403) so that unconfigured
+	 * webhook endpoints cannot be exploited (PR #3844 pattern).
 	 */
-	public function test_slack_validation_passes_without_signing_secret() {
+	public function test_slack_validation_rejects_without_signing_secret() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
 
-		// Controller's get_active_slack_connection will return null (no connections stored).
+		// No connections stored — get_signing_secret() returns ''.
 		$controller = new WP_MCP_AI_Slack_Event_Controller();
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/slack' );
@@ -593,8 +597,17 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$result = $controller->validate_slack_signature( $request );
 
-		// Without a configured signing secret the method should return true (allows through with warning).
-		$this->assertTrue( $result, 'Validation should pass when no signing secret is configured' );
+		// Fail-closed: must return WP_Error (not true) when signing secret is absent.
+		$this->assertInstanceOf(
+			'WP_Error',
+			$result,
+			'validate_slack_signature must return WP_Error when signing secret is not configured'
+		);
+		$this->assertSame(
+			'rest_forbidden',
+			$result->get_error_code(),
+			'Error code must be rest_forbidden'
+		);
 	}
 
 	/**
@@ -818,16 +831,16 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'ts'      => '1700000001.000100',
 		);
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		$method->invoke( $controller, $event );
 
 		// The cron job must have been scheduled.
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
 		$this->assertNotFalse( $next, 'Cron job must be scheduled when <@BOT_USER_ID> satisfies require_mention' );
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
 		update_option( 'wp_mcp_ai_remote_connections', $connections );
@@ -873,7 +886,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		// Regular message that does NOT mention the bot.
 		$event = array(
@@ -886,7 +899,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		$method->invoke( $controller, $event );
 
-		$next = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
 		$this->assertFalse( $next, 'Cron job must NOT be scheduled for messages that do not mention the bot' );
 
 		wp_delete_post( $assistant_id, true );
@@ -934,7 +947,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method = $reflection->getMethod( 'process_event' );
 		$method->setAccessible( true );
 
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 
 		$message_ts = '1700000003.000300';
 		$event_base = array(
@@ -946,21 +959,229 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// First event — app_mention — should schedule a cron job.
 		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'app_mention' ) ) );
-		$next_after_first = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$next_after_first = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
 		$this->assertNotFalse( $next_after_first, 'First event (app_mention) must schedule a cron job' );
 
 		// Second event — message.channels for the same ts — must be deduplicated.
 		// Unschedule the first job to test whether a new one would be added.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		$method->invoke( $controller, array_merge( $event_base, array( 'type' => 'message' ) ) );
-		$next_after_second = wp_next_scheduled( 'wp_mcp_ai_slack_reply_job' );
+		$next_after_second = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
 		$this->assertFalse( $next_after_second, 'Duplicate message event (same ts) must not schedule a second cron job' );
 
 		// Clean up.
-		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_reply_job' );
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
 		wp_delete_post( $assistant_id, true );
 		unset( $connections[ $connection_id ] );
 		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
+	/**
+	 * Industry standard: in a 1-on-1 DM (channel_type 'im') the bot is the
+	 * direct recipient and require_mention must be bypassed.  A plain DM message
+	 * that contains no bot mention should still schedule a reply job.
+	 */
+	public function test_slack_process_event_dm_bypasses_require_mention() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$connection_id = 'conn_slk_dm_' . wp_generate_password( 8, false );
+		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$assistant_id  = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Slack DM Test',
+				'post_name'   => 'slack-dm-test',
+				'post_status' => 'publish',
+			)
+		);
+
+		$connections[ $connection_id ] = array(
+			'id'                     => $connection_id,
+			'name'                   => 'Slack DM Bypass Test',
+			'connection_type'        => 'slack',
+			'enabled'                => true,
+			'require_mention'        => true, // enabled — but must be bypassed for DMs.
+			'slack_bot_user_id'      => 'UBOTDM1',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $connection_id );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+
+		// Plain DM message without any @mention — require_mention must be bypassed.
+		$event = array(
+			'type'         => 'message',
+			'user'         => 'UUSERDIR',
+			'text'         => 'Hello, can you help me?',
+			'channel'      => 'DDMCHAN1',
+			'channel_type' => 'im',
+			'ts'           => '1700000010.000010',
+		);
+
+		$method->invoke( $controller, $event );
+
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$this->assertNotFalse(
+			$next,
+			'DM message must schedule a reply job even when require_mention is enabled (DMs bypass the mention requirement)'
+		);
+
+		// Clean up.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_delete_post( $assistant_id, true );
+		unset( $connections[ $connection_id ] );
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
+	/**
+	 * process_event must forward the thread_ts and channel_type fields to the
+	 * scheduled cron job so that handle_slack_reply_job can reply in-thread.
+	 *
+	 * Industry standard: bots should reply inside the same Slack thread to keep
+	 * conversations tidy (see chat.postMessage thread_ts parameter).
+	 */
+	public function test_slack_process_event_passes_thread_ts_to_cron_job() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$connection_id = 'conn_slk_thr_' . wp_generate_password( 8, false );
+		$connections   = get_option( 'wp_mcp_ai_remote_connections', array() );
+		$assistant_id  = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Slack Thread Test',
+				'post_name'   => 'slack-thread-test',
+				'post_status' => 'publish',
+			)
+		);
+
+		$connections[ $connection_id ] = array(
+			'id'                     => $connection_id,
+			'name'                   => 'Slack Thread Test',
+			'connection_type'        => 'slack',
+			'enabled'                => true,
+			'require_mention'        => false,
+			'slack_bot_user_id'      => 'UBOTTHREAD',
+			'assigned_assistant_ids' => array( $assistant_id ),
+		);
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+
+		$prop = $reflection->getProperty( 'current_connection_id' );
+		$prop->setAccessible( true );
+		$prop->setValue( $controller, $connection_id );
+
+		$method = $reflection->getMethod( 'process_event' );
+		$method->setAccessible( true );
+
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+
+		$root_ts   = '1700000020.000020';
+		$thread_ts = '1700000020.000020'; // Same as root = this IS the thread root.
+
+		// Message posted inside a thread (thread_ts set, channel_type 'channel').
+		$event = array(
+			'type'         => 'message',
+			'user'         => 'UUSERTHR',
+			'text'         => 'A question inside a thread',
+			'channel'      => 'CCHAN_THR',
+			'channel_type' => 'channel',
+			'ts'           => '1700000021.000021',
+			'thread_ts'    => $thread_ts,
+		);
+
+		$method->invoke( $controller, $event );
+
+		$next = wp_next_scheduled( 'wp_mcp_ai_slack_send_ai_reply' );
+		$this->assertNotFalse( $next, 'Thread message must schedule a reply job' );
+
+		// Inspect the scheduled args to confirm thread_ts and channel_type are forwarded.
+		$crons = _get_cron_array();
+		$found_thread_ts    = false;
+		$found_channel_type = false;
+
+		foreach ( $crons as $timestamp => $hooks ) {
+			if ( ! isset( $hooks['wp_mcp_ai_slack_send_ai_reply'] ) ) {
+				continue;
+			}
+			foreach ( $hooks['wp_mcp_ai_slack_send_ai_reply'] as $key => $cron_data ) {
+				$cron_args = isset( $cron_data['args'][0] ) ? $cron_data['args'][0] : array();
+				if ( isset( $cron_args['thread_ts'] ) && $thread_ts === $cron_args['thread_ts'] ) {
+					$found_thread_ts = true;
+				}
+				if ( isset( $cron_args['channel_type'] ) && 'channel' === $cron_args['channel_type'] ) {
+					$found_channel_type = true;
+				}
+			}
+		}
+
+		$this->assertTrue( $found_thread_ts, 'thread_ts must be forwarded to the scheduled cron job args' );
+		$this->assertTrue( $found_channel_type, 'channel_type must be forwarded to the scheduled cron job args' );
+
+		// Clean up.
+		wp_clear_scheduled_hook( 'wp_mcp_ai_slack_send_ai_reply' );
+		wp_delete_post( $assistant_id, true );
+		unset( $connections[ $connection_id ] );
+		update_option( 'wp_mcp_ai_remote_connections', $connections );
+	}
+
+	/**
+	 * get_conversation_history_key must produce distinct keys for the same
+	 * user/channel/connection when thread_ts differs (thread-scoped history),
+	 * and match the legacy (no thread_ts) key when thread_ts is omitted.
+	 */
+	public function test_slack_conversation_history_key_thread_scoped() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$controller = new WP_MCP_AI_Slack_Event_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'get_conversation_history_key' );
+		$method->setAccessible( true );
+
+		// No thread_ts → legacy key (4th arg omitted / empty string).
+		$key_base        = $method->invoke( $controller, 'U1', 'C1', 'conn1' );
+		$key_base_empty  = $method->invoke( $controller, 'U1', 'C1', 'conn1', '' );
+
+		// With thread_ts → different key.
+		$key_thread_a = $method->invoke( $controller, 'U1', 'C1', 'conn1', '1700000001.000001' );
+		$key_thread_b = $method->invoke( $controller, 'U1', 'C1', 'conn1', '1700000002.000002' );
+
+		// Base keys (no thread) must be identical regardless of how the arg is passed.
+		$this->assertSame( $key_base, $key_base_empty, 'Omitting thread_ts must produce the same key as passing empty string' );
+
+		// Thread keys must differ from the base key.
+		$this->assertNotSame( $key_base, $key_thread_a, 'Thread-scoped key must differ from the channel-level key' );
+
+		// Different thread timestamps must produce different keys.
+		$this->assertNotSame( $key_thread_a, $key_thread_b, 'Different thread_ts values must produce different history keys' );
+
+		// All keys must start with the expected prefix and fit within transient limits.
+		$this->assertStringStartsWith( 'wp_mcp_ai_sl_conv_', $key_thread_a );
+		$this->assertLessThanOrEqual( 172, strlen( $key_thread_a ) );
+	}
+
+	/**
+	 * MAX_RATE_LIMIT_RETRIES constant must equal 3.
+	 */
+	public function test_slack_max_rate_limit_retries_constant() {
+		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
+
+		$this->assertSame(
+			3,
+			WP_MCP_AI_Slack_Event_Controller::MAX_RATE_LIMIT_RETRIES,
+			'MAX_RATE_LIMIT_RETRIES must be 3'
+		);
 	}
 
 	// =========================================================================
