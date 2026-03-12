@@ -5425,5 +5425,283 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( 172, strlen( $key1 ), 'Key must fit WordPress transient key limit' );
 	}
 
+	// =========================================================================
+	// Google Chat — OIDC bypass with space-specific connection (Bug fix tests)
+	// =========================================================================
+
+	/**
+	 * validate_google_oidc_token bypasses OIDC for a space-specific connection when
+	 * using the generic webhook URL and disable_oidc_verification is enabled.
+	 *
+	 * Bug: When no connection_id is present in the webhook URL, the permission
+	 * callback called get_active_google_chat_connection() without a space_name,
+	 * which skips space-specific connections. The fix reads the space_name from the
+	 * request body so the correct connection (and its disable_oidc_verification flag)
+	 * is found.
+	 */
+	public function test_google_chat_oidc_bypass_works_for_space_specific_connection_via_generic_url() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Store a connection that is space-specific AND has OIDC verification disabled.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_oidc_bypass_conn' => array(
+					'id'                       => 'gc_oidc_bypass_conn',
+					'connection_type'          => 'google_chat',
+					'enabled'                  => true,
+					'api_key'                  => 'dummy_token',
+					'google_chat_space'        => 'spaces/OIDCSPACE',
+					'disable_oidc_verification' => true,
+					'assigned_assistant_ids'   => array(),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// Build a request to the GENERIC URL (no connection_id param) with a payload
+		// whose space.name matches the space-specific connection above.
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name'      => 'spaces/OIDCSPACE',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/OIDCSPACE/messages/msg-001',
+				'text'   => 'Hello',
+				'sender' => array( 'name' => 'users/999' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		// No connection_id param and NO Authorization header — relies on OIDC bypass.
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertTrue(
+			$result,
+			'validate_google_oidc_token must return true when disable_oidc_verification is set on the matching space-specific connection, even without a URL connection_id'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * validate_google_oidc_token does NOT bypass OIDC when disable_oidc_verification
+	 * is false on the connection, even if the space name matches.
+	 */
+	public function test_google_chat_oidc_not_bypassed_when_flag_is_false() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Space-specific connection with OIDC verification ENABLED (not bypassed).
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_oidc_on_conn' => array(
+					'id'                       => 'gc_oidc_on_conn',
+					'connection_type'          => 'google_chat',
+					'enabled'                  => true,
+					'api_key'                  => 'dummy_token',
+					'google_chat_space'        => 'spaces/OIDCONSPACE',
+					'disable_oidc_verification' => false,
+					'assigned_assistant_ids'   => array(),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name'      => 'spaces/OIDCONSPACE',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/OIDCONSPACE/messages/msg-002',
+				'text'   => 'Hello',
+				'sender' => array( 'name' => 'users/888' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+		// No Authorization header → should fail OIDC validation (no token supplied).
+
+		$result = $controller->validate_google_oidc_token( $request );
+
+		$this->assertFalse(
+			$result,
+			'validate_google_oidc_token must return false when disable_oidc_verification is not set and no Bearer token is provided'
+		);
+
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * handle_webhook schedules an AI reply cron job for a DM when using the generic
+	 * webhook URL with a space-specific connection (regression test for route conflict).
+	 *
+	 * The legacy WP_MCP_AI_Google_Chat_Webhook_Handler was registered first for the
+	 * generic URL, intercepting requests before the full controller could handle them.
+	 * The fix in google-chat-webhook-init.php skips the legacy handler's route
+	 * registration when the full controller class is present.
+	 */
+	public function test_google_chat_handle_webhook_schedules_reply_for_dm_via_generic_url() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC Generic URL Bot',
+				'post_name'   => 'gc-generic-url-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_generic_conn' => array(
+					'id'                     => 'gc_generic_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'api_key'                => 'dummy_token',
+					'google_chat_space'      => 'spaces/GENERICSPACE',
+					'assigned_assistant_ids' => array( $post_id ),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		$payload = array(
+			'type'    => 'MESSAGE',
+			'space'   => array(
+				'name'      => 'spaces/GENERICSPACE',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'message' => array(
+				'name'   => 'spaces/GENERICSPACE/messages/msg-generic-001',
+				'text'   => 'Hello from DM via generic URL',
+				'sender' => array( 'name' => 'users/777' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertSame(
+			200,
+			rest_ensure_response( $response )->get_status(),
+			'handle_webhook must return HTTP 200 for a valid DM MESSAGE event'
+		);
+
+		$this->assertNotFalse(
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'handle_webhook must schedule an AI reply cron job for a DM MESSAGE event on the generic webhook URL'
+		);
+
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
+
+	/**
+	 * handle_added_to_space schedules an AI reply for a DM initial message even when
+	 * the connection uses only a reply_webhook_url (no OAuth/Service-Account credentials).
+	 *
+	 * Regression: the has_credentials check incorrectly returned false for
+	 * webhook-only connections, silently dropping the DM initial message.
+	 */
+	public function test_google_chat_added_to_space_dm_schedules_reply_with_webhook_url_only() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'GC Webhook Bot',
+				'post_name'   => 'gc-webhook-bot',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Connection with ONLY a reply_webhook_url — no api_key / OAuth credentials.
+		update_option(
+			'wp_mcp_ai_pro_remote_sites',
+			array(
+				'gc_webhook_only_conn' => array(
+					'id'                     => 'gc_webhook_only_conn',
+					'connection_type'        => 'google_chat',
+					'enabled'                => true,
+					'reply_webhook_url'      => 'https://chat.googleapis.com/v1/spaces/WEBHOOKSPACE/messages?key=abc&token=xyz',
+					'assigned_assistant_ids' => array( $post_id ),
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+
+		// ADDED_TO_SPACE for a DM, including the user's first message.
+		$payload = array(
+			'type'    => 'ADDED_TO_SPACE',
+			'space'   => array(
+				'name'      => 'spaces/WEBHOOKSPACE',
+				'spaceType' => 'DIRECT_MESSAGE',
+			),
+			'user'    => array( 'name' => 'users/444' ),
+			'message' => array(
+				'name'   => 'spaces/WEBHOOKSPACE/messages/init-msg',
+				'text'   => 'Hi there!',
+				'sender' => array( 'name' => 'users/444' ),
+			),
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/webhooks/google-chat/gc_webhook_only_conn' );
+		$request->set_param( 'connection_id', 'gc_webhook_only_conn' );
+		$request->set_body( wp_json_encode( $payload ) );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$response = $controller->handle_webhook( $request );
+
+		$this->assertSame(
+			200,
+			rest_ensure_response( $response )->get_status(),
+			'handle_webhook must return HTTP 200 for ADDED_TO_SPACE in a DM'
+		);
+
+		$this->assertNotFalse(
+			$this->next_scheduled_any_args( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK ),
+			'handle_webhook must schedule an AI reply for the initial DM message when only a reply_webhook_url is configured'
+		);
+
+		wp_unschedule_hook( WP_MCP_AI_Google_Chat_Webhook_Controller::REPLY_CRON_HOOK );
+		wp_delete_post( $post_id, true );
+		delete_option( 'wp_mcp_ai_pro_remote_sites' );
+	}
 
 }
