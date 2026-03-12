@@ -2826,7 +2826,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</thead>
 							<tbody>
 								<tr><td><code>chat:write</code></td><td><?php esc_html_e( 'Sending AI replies to channels and DMs', 'mcp-ai-wpoos-pro' ); ?></td></tr>
-								<tr><td><code>app_mentions:read</code></td><td><?php esc_html_e( '@mention detection â subscribe to the app_mention event so the bot replies when @mentioned in any channel', 'mcp-ai-wpoos-pro' ); ?></td></tr>
+								<tr><td><code>app_mentions:read</code></td><td><?php esc_html_e( '@mention detection — subscribe to the app_mention event so the bot replies when @mentioned in any channel', 'mcp-ai-wpoos-pro' ); ?></td></tr>
 								<tr><td><code>channels:history</code></td><td><?php esc_html_e( 'Reading messages in public channels (message.channels event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
 								<tr><td><code>groups:history</code></td><td><?php esc_html_e( 'Reading messages in private channels (message.groups event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
 								<tr><td><code>im:history</code></td><td><?php esc_html_e( 'Reading direct messages sent to the bot (message.im event)', 'mcp-ai-wpoos-pro' ); ?></td></tr>
@@ -2839,7 +2839,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</table>
 						<p class="description" style="margin-top: 8px;">
 							<strong><?php esc_html_e( 'Event Subscriptions:', 'mcp-ai-wpoos-pro' ); ?></strong>
-							<?php esc_html_e( 'In your Slack app under Event Subscriptions â Subscribe to bot events, add: app_mention (for @mentions), message.channels (public channels), message.groups (private channels), message.im (DMs), message.mpim (group DMs).', 'mcp-ai-wpoos-pro' ); ?>
+							<?php esc_html_e( 'In your Slack app under Event Subscriptions → Subscribe to bot events, add: app_mention (for @mentions), message.channels (public channels), message.groups (private channels), message.im (DMs), message.mpim (group DMs).', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>

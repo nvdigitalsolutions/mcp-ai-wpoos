@@ -86,6 +86,13 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	const MAX_REQUEST_AGE = 300;
 
 	/**
+	 * Maximum number of times a rate-limited (HTTP 429) reply job will be
+	 * retried before giving up.  Each retry respects the Retry-After header
+	 * returned by Slack.
+	 */
+	const MAX_RATE_LIMIT_RETRIES = 3;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -210,7 +217,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	public function handle_event( $request ) {
 		// Resolve the per-connection ID from the URL so all helper methods in
 		// this request lifecycle can target the correct Slack workspace.
-		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+		$raw_conn_id                 = $request->get_param( 'connection_id' );
+		$this->current_connection_id = $raw_conn_id ? $raw_conn_id : null;
 
 		$payload = $request->get_json_params();
 
@@ -265,6 +273,18 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * is installed and requires the `app_mentions:read` scope plus the
 	 * `app_mention` event subscription.
 	 *
+	 * Channel-type awareness (industry standard):
+	 * - `channel` / `group`: public and private channels — mentions optional.
+	 * - `im`: 1-on-1 direct message — the bot is the direct recipient, so
+	 *   `require_mention` is never enforced (user is already talking to the bot).
+	 * - `mpim`: multi-person DM — treated the same as `im` (bot is a direct
+	 *   participant, no @mention noise needed).
+	 *
+	 * Thread-aware replies (industry standard):
+	 * The `thread_ts` field is forwarded to the async reply job so that messages
+	 * sent inside a Slack thread receive their AI reply inside the same thread
+	 * (via `chat.postMessage` `thread_ts` parameter).
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param array $event Slack event object.
@@ -289,10 +309,17 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		$text       = isset( $event['text'] ) ? (string) $event['text'] : '';
-		$user_id    = isset( $event['user'] ) ? (string) $event['user'] : '';
-		$channel_id = isset( $event['channel'] ) ? (string) $event['channel'] : '';
-		$message_ts = isset( $event['ts'] ) ? (string) $event['ts'] : '';
+		$text         = isset( $event['text'] ) ? (string) $event['text'] : '';
+		$user_id      = isset( $event['user'] ) ? (string) $event['user'] : '';
+		$channel_id   = isset( $event['channel'] ) ? (string) $event['channel'] : '';
+		$message_ts   = isset( $event['ts'] ) ? (string) $event['ts'] : '';
+		// channel_type is set by Slack: 'channel' (public), 'group' (private),
+		// 'im' (1-on-1 DM), or 'mpim' (multi-person DM).
+		$channel_type = isset( $event['channel_type'] ) ? sanitize_key( $event['channel_type'] ) : '';
+		// thread_ts is present when the message is posted inside an existing thread.
+		// It identifies the root (parent) message of the thread. Passing it through
+		// to the reply job allows the bot to respond in the same thread.
+		$thread_ts    = isset( $event['thread_ts'] ) ? (string) $event['thread_ts'] : '';
 
 		if ( '' === $text || '' === $user_id || '' === $channel_id ) {
 			return;
@@ -331,7 +358,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		// accept EITHER a Slack native bot mention (<@BOT_USER_ID>) OR an
 		// @assistant-slug mention so the bot responds even when only the
 		// message.channels event is subscribed (not app_mention).
-		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention ) {
+		//
+		// Industry standard: in 1-on-1 DMs (channel_type 'im') and multi-person
+		// DMs (channel_type 'mpim') the bot is already the direct recipient —
+		// requiring an @mention in a private DM conversation is not user-friendly
+		// and goes against Slack platform conventions. The require_mention flag
+		// is therefore only enforced for channel/group messages.
+		$is_dm = ( 'im' === $channel_type || 'mpim' === $channel_type );
+
+		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention && ! $is_dm ) {
 			$has_slack_bot_mention = '' !== $bot_user_id && false !== strpos( $text, '<@' . $bot_user_id . '>' );
 			if ( ! $has_slack_bot_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
 				return;
@@ -406,6 +441,12 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 				'user_id'       => $user_id,
 				'channel_id'    => $channel_id,
 				'connection_id' => $connection_id,
+				// thread_ts: forward so the reply is posted inside the same Slack thread.
+				// Empty string when the message is at channel-level (not in a thread).
+				'thread_ts'     => $thread_ts,
+				// channel_type: 'channel', 'group', 'im', or 'mpim'. Used by the
+				// reply job to determine whether to include thread_ts in the payload.
+				'channel_type'  => $channel_type,
 			),
 		);
 
@@ -419,6 +460,16 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * Implements per-user conversation history following the same pattern as the
 	 * WhatsApp auto-reply handler (PR #3844), respecting the global
 	 * max_history_messages setting and the wp_mcp_ai_slack_max_history_messages filter.
+	 *
+	 * Thread-aware replies (industry standard):
+	 * When the original message was posted inside a Slack thread (thread_ts present),
+	 * the AI reply is sent back into the same thread via the thread_ts parameter of
+	 * chat.postMessage, keeping conversations tidy and contextual.
+	 *
+	 * Rate limiting (industry standard):
+	 * When Slack returns HTTP 429 Too Many Requests the Retry-After header value is
+	 * respected and the job is rescheduled.  A retry counter (max MAX_RATE_LIMIT_RETRIES)
+	 * prevents indefinite loops.
 	 *
 	 * @since 1.0.0
 	 *
@@ -434,6 +485,13 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$user_id       = isset( $args['user_id'] ) ? (string) $args['user_id'] : '';
 		$channel_id    = isset( $args['channel_id'] ) ? (string) $args['channel_id'] : '';
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		// thread_ts is set when the message was posted inside a Slack thread.
+		// Empty string for top-level (non-threaded) channel messages and DMs.
+		$thread_ts     = isset( $args['thread_ts'] ) ? (string) $args['thread_ts'] : '';
+		// channel_type distinguishes DMs ('im', 'mpim') from channel messages.
+		$channel_type  = isset( $args['channel_type'] ) ? sanitize_key( $args['channel_type'] ) : '';
+		// Retry counter incremented each time the job is rescheduled due to a 429.
+		$retry_count   = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $channel_id || '' === $connection_id ) {
 			WP_MCP_AI_Logger::log_error(
@@ -473,7 +531,16 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		// --- Per-user conversation history (mirrors PR #3844 for WhatsApp) ---
-		$history_key = $this->get_conversation_history_key( $user_id, $channel_id, $connection_id );
+		// Thread-aware history: when the message is inside a Slack thread, scope
+		// the history to that thread so each thread maintains independent context.
+		// DMs and top-level channel messages use the channel-level key (no thread_ts).
+		$is_dm       = ( 'im' === $channel_type || 'mpim' === $channel_type );
+		$history_key = $this->get_conversation_history_key(
+			$user_id,
+			$channel_id,
+			$connection_id,
+			( ! $is_dm && '' !== $thread_ts ) ? $thread_ts : ''
+		);
 		$history     = get_transient( $history_key );
 		$history     = is_array( $history ) ? $history : array();
 
@@ -570,10 +637,19 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		// Post reply to Slack via chat.postMessage.
+		// Industry standard: if the incoming message was inside a Slack thread,
+		// reply inside the same thread by passing thread_ts. This keeps channel
+		// conversations tidy and is the expected behaviour for Slack bots.
+		// thread_ts is not included for DMs (already 1-on-1) or top-level
+		// channel messages (no active thread).
 		$payload = array(
 			'channel' => $channel_id,
 			'text'    => $content,
 		);
+
+		if ( '' !== $thread_ts && ! $is_dm ) {
+			$payload['thread_ts'] = $thread_ts;
+		}
 
 		$body = wp_json_encode( $payload );
 
@@ -614,6 +690,41 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$http_code    = (int) wp_remote_retrieve_response_code( $result );
 		$decoded_body = json_decode( wp_remote_retrieve_body( $result ), true );
 		$api_ok       = is_array( $decoded_body ) && ! empty( $decoded_body['ok'] );
+
+		// Industry standard: handle HTTP 429 Too Many Requests by respecting the
+		// Retry-After header returned by Slack and rescheduling the job.
+		// A retry counter prevents indefinite loops.
+		if ( 429 === $http_code ) {
+			if ( $retry_count >= self::MAX_RATE_LIMIT_RETRIES ) {
+				WP_MCP_AI_Logger::log_error(
+					'Slack AI reply: rate limit retry limit reached; giving up.',
+					array(
+						'connection_id' => $connection_id,
+						'retry_count'   => $retry_count,
+					)
+				);
+				return;
+			}
+
+			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
+			// Always wait at least 30 s; honour the Retry-After value when larger.
+			$delay       = max( 30, $retry_after );
+
+			WP_MCP_AI_Logger::log_error(
+				sprintf(
+					'Slack AI reply: rate limited (429). Retrying in %d seconds (attempt %d/%d).',
+					$delay,
+					$retry_count + 1,
+					self::MAX_RATE_LIMIT_RETRIES
+				),
+				array( 'connection_id' => $connection_id )
+			);
+
+			$retry_args             = $args;
+			$retry_args['retry_count'] = $retry_count + 1;
+			wp_schedule_single_event( time() + $delay, self::REPLY_CRON_HOOK, array( $retry_args ) );
+			return;
+		}
 
 		if ( 200 !== $http_code || ! $api_ok ) {
 			$api_error = is_array( $decoded_body ) && isset( $decoded_body['error'] ) ? $decoded_body['error'] : '';
@@ -695,15 +806,25 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * The key is hashed to avoid PII in option names and stay within WordPress's
 	 * 172-character transient key limit.
 	 *
+	 * Thread-scoped history: when $thread_ts is supplied (non-empty string) the
+	 * key is scoped to that specific thread so that multiple concurrent thread
+	 * conversations in the same channel each maintain independent context.
+	 * Pass an empty string (or omit) for DMs and top-level channel messages.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $user_id       Slack user ID.
 	 * @param string $channel_id    Slack channel ID.
 	 * @param string $connection_id Remote connection ID.
+	 * @param string $thread_ts     Optional thread root timestamp for thread-scoped history.
 	 * @return string Transient key.
 	 */
-	protected function get_conversation_history_key( $user_id, $channel_id, $connection_id ) {
-		return 'wp_mcp_ai_sl_conv_' . md5( $user_id . '_' . $channel_id . '_' . $connection_id );
+	protected function get_conversation_history_key( $user_id, $channel_id, $connection_id, $thread_ts = '' ) {
+		$key_parts = $user_id . '_' . $channel_id . '_' . $connection_id;
+		if ( '' !== $thread_ts ) {
+			$key_parts .= '_' . $thread_ts;
+		}
+		return 'wp_mcp_ai_sl_conv_' . md5( $key_parts );
 	}
 
 	/**
