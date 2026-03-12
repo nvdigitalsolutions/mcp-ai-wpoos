@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-auto-reply-in-google-chat',
-        'version' => 'dev-copilot/fix-auto-reply-in-google-chat',
-        'reference' => '2b52d86f1b53ff0057619dc2bc22d3e25fa9dc9f',
+        'pretty_version' => 'dev-copilot/extend-teams-chat-connection',
+        'version' => 'dev-copilot/extend-teams-chat-connection',
+        'reference' => '01a04ee0b6cd077bf45874146b409c8abfa4b661',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-auto-reply-in-google-chat',
-            'version' => 'dev-copilot/fix-auto-reply-in-google-chat',
-            'reference' => '2b52d86f1b53ff0057619dc2bc22d3e25fa9dc9f',
+            'pretty_version' => 'dev-copilot/extend-teams-chat-connection',
+            'version' => 'dev-copilot/extend-teams-chat-connection',
+            'reference' => '01a04ee0b6cd077bf45874146b409c8abfa4b661',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
