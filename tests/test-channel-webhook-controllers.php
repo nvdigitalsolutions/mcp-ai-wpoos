@@ -41,7 +41,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	/**
 	 * Check whether any cron event is scheduled for the given hook, regardless of args.
 	 *
-	 * wp_next_scheduled() matches by args hash; calling it without args only finds
+	 * The wp_next_scheduled() function matches by args hash; calling it without args only finds
 	 * events that were also scheduled without args. This helper scans the entire
 	 * cron array so it works for events scheduled with arbitrary arguments.
 	 *
@@ -224,7 +224,10 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 				'role'                  => 'user',
 				'content'               => 'Hello',
 				'agentic_tool_messages' => array(
-					array( 'role' => 'assistant', 'content' => 'tool trace' ),
+					array(
+						'role'    => 'assistant',
+						'content' => 'tool trace',
+					),
 				),
 			),
 			array(
@@ -681,7 +684,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * process_event stops early for message events that contain a bot_id (bot
+	 * Test process_event stops early for message events that contain a bot_id (bot
 	 * message in channel). app_mention events skip this filter.
 	 */
 	public function test_slack_process_event_filters_bot_messages_for_message_type() {
@@ -712,7 +715,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * process_event must stop early for message events with a subtype (e.g.
+	 * Test process_event must stop early for message events with a subtype (e.g.
 	 * message_changed, bot_message) to avoid double-processing Slack edits.
 	 */
 	public function test_slack_process_event_filters_message_subtypes() {
@@ -742,7 +745,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * process_event must include the message ts field in the cron job so that
+	 * Test process_event must include the message ts field in the cron job so that
 	 * duplicate Slack events for the same message are deduplicated. Verify the
 	 * process_event method can be called with a ts field without errors.
 	 */
@@ -800,12 +803,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		$connections[ $connection_id ] = array(
-			'id'                  => $connection_id,
-			'name'                => 'Slack Native Mention Test',
-			'connection_type'     => 'slack',
-			'enabled'             => true,
-			'require_mention'     => true,
-			'slack_bot_user_id'   => 'UBOTXXX',
+			'id'                     => $connection_id,
+			'name'                   => 'Slack Native Mention Test',
+			'connection_type'        => 'slack',
+			'enabled'                => true,
+			'require_mention'        => true,
+			'slack_bot_user_id'      => 'UBOTXXX',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
 		update_option( 'wp_mcp_ai_remote_connections', $connections );
@@ -866,12 +869,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		$connections[ $connection_id ] = array(
-			'id'                  => $connection_id,
-			'name'                => 'Slack Drop Test',
-			'connection_type'     => 'slack',
-			'enabled'             => true,
-			'require_mention'     => true,
-			'slack_bot_user_id'   => 'UBOTXXX',
+			'id'                     => $connection_id,
+			'name'                   => 'Slack Drop Test',
+			'connection_type'        => 'slack',
+			'enabled'                => true,
+			'require_mention'        => true,
+			'slack_bot_user_id'      => 'UBOTXXX',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
 		update_option( 'wp_mcp_ai_remote_connections', $connections );
@@ -927,12 +930,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		);
 
 		$connections[ $connection_id ] = array(
-			'id'                  => $connection_id,
-			'name'                => 'Slack Dedup Test',
-			'connection_type'     => 'slack',
-			'enabled'             => true,
-			'require_mention'     => false,
-			'slack_bot_user_id'   => 'UBOTYYY',
+			'id'                     => $connection_id,
+			'name'                   => 'Slack Dedup Test',
+			'connection_type'        => 'slack',
+			'enabled'                => true,
+			'require_mention'        => false,
+			'slack_bot_user_id'      => 'UBOTYYY',
 			'assigned_assistant_ids' => array( $assistant_id ),
 		);
 		update_option( 'wp_mcp_ai_remote_connections', $connections );
@@ -1044,7 +1047,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * process_event must forward the thread_ts and channel_type fields to the
+	 * Test process_event must forward the thread_ts and channel_type fields to the
 	 * scheduled cron job so that handle_slack_reply_job can reply in-thread.
 	 *
 	 * Industry standard: bots should reply inside the same Slack thread to keep
@@ -1107,7 +1110,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$this->assertNotFalse( $next, 'Thread message must schedule a reply job' );
 
 		// Inspect the scheduled args to confirm thread_ts and channel_type are forwarded.
-		$crons = _get_cron_array();
+		$crons              = _get_cron_array();
 		$found_thread_ts    = false;
 		$found_channel_type = false;
 
@@ -1137,7 +1140,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * get_conversation_history_key must produce distinct keys for the same
+	 * Test get_conversation_history_key must produce distinct keys for the same
 	 * user/channel/connection when thread_ts differs (thread-scoped history),
 	 * and match the legacy (no thread_ts) key when thread_ts is omitted.
 	 */
@@ -1150,8 +1153,8 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// No thread_ts → legacy key (4th arg omitted / empty string).
-		$key_base        = $method->invoke( $controller, 'U1', 'C1', 'conn1' );
-		$key_base_empty  = $method->invoke( $controller, 'U1', 'C1', 'conn1', '' );
+		$key_base       = $method->invoke( $controller, 'U1', 'C1', 'conn1' );
+		$key_base_empty = $method->invoke( $controller, 'U1', 'C1', 'conn1', '' );
 
 		// With thread_ts → different key.
 		$key_thread_a = $method->invoke( $controller, 'U1', 'C1', 'conn1', '1700000001.000001' );
@@ -1319,7 +1322,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_slack_blocks must return a single section block for short content.
+	 * Test build_slack_blocks must return a single section block for short content.
 	 */
 	public function test_slack_build_blocks_single_block() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
@@ -1334,7 +1337,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_slack_blocks must split content that exceeds 3000 characters into
+	 * Test build_slack_blocks must split content that exceeds 3000 characters into
 	 * multiple section blocks.
 	 */
 	public function test_slack_build_blocks_splits_long_content() {
@@ -1358,7 +1361,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * build_slack_blocks must return a single section block for empty input.
+	 * Test build_slack_blocks must return a single section block for empty input.
 	 */
 	public function test_slack_build_blocks_empty_input() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
@@ -1823,9 +1826,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		$payload = rtrim(
 			strtr(
-				base64_encode(
+				base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					wp_json_encode(
-						array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						array(
 						'iss' => 'accounts.google.com',
 						'aud' => $webhook_url,
 						'exp' => time() - 3600,
@@ -1894,9 +1897,9 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		$payload = rtrim(
 			strtr(
-				base64_encode(
+				base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					wp_json_encode(
-						array( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						array(
 						'iss' => 'accounts.google.com',
 						'aud' => 'https://example.com/wrong-endpoint',
 						'exp' => time() + 3600,
@@ -2156,7 +2159,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$filter_called = false;
 		add_filter(
 			'wp_mcp_ai_google_chat_should_auto_reply',
-			function ( $reply ) use ( &$filter_called ) {
+			function ( $reply ) use ( &$filter_called ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 				$filter_called = true;
 				return false; // Block actual cron scheduling in test.
 			}
@@ -2655,6 +2658,12 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 
 		// Subclass that stubs get_consumer_secret() to return a known value.
 		$controller = new class() extends WP_MCP_AI_Twitter_Webhook_Controller {
+			/**
+			 * Returns the test consumer secret.
+			 *
+			 * @param string $connection_id Connection ID.
+			 * @return string
+			 */
 			protected function get_consumer_secret( $connection_id = '' ) {
 				return 'test_consumer_secret';
 			}
@@ -2683,10 +2692,22 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 		$expected_signature = 'sha256=' . base64_encode( hash_hmac( 'sha256', $payload, $secret, true ) );
 
 		$controller = new class( $secret ) extends WP_MCP_AI_Twitter_Webhook_Controller {
+			/** @var string The consumer secret used in tests. */
 			private $test_secret;
+			/**
+			 * Constructor.
+			 *
+			 * @param string $secret Consumer secret.
+			 */
 			public function __construct( $secret ) {
 				$this->test_secret = $secret;
 			}
+			/**
+			 * Returns the test consumer secret.
+			 *
+			 * @param string $connection_id Connection ID.
+			 * @return string
+			 */
 			protected function get_consumer_secret( $connection_id = '' ) {
 				return $this->test_secret;
 			}
@@ -2803,7 +2824,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant returns false for empty message text.
+	 * Test message_mentions_assistant returns false for empty message text.
 	 */
 	public function test_mention_trigger_returns_false_for_empty_text() {
 		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
@@ -2825,7 +2846,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant returns false for empty assistant IDs.
+	 * Test message_mentions_assistant returns false for empty assistant IDs.
 	 */
 	public function test_mention_trigger_returns_false_for_empty_ids() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
@@ -2835,7 +2856,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant returns true when @slug appears in the text.
+	 * Test message_mentions_assistant returns true when @slug appears in the text.
 	 */
 	public function test_mention_trigger_detects_slug_mention() {
 		$this->load_controller( 'WP_MCP_AI_Slack_Event_Controller', 'includes/rest/class-wp-mcp-ai-slack-event-controller.php' );
@@ -2856,7 +2877,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant is case-insensitive.
+	 * Test message_mentions_assistant is case-insensitive.
 	 */
 	public function test_mention_trigger_is_case_insensitive() {
 		$this->load_controller( 'WP_MCP_AI_Telegram_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-telegram-webhook-controller.php' );
@@ -2878,7 +2899,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant returns false when @slug is not present.
+	 * Test message_mentions_assistant returns false when @slug is not present.
 	 */
 	public function test_mention_trigger_returns_false_when_no_slug_in_text() {
 		$this->load_controller( 'WP_MCP_AI_Discord_Interaction_Controller', 'includes/rest/class-wp-mcp-ai-discord-interaction-controller.php' );
@@ -2916,7 +2937,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant returns true when any one of multiple assistants is mentioned.
+	 * Test message_mentions_assistant returns true when any one of multiple assistants is mentioned.
 	 */
 	public function test_mention_trigger_matches_any_assigned_assistant() {
 		$this->load_controller( 'WP_MCP_AI_Teams_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-teams-webhook-controller.php' );
@@ -2949,7 +2970,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant is available on the Google Chat controller.
+	 * Test message_mentions_assistant is available on the Google Chat controller.
 	 */
 	public function test_mention_trigger_available_on_google_chat_controller() {
 		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
@@ -2970,7 +2991,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant is available on the WhatsApp controller.
+	 * Test message_mentions_assistant is available on the WhatsApp controller.
 	 */
 	public function test_mention_trigger_available_on_whatsapp_controller() {
 		$this->load_controller( 'WP_MCP_AI_WhatsApp_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-whatsapp-webhook-controller.php' );
@@ -2992,7 +3013,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * message_mentions_assistant is available on the Messenger controller.
+	 * Test message_mentions_assistant is available on the Messenger controller.
 	 */
 	public function test_mention_trigger_available_on_messenger_controller() {
 		$this->load_controller( 'WP_MCP_AI_Messenger_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-messenger-webhook-controller.php' );
@@ -3343,7 +3364,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * handle_webhook passes message.thread.name through to the cron job args
+	 * Test handle_webhook passes message.thread.name through to the cron job args
 	 * so that handle_google_chat_reply_job can reply in the same thread.
 	 */
 	public function test_google_chat_thread_name_passed_to_cron_job() {
@@ -3415,7 +3436,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_webhook passes an empty thread_name to the cron job when the payload
+	 * Test handle_webhook passes an empty thread_name to the cron job when the payload
 	 * contains no message.thread field (e.g. DMs or new top-level messages).
 	 */
 	public function test_google_chat_empty_thread_name_when_no_thread_in_payload() {
@@ -5509,7 +5530,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	 *
 	 * @param string $channel    Channel slug to pass to get_recent_messages().
 	 * @param string $contact_id Contact/user ID.
-	 * @param string $connection Connection ID.
+	 * @param string $connection_id Connection ID.
 	 */
 	private function assert_cct_fallback_safe( $channel, $contact_id = 'u123', $connection_id = 'c1' ) {
 		$this->load_channel_messages_cct();
@@ -5621,7 +5642,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	// =========================================================================
 
 	/**
-	 * validate_google_oidc_token bypasses OIDC for a space-specific connection when
+	 * Test validate_google_oidc_token bypasses OIDC for a space-specific connection when
 	 * using the generic webhook URL and disable_oidc_verification is enabled.
 	 *
 	 * Bug: When no connection_id is present in the webhook URL, the permission
@@ -5642,13 +5663,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'wp_mcp_ai_pro_remote_sites',
 			array(
 				'gc_oidc_bypass_conn' => array(
-					'id'                       => 'gc_oidc_bypass_conn',
-					'connection_type'          => 'google_chat',
-					'enabled'                  => true,
-					'api_key'                  => 'dummy_token',
-					'google_chat_space'        => 'spaces/OIDCSPACE',
+					'id'                        => 'gc_oidc_bypass_conn',
+					'connection_type'           => 'google_chat',
+					'enabled'                   => true,
+					'api_key'                   => 'dummy_token',
+					'google_chat_space'         => 'spaces/OIDCSPACE',
 					'disable_oidc_verification' => true,
-					'assigned_assistant_ids'   => array(),
+					'assigned_assistant_ids'    => array(),
 				),
 			)
 		);
@@ -5686,7 +5707,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate_google_oidc_token does NOT bypass OIDC when disable_oidc_verification
+	 * Test validate_google_oidc_token does NOT bypass OIDC when disable_oidc_verification
 	 * is false on the connection, even if the space name matches.
 	 */
 	public function test_google_chat_oidc_not_bypassed_when_flag_is_false() {
@@ -5701,13 +5722,13 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 			'wp_mcp_ai_pro_remote_sites',
 			array(
 				'gc_oidc_on_conn' => array(
-					'id'                       => 'gc_oidc_on_conn',
-					'connection_type'          => 'google_chat',
-					'enabled'                  => true,
-					'api_key'                  => 'dummy_token',
-					'google_chat_space'        => 'spaces/OIDCONSPACE',
+					'id'                        => 'gc_oidc_on_conn',
+					'connection_type'           => 'google_chat',
+					'enabled'                   => true,
+					'api_key'                   => 'dummy_token',
+					'google_chat_space'         => 'spaces/OIDCONSPACE',
 					'disable_oidc_verification' => false,
-					'assigned_assistant_ids'   => array(),
+					'assigned_assistant_ids'    => array(),
 				),
 			)
 		);
@@ -5743,7 +5764,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_webhook schedules an AI reply cron job for a DM when using the generic
+	 * Test handle_webhook schedules an AI reply cron job for a DM when using the generic
 	 * webhook URL with a space-specific connection (regression test for route conflict).
 	 *
 	 * The legacy WP_MCP_AI_Google_Chat_Webhook_Handler was registered first for the
@@ -5819,7 +5840,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * handle_added_to_space schedules an AI reply for a DM initial message even when
+	 * Test handle_added_to_space schedules an AI reply for a DM initial message even when
 	 * the connection uses only a reply_webhook_url (no OAuth/Service-Account credentials).
 	 *
 	 * Regression: the has_credentials check incorrectly returned false for
@@ -5896,7 +5917,7 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate_google_oidc_token bypasses OIDC for DM spaces when the only available
+	 * Test validate_google_oidc_token bypasses OIDC for DM spaces when the only available
 	 * google_chat connection has a DIFFERENT google_chat_space and disable_oidc_verification
 	 * is enabled (last-resort fallback).
 	 *
