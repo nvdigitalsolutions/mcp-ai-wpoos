@@ -622,7 +622,7 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				$tools_url        = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
 				$analytics_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
 				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
-				$markdown_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/tma-markdown.min.js' );
+				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
 				// Resolve the assistant configured for this Mini App connection so that
 				// templates can pass it as assistant_id to the chat endpoint.
