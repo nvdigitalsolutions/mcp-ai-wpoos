@@ -329,8 +329,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['google_chat_space'] = $existing_connection['google_chat_space'];
 			}
 
-			// Preserve existing reply_webhook_url (Google Chat incoming webhook) if not provided.
-			if ( empty( $connection_data['reply_webhook_url'] ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
+			// Preserve existing reply_webhook_url (Google Chat incoming webhook) only when the
+			// key is entirely absent from the submitted data. When the admin form explicitly
+			// submits the field as an empty string (user cleared the optional field), the key
+			// will be present and we must honour that intent — using array_key_exists() rather
+			// than empty() is what makes the field clearable.
+			if ( ! array_key_exists( 'reply_webhook_url', $connection_data ) && ! empty( $existing_connection['reply_webhook_url'] ) ) {
 				$connection_data['reply_webhook_url'] = $existing_connection['reply_webhook_url'];
 			}
 
