@@ -618,10 +618,11 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				 *
 				 * @param string $title Default page title.
 				 */
-				$page_title    = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
-				$tools_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
-				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
-				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$page_title       = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url        = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+				$analytics_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
 				// Resolve the assistant configured for this Mini App connection so that
 				// templates can pass it as assistant_id to the chat endpoint.
@@ -636,20 +637,21 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'       => $request,
-					'connection'    => $connection,
-					'namespace'     => $this->namespace,
-					'rest_base'     => $this->rest_base,
-					'assistant'     => $request->get_param( 'assistant' ),
-					'assistant_id'  => $assistant_id,
-					'chat_url'      => $chat_url,
-					'validate_url'  => $validate_url,
-					'site_name'     => $page_title,
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'tools_url'     => $tools_url,
-					'analytics_url' => $analytics_url,
-					'chart_js_url'  => $chart_js_url,
-					'member_id'     => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+					'request'         => $request,
+					'connection'      => $connection,
+					'namespace'       => $this->namespace,
+					'rest_base'       => $this->rest_base,
+					'assistant'       => $request->get_param( 'assistant' ),
+					'assistant_id'    => $assistant_id,
+					'chat_url'        => $chat_url,
+					'validate_url'    => $validate_url,
+					'site_name'       => $page_title,
+					'nonce'           => wp_create_nonce( 'wp_rest' ),
+					'tools_url'       => $tools_url,
+					'analytics_url'   => $analytics_url,
+					'chart_js_url'    => $chart_js_url,
+					'markdown_js_url' => $markdown_js_url,
+					'member_id'       => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
 				);
