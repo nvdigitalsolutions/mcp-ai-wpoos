@@ -3324,6 +3324,12 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 	 * templates such as Medical Vitals authenticate via the TMA token even when
 	 * Telegram's built-in WebView does not persist auth cookies across requests.
 	 *
+	 * When `assistant_id` is absent from the request this handler resolves the
+	 * assistant from the active Telegram connection (following the same priority
+	 * chain used when rendering the Mini App page), ensuring that the doctor/coach
+	 * tab chat always uses the assistant assigned to the bot connection rather
+	 * than falling back to the site-wide global default.
+	 *
 	 * @since 1.1.6
 	 *
 	 * @param WP_REST_Request $request REST request object.
@@ -3336,6 +3342,19 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				__( 'Chat service is not available.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 503 )
 			);
+		}
+
+		// If no assistant_id was supplied by the client, resolve it from the
+		// active Telegram connection so that the doctor/coach tab chat uses the
+		// same assistant that is assigned to this bot – identical to the
+		// resolution used when rendering the Mini App HTML page.
+		$request_assistant_id = $request->get_param( 'assistant_id' );
+		if ( null === $request_assistant_id || '' === (string) $request_assistant_id || 0 === (int) $request_assistant_id ) {
+			$connection   = $this->get_active_telegram_connection();
+			$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
+			if ( ! empty( $assistant_id ) ) {
+				$request->set_param( 'assistant_id', $assistant_id );
+			}
 		}
 
 		// Pass the shared main controller so that the chat handler has full access
