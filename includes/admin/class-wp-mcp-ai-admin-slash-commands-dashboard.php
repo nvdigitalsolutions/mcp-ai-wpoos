@@ -52,8 +52,8 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	 * Note: The menu uses 'edit_posts' capability (Contributor+) because individual
 	 * slash commands enforce their own capability requirements. The command handler
 	 * checks each command's required capability before execution, providing granular
-	 * access control. For example, /optimize_perf requires 'manage_options' while
-	 * /next_task requires 'edit_posts'.
+	 * access control. For example, /optimize-perf requires 'manage_options' while
+	 * /next-task requires 'edit_posts'.
 	 *
 	 * @return void
 	 */
@@ -541,7 +541,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 						<?php esc_html_e( 'Execute', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<p class="description">
-						<?php esc_html_e( 'Examples: /help, /next_task --dry-run, /ship 123 --publish, /workflow daily-review', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Examples: /help, /next-task --dry-run, /ship 123 --publish, /workflow daily-review', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 

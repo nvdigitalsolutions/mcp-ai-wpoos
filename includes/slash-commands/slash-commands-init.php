@@ -90,19 +90,19 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
-	// Load next_task command.
+	// Load next-task command.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-next-task.php';
 
-	// Register /next_task command (Telegram requires underscores, not hyphens).
+	// Register /next-task command.
 	$next_task_command = new WP_MCP_AI_Slash_Command_Next_Task();
 	$wp_mcp_ai_slash_command_handler->register(
-		'next_task',
+		'next-task',
 		array(
 			'handler'     => array( $next_task_command, 'execute' ),
 			'description' => __( 'Autonomous task discovery and execution for WordPress content', 'mcp-ai-wpoos' ),
-			'usage'       => '/next_task [--filter=<type>] [--type=<task-type>] [--limit=<number>] [--dry-run|-n] [--auto|-a]',
+			'usage'       => '/next-task [--filter=<type>] [--type=<task-type>] [--limit=<number>] [--dry-run|-n] [--auto|-a]',
 			'capability'  => 'edit_posts',
-			'aliases'     => array( 'next', 'next-task' ),
+			'aliases'     => array( 'next' ),
 			'parameters'  => array(
 				'--filter'  => array(
 					'description' => __( 'Filter tasks by type (all, drafts, seo, updates)', 'mcp-ai-wpoos' ),
@@ -177,19 +177,19 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
-	// Load clean_content command.
+	// Load clean-content command.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-clean-content.php';
 
-	// Register /clean_content command (Telegram requires underscores, not hyphens).
+	// Register /clean-content command.
 	$clean_content_command = new WP_MCP_AI_Slash_Command_Clean_Content();
 	$wp_mcp_ai_slash_command_handler->register(
-		'clean_content',
+		'clean-content',
 		array(
 			'handler'     => array( $clean_content_command, 'execute' ),
 			'description' => __( 'Content quality assurance with 3-phase detection (HIGH/MEDIUM/LOW certainty)', 'mcp-ai-wpoos' ),
-			'usage'       => '/clean_content [post_id|recent|all] [--phase=<1-3>] [--limit=<number>] [--dry-run|-n] [--auto-fix|-a] [--post-type=<type>] [--verbose|-v]',
+			'usage'       => '/clean-content [post_id|recent|all] [--phase=<1-3>] [--limit=<number>] [--dry-run|-n] [--auto-fix|-a] [--post-type=<type>] [--verbose|-v]',
 			'capability'  => 'edit_posts',
-			'aliases'     => array( 'clean', 'clean-content' ),
+			'aliases'     => array( 'clean' ),
 			'parameters'  => array(
 				'target'      => array(
 					'description' => __( 'Post ID, "recent" (default), or "all"', 'mcp-ai-wpoos' ),
@@ -223,19 +223,19 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
-	// Load optimize_perf command.
+	// Load optimize-perf command.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-optimize-perf.php';
 
-	// Register /optimize_perf command (Telegram requires underscores, not hyphens).
+	// Register /optimize-perf command.
 	$optimize_perf_command = new WP_MCP_AI_Slash_Command_Optimize_Perf();
 	$wp_mcp_ai_slash_command_handler->register(
-		'optimize_perf',
+		'optimize-perf',
 		array(
 			'handler'     => array( $optimize_perf_command, 'execute' ),
 			'description' => __( 'Automated performance analysis and optimization for WordPress sites', 'mcp-ai-wpoos' ),
-			'usage'       => '/optimize_perf [--phases=<1-10>] [--url=<url>] [--dry-run|-n] [--auto-apply|-a] [--detailed|-v]',
+			'usage'       => '/optimize-perf [--phases=<1-10>] [--url=<url>] [--dry-run|-n] [--auto-apply|-a] [--detailed|-v]',
 			'capability'  => 'manage_options',
-			'aliases'     => array( 'perf', 'optimize-perf' ),
+			'aliases'     => array( 'perf' ),
 			'parameters'  => array(
 				'--phases'     => array(
 					'description' => __( 'Comma-separated phase numbers to run (1-10, default: all)', 'mcp-ai-wpoos' ),
@@ -261,19 +261,19 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
-	// Load sync_docs command.
+	// Load sync-docs command.
 	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-sync-docs.php';
 
-	// Register /sync_docs command (Telegram requires underscores, not hyphens).
+	// Register /sync-docs command.
 	$sync_docs_command = new WP_MCP_AI_Slash_Command_Sync_Docs();
 	$wp_mcp_ai_slash_command_handler->register(
-		'sync_docs',
+		'sync-docs',
 		array(
 			'handler'     => array( $sync_docs_command, 'execute' ),
 			'description' => __( 'Documentation drift detection and synchronization', 'mcp-ai-wpoos' ),
-			'usage'       => '/sync_docs [--type=<all|posts|pages|readme>] [--dry-run|-n] [--auto-fix|-a] [--skip-links] [--skip-code]',
+			'usage'       => '/sync-docs [--type=<all|posts|pages|readme>] [--dry-run|-n] [--auto-fix|-a] [--skip-links] [--skip-code]',
 			'capability'  => 'edit_posts',
-			'aliases'     => array( 'docs', 'sync-docs' ),
+			'aliases'     => array( 'docs' ),
 			'parameters'  => array(
 				'--type'       => array(
 					'description' => __( 'Type of documentation to sync (all, posts, pages, readme)', 'mcp-ai-wpoos' ),
