@@ -24,6 +24,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Top-level parameter keys that are part of the tool's own interface and
+	 * must not be forwarded to the CCT as record field values.
+	 *
+	 * Used by normalize_fields_argument() when falling back to top-level field
+	 * extraction (i.e. when the caller omits the 'fields' wrapper key).
+	 * Keep this list in sync with get_parameters_schema() properties.
+	 */
+	const TOOL_PARAM_KEYS = array( 'action', 'cct_slug', 'item_id', 'per_page', 'page', 'fields' );
+
+	/**
 	 * Check if this tool is available.
 	 *
 	 * @since 1.0.0
@@ -952,9 +962,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// parameters and treat them as the CCT field payload.  Some AI
 		// models emit field data at the top level of the arguments object
 		// instead of nesting it under a 'fields' key.
-		$known_params = array( 'action', 'cct_slug', 'item_id', 'per_page', 'page', 'fields' );
-
-		return array_diff_key( $arguments, array_flip( $known_params ) );
+		return array_diff_key( $arguments, array_flip( self::TOOL_PARAM_KEYS ) );
 	}
 
 	/**
