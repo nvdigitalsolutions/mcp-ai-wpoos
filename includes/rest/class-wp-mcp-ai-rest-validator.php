@@ -735,23 +735,6 @@ class WP_MCP_AI_REST_Validator {
 			$options['enable_web_search'] = (bool) $options['enable_web_search'];
 		}
 
-		// OpenAI reasoning effort — low / medium / high; controls chain-of-thought reasoning depth.
-		if ( isset( $options['reasoning_effort'] ) ) {
-			$effort = sanitize_text_field( $options['reasoning_effort'] );
-			if ( in_array( $effort, array( 'low', 'medium', 'high' ), true ) ) {
-				$options['reasoning_effort'] = $effort;
-			} else {
-				unset( $options['reasoning_effort'] );
-			}
-		} elseif ( 'openai' === $provider ) {
-			// Propagate the global OpenAI reasoning effort from settings when not overridden per-request.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$effort   = isset( $settings['openai_default_reasoning_effort'] ) ? sanitize_text_field( $settings['openai_default_reasoning_effort'] ) : 'off';
-			if ( in_array( $effort, array( 'low', 'medium', 'high' ), true ) ) {
-				$options['reasoning_effort'] = $effort;
-			}
-		}
-
 		// Gemini extended thinking / reasoning budget.
 		// When set, Gemini 2.5+ models will use thinkingConfig with the specified token budget.
 		if ( isset( $options['thinking_budget_tokens'] ) ) {
@@ -763,26 +746,10 @@ class WP_MCP_AI_REST_Validator {
 			}
 		} elseif ( 'gemini' === $provider ) {
 			// Propagate the global Gemini thinking budget from settings when not overridden per-request.
-			// Respects the gemini_default_reasoning toggle; falls back to legacy behaviour (budget > 0)
-			// when the setting has never been explicitly configured.
-			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-			$reasoning_enabled = isset( $settings['gemini_default_reasoning'] )
-				? ! empty( $settings['gemini_default_reasoning'] )
-				: ( isset( $settings['gemini_thinking_budget_tokens'] ) && absint( $settings['gemini_thinking_budget_tokens'] ) > 0 );
-			if ( $reasoning_enabled ) {
-				$budget = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 0;
-				if ( $budget > 0 ) {
-					$options['thinking_budget_tokens'] = $budget;
-				}
-			}
-		} elseif ( 'anthropic' === $provider ) {
-			// Propagate the global Anthropic thinking budget from settings when not overridden per-request.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			if ( ! empty( $settings['anthropic_default_reasoning'] ) ) {
-				$budget = isset( $settings['anthropic_thinking_budget_tokens'] ) ? absint( $settings['anthropic_thinking_budget_tokens'] ) : 5000;
-				if ( $budget > 0 ) {
-					$options['thinking_budget_tokens'] = min( 16000, $budget );
-				}
+			$budget   = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 0;
+			if ( $budget > 0 ) {
+				$options['thinking_budget_tokens'] = $budget;
 			}
 		}
 
