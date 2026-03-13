@@ -7514,12 +7514,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							teamsAppPackageResult.style.display = 'block';
 							if (result.success) {
 								var d = result.data;
-								var byteChars = atob(d.zip_base64);
-								var byteNumbers = new Array(byteChars.length);
-								for (var i = 0; i < byteChars.length; i++) {
-									byteNumbers[i] = byteChars.charCodeAt(i);
-								}
-								var byteArray = new Uint8Array(byteNumbers);
+								var byteArray = Uint8Array.from(atob(d.zip_base64), function(c) { return c.charCodeAt(0); });
 								var blob = new Blob([byteArray], { type: 'application/zip' });
 								var url  = URL.createObjectURL(blob);
 								var html = '<div class="notice notice-success inline" style="margin:0;"><p><strong>' + <?php echo wp_json_encode( __( 'App package ready!', 'mcp-ai-wpoos-pro' ) ); ?> + '</strong></p>';
@@ -8573,19 +8568,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			'connection_type' => 'microsoft_teams',
 			'auth_type'       => 'none',
 			'client_id'       => $connection['client_id'],
-			'client_secret'   => '', // Keep existing encrypted value.
+			// Empty string + _client_secret_encrypted flag instructs save_connection to
+			// preserve the existing encrypted value (same pattern as Google OAuth callbacks).
+			'client_secret'   => '',
 			'token'           => $access_token,
 			'refresh_token'   => $refresh_token,
 			'token_expiry'    => time() + $expires_in,
 			'tenant_id'       => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
 			'app_id'          => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
-			'signing_secret'  => '', // Keep existing encrypted value.
+			// Empty string + _signing_secret_encrypted flag preserves the existing encrypted value.
+			'signing_secret'  => '',
 			'require_mention' => ! empty( $connection['require_mention'] ),
 			'enabled'         => $connection['enabled'],
 			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
 		);
 
-		// Preserve encrypted fields so they are not re-encrypted or cleared.
+		// Flags tell save_connection to copy the existing encrypted values rather than
+		// treating the empty strings above as a request to clear those fields.
 		$update_data['_client_secret_encrypted'] = true;
 		$update_data['_signing_secret_encrypted'] = true;
 
@@ -8742,8 +8741,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			return;
 		}
 
-		// Build a minimal 192×192 purple PNG for the colour icon (Teams requirement).
-		// This is a 1×1 PNG scaled via CSS; for production, replace with a real icon.
+		// Build minimal placeholder PNG icons for the Teams app package.
+		// color.png  : 192×192 purple placeholder icon (Teams colour icon requirement).
+		// outline.png: 32×32  purple outline placeholder icon (Teams outline icon requirement).
+		// For production deployments, replace these with a proper branded icon.
 		// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		$color_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADAAQMAAABCs85oAAAABlBMVEViZKcAAADJ9rBRAAAAFElEQVR42mP4z8BQDwQMoxpGNQAAYqkAAV/XhQAAAABJRU5ErkJggg==';
 		$outline_png_b64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABlBMVEX///8AAABVwtN+AAAAGUlEQVR42mP4z8BQDwQMoxpGNQAAcsIAAeMLN78AAAAASUVORK5CYII=';

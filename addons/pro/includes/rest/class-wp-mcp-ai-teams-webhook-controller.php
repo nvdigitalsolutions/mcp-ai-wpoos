@@ -1555,13 +1555,16 @@ class WP_MCP_AI_Teams_Webhook_Controller extends WP_REST_Controller {
 			'connection_type' => 'microsoft_teams',
 			'auth_type'       => 'none',
 			'client_id'       => $client_id,
-			'client_secret'   => '', // Preserve existing encrypted value.
+			// Empty string + _client_secret_encrypted flag tells save_connection to
+			// preserve the existing encrypted client_secret without re-encrypting it.
+			'client_secret'   => '',
 			'token'           => $new_access_token,
 			'refresh_token'   => $new_refresh_token,
 			'token_expiry'    => time() + $new_expires_in,
 			'tenant_id'       => isset( $connection['tenant_id'] ) ? $connection['tenant_id'] : '',
 			'app_id'          => isset( $connection['app_id'] ) ? $connection['app_id'] : '',
-			'signing_secret'  => '', // Preserve existing encrypted value.
+			// Empty string + _signing_secret_encrypted flag preserves the existing encrypted signing_secret.
+			'signing_secret'  => '',
 			'require_mention' => ! empty( $connection['require_mention'] ),
 			'enabled'         => $connection['enabled'],
 			'assigned_assistant_ids' => isset( $connection['assigned_assistant_ids'] ) ? $connection['assigned_assistant_ids'] : array(),
