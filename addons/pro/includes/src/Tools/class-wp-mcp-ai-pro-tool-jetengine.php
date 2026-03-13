@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD: list_types, list_items, get_item, create_item, update_item, delete_item.', 'mcp-ai-wpoos-pro' );
+		return __( 'Query and manage JetEngine Custom Content Type (CCT) items. Use this tool — NOT create_post — when you need to create, read, update, or delete records in any JetEngine CCT such as vital_signs, channel_messages, or any other CCT slug. Supports full CRUD and schema discovery: list_types, get_schema, list_items, get_item, create_item, update_item, delete_item. Always call get_schema first to discover available field names and types before creating or updating items.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -83,8 +83,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'action'   => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list_types, list_items, get_item, create_item, update_item, delete_item.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'list_types', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item' ),
+					'description' => __( 'The action to perform: list_types, get_schema, list_items, get_item, create_item, update_item, delete_item. Use get_schema to discover all field names and types for a CCT before creating or updating items.', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'list_types', 'get_schema', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item' ),
 					'default'     => 'list_types',
 				),
 				'cct_slug' => array(
@@ -167,6 +167,8 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		switch ( $action ) {
 			case 'list_types':
 				return $this->list_types();
+			case 'get_schema':
+				return $this->get_schema( $arguments );
 			case 'list_items':
 				return $this->list_items( $arguments );
 			case 'get_item':
@@ -258,6 +260,180 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array( 'types' => $result );
+	}
+
+	/**
+	 * Get the field schema for a CCT type.
+	 *
+	 * Returns the full list of field definitions (name, type, required, options,
+	 * description, default) so that the AI assistant knows which field names and
+	 * types are available before calling create_item or update_item.
+	 *
+	 * When JetEngine's manager has the type loaded in memory, fields are read
+	 * directly from the type object.  For CCTs registered programmatically (such
+	 * as vitals_log) this method falls back to calling the protected static
+	 * get_fields_schema() / get_meta_fields() method on the corresponding CCT
+	 * class via reflection.
+	 *
+	 * @param array $arguments Tool arguments (must include 'cct_slug').
+	 * @return array|WP_Error Schema array on success, WP_Error on failure.
+	 */
+	protected function get_schema( $arguments ) {
+		if ( empty( $arguments['cct_slug'] ) ) {
+			return new WP_Error(
+				'missing_cct_slug',
+				__( 'CCT slug is required for get_schema action.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		$slug = sanitize_key( $arguments['cct_slug'] );
+
+		if ( function_exists( 'jet_engine' ) ) {
+			$module = jet_engine()->modules->get_module( 'custom-content-types' );
+
+			if ( $module && $module->instance ) {
+				$type = $this->get_cct_type( $module->instance, $slug );
+
+				if ( $type ) {
+					$raw_fields = array();
+
+					if ( isset( $type->meta_fields ) && is_array( $type->meta_fields ) && ! empty( $type->meta_fields ) ) {
+						$raw_fields = $type->meta_fields;
+					} elseif ( isset( $type->fields ) && is_array( $type->fields ) && ! empty( $type->fields ) ) {
+						$raw_fields = $type->fields;
+					}
+
+					if ( ! empty( $raw_fields ) ) {
+						return $this->format_fields_schema( $slug, $raw_fields );
+					}
+				}
+			}
+		}
+
+		// JetEngine manager could not locate the type — fall back to the
+		// programmatic CCT class for known slugs.
+		return $this->get_schema_from_cct_class( $slug );
+	}
+
+	/**
+	 * Retrieve field schema from a programmatic CCT class for known CCT slugs.
+	 *
+	 * Uses ReflectionClass to call the protected static get_fields_schema() or
+	 * get_meta_fields() method on the corresponding CCT class, covering all CCTs
+	 * that ship with this plugin.
+	 *
+	 * @param string $slug CCT slug.
+	 * @return array|WP_Error Formatted schema array, or WP_Error when unavailable.
+	 */
+	protected function get_schema_from_cct_class( $slug ) {
+		$known = array(
+			'vitals_log'          => 'WP_MCP_AI_JetEngine_Vitals_Log_CCT',
+			'vital_signs'         => 'WP_MCP_AI_JetEngine_Vitals_CCT',
+			'quizzes'             => 'WP_MCP_AI_JetEngine_Quizzes_CCT',
+			'webchat_messages'    => 'WP_MCP_AI_JetEngine_Webchat_Messages_CCT',
+			'assistants'          => 'WP_MCP_AI_JetEngine_Assistants_CCT',
+			'quiz_submissions'    => 'WP_MCP_AI_JetEngine_Submissions_CCT',
+			'ai_usage_logs'       => 'WP_MCP_AI_JetEngine_Usage_Logs_CCT',
+			'ai_peers'            => 'WP_MCP_AI_JetEngine_AI_Peers_CCT',
+			'ai_chat_transcripts' => 'WP_MCP_AI_JetEngine_CCT',
+		);
+
+		if ( ! isset( $known[ $slug ] ) || ! class_exists( $known[ $slug ] ) ) {
+			return new WP_Error(
+				'cct_not_found',
+				/* translators: %s: CCT slug */
+				sprintf( __( 'CCT type "%s" not found.', 'mcp-ai-wpoos-pro' ), $slug )
+			);
+		}
+
+		$class      = $known[ $slug ];
+		$raw_fields = null;
+
+		foreach ( array( 'get_fields_schema', 'get_meta_fields' ) as $method_name ) {
+			try {
+				$reflection = new ReflectionClass( $class );
+				if ( ! $reflection->hasMethod( $method_name ) ) {
+					continue;
+				}
+				$method = $reflection->getMethod( $method_name );
+				$method->setAccessible( true );
+				$raw_fields = $method->invoke( null ); // Static method; no instance needed.
+				break;
+			} catch ( Exception $e ) {
+				error_log( 'WP_MCP_AI JetEngine get_schema reflection failed for ' . $class . '::' . $method_name . '(): ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				continue;
+			}
+		}
+
+		if ( null === $raw_fields || ! is_array( $raw_fields ) ) {
+			return new WP_Error(
+				'schema_unavailable',
+				__( 'Could not retrieve schema for this CCT.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $this->format_fields_schema( $slug, $raw_fields );
+	}
+
+	/**
+	 * Normalise raw JetEngine field definitions into a consistent schema array.
+	 *
+	 * Each entry in the returned 'fields' array contains:
+	 *   - name        (string)  Field slug used as the key in create/update 'fields'.
+	 *   - title       (string)  Human-readable label.
+	 *   - type        (string)  Field type: text, number, textarea, select, etc.
+	 *   - required    (bool)    Whether the field is required.
+	 *   - description (string)  Usage description.
+	 *   - default     (mixed)   Default value (empty string when unset).
+	 *   - options     (array)   Only present for select fields; each entry has 'key' and 'label'.
+	 *
+	 * @param string $slug       CCT slug.
+	 * @param array  $raw_fields Raw field definitions from JetEngine or a CCT class.
+	 * @return array Associative array with keys 'cct_slug', 'field_count', 'fields'.
+	 */
+	protected function format_fields_schema( $slug, array $raw_fields ) {
+		$fields = array();
+
+		foreach ( $raw_fields as $field ) {
+			if ( empty( $field['name'] ) ) {
+				continue;
+			}
+
+			$formatted = array(
+				'name'        => $field['name'],
+				'title'       => isset( $field['title'] ) ? $field['title'] : $field['name'],
+				'type'        => isset( $field['type'] ) ? $field['type'] : 'text',
+				'required'    => ! empty( $field['is_required'] ),
+				'description' => isset( $field['description'] ) ? $field['description'] : '',
+				'default'     => isset( $field['default_val'] ) ? $field['default_val'] : '',
+			);
+
+			if ( ! empty( $field['options'] ) && is_array( $field['options'] ) ) {
+				$formatted['options'] = array_map(
+					function ( $opt ) {
+						if ( is_array( $opt ) ) {
+							return array(
+								'key'   => isset( $opt['key'] ) ? $opt['key'] : '',
+								'label' => isset( $opt['value'] ) ? $opt['value'] : ( isset( $opt['key'] ) ? $opt['key'] : '' ),
+							);
+						}
+						return array(
+							'key'   => (string) $opt,
+							'label' => (string) $opt,
+						);
+					},
+					$field['options']
+				);
+			}
+
+			$fields[] = $formatted;
+		}
+
+		return array(
+			'cct_slug'    => $slug,
+			'field_count' => count( $fields ),
+			'fields'      => $fields,
+		);
 	}
 
 	/**
