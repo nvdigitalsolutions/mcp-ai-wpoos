@@ -797,9 +797,97 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$this->assertEmpty( $result );
 	}
 
+	/**
+	 * normalize_fields_argument() must extract top-level non-standard keys as
+	 * fields when the 'fields' key is absent — fallback for AI models that pass
+	 * CCT field data at the top level of the arguments object.
+	 */
+	public function test_normalize_fields_argument_fallback_extracts_top_level_fields() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'action'           => 'create_item',
+					'cct_slug'         => 'vitals_log',
+					'member_id'        => 2976,
+					'measurement_date' => '2026-02-09',
+					'bp_systolic'      => 105,
+					'bp_diastolic'     => 56,
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		// Standard params must be excluded.
+		$this->assertArrayNotHasKey( 'action', $result );
+		$this->assertArrayNotHasKey( 'cct_slug', $result );
+		// CCT fields must be present.
+		$this->assertArrayHasKey( 'member_id', $result );
+		$this->assertSame( 2976, $result['member_id'] );
+		$this->assertArrayHasKey( 'measurement_date', $result );
+		$this->assertSame( '2026-02-09', $result['measurement_date'] );
+		$this->assertArrayHasKey( 'bp_systolic', $result );
+		$this->assertSame( 105, $result['bp_systolic'] );
+	}
+
+	/**
+	 * normalize_fields_argument() must prefer the 'fields' key over top-level
+	 * field data when both are present in the arguments array.
+	 */
+	public function test_normalize_fields_argument_fields_key_takes_precedence_over_top_level() {
+		$tool   = $this->get_tool();
+		$method = $this->get_normalize_fields_method();
+
+		$result = $method->invokeArgs(
+			$tool,
+			array(
+				array(
+					'action'      => 'create_item',
+					'cct_slug'    => 'vitals_log',
+					'member_id'   => 9999,  // top-level — must be ignored.
+					'bp_systolic' => 200,   // top-level — must be ignored.
+					'fields'      => array(
+						'member_id'   => 2976,
+						'bp_systolic' => 105,
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 2976, $result['member_id'], "'fields' key must take precedence." );
+		$this->assertSame( 105, $result['bp_systolic'], "'fields' key must take precedence." );
+	}
+
 	// =========================================================================
-	// create_item — direct-path priority for vitals_log
+	// Schema — additionalProperties on 'fields'
 	// =========================================================================
+
+	/**
+	 * The 'fields' schema property must declare additionalProperties: true so
+	 * that AI models know they can pass arbitrary key/value pairs.
+	 */
+	public function test_schema_fields_has_additional_properties_true() {
+		$tool   = $this->get_tool();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'fields', $schema['properties'] );
+		$fields_schema = $schema['properties']['fields'];
+
+		$this->assertArrayHasKey(
+			'additionalProperties',
+			$fields_schema,
+			"'fields' schema must declare additionalProperties."
+		);
+		$this->assertTrue(
+			$fields_schema['additionalProperties'],
+			"'fields' schema additionalProperties must be true so AI models can pass any CCT field key."
+		);
+	}
+
+
 
 	/**
 	 * create_item() must attempt the direct database path (create_item_direct)
