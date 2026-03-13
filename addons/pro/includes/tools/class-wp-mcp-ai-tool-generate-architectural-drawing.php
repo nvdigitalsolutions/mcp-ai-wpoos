@@ -795,6 +795,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		}
 
 		// Prepare SVG output file.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
 		$temp_output = wp_tempnam( 'arch-drawing-svg-' );
 		if ( ! $temp_output ) {
 			return new WP_Error(
