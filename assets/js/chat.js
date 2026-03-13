@@ -102,6 +102,9 @@
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
+    const REASONING_BUTTON_CLASS = 'wp-mcp-ai-chat__reasoning';
+    const REASONING_ACTIVE_CLASS = 'wp-mcp-ai-chat__reasoning--active';
+    const REASONING_PROVIDERS = ['openai', 'anthropic', 'gemini'];
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
@@ -10957,6 +10960,7 @@
             const translateButton = container.querySelector('.wp-mcp-ai-chat__translate');
             const translateInput = container.querySelector('.wp-mcp-ai-chat__translate-input');
             const voiceChatButton = container.querySelector('.wp-mcp-ai-chat__voice-chat');
+            const reasoningButton = container.querySelector('.' + REASONING_BUTTON_CLASS);
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             const toolShortcutsWrapper = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-wrapper');
             const toolShortcutsToggle = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-toggle');
@@ -11054,6 +11058,8 @@
                 translateButton: translateButton,
                 translateInput: translateInput,
                 voiceChatButton: voiceChatButton,
+                reasoningButton: reasoningButton,
+                reasoningEnabled: !!instanceConfig.defaultReasoningMode,
                 toolShortcutsContainer: toolShortcutsContainer,
                 toolShortcutsWrapper: toolShortcutsWrapper,
                 toolShortcutsToggle: toolShortcutsToggle,
@@ -11100,6 +11106,7 @@
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
             renderCptActionButtons(state);
+            initReasoningButton(state);
 
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
@@ -12882,6 +12889,81 @@
         });
     }
 
+    /**
+     * Check whether the current provider supports reasoning mode.
+     *
+     * @param {Object} state Chat state object.
+     * @returns {boolean} True when the provider supports reasoning mode.
+     */
+    function isReasoningSupported(state) {
+        if (!state || !state.config) {
+            return false;
+        }
+        // Explicit support flag passed from PHP (preferred).
+        if (typeof state.config.reasoningSupport === 'boolean') {
+            return state.config.reasoningSupport;
+        }
+        // Fallback: derive from known provider list.
+        const provider = state.config.provider || '';
+        return !provider || REASONING_PROVIDERS.indexOf(provider) !== -1;
+    }
+
+    /**
+     * Update the visual state of the reasoning mode button.
+     *
+     * @param {Object} state Chat state object.
+     */
+    function updateReasoningButtonState(state) {
+        const button = state.reasoningButton;
+        if (!button) {
+            return;
+        }
+        if (state.reasoningEnabled) {
+            button.classList.add(REASONING_ACTIVE_CLASS);
+            button.setAttribute('aria-pressed', 'true');
+            const label = getString('reasoningModeOn', 'Reasoning mode active — click to disable');
+            button.setAttribute('title', label);
+            button.setAttribute('aria-label', label);
+        } else {
+            button.classList.remove(REASONING_ACTIVE_CLASS);
+            button.setAttribute('aria-pressed', 'false');
+            const label = getString('reasoningModeOff', 'Enable reasoning mode');
+            button.setAttribute('title', label);
+            button.setAttribute('aria-label', label);
+        }
+    }
+
+    /**
+     * Initialise the reasoning mode toggle button.
+     *
+     * Shows the button only when the current provider supports reasoning, wires up
+     * the click handler, and applies the admin-configured default state.
+     *
+     * @param {Object} state Chat state object.
+     */
+    function initReasoningButton(state) {
+        const button = state.reasoningButton;
+        if (!button) {
+            return;
+        }
+
+        if (!isReasoningSupported(state)) {
+            button.hidden = true;
+            return;
+        }
+
+        button.hidden = false;
+        updateReasoningButtonState(state);
+
+        button.addEventListener('click', function (event) {
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            state.reasoningEnabled = !state.reasoningEnabled;
+            updateReasoningButtonState(state);
+        });
+    }
+
     function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
@@ -12942,6 +13024,19 @@
             }
             if (state.config.temperature !== undefined && state.config.temperature !== null) {
                 payload.options.temperature = parseFloat(state.config.temperature);
+            }
+        }
+
+        // Include reasoning mode parameters when reasoning is enabled and provider supports it.
+        if (state.reasoningEnabled && isReasoningSupported(state)) {
+            payload.options = payload.options || {};
+            const provider = state.config.provider || '';
+            if (!provider || provider === 'openai') {
+                // OpenAI uses reasoning_effort (low / medium / high).
+                payload.options.reasoning_effort = state.config.defaultReasoningEffort || 'medium';
+            } else if (provider === 'gemini' || provider === 'anthropic') {
+                // Gemini and Anthropic use thinking_budget_tokens.
+                payload.options.thinking_budget_tokens = state.config.defaultReasoningBudget || 5000;
             }
         }
 

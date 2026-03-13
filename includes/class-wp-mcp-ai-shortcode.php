@@ -978,6 +978,45 @@ class WP_MCP_AI_Shortcode {
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
+			// Add reasoning mode support config.
+			// Providers that support chain-of-thought / extended-thinking reasoning mode.
+			$reasoning_providers       = array( 'openai', 'anthropic', 'gemini' );
+			$provider_supports_reasoning = ! empty( $assistant_provider ) && in_array( $assistant_provider, $reasoning_providers, true );
+
+			// When no specific provider is configured for the assistant, enable reasoning support
+			// if any reasoning-capable provider is enabled in global settings.
+			if ( ! $provider_supports_reasoning && empty( $assistant_provider ) ) {
+				$provider_supports_reasoning = ! empty( $settings['enable_openai'] ) || ! empty( $settings['enable_gemini'] ) || ! empty( $settings['enable_anthropic'] );
+			}
+
+			$config['reasoningSupport'] = $provider_supports_reasoning;
+
+			// Determine default reasoning mode and parameters from provider settings.
+			$default_reasoning_on     = false;
+			$default_reasoning_effort = 'medium';
+			$default_reasoning_budget = 5000;
+
+			if ( 'openai' === $assistant_provider ) {
+				$effort = isset( $settings['openai_default_reasoning_effort'] ) ? sanitize_text_field( $settings['openai_default_reasoning_effort'] ) : 'off';
+				if ( in_array( $effort, array( 'low', 'medium', 'high' ), true ) ) {
+					$default_reasoning_on     = true;
+					$default_reasoning_effort = $effort;
+				}
+			} elseif ( 'gemini' === $assistant_provider ) {
+				$default_reasoning_on     = ! empty( $settings['gemini_default_reasoning'] );
+				$default_reasoning_budget = isset( $settings['gemini_thinking_budget_tokens'] ) ? absint( $settings['gemini_thinking_budget_tokens'] ) : 8192;
+				if ( 0 === $default_reasoning_budget ) {
+					$default_reasoning_budget = 8192;
+				}
+			} elseif ( 'anthropic' === $assistant_provider ) {
+				$default_reasoning_on     = ! empty( $settings['anthropic_default_reasoning'] );
+				$default_reasoning_budget = isset( $settings['anthropic_thinking_budget_tokens'] ) ? absint( $settings['anthropic_thinking_budget_tokens'] ) : 5000;
+			}
+
+			$config['defaultReasoningMode']   = $default_reasoning_on;
+			$config['defaultReasoningEffort']  = $default_reasoning_effort;
+			$config['defaultReasoningBudget']  = $default_reasoning_budget;
+
 			// Add provider and model for client-side execution (embedded provider).
 			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
 			if ( ! empty( $assistant_provider ) ) {
@@ -1318,6 +1357,12 @@ class WP_MCP_AI_Shortcode {
 					</button>
 					<button type="button" class="wp-mcp-ai-chat__build" hidden>
 						<?php esc_html_e( 'Build', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button type="button" class="wp-mcp-ai-chat__reasoning" aria-label="<?php echo esc_attr__( 'Enable reasoning mode', 'mcp-ai-wpoos' ); ?>" aria-pressed="false" title="<?php echo esc_attr__( 'Enable reasoning mode', 'mcp-ai-wpoos' ); ?>" hidden>
+						<svg class="wp-mcp-ai-chat__reasoning-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M9.5 2a5.5 5.5 0 0 1 5.48 5.07A4.5 4.5 0 0 1 18 11.5c0 1.31-.56 2.49-1.45 3.32A4 4 0 0 1 13 18.93V20h1a1 1 0 0 1 0 2H10a1 1 0 0 1 0-2h1v-1.07A4 4 0 0 1 7.45 14.82 4.5 4.5 0 0 1 4 11.5a4.5 4.5 0 0 1 .02-.5A5.5 5.5 0 0 1 9.5 2zm0 2A3.5 3.5 0 0 0 6.05 11l.04.5H6a2.5 2.5 0 0 0 2.5 2.5h2V20h2v-6H15A2.5 2.5 0 0 0 17.5 11.5a2.5 2.5 0 0 0-2.5-2.5h-.05l.05-.5A3.5 3.5 0 0 0 9.5 4z"/>
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Enable reasoning mode', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<button type="submit" class="wp-mcp-ai-chat__submit">
 						<?php esc_html_e( 'Send', 'mcp-ai-wpoos' ); ?>
