@@ -2090,6 +2090,34 @@ class Test_Channel_Webhook_Controllers extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test empty_response() returns the Google Chat card format required for valid
+	 * webhook acknowledgements.
+	 *
+	 * Google Chat rejects bare `{}` responses with an in-space alert. The response
+	 * must include a `header` object (with at least a `title` key) and a `sections`
+	 * array to pass Google Chat's response validation while remaining invisible to
+	 * users (the actual AI reply is sent asynchronously via cron).
+	 */
+	public function test_google_chat_empty_response_returns_card_format() {
+		$this->load_controller( 'WP_MCP_AI_Google_Chat_Webhook_Controller', 'includes/rest/class-wp-mcp-ai-google-chat-webhook-controller.php' );
+
+		$controller = new WP_MCP_AI_Google_Chat_Webhook_Controller();
+		$reflection = new ReflectionClass( $controller );
+		$method     = $reflection->getMethod( 'empty_response' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $controller );
+
+		$this->assertIsArray( $result, 'empty_response() must return an array (not stdClass or other type)' );
+		$this->assertArrayHasKey( 'header', $result, 'empty_response() must include a "header" key' );
+		$this->assertArrayHasKey( 'sections', $result, 'empty_response() must include a "sections" key' );
+		$this->assertIsArray( $result['header'], '"header" must be an array' );
+		$this->assertArrayHasKey( 'title', $result['header'], '"header" must contain a "title" key' );
+		$this->assertIsArray( $result['sections'], '"sections" must be an array' );
+		$this->assertEmpty( $result['sections'], '"sections" must be empty for a silent acknowledgement' );
+	}
+
+	/**
 	 * Test get_conversation_history_key returns a deterministic, scoped, non-empty string.
 	 */
 	public function test_google_chat_conversation_history_key_is_deterministic() {

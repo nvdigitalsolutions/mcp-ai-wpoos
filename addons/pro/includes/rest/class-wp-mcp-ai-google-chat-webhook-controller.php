@@ -1941,17 +1941,28 @@ class WP_MCP_AI_Google_Chat_Webhook_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Return an empty Google Chat-compatible response body.
+	 * Return a Google Chat-compatible acknowledgement response body.
 	 *
-	 * Google Chat accepts an empty JSON object as a valid acknowledgement
-	 * when the bot opts to reply asynchronously.
+	 * Google Chat requires the synchronous HTTP response to include a card-shaped
+	 * JSON object with at minimum a `header` (containing a `title`) and a `sections`
+	 * array. Returning a bare empty object (`{}`) causes Google Chat to consider the
+	 * response invalid and display an alert in the space. The empty-sections card
+	 * satisfies the validation requirement without rendering any visible card content
+	 * to the user — the actual AI reply is sent asynchronously via the cron job.
+	 *
+	 * The response is always delivered with a `Content-Type: application/json` header
+	 * (set automatically by the WordPress REST API and by `wp_send_json()` on the
+	 * admin-ajax fallback path).
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return stdClass Empty JSON object response.
+	 * @return array Google Chat card acknowledgement with empty sections.
 	 */
 	protected function empty_response() {
-		return new stdClass();
+		return array(
+			'header'   => array( 'title' => '' ),
+			'sections' => array(),
+		);
 	}
 
 	/**
