@@ -2831,3 +2831,59 @@ Note: `esbuild.config.pro.js` was already excluded in the manual `bin/build-plug
 ---
 
 *Last updated: March 12, 2026*
+
+---
+
+## Pass 15 — March 13, 2026 — Root JS/JSON File Exclusion Audit
+
+### Scope
+
+Targeted audit of all `.js` and `.json` files present in the repository root to verify they are excluded from the WordPress.org deployment ZIP before submission. Both the `.distignore` file (used by the 10up GitHub Actions deployment action) and the manual `bin/build-plugin-zip.sh` rsync exclusion lists were checked and aligned.
+
+### Files Audited / Changed
+
+| File | Action |
+|---|---|
+| `.distignore` | **FIXED** — Added `cleancss.config.js` to the "Build tools and dependencies" section; it was the only root-level build-tool JS/JSON file not previously excluded |
+| `bin/build-plugin-zip.sh` | **FIXED** — Added `cleancss.config.js`, `cosmos.config.json`, `cosmos.webpack.config.js`, and `webpack.config.tma-builder.js` to both rsync exclude blocks (base-only build and combined base+pro build); these four files were added to `.distignore` in Pass 14 but were never added to the shell script exclude lists, leaving a gap between the two deployment paths |
+
+### Root `.js` and `.json` File Inventory (post-fix)
+
+All root-level build-tool files are now excluded from **both** deployment paths:
+
+| File | Type | `.distignore` | `bin/build-plugin-zip.sh` |
+|---|---|---|---|
+| `babel.config.js` | JS build tool | ✅ | ✅ |
+| `cleancss.config.js` | CSS minification tool | ✅ (added Pass 15) | ✅ (added Pass 15) |
+| `cosmos.webpack.config.js` | React Cosmos dev tool | ✅ (added Pass 14) | ✅ (added Pass 15) |
+| `esbuild.config.js` | JS bundler config | ✅ | ✅ |
+| `esbuild.config.pro.js` | Pro JS bundler config | ✅ (added Pass 14) | ✅ |
+| `jest.config.js` | JS test runner | ✅ | ✅ |
+| `webpack.config.js` | Webpack bundler config | ✅ | ✅ |
+| `webpack.config.tma-builder.js` | Template builder webpack | ✅ (added Pass 14) | ✅ (added Pass 15) |
+| `composer.json` | PHP dependency manager | ✅ | ✅ |
+| `cosmos.config.json` | React Cosmos dev tool | ✅ (added Pass 14) | ✅ (added Pass 15) |
+| `package.json` | Node.js dependency manager | ✅ | ✅ |
+| `package-lock.json` | Node.js lockfile | ✅ | ✅ |
+| `patches.lock.json` | Composer patches lockfile | ✅ | ✅ |
+| `tsconfig.json` | TypeScript config | ✅ | ✅ |
+
+### Findings
+
+#### A. Missing from `.distignore` (Guideline — General Cleanliness) — LOW — FIXED
+
+`cleancss.config.js` was the only root-level JS/JSON file absent from `.distignore`. It is a Node.js script that drives CSS minification during development and has no role in a deployed plugin.
+
+#### B. `.distignore` / `bin/build-plugin-zip.sh` Alignment Gap — LOW — FIXED
+
+Four files added to `.distignore` in Pass 14 (`cleancss.config.js`, `cosmos.config.json`, `cosmos.webpack.config.js`, `webpack.config.tma-builder.js`) were never back-ported to the two rsync exclude blocks in `bin/build-plugin-zip.sh`. The shell script is used for local ZIP builds and CI artifact creation; the gap meant those files could appear in locally-built ZIPs even though they were absent from WordPress.org SVN deployments. Both rsync blocks (base-only and combined base+pro) have been updated.
+
+#### C. All Other Guidelines — PASS (unchanged from Pass 14)
+
+No other changes. All 13 guidelines remain in ✅ status.
+
+**Base plugin compliance status: ✅ Fully compliant — March 13, 2026 (Pass 15)**
+
+---
+
+*Last updated: March 13, 2026*
