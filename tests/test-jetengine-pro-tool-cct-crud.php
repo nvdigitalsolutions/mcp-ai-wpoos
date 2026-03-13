@@ -271,11 +271,14 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Type with slug only in args — simulates partial-init JetEngine object.
-		$args_type        = new stdClass();
-		$args_type->slug  = '';
-		$args_type->name  = null;
-		$args_type->id    = null;
-		$args_type->args  = array( 'slug' => 'vitals_log', 'name' => 'Vitals Log' );
+		$args_type         = new stdClass();
+		$args_type->slug   = '';
+		$args_type->name   = null;
+		$args_type->id     = null;
+		$args_type->args   = array(
+			'slug' => 'vitals_log',
+			'name' => 'Vitals Log',
+		);
 		$args_type->fields = array();
 
 		// Verify the resolution logic matches what list_types() does.
@@ -298,11 +301,11 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 		$this->assertSame( 'Vitals Log', $name, 'Name resolved from args array.' );
 
 		// Anonymous type — no slug in direct property or args: must be filtered out.
-		$anon_type        = new stdClass();
-		$anon_type->slug  = '';
-		$anon_type->name  = null;
-		$anon_type->id    = null;
-		$anon_type->args  = array();
+		$anon_type         = new stdClass();
+		$anon_type->slug   = '';
+		$anon_type->name   = null;
+		$anon_type->id     = null;
+		$anon_type->args   = array();
 		$anon_type->fields = array();
 
 		$anon_slug = '';
@@ -320,8 +323,8 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	 */
 	public function test_list_types_field_count_falls_back_to_meta_fields() {
 		// Replicate the field_count resolution logic from list_types().
-		$type             = new stdClass();
-		$type->fields     = null;
+		$type              = new stdClass();
+		$type->fields      = null;
 		$type->meta_fields = array( 'a', 'b', 'c' );
 
 		$field_count = 0;
@@ -338,9 +341,9 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 	 * list_types() ID resolution must prefer '_ID' when 'id' is null.
 	 */
 	public function test_list_types_id_falls_back_to_underscore_id() {
-		$type       = new stdClass();
-		$type->id   = null;
-		$type->_ID  = 42;
+		$type      = new stdClass();
+		$type->id  = null;
+		$type->_ID = 42;
 
 		$id = null;
 		if ( isset( $type->id ) && null !== $type->id ) {
@@ -384,7 +387,10 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			array(
 				array(
 					'cct_slug' => 'vitals_log',
-					'fields'   => array( 'member_id' => 1, 'measurement_date' => '2025-01-01' ),
+					'fields'   => array(
+						'member_id'        => 1,
+						'measurement_date' => '2025-01-01',
+					),
 				),
 			)
 		);
@@ -445,5 +451,265 @@ class Test_JetEngine_Pro_Tool_CCT_CRUD extends WP_UnitTestCase {
 			}
 			$this->assertFalse( $threw, "maybe_register_known_cct('{$slug}') must not throw." );
 		}
+	}
+
+	// =========================================================================
+	// get_schema — parameter schema includes get_schema action
+	// =========================================================================
+
+	/**
+	 * The 'get_schema' action must be present in the schema enum.
+	 */
+	public function test_schema_includes_get_schema_action() {
+		$tool   = $this->get_tool();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'action', $schema['properties'] );
+		$this->assertContains( 'get_schema', $schema['properties']['action']['enum'] );
+	}
+
+	/**
+	 * All seven actions (including get_schema) must be declared in the schema.
+	 */
+	public function test_schema_declares_all_actions_including_get_schema() {
+		$tool     = $this->get_tool();
+		$schema   = $tool->get_parameters_schema();
+		$expected = array( 'list_types', 'get_schema', 'list_items', 'get_item', 'create_item', 'update_item', 'delete_item' );
+
+		foreach ( $expected as $action ) {
+			$this->assertContains(
+				$action,
+				$schema['properties']['action']['enum'],
+				"Action '{$action}' must be in the schema enum."
+			);
+		}
+	}
+
+	// =========================================================================
+	// get_schema — missing JetEngine
+	// =========================================================================
+
+	/**
+	 * The get_schema action must return WP_Error when JetEngine is not active.
+	 */
+	public function test_get_schema_returns_error_without_jetengine() {
+		if ( class_exists( 'Jet_Engine' ) || function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'JetEngine is present; skipping unavailability test.' );
+		}
+
+		$tool = $this->get_tool();
+
+		$result = $tool->execute(
+			array(
+				'action'   => 'get_schema',
+				'cct_slug' => 'vitals_log',
+			),
+			array()
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'jetengine_not_active', $result->get_error_code() );
+	}
+
+	// =========================================================================
+	// get_schema — missing cct_slug
+	// =========================================================================
+
+	/**
+	 * The get_schema() method must return WP_Error when cct_slug is absent.
+	 * Tested via reflection to bypass the JetEngine availability check.
+	 */
+	public function test_get_schema_requires_cct_slug() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'get_schema' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( array() ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'missing_cct_slug', $result->get_error_code() );
+	}
+
+	// =========================================================================
+	// get_schema_from_cct_class — known CCT class
+	// =========================================================================
+
+	/**
+	 * The get_schema_from_cct_class() method must return a proper schema array when the
+	 * corresponding CCT class is available.
+	 */
+	public function test_get_schema_from_cct_class_returns_schema_for_vitals_log() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$vitals_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-vitals-log-cct.php';
+			if ( file_exists( $vitals_path ) ) {
+				require_once $vitals_path;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_JetEngine_Vitals_Log_CCT not available.' );
+		}
+
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'get_schema_from_cct_class' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( 'vitals_log' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'cct_slug', $result );
+		$this->assertArrayHasKey( 'field_count', $result );
+		$this->assertArrayHasKey( 'fields', $result );
+		$this->assertSame( 'vitals_log', $result['cct_slug'] );
+		$this->assertGreaterThan( 0, $result['field_count'] );
+		$this->assertIsArray( $result['fields'] );
+
+		// Each field must have the mandatory keys.
+		foreach ( $result['fields'] as $field ) {
+			$this->assertArrayHasKey( 'name', $field, 'Each field must have a name.' );
+			$this->assertArrayHasKey( 'type', $field, 'Each field must have a type.' );
+			$this->assertArrayHasKey( 'required', $field, 'Each field must have a required flag.' );
+			$this->assertArrayHasKey( 'description', $field, 'Each field must have a description.' );
+		}
+
+		// Verify that known vitals_log fields are present.
+		$field_names = array_column( $result['fields'], 'name' );
+		$this->assertContains( 'member_id', $field_names, 'vitals_log schema must include member_id field.' );
+		$this->assertContains( 'measurement_date', $field_names, 'vitals_log schema must include measurement_date field.' );
+	}
+
+	/**
+	 * The get_schema_from_cct_class() method must return WP_Error for unknown CCT slugs.
+	 */
+	public function test_get_schema_from_cct_class_returns_error_for_unknown_slug() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'get_schema_from_cct_class' );
+		$method->setAccessible( true );
+
+		$result = $method->invokeArgs( $tool, array( 'completely_unknown_cct' ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertSame( 'cct_not_found', $result->get_error_code() );
+	}
+
+	// =========================================================================
+	// format_fields_schema — normalisation
+	// =========================================================================
+
+	/**
+	 * The format_fields_schema() method must normalise raw JetEngine fields and include
+	 * options only for select-type fields.
+	 */
+	public function test_format_fields_schema_normalises_raw_fields() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'format_fields_schema' );
+		$method->setAccessible( true );
+
+		$raw_fields = array(
+			array(
+				'name'        => 'member_id',
+				'title'       => 'Member ID',
+				'type'        => 'number',
+				'is_required' => true,
+				'description' => 'WordPress user ID',
+				'default_val' => '',
+			),
+			array(
+				'name'        => 'source',
+				'title'       => 'Source',
+				'type'        => 'select',
+				'is_required' => false,
+				'description' => 'Entry source',
+				'default_val' => 'manual',
+				'options'     => array(
+					array(
+						'key'   => 'manual',
+						'value' => 'Manual Entry',
+					),
+					array(
+						'key'   => 'api',
+						'value' => 'External API',
+					),
+				),
+			),
+			// Entry with no 'name' must be silently skipped.
+			array(
+				'title' => 'Ghost Field',
+				'type'  => 'text',
+			),
+		);
+
+		$result = $method->invokeArgs( $tool, array( 'vitals_log', $raw_fields ) );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 'vitals_log', $result['cct_slug'] );
+		$this->assertSame( 2, $result['field_count'], 'Unnamed fields must be skipped.' );
+		$this->assertCount( 2, $result['fields'] );
+
+		// First field (number, required).
+		$member_id_field = $result['fields'][0];
+		$this->assertSame( 'member_id', $member_id_field['name'] );
+		$this->assertSame( 'number', $member_id_field['type'] );
+		$this->assertTrue( $member_id_field['required'] );
+		$this->assertArrayNotHasKey( 'options', $member_id_field, 'Non-select field must not have options.' );
+
+		// Second field (select with options).
+		$source_field = $result['fields'][1];
+		$this->assertSame( 'source', $source_field['name'] );
+		$this->assertSame( 'manual', $source_field['default'] );
+		$this->assertArrayHasKey( 'options', $source_field, 'Select field must have options.' );
+		$this->assertCount( 2, $source_field['options'] );
+		$this->assertSame( 'manual', $source_field['options'][0]['key'] );
+		$this->assertSame( 'Manual Entry', $source_field['options'][0]['label'] );
+	}
+
+	/**
+	 * The format_fields_schema() method must fall back gracefully when optional field
+	 * keys (title, description, default_val) are absent.
+	 */
+	public function test_format_fields_schema_handles_minimal_field_definition() {
+		$tool       = $this->get_tool();
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'format_fields_schema' );
+		$method->setAccessible( true );
+
+		$raw_fields = array(
+			array( 'name' => 'bare_field' ),
+		);
+
+		$result = $method->invokeArgs( $tool, array( 'test_cct', $raw_fields ) );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( 1, $result['field_count'] );
+		$field = $result['fields'][0];
+		$this->assertSame( 'bare_field', $field['name'] );
+		$this->assertSame( 'bare_field', $field['title'], 'Title must fall back to name.' );
+		$this->assertSame( 'text', $field['type'], 'Type must fall back to text.' );
+		$this->assertFalse( $field['required'] );
+		$this->assertSame( '', $field['description'] );
+		$this->assertSame( '', $field['default'] );
+	}
+
+	// =========================================================================
+	// Description — mentions get_schema
+	// =========================================================================
+
+	/**
+	 * The tool description must mention 'get_schema' so the AI knows the action exists.
+	 */
+	public function test_description_mentions_get_schema() {
+		$tool        = $this->get_tool();
+		$description = $tool->get_description();
+
+		$this->assertStringContainsString(
+			'get_schema',
+			$description,
+			'Description must mention get_schema so the AI can discover it.'
+		);
 	}
 }
