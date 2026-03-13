@@ -1,52 +1,143 @@
-# NV oOS NPM Packages - Complete Implementation
+# NV oOS NPM Packages
 
 ## Overview
 
-Three standalone NPM packages extracted from the NV Open Operator System (oOS) WordPress plugin, ready for publication and use in any JavaScript/TypeScript project.
+Standalone NPM packages extracted from the [NV Open Operator System (oOS)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos) WordPress plugin. Each package is independently usable in any JavaScript/TypeScript project.
 
-## 📦 Published Packages
+All packages are **ES modules** with full TypeScript definitions. See each package's README for detailed API documentation.
 
-### 1. @nvdigitalsolutions/nvoos-storage
-**Storage utilities with Web Worker optimization**
+---
 
-- **Version**: 0.1.0-alpha.1
-- **License**: MIT
-- **Size**: ~5.4 KB (minified)
-- **Dependencies**: Zero (uses native Web APIs only)
+## 📦 Packages
 
-**What it does:**
-- Async JSON parsing/stringifying using Web Workers
-- Prevents main thread blocking for large data (>10KB)
+### Tier 1 — Core Utilities (Initial Set)
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-storage`](./nvoos-storage/) | Async JSON via Web Worker | Zero |
+| [`nvoos-markdown`](./nvoos-markdown/) | XSS-safe markdown renderer | marked, dompurify |
+| [`nvoos-events`](./nvoos-events/) | SSE client + job event bus | @microsoft/fetch-event-source |
+
+### Tier 2 — Extended Utilities
+
+| Package | Description | Dependencies |
+|---------|-------------|--------------|
+| [`nvoos-http-client`](./nvoos-http-client/) | HTTP client with retry/backoff | ky |
+| [`nvoos-clipboard`](./nvoos-clipboard/) | Clipboard copy with fallback | Zero |
+| [`nvoos-offline-sync`](./nvoos-offline-sync/) | IndexedDB offline-first sync | Zero |
+
+---
+
+## Package Details
+
+### @nvdigitalsolutions/nvoos-storage
+
+- Async JSON parsing/stringifying via Web Workers (prevents main-thread blocking)
 - Automatic fallback for small data and unsupported browsers
-- Production-tested handling AI chat transcripts
+- Includes companion `storage-worker.js` script
 
-**Installation:**
 ```bash
 npm install @nvdigitalsolutions/nvoos-storage
 ```
 
-**Location**: `/packages/nvoos-storage/`
-
 ---
 
-### 2. @nvdigitalsolutions/nvoos-markdown
-**Security-hardened markdown renderer**
+### @nvdigitalsolutions/nvoos-markdown
 
-- **Version**: 0.1.0-alpha.1
-- **License**: MIT
-- **Size**: ~8.1 KB (minified)
-- **Dependencies**: marked ^9.0.0, dompurify ^3.0.0 (peer)
+- Renders markdown to sanitized HTML using `marked` + `DOMPurify`
+- Pre-configured security profile for AI-generated content
+- `MarkdownRenderer` class with configurable CSS classes and allowed tags
+- Standalone helper exports: `escapeHtml`, `sanitizeUrl`, `renderInlineLabel`
 
-**What it does:**
-- Renders markdown with built-in XSS protection
-- Pre-configured security profiles for AI-generated content
-- Custom code block and image rendering
-- Lightweight wrapper over industry-standard libraries
-
-**Installation:**
 ```bash
 npm install @nvdigitalsolutions/nvoos-markdown marked dompurify
 ```
+
+---
+
+### @nvdigitalsolutions/nvoos-events
+
+- Enhanced SSE client (POST support, auto-reconnect, max retry limit)
+- Job event bus (mitt-compatible) with LRU cache eviction
+- Promise-based `watchJob()` for async job completion tracking
+
+```bash
+npm install @nvdigitalsolutions/nvoos-events @microsoft/fetch-event-source
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-http-client
+
+- `postJson`, `uploadFile`, `get`, `delete` with automatic retry
+- Exponential backoff with configurable limits
+- Request/response hooks for auth failure detection, logging, and instrumentation
+- `parseError()` helper for structured error handling
+
+```bash
+npm install @nvdigitalsolutions/nvoos-http-client ky
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-clipboard
+
+- `copyTextToClipboard()` — Clipboard API with `execCommand` fallback
+- `attachCopyButton()` — attaches a self-managing copy button to any element
+- Configurable CSS class names via `configure()`
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-clipboard
+```
+
+---
+
+### @nvdigitalsolutions/nvoos-offline-sync
+
+- IndexedDB-backed message persistence (works offline immediately)
+- Automatic sync queue that drains on reconnect
+- Configurable `syncUrl`, `syncHeaders`, `dbName`, offline UI toggle
+- Zero external dependencies
+
+```bash
+npm install @nvdigitalsolutions/nvoos-offline-sync
+```
+
+---
+
+## Building All Packages
+
+Each package has an `adapt-for-npm.js` build script that transforms the WordPress
+plugin source into a clean ES module:
+
+```bash
+for pkg in nvoos-storage nvoos-markdown nvoos-events nvoos-http-client nvoos-clipboard nvoos-offline-sync; do
+  (cd $pkg && node adapt-for-npm.js)
+done
+```
+
+---
+
+## Additional Package Candidates
+
+The following files were identified as future extraction candidates during the
+industry-standards audit (see `FINAL_SUMMARY.md` for full analysis):
+
+| File | Candidate Package | Portability |
+|------|------------------|-------------|
+| `chat-audio-service.js` (2112 LOC) | `nvoos-audio-recorder` + `nvoos-speech-synthesis` | Medium — split needed |
+| `chat-transcription-service.js` (779 LOC) | `nvoos-transcription` | Medium |
+| `chat-attachments-service.js` (586 LOC) | `nvoos-file-validator` | Medium |
+| `cron-status-service.js` (485 LOC) | `nvoos-job-status` | High |
+| `accessibility-enhancements.js` (503 LOC) | `nvoos-a11y` | Low — jQuery dep |
+
+---
+
+## License
+
+All packages are MIT licensed. See `LICENSE` in each package directory.
+
 
 **Location**: `/packages/nvoos-markdown/`
 

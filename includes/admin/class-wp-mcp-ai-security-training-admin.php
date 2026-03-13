@@ -179,7 +179,7 @@ class WP_MCP_AI_Security_Training_Admin {
 					$mandatory    = get_post_meta( $module->ID, '_training_mandatory', true ) === '1';
 					?>
 
-					<div class="wp-mcp-ai-training-module <?php echo $is_completed ? 'completed' : ''; ?>" data-module-id="<?php echo esc_attr( $module->ID ); ?>">
+					<div class="wp-mcp-ai-training-module <?php echo esc_attr( $is_completed ? 'completed' : '' ); ?>" data-module-id="<?php echo esc_attr( $module->ID ); ?>">
 						<div class="wp-mcp-ai-module-header">
 							<h3>
 								<?php echo esc_html( $module->post_title ); ?>

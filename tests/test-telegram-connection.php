@@ -1273,6 +1273,196 @@ class Test_Telegram_Connection extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that the Mini App controller registers the TMA-specific chat endpoint.
+	 *
+	 * The /chat route uses check_permission (TMA-token aware) so that templates
+	 * like Medical Vitals can authenticate via the X-WP-MCP-AI-TMA-Token header
+	 * without relying on a persistent WordPress auth cookie.
+	 */
+	public function test_telegram_mini_app_chat_route_is_registered() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$controller->register_routes();
+
+		$routes = rest_get_server()->get_routes();
+
+		$this->assertArrayHasKey(
+			'/mcp-ai/v1/telegram-mini-app/chat',
+			$routes,
+			'The /mcp-ai/v1/telegram-mini-app/chat REST route should be registered'
+		);
+
+		// Verify the registered route accepts POST.
+		$route_config = $routes['/mcp-ai/v1/telegram-mini-app/chat'];
+		$methods      = array_column( $route_config, 'methods' );
+		$this->assertTrue(
+			in_array( WP_REST_Server::CREATABLE, $methods, true ),
+			'The /mcp-ai/v1/telegram-mini-app/chat route should accept POST requests'
+		);
+	}
+
+	/**
+	 * Test that the Mini App controller has a handle_tma_chat_request method.
+	 */
+	public function test_telegram_mini_app_controller_has_tma_chat_handler() {
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		$this->assertTrue(
+			method_exists( $controller, 'handle_tma_chat_request' ),
+			'WP_MCP_AI_Telegram_Mini_App_Controller should have handle_tma_chat_request() method'
+		);
+	}
+
+	/**
+	 * Test that handle_tma_chat_request() resolves the connection's assigned assistant
+	 * and injects it into the request when no assistant_id is present.
+	 */
+	public function test_handle_tma_chat_request_resolves_assistant_from_connection() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a Telegram connection that has an assigned assistant.
+		$connection_data = array(
+			'name'                   => 'TMA Doctor Test',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '9999999999:AATMADoctorTestTokenABCDEFGHIJKLMNOP',
+			'assigned_assistant_ids' => array( 42 ),
+		);
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		if ( ! $saved ) {
+			$this->markTestSkipped( 'save_connection() returned false – cannot proceed' );
+			return;
+		}
+
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Verify the connection is actually retrievable via get_active_telegram_connection().
+		$reflection          = new ReflectionClass( $controller );
+		$get_connection_meth = $reflection->getMethod( 'get_active_telegram_connection' );
+		$get_connection_meth->setAccessible( true );
+		$active_connection = $get_connection_meth->invoke( $controller );
+
+		if ( null === $active_connection ) {
+			$this->markTestSkipped( 'get_active_telegram_connection() returned null – Telegram connection not retrievable' );
+			return;
+		}
+
+		// Build a POST request to /chat with NO assistant_id.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/chat' );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello doctor',
+				),
+			)
+		);
+		// Explicitly ensure assistant_id is absent.
+		$this->assertNull( $request->get_param( 'assistant_id' ), 'assistant_id should be absent before calling handle_tma_chat_request' );
+
+		// Call handle_tma_chat_request – it will delegate to the chat handler which
+		// may return an error (no real AI provider in tests), but the key assertion
+		// is that assistant_id is injected into the request object BEFORE delegation.
+		$controller->handle_tma_chat_request( $request );
+
+		// The request object is mutated in-place by set_param() inside handle_tma_chat_request.
+		$resolved_id = $request->get_param( 'assistant_id' );
+
+		$this->assertNotEmpty(
+			$resolved_id,
+			'handle_tma_chat_request() should inject the connection\'s assigned assistant_id into the request when none was provided'
+		);
+		$this->assertEquals(
+			'42',
+			(string) $resolved_id,
+			'The resolved assistant_id should match the first assigned_assistant_ids from the active connection'
+		);
+	}
+
+	/**
+	 * Test that handle_tma_chat_request() does not overwrite an assistant_id that is
+	 * already present in the request (client-supplied value takes precedence).
+	 */
+	public function test_handle_tma_chat_request_preserves_explicit_assistant_id() {
+		if ( ! class_exists( 'WP_MCP_AI_Telegram_Mini_App_Controller' ) ) {
+			if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$this->markTestSkipped( 'Pro addon not available' );
+				return;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+			return;
+		}
+
+		// Save a connection whose assigned assistant differs from what the client sends.
+		$connection_data = array(
+			'name'                   => 'TMA Override Test',
+			'connection_type'        => 'telegram',
+			'auth_type'              => 'none',
+			'enabled'                => true,
+			'api_key'                => '8888888888:AATMAOverrideTestTokenABCDEFGHIJKL',
+			'assigned_assistant_ids' => array( 99 ),
+		);
+
+		$saved = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		if ( ! $saved ) {
+			$this->markTestSkipped( 'save_connection() returned false – cannot proceed' );
+			return;
+		}
+
+		$controller = $this->load_telegram_mini_app_controller();
+		if ( null === $controller ) {
+			return;
+		}
+
+		// Build a POST request with an explicit assistant_id of 55.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/telegram-mini-app/chat' );
+		$request->set_param( 'assistant_id', '55' );
+		$request->set_param(
+			'messages',
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Hello',
+				),
+			)
+		);
+
+		$controller->handle_tma_chat_request( $request );
+
+		// The explicit value should remain unchanged.
+		$this->assertEquals(
+			'55',
+			(string) $request->get_param( 'assistant_id' ),
+			'An explicit assistant_id supplied by the client must not be overwritten by the connection fallback'
+		);
+	}
+
+	/**
 	 * Test that verify_init_data() verifies a correctly-signed initData string.
 	 *
 	 * Constructs a synthetic initData using the same algorithm Telegram uses:

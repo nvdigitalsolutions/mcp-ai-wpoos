@@ -239,6 +239,10 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.npmrc' \
         --exclude '.codecov.yml' \
         --exclude 'esbuild.config.pro.js' \
+        --exclude 'cleancss.config.js' \
+        --exclude 'cosmos.config.json' \
+        --exclude 'cosmos.webpack.config.js' \
+        --exclude 'webpack.config.tma-builder.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \
@@ -693,6 +697,10 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.npmrc' \
         --exclude '.codecov.yml' \
         --exclude 'esbuild.config.pro.js' \
+        --exclude 'cleancss.config.js' \
+        --exclude 'cosmos.config.json' \
+        --exclude 'cosmos.webpack.config.js' \
+        --exclude 'webpack.config.tma-builder.js' \
         --exclude 'phpcs.xml.dist' \
         --exclude 'webpack.config.js' \
         --exclude 'test-*.php' \

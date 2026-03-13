@@ -86,6 +86,29 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	const MAX_REQUEST_AGE = 300;
 
 	/**
+	 * Maximum number of times a rate-limited (HTTP 429) reply job will be
+	 * retried before giving up.  Each retry respects the Retry-After header
+	 * returned by Slack.
+	 */
+	const MAX_RATE_LIMIT_RETRIES = 3;
+
+	/**
+	 * Minimum number of seconds to wait when rescheduling a rate-limited
+	 * (HTTP 429) reply job, regardless of the Retry-After header value.
+	 */
+	const MIN_RETRY_DELAY = 30;
+
+	/**
+	 * Default maximum agentic loop iterations for Slack reply jobs.
+	 *
+	 * The /mcp-ai/v1/chat endpoint defaults to 1 iteration. Slack reply jobs
+	 * use a higher cap so multi-step tool workflows (e.g. search → analyse →
+	 * respond) can complete before the reply is dispatched. This mirrors the
+	 * pattern used by the Telegram and browser chat-client endpoints.
+	 */
+	const DEFAULT_MAX_AGENTIC_ITERATIONS = 10;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -210,7 +233,8 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	public function handle_event( $request ) {
 		// Resolve the per-connection ID from the URL so all helper methods in
 		// this request lifecycle can target the correct Slack workspace.
-		$this->current_connection_id = $request->get_param( 'connection_id' ) ?: null;
+		$raw_conn_id                 = $request->get_param( 'connection_id' );
+		$this->current_connection_id = $raw_conn_id ? $raw_conn_id : null;
 
 		$payload = $request->get_json_params();
 
@@ -259,7 +283,23 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	/**
 	 * Process a Slack event object.
 	 *
-	 * Only handles non-bot text messages (`message` type without a subtype).
+	 * Handles non-bot text messages (`message` type without a subtype) and
+	 * direct @mentions of the app (`app_mention` type). The `app_mention` event
+	 * is fired by Slack when a user @mentions the bot in a channel where the app
+	 * is installed and requires the `app_mentions:read` scope plus the
+	 * `app_mention` event subscription.
+	 *
+	 * Channel-type awareness (industry standard):
+	 * - `channel` / `group`: public and private channels — mentions optional.
+	 * - `im`: 1-on-1 direct message — the bot is the direct recipient, so
+	 *   `require_mention` is never enforced (user is already talking to the bot).
+	 * - `mpim`: multi-person DM — treated the same as `im` (bot is a direct
+	 *   participant, no @mention noise needed).
+	 *
+	 * Thread-aware replies (industry standard):
+	 * The `thread_ts` field is forwarded to the async reply job so that messages
+	 * sent inside a Slack thread receive their AI reply inside the same thread
+	 * (via `chat.postMessage` `thread_ts` parameter).
 	 *
 	 * @since 1.0.0
 	 *
@@ -268,19 +308,34 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	protected function process_event( array $event ) {
 		$event_type = isset( $event['type'] ) ? $event['type'] : '';
 
-		// Only handle plain user messages, not bot messages or message edits.
-		if ( 'message' !== $event_type ) {
+		// Handle both plain channel messages and direct @mentions (app_mention).
+		// app_mention is fired when a user @mentions the bot in any channel.
+		// message.channels / message.groups / message.im cover all messages in
+		// channels where the bot is a member.
+		$is_app_mention = ( 'app_mention' === $event_type );
+
+		if ( 'message' !== $event_type && ! $is_app_mention ) {
 			return;
 		}
 
-		// Skip bot messages and subtypes (edits, deletions, etc.).
-		if ( isset( $event['bot_id'] ) || isset( $event['subtype'] ) ) {
+		// Skip bot messages and subtypes (edits, deletions, etc.) for message events.
+		// app_mention events originate from real users, so the subtype check is
+		// applied only to the generic message type to avoid double-replies.
+		if ( ! $is_app_mention && ( isset( $event['bot_id'] ) || isset( $event['subtype'] ) ) ) {
 			return;
 		}
 
-		$text       = isset( $event['text'] ) ? (string) $event['text'] : '';
-		$user_id    = isset( $event['user'] ) ? (string) $event['user'] : '';
-		$channel_id = isset( $event['channel'] ) ? (string) $event['channel'] : '';
+		$text         = isset( $event['text'] ) ? (string) $event['text'] : '';
+		$user_id      = isset( $event['user'] ) ? (string) $event['user'] : '';
+		$channel_id   = isset( $event['channel'] ) ? (string) $event['channel'] : '';
+		$message_ts   = isset( $event['ts'] ) ? (string) $event['ts'] : '';
+		// channel_type is set by Slack: 'channel' (public), 'group' (private),
+		// 'im' (1-on-1 DM), or 'mpim' (multi-person DM).
+		$channel_type = isset( $event['channel_type'] ) ? sanitize_key( $event['channel_type'] ) : '';
+		// thread_ts is present when the message is posted inside an existing thread.
+		// It identifies the root (parent) message of the thread. Passing it through
+		// to the reply job allows the bot to respond in the same thread.
+		$thread_ts    = isset( $event['thread_ts'] ) ? (string) $event['thread_ts'] : '';
 
 		if ( '' === $text || '' === $user_id || '' === $channel_id ) {
 			return;
@@ -294,7 +349,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		$assigned_assistant_ids = isset( $connection['assigned_assistant_ids'] ) && is_array( $connection['assigned_assistant_ids'] )
-			? array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) )
+			? array_values( array_filter( array_map( 'absint', $connection['assigned_assistant_ids'] ) ) )
 			: array();
 
 		if ( empty( $assigned_assistant_ids ) ) {
@@ -307,9 +362,59 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
-		// When the connection requires an @slug mention, only reply if the message
-		// explicitly addresses an assigned assistant by its WordPress post slug.
-		if ( ! empty( $connection['require_mention'] ) && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+		// Retrieve the bot's Slack user ID (stored when the admin last ran the
+		// connection test). Used to detect native Slack @mentions (<@USER_ID>)
+		// in message events and to strip the mention prefix before sending to AI.
+		$bot_user_id = isset( $connection['slack_bot_user_id'] )
+			? sanitize_text_field( $connection['slack_bot_user_id'] )
+			: '';
+
+		// When the connection requires a mention, app_mention events ALWAYS satisfy
+		// it (the user explicitly @mentioned the bot). For plain message events,
+		// accept EITHER a Slack native bot mention (<@BOT_USER_ID>) OR an
+		// @assistant-slug mention so the bot responds even when only the
+		// message.channels event is subscribed (not app_mention).
+		//
+		// Industry standard: in 1-on-1 DMs (channel_type 'im') and multi-person
+		// DMs (channel_type 'mpim') the bot is already the direct recipient —
+		// requiring an @mention in a private DM conversation is not user-friendly
+		// and goes against Slack platform conventions. The require_mention flag
+		// is therefore only enforced for channel/group messages.
+		$is_dm = ( 'im' === $channel_type || 'mpim' === $channel_type );
+
+		if ( ! empty( $connection['require_mention'] ) && ! $is_app_mention && ! $is_dm ) {
+			$has_slack_bot_mention = '' !== $bot_user_id && false !== strpos( $text, '<@' . $bot_user_id . '>' );
+			if ( ! $has_slack_bot_mention && ! $this->message_mentions_assistant( $text, $assigned_assistant_ids ) ) {
+				return;
+			}
+		}
+
+		// Prevent duplicate AI replies when Slack delivers both an app_mention
+		// event AND a message.channels event for the same user message (Slack
+		// sends both when the bot is @mentioned in a public channel). Guard with
+		// a short transient keyed on the message timestamp + channel + connection.
+		if ( '' !== $message_ts ) {
+			$msg_dedup_key = 'wp_mcp_ai_sl_msg_' . md5( $message_ts . '_' . $channel_id . '_' . $connection_id );
+			if ( get_transient( $msg_dedup_key ) ) {
+				return;
+			}
+			set_transient( $msg_dedup_key, 1, self::DEDUP_TRANSIENT_TTL );
+		}
+
+		// Strip the leading "<@BOT_USER_ID> " Slack mention syntax from the
+		// message text before storing and sending to the AI so the assistant
+		// receives a clean question without the mention noise.
+		if ( '' !== $bot_user_id ) {
+			$stripped = trim( preg_replace( '/^<@' . preg_quote( $bot_user_id, '/' ) . '>\s*/u', '', $text ) );
+			if ( '' !== $stripped ) {
+				$text = $stripped;
+			}
+		}
+
+		// Enforce per-contact rate limiting when the global setting is enabled.
+		// Uses a transient-based sliding window; see wp_mcp_ai_chat_channel_is_rate_limited().
+		if ( function_exists( 'wp_mcp_ai_chat_channel_is_rate_limited' ) &&
+			wp_mcp_ai_chat_channel_is_rate_limited( 'slack', $user_id ) ) {
 			return;
 		}
 
@@ -338,7 +443,7 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 					'status'             => 'received',
 					'connection_id'      => $connection_id,
 					'phone_number_id'    => $channel_id,
-					'timestamp'          => isset( $event['ts'] ) ? (int) $event['ts'] : time(),
+					'timestamp'          => '' !== $message_ts ? (int) (float) $message_ts : time(),
 					'reply_sent'         => 0,
 					'assigned_agent'     => (string) $assigned_assistant_ids[0],
 				)
@@ -352,6 +457,12 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 				'user_id'       => $user_id,
 				'channel_id'    => $channel_id,
 				'connection_id' => $connection_id,
+				// thread_ts: forward so the reply is posted inside the same Slack thread.
+				// Empty string when the message is at channel-level (not in a thread).
+				'thread_ts'     => $thread_ts,
+				// channel_type: 'channel', 'group', 'im', or 'mpim'. Used by the
+				// reply job to determine whether to include thread_ts in the payload.
+				'channel_type'  => $channel_type,
 			),
 		);
 
@@ -365,6 +476,16 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * Implements per-user conversation history following the same pattern as the
 	 * WhatsApp auto-reply handler (PR #3844), respecting the global
 	 * max_history_messages setting and the wp_mcp_ai_slack_max_history_messages filter.
+	 *
+	 * Thread-aware replies (industry standard):
+	 * When the original message was posted inside a Slack thread (thread_ts present),
+	 * the AI reply is sent back into the same thread via the thread_ts parameter of
+	 * chat.postMessage, keeping conversations tidy and contextual.
+	 *
+	 * Rate limiting (industry standard):
+	 * When Slack returns HTTP 429 Too Many Requests the Retry-After header value is
+	 * respected and the job is rescheduled.  A retry counter (max MAX_RATE_LIMIT_RETRIES)
+	 * prevents indefinite loops.
 	 *
 	 * @since 1.0.0
 	 *
@@ -380,8 +501,24 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$user_id       = isset( $args['user_id'] ) ? (string) $args['user_id'] : '';
 		$channel_id    = isset( $args['channel_id'] ) ? (string) $args['channel_id'] : '';
 		$connection_id = isset( $args['connection_id'] ) ? sanitize_key( $args['connection_id'] ) : '';
+		// thread_ts is set when the message was posted inside a Slack thread.
+		// Empty string for top-level (non-threaded) channel messages and DMs.
+		$thread_ts     = isset( $args['thread_ts'] ) ? (string) $args['thread_ts'] : '';
+		// channel_type distinguishes DMs ('im', 'mpim') from channel messages.
+		$channel_type  = isset( $args['channel_type'] ) ? sanitize_key( $args['channel_type'] ) : '';
+		// Retry counter incremented each time the job is rescheduled due to a 429.
+		$retry_count   = isset( $args['retry_count'] ) ? absint( $args['retry_count'] ) : 0;
 
 		if ( ! $assistant_id || '' === $message_text || '' === $channel_id || '' === $connection_id ) {
+			WP_MCP_AI_Logger::log_error(
+				'Slack AI reply: missing required job argument.',
+				array(
+					'assistant_id'  => $assistant_id,
+					'has_message'   => '' !== $message_text,
+					'has_channel'   => '' !== $channel_id,
+					'connection_id' => $connection_id,
+				)
+			);
 			return;
 		}
 
@@ -410,7 +547,16 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		}
 
 		// --- Per-user conversation history (mirrors PR #3844 for WhatsApp) ---
-		$history_key = $this->get_conversation_history_key( $user_id, $channel_id, $connection_id );
+		// Thread-aware history: when the message is inside a Slack thread, scope
+		// the history to that thread so each thread maintains independent context.
+		// DMs and top-level channel messages use the channel-level key (no thread_ts).
+		$is_dm       = ( 'im' === $channel_type || 'mpim' === $channel_type );
+		$history_key = $this->get_conversation_history_key(
+			$user_id,
+			$channel_id,
+			$connection_id,
+			( ! $is_dm && '' !== $thread_ts ) ? $thread_ts : ''
+		);
 		$history     = get_transient( $history_key );
 		$history     = is_array( $history ) ? $history : array();
 
@@ -488,7 +634,15 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Raise the agentic-loop iteration cap for Slack reply jobs so that
+		// multi-step tool workflows (search → analyse → respond, etc.) can run
+		// to completion. Without this, the /mcp-ai/v1/chat endpoint defaults to
+		// a single iteration and the final content remains null when a second
+		// tool round is needed.
+		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_slack_max_agentic_iterations' ), 10, 2 );
 		$response = rest_do_request( $request );
+		remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_slack_max_agentic_iterations' ), 10 );
+
 		wp_set_current_user( $original_user_id );
 
 		if ( $response->is_error() ) {
@@ -506,11 +660,30 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return;
 		}
 
+		// Convert AI markdown response to Slack mrkdwn so the reply renders
+		// with proper bold, italic, code, and link formatting instead of showing
+		// raw markdown syntax in the Slack channel.
+		$mrkdwn_content = self::convert_markdown_to_mrkdwn( $content );
+
 		// Post reply to Slack via chat.postMessage.
+		// Industry standard: if the incoming message was inside a Slack thread,
+		// reply inside the same thread by passing thread_ts. This keeps channel
+		// conversations tidy and is the expected behaviour for Slack bots.
+		// thread_ts is not included for DMs (already 1-on-1) or top-level
+		// channel messages (no active thread).
+		// Use Slack Block Kit with mrkdwn text type for rich formatting.
+		// The plain-text 'text' field is required as a notification fallback.
+		$blocks = self::build_slack_blocks( $mrkdwn_content );
+
 		$payload = array(
 			'channel' => $channel_id,
-			'text'    => $content,
+			'text'    => wp_strip_all_tags( $content ),
+			'blocks'  => $blocks,
 		);
+
+		if ( '' !== $thread_ts && ! $is_dm ) {
+			$payload['thread_ts'] = $thread_ts;
+		}
 
 		$body = wp_json_encode( $payload );
 
@@ -551,6 +724,41 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 		$http_code    = (int) wp_remote_retrieve_response_code( $result );
 		$decoded_body = json_decode( wp_remote_retrieve_body( $result ), true );
 		$api_ok       = is_array( $decoded_body ) && ! empty( $decoded_body['ok'] );
+
+		// Industry standard: handle HTTP 429 Too Many Requests by respecting the
+		// Retry-After header returned by Slack and rescheduling the job.
+		// A retry counter prevents indefinite loops.
+		if ( 429 === $http_code ) {
+			if ( $retry_count >= self::MAX_RATE_LIMIT_RETRIES ) {
+				WP_MCP_AI_Logger::log_error(
+					'Slack AI reply: rate limit retry limit reached; giving up.',
+					array(
+						'connection_id' => $connection_id,
+						'retry_count'   => $retry_count,
+					)
+				);
+				return;
+			}
+
+			$retry_after = (int) wp_remote_retrieve_header( $result, 'retry-after' );
+			// Always wait at least MIN_RETRY_DELAY s; honour the Retry-After value when larger.
+			$delay       = max( self::MIN_RETRY_DELAY, $retry_after );
+
+			WP_MCP_AI_Logger::log_error(
+				sprintf(
+					'Slack AI reply: rate limited (429). Retrying in %d seconds (attempt %d/%d).',
+					$delay,
+					$retry_count + 1,
+					self::MAX_RATE_LIMIT_RETRIES
+				),
+				array( 'connection_id' => $connection_id )
+			);
+
+			$retry_args             = $args;
+			$retry_args['retry_count'] = $retry_count + 1;
+			wp_schedule_single_event( time() + $delay, self::REPLY_CRON_HOOK, array( $retry_args ) );
+			return;
+		}
 
 		if ( 200 !== $http_code || ! $api_ok ) {
 			$api_error = is_array( $decoded_body ) && isset( $decoded_body['error'] ) ? $decoded_body['error'] : '';
@@ -632,15 +840,25 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	 * The key is hashed to avoid PII in option names and stay within WordPress's
 	 * 172-character transient key limit.
 	 *
+	 * Thread-scoped history: when $thread_ts is supplied (non-empty string) the
+	 * key is scoped to that specific thread so that multiple concurrent thread
+	 * conversations in the same channel each maintain independent context.
+	 * Pass an empty string (or omit) for DMs and top-level channel messages.
+	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $user_id       Slack user ID.
 	 * @param string $channel_id    Slack channel ID.
 	 * @param string $connection_id Remote connection ID.
+	 * @param string $thread_ts     Optional thread root timestamp for thread-scoped history.
 	 * @return string Transient key.
 	 */
-	protected function get_conversation_history_key( $user_id, $channel_id, $connection_id ) {
-		return 'wp_mcp_ai_sl_conv_' . md5( $user_id . '_' . $channel_id . '_' . $connection_id );
+	protected function get_conversation_history_key( $user_id, $channel_id, $connection_id, $thread_ts = '' ) {
+		$key_parts = $user_id . '_' . $channel_id . '_' . $connection_id;
+		if ( '' !== $thread_ts ) {
+			$key_parts .= '_' . $thread_ts;
+		}
+		return 'wp_mcp_ai_sl_conv_' . md5( $key_parts );
 	}
 
 	/**
@@ -819,7 +1037,280 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Convert standard Markdown to Slack mrkdwn format.
+	 *
+	 * AI models return responses in standard Markdown. Slack uses its own
+	 * "mrkdwn" dialect that differs in key ways (e.g. *bold* not **bold**,
+	 * _italic_, ~strikethrough~, <url|text> links). This method bridges the
+	 * gap so that AI replies render with proper formatting in Slack channels.
+	 *
+	 * Code spans and code blocks are preserved verbatim because their syntax
+	 * is identical in both dialects. Headings are converted to bold lines.
+	 * HTML anchor tags that AI assistants sometimes emit are converted to
+	 * Slack link syntax. Unrecognised HTML tags are stripped.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text Markdown-formatted AI response text.
+	 * @return string mrkdwn-formatted text suitable for Slack chat.postMessage.
+	 */
+	public static function convert_markdown_to_mrkdwn( $text ) {
+		if ( ! is_string( $text ) || '' === $text ) {
+			return '';
+		}
+
+		// 1. Extract fenced code blocks and replace with placeholders so that
+		//    content inside them is not processed by subsequent regex rules.
+		$code_blocks            = array();
+		$code_block_placeholder = "\x07SLKCB:";
+		$cb_index               = 0;
+
+		$text = preg_replace_callback(
+			'/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/s',
+			function ( $m ) use ( &$code_blocks, &$cb_index, $code_block_placeholder ) {
+				$key               = $code_block_placeholder . $cb_index . "\x07";
+				$code_blocks[$key] = '```' . rtrim( $m[2], "\n" ) . '```';
+				++$cb_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 2. Extract inline code spans and replace with placeholders.
+		$inline_codes            = array();
+		$inline_code_placeholder = "\x07SLKIC:";
+		$ic_index                = 0;
+
+		$text = preg_replace_callback(
+			'/`([^`\n]+?)`/',
+			function ( $m ) use ( &$inline_codes, &$ic_index, $inline_code_placeholder ) {
+				$key                = $inline_code_placeholder . $ic_index . "\x07";
+				$inline_codes[$key] = '`' . $m[1] . '`';
+				++$ic_index;
+				return $key;
+			},
+			$text
+		);
+
+		// 3. Convert HTML anchor tags to Slack link syntax <url|link_text>.
+		//    AI responses sometimes emit raw <a href="…">…</a> instead of
+		//    Markdown [text](url) syntax.
+		$text = preg_replace_callback(
+			'/<a\b[^>]*\bhref=["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/si',
+			function ( $m ) {
+				$url       = esc_url( $m[1] );
+				$link_text = wp_strip_all_tags( $m[2] );
+				if ( '' === $url ) {
+					return $link_text;
+				}
+				return '' !== $link_text ? '<' . $url . '|' . $link_text . '>' : '<' . $url . '>';
+			},
+			$text
+		);
+
+		// 4. Strip any remaining HTML tags (Slack does not render HTML).
+		$text = wp_strip_all_tags( $text );
+		$text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+
+		// 5. Headings (# … through ######) → *bold* text on its own line.
+		$text = preg_replace( '/^#{1,6}\s+(.+)$/m', '*$1*', $text );
+
+		// 6. Bold: **text** or __text__ → *text* (Slack single-asterisk bold).
+		$text = preg_replace( '/\*\*(.+?)\*\*/s', '*$1*', $text );
+		$text = preg_replace( '/__(.+?)__/s', '*$1*', $text );
+
+		// 7. Italic: *text* → _text_ (Slack underscore italic).
+		//    Use lookbehind/lookahead to avoid matching Slack's own *bold* tokens
+		//    that were just created in step 6.
+		$text = preg_replace( '/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '_$1_', $text );
+
+		// 8. Underscored italic: _text_ stays as _text_ (already mrkdwn).
+		//    No change needed.
+
+		// 9. Strikethrough: ~~text~~ → ~text~ (Slack single-tilde).
+		$text = preg_replace( '/~~(.+?)~~/s', '~$1~', $text );
+
+		// 10. Markdown links: [text](url) → <url|text>.
+		$text = preg_replace_callback(
+			'/\[([^\]]+)\]\(([^)]+)\)/',
+			function ( $m ) {
+				$url = esc_url( trim( $m[2] ) );
+				if ( '' === $url ) {
+					return $m[1];
+				}
+				return '<' . $url . '|' . $m[1] . '>';
+			},
+			$text
+		);
+
+		// 11. Bullet lists: lines starting with "- " or "* " → "• " (Unicode bullet).
+		$text = preg_replace( '/^[ \t]*[-*]\s+/m', '• ', $text );
+
+		// 12. Restore inline code placeholders.
+		if ( ! empty( $inline_codes ) ) {
+			$text = str_replace( array_keys( $inline_codes ), array_values( $inline_codes ), $text );
+		}
+
+		// 13. Restore fenced code block placeholders.
+		if ( ! empty( $code_blocks ) ) {
+			$text = str_replace( array_keys( $code_blocks ), array_values( $code_blocks ), $text );
+		}
+
+		return trim( $text );
+	}
+
+	/**
+	 * Build a Slack Block Kit payload from mrkdwn-formatted text.
+	 *
+	 * Slack Block Kit section blocks allow mrkdwn rendering and have a 3 000-
+	 * character limit per block. This method splits long replies into multiple
+	 * section blocks while keeping paragraph breaks intact. Each block renders
+	 * as rich text with proper bold, italic, code, and link formatting.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $mrkdwn mrkdwn-formatted text.
+	 * @return array Array of Slack Block Kit block objects.
+	 */
+	public static function build_slack_blocks( $mrkdwn ) {
+		// Slack section block text limit.
+		$max_block_len = 3000;
+
+		if ( strlen( $mrkdwn ) <= $max_block_len ) {
+			return array(
+				array(
+					'type' => 'section',
+					'text' => array(
+						'type' => 'mrkdwn',
+						'text' => $mrkdwn,
+					),
+				),
+			);
+		}
+
+		// Split on two or more consecutive newlines to identify paragraph boundaries.
+		// Each paragraph is accumulated into a block until the 3000-char limit is reached.
+		$paragraphs = preg_split( '/\n{2,}/', $mrkdwn );
+		$blocks     = array();
+		$current    = '';
+
+		foreach ( $paragraphs as $para ) {
+			$para = trim( $para );
+			if ( '' === $para ) {
+				continue;
+			}
+
+			$candidate = '' === $current ? $para : $current . "\n\n" . $para;
+
+			if ( strlen( $candidate ) <= $max_block_len ) {
+				$current = $candidate;
+			} else {
+				if ( '' !== $current ) {
+					$blocks[] = array(
+						'type' => 'section',
+						'text' => array(
+							'type' => 'mrkdwn',
+							'text' => $current,
+						),
+					);
+				}
+				// If a single paragraph exceeds the limit, truncate it.
+				$current = strlen( $para ) > $max_block_len ? substr( $para, 0, $max_block_len ) : $para;
+			}
+		}
+
+		if ( '' !== $current ) {
+			$blocks[] = array(
+				'type' => 'section',
+				'text' => array(
+					'type' => 'mrkdwn',
+					'text' => $current,
+				),
+			);
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Return the maximum number of agentic iterations for Slack reply jobs.
+	 *
+	 * Hooked to the `wp_mcp_ai_max_agentic_iterations` filter during cron
+	 * execution so that multi-step tool workflows complete before the Slack
+	 * reply is dispatched.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int   $default_max     Current maximum from upstream filter chain.
+	 * @param array $assistant_config Assistant configuration (unused).
+	 * @return int The higher of the incoming default and DEFAULT_MAX_AGENTIC_ITERATIONS.
+	 */
+	public function get_slack_max_agentic_iterations( $default_max, $assistant_config = array() ) {
+		return max( (int) $default_max, self::DEFAULT_MAX_AGENTIC_ITERATIONS );
+	}
+
+	/**
+	 * Resolve a message content value to a plain-text string.
+	 *
+	 * The /mcp-ai/v1/chat endpoint can return content as either:
+	 * - A plain string (OpenAI, Anthropic).
+	 * - An array of typed segments (Gemini / Ollama normalised format), where
+	 *   each segment has at minimum a `type` key. Only `text`-type segments
+	 *   carry displayable text.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $content Raw content value from message.content.
+	 * @return string Plain-text content or empty string.
+	 */
+	protected function resolve_content_to_string( $content ) {
+		if ( is_string( $content ) ) {
+			return trim( $content );
+		}
+
+		if ( ! is_array( $content ) ) {
+			return '';
+		}
+
+		// Array of content segments (Gemini / Ollama normalised format).
+		$parts = array();
+		foreach ( $content as $segment ) {
+			if ( ! is_array( $segment ) ) {
+				if ( is_string( $segment ) ) {
+					$parts[] = $segment;
+				}
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? (string) $segment['type'] : '';
+
+			if ( 'text' === $type && isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			} elseif ( isset( $segment['text'] ) && is_string( $segment['text'] ) ) {
+				$text = trim( $segment['text'] );
+				if ( '' !== $text ) {
+					$parts[] = $text;
+				}
+			}
+		}
+
+		return implode( "\n", $parts );
+	}
+
+	/**
 	 * Extract plain-text content from the internal /mcp-ai/v1/chat response.
+	 *
+	 * Handles both string and array content segments (multi-provider normalisation
+	 * for Gemini and Ollama responses that return content as an array).
+	 *
+	 * When an agentic tool-calling workflow runs, some providers set
+	 * `message.content` to null on intermediate responses where
+	 * `finish_reason = "tool_calls"`. This method handles that case by scanning
+	 * all choices and falling back to `agentic_tool_messages` so that the last
+	 * assistant message with non-empty text is returned.
 	 *
 	 * @since 1.0.0
 	 *
@@ -831,17 +1322,54 @@ class WP_MCP_AI_Slack_Event_Controller extends WP_REST_Controller {
 			return '';
 		}
 
-		$choices = isset( $data['data']['choices'] ) ? $data['data']['choices']
-			: ( isset( $data['choices'] ) ? $data['choices'] : array() );
+		// Normalise: the endpoint wraps the raw LLM response under 'data'.
+		$llm_data = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : $data;
+		$choices  = isset( $llm_data['choices'] ) && is_array( $llm_data['choices'] ) ? $llm_data['choices'] : array();
 
-		if ( ! is_array( $choices ) || empty( $choices ) ) {
-			return '';
+		// --- Pass 1: scan every choice for a non-empty content value.
+		// Prefer choices whose finish_reason is 'stop' over 'tool_calls'.
+		$best_content = '';
+		foreach ( $choices as $choice ) {
+			$msg     = isset( $choice['message'] ) && is_array( $choice['message'] ) ? $choice['message'] : array();
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
+
+			if ( '' === $content ) {
+				continue;
+			}
+
+			$finish = isset( $choice['finish_reason'] ) ? (string) $choice['finish_reason'] : '';
+
+			// A 'stop' finish is the definitive final answer — return immediately.
+			if ( 'stop' === $finish ) {
+				return $content;
+			}
+
+			if ( '' === $best_content ) {
+				$best_content = $content;
+			}
 		}
 
-		$first = reset( $choices );
+		if ( '' !== $best_content ) {
+			return $best_content;
+		}
 
-		if ( isset( $first['message']['content'] ) && is_string( $first['message']['content'] ) ) {
-			return trim( $first['message']['content'] );
+		// --- Pass 2: fall back to agentic_tool_messages.
+		// When all choices have null/empty content (e.g. the loop exhausted its
+		// iteration cap before the model produced a final text reply), the chat
+		// service attaches intermediate assistant messages to the response under
+		// `agentic_tool_messages`. Return the last one that contains text.
+		$agentic_messages = isset( $llm_data['agentic_tool_messages'] ) && is_array( $llm_data['agentic_tool_messages'] )
+			? $llm_data['agentic_tool_messages']
+			: array();
+
+		foreach ( array_reverse( $agentic_messages ) as $msg ) {
+			if ( ! is_array( $msg ) ) {
+				continue;
+			}
+			$content = isset( $msg['content'] ) ? $this->resolve_content_to_string( $msg['content'] ) : '';
+			if ( '' !== $content ) {
+				return $content;
+			}
 		}
 
 		return '';

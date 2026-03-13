@@ -39,6 +39,11 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 	};
 
 	/**
+	 * Maximum number of consecutive reconnection attempts before giving up
+	 */
+	const MAX_RECONNECT_ATTEMPTS = 10;
+
+	/**
 	 * SSE Service
 	 * 
 	 * Provides methods to create and manage Server-Sent Events connections
@@ -106,6 +111,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 				const ctrl = new AbortController();
 				const connectionKey = this.generateConnectionKey(url);
 				const self = this;
+				let reconnectAttempts = 0;
 
 				// Build fetch options
 				const fetchOptions = {
@@ -119,6 +125,14 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 * Validates response before processing events
 					 */
 					async onopen(response) {
+						// Reset reconnect attempts on successful connection
+						reconnectAttempts = 0;
+
+						// Update connection status
+						if (self.connections[connectionKey]) {
+							self.connections[connectionKey].status = 'open';
+						}
+
 						// Check for successful response
 						if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
 							// Connection successful
@@ -187,6 +201,9 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 */
 					onclose: () => {
 						// Connection closed normally
+						if (self.connections[connectionKey]) {
+							self.connections[connectionKey].status = 'closed';
+						}
 						if (window.wpMcpAiDebug && window.console && console.log) {
 							console.log('[NV oOS SSE] Connection closed by server');
 						}
@@ -197,8 +214,10 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 * Can throw to stop reconnection, or return retry interval
 					 */
 					onerror: (err) => {
+						reconnectAttempts++;
+
 						if (window.wpMcpAiDebug && window.console && console.error) {
-							console.error('[NV oOS SSE] Connection error:', err);
+							console.error('[NV oOS SSE] Connection error (attempt ' + reconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS + '):', err);
 						}
 
 						// Call user's error handler if provided
@@ -210,6 +229,14 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 						// For retriable errors, don't throw (library will auto-retry)
 						if (err.message && err.message.includes('Client error')) {
 							throw err; // Stop reconnecting on client errors
+						}
+
+						// Stop reconnecting after max attempts to prevent infinite retry loops
+						if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+							if (window.console && console.warn) {
+								console.warn('[NV oOS SSE] Max reconnection attempts (' + MAX_RECONNECT_ATTEMPTS + ') reached, giving up');
+							}
+							throw new Error('Max reconnection attempts reached');
 						}
 						// For other errors, allow automatic retry
 					}
@@ -234,7 +261,8 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					ctrl: ctrl,
 					url: url,
 					createdAt: Date.now(),
-					promise: connectionPromise
+					promise: connectionPromise,
+					status: 'connecting'
 				};
 
 				// Return connection object with close method (backward compatible API)
@@ -246,6 +274,11 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					// Expose abort method for advanced use cases
 					abort: function () {
 						ctrl.abort();
+					},
+					// Get connection status
+					getStatus: function () {
+						const conn = self.connections[connectionKey];
+						return conn ? conn.status : 'closed';
 					}
 				};
 
@@ -309,6 +342,23 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 		 */
 		getConnectionCount: function () {
 			return Object.keys(this.connections).length;
+		},
+
+		/**
+		 * Get connection status for a given URL
+		 * 
+		 * @param {string} url - Connection URL to check
+		 * @return {string} Connection status ('connecting', 'open', 'closed', or 'unknown')
+		 */
+		getConnectionStatus: function (url) {
+			const keys = Object.keys(this.connections);
+			for (let i = 0; i < keys.length; i++) {
+				const conn = this.connections[keys[i]];
+				if (conn && conn.url === url) {
+					return conn.status || 'unknown';
+				}
+			}
+			return 'closed';
 		}
 	};
 

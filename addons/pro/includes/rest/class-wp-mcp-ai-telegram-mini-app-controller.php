@@ -261,6 +261,31 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 			)
 		);
 
+		// TMA-specific chat endpoint – mirrors /chat-client but uses check_permission
+		// so that requests authenticated via the X-WP-MCP-AI-TMA-Token header (issued
+		// by the /validate endpoint) are accepted without a WordPress auth cookie.
+		register_rest_route(
+			$this->namespace,
+			'/' . $this->rest_base . '/chat',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_tma_chat_request' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'messages'     => array(
+						'required'          => true,
+						'type'              => 'array',
+						'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos-pro' ),
+					),
+					'assistant_id' => array(
+						'required'          => false,
+						'type'              => array( 'integer', 'string' ),
+						'description'       => __( 'Optional assistant ID to use for this chat request.', 'mcp-ai-wpoos-pro' ),
+					),
+				),
+			)
+		);
+
 		// Media library data endpoint (GET).
 		register_rest_route(
 			$this->namespace,
@@ -593,31 +618,40 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				 *
 				 * @param string $title Default page title.
 				 */
-				$page_title    = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
-				$tools_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
-				$analytics_url = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
-				$chart_js_url  = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$page_title       = apply_filters( 'wp_mcp_ai_telegram_mini_app_title', get_bloginfo( 'name' ) );
+				$tools_url        = rest_url( $this->namespace . '/' . $this->rest_base . '/tools' );
+				$analytics_url    = rest_url( $this->namespace . '/' . $this->rest_base . '/analytics' );
+				$chart_js_url     = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
+				$markdown_js_url  = esc_url( WP_MCP_AI_PRO_URL . 'assets/js/tma-markdown.min.js' );
 
 				// Resolve the assistant configured for this Mini App connection so that
-				// templates can pass it as assistant_id to the chat-client endpoint.
+				// templates can pass it as assistant_id to the chat endpoint.
 				$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
-				$chat_url     = rest_url( 'mcp-ai/v1/chat-client' );
+
+				// Use the TMA-specific chat endpoint so that templates can authenticate
+				// via the TMA session token (X-WP-MCP-AI-TMA-Token) returned by /validate,
+				// without requiring a WordPress auth cookie that may not persist inside
+				// Telegram's built-in WebView.
+				$chat_url     = rest_url( $this->namespace . '/' . $this->rest_base . '/chat' );
+				$validate_url = rest_url( $this->namespace . '/' . $this->rest_base . '/validate' );
 
 				// Build the context array that non-default templates expect.
 				$ctx = array(
-					'request'       => $request,
-					'connection'    => $connection,
-					'namespace'     => $this->namespace,
-					'rest_base'     => $this->rest_base,
-					'assistant'     => $request->get_param( 'assistant' ),
-					'assistant_id'  => $assistant_id,
-					'chat_url'      => $chat_url,
-					'site_name'     => $page_title,
-					'nonce'         => wp_create_nonce( 'wp_rest' ),
-					'tools_url'     => $tools_url,
-					'analytics_url' => $analytics_url,
-					'chart_js_url'  => $chart_js_url,
-					'member_id'     => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
+					'request'         => $request,
+					'connection'      => $connection,
+					'namespace'       => $this->namespace,
+					'rest_base'       => $this->rest_base,
+					'assistant'       => $request->get_param( 'assistant' ),
+					'assistant_id'    => $assistant_id,
+					'chat_url'        => $chat_url,
+					'validate_url'    => $validate_url,
+					'site_name'       => $page_title,
+					'nonce'           => wp_create_nonce( 'wp_rest' ),
+					'tools_url'       => $tools_url,
+					'analytics_url'   => $analytics_url,
+					'chart_js_url'    => $chart_js_url,
+					'markdown_js_url' => $markdown_js_url,
+					'member_id'       => function_exists( 'wp_mcp_ai_get_member_id_by_user_id' )
 						? wp_mcp_ai_get_member_id_by_user_id( get_current_user_id() )
 						: 0,
 				);
@@ -3280,6 +3314,61 @@ class WP_MCP_AI_Telegram_Mini_App_Controller extends WP_REST_Controller {
 				'result'  => $result,
 			)
 		);
+	}
+
+	/**
+	 * Handle a chat request from a Telegram Mini App template.
+	 *
+	 * This is a thin proxy to the standard /chat-client handler, but registered
+	 * under the Mini App namespace so that `check_permission` (which accepts both
+	 * WordPress nonces and the TMA session token issued by /validate) is used
+	 * instead of the global chat-client permission check.  This lets Mini App
+	 * templates such as Medical Vitals authenticate via the TMA token even when
+	 * Telegram's built-in WebView does not persist auth cookies across requests.
+	 *
+	 * When `assistant_id` is absent from the request this handler resolves the
+	 * assistant from the active Telegram connection (following the same priority
+	 * chain used when rendering the Mini App page), ensuring that the doctor/coach
+	 * tab chat always uses the assistant assigned to the bot connection rather
+	 * than falling back to the site-wide global default.
+	 *
+	 * @since 1.1.6
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_tma_chat_request( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Controller' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tma_chat_unavailable',
+				__( 'Chat service is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		// If no assistant_id was supplied by the client, resolve it from the
+		// active Telegram connection so that the doctor/coach tab chat uses the
+		// same assistant that is assigned to this bot – identical to the
+		// resolution used when rendering the Mini App HTML page.
+		$request_assistant_id = $request->get_param( 'assistant_id' );
+		if ( null === $request_assistant_id || '' === (string) $request_assistant_id || 0 === (int) $request_assistant_id ) {
+			$connection   = $this->get_active_telegram_connection();
+			$assistant_id = $this->resolve_mini_app_assistant( $request, $connection );
+			if ( ! empty( $assistant_id ) ) {
+				$request->set_param( 'assistant_id', $assistant_id );
+			}
+		}
+
+		// Pass the shared main controller so that the chat handler has full access
+		// to assistants, providers, and tool registries – and avoids registering a
+		// duplicate SSE hook that the no-arg constructor would add.
+		$main_controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] )
+			? $GLOBALS['wp_mcp_ai_rest_controller']
+			: null;
+
+		$chat_controller = new WP_MCP_AI_REST_Chat_Controller( $main_controller );
+
+		return $chat_controller->handle_chat_client_request( $request );
 	}
 
 	/**

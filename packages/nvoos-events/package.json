@@ -3,7 +3,14 @@
   "version": "0.1.0-alpha.1",
   "description": "Real-time event coordination with SSE client and job event bus - Extracted from NV Open Operator System",
   "main": "dist/nvoos-events.js",
+  "module": "dist/nvoos-events.js",
   "types": "dist/nvoos-events.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/nvoos-events.js",
+      "default": "./dist/nvoos-events.js"
+    }
+  },
   "author": "NV Digital Solutions <hello@nvdigitalsolutions.com>",
   "license": "MIT",
   "homepage": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/packages/nvoos-events",
