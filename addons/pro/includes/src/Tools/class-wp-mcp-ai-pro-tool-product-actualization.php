@@ -723,8 +723,8 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
-		// image data from Gemini is base64-encoded.
-		return $this->save_ai_result_to_temp( $result['image'], 'png', true );
+		// Gemini client already decodes the inline base64 to raw binary in edit_image().
+		return $this->save_ai_result_to_temp( $result['image'], 'png', false );
 	}
 
 	/**
@@ -770,7 +770,10 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		$raw_data   = null;
 
 		if ( ! empty( $image_data['b64_json'] ) ) {
-			$decoded = base64_decode( $image_data['b64_json'], true );
+			// Strip any embedded whitespace before decoding (some API responses
+			// include MIME-style line-wrapped base64 that fails strict mode).
+			$b64_clean = str_replace( array( "\r", "\n", ' ' ), '', $image_data['b64_json'] );
+			$decoded   = base64_decode( $b64_clean, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding binary image data from API response.
 			if ( false === $decoded ) {
 				return new WP_Error(
 					'wp_mcp_ai_decode_failed',
