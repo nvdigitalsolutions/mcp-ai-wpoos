@@ -1619,7 +1619,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$data['logged_by'] = get_current_user_id();
 		$data['entry_id']  = 'vs_' . time() . '_' . wp_rand( 1000, 9999 );
 
-		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::insert( $member_id, $data );
+		$item_id = WP_MCP_AI_JetEngine_Vitals_Log_CCT::upsert( $member_id, $data );
 
 		if ( ! $item_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save vitals to CCT. Please try again.', 'mcp-ai-wpoos-pro' ) ) );

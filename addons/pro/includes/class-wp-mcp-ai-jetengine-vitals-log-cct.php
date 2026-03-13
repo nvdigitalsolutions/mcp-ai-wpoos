@@ -75,19 +75,27 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 	}
 
 	/**
-	 * Insert a vitals log record into the CCT.
+	 * Insert a new vitals log record into the CCT.
+	 *
+	 * Direct `$wpdb->insert()` is always used when the table exists because the
+	 * JetEngine item-handler's `create_item()` is designed for form submissions
+	 * and reads field values from `$_POST` / `$_REQUEST` internally — it does
+	 * not reliably persist custom fields when called programmatically.  The
+	 * handler is only attempted as a last-resort fallback when the table has not
+	 * been created yet.
+	 *
+	 * Prefer {@see upsert()} over this method when same-day consolidation of
+	 * partial readings is desired.
 	 *
 	 * @param int   $member_id WordPress post ID of the member.
 	 * @param array $data      Flat key/value pairs matching the CCT schema.
-	 * @return int|false       Inserted CCT item ID, or false on failure.
+	 * @return int|false       Inserted CCT item _ID, or false on failure.
 	 */
 	public static function insert( $member_id, array $data ) {
 		$member_id = absint( $member_id );
 		if ( ! $member_id ) {
 			return false;
 		}
-
-		$handler = self::get_item_handler();
 
 		$record = array_merge(
 			array(
@@ -97,11 +105,7 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			$data
 		);
 
-		if ( $handler && method_exists( $handler, 'create_item' ) ) {
-			$result = $handler->create_item( $record );
-			return is_numeric( $result ) ? (int) $result : false;
-		}
-
+		// Prefer a direct DB insert — reliable for programmatic writes.
 		if ( self::table_exists() ) {
 			global $wpdb;
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -109,7 +113,119 @@ class WP_MCP_AI_JetEngine_Vitals_Log_CCT {
 			return $wpdb->insert_id ? (int) $wpdb->insert_id : false;
 		}
 
+		// Last-resort: JetEngine handler (covers fresh installs where the table
+		// may not exist yet but JetEngine can initialise it on the fly).
+		$handler = self::get_item_handler();
+		if ( $handler && method_exists( $handler, 'create_item' ) ) {
+			$result = $handler->create_item( $record );
+			return is_numeric( $result ) ? (int) $result : false;
+		}
+
 		return false;
+	}
+
+	/**
+	 * Find the first vitals log row for a member on a specific measurement date.
+	 *
+	 * @param int    $member_id Member post ID.
+	 * @param string $date      Measurement date string 'YYYY-MM-DD'.
+	 * @return object|null      CCT row object (oldest matching), or null.
+	 */
+	public static function get_for_date( $member_id, $date ) {
+		$member_id = absint( $member_id );
+		$date      = sanitize_text_field( $date );
+
+		if ( ! $member_id || ! $date || ! self::table_exists() ) {
+			return null;
+		}
+
+		global $wpdb;
+		$table = self::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND measurement_date = %s ORDER BY _ID ASC LIMIT 1", $member_id, $date ) );
+
+		return $row ? $row : null;
+	}
+
+	/**
+	 * Update specific fields on an existing CCT row.
+	 *
+	 * @param int   $item_id CCT row primary key (_ID).
+	 * @param array $data    Flat key/value pairs to update.
+	 * @return bool          True when at least one row was affected.
+	 */
+	public static function update_fields( $item_id, array $data ) {
+		$item_id = absint( $item_id );
+
+		if ( ! $item_id || empty( $data ) || ! self::table_exists() ) {
+			return false;
+		}
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$result = $wpdb->update(
+			self::get_table_name(),
+			$data,
+			array( '_ID' => $item_id )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Insert or consolidate a vitals log entry for the given member and date.
+	 *
+	 * When a record already exists for the same member + measurement_date the
+	 * incoming data is merged into that row:
+	 *  - Every non-empty field in $data overwrites its counterpart in the
+	 *    existing row, so partial readings from separate sessions accumulate
+	 *    into a single complete day-record.
+	 *  - The original `entry_id` and `logged_by` are always preserved (set on
+	 *    first write only).
+	 *  - `measurement_time` is preserved from the first write unless the
+	 *    existing value is empty.
+	 *  - `logged_at` is always refreshed to reflect the most-recent write.
+	 *
+	 * When no record exists a fresh row is created via {@see insert()}.
+	 *
+	 * @param int   $member_id Member post ID.
+	 * @param array $data      Flat key/value pairs matching the CCT schema.
+	 * @return int|false       CCT item _ID on success, or false on failure.
+	 */
+	public static function upsert( $member_id, array $data ) {
+		$measurement_date = ! empty( $data['measurement_date'] )
+			? $data['measurement_date']
+			: current_time( 'Y-m-d' );
+
+		$existing = self::get_for_date( absint( $member_id ), $measurement_date );
+
+		if ( $existing ) {
+			// Build the update payload: new non-empty values fill / overwrite.
+			$update = array();
+			foreach ( $data as $key => $val ) {
+				// Preserve originals set on first write.
+				if ( in_array( $key, array( 'entry_id', 'logged_by' ), true ) ) {
+					continue;
+				}
+				// Preserve measurement_time when already recorded.
+				if ( 'measurement_time' === $key && ! empty( $existing->measurement_time ) ) {
+					continue;
+				}
+				if ( '' !== (string) $val && null !== $val ) {
+					$update[ $key ] = $val;
+				}
+			}
+
+			// Always refresh the last-write audit timestamp.
+			$update['logged_at'] = current_time( 'mysql' );
+
+			self::update_fields( (int) $existing->_ID, $update );
+
+			return (int) $existing->_ID;
+		}
+
+		return self::insert( $member_id, $data );
 	}
 
 	/**
